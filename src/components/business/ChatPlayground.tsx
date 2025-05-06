@@ -17,69 +17,70 @@ import { useCustom } from "@refinedev/core";
 import { REST_URL } from "@/lib/api";
 
 type FormValue = {
-  model: string;
-  temperature: number;
-  max_length: number;
-  top_p: number;
+	model: string;
+	temperature: number;
+	max_length: number;
+	top_p: number;
 };
 
 type ChatPlaygroundProps = {
-  endpoint: Endpoint;
+	endpoint: Endpoint;
 };
 
 export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
-  const { ...form } = useForm({
-    mode: "all",
-    defaultValues: {
-      model: "",
-      temperature: 0.56,
-      max_length: 256,
-      top_p: 0.9,
-    },
-  });
+	const { ...form } = useForm({
+		mode: "all",
+		defaultValues: {
+			model: "",
+			temperature: 0.56,
+			max_length: 256,
+			top_p: 0.9,
+		},
+	});
 
-  const { handleSubmit, input, setInput, messages, status, stop } = useChat({
-    api: `${REST_URL}/playgrounds/chat/${endpoint.metadata.name}`,
-    streamProtocol: "text",
-    experimental_throttle: 50,
-  });
+	const { handleSubmit, input, setInput, messages, status, stop } = useChat({
+		api: `${REST_URL}/playgrounds/chat/${endpoint.metadata.name}`,
+		streamProtocol: "text",
+		experimental_throttle: 50,
+	});
 
-  const modelsData = useCustom({
-    url: `/serve-proxy/${endpoint.metadata.name}/v1/models`,
-    method: "get",
-    queryOptions: {
-      enabled: Boolean(endpoint.metadata.name),
-    },
-  });
+	const modelsData = useCustom({
+		url: `/serve-proxy/${endpoint.metadata.name}/v1/models`,
+		method: "get",
+		queryOptions: {
+			enabled: Boolean(endpoint.metadata.name),
+		},
+	});
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const outerEl = scrollAreaRef.current?.parentElement;
-    outerEl?.scrollTo({
-      top: outerEl?.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages]);
+	const scrollAreaRef = useRef<HTMLDivElement>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: trigger scroll on messages change
+	useEffect(() => {
+		const outerEl = scrollAreaRef.current?.parentElement;
+		outerEl?.scrollTo({
+			top: outerEl?.scrollHeight,
+			behavior: "smooth",
+		});
+	}, [messages]);
 
-  const onSubmit: SubmitHandler<FormValue> = (
-    { model, temperature, max_length, top_p },
-    e
-  ) => {
-    handleSubmit(e, {
-      body: {
-        model,
-        temperature,
-        max_length,
-        top_p,
-      },
-    });
-  };
+	const onSubmit: SubmitHandler<FormValue> = (
+		{ model, temperature, max_length, top_p },
+		e,
+	) => {
+		handleSubmit(e, {
+			body: {
+				model,
+				temperature,
+				max_length,
+				top_p,
+			},
+		});
+	};
 
-  return (
-    <Form {...form}>
-      <form className="h-full flex-col" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="h-full">
-          {/* <div className=" container flex flex-col items-start justify-between space-y-2 py-4 sm:flex-row sm:items-center sm:space-y-0">
+	return (
+		<Form {...form}>
+			<form className="h-full flex-col" onSubmit={form.handleSubmit(onSubmit)}>
+				<div className="h-full">
+					{/* <div className=" container flex flex-col items-start justify-between space-y-2 py-4 sm:flex-row sm:items-center sm:space-y-0">
             <div className="ml-auto flex w-full space-x-2 sm:justify-end">
             <PresetSelector presets={presets} />
             <PresetSave />
@@ -90,93 +91,93 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
             <PresetActions />
           </div>
           </div> */}
-          <div className="h-full">
-            <div className="container h-full py-6">
-              <div className="grid h-full items-stretch gap-6 md:grid-cols-[1fr_300px]">
-                <div className="flex-col space-y-4 sm:flex md:order-2 h-full">
-                  <Controller
-                    name="model"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Combobox
-                        placeholder="Select a model"
-                        triggerClassName="sm:w-[300px]"
-                        popoverClassName="w-[300px]"
-                        options={(modelsData.data?.data.data || []).map(
-                          (v: { id: string }) => ({
-                            label: v.id,
-                            value: v.id,
-                          })
-                        )}
-                        {...field}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="temperature"
-                    control={form.control}
-                    render={({ field }) => <TemperatureSelector {...field} />}
-                  />
-                  <Controller
-                    name="max_length"
-                    control={form.control}
-                    render={({ field }) => <MaxLengthSelector {...field} />}
-                  />
-                  <Controller
-                    name="top_p"
-                    control={form.control}
-                    render={({ field }) => <TopPSelector {...field} />}
-                  />
-                </div>
-                <div className="md:order-1 relative w-full space-y-2 h-full overflow-auto">
-                  <ScrollArea className="p-2" ref={scrollAreaRef}>
-                    {messages.map((message) => (
-                      <div key={message.id}>
-                        <div className="font-bold">{message.role}</div>
-                        <div className="markdown-body">
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        </div>
-                      </div>
-                    ))}
-                  </ScrollArea>
-                  <div className="flex flex-col space-y-2 border rounded-md shadow-sm p-1 sticky bottom-2 right-0 left-0 bg-white">
-                    <Textarea
-                      placeholder={
-                        !form.getValues().model
-                          ? "Select a model first"
-                          : "Chat with your AI model..."
-                      }
-                      className="flex-1 p-4 border-0 outline-none focus:ring-0 focus-visible:ring-0 focus:outline-none resize-none shadow-none"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      disabled={
-                        ["streaming", "submitted"].includes(status) ||
-                        !form.getValues().model
-                      }
-                      onKeyDown={(e) => {
-                        if (e.metaKey && e.key === "Enter") {
-                          form.handleSubmit(onSubmit)();
-                        }
-                      }}
-                    />
-                    <div className="flex items-center space-x-2 justify-end">
-                      {status === "streaming" ? (
-                        <Button variant="secondary" onClick={stop}>
-                          Stop
-                        </Button>
-                      ) : (
-                        <Button type="submit" disabled={status === "submitted"}>
-                          Send
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </form>
-    </Form>
-  );
+					<div className="h-full">
+						<div className="container h-full py-6">
+							<div className="grid h-full items-stretch gap-6 md:grid-cols-[1fr_300px]">
+								<div className="flex-col space-y-4 sm:flex md:order-2 h-full">
+									<Controller
+										name="model"
+										control={form.control}
+										render={({ field }) => (
+											<Combobox
+												placeholder="Select a model"
+												triggerClassName="sm:w-[300px]"
+												popoverClassName="w-[300px]"
+												options={(modelsData.data?.data.data || []).map(
+													(v: { id: string }) => ({
+														label: v.id,
+														value: v.id,
+													}),
+												)}
+												{...field}
+											/>
+										)}
+									/>
+									<Controller
+										name="temperature"
+										control={form.control}
+										render={({ field }) => <TemperatureSelector {...field} />}
+									/>
+									<Controller
+										name="max_length"
+										control={form.control}
+										render={({ field }) => <MaxLengthSelector {...field} />}
+									/>
+									<Controller
+										name="top_p"
+										control={form.control}
+										render={({ field }) => <TopPSelector {...field} />}
+									/>
+								</div>
+								<div className="md:order-1 relative w-full space-y-2 h-full overflow-auto">
+									<ScrollArea className="p-2" ref={scrollAreaRef}>
+										{messages.map((message) => (
+											<div key={message.id}>
+												<div className="font-bold">{message.role}</div>
+												<div className="markdown-body">
+													<ReactMarkdown>{message.content}</ReactMarkdown>
+												</div>
+											</div>
+										))}
+									</ScrollArea>
+									<div className="flex flex-col space-y-2 border rounded-md shadow-sm p-1 sticky bottom-2 right-0 left-0 bg-white">
+										<Textarea
+											placeholder={
+												!form.getValues().model
+													? "Select a model first"
+													: "Chat with your AI model..."
+											}
+											className="flex-1 p-4 border-0 outline-none focus:ring-0 focus-visible:ring-0 focus:outline-none resize-none shadow-none"
+											value={input}
+											onChange={(e) => setInput(e.target.value)}
+											disabled={
+												["streaming", "submitted"].includes(status) ||
+												!form.getValues().model
+											}
+											onKeyDown={(e) => {
+												if (e.metaKey && e.key === "Enter") {
+													form.handleSubmit(onSubmit)();
+												}
+											}}
+										/>
+										<div className="flex items-center space-x-2 justify-end">
+											{status === "streaming" ? (
+												<Button variant="secondary" onClick={stop}>
+													Stop
+												</Button>
+											) : (
+												<Button type="submit" disabled={status === "submitted"}>
+													Send
+												</Button>
+											)}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</Form>
+	);
 }

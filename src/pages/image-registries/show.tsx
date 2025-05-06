@@ -7,34 +7,34 @@ import type { ImageRegistry } from "@/types";
 import { useShow } from "@refinedev/core";
 
 export const ImageRegistriesShow = () => {
-  const {
-    query: { data, isLoading },
-  } = useShow<ImageRegistry>();
-  const record = data?.data;
+	const {
+		query: { data, isLoading },
+	} = useShow<ImageRegistry>();
+	const record = data?.data;
 
-  if (isLoading) {
-    return <Loader className="h-4 text-primary" />;
-  }
+	if (isLoading) {
+		return <Loader className="h-4 text-primary" />;
+	}
 
-  if (!record) {
-    return <div>404 not found</div>;
-  }
+	if (!record) {
+		return <div>404 not found</div>;
+	}
 
-  return (
-    <ShowPage record={record}>
-      <MetadataCard metadata={record.metadata} />
-      <Card className="mt-4">
-        <CardContent>
-          <ShowPage.Row title={"Status"}>
-            <ImageRegistryStatus phase={record.status?.phase} />
-          </ShowPage.Row>
-          <div className="grid grid-cols-4 gap-8">
-            <ShowPage.Row title={"Repo"}>
-              {record.spec.url}/{record.spec.repository}
-            </ShowPage.Row>
-          </div>
-        </CardContent>
-      </Card>
-    </ShowPage>
-  );
+	return (
+		<ShowPage record={record}>
+			<MetadataCard metadata={record.metadata} />
+			<Card className="mt-4">
+				<CardContent>
+					<ShowPage.Row title={"Status"}>
+						<ImageRegistryStatus phase={record.status?.phase} />
+					</ShowPage.Row>
+					<div className="grid grid-cols-4 gap-8">
+						<ShowPage.Row title={"Repo"}>
+							{record.spec.url}/{record.spec.repository}
+						</ShowPage.Row>
+					</div>
+				</CardContent>
+			</Card>
+		</ShowPage>
+	);
 };

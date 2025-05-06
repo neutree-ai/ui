@@ -3,28 +3,28 @@ import { RowAction } from ".";
 import { useGetEditUrl } from "@/components/theme/hooks";
 
 type EditActionProps = RowActionProps & {
-  row: any;
-  resource: string;
-  title: string;
+	row: any;
+	resource: string;
+	title: string;
 };
 
 export function EditAction({
-  row,
-  resource,
-  title,
-  disabled,
-  ...props
+	row,
+	resource,
+	title,
+	disabled,
+	...props
 }: EditActionProps) {
-  const edit = useGetEditUrl(resource, row.metadata.name);
+	const edit = useGetEditUrl(resource, row.metadata.name);
 
-  return (
-    <RowAction
-      {...props}
-      disabled={!edit.can || disabled}
-      title={!edit?.can ? edit?.reason : title}
-      to={edit.url}
-    />
-  );
+	return (
+		<RowAction
+			{...props}
+			disabled={!edit.can || disabled}
+			title={!edit?.can ? edit?.reason : title}
+			to={edit.url}
+		/>
+	);
 }
 
 EditAction.displayName = "EditAction";

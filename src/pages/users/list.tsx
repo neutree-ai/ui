@@ -3,20 +3,20 @@ import { useMetadataColumns } from "@/components/theme/table/columns/metadata-co
 import { useUserColumns } from "@/components/theme/table/columns/user-columns";
 
 export const UsersList = () => {
-  const metadataColumns = useMetadataColumns();
-  const userColumns = useUserColumns();
+	const metadataColumns = useMetadataColumns();
+	const userColumns = useUserColumns();
 
-  return (
-    <ListPage>
-      <Table enableSorting enableFilters>
-        {metadataColumns.name}
-        {userColumns.email}
+	return (
+		<ListPage>
+			<Table enableSorting enableFilters>
+				{metadataColumns.name}
+				{userColumns.email}
 
-        {metadataColumns.creation_timestamp}
-        {metadataColumns.update_timestamp}
+				{metadataColumns.creation_timestamp}
+				{metadataColumns.update_timestamp}
 
-        {metadataColumns.action}
-      </Table>
-    </ListPage>
-  );
+				{metadataColumns.action}
+			</Table>
+		</ListPage>
+	);
 };

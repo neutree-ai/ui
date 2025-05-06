@@ -3,17 +3,17 @@ import { useMetadataColumns } from "@/components/theme/table/columns/metadata-co
 import { useWorkflowColumns } from "@/components/theme/table/columns/workflow-columns";
 
 export const WorkspacesList = () => {
-  const metadataColumns = useMetadataColumns();
-  const workflowColumns = useWorkflowColumns();
+	const metadataColumns = useMetadataColumns();
+	const workflowColumns = useWorkflowColumns();
 
-  return (
-    <ListPage>
-      <Table enableSorting enableFilters>
-        {metadataColumns.name}
-        {metadataColumns.update_timestamp}
-        {metadataColumns.creation_timestamp}
-        {workflowColumns.action}
-      </Table>
-    </ListPage>
-  );
+	return (
+		<ListPage>
+			<Table enableSorting enableFilters>
+				{metadataColumns.name}
+				{metadataColumns.update_timestamp}
+				{metadataColumns.creation_timestamp}
+				{workflowColumns.action}
+			</Table>
+		</ListPage>
+	);
 };
