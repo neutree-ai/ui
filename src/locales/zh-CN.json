@@ -1,0 +1,35 @@
+{
+  "dashboard": {
+    "title": "概览"
+  },
+  "clusters": {
+    "title": "集群"
+  },
+  "model_registries": {
+    "title": "模型仓库"
+  },
+  "image_registries": {
+    "title": "容器镜像仓库"
+  },
+  "engines": {
+    "title": "推理引擎"
+  },
+  "endpoints": {
+    "title": "推理实例"
+  },
+  "workspaces": {
+    "title": "工作空间"
+  },
+  "user_profiles": {
+    "title": "用户"
+  },
+  "roles": {
+    "title": "角色"
+  },
+  "role_assignments": {
+    "title": "工作空间策略"
+  },
+  "api_keys": {
+    "title": "API 密钥"
+  }
+}
