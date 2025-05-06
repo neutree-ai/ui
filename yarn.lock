@@ -1130,13 +1130,13 @@
     lodash-es "^4.17.21"
     react-hook-form "^7.43.5"
 
-"@refinedev/react-router-v6@^4.6.0":
-  version "4.6.2"
-  resolved "https://registry.npmjs.org/@refinedev/react-router-v6/-/react-router-v6-4.6.2.tgz#e5dca3480647389584ee0a95da6b7153faeb5cc6"
-  integrity sha512-MpIXlcHglfETF2uqAbd9fmv5dfqoeaj9iayebj4IqANJK9fxiKHyai2E5o9+JNkHWuZnAr9QOeDJqbAGihrGTw==
+"@refinedev/react-router@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@refinedev/react-router/-/react-router-1.0.1.tgz#b3d904c5cab5eb97a20494f8bffa0c84065b32f8"
+  integrity sha512-C5KZjJeeGBwCE6qOUtDx50f4t6c/ZC776IQBiBb30i6Nbq/P72oWS530oGG/Z4/6Zl9F55X6Djk6ylO0IK9iEg==
   dependencies:
     qs "^6.10.1"
-    react-router-dom "^6.8.1"
+    react-router "^7.0.2"
 
 "@refinedev/react-table@^5.6.13":
   version "5.6.15"
@@ -1155,11 +1155,6 @@
     "@refinedev/core" "^4.57.9"
     dayjs "^1.10.7"
     tslib "^2.6.2"
-
-"@remix-run/router@1.23.0":
-  version "1.23.0"
-  resolved "https://registry.npmjs.org/@remix-run/router/-/router-1.23.0.tgz#35390d0e7779626c026b11376da6789eb8389242"
-  integrity sha512-O3rHJzAQKamUz1fvE0Qaw0xSFqsA/yafi2iqeE0pvdFtCO1viYx8QL6f3Ln/aCCTLxs68SLf0KPM9eSeM8yBnA==
 
 "@standard-schema/utils@^0.3.0":
   version "0.3.0"
@@ -3021,22 +3016,14 @@ react-resizable-panels@^2.1.7:
   resolved "https://registry.npmjs.org/react-resizable-panels/-/react-resizable-panels-2.1.9.tgz#874847710f4f122df749b5f08ebe9c72a1e338ca"
   integrity sha512-z77+X08YDIrgAes4jl8xhnUu1LNIRp4+E7cv4xHmLOxxUPO/ML7PSrE813b90vj7xvQ1lcf7g2uA9GeMZonjhQ==
 
-react-router-dom@^6.8.1:
-  version "6.30.0"
-  resolved "https://registry.npmjs.org/react-router-dom/-/react-router-dom-6.30.0.tgz#a64774104508bff56b1affc2796daa3f7e76b7df"
-  integrity sha512-x30B78HV5tFk8ex0ITwzC9TTZMua4jGyA9IUlH1JLQYQTFyxr/ZxwOJq7evg1JX1qGVUcvhsmQSKdPncQrjTgA==
+react-router-dom@^7.5.3:
+  version "7.5.3"
+  resolved "https://registry.npmjs.org/react-router-dom/-/react-router-dom-7.5.3.tgz#496e9f6d90f731703c7772668b41747028e0a2d5"
+  integrity sha512-cK0jSaTyW4jV9SRKAItMIQfWZ/D6WEZafgHuuCb9g+SjhLolY78qc+De4w/Cz9ybjvLzShAmaIMEXt8iF1Cm+A==
   dependencies:
-    "@remix-run/router" "1.23.0"
-    react-router "6.30.0"
+    react-router "7.5.3"
 
-react-router@6.30.0:
-  version "6.30.0"
-  resolved "https://registry.npmjs.org/react-router/-/react-router-6.30.0.tgz#9789d775e63bc0df60f39ced77c8c41f1e01ff90"
-  integrity sha512-D3X8FyH9nBcTSHGdEKurK7r8OYE1kKFn3d/CF+CoxbSHkxU7o37+Uh7eAHRXr6k2tSExXYO++07PeXJtA/dEhQ==
-  dependencies:
-    "@remix-run/router" "1.23.0"
-
-react-router@^7.0.2:
+react-router@7.5.3, react-router@^7.0.2, react-router@^7.5.3:
   version "7.5.3"
   resolved "https://registry.npmjs.org/react-router/-/react-router-7.5.3.tgz#9e5420832af8c3690740c1797d4fa54613fea06d"
   integrity sha512-3iUDM4/fZCQ89SXlDa+Ph3MevBrozBAI655OAfWQlTm9nBR0IKlrmNwFow5lPHttbwvITZfkeeeZFP6zt3F7pw==

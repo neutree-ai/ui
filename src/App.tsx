@@ -9,15 +9,9 @@ import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import routerProvider, {
   CatchAllNavigate,
   NavigateToResource,
-} from "@refinedev/react-router-v6";
+} from "@refinedev/react-router";
 import { dataProvider } from "./data-provider";
-import {
-  BrowserRouter,
-  Outlet,
-  Route,
-  Routes,
-  HashRouter,
-} from "react-router-dom";
+import { Outlet, Route, Routes, HashRouter } from "react-router-dom";
 import {
   DefaultLayout,
   BaseLayout,
@@ -235,7 +229,7 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
   const { t } = useTranslation();
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <RefineKbarProvider>
         <Refine
           dataProvider={dataProvider(clientPostgrest)}
@@ -255,19 +249,18 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
             },
           }))}
           i18nProvider={i18nProvider}
-          options={
-            {
-              // reactQuery: {
-              //   clientConfig: {
-              //     defaultOptions: {
-              //       queries: {
-              //         refetchInterval: 3000,
-              //       },
-              //     },
-              //   },
-              // },
-            }
-          }
+          options={{
+            disableTelemetry: true,
+            // reactQuery: {
+            //   clientConfig: {
+            //     defaultOptions: {
+            //       queries: {
+            //         refetchInterval: 3000,
+            //       },
+            //     },
+            //   },
+            // },
+          }}
         >
           <BaseLayout>
             <Routes>
@@ -423,7 +416,7 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
           <RefineKbar />
         </Refine>
       </RefineKbarProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

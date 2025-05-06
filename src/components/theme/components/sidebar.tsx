@@ -17,7 +17,7 @@ import {
 import React from "react";
 import { useMenu, useResourceParams } from "@refinedev/core";
 import type { TreeMenuItem } from "@refinedev/core/dist/hooks/menu/useMenu";
-import { useLocation } from "react-use";
+import { useLocation } from "react-router";
 import { useWorkspace } from "../hooks";
 import type { LayoutProps } from "../types";
 import { cn } from "@/lib/utils";
