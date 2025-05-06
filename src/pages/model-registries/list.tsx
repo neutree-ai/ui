@@ -3,22 +3,22 @@ import { useMetadataColumns } from "@/components/theme/table/columns/metadata-co
 import { useModelRegistryColumns } from "@/components/theme/table/columns/model-registry-columns";
 
 export const ModelRegistriesList = () => {
-	const metadataColumns = useMetadataColumns();
-	const modelRegistryColumns = useModelRegistryColumns();
+  const metadataColumns = useMetadataColumns();
+  const modelRegistryColumns = useModelRegistryColumns();
 
-	return (
-		<ListPage>
-			<Table enableSorting enableFilters>
-				{metadataColumns.name}
-				{metadataColumns.workspace}
+  return (
+    <ListPage>
+      <Table enableSorting enableFilters>
+        {metadataColumns.name}
+        {metadataColumns.workspace}
 
-				{modelRegistryColumns.status}
-				{modelRegistryColumns.type}
+        {modelRegistryColumns.status}
+        {modelRegistryColumns.type}
 
-				{metadataColumns.update_timestamp}
-				{metadataColumns.creation_timestamp}
-				{metadataColumns.action}
-			</Table>
-		</ListPage>
-	);
+        {metadataColumns.update_timestamp}
+        {metadataColumns.creation_timestamp}
+        {metadataColumns.action}
+      </Table>
+    </ListPage>
+  );
 };

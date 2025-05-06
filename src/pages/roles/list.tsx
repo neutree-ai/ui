@@ -3,19 +3,19 @@ import { useMetadataColumns } from "@/components/theme/table/columns/metadata-co
 import { useRoleColumns } from "@/components/theme/table/columns/role-columns";
 
 export const RolesList = () => {
-	const metadataColumns = useMetadataColumns();
-	const roleColumns = useRoleColumns();
+  const metadataColumns = useMetadataColumns();
+  const roleColumns = useRoleColumns();
 
-	return (
-		<ListPage>
-			<Table enableSorting enableFilters>
-				{roleColumns.name}
-				{roleColumns.permissions}
+  return (
+    <ListPage>
+      <Table enableSorting enableFilters>
+        {roleColumns.name}
+        {roleColumns.permissions}
 
-				{metadataColumns.update_timestamp}
-				{metadataColumns.creation_timestamp}
-				{roleColumns.action}
-			</Table>
-		</ListPage>
-	);
+        {metadataColumns.update_timestamp}
+        {metadataColumns.creation_timestamp}
+        {roleColumns.action}
+      </Table>
+    </ListPage>
+  );
 };

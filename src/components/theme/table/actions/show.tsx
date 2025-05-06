@@ -3,28 +3,28 @@ import { RowAction } from ".";
 import { useGetShowUrl } from "@/components/theme/hooks";
 
 type ShowActionProps = RowActionProps & {
-	row: any;
-	resource: string;
-	title: string;
+  row: any;
+  resource: string;
+  title: string;
 };
 
 export function ShowAction({
-	row,
-	resource,
-	title,
-	disabled,
-	...props
+  row,
+  resource,
+  title,
+  disabled,
+  ...props
 }: ShowActionProps) {
-	const detail = useGetShowUrl(resource, row.id);
+  const detail = useGetShowUrl(resource, row.id);
 
-	return (
-		<RowAction
-			{...props}
-			disabled={!detail.can || disabled}
-			title={!detail?.can ? detail?.reason : title}
-			to={detail.url}
-		/>
-	);
+  return (
+    <RowAction
+      {...props}
+      disabled={!detail.can || disabled}
+      title={!detail?.can ? detail?.reason : title}
+      to={detail.url}
+    />
+  );
 }
 
 ShowAction.displayName = "ShowAction";

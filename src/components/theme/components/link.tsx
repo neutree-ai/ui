@@ -4,24 +4,24 @@ import { useLink, useRouterContext, useRouterType } from "@refinedev/core";
 import { forwardRef } from "react";
 
 type LinkProps = LayoutResource["link"] & {
-	asChild?: boolean;
+  asChild?: boolean;
 };
 
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
-	({ children, href, title, className, asChild }, ref) => {
-		const { Link: LegacyLink } = useRouterContext();
-		const routerType = useRouterType();
-		const Link = useLink();
+  ({ children, href, title, className, asChild }, ref) => {
+    const { Link: LegacyLink } = useRouterContext();
+    const routerType = useRouterType();
+    const Link = useLink();
 
-		const ActiveLink = routerType === "legacy" ? LegacyLink : Link;
-		const Comp = asChild ? Slot : ActiveLink;
+    const ActiveLink = routerType === "legacy" ? LegacyLink : Link;
+    const Comp = asChild ? Slot : ActiveLink;
 
-		return (
-			<Comp ref={ref} to={href} className={className} title={title}>
-				{children}
-			</Comp>
-		);
-	},
+    return (
+      <Comp ref={ref} to={href} className={className} title={title}>
+        {children}
+      </Comp>
+    );
+  },
 );
 
 Link.displayName = "Link";

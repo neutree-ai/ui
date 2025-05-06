@@ -5,48 +5,44 @@ import { SquarePlusIcon } from "lucide-react";
 import type { FC } from "react";
 
 export const CreateButton: FC<CreateButtonProps> = ({
-	resource,
-	hideText = false,
-	accessControl,
-	meta,
-	onClick,
-	children,
-	...props
+  resource,
+  hideText = false,
+  accessControl,
+  meta,
+  onClick,
+  children,
+  ...props
 }) => {
-	const { hidden, disabled, label, title, LinkComponent, to } = useCreateButton(
-		{
-			resource,
-			accessControl,
-			meta,
-		},
-	);
+  const { hidden, disabled, label, title, LinkComponent, to } = useCreateButton(
+    {
+      resource,
+      accessControl,
+      meta,
+    },
+  );
 
-	if (hidden) return null;
-	return (
-		<LinkComponent
-			to={to}
-			replace={false}
-			onClick={(e: React.PointerEvent<HTMLButtonElement>) => {
-				if (disabled) {
-					e.preventDefault();
-					return;
-				}
-				if (onClick) {
-					e.preventDefault();
-					onClick(e);
-				}
-			}}
-		>
-			<Button
-				disabled={disabled}
-				title={title}
-				icon={<SquarePlusIcon className="mr-2 w-4 h-4" />}
-				{...props}
-			>
-				{!hideText && (children ?? label)}
-			</Button>
-		</LinkComponent>
-	);
+  if (hidden) return null;
+  return (
+    <LinkComponent
+      to={to}
+      replace={false}
+      onClick={(e: React.PointerEvent<HTMLButtonElement>) => {
+        if (disabled) {
+          e.preventDefault();
+          return;
+        }
+        if (onClick) {
+          e.preventDefault();
+          onClick(e);
+        }
+      }}
+    >
+      <Button disabled={disabled} title={title} {...props}>
+        <SquarePlusIcon className="mr-2 w-4 h-4" />
+        {!hideText && (children ?? label)}
+      </Button>
+    </LinkComponent>
+  );
 };
 
 CreateButton.displayName = "CreateButton";
