@@ -6,6 +6,7 @@ export const ClustersCreate = () => {
     form,
     metadataFields,
     imageRegistryFields,
+    typeFields,
     providerFields,
     authFields,
   } = useClusterForm({ action: "create" });
@@ -13,6 +14,7 @@ export const ClustersCreate = () => {
     <Form {...form} title="Create Cluster">
       {metadataFields}
       {imageRegistryFields}
+      {typeFields}
       {providerFields}
       {authFields}
     </Form>

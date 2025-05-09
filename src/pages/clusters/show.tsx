@@ -66,14 +66,51 @@ export const ClustersShow = () => {
                   </ShowButton>
                 </ShowPage.Row>
               </div>
-              <div>
-                <ShowPage.Row title="Head IP">
-                  {record.spec.config.provider.head_ip ?? ""}
-                </ShowPage.Row>
-                <ShowPage.Row title="Worker IPs">
-                  {(record.spec.config.provider.worker_ips || [])?.join(",")}
-                </ShowPage.Row>
-              </div>
+              {"provider" in record.spec.config && (
+                <div>
+                  <ShowPage.Row title="Head IP">
+                    {record.spec.config.provider.head_ip ?? ""}
+                  </ShowPage.Row>
+                  <ShowPage.Row title="Worker IPs">
+                    {(record.spec.config.provider.worker_ips || [])?.join(",")}
+                  </ShowPage.Row>
+                </div>
+              )}
+              {"kubeconfig" in record.spec.config && (
+                <div>
+                  <div className="grid grid-cols-4 gap-8">
+                    <ShowPage.Row title="Access Mode">
+                      {record.spec.config.head_node_spec?.access_mode ?? ""}
+                    </ShowPage.Row>
+
+                    <ShowPage.Row title="Head Node CPU">
+                      {record.spec.config.head_node_spec?.resources?.cpu ?? ""}
+                    </ShowPage.Row>
+
+                    <ShowPage.Row title="Head Node Memory">
+                      {record.spec.config.head_node_spec?.resources?.memory ??
+                        ""}
+                    </ShowPage.Row>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-8">
+                    <ShowPage.Row title="Worker Node Replica">
+                      {record.spec.config.worker_group_specs?.[0]
+                        ?.max_replicas ?? ""}
+                    </ShowPage.Row>
+
+                    <ShowPage.Row title="Worker Node CPU">
+                      {record.spec.config.worker_group_specs?.[0].resources
+                        ?.cpu ?? ""}
+                    </ShowPage.Row>
+
+                    <ShowPage.Row title="Worker Node Memory">
+                      {record.spec.config.worker_group_specs?.[0].resources
+                        ?.memory ?? ""}
+                    </ShowPage.Row>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card className="mt-4">
