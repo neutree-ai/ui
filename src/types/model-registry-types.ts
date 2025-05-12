@@ -11,7 +11,7 @@ export type ModelRegistry = {
 
 export type ModelRegistrySpec = {
   type: string; // 'bentoml' | 'hugging-face';
-  // for now, local only support 'file:///home/aippp/models'
+  // for now, local only support 'file:///home/neutree/models'
   url: string; // 'file://path/to/model' | 'https://huggingface.co' | 'nfs://path/to/model';
   credentials: string;
 };

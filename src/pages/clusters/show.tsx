@@ -19,7 +19,7 @@ export const ClustersShow = () => {
 
   const { translate } = useTranslation();
 
-  const metadataColumns = useMetadataColumns();
+  const metadataColumns = useMetadataColumns({ resource: "endpoints" });
   const endpointColumns = useEndpointColumns();
 
   if (isLoading) {

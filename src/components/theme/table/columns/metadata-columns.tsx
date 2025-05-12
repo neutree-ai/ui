@@ -4,9 +4,11 @@ import Timestamp from "@/components/business/Timestamp";
 import { Edit, Trash2 } from "lucide-react";
 import { Table } from "..";
 
-export const useMetadataColumns = () => {
+export const useMetadataColumns = (options?: { resource: string }) => {
   const { translate } = useTranslation();
-  const { resource } = useResource();
+  const { resource: hookResource } = useResource();
+
+  const resource = options?.resource ?? hookResource?.name ?? "";
 
   return {
     name: (
@@ -24,6 +26,7 @@ export const useMetadataColumns = () => {
               meta={{
                 workspace,
               }}
+              resource={resource}
             >
               {name}
             </ShowButton>
@@ -87,13 +90,13 @@ export const useMetadataColumns = () => {
             <Table.EditAction
               title="Edit"
               row={original}
-              resource={resource?.name || ""}
+              resource={resource}
               icon={<Edit size={16} />}
             />
             <Table.DeleteAction
               title="Delete"
               row={original}
-              resource={resource?.name || ""}
+              resource={resource}
               icon={<Trash2 size={16} />}
             />
           </Table.Actions>
