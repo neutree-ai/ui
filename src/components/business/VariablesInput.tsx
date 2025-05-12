@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,17 +56,11 @@ export const VariablesInput = React.forwardRef<
   ) => {
     const [newKey, setNewKey] = useState<string>("");
     const [newValue, setNewValue] = useState<string>("");
-    const [availableSchemaKeys, setAvailableSchemaKeys] = useState<string[]>(
-      [],
-    );
 
-    // Update available schema keys that aren't already in use
-    useEffect(() => {
+    const availableSchemaKeys = useMemo(() => {
       const usedKeys = Object.keys(value);
       const schemaKeys = Object.keys(schema);
-      setAvailableSchemaKeys(
-        schemaKeys.filter((key) => !usedKeys.includes(key)),
-      );
+      return schemaKeys.filter((key) => !usedKeys.includes(key));
     }, [value, schema]);
 
     const handleAddVariable = () => {
