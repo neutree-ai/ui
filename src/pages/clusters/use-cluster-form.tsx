@@ -111,7 +111,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   head_node_spec: {
                     access_mode: "LoadBalancer",
                     resources: {
-                      cpu: 1,
+                      cpu: "1",
                       memory: "2Gi",
                     },
                   },
@@ -121,7 +121,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                       min_replicas: 1,
                       max_replicas: 1,
                       resources: {
-                        cpu: 1,
+                        cpu: "1",
                         memory: "2Gi",
                       },
                     },
@@ -171,7 +171,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               name="spec.config.head_node_spec.resources.cpu"
               label="Head Node CPU"
             >
-              <Input type="number" disabled={isEdit} />
+              <Input disabled={isEdit} />
             </Field>
 
             <Field
@@ -211,7 +211,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               name="spec.config.worker_group_specs.0.resources.cpu"
               label="Worker Node CPU"
             >
-              <Input type="number" disabled={isEdit} />
+              <Input disabled={isEdit} />
             </Field>
 
             <Field
