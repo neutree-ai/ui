@@ -39,7 +39,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   });
 
   const { handleSubmit, input, setInput, messages, status, stop } = useChat({
-    api: `${REST_URL}/playgrounds/chat/${endpoint.metadata.name}`,
+    api: `/api/v1/serve-proxy/${endpoint.metadata.name}/v1/chat/completions`,
     streamProtocol: "text",
     experimental_throttle: 50,
   });
