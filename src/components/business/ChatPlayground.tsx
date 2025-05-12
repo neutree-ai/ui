@@ -8,13 +8,13 @@ import { MaxLengthSelector } from "./maxlength-selector";
 import { TemperatureSelector } from "./temperature-selector";
 import { TopPSelector } from "./top-p-selector";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
-import { useChat } from "@ai-sdk/react";
+import { createOpenAI } from "@ai-sdk/openai";
 import type { Endpoint } from "@/types";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import "github-markdown-css/github-markdown-light.css";
 import { useCustom } from "@refinedev/core";
-import { REST_URL } from "@/lib/api";
+import { streamText, type CoreMessage } from "ai";
 
 type FormValue = {
   model: string;
@@ -38,10 +38,12 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     },
   });
 
-  const { handleSubmit, input, setInput, messages, status, stop } = useChat({
-    api: `/api/v1/serve-proxy/${endpoint.metadata.name}/v1/chat/completions`,
-    streamProtocol: "text",
-    experimental_throttle: 50,
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<CoreMessage[]>([]);
+
+  const openai = createOpenAI({
+    baseURL: `/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,
+    apiKey: "no",
   });
 
   const modelsData = useCustom({
@@ -62,18 +64,35 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     });
   }, [messages]);
 
-  const onSubmit: SubmitHandler<FormValue> = (
+  const onSubmit: SubmitHandler<FormValue> = async (
     { model, temperature, max_length, top_p },
     e,
   ) => {
-    handleSubmit(e, {
-      body: {
-        model,
-        temperature,
-        max_length,
-        top_p,
-      },
+    const userMsg = { role: "user" as const, content: input };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+
+    const stream = streamText({
+      model: openai(model),
+      messages: [...messages, { role: "user", content: input }],
+      temperature,
+      maxTokens: max_length,
+      topP: top_p,
     });
+
+    const assistantIndex = messages.length + 1;
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    for await (const delta of stream.textStream) {
+      setMessages((prev) => {
+        const next = [...prev];
+        next[assistantIndex] = {
+          role: "assistant",
+          content: next[assistantIndex].content + (delta ?? ""),
+        };
+        return next;
+      });
+    }
   };
 
   return (
@@ -131,11 +150,15 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                 </div>
                 <div className="md:order-1 relative w-full space-y-2 h-full overflow-auto">
                   <ScrollArea className="p-2" ref={scrollAreaRef}>
-                    {messages.map((message) => (
-                      <div key={message.id}>
+                    {messages.map((message, index) => (
+                      <div key={index}>
                         <div className="font-bold">{message.role}</div>
                         <div className="markdown-body">
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                          <ReactMarkdown>
+                            {typeof message.content === "string"
+                              ? message.content
+                              : ""}
+                          </ReactMarkdown>
                         </div>
                       </div>
                     ))}

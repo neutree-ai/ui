@@ -26,7 +26,7 @@
   dependencies:
     json-schema "^0.4.0"
 
-"@ai-sdk/react@1.2.11", "@ai-sdk/react@^1.1.17":
+"@ai-sdk/react@1.2.11":
   version "1.2.11"
   resolved "https://registry.npmjs.org/@ai-sdk/react/-/react-1.2.11.tgz#09ebb45866c81341d5c690d6203101c4dcae1663"
   integrity sha512-+kPqLkJ3TWP6czaJPV+vzAKSUcKQ1598BUrcLHt56sH99+LhmIIW3ylZp0OfC3O6TR3eO1Lt0Yzw4R0mK6g9Gw==
