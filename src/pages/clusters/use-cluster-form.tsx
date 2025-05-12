@@ -29,7 +29,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             ssh_private_key: "",
           },
         },
-        version: "v15",
+        version: "v16",
       },
     },
   });
@@ -37,6 +37,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const workspace = form.watch("metadata.workspace");
   const type = form.watch("spec.type");
   const isKubernetes = type === "kubernetes";
+
+  const headResources = form.watch("spec.config.head_node_spec.resources");
+  const workerResources = form.watch(
+    "spec.config.worker_group_specs.0.resources",
+  );
 
   const meta = {
     workspace,
@@ -113,6 +118,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                     resources: {
                       cpu: "1",
                       memory: "2Gi",
+                      "nvidia.com/gpu": "0",
                     },
                   },
                   worker_group_specs: [
@@ -123,6 +129,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                       resources: {
                         cpu: "1",
                         memory: "2Gi",
+                        "nvidia.com/gpu": "0",
                       },
                     },
                   ],
@@ -182,7 +189,23 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               <Input disabled={isEdit} />
             </Field>
 
-            <div className="col-span-1" />
+            <Field
+              {...form}
+              name="spec.config.head_node_spec.resources['nvidia\.com/gpu']"
+              label="Head Node GPU"
+            >
+              <Input
+                disabled={isEdit}
+                value={headResources["nvidia.com/gpu"] as string}
+                onChange={(evt) => {
+                  const value = evt.target.value;
+                  form.setValue("spec.config.head_node_spec.resources", {
+                    ...headResources,
+                    "nvidia.com/gpu": value,
+                  });
+                }}
+              />
+            </Field>
 
             <Field
               {...form}
@@ -220,6 +243,24 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               label="Worker Node Memory"
             >
               <Input disabled={isEdit} />
+            </Field>
+
+            <Field
+              {...form}
+              name="spec.config.worker_group_specs.0.resources['nvidia\.com/gpu']"
+              label="Worker Node GPU"
+            >
+              <Input
+                disabled={isEdit}
+                value={workerResources["nvidia.com/gpu"] as string}
+                onChange={(evt) => {
+                  const value = evt.target.value;
+                  form.setValue("spec.config.worker_group_specs.0.resources", {
+                    ...workerResources,
+                    "nvidia.com/gpu": value,
+                  });
+                }}
+              />
             </Field>
           </>
         )}
