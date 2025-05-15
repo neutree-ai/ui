@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-2 border rounded shadow-sm">
+      <div className="bg-popover text-popover-foreground p-2 border rounded shadow-sm">
         <p className="text-sm font-medium">{data.text}</p>
       </div>
     );
@@ -41,13 +41,13 @@ const CustomTooltip = ({ active, payload }: any) => {
 const CustomScatterPoint = ({ cx, cy, payload }: any) => {
   return (
     <g>
-      <circle cx={cx} cy={cy} r={8} fill="#3b82f6" />
+      <circle cx={cx} cy={cy} r={8} fill="hsl(var(--primary))" />
       <text
         x={cx}
         y={cy}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="white"
+        fill="hsl(var(--primary-foreground))"
         fontSize="10"
       >
         {payload.index}
@@ -272,7 +272,7 @@ export default function EmbeddingPlayground({
                           key={doc.id}
                           className="flex items-center space-x-2"
                         >
-                          <div className="flex-none w-8 h-8 flex items-center justify-center bg-gray-100 rounded">
+                          <div className="flex-none w-8 h-8 flex items-center justify-center bg-muted text-muted-foreground rounded">
                             {doc.id}
                           </div>
                           <Textarea
@@ -328,13 +328,17 @@ export default function EmbeddingPlayground({
                                 left: 20,
                               }}
                             >
-                              <CartesianGrid strokeDasharray="3 3" />
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="hsl(var(--border))"
+                              />
                               <XAxis
                                 type="number"
                                 dataKey="x"
                                 name="sentiment"
                                 domain={[-1, 1]}
                                 tick={<span />}
+                                stroke="hsl(var(--foreground))"
                               />
                               <YAxis
                                 type="number"
@@ -342,17 +346,18 @@ export default function EmbeddingPlayground({
                                 name="nature"
                                 domain={[-1, 1]}
                                 tick={<span />}
+                                stroke="hsl(var(--foreground))"
                               />
                               <Tooltip content={<CustomTooltip />} />
                               <Scatter
                                 data={embeddings}
-                                fill="#8884d8"
+                                fill="hsl(var(--primary))"
                                 shape={<CustomScatterPoint />}
                               />
                             </ScatterChart>
                           </ResponsiveContainer>
                         ) : (
-                          <div className="flex items-center justify-center h-full text-gray-400">
+                          <div className="flex items-center justify-center h-full text-muted-foreground">
                             No embedding data to display
                           </div>
                         )}
@@ -360,7 +365,7 @@ export default function EmbeddingPlayground({
                     </TabsContent>
                     <TabsContent value="json" className="m-0">
                       <ScrollArea className="h-[300px]">
-                        <pre className="p-4 text-xs">
+                        <pre className="p-4 text-xs bg-muted/30 text-foreground rounded">
                           {JSON.stringify(embeddings, null, 2)}
                         </pre>
                       </ScrollArea>

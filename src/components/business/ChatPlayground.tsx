@@ -99,17 +99,6 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     <Form {...form}>
       <form className="h-full flex-col" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="h-full">
-          {/* <div className=" container flex flex-col items-start justify-between space-y-2 py-4 sm:flex-row sm:items-center sm:space-y-0">
-            <div className="ml-auto flex w-full space-x-2 sm:justify-end">
-            <PresetSelector presets={presets} />
-            <PresetSave />
-            <div className="space-x-2 md:flex">
-              <CodeViewer />
-              <PresetShare />
-            </div>
-            <PresetActions />
-          </div>
-          </div> */}
           <div className="h-full">
             <div className="container h-full py-6">
               <div className="grid h-full items-stretch gap-6 md:grid-cols-[1fr_300px]">
@@ -151,9 +140,11 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                 <div className="md:order-1 relative w-full space-y-2 h-full overflow-auto">
                   <ScrollArea className="p-2" ref={scrollAreaRef}>
                     {messages.map((message, index) => (
-                      <div key={index}>
-                        <div className="font-bold">{message.role}</div>
-                        <div className="markdown-body">
+                      <div key={index} className="mb-4">
+                        <div className="font-bold text-sm uppercase dark:text-gray-300">
+                          {message.role}
+                        </div>
+                        <div className="markdown-body dark:bg-transparent dark:text-gray-200 rounded-md p-2">
                           <ReactMarkdown>
                             {typeof message.content === "string"
                               ? message.content
@@ -163,14 +154,15 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                       </div>
                     ))}
                   </ScrollArea>
-                  <div className="flex flex-col space-y-2 border rounded-md shadow-sm p-1 sticky bottom-2 right-0 left-0 bg-white">
+                  {/* 修改: 添加暗色模式兼容的底部输入区域 */}
+                  <div className="flex flex-col space-y-2 border dark:border-gray-700 rounded-md shadow-sm p-1 sticky bottom-2 right-0 left-0 bg-white dark:bg-gray-800">
                     <Textarea
                       placeholder={
                         !form.getValues().model
                           ? "Select a model first"
                           : "Chat with your AI model..."
                       }
-                      className="flex-1 p-4 border-0 outline-none focus:ring-0 focus-visible:ring-0 focus:outline-none resize-none shadow-none"
+                      className="flex-1 p-4 border-0 outline-none focus:ring-0 focus-visible:ring-0 focus:outline-none resize-none shadow-none bg-transparent dark:text-gray-200 dark:placeholder:text-gray-400"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       disabled={
@@ -189,7 +181,14 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                           Stop
                         </Button>
                       ) : (
-                        <Button type="submit" disabled={status === "submitted"}>
+                        <Button
+                          type="submit"
+                          disabled={
+                            status === "submitted" ||
+                            !input.trim() ||
+                            !form.getValues().model
+                          }
+                        >
                           Send
                         </Button>
                       )}
