@@ -29,7 +29,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             ssh_private_key: "",
           },
         },
-        version: "v16",
+        version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
       },
     },
   });
