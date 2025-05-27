@@ -171,15 +171,59 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const [modelSearch, setModelSearch] = useState("");
+
+  const currentModelName = form.watch("spec.model.name");
+  const currentRegistry = form.watch("spec.model.registry");
+
+  const isEdit = action === "edit";
+
+  // Auto-initialize model search with template model name when available
+  const effectiveModelSearch = useMemo(() => {
+    if (modelSearch) return modelSearch;
+    if (currentRegistry && currentModelName && !isEdit) {
+      return currentModelName;
+    }
+    return "";
+  }, [modelSearch, currentRegistry, currentModelName, isEdit]);
+
   const modelsData = useCustom({
-    url: `/workspaces/${workspace}/model_registries/${
-      form.getValues().spec.model.registry
-    }/models?search=${modelSearch}`,
+    url: `/workspaces/${workspace}/model_registries/${currentRegistry}/models?search=${effectiveModelSearch}`,
     method: "get",
     queryOptions: {
-      enabled: Boolean(form.getValues().spec.model.registry),
+      enabled: Boolean(currentRegistry && effectiveModelSearch),
     },
   });
+
+  // Computed: Check if current model name exists in search results
+  const isModelFoundInRegistry = useMemo(() => {
+    if (!modelsData.data?.data || !currentModelName || !currentRegistry) {
+      return false;
+    }
+    return modelsData.data.data.some(
+      (model: GeneralModel) => model.name === currentModelName,
+    );
+  }, [modelsData.data, currentModelName, currentRegistry]);
+
+  // Custom validation effect for model availability
+  useEffect(() => {
+    if (action === "create" && currentRegistry && currentModelName) {
+      if (!isModelFoundInRegistry && modelsData.data) {
+        form.setError("spec.model.name", {
+          type: "manual",
+          message: `Model "${currentModelName}" not found in registry "${currentRegistry}". Please select a valid model or choose a different registry.`,
+        });
+      } else if (isModelFoundInRegistry) {
+        form.clearErrors("spec.model.name");
+      }
+    }
+  }, [
+    isModelFoundInRegistry,
+    currentRegistry,
+    currentModelName,
+    modelsData.data,
+    action,
+    form,
+  ]);
 
   const { engineNames, engineVersions, engineTasks } = useMemo(() => {
     const engineNames: string[] = [];
@@ -198,8 +242,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       engineTasks,
     };
   }, [engines]);
-
-  const isEdit = action === "edit";
 
   const acceleratorValue = form.watch("spec.resources.accelerator");
   const engineSpec = form.watch("spec.engine");
@@ -279,6 +321,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
+  console.log({
+    isModelFoundInRegistry,
+    currentRegistry,
+    currentModelName,
+    mdata: modelsData.data,
+  });
+
   return {
     form,
     metadataFields: (
@@ -314,6 +363,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               label: e.metadata.name,
               value: e.metadata.name,
             }))}
+            onChange={(value) => {
+              form.setValue("spec.model.registry", value as string);
+              // Reset model search when registry changes
+              setModelSearch("");
+            }}
           />
         </Field>
         {!isEdit && (
@@ -351,27 +405,50 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               {isEdit ? (
                 <Input disabled />
               ) : (
-                <AsyncCombobox
-                  placeholder="Select A Model"
-                  loading={
-                    modelsData.isFetching ? (
-                      <CommandLoading className="px-2 py-1.5 text-muted-foreground">
-                        fetching...
-                      </CommandLoading>
-                    ) : null
-                  }
-                  options={(modelsData.data?.data || []).map(
-                    (e: GeneralModel) => {
-                      return {
-                        label: e.name,
-                        value: e.name,
-                      };
-                    },
+                <div className="space-y-2">
+                  <AsyncCombobox
+                    placeholder="Select A Model"
+                    loading={
+                      modelsData.isFetching ? (
+                        <CommandLoading className="px-2 py-1.5 text-muted-foreground">
+                          fetching...
+                        </CommandLoading>
+                      ) : null
+                    }
+                    options={(modelsData.data?.data || []).map(
+                      (e: GeneralModel) => {
+                        return {
+                          label: e.name,
+                          value: e.name,
+                        };
+                      },
+                    )}
+                    shouldFilter={false}
+                    onSearchChange={setModelSearch}
+                    triggerClassName="w-full"
+                    // Disable if no registry selected OR model not found in registry after search
+                    disabled={
+                      !currentRegistry ||
+                      (!isModelFoundInRegistry && !!modelsData.data)
+                    }
+                    // Show template model name even when disabled
+                    value={currentModelName}
+                    // Handle model selection
+                    onChange={(value: string) => {
+                      form.setValue("spec.model.name", value);
+                    }}
+                  />
+                  {/* Show validation status */}
+                  {currentRegistry && currentModelName && modelsData.data && (
+                    <div className="text-sm">
+                      {isModelFoundInRegistry ? null : (
+                        <span className="text-red-600">
+                          Model not found in selected registry
+                        </span>
+                      )}
+                    </div>
                   )}
-                  shouldFilter={false}
-                  onSearchChange={setModelSearch}
-                  triggerClassName="w-full"
-                />
+                </div>
               )}
             </Field>
             <Field {...form} name="spec.model.version" label="Model Version">
