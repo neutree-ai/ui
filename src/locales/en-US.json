@@ -152,6 +152,9 @@
 	"model_registries": {
 		"title": "Model Registries"
 	},
+	"model_catalogs": {
+		"title": "Model Catalogs"
+	},
 	"image_registries": {
 		"title": "Image Registries"
 	},

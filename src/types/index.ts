@@ -3,6 +3,7 @@ export * from "./engine-types";
 export * from "./image-registry-types";
 export * from "./cluster-types";
 export * from "./model-registry-types";
+export * from "./model-catalog-types";
 export * from "./model-types";
 export * from "./api-key-types";
 export * from "./workspace-types";

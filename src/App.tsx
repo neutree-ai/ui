@@ -35,6 +35,7 @@ import {
   HardDrive,
   Database,
   Server,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -49,6 +50,10 @@ import {
   ModelRegistriesList,
   ModelRegistriesShow,
 } from "./pages/model-registries";
+import {
+  ModelCatalogsList,
+  ModelCatalogsShow,
+} from "./pages/model-catalogs";
 import {
   ImageRegistriesCreate,
   ImageRegistriesEdit,
@@ -115,6 +120,17 @@ const resources: ResourceProps[] = [
     show: "/:workspace/model-registries/show/:id",
     meta: {
       icon: <Database />,
+      workspaced: true,
+      idColumnName: "metadata->name",
+      parent: "infrastructure",
+    },
+  },
+  {
+    name: "model_catalogs",
+    list: "/:workspace/model-catalogs",
+    show: "/:workspace/model-catalogs/show/:id",
+    meta: {
+      icon: <BookOpen />,
       workspaced: true,
       idColumnName: "metadata->name",
       parent: "infrastructure",
@@ -332,6 +348,10 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   <Route path="show/:id" element={<ModelRegistriesShow />} />
                   <Route path="edit/:id" element={<ModelRegistriesEdit />} />
                   <Route path="create" element={<ModelRegistriesCreate />} />
+                </Route>
+                <Route path="/:workspace/model-catalogs">
+                  <Route index element={<ModelCatalogsList />} />
+                  <Route path="show/:id" element={<ModelCatalogsShow />} />
                 </Route>
                 <Route path="/:workspace/image-registries">
                   <Route index element={<ImageRegistriesList />} />

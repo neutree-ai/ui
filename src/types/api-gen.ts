@@ -11,43 +11,42 @@ export type Database = {
     Tables: {
       api_daily_usage: {
         Row: {
-          api_key_id: string;
-          created_at: string;
-          dimensional_usage: Json | null;
+          api_version: string;
           id: number;
-          metadata: Json | null;
-          total_usage: number;
-          updated_at: string;
-          usage_date: string;
+          kind: string;
+          metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec:
+            | Database["api"]["CompositeTypes"]["api_daily_usage_spec"]
+            | null;
+          status:
+            | Database["api"]["CompositeTypes"]["api_daily_usage_status"]
+            | null;
         };
         Insert: {
-          api_key_id: string;
-          created_at?: string;
-          dimensional_usage?: Json | null;
+          api_version: string;
           id?: number;
-          metadata?: Json | null;
-          total_usage?: number;
-          updated_at?: string;
-          usage_date: string;
+          kind: string;
+          metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec?:
+            | Database["api"]["CompositeTypes"]["api_daily_usage_spec"]
+            | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["api_daily_usage_status"]
+            | null;
         };
         Update: {
-          api_key_id?: string;
-          created_at?: string;
-          dimensional_usage?: Json | null;
+          api_version?: string;
           id?: number;
-          metadata?: Json | null;
-          total_usage?: number;
-          updated_at?: string;
-          usage_date?: string;
+          kind?: string;
+          metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec?:
+            | Database["api"]["CompositeTypes"]["api_daily_usage_spec"]
+            | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["api_daily_usage_status"]
+            | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: "api_daily_usage_api_key_id_fkey";
-            columns: ["api_key_id"];
-            referencedRelation: "api_keys";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       api_keys: {
         Row: {
@@ -247,6 +246,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      model_catalogs: {
+        Row: {
+          api_version: string;
+          id: number;
+          kind: string;
+          metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec: Database["api"]["CompositeTypes"]["model_catalog_spec"] | null;
+          status:
+            | Database["api"]["CompositeTypes"]["model_catalog_status"]
+            | null;
+        };
+        Insert: {
+          api_version: string;
+          id?: number;
+          kind: string;
+          metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec?: Database["api"]["CompositeTypes"]["model_catalog_spec"] | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["model_catalog_status"]
+            | null;
+        };
+        Update: {
+          api_version?: string;
+          id?: number;
+          kind?: string;
+          metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec?: Database["api"]["CompositeTypes"]["model_catalog_spec"] | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["model_catalog_status"]
+            | null;
+        };
+        Relationships: [];
+      };
       model_registries: {
         Row: {
           api_version: string;
@@ -293,6 +325,9 @@ export type Database = {
           spec:
             | Database["api"]["CompositeTypes"]["role_assignment_spec"]
             | null;
+          status:
+            | Database["api"]["CompositeTypes"]["role_assignment_status"]
+            | null;
         };
         Insert: {
           api_version: string;
@@ -302,6 +337,9 @@ export type Database = {
           spec?:
             | Database["api"]["CompositeTypes"]["role_assignment_spec"]
             | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["role_assignment_status"]
+            | null;
         };
         Update: {
           api_version?: string;
@@ -310,6 +348,9 @@ export type Database = {
           metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
           spec?:
             | Database["api"]["CompositeTypes"]["role_assignment_spec"]
+            | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["role_assignment_status"]
             | null;
         };
         Relationships: [];
@@ -321,6 +362,7 @@ export type Database = {
           kind: string;
           metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
           spec: Database["api"]["CompositeTypes"]["role_spec"] | null;
+          status: Database["api"]["CompositeTypes"]["role_status"] | null;
         };
         Insert: {
           api_version: string;
@@ -328,6 +370,7 @@ export type Database = {
           kind: string;
           metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
           spec?: Database["api"]["CompositeTypes"]["role_spec"] | null;
+          status?: Database["api"]["CompositeTypes"]["role_status"] | null;
         };
         Update: {
           api_version?: string;
@@ -335,6 +378,7 @@ export type Database = {
           kind?: string;
           metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
           spec?: Database["api"]["CompositeTypes"]["role_spec"] | null;
+          status?: Database["api"]["CompositeTypes"]["role_status"] | null;
         };
         Relationships: [];
       };
@@ -345,6 +389,9 @@ export type Database = {
           kind: string;
           metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
           spec: Database["api"]["CompositeTypes"]["user_profile_spec"] | null;
+          status:
+            | Database["api"]["CompositeTypes"]["user_profile_status"]
+            | null;
         };
         Insert: {
           api_version: string;
@@ -352,6 +399,9 @@ export type Database = {
           kind: string;
           metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
           spec?: Database["api"]["CompositeTypes"]["user_profile_spec"] | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["user_profile_status"]
+            | null;
         };
         Update: {
           api_version?: string;
@@ -359,6 +409,9 @@ export type Database = {
           kind?: string;
           metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
           spec?: Database["api"]["CompositeTypes"]["user_profile_spec"] | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["user_profile_status"]
+            | null;
         };
         Relationships: [];
       };
@@ -368,18 +421,21 @@ export type Database = {
           id: number;
           kind: string;
           metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
+          status: Database["api"]["CompositeTypes"]["workspace_status"] | null;
         };
         Insert: {
           api_version: string;
           id?: number;
           kind: string;
           metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          status?: Database["api"]["CompositeTypes"]["workspace_status"] | null;
         };
         Update: {
           api_version?: string;
           id?: number;
           kind?: string;
           metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          status?: Database["api"]["CompositeTypes"]["workspace_status"] | null;
         };
         Relationships: [];
       };
@@ -406,6 +462,7 @@ export type Database = {
           p_workspace: string;
           p_name: string;
           p_quota: number;
+          p_display_name?: string;
         };
         Returns: {
           api_version: string;
@@ -453,7 +510,7 @@ export type Database = {
           p_usage_amount: number;
           p_model?: string;
         };
-        Returns: undefined;
+        Returns: Json;
       };
       sync_api_key_usage: {
         Args: Record<PropertyKey, never>;
@@ -503,10 +560,23 @@ export type Database = {
         | "cluster:read"
         | "cluster:create"
         | "cluster:update"
-        | "cluster:delete";
+        | "cluster:delete"
+        | "model_catalog:read"
+        | "model_catalog:create"
+        | "model_catalog:update"
+        | "model_catalog:delete";
       role_preset: "admin" | "workspace_user";
     };
     CompositeTypes: {
+      api_daily_usage_spec: {
+        api_key_id: string | null;
+        usage_date: string | null;
+        total_usage: number | null;
+        dimensional_usage: Json | null;
+      };
+      api_daily_usage_status: {
+        last_sync_time: string | null;
+      };
       api_key_spec: {
         quota: number | null;
       };
@@ -523,6 +593,7 @@ export type Database = {
         type: string | null;
         config: Json | null;
         image_registry: string | null;
+        version: string | null;
       };
       cluster_status: {
         phase: string | null;
@@ -530,16 +601,26 @@ export type Database = {
         dashboard_url: string | null;
         last_transition_time: string | null;
         error_message: string | null;
+        ready_nodes: number | null;
+        desired_nodes: number | null;
+        version: string | null;
+        ray_version: string | null;
+        initialized: boolean | null;
+        node_provision_status: string | null;
       };
-      container_spec: {
+      endpoint_engine_spec: {
         engine: string | null;
         version: string | null;
       };
       endpoint_spec: {
         cluster: string | null;
         model: Database["api"]["CompositeTypes"]["model_spec"] | null;
-        container: Database["api"]["CompositeTypes"]["container_spec"] | null;
+        engine:
+          | Database["api"]["CompositeTypes"]["endpoint_engine_spec"]
+          | null;
         resources: Database["api"]["CompositeTypes"]["resource_spec"] | null;
+        replicas: Database["api"]["CompositeTypes"]["replica_spec"] | null;
+        deployment_options: Json | null;
         variables: Json | null;
       };
       endpoint_status: {
@@ -550,6 +631,7 @@ export type Database = {
       };
       engine_spec: {
         versions: Database["api"]["CompositeTypes"]["engine_version"][] | null;
+        supported_tasks: string[] | null;
       };
       engine_status: {
         phase: string | null;
@@ -573,11 +655,27 @@ export type Database = {
       };
       metadata: {
         name: string | null;
+        display_name: string | null;
         workspace: string | null;
         deletion_timestamp: string | null;
         creation_timestamp: string | null;
         update_timestamp: string | null;
         labels: Json | null;
+      };
+      model_catalog_spec: {
+        model: Database["api"]["CompositeTypes"]["model_spec"] | null;
+        engine:
+          | Database["api"]["CompositeTypes"]["endpoint_engine_spec"]
+          | null;
+        resources: Database["api"]["CompositeTypes"]["resource_spec"] | null;
+        replicas: Database["api"]["CompositeTypes"]["replica_spec"] | null;
+        deployment_options: Json | null;
+        variables: Json | null;
+      };
+      model_catalog_status: {
+        phase: string | null;
+        last_transition_time: string | null;
+        error_message: string | null;
       };
       model_registry_spec: {
         type: string | null;
@@ -594,6 +692,10 @@ export type Database = {
         name: string | null;
         file: string | null;
         version: string | null;
+        task: string | null;
+      };
+      replica_spec: {
+        num: number | null;
       };
       resource_spec: {
         cpu: number | null;
@@ -607,12 +709,32 @@ export type Database = {
         global: boolean | null;
         role: string | null;
       };
+      role_assignment_status: {
+        phase: string | null;
+        service_url: string | null;
+        error_message: string | null;
+      };
       role_spec: {
         preset_key: Database["api"]["Enums"]["role_preset"] | null;
         permissions: Database["api"]["Enums"]["permission_action"][] | null;
       };
+      role_status: {
+        phase: string | null;
+        service_url: string | null;
+        error_message: string | null;
+      };
       user_profile_spec: {
         email: string | null;
+      };
+      user_profile_status: {
+        phase: string | null;
+        service_url: string | null;
+        error_message: string | null;
+      };
+      workspace_status: {
+        phase: string | null;
+        service_url: string | null;
+        error_message: string | null;
       };
     };
   };
@@ -1387,9 +1509,7 @@ export type Tables<
   PublicTableNameOrOptions extends
     | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends {
-    schema: keyof Database;
-  }
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
@@ -1414,9 +1534,7 @@ export type TablesInsert<
   PublicTableNameOrOptions extends
     | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends {
-    schema: keyof Database;
-  }
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
@@ -1437,9 +1555,7 @@ export type TablesUpdate<
   PublicTableNameOrOptions extends
     | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends {
-    schema: keyof Database;
-  }
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }

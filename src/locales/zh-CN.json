@@ -8,6 +8,9 @@
 	"model_registries": {
 		"title": "模型仓库"
 	},
+	"model_catalogs": {
+		"title": "模型目录"
+	},
 	"image_registries": {
 		"title": "容器镜像仓库"
 	},
