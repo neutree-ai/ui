@@ -1,0 +1,346 @@
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import dayjs from "dayjs";
+import {
+  Clock,
+  Calendar,
+  RefreshCw,
+  Play,
+  Pause,
+  ChevronDown,
+  RotateCcw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useTheme } from "next-themes";
+
+export interface PanelConfig {
+  id: number;
+  title?: string;
+  width?: number;
+  height?: number;
+  gridArea?: string;
+}
+
+export interface DashboardConfig {
+  baseUrl: string;
+  dashboardId: string;
+  orgId?: number;
+  theme?: "light" | "dark";
+  timezone?: string;
+  variables?: Record<string, string>;
+}
+
+export interface TimeRange {
+  from: string;
+  to: string;
+  display: string;
+}
+
+export interface GrafanaPanelsProps {
+  dashboardConfig: DashboardConfig;
+  panels: PanelConfig[];
+  defaultTimeRange?: TimeRange;
+  refreshIntervals?: number[];
+  enableAutoRefresh?: boolean;
+  className?: string;
+  onTimeRangeChange?: (range: TimeRange) => void;
+  onRefreshIntervalChange?: (interval: number) => void;
+}
+
+const DEFAULT_TIME_RANGES: TimeRange[] = [
+  { from: "now-5m", to: "now", display: "Last 5 minutes" },
+  { from: "now-15m", to: "now", display: "Last 15 minutes" },
+  { from: "now-30m", to: "now", display: "Last 30 minutes" },
+  { from: "now-1h", to: "now", display: "Last 1 hour" },
+  { from: "now-3h", to: "now", display: "Last 3 hours" },
+  { from: "now-6h", to: "now", display: "Last 6 hours" },
+  { from: "now-12h", to: "now", display: "Last 12 hours" },
+  { from: "now-24h", to: "now", display: "Last 24 hours" },
+  { from: "now-2d", to: "now", display: "Last 2 days" },
+  { from: "now-7d", to: "now", display: "Last 7 days" },
+  {
+    from: dayjs().startOf("day").valueOf().toString(),
+    to: dayjs().endOf("day").valueOf().toString(),
+    display: "Today",
+  },
+];
+
+const DEFAULT_REFRESH_INTERVALS = [0, 5, 10, 30, 60, 300, 600, 1800, 3600];
+
+export default function GrafanaPanels({
+  dashboardConfig,
+  panels,
+  defaultTimeRange = DEFAULT_TIME_RANGES[3], // Last 1 hour
+  refreshIntervals = DEFAULT_REFRESH_INTERVALS,
+  enableAutoRefresh = true,
+  className,
+  onTimeRangeChange,
+  onRefreshIntervalChange,
+}: GrafanaPanelsProps) {
+  const [currentTimeRange, setCurrentTimeRange] =
+    useState<TimeRange>(defaultTimeRange);
+  const [refreshInterval, setRefreshInterval] = useState<number>(0);
+  const [isAutoRefreshing, setIsAutoRefreshing] = useState<boolean>(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date>(new Date());
+  const [refreshKey, setRefreshKey] = useState<number>(0);
+  const { theme } = useTheme();
+
+  const buildCommonParams = useMemo(() => {
+    const params = new URLSearchParams();
+
+    if (dashboardConfig.orgId) {
+      params.append("orgId", dashboardConfig.orgId.toString());
+    }
+
+    if (dashboardConfig.theme || theme) {
+      params.append("theme", dashboardConfig.theme || theme || "light");
+    }
+
+    if (dashboardConfig.timezone) {
+      params.append("timezone", dashboardConfig.timezone);
+    }
+
+    if (dashboardConfig.variables) {
+      for (const [key, value] of Object.entries(dashboardConfig.variables)) {
+        params.append(`var-${key}`, value);
+      }
+    }
+
+    return params.toString();
+  }, [dashboardConfig, theme]);
+
+  const panelUrls = useMemo(() => {
+    return panels.map((panel) => {
+      const url = new URL(
+        `/d-solo/${dashboardConfig.dashboardId}`,
+        dashboardConfig.baseUrl,
+      );
+      url.searchParams.append("panelId", panel.id.toString());
+      url.searchParams.append("from", currentTimeRange.from);
+      url.searchParams.append("to", currentTimeRange.to);
+      url.searchParams.append("refresh", refreshKey.toString());
+
+      const commonParams = buildCommonParams;
+      if (commonParams) {
+        const params = new URLSearchParams(commonParams);
+        for (const [key, value] of params) {
+          url.searchParams.append(key, value);
+        }
+      }
+
+      return url.toString();
+    });
+  }, [
+    panels,
+    dashboardConfig,
+    currentTimeRange,
+    buildCommonParams,
+    refreshKey,
+  ]);
+
+  const handleTimeRangeChange = useCallback(
+    (range: TimeRange) => {
+      setCurrentTimeRange(range);
+      setLastRefreshTime(new Date());
+      onTimeRangeChange?.(range);
+    },
+    [onTimeRangeChange],
+  );
+
+  const handleRefreshIntervalChange = useCallback(
+    (interval: number) => {
+      setRefreshInterval(interval);
+      setIsAutoRefreshing(interval > 0);
+      onRefreshIntervalChange?.(interval);
+    },
+    [onRefreshIntervalChange],
+  );
+
+  const handleManualRefresh = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+    setLastRefreshTime(new Date());
+  }, []);
+
+  const toggleAutoRefresh = useCallback(() => {
+    if (refreshInterval > 0) {
+      setIsAutoRefreshing(!isAutoRefreshing);
+    }
+  }, [refreshInterval, isAutoRefreshing]);
+
+  // Auto refresh logic
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (isAutoRefreshing && refreshInterval > 0) {
+      intervalId = setInterval(() => {
+        setRefreshKey((prev) => prev + 1);
+        setLastRefreshTime(new Date());
+      }, refreshInterval * 1000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isAutoRefreshing, refreshInterval]);
+
+  const formatRefreshInterval = (seconds: number): string => {
+    if (seconds === 0) return "Off";
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${seconds / 60}m`;
+    return `${seconds / 3600}h`;
+  };
+
+  return (
+    <div className={`space-y-4 ${className || ""}`}>
+      {/* Control Panel */}
+      <Card className="p-2">
+        <CardContent className="p-0">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Time Range Selector */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {currentTimeRange.display}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="space-y-1">
+                  <div className="font-medium text-sm mb-2">Time Range</div>
+                  {DEFAULT_TIME_RANGES.map((range) => (
+                    <Button
+                      key={`${range.from}-${range.to}`}
+                      variant={
+                        currentTimeRange.from === range.from &&
+                        currentTimeRange.to === range.to
+                          ? "default"
+                          : "ghost"
+                      }
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => handleTimeRangeChange(range)}
+                    >
+                      {range.display}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Separator orientation="vertical" className="h-6" />
+
+            {/* Refresh Controls */}
+            {enableAutoRefresh && (
+              <>
+                <Select
+                  value={refreshInterval.toString()}
+                  onValueChange={(value) =>
+                    handleRefreshIntervalChange(Number(value))
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {refreshIntervals.map((interval) => (
+                      <SelectItem key={interval} value={interval.toString()}>
+                        {formatRefreshInterval(interval)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {refreshInterval > 0 && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={toggleAutoRefresh}
+                    className={
+                      isAutoRefreshing ? "text-green-600" : "text-gray-400"
+                    }
+                  >
+                    {isAutoRefreshing ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </>
+            )}
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleManualRefresh}
+              title="Refresh now"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+
+            <Separator orientation="vertical" className="h-6" />
+
+            {/* Status Info */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RotateCcw className="h-4 w-4" />
+              Last updated: {lastRefreshTime.toLocaleTimeString()}
+            </div>
+
+            {isAutoRefreshing && (
+              <Badge
+                variant="secondary"
+                className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+              >
+                Auto-refresh: {formatRefreshInterval(refreshInterval)}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Panels Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        {panels.map((panel, index) => (
+          <Card key={panel.id} className="overflow-hidden">
+            {panel.title && (
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium">
+                  {panel.title}
+                </CardTitle>
+              </CardHeader>
+            )}
+            <CardContent className={panel.title ? "p-0 pt-0" : "p-0"}>
+              <div className="relative">
+                <iframe
+                  src={panelUrls[index]}
+                  width={panel.width || "100%"}
+                  height={panel.height || 300}
+                  className="w-full border-0 rounded-md"
+                  title={panel.title || `Grafana Panel ${panel.id}`}
+                  loading="lazy"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}

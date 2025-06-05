@@ -11,6 +11,7 @@ import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-co
 import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
 import { useTranslation as useI18nTranslation } from "@/lib/i18n";
+import GrafanaPanels from "@/components/business/GrafanaPanels";
 
 export const ClustersShow = () => {
   const {
@@ -39,6 +40,7 @@ export const ClustersShow = () => {
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
           <TabsTrigger value="basic">{t("clusters.tabs.basic")}</TabsTrigger>
+          <TabsTrigger value="monitor">Monitor</TabsTrigger>
           <TabsTrigger value="ray">
             {t("clusters.tabs.rayDashboard")}
           </TabsTrigger>
@@ -147,6 +149,99 @@ export const ClustersShow = () => {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent
+          value="monitor"
+          className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
+        >
+          <GrafanaPanels
+            dashboardConfig={{
+              baseUrl: "http://192.168.24.140:3030",
+              dashboardId: "rayDefaultDashboard",
+              orgId: 1,
+              timezone: "browser",
+              variables: {
+                datasource: "neutree-cluster",
+                SessionName: "$__all",
+                Instance: "$__all",
+                Cluster: record.metadata.name,
+              },
+            }}
+            panels={[
+              {
+                id: 26,
+              },
+              {
+                id: 35,
+              },
+              {
+                id: 38,
+              },
+              {
+                id: 33,
+              },
+              {
+                id: 42,
+              },
+              {
+                id: 36,
+              },
+              {
+                id: 27,
+              },
+              {
+                id: 29,
+              },
+              {
+                id: 28,
+              },
+              {
+                id: 40,
+              },
+              {
+                id: 2,
+              },
+              {
+                id: 8,
+              },
+              {
+                id: 6,
+              },
+              {
+                id: 32,
+              },
+              {
+                id: 4,
+              },
+              {
+                id: 48,
+              },
+              {
+                id: 44,
+              },
+              {
+                id: 34,
+              },
+              {
+                id: 37,
+              },
+              {
+                id: 18,
+              },
+              {
+                id: 20,
+              },
+              {
+                id: 24,
+              },
+              {
+                id: 41,
+              },
+            ]}
+            enableAutoRefresh={true}
+            refreshIntervals={[0, 5, 10, 30, 60, 300, 600]}
+            className="w-full"
+          />
         </TabsContent>
         <TabsContent value="ray" className="h-[calc(100%-theme('spacing.9'))]">
           {dashboardUrl && (

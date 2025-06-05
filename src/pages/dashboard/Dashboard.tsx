@@ -1,3 +1,4 @@
+import GrafanaPanels from "@/components/business/GrafanaPanels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useList } from "@refinedev/core";
@@ -66,6 +67,92 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      <GrafanaPanels
+        dashboardConfig={{
+          baseUrl: "http://192.168.24.140:3030",
+          dashboardId: "rayServeDashboard",
+          orgId: 1,
+          timezone: "browser",
+          variables: {
+            datasource: "neutree-cluster",
+            Application: "$__all",
+            HTTP_Route: "$__all",
+            gRPC_Method: "$__all",
+            Cluster: "$__all",
+          },
+        }}
+        panels={[
+          {
+            id: 5,
+          },
+          {
+            id: 7,
+          },
+          {
+            id: 8,
+          },
+          {
+            id: 17,
+          },
+          {
+            id: 12,
+          },
+          {
+            id: 15,
+          },
+          {
+            id: 16,
+          },
+          {
+            id: 2,
+          },
+          {
+            id: 13,
+          },
+          {
+            id: 14,
+          },
+          {
+            id: 9,
+          },
+          {
+            id: 10,
+          },
+          {
+            id: 11,
+          },
+          {
+            id: 3,
+          },
+          {
+            id: 4,
+          },
+          {
+            id: 6,
+          },
+          {
+            id: 20,
+          },
+          {
+            id: 21,
+          },
+          {
+            id: 22,
+          },
+          {
+            id: 23,
+          },
+          {
+            id: 24,
+          },
+          {
+            id: 25,
+          },
+        ]}
+        enableAutoRefresh={true}
+        refreshIntervals={[0, 5, 10, 30, 60, 300, 600]}
+        className="w-full"
+      />
     </div>
   );
 }
