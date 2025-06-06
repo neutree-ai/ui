@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // Deep merge function for form data with smart overriding
 const deepMerge = (
@@ -71,6 +72,7 @@ const deepMerge = (
 };
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
+  const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
@@ -239,7 +241,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       if (!isModelFoundInRegistry && modelsData.data) {
         form.setError("spec.model.name", {
           type: "manual",
-          message: `Model "${currentModelName}" not found in registry "${currentRegistry}". Please select a valid model or choose a different registry.`,
+          message: `${t("endpoints.messages.modelNotFoundInRegistry")}`,
         });
       } else if (isModelFoundInRegistry) {
         form.clearErrors("spec.model.name");
@@ -252,6 +254,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     modelsData.data,
     action,
     form,
+    t,
   ]);
 
   // Handle model catalog selection with merge logic
@@ -327,22 +330,43 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   return {
     form,
     metadataFields: (
-      <FormCardGrid title="Basic Information">
-        <Field {...form} name="metadata.name" label="Name">
-          <Input placeholder="Endpoint Name" disabled={isEdit} />
+      <FormCardGrid title={t("endpoints.sections.basicInformation")}>
+        <Field
+          {...form}
+          name="metadata.name"
+          label={t("endpoints.fields.name")}
+        >
+          <Input
+            placeholder={t("endpoints.placeholders.endpointName")}
+            disabled={isEdit}
+          />
         </Field>
-        <Field {...form} name="metadata.workspace" label="Workspace">
+        <Field
+          {...form}
+          name="metadata.workspace"
+          label={t("endpoints.fields.workspace")}
+        >
           <WorkspaceField disabled={isEdit} />
         </Field>
       </FormCardGrid>
     ),
     // Template selection section for both create and edit modes
     templateFields: (
-      <FormCardGrid title={isEdit ? "Configuration" : "Template Selection"}>
-        <Field {...form} name="spec.cluster" label="Cluster">
+      <FormCardGrid
+        title={
+          isEdit
+            ? t("endpoints.sections.configuration")
+            : t("endpoints.sections.templateSelection")
+        }
+      >
+        <Field
+          {...form}
+          name="spec.cluster"
+          label={t("endpoints.fields.cluster")}
+        >
           <Combobox
             disabled={clusters.query.isLoading}
-            placeholder="Select A Cluster"
+            placeholder={t("endpoints.placeholders.selectCluster")}
             options={(clusters.query?.data?.data || []).map((e) => {
               return {
                 label: e.metadata.name,
@@ -351,9 +375,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             })}
           />
         </Field>
-        <Field {...form} name="spec.model.registry" label="Model Registry">
+        <Field
+          {...form}
+          name="spec.model.registry"
+          label={t("endpoints.fields.modelRegistry")}
+        >
           <Combobox
-            placeholder="Select A Model Registry"
+            placeholder={t("endpoints.placeholders.selectModelRegistry")}
             disabled={modelRegistries.query.isLoading}
             options={(modelRegistries.query.data?.data || []).map((e) => ({
               label: e.metadata.name,
@@ -367,9 +395,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           />
         </Field>
         {!isEdit && (
-          <Field {...form} name="-" label="Model Catalog (Template)">
+          <Field {...form} name="-" label={t("endpoints.fields.modelCatalog")}>
             <Combobox
-              placeholder="Select A Model Catalog"
+              placeholder={t("endpoints.placeholders.selectModelCatalog")}
               disabled={modelCatalogs.query.isLoading}
               options={(modelCatalogs.query.data?.data || []).map((e) => ({
                 label: e.metadata.name,
@@ -384,28 +412,36 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ),
     // Resource settings section - always visible
     resourceFields: (
-      <FormCardGrid title="Resource Settings">
-        <Field {...form} name="spec.resources.cpu" label="CPU">
+      <FormCardGrid title={t("endpoints.sections.resourceSettings")}>
+        <Field
+          {...form}
+          name="spec.resources.cpu"
+          label={t("endpoints.fields.cpu")}
+        >
           <div className="flex flex-col gap-2">
             {form.watch("spec.resources.cpu")}
             <Slider min={0} max={20} step={0.1} />
           </div>
         </Field>
 
-        <Field {...form} name="spec.resources.memory" label="Memory (GB)">
+        <Field
+          {...form}
+          name="spec.resources.memory"
+          label={t("endpoints.fields.memoryGb")}
+        >
           <div className="flex flex-col gap-2">
             {form.watch("spec.resources.memory")}
             <Slider min={0} max={50} step={0.5} />
           </div>
         </Field>
 
-        <Field {...form} name="-" label="GPU">
+        <Field {...form} name="-" label={t("endpoints.fields.gpu")}>
           <Combobox
-            placeholder="Select GPU Type"
+            placeholder={t("endpoints.placeholders.selectGpuType")}
             options={[
-              { label: "Generic", value: "-" },
-              { label: "L4", value: "NVIDIA_L4" },
-              { label: "T4", value: "NVIDIA_TESLA_T4" },
+              { label: t("endpoints.options.generic"), value: "-" },
+              { label: t("endpoints.options.l4"), value: "NVIDIA_L4" },
+              { label: t("endpoints.options.t4"), value: "NVIDIA_TESLA_T4" },
             ]}
             value={Object.keys(acceleratorValue)[0]}
             onChange={(value) => {
@@ -417,7 +453,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           />
         </Field>
 
-        <Field {...form} name="-" label="GPU Count">
+        <Field {...form} name="-" label={t("endpoints.fields.gpuCount")}>
           <div className="flex flex-col gap-2">
             {Object.values(acceleratorValue)[0] as number}
             <Slider
@@ -441,7 +477,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       <Collapsible open={isCustomizeOpen} onOpenChange={setIsCustomizeOpen}>
         <CollapsibleTrigger asChild>
           <Button variant="outline" className="w-full justify-between">
-            {isEdit ? "Configuration Details" : "Customize Settings"}
+            {isEdit
+              ? t("endpoints.sections.configurationDetails")
+              : t("endpoints.sections.customizeSettings")}
             {isCustomizeOpen ? (
               <ChevronDown className="h-4 w-4" />
             ) : (
@@ -450,18 +488,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-4">
-          <FormCardGrid title="Model Settings">
-            <Field {...form} name="spec.model.name" label="Model Name">
+          <FormCardGrid title={t("endpoints.sections.modelSettings")}>
+            <Field
+              {...form}
+              name="spec.model.name"
+              label={t("endpoints.fields.modelName")}
+            >
               {isEdit ? (
                 <Input disabled />
               ) : (
                 <div className="space-y-2">
                   <AsyncCombobox
-                    placeholder="Select A Model"
+                    placeholder={t("endpoints.placeholders.selectModel")}
                     loading={
                       modelsData.isFetching ? (
                         <CommandLoading className="px-2 py-1.5 text-muted-foreground">
-                          fetching...
+                          {t("endpoints.messages.fetching")}
                         </CommandLoading>
                       ) : null
                     }
@@ -493,7 +535,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     <div className="text-sm">
                       {isModelFoundInRegistry ? null : (
                         <span className="text-red-600">
-                          Model not found in selected registry
+                          {t("endpoints.messages.modelNotFoundInRegistry")}
                         </span>
                       )}
                     </div>
@@ -501,18 +543,30 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
               )}
             </Field>
-            <Field {...form} name="spec.model.version" label="Model Version">
+            <Field
+              {...form}
+              name="spec.model.version"
+              label={t("endpoints.fields.modelVersion")}
+            >
               <Input disabled={isEdit} />
             </Field>
-            <Field {...form} name="spec.model.file" label="Model File">
+            <Field
+              {...form}
+              name="spec.model.file"
+              label={t("endpoints.fields.modelFile")}
+            >
               <Input disabled={isEdit} />
             </Field>
           </FormCardGrid>
 
-          <FormCardGrid title="Engine Settings">
-            <Field {...form} name="spec.engine.engine" label="Engine">
+          <FormCardGrid title={t("endpoints.sections.engineSettings")}>
+            <Field
+              {...form}
+              name="spec.engine.engine"
+              label={t("endpoints.fields.engine")}
+            >
               <Combobox
-                placeholder="Select An Engine"
+                placeholder={t("endpoints.placeholders.selectEngine")}
                 disabled={engines.query.isLoading}
                 options={engineNames.map((v) => ({
                   label: v,
@@ -531,9 +585,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 }}
               />
             </Field>
-            <Field {...form} name="spec.engine.version" label="Engine Version">
+            <Field
+              {...form}
+              name="spec.engine.version"
+              label={t("endpoints.fields.engineVersion")}
+            >
               <Combobox
-                placeholder="Select A Version"
+                placeholder={t("endpoints.placeholders.selectVersion")}
                 disabled={!form.getValues().spec.engine.engine}
                 options={(
                   engineVersions[form.getValues().spec.engine.engine] || []
@@ -543,9 +601,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 }))}
               />
             </Field>
-            <Field {...form} name="spec.model.task" label="Task Type">
+            <Field
+              {...form}
+              name="spec.model.task"
+              label={t("endpoints.fields.taskType")}
+            >
               <Combobox
-                placeholder="Select A Support Task Type"
+                placeholder={t("endpoints.placeholders.selectTaskType")}
                 disabled={!form.getValues().spec.engine.engine}
                 options={(
                   engineTasks[form.getValues().spec.engine.engine] || []
@@ -557,22 +619,26 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </Field>
           </FormCardGrid>
 
-          <FormCardGrid title="Replica Settings">
-            <Field {...form} name="spec.replicas.num" label="Replicas">
+          <FormCardGrid title={t("endpoints.sections.replicaSettings")}>
+            <Field
+              {...form}
+              name="spec.replicas.num"
+              label={t("endpoints.fields.replicas")}
+            >
               <Input type="number" />
             </Field>
 
             <Field
               {...form}
               name="spec.deployment_options.scheduler.type"
-              label="Scheduler Type"
+              label={t("endpoints.fields.schedulerType")}
             >
               <Combobox
-                placeholder="Select Scheduler Type"
+                placeholder={t("endpoints.placeholders.selectSchedulerType")}
                 options={[
-                  { label: "Power of two", value: "pow2" },
+                  { label: t("endpoints.options.powerOfTwo"), value: "pow2" },
                   {
-                    label: "Consistent hashing",
+                    label: t("endpoints.options.consistentHashing"),
                     value: "consistent_hash",
                   },
                 ]}
@@ -580,11 +646,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </Field>
           </FormCardGrid>
 
-          <FormCardGrid title="Advanced Options">
+          <FormCardGrid title={t("endpoints.sections.advancedOptions")}>
             <Field
               {...form}
               name="spec.variables.engine_args"
-              label="Engine Variables"
+              label={t("endpoints.fields.engineVariables")}
               className="col-span-4"
             >
               <VariablesInput

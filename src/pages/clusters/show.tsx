@@ -29,7 +29,7 @@ export const ClustersShow = () => {
   }
 
   if (!record) {
-    return <div>404 not found</div>;
+    return <div>{t("clusters.messages.notFound")}</div>;
   }
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
@@ -153,7 +153,7 @@ export const ClustersShow = () => {
             <iframe
               src={dashboardUrl}
               className="w-full h-full"
-              title="Ray Dashboard"
+              title={t("clusters.messages.rayDashboardTitle")}
             />
           )}
         </TabsContent>

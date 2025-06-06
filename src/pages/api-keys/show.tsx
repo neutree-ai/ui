@@ -11,9 +11,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShowPage } from "@/components/theme";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import MetadataCard from "@/components/business/MetadataCard";
 
 export const ApiKeysShow = () => {
+  const { t } = useTranslation();
   const {
     query: { data, isLoading },
   } = useShow();
@@ -37,11 +39,11 @@ export const ApiKeysShow = () => {
   }, [record, mutateAsync]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>{t("api_keys.messages.loading")}</div>;
   }
 
   if (!record) {
-    return <div>404 not found</div>;
+    return <div>{t("api_keys.messages.notFound")}</div>;
   }
 
   return (
@@ -51,18 +53,20 @@ export const ApiKeysShow = () => {
         <Card className="mt-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl font-semibold">
-              API Usage Statistics
+              {t("api_keys.usage.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>API Key Name</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Workspace</TableHead>
-                  <TableHead className="text-right">Usage</TableHead>
+                  <TableHead>{t("api_keys.fields.date")}</TableHead>
+                  <TableHead>{t("api_keys.fields.name")}</TableHead>
+                  <TableHead>{t("api_keys.fields.model")}</TableHead>
+                  <TableHead>{t("api_keys.fields.workspace")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("api_keys.fields.usage")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -73,7 +77,7 @@ export const ApiKeysShow = () => {
                     <TableCell>{row.model}</TableCell>
                     <TableCell>{row.workspace}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {row.usage} tokens
+                      {row.usage} {t("api_keys.usage.tokens")}
                     </TableCell>
                   </TableRow>
                 ))}

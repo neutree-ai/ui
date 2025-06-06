@@ -98,7 +98,8 @@
 		"notAccessTitle": "您没有访问权限"
 	},
 	"ui": {
-		"language": "语言"
+		"language": "语言",
+		"more": "更多"
 	},
 	"warnWhenUnsavedChanges": "您确定要离开吗？您有未保存的更改。",
 	"notifications": {
@@ -177,7 +178,36 @@
 			"headNodeMemory": "主节点内存",
 			"workerNodeReplica": "工作节点副本数",
 			"workerNodeCpu": "工作节点 CPU",
-			"workerNodeMemory": "工作节点内存"
+			"workerNodeMemory": "工作节点内存",
+			"name": "名称",
+			"workspace": "工作空间",
+			"kubeconfig": "Kubeconfig",
+			"headAccessMode": "主节点访问模式",
+			"headNodeGpu": "主节点 GPU",
+			"workerNodeGpu": "工作节点 GPU",
+			"sshUser": "SSH 用户",
+			"sshPrivateKey": "SSH 私钥"
+		},
+		"sections": {
+			"basicInformation": "基础信息",
+			"clusterType": "集群类型",
+			"provider": "提供商",
+			"nodeAuthentication": "节点认证"
+		},
+		"placeholders": {
+			"clusterName": "集群名称",
+			"selectImageRegistry": "选择镜像仓库",
+			"sshUserExample": "例如 root"
+		},
+		"options": {
+			"multipleStaticNodes": "多个静态节点",
+			"kubernetes": "Kubernetes",
+			"loadBalancer": "负载均衡器",
+			"ingress": "入口"
+		},
+		"messages": {
+			"notFound": "404 未找到",
+			"rayDashboardTitle": "Ray 仪表板"
 		}
 	},
 	"model_registries": {
@@ -257,10 +287,87 @@
 		}
 	},
 	"engines": {
-		"title": "推理引擎"
+		"title": "推理引擎",
+		"fields": {
+			"status": "状态",
+			"supportedTasks": "支持的任务",
+			"versions": "版本",
+			"engineVersion": "引擎版本",
+			"valuesSchema": "值架构"
+		}
 	},
 	"endpoints": {
-		"title": "推理实例"
+		"title": "推理实例",
+		"fields": {
+			"status": "状态",
+			"serviceUrl": "服务地址",
+			"cluster": "集群",
+			"engine": "引擎",
+			"model": "模型",
+			"task": "任务",
+			"resources": "资源",
+			"gpu": "GPU",
+			"cpu": "CPU",
+			"memory": "内存",
+			"replica": "副本",
+			"scheduler": "调度器",
+			"variables": "变量",
+			"name": "名称",
+			"workspace": "工作空间",
+			"modelRegistry": "模型仓库",
+			"modelCatalog": "模型目录（模板）",
+			"memoryGb": "内存 (GB)",
+			"gpuCount": "GPU 数量",
+			"modelName": "模型名称",
+			"modelVersion": "模型版本",
+			"modelFile": "模型文件",
+			"engineVersion": "引擎版本",
+			"taskType": "任务类型",
+			"replicas": "副本数",
+			"schedulerType": "调度器类型",
+			"engineVariables": "引擎变量"
+		},
+		"sections": {
+			"basicInformation": "基础信息",
+			"templateSelection": "模板选择",
+			"configuration": "配置",
+			"resourceSettings": "资源设置",
+			"customizeSettings": "自定义设置",
+			"configurationDetails": "配置详情",
+			"modelSettings": "模型设置",
+			"engineSettings": "引擎设置",
+			"replicaSettings": "副本设置",
+			"advancedOptions": "高级选项"
+		},
+		"placeholders": {
+			"endpointName": "推理实例名称",
+			"selectCluster": "选择集群",
+			"selectModelRegistry": "选择模型仓库",
+			"selectModelCatalog": "选择模型目录",
+			"selectGpuType": "选择 GPU 类型",
+			"selectModel": "选择模型",
+			"selectEngine": "选择引擎",
+			"selectVersion": "选择版本",
+			"selectTaskType": "选择支持的任务类型",
+			"selectSchedulerType": "选择调度器类型"
+		},
+		"options": {
+			"generic": "通用",
+			"l4": "L4",
+			"t4": "T4",
+			"powerOfTwo": "二的幂",
+			"consistentHashing": "一致性哈希"
+		},
+		"messages": {
+			"rayDashboardNotAvailable": "Ray 仪表板不可用。",
+			"fetching": "获取中...",
+			"modelNotFoundInRegistry": "在选定的仓库中未找到模型"
+		},
+		"tabs": {
+			"basic": "基础信息",
+			"rayDashboard": "Ray 仪表板",
+			"playground": "测试平台"
+		}
 	},
 	"user_profiles": {
 		"title": "用户",
@@ -318,7 +425,36 @@
 		}
 	},
 	"api_keys": {
-		"title": "API 密钥"
+		"title": "API 密钥",
+		"create": "创建 API 密钥",
+		"fields": {
+			"name": "名称",
+			"workspace": "工作空间",
+			"secretKey": "密钥",
+			"date": "日期",
+			"model": "模型",
+			"usage": "使用量"
+		},
+		"placeholders": {
+			"selectWorkspace": "选择工作空间"
+		},
+		"messages": {
+			"createSuccess": "API 密钥创建成功！请立即复制您的密钥。您将无法再次查看它。",
+			"createDescription": "为您的应用程序创建新的 API 密钥。",
+			"loading": "加载中...",
+			"notFound": "404 未找到"
+		},
+		"buttons": {
+			"copy": "复制",
+			"copied": "已复制",
+			"close": "关闭",
+			"cancel": "取消",
+			"create": "创建"
+		},
+		"usage": {
+			"title": "API 使用统计",
+			"tokens": "令牌"
+		}
 	},
 	"infrastructure": {
 		"title": "基础设施"

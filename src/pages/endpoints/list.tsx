@@ -2,13 +2,15 @@ import { ModelTaskFilter } from "@/components/business/ModelTaskFilter";
 import { ListPage, Table } from "@/components/theme";
 import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
+import { useTranslation } from "react-i18next";
 
 export const EndpointsList = () => {
+  const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
   const endpointColumns = useEndpointColumns();
 
   return (
-    <ListPage title="Endpoints" breadcrumb={false}>
+    <ListPage title={t("endpoints.title")} breadcrumb={false}>
       <Table
         enableSorting
         enableFilters

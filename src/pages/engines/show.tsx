@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/select";
 import type { Engine } from "@/types";
 import { useShow } from "@refinedev/core";
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 
 export const EnginesShow = () => {
+  const { t } = useTranslation();
   const {
     query: { data, isLoading },
   } = useShow<Engine>({});
@@ -36,7 +38,7 @@ export const EnginesShow = () => {
   }
 
   if (!record) {
-    return <div>404 not found</div>;
+    return <div>{t("pages.error.notFound")}</div>;
   }
 
   const selectedVersion = record.spec.versions.find(
@@ -48,10 +50,10 @@ export const EnginesShow = () => {
       <MetadataCard metadata={record.metadata} />
       <Card className="mt-4">
         <CardContent>
-          <ShowPage.Row title={"Status"}>
+          <ShowPage.Row title={t("engines.fields.status")}>
             <EngineStatus phase={record.status?.phase} />
           </ShowPage.Row>
-          <ShowPage.Row title={"Supported Tasks"}>
+          <ShowPage.Row title={t("engines.fields.supportedTasks")}>
             {record.spec.supported_tasks.map((task) => {
               return (
                 <div
@@ -67,7 +69,7 @@ export const EnginesShow = () => {
       </Card>
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>Versions</CardTitle>
+          <CardTitle>{t("engines.fields.versions")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Select
@@ -77,7 +79,7 @@ export const EnginesShow = () => {
             }}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Engine Version" />
+              <SelectValue placeholder={t("engines.fields.engineVersion")} />
             </SelectTrigger>
             <SelectContent>
               {record.spec.versions.map((v) => {
@@ -90,7 +92,7 @@ export const EnginesShow = () => {
             </SelectContent>
           </Select>
           {selectedVersion && (
-            <ShowPage.Row title={"Values Schema"}>
+            <ShowPage.Row title={t("engines.fields.valuesSchema")}>
               <JSONSchemaVisualizer schema={selectedVersion.values_schema} />
             </ShowPage.Row>
           )}

@@ -3,6 +3,7 @@ import { Copy, Check } from "lucide-react";
 import type { UseTableReturnType } from "@refinedev/react-table";
 import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,6 +28,7 @@ import { useApiKeyColumns } from "@/components/theme/table/columns/api-key-colum
 import type { ApiKey } from "@/types";
 
 const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
+  const { t } = useTranslation();
   const form = useForm({
     mode: "all",
     defaultValues: {
@@ -76,13 +78,14 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         <Alert className="border-green-200 bg-green-50">
           <Check className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            API Key created successfully! Please copy your secret key now. You
-            won't be able to see it again.
+            {t("api_keys.messages.createSuccess")}
           </AlertDescription>
         </Alert>
 
         <div className="space-y-2">
-          <div className="text-sm font-medium">Secret Key:</div>
+          <div className="text-sm font-medium">
+            {t("api_keys.fields.secretKey")}:
+          </div>
           <div className="relative">
             <div className="p-3 bg-muted rounded-md border min-h-[60px] flex items-center">
               <code className="text-sm break-all font-mono leading-relaxed">
@@ -103,12 +106,12 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
               {copied ? (
                 <>
                   <Check className="h-4 w-4 mr-1" />
-                  Copied
+                  {t("api_keys.buttons.copied")}
                 </>
               ) : (
                 <>
                   <Copy className="h-4 w-4 mr-1" />
-                  Copy
+                  {t("api_keys.buttons.copy")}
                 </>
               )}
             </Button>
@@ -117,7 +120,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
 
         <DialogFooter>
           <Button onClick={onClose} className="w-full">
-            Close
+            {t("api_keys.buttons.close")}
           </Button>
         </DialogFooter>
       </div>
@@ -132,10 +135,10 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
           render={({ field }) => {
             return (
               <FormItem>
-                <FormLabel>Workspace</FormLabel>
+                <FormLabel>{t("api_keys.fields.workspace")}</FormLabel>
                 <FormControl>
                   <Combobox
-                    placeholder="Select A Workspace"
+                    placeholder={t("api_keys.placeholders.selectWorkspace")}
                     disabled={workspaces.query.isLoading}
                     options={(workspaces.query.data?.data || []).map((e) => ({
                       label: e.metadata.name,
@@ -153,7 +156,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
           render={({ field }) => {
             return (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>{t("api_keys.fields.name")}</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -163,10 +166,10 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         />
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t("api_keys.buttons.cancel")}
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            Create
+            {t("api_keys.buttons.create")}
           </Button>
         </DialogFooter>
       </form>
@@ -175,6 +178,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
 };
 
 export const ApiKeysList = () => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const metadataColumns = useMetadataColumns();
   const apiKeyColumns = useApiKeyColumns();
@@ -190,9 +194,9 @@ export const ApiKeysList = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create API Key</DialogTitle>
+            <DialogTitle>{t("api_keys.create")}</DialogTitle>
             <DialogDescription>
-              Create a new API key for your application.
+              {t("api_keys.messages.createDescription")}
             </DialogDescription>
           </DialogHeader>
           <CreateApiKeyForm onClose={() => setOpen(false)} />

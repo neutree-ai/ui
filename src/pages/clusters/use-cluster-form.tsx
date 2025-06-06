@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import type { Cluster, ImageRegistry } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
+import { useTranslation } from "react-i18next";
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
+  const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
   const form = useForm<Cluster>({
     mode: "all",
@@ -57,20 +59,31 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   return {
     form,
     metadataFields: (
-      <FormCardGrid title="Basic Information">
-        <Field {...form} name="metadata.name" label="Name">
-          <Input placeholder="Cluster Name" disabled={isEdit} />
+      <FormCardGrid title={t("clusters.sections.basicInformation")}>
+        <Field {...form} name="metadata.name" label={t("clusters.fields.name")}>
+          <Input
+            placeholder={t("clusters.placeholders.clusterName")}
+            disabled={isEdit}
+          />
         </Field>
-        <Field {...form} name="metadata.workspace" label="Workspace">
+        <Field
+          {...form}
+          name="metadata.workspace"
+          label={t("clusters.fields.workspace")}
+        >
           <WorkspaceField disabled={isEdit} />
         </Field>
       </FormCardGrid>
     ),
     imageRegistryFields: (
       <FormCardGrid>
-        <Field {...form} name="spec.image_registry" label="Image Registry">
+        <Field
+          {...form}
+          name="spec.image_registry"
+          label={t("clusters.fields.imageRegistry")}
+        >
           <Combobox
-            placeholder="Select A Image Registry"
+            placeholder={t("clusters.placeholders.selectImageRegistry")}
             options={(imageRegistries.query.data?.data || []).map((item) => ({
               label: item.metadata.name,
               value: item.metadata.name,
@@ -81,13 +94,16 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     typeFields: (
-      <FormCardGrid title="Cluster Type">
-        <Field {...form} name="spec.type" label="Type">
+      <FormCardGrid title={t("clusters.sections.clusterType")}>
+        <Field {...form} name="spec.type" label={t("clusters.fields.type")}>
           <Select
             options={[
               // { label: "Single Local Node", value: "local" },
-              { label: "Multiple Static Nodes", value: "ssh" },
-              { label: "Kubernetes", value: "kubernetes" },
+              {
+                label: t("clusters.options.multipleStaticNodes"),
+                value: "ssh",
+              },
+              { label: t("clusters.options.kubernetes"), value: "kubernetes" },
             ]}
             onChange={(value) => {
               form.setValue("spec.type", value);
@@ -142,7 +158,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     providerFields: (
-      <FormCardGrid title="Provider">
+      <FormCardGrid title={t("clusters.sections.provider")}>
         {type === "ssh" && (
           <Field {...form} name="spec.config.provider" className="col-span-4">
             <NodeIPsField />
@@ -154,7 +170,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.kubeconfig"
-              label="Kubeconfig"
+              label={t("clusters.fields.kubeconfig")}
               className="col-span-4"
             >
               <Input type="password" disabled={isEdit} />
@@ -162,12 +178,15 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.head_node_spec.access_mode"
-              label="Head Access Mode"
+              label={t("clusters.fields.headAccessMode")}
             >
               <Select
                 options={[
-                  { label: "LoadBalancer", value: "LoadBalancer" },
-                  { label: "Ingress", value: "Ingress" },
+                  {
+                    label: t("clusters.options.loadBalancer"),
+                    value: "LoadBalancer",
+                  },
+                  { label: t("clusters.options.ingress"), value: "Ingress" },
                 ]}
                 disabled={isEdit}
               />
@@ -176,7 +195,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.head_node_spec.resources.cpu"
-              label="Head Node CPU"
+              label={t("clusters.fields.headNodeCpu")}
             >
               <Input disabled={isEdit} />
             </Field>
@@ -184,7 +203,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.head_node_spec.resources.memory"
-              label="Head Node Memory"
+              label={t("clusters.fields.headNodeMemory")}
             >
               <Input disabled={isEdit} />
             </Field>
@@ -192,7 +211,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.head_node_spec.resources['nvidia\.com/gpu']"
-              label="Head Node GPU"
+              label={t("clusters.fields.headNodeGpu")}
             >
               <Input
                 disabled={isEdit}
@@ -210,7 +229,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.worker_group_specs.0.min_replicas"
-              label="Worker Node Replica"
+              label={t("clusters.fields.workerNodeReplica")}
             >
               <Input
                 type="number"
@@ -232,7 +251,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.worker_group_specs.0.resources.cpu"
-              label="Worker Node CPU"
+              label={t("clusters.fields.workerNodeCpu")}
             >
               <Input disabled={isEdit} />
             </Field>
@@ -240,7 +259,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.worker_group_specs.0.resources.memory"
-              label="Worker Node Memory"
+              label={t("clusters.fields.workerNodeMemory")}
             >
               <Input disabled={isEdit} />
             </Field>
@@ -248,7 +267,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.config.worker_group_specs.0.resources['nvidia\.com/gpu']"
-              label="Worker Node GPU"
+              label={t("clusters.fields.workerNodeGpu")}
             >
               <Input
                 disabled={isEdit}
@@ -267,14 +286,18 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     authFields: isKubernetes ? null : (
-      <FormCardGrid title="Node Authentication">
-        <Field {...form} name="spec.config.auth.ssh_user" label="SSH User">
-          <Input placeholder="e.g root" />
+      <FormCardGrid title={t("clusters.sections.nodeAuthentication")}>
+        <Field
+          {...form}
+          name="spec.config.auth.ssh_user"
+          label={t("clusters.fields.sshUser")}
+        >
+          <Input placeholder={t("clusters.placeholders.sshUserExample")} />
         </Field>
         <Field
           {...form}
           name="spec.config.auth.ssh_private_key"
-          label="SSH Private Key"
+          label={t("clusters.fields.sshPrivateKey")}
         >
           <Input type="password" />
         </Field>

@@ -98,7 +98,8 @@
 		"notAccessTitle": "You don't have permission to access"
 	},
 	"ui": {
-		"language": "Language"
+		"language": "Language",
+		"more": "More"
 	},
 	"warnWhenUnsavedChanges": "Are you sure you want to leave? You have unsaved changes.",
 	"notifications": {
@@ -177,7 +178,36 @@
 			"headNodeMemory": "Head Node Memory",
 			"workerNodeReplica": "Worker Node Replica",
 			"workerNodeCpu": "Worker Node CPU",
-			"workerNodeMemory": "Worker Node Memory"
+			"workerNodeMemory": "Worker Node Memory",
+			"name": "Name",
+			"workspace": "Workspace",
+			"kubeconfig": "Kubeconfig",
+			"headAccessMode": "Head Access Mode",
+			"headNodeGpu": "Head Node GPU",
+			"workerNodeGpu": "Worker Node GPU",
+			"sshUser": "SSH User",
+			"sshPrivateKey": "SSH Private Key"
+		},
+		"sections": {
+			"basicInformation": "Basic Information",
+			"clusterType": "Cluster Type",
+			"provider": "Provider",
+			"nodeAuthentication": "Node Authentication"
+		},
+		"placeholders": {
+			"clusterName": "Cluster Name",
+			"selectImageRegistry": "Select A Image Registry",
+			"sshUserExample": "e.g root"
+		},
+		"options": {
+			"multipleStaticNodes": "Multiple Static Nodes",
+			"kubernetes": "Kubernetes",
+			"loadBalancer": "LoadBalancer",
+			"ingress": "Ingress"
+		},
+		"messages": {
+			"notFound": "404 not found",
+			"rayDashboardTitle": "Ray Dashboard"
 		}
 	},
 	"model_registries": {
@@ -257,10 +287,87 @@
 		}
 	},
 	"engines": {
-		"title": "Engines"
+		"title": "Engines",
+		"fields": {
+			"status": "Status",
+			"supportedTasks": "Supported Tasks",
+			"versions": "Versions",
+			"engineVersion": "Engine Version",
+			"valuesSchema": "Values Schema"
+		}
 	},
 	"endpoints": {
-		"title": "Endpoints"
+		"title": "Endpoints",
+		"fields": {
+			"status": "Status",
+			"serviceUrl": "Service URL",
+			"cluster": "Cluster",
+			"engine": "Engine",
+			"model": "Model",
+			"task": "Task",
+			"resources": "Resources",
+			"gpu": "GPU",
+			"cpu": "CPU",
+			"memory": "Memory",
+			"replica": "Replica",
+			"scheduler": "Scheduler",
+			"variables": "Variables",
+			"name": "Name",
+			"workspace": "Workspace",
+			"modelRegistry": "Model Registry",
+			"modelCatalog": "Model Catalog (Template)",
+			"memoryGb": "Memory (GB)",
+			"gpuCount": "GPU Count",
+			"modelName": "Model Name",
+			"modelVersion": "Model Version",
+			"modelFile": "Model File",
+			"engineVersion": "Engine Version",
+			"taskType": "Task Type",
+			"replicas": "Replicas",
+			"schedulerType": "Scheduler Type",
+			"engineVariables": "Engine Variables"
+		},
+		"sections": {
+			"basicInformation": "Basic Information",
+			"templateSelection": "Template Selection",
+			"configuration": "Configuration",
+			"resourceSettings": "Resource Settings",
+			"customizeSettings": "Customize Settings",
+			"configurationDetails": "Configuration Details",
+			"modelSettings": "Model Settings",
+			"engineSettings": "Engine Settings",
+			"replicaSettings": "Replica Settings",
+			"advancedOptions": "Advanced Options"
+		},
+		"placeholders": {
+			"endpointName": "Endpoint Name",
+			"selectCluster": "Select A Cluster",
+			"selectModelRegistry": "Select A Model Registry",
+			"selectModelCatalog": "Select A Model Catalog",
+			"selectGpuType": "Select GPU Type",
+			"selectModel": "Select A Model",
+			"selectEngine": "Select An Engine",
+			"selectVersion": "Select A Version",
+			"selectTaskType": "Select A Support Task Type",
+			"selectSchedulerType": "Select Scheduler Type"
+		},
+		"options": {
+			"generic": "Generic",
+			"l4": "L4",
+			"t4": "T4",
+			"powerOfTwo": "Power of two",
+			"consistentHashing": "Consistent hashing"
+		},
+		"messages": {
+			"rayDashboardNotAvailable": "Ray dashboard is not available.",
+			"fetching": "fetching...",
+			"modelNotFoundInRegistry": "Model not found in selected registry"
+		},
+		"tabs": {
+			"basic": "Basic",
+			"rayDashboard": "Ray Dashboard",
+			"playground": "Playground"
+		}
 	},
 	"user_profiles": {
 		"title": "Users",
@@ -318,7 +425,36 @@
 		}
 	},
 	"api_keys": {
-		"title": "API key"
+		"title": "API key",
+		"create": "Create API Key",
+		"fields": {
+			"name": "Name",
+			"workspace": "Workspace",
+			"secretKey": "Secret Key",
+			"date": "Date",
+			"model": "Model",
+			"usage": "Usage"
+		},
+		"placeholders": {
+			"selectWorkspace": "Select A Workspace"
+		},
+		"messages": {
+			"createSuccess": "API Key created successfully! Please copy your secret key now. You won't be able to see it again.",
+			"createDescription": "Create a new API key for your application.",
+			"loading": "Loading...",
+			"notFound": "404 not found"
+		},
+		"buttons": {
+			"copy": "Copy",
+			"copied": "Copied",
+			"close": "Close",
+			"cancel": "Cancel",
+			"create": "Create"
+		},
+		"usage": {
+			"title": "API Usage Statistics",
+			"tokens": "tokens"
+		}
 	},
 	"infrastructure": {
 		"title": "Infrastructure"

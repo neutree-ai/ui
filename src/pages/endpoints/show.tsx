@@ -21,8 +21,10 @@ import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisu
 import Loader from "@/components/theme/components/loader";
 import { useCallback, useRef } from "react";
 import RerankPlayground from "@/components/business/RerankPlayground";
+import { useTranslation } from "react-i18next";
 
 const RayDashboardTab = ({ record }: { record: Endpoint }) => {
+  const { t } = useTranslation();
   const { data: clusterData, isLoading } = useList({
     resource: "clusters",
     filters: [
@@ -65,7 +67,9 @@ const RayDashboardTab = ({ record }: { record: Endpoint }) => {
   if (!rayDashboardUrl) {
     return (
       <p>
-        <span className="text-red-500">Ray dashboard is not available.</span>
+        <span className="text-red-500">
+          {t("endpoints.messages.rayDashboardNotAvailable")}
+        </span>
       </p>
     );
   }
@@ -76,12 +80,13 @@ const RayDashboardTab = ({ record }: { record: Endpoint }) => {
       className="w-full h-full"
       onLoad={handleIframeLoad}
       ref={iframeRef}
-      title="Ray Dashboard"
+      title={t("endpoints.tabs.rayDashboard")}
     />
   );
 };
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
+  const { t } = useTranslation();
   const {
     query: { data, isLoading },
   } = useShow<Endpoint>();
@@ -102,7 +107,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   }
 
   if (!record) {
-    return <div>404 not found</div>;
+    return <div>{t("pages.error.notFound")}</div>;
   }
 
   const engineVersionSchema = engineData?.data?.spec.versions.find(
@@ -113,9 +118,13 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     <ShowPage record={record}>
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
-          <TabsTrigger value="basic">Basic</TabsTrigger>
-          <TabsTrigger value="ray">Ray Dashboard</TabsTrigger>
-          <TabsTrigger value="playground">Playground</TabsTrigger>
+          <TabsTrigger value="basic">{t("endpoints.tabs.basic")}</TabsTrigger>
+          <TabsTrigger value="ray">
+            {t("endpoints.tabs.rayDashboard")}
+          </TabsTrigger>
+          <TabsTrigger value="playground">
+            {t("endpoints.tabs.playground")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent
           value="basic"
@@ -125,11 +134,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <Card className="mt-4">
             <CardContent>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={"Status"}>
+                <ShowPage.Row title={t("endpoints.fields.status")}>
                   <EndpointStatus phase={record.status?.phase} />
                 </ShowPage.Row>
                 <ShowPage.Row
-                  title="Service URL"
+                  title={t("endpoints.fields.serviceUrl")}
                   children={
                     <a href={url} target="_blank" rel="noreferrer">
                       <Button variant="link" className="p-0">
@@ -140,7 +149,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 />
               </div>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={"Cluster"}>
+                <ShowPage.Row title={t("endpoints.fields.cluster")}>
                   <ShowButton
                     recordItemId={record.spec.cluster}
                     meta={{
@@ -152,16 +161,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     {record.spec.cluster}
                   </ShowButton>
                 </ShowPage.Row>
-                <ShowPage.Row title={"Engine"}>
+                <ShowPage.Row title={t("endpoints.fields.engine")}>
                   <EndpointEngine {...record} />
                 </ShowPage.Row>
                 <div>
-                  <ShowPage.Row title={"Model"}>
+                  <ShowPage.Row title={t("endpoints.fields.model")}>
                     <EndpointModel model={record.spec.model} />
                   </ShowPage.Row>
                 </div>
                 <div>
-                  <ShowPage.Row title={"Task"}>
+                  <ShowPage.Row title={t("endpoints.fields.task")}>
                     <ModelTask task={record.spec.model.task} />
                   </ShowPage.Row>
                 </div>
@@ -170,19 +179,19 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </Card>
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>Resources</CardTitle>
+              <CardTitle>{t("endpoints.fields.resources")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title="GPU">
+                <ShowPage.Row title={t("endpoints.fields.gpu")}>
                   {Object.values(record.spec.resources?.accelerator || {})[0] ??
                     record.spec.resources?.gpu ??
                     "-"}
                 </ShowPage.Row>
-                <ShowPage.Row title="CPU">
+                <ShowPage.Row title={t("endpoints.fields.cpu")}>
                   {record.spec.resources?.cpu ?? "-"}
                 </ShowPage.Row>
-                <ShowPage.Row title="Memory">
+                <ShowPage.Row title={t("endpoints.fields.memory")}>
                   {record.spec.resources?.memory ?? "-"}
                 </ShowPage.Row>
               </div>
@@ -199,12 +208,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <Card className="mt-4">
             <CardContent>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title="Replica">
+                <ShowPage.Row title={t("endpoints.fields.replica")}>
                   {record.spec.replicas?.num ?? 1}
                 </ShowPage.Row>
-                <ShowPage.Row title="Scheduler">
+                <ShowPage.Row title={t("endpoints.fields.scheduler")}>
                   {record.spec.deployment_options?.scheduler.type ??
-                    "Power of two"}
+                    t("model_catalogs.values.powerOfTwo")}
                 </ShowPage.Row>
               </div>
             </CardContent>
@@ -212,7 +221,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           {engineVersionSchema && record.spec.variables?.engine_args && (
             <Card className="mt-4">
               <CardHeader>
-                <CardTitle>Variables</CardTitle>
+                <CardTitle>{t("endpoints.fields.variables")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <JSONSchemaValueVisualizer
