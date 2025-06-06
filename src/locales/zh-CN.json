@@ -1,4 +1,9 @@
 {
+	"common": {
+		"messages": {
+			"grafanaNotConfigured": "Grafana 监控未配置。"
+		}
+	},
 	"pages": {
 		"login": {
 			"title": "登录您的账户",

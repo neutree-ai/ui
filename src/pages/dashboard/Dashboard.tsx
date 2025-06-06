@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useList } from "@refinedev/core";
 import { HardDrive, Server } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { useSystemApi } from "@/hooks/use-system-api";
 
 type Counter = {
   count: number;
@@ -13,6 +14,7 @@ const COUNT_FN = "count()";
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const { grafanaUrl } = useSystemApi();
 
   const { data: clusterCountData, isLoading: isClusterCountLoading } =
     useList<Counter>({
@@ -67,92 +69,100 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-      <GrafanaPanels
-        dashboardConfig={{
-          baseUrl: "http://192.168.24.140:3030",
-          dashboardId: "rayServeDashboard",
-          orgId: 1,
-          timezone: "browser",
-          variables: {
-            datasource: "neutree-cluster",
-            Application: "$__all",
-            HTTP_Route: "$__all",
-            gRPC_Method: "$__all",
-            Cluster: "$__all",
-          },
-        }}
-        panels={[
-          {
-            id: 5,
-          },
-          {
-            id: 7,
-          },
-          {
-            id: 8,
-          },
-          {
-            id: 17,
-          },
-          {
-            id: 12,
-          },
-          {
-            id: 15,
-          },
-          {
-            id: 16,
-          },
-          {
-            id: 2,
-          },
-          {
-            id: 13,
-          },
-          {
-            id: 14,
-          },
-          {
-            id: 9,
-          },
-          {
-            id: 10,
-          },
-          {
-            id: 11,
-          },
-          {
-            id: 3,
-          },
-          {
-            id: 4,
-          },
-          {
-            id: 6,
-          },
-          {
-            id: 20,
-          },
-          {
-            id: 21,
-          },
-          {
-            id: 22,
-          },
-          {
-            id: 23,
-          },
-          {
-            id: 24,
-          },
-          {
-            id: 25,
-          },
-        ]}
-        enableAutoRefresh={true}
-        refreshIntervals={[0, 5, 10, 30, 60, 300, 600]}
-        className="w-full"
-      />
+      {grafanaUrl ? (
+        <GrafanaPanels
+          dashboardConfig={{
+            baseUrl: grafanaUrl,
+            dashboardId: "rayServeDashboard",
+            orgId: 1,
+            timezone: "browser",
+            variables: {
+              datasource: "neutree-cluster",
+              Application: "$__all",
+              HTTP_Route: "$__all",
+              gRPC_Method: "$__all",
+              Cluster: "$__all",
+            },
+          }}
+          panels={[
+            {
+              id: 5,
+            },
+            {
+              id: 7,
+            },
+            {
+              id: 8,
+            },
+            {
+              id: 17,
+            },
+            {
+              id: 12,
+            },
+            {
+              id: 15,
+            },
+            {
+              id: 16,
+            },
+            {
+              id: 2,
+            },
+            {
+              id: 13,
+            },
+            {
+              id: 14,
+            },
+            {
+              id: 9,
+            },
+            {
+              id: 10,
+            },
+            {
+              id: 11,
+            },
+            {
+              id: 3,
+            },
+            {
+              id: 4,
+            },
+            {
+              id: 6,
+            },
+            {
+              id: 20,
+            },
+            {
+              id: 21,
+            },
+            {
+              id: 22,
+            },
+            {
+              id: 23,
+            },
+            {
+              id: 24,
+            },
+            {
+              id: 25,
+            },
+          ]}
+          enableAutoRefresh={true}
+          refreshIntervals={[0, 5, 10, 30, 60, 300, 600]}
+          className="w-full"
+        />
+      ) : (
+        <div className="flex items-center justify-center h-48">
+          <p className="text-muted-foreground">
+            {t("common.messages.grafanaNotConfigured")}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

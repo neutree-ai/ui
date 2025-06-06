@@ -1,4 +1,9 @@
 {
+	"common": {
+		"messages": {
+			"grafanaNotConfigured": "Grafana monitoring is not configured."
+		}
+	},
 	"pages": {
 		"login": {
 			"title": "Sign in to your account",
