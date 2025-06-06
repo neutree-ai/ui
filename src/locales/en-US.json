@@ -170,6 +170,7 @@
 		"edit": "Edit Cluster",
 		"tabs": {
 			"basic": "Basic",
+			"monitor": "Monitor",
 			"rayDashboard": "Ray Dashboard"
 		},
 		"fields": {
@@ -371,6 +372,7 @@
 		"tabs": {
 			"basic": "Basic",
 			"rayDashboard": "Ray Dashboard",
+			"monitor": "Monitor",
 			"playground": "Playground"
 		}
 	},
@@ -544,6 +546,29 @@
 				"score": "Score",
 				"was": "was"
 			}
+		},
+		"grafanaPanels": {
+			"timeRange": {
+				"title": "Time Range",
+				"last5minutes": "Last 5 minutes",
+				"last15minutes": "Last 15 minutes",
+				"last30minutes": "Last 30 minutes",
+				"last1hour": "Last 1 hour",
+				"last3hours": "Last 3 hours",
+				"last6hours": "Last 6 hours",
+				"last12hours": "Last 12 hours",
+				"last24hours": "Last 24 hours",
+				"last2days": "Last 2 days",
+				"last7days": "Last 7 days",
+				"today": "Today"
+			},
+			"refresh": {
+				"refreshNow": "Refresh now",
+				"lastUpdated": "Last updated:",
+				"autoRefresh": "Auto-refresh:",
+				"off": "Off"
+			},
+			"defaultPanelTitle": "Grafana Panel {{id}}"
 		}
 	},
 	"status": {

@@ -170,6 +170,7 @@
 		"edit": "编辑集群",
 		"tabs": {
 			"basic": "基础信息",
+			"monitor": "监控",
 			"rayDashboard": "Ray 仪表板"
 		},
 		"fields": {
@@ -371,6 +372,7 @@
 		"tabs": {
 			"basic": "基础信息",
 			"rayDashboard": "Ray 仪表板",
+			"monitor": "监控",
 			"playground": "测试平台"
 		}
 	},
@@ -544,6 +546,29 @@
 				"score": "分数",
 				"was": "原"
 			}
+		},
+		"grafanaPanels": {
+			"timeRange": {
+				"title": "时间范围",
+				"last5minutes": "最近 5 分钟",
+				"last15minutes": "最近 15 分钟",
+				"last30minutes": "最近 30 分钟",
+				"last1hour": "最近 1 小时",
+				"last3hours": "最近 3 小时",
+				"last6hours": "最近 6 小时",
+				"last12hours": "最近 12 小时",
+				"last24hours": "最近 24 小时",
+				"last2days": "最近 2 天",
+				"last7days": "最近 7 天",
+				"today": "今天"
+			},
+			"refresh": {
+				"refreshNow": "立即刷新",
+				"lastUpdated": "最后更新：",
+				"autoRefresh": "自动刷新：",
+				"off": "关闭"
+			},
+			"defaultPanelTitle": "Grafana 面板 {{id}}"
 		}
 	},
 	"status": {

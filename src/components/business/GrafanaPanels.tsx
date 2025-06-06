@@ -9,6 +9,7 @@ import {
   ChevronDown,
   RotateCcw,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -61,21 +62,61 @@ export interface GrafanaPanelsProps {
   onRefreshIntervalChange?: (interval: number) => void;
 }
 
-const DEFAULT_TIME_RANGES: TimeRange[] = [
-  { from: "now-5m", to: "now", display: "Last 5 minutes" },
-  { from: "now-15m", to: "now", display: "Last 15 minutes" },
-  { from: "now-30m", to: "now", display: "Last 30 minutes" },
-  { from: "now-1h", to: "now", display: "Last 1 hour" },
-  { from: "now-3h", to: "now", display: "Last 3 hours" },
-  { from: "now-6h", to: "now", display: "Last 6 hours" },
-  { from: "now-12h", to: "now", display: "Last 12 hours" },
-  { from: "now-24h", to: "now", display: "Last 24 hours" },
-  { from: "now-2d", to: "now", display: "Last 2 days" },
-  { from: "now-7d", to: "now", display: "Last 7 days" },
+const getDefaultTimeRanges = (t: (key: string) => string): TimeRange[] => [
+  {
+    from: "now-5m",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last5minutes"),
+  },
+  {
+    from: "now-15m",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last15minutes"),
+  },
+  {
+    from: "now-30m",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last30minutes"),
+  },
+  {
+    from: "now-1h",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last1hour"),
+  },
+  {
+    from: "now-3h",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last3hours"),
+  },
+  {
+    from: "now-6h",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last6hours"),
+  },
+  {
+    from: "now-12h",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last12hours"),
+  },
+  {
+    from: "now-24h",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last24hours"),
+  },
+  {
+    from: "now-2d",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last2days"),
+  },
+  {
+    from: "now-7d",
+    to: "now",
+    display: t("components.grafanaPanels.timeRange.last7days"),
+  },
   {
     from: dayjs().startOf("day").valueOf().toString(),
     to: dayjs().endOf("day").valueOf().toString(),
-    display: "Today",
+    display: t("components.grafanaPanels.timeRange.today"),
   },
 ];
 
@@ -84,15 +125,19 @@ const DEFAULT_REFRESH_INTERVALS = [0, 5, 10, 30, 60, 300, 600, 1800, 3600];
 export default function GrafanaPanels({
   dashboardConfig,
   panels,
-  defaultTimeRange = DEFAULT_TIME_RANGES[3], // Last 1 hour
+  defaultTimeRange,
   refreshIntervals = DEFAULT_REFRESH_INTERVALS,
   enableAutoRefresh = true,
   className,
   onTimeRangeChange,
   onRefreshIntervalChange,
 }: GrafanaPanelsProps) {
-  const [currentTimeRange, setCurrentTimeRange] =
-    useState<TimeRange>(defaultTimeRange);
+  const { t } = useTranslation();
+  const DEFAULT_TIME_RANGES = useMemo(() => getDefaultTimeRanges(t), [t]);
+
+  const [currentTimeRange, setCurrentTimeRange] = useState<TimeRange>(
+    defaultTimeRange || DEFAULT_TIME_RANGES[3],
+  ); // Last 1 hour
   const [refreshInterval, setRefreshInterval] = useState<number>(0);
   const [isAutoRefreshing, setIsAutoRefreshing] = useState<boolean>(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date>(new Date());
@@ -200,7 +245,7 @@ export default function GrafanaPanels({
   }, [isAutoRefreshing, refreshInterval]);
 
   const formatRefreshInterval = (seconds: number): string => {
-    if (seconds === 0) return "Off";
+    if (seconds === 0) return t("components.grafanaPanels.refresh.off");
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${seconds / 60}m`;
     return `${seconds / 3600}h`;
@@ -223,7 +268,9 @@ export default function GrafanaPanels({
               </PopoverTrigger>
               <PopoverContent className="w-64 p-2">
                 <div className="space-y-1">
-                  <div className="font-medium text-sm mb-2">Time Range</div>
+                  <div className="font-medium text-sm mb-2">
+                    {t("components.grafanaPanels.timeRange.title")}
+                  </div>
                   {DEFAULT_TIME_RANGES.map((range) => (
                     <Button
                       key={`${range.from}-${range.to}`}
@@ -290,7 +337,7 @@ export default function GrafanaPanels({
               variant="outline"
               size="icon"
               onClick={handleManualRefresh}
-              title="Refresh now"
+              title={t("components.grafanaPanels.refresh.refreshNow")}
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -300,7 +347,8 @@ export default function GrafanaPanels({
             {/* Status Info */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <RotateCcw className="h-4 w-4" />
-              Last updated: {lastRefreshTime.toLocaleTimeString()}
+              {t("components.grafanaPanels.refresh.lastUpdated")}{" "}
+              {lastRefreshTime.toLocaleTimeString()}
             </div>
 
             {isAutoRefreshing && (
@@ -308,7 +356,8 @@ export default function GrafanaPanels({
                 variant="secondary"
                 className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
               >
-                Auto-refresh: {formatRefreshInterval(refreshInterval)}
+                {t("components.grafanaPanels.refresh.autoRefresh")}{" "}
+                {formatRefreshInterval(refreshInterval)}
               </Badge>
             )}
           </div>
@@ -333,7 +382,12 @@ export default function GrafanaPanels({
                   width={panel.width || "100%"}
                   height={panel.height || 300}
                   className="w-full border-0 rounded-md"
-                  title={panel.title || `Grafana Panel ${panel.id}`}
+                  title={
+                    panel.title ||
+                    t("components.grafanaPanels.defaultPanelTitle", {
+                      id: panel.id,
+                    })
+                  }
                   loading="lazy"
                 />
               </div>

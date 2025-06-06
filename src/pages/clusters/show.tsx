@@ -42,7 +42,9 @@ export const ClustersShow = () => {
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
           <TabsTrigger value="basic">{t("clusters.tabs.basic")}</TabsTrigger>
-          <TabsTrigger value="monitor">Monitor</TabsTrigger>
+          <TabsTrigger value="monitor">
+            {t("clusters.tabs.monitor")}
+          </TabsTrigger>
           <TabsTrigger value="ray">
             {t("clusters.tabs.rayDashboard")}
           </TabsTrigger>

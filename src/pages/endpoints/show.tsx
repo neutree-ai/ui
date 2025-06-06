@@ -125,7 +125,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <TabsTrigger value="ray">
             {t("endpoints.tabs.rayDashboard")}
           </TabsTrigger>
-          <TabsTrigger value="monitor">Monitor</TabsTrigger>
+          <TabsTrigger value="monitor">
+            {t("endpoints.tabs.monitor")}
+          </TabsTrigger>
           <TabsTrigger value="playground">
             {t("endpoints.tabs.playground")}
           </TabsTrigger>
