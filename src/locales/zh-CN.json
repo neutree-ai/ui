@@ -161,7 +161,19 @@
 			"name": "名称",
 			"workspace": "工作空间",
 			"creation_timestamp": "创建时间",
-			"update_timestamp": "更新时间"
+			"update_timestamp": "更新时间",
+			"type": "类型",
+			"imageRegistry": "镜像仓库",
+			"status": "状态",
+			"model": "模型",
+			"engine": "引擎",
+			"cluster": "集群",
+			"task": "任务",
+			"versions": "版本",
+			"role": "角色",
+			"user": "用户",
+			"permissions": "权限",
+			"permissionsCount": "{{count}} 个权限"
 		}
 	},
 	"documentTitle": {

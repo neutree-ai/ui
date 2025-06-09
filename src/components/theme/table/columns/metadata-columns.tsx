@@ -36,7 +36,7 @@ export const useMetadataColumns = (options?: { resource: string }) => {
     ),
     workspace: (
       <Table.Column
-        header={"Workspace"}
+        header={translate("table.column.workspace")}
         accessorKey="metadata.workspace"
         id="workspace"
         enableHiding
@@ -88,13 +88,13 @@ export const useMetadataColumns = (options?: { resource: string }) => {
         cell={({ row: { original } }) => (
           <Table.Actions>
             <Table.EditAction
-              title="Edit"
+              title={translate("buttons.edit")}
               row={original}
               resource={resource}
               icon={<Edit size={16} />}
             />
             <Table.DeleteAction
-              title="Delete"
+              title={translate("buttons.delete")}
               row={original}
               resource={resource}
               icon={<Trash2 size={16} />}

@@ -151,5 +151,14 @@
   "src/components/business/LogoutButton.tsx": "8cb3d0097588e1c8b46da75d47c126ae",
   "src/components/theme/table/fields/table-filter-dropdown.tsx": "123612c19006c89069725f55c646a016",
   "src/components/theme/table/fields/table-filter-search-column.tsx": "af83130ae932f4dfa5662f68e88c7fb5",
-  "src/components/theme/table/columns/api-key-columns.tsx": "2759c298c1f1580f78b4ba6425af945c"
+  "src/components/theme/table/columns/api-key-columns.tsx": "edbd318b1d6e5bb2b4ca00a96579d693",
+  "src/components/theme/table/columns/cluster-columns.tsx": "9056a410ce5cf7b89329a9f7edeb0952",
+  "src/components/theme/table/columns/endpoint-columns.tsx": "431963c27e87fcd20cb5388b7487ee9a",
+  "src/components/theme/table/columns/engine-columns.tsx": "fb22227edb73fd5c74dd71af8739a637",
+  "src/components/theme/table/columns/image-registry-columns.tsx": "add22e1d4bb2198261cb439b422cb044",
+  "src/components/theme/table/columns/metadata-columns.tsx": "52eca0c7769dfc328d1ca6276be26a25",
+  "src/components/theme/table/columns/model-catalog-columns.tsx": "d10cb45be3ac82dc0412820672755eac",
+  "src/components/theme/table/columns/model-registry-columns.tsx": "1283ded45b9356adb451b0dd04589dd0",
+  "src/components/theme/table/columns/role-assignment-columns.tsx": "a54091b337396c7f4dc7446882a90465",
+  "src/components/theme/table/columns/role-columns.tsx": "7ac4a933c22d8d3525d7ad413e37d51a"
 }

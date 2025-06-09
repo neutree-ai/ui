@@ -2,12 +2,14 @@ import ModelRegistryType from "@/components/business/ModelRegistryType";
 import { Table } from "..";
 import ModelRegistryStatus from "@/components/business/ModelRegistryStatus";
 import type { ModelRegistryPhase } from "@/types";
+import { useTranslate } from "@refinedev/core";
 
 export const useModelRegistryColumns = () => {
+  const t = useTranslate();
   return {
     type: (
       <Table.Column
-        header={"Type"}
+        header={t("table.column.type")}
         accessorKey="spec.type"
         id="type"
         enableHiding
@@ -19,7 +21,7 @@ export const useModelRegistryColumns = () => {
     ),
     status: (
       <Table.Column
-        header={"Status"}
+        header={t("table.column.status")}
         accessorKey="status.phase"
         id="status"
         enableHiding

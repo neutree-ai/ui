@@ -5,12 +5,14 @@ import { ShowButton } from "../../buttons";
 import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointStatus from "@/components/business/EndpointStatus";
 import type { Endpoint, EndpointPhase } from "@/types";
+import { useTranslate } from "@refinedev/core";
 
 export const useEndpointColumns = () => {
+  const t = useTranslate();
   return {
     model: (
       <Table.Column
-        header={"Model"}
+        header={t("table.column.model")}
         accessorKey="status"
         id="model"
         enableHiding
@@ -22,7 +24,7 @@ export const useEndpointColumns = () => {
     ),
     engine: (
       <Table.Column
-        header={"Engine"}
+        header={t("table.column.engine")}
         accessorKey="spec.engine.engine"
         id="engine"
         enableHiding
@@ -33,7 +35,7 @@ export const useEndpointColumns = () => {
     ),
     status: (
       <Table.Column
-        header={"Status"}
+        header={t("table.column.status")}
         accessorKey="status.phase"
         id="status"
         enableHiding
@@ -46,7 +48,7 @@ export const useEndpointColumns = () => {
     ),
     cluster: (
       <Table.Column
-        header={"Cluster"}
+        header={t("table.column.cluster")}
         accessorKey="spec.cluster"
         id="cluster"
         enableHiding
@@ -72,7 +74,7 @@ export const useEndpointColumns = () => {
     ),
     task: (
       <Table.Column
-        header={"Task"}
+        header={t("table.column.task")}
         accessorKey="spec.model.task"
         id="task"
         enableHiding

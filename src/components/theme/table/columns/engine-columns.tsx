@@ -2,12 +2,14 @@ import type { EnginePhase, EngineVersion } from "@/types";
 import { Table } from "..";
 import EngineStatus from "@/components/business/EngineStatus";
 import EngineVersions from "@/components/business/EngineVersions";
+import { useTranslate } from "@refinedev/core";
 
 export const useEngineColumns = () => {
+  const t = useTranslate();
   return {
     versions: (
       <Table.Column
-        header={"Versions"}
+        header={t("table.column.versions")}
         accessorKey="spec.versions"
         id="version"
         enableHiding
@@ -22,7 +24,7 @@ export const useEngineColumns = () => {
     ),
     status: (
       <Table.Column
-        header={"Status"}
+        header={t("table.column.status")}
         accessorKey="status.phase"
         id="status"
         enableHiding

@@ -1,12 +1,14 @@
 import UserCell from "@/components/business/UserCell";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
+import { useTranslate } from "@refinedev/core";
 
 export const useRoleAssignmentColumns = () => {
+  const t = useTranslate();
   return {
     workspace: (
       <Table.Column
-        header={"Workspace"}
+        header={t("table.column.workspace")}
         accessorKey="spec.workspace"
         id="workspace"
         enableHiding
@@ -30,7 +32,7 @@ export const useRoleAssignmentColumns = () => {
     ),
     role: (
       <Table.Column
-        header={"Role"}
+        header={t("table.column.role")}
         accessorKey="spec.role"
         id="role"
         enableHiding
@@ -51,7 +53,7 @@ export const useRoleAssignmentColumns = () => {
     ),
     user: (
       <Table.Column
-        header={"User"}
+        header={t("table.column.user")}
         accessorKey="spec.user_id"
         id="user"
         enableHiding

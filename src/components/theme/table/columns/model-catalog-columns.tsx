@@ -3,12 +3,14 @@ import { Table } from "..";
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
 import { Trash2 } from "lucide-react";
+import { useTranslate } from "@refinedev/core";
 
 export const useModelCatalogColumns = () => {
+  const t = useTranslate();
   return {
     model: (
       <Table.Column
-        header={"Model"}
+        header={t("table.column.model")}
         accessorKey="spec.model.name"
         id="model"
         enableHiding
@@ -16,7 +18,7 @@ export const useModelCatalogColumns = () => {
     ),
     task: (
       <Table.Column
-        header={"Task"}
+        header={t("table.column.task")}
         accessorKey="spec.model.task"
         id="task"
         enableHiding
@@ -28,7 +30,7 @@ export const useModelCatalogColumns = () => {
     ),
     engine: (
       <Table.Column
-        header={"Engine"}
+        header={t("table.column.engine")}
         accessorKey="spec.engine.engine"
         id="engine"
         enableHiding
@@ -36,7 +38,7 @@ export const useModelCatalogColumns = () => {
     ),
     status: (
       <Table.Column
-        header={"Status"}
+        header={t("table.column.status")}
         accessorKey="status.phase"
         id="status"
         enableHiding
@@ -53,7 +55,7 @@ export const useModelCatalogColumns = () => {
         cell={({ row: { original } }) => (
           <Table.Actions>
             <Table.DeleteAction
-              title="Delete"
+              title={t("buttons.delete")}
               row={original}
               resource="model_catalogs"
               icon={<Trash2 size={16} />}

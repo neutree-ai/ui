@@ -3,12 +3,14 @@ import { Table } from "..";
 import type { ClusterPhase } from "@/types";
 import { ShowButton } from "../../buttons";
 import ClusterType from "@/components/business/ClusterType";
+import { useTranslate } from "@refinedev/core";
 
 export const useClusterColumns = () => {
+  const t = useTranslate();
   return {
     type: (
       <Table.Column
-        header={"Type"}
+        header={t("table.column.type")}
         accessorKey="spec.type"
         id="type"
         enableHiding
@@ -20,7 +22,7 @@ export const useClusterColumns = () => {
     ),
     image_registry: (
       <Table.Column
-        header={"Image Registry"}
+        header={t("table.column.imageRegistry")}
         accessorKey="spec.image_registry"
         id="registry"
         enableHiding
@@ -43,7 +45,7 @@ export const useClusterColumns = () => {
     ),
     status: (
       <Table.Column
-        header={"Status"}
+        header={t("table.column.status")}
         accessorKey="status.phase"
         id="status"
         enableHiding

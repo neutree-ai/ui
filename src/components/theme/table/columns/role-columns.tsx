@@ -1,12 +1,14 @@
 import { Edit, Lock, Trash2 } from "lucide-react";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
+import { useTranslate } from "@refinedev/core";
 
 export const useRoleColumns = () => {
+  const t = useTranslate();
   return {
     name: (
       <Table.Column
-        header={"Name"}
+        header={t("table.column.name")}
         accessorKey="metadata.name"
         id="name"
         enableHiding
@@ -30,13 +32,13 @@ export const useRoleColumns = () => {
     ),
     permissions: (
       <Table.Column
-        header={"Permissions"}
+        header={t("table.column.permissions")}
         accessorKey="spec.permissions"
         id="permissions"
         enableHiding
         cell={({ getValue }) => {
           const value = getValue() as unknown as string[];
-          return `${value.length} permissions`;
+          return t("table.column.permissionsCount", { count: value.length });
         }}
       />
     ),
@@ -52,13 +54,13 @@ export const useRoleColumns = () => {
           return (
             <Table.Actions>
               <Table.EditAction
-                title="Edit"
+                title={t("buttons.edit")}
                 row={original}
                 resource="roles"
                 icon={<Edit size={16} />}
               />
               <Table.DeleteAction
-                title="Delete"
+                title={t("buttons.delete")}
                 row={original}
                 resource="roles"
                 icon={<Trash2 size={16} />}

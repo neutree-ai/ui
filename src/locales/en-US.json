@@ -161,7 +161,19 @@
 			"name": "Name",
 			"workspace": "Workspace",
 			"creation_timestamp": "Created at",
-			"update_timestamp": "Updated at"
+			"update_timestamp": "Updated at",
+			"type": "Type",
+			"imageRegistry": "Image Registry",
+			"status": "Status",
+			"model": "Model",
+			"engine": "Engine",
+			"cluster": "Cluster",
+			"task": "Task",
+			"versions": "Versions",
+			"role": "Role",
+			"user": "User",
+			"permissions": "Permissions",
+			"permissionsCount": "{{count}} permissions"
 		}
 	},
 	"documentTitle": {
