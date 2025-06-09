@@ -274,6 +274,58 @@ export const useYamlImport = () => {
     [importFromYaml],
   );
 
+  const importFromUrl = useCallback(
+    async (url: string): Promise<ImportProgress> => {
+      try {
+        setIsImporting(true);
+
+        // Validate URL format
+        let normalizedUrl = url.trim();
+        if (
+          !normalizedUrl.startsWith("http://") &&
+          !normalizedUrl.startsWith("https://")
+        ) {
+          normalizedUrl = `https://${normalizedUrl}`;
+        }
+
+        const response = await fetch(normalizedUrl, {
+          method: "GET",
+          headers: {
+            Accept: "application/x-yaml, text/yaml, text/plain, */*",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch from URL: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        const content = await response.text();
+        return await importFromYaml(content);
+      } catch (error) {
+        console.error("Error fetching YAML from URL:", error);
+        setIsImporting(false);
+        return {
+          total: 0,
+          completed: 0,
+          results: [
+            {
+              resourceName: url,
+              resourceType: "url",
+              success: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to fetch from URL",
+            },
+          ],
+        };
+      }
+    },
+    [importFromYaml],
+  );
+
   const resetProgress = useCallback(() => {
     setProgress({
       total: 0,
@@ -287,6 +339,7 @@ export const useYamlImport = () => {
     isImporting,
     importFromYaml,
     importFromFile,
+    importFromUrl,
     resetProgress,
   };
 };

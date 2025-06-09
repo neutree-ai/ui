@@ -531,8 +531,11 @@
 		"yamlImport": {
 			"importYaml": "导入 YAML",
 			"title": "从 YAML 导入资源",
-			"description": "从 YAML 文件导入多个资源。支持 Kubernetes 风格的资源定义。",
+			"description": "从 YAML 文件或 URL 导入多个资源。支持 Kubernetes 风格的资源定义。",
 			"uploadYamlFile": "上传 YAML 文件",
+			"importFromUrl": "从 URL 导入",
+			"urlPlaceholder": "https://example.com/resources.yaml",
+			"fetch": "获取",
 			"or": "或",
 			"pasteYamlContent": "粘贴 YAML 内容",
 			"pasteYamlPlaceholder": "在此粘贴您的 YAML 内容...",

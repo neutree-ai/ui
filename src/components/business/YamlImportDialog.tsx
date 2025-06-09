@@ -32,10 +32,16 @@ export const YamlImportDialog = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [yamlContent, setYamlContent] = useState("");
+  const [yamlUrl, setYamlUrl] = useState("");
   const [showResults, setShowResults] = useState(false);
 
-  const { progress, isImporting, importFromYaml, resetProgress } =
-    useYamlImport();
+  const {
+    progress,
+    isImporting,
+    importFromYaml,
+    importFromUrl,
+    resetProgress,
+  } = useYamlImport();
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -60,8 +66,18 @@ export const YamlImportDialog = ({
     setShowResults(true);
   };
 
+  const handleUrlImport = async () => {
+    if (!yamlUrl.trim()) return;
+
+    setShowResults(false);
+    resetProgress();
+    const result = await importFromUrl(yamlUrl);
+    setShowResults(true);
+  };
+
   const resetDialog = () => {
     setYamlContent("");
+    setYamlUrl("");
     setShowResults(false);
     resetProgress();
   };
@@ -102,7 +118,7 @@ export const YamlImportDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto">
           {!showResults ? (
             <div className="space-y-6">
               {/* File Upload Section */}
@@ -119,6 +135,43 @@ export const YamlImportDialog = ({
                     className="flex-1"
                   />
                   <FileText className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    {t("components.yamlImport.or")}
+                  </span>
+                </div>
+              </div>
+
+              {/* URL Input Section */}
+              <div className="space-y-3">
+                <Label htmlFor="yaml-url" className="text-base font-medium">
+                  {t("components.yamlImport.importFromUrl")}
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    id="yaml-url"
+                    type="url"
+                    placeholder={t("components.yamlImport.urlPlaceholder")}
+                    value={yamlUrl}
+                    onChange={(e) => setYamlUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleUrlImport}
+                    disabled={!yamlUrl.trim() || isImporting}
+                    variant="outline"
+                  >
+                    {isImporting
+                      ? t("components.yamlImport.importing")
+                      : t("components.yamlImport.fetch")}
+                  </Button>
                 </div>
               </div>
 

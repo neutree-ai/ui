@@ -531,8 +531,11 @@
 		"yamlImport": {
 			"importYaml": "Import YAML",
 			"title": "Import Resources from YAML",
-			"description": "Import multiple resources from a YAML file. Supports Kubernetes-style resource definitions.",
+			"description": "Import multiple resources from a YAML file or URL. Supports Kubernetes-style resource definitions.",
 			"uploadYamlFile": "Upload YAML File",
+			"importFromUrl": "Import from URL",
+			"urlPlaceholder": "https://example.com/resources.yaml",
+			"fetch": "Fetch",
 			"or": "Or",
 			"pasteYamlContent": "Paste YAML Content",
 			"pasteYamlPlaceholder": "Paste your YAML content here...",
