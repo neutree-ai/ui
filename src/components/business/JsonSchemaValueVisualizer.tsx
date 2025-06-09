@@ -88,9 +88,17 @@ const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
 
   const formatValue = () => {
     if (value === undefined)
-      return <span className="italic text-muted-foreground">{t("components.jsonSchemaValueVisualizer.undefined")}</span>;
+      return (
+        <span className="italic text-muted-foreground">
+          {t("components.jsonSchemaValueVisualizer.undefined")}
+        </span>
+      );
     if (value === null)
-      return <span className="italic text-muted-foreground">{t("components.jsonSchemaValueVisualizer.null")}</span>;
+      return (
+        <span className="italic text-muted-foreground">
+          {t("components.jsonSchemaValueVisualizer.null")}
+        </span>
+      );
 
     switch (actualType) {
       case "string":
@@ -126,10 +134,14 @@ const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
           </TooltipTrigger>
           <TooltipContent>
             <p>
-              {t("components.jsonSchemaValueVisualizer.typeMismatch", "type miss match: expect {{expectedType}}, actual {{actualType}}", {
-                expectedType: type,
-                actualType: actualType
-              })}
+              {t(
+                "components.jsonSchemaValueVisualizer.typeMismatch",
+                "type miss match: expect {{expectedType}}, actual {{actualType}}",
+                {
+                  expectedType: type,
+                  actualType: actualType,
+                },
+              )}
             </p>
           </TooltipContent>
         </Tooltip>
@@ -261,7 +273,7 @@ const JSONSchemaValueVisualizer = ({
   value,
 }: JSONSchemaValueVisualizerProps) => {
   const { t } = useTranslation();
-  
+
   return (
     <div className="w-full bg-background text-foreground">
       <PropertyNode

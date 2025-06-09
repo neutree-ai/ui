@@ -159,10 +159,13 @@ interface JSONSchemaVisualizerProps {
 
 const JSONSchemaVisualizer = ({ schema }: JSONSchemaVisualizerProps) => {
   const { t } = useTranslation();
-  
+
   return (
     <div className="w-full bg-background text-foreground">
-      <PropertyNode name={schema.title || t("components.jsonSchemaVisualizer.root")} schema={schema} />
+      <PropertyNode
+        name={schema.title || t("components.jsonSchemaVisualizer.root")}
+        schema={schema}
+      />
     </div>
   );
 };
