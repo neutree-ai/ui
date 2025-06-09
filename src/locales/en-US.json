@@ -473,6 +473,19 @@
 		"title": "Developer"
 	},
 	"components": {
+		"ui": {
+			"combobox": {
+				"select": "Select"
+			},
+			"dialog": {
+				"close": "Close"
+			},
+			"sidebar": {
+				"title": "Sidebar",
+				"description": "Displays the mobile sidebar.",
+				"toggle": "Toggle Sidebar"
+			}
+		},
 		"yamlImport": {
 			"importYaml": "Import YAML",
 			"title": "Import Resources from YAML",

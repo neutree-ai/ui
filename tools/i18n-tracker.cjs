@@ -13,7 +13,7 @@ const { execSync } = require('node:child_process');
 const crypto = require('node:crypto');
 
 const HASH_FILE = '.i18n-tracker.lock';
-const FILE_REGEX = /\.(tsx?)$/;   // .ts .tsx
+const FILE_REGEX = /\.(tsx?)$/;   // .ts .tsx (but exclude .d.ts)
 const ROOT = process.cwd();
 
 /* ---------- helpers ---------- */
@@ -40,6 +40,16 @@ if (process.argv[2] === 'update' || process.argv[2] === '-u' || process.argv[2] 
   if (!fs.existsSync(abs)) {
     console.error(`File not found: ${rel}`);
     process.exit(1);
+  }
+  // Skip .d.ts files
+  if (rel.endsWith('.d.ts')) {
+    console.log(`Skipping .d.ts file: ${rel}`);
+    process.exit(0);
+  }
+  // Check if file matches our regex pattern
+  if (!FILE_REGEX.test(rel)) {
+    console.log(`Skipping non-TypeScript file: ${rel}`);
+    process.exit(0);
   }
   const hashes = loadHashes();
   hashes[rel] = md5Of(abs);
@@ -93,7 +103,9 @@ function walk(dir) {
       if (item === 'node_modules' || item.startsWith('.')) continue;
       const stat = fs.statSync(p);
       if (stat.isDirectory()) stack.push(p);
-      else if (stat.isFile() && FILE_REGEX.test(item)) out.push(path.relative(ROOT, p));
+      else if (stat.isFile() && FILE_REGEX.test(item) && !item.endsWith('.d.ts')) {
+        out.push(path.relative(ROOT, p));
+      }
     }
   }
   return out;
@@ -102,7 +114,8 @@ function walk(dir) {
 function gitFiles(depth) {
   try {
     const diff = execSync(`git diff --name-only HEAD~${depth}`, { encoding: 'utf8' });
-    return diff.split('\n').filter(f => FILE_REGEX.test(f.trim()));
+    return diff.split('\n')
+      .filter(f => f.trim() && FILE_REGEX.test(f.trim()) && !f.trim().endsWith('.d.ts'));
   } catch (e) {
     console.error(`Git command failed: ${e.message}`);
     process.exit(1);
@@ -111,8 +124,25 @@ function gitFiles(depth) {
 
 const targets = gitDepth ? gitFiles(gitDepth) : walk(ROOT);
 
-/* ---------- compare hashes ---------- */
+/* ---------- cleanup lock file (gc) ---------- */
 const oldMap = loadHashes();
+let hasChanges = false;
+
+// Remove entries for files that no longer exist
+for (const rel in oldMap) {
+  const abs = path.join(ROOT, rel);
+  if (!fs.existsSync(abs)) {
+    delete oldMap[rel];
+    hasChanges = true;
+  }
+}
+
+// Save updated hashes if we removed any entries
+if (hasChanges) {
+  saveHashes(oldMap);
+}
+
+/* ---------- compare hashes ---------- */
 const pending = [];
 
 for (const rel of targets) {

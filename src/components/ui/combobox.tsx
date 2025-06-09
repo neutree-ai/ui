@@ -1,4 +1,5 @@
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
       value,
       onChange,
       options,
-      placeholder = "Select",
+      placeholder,
       allowUnselect = true,
       shouldFilter,
       loading,
@@ -50,6 +51,9 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
     ref,
   ) => {
     const [open, setOpen] = useState(false);
+    const { t } = useTranslation();
+    const defaultPlaceholder =
+      placeholder || t("components.ui.combobox.select");
 
     return (
       <Popover open={open} onOpenChange={setOpen}>
@@ -68,7 +72,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
             >
               {value
                 ? options.find((item) => item.value === value)?.label
-                : placeholder}
+                : defaultPlaceholder}
               <ChevronsUpDown className="opacity-50" />
             </Button>
           </FormControl>
@@ -80,7 +84,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
             shouldFilter={shouldFilter}
           >
             <CommandInput
-              placeholder={placeholder}
+              placeholder={defaultPlaceholder}
               className="h-9"
               onValueChange={onSearchChange}
             />

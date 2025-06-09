@@ -473,6 +473,19 @@
 		"title": "开发者"
 	},
 	"components": {
+		"ui": {
+			"combobox": {
+				"select": "选择"
+			},
+			"dialog": {
+				"close": "关闭"
+			},
+			"sidebar": {
+				"title": "侧边栏",
+				"description": "显示移动端侧边栏。",
+				"toggle": "切换侧边栏"
+			}
+		},
 		"yamlImport": {
 			"importYaml": "导入 YAML",
 			"title": "从 YAML 导入资源",
