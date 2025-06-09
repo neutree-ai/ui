@@ -221,7 +221,9 @@ export function Table<
                               columnDef?.filter &&
                               columnDef.filter({
                                 column: header.column,
-                                title: `${columnDef.header} Filter`,
+                                title: t("table.filter", {
+                                  column: columnDef.header,
+                                }),
                               })}
                           </div>
                         </TableHead>
@@ -265,7 +267,7 @@ export function Table<
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    {t("todo", "No results")}.
+                    {t("table.noResults")}.
                   </TableCell>
                 </TableRow>
               )}

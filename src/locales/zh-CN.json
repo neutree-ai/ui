@@ -127,6 +127,18 @@
 		"actions": "操作",
 		"columns": "列",
 		"toggleColumns": "切换列",
+		"noResults": "无结果",
+		"filter": "{{column}} 筛选",
+		"selectAll": "全选",
+		"bulkActions": "批量操作",
+		"pagination": {
+			"rowsPerPage": "每页行数",
+			"page": "第 {{current}} 页，共 {{total}} 页",
+			"goToFirstPage": "跳转到第一页",
+			"goToPreviousPage": "跳转到上一页",
+			"goToNextPage": "跳转到下一页",
+			"goToLastPage": "跳转到最后一页"
+		},
 		"column": {
 			"name": "名称",
 			"workspace": "工作空间",

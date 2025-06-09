@@ -40,7 +40,7 @@ export const CheckAll: FC<CheckAllProps> = forwardRef<
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         className="translate-y-[2px]"
-        aria-label={t("Select all")}
+        aria-label={t("table.selectAll")}
       />
       {children ||
         (Array.isArray(options) && options.length && (
@@ -61,7 +61,7 @@ export const CheckAll: FC<CheckAllProps> = forwardRef<
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuLabel>{t("Bulk Actions")}</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("table.bulkActions")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {!children && Array.isArray(options) && options?.length > 0
                 ? options.map((option, key) => (

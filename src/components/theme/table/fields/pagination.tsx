@@ -33,7 +33,9 @@ export const Pagination = <TData extends BaseRecord = BaseRecord>({
       </div>
       <div className="flex relative flex-col-reverse gap-y-4 sm:gap-y-0 sm:flex-row items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">
+            {t("table.pagination.rowsPerPage")}
+          </p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
@@ -53,8 +55,10 @@ export const Pagination = <TData extends BaseRecord = BaseRecord>({
           </Select>
         </div>
         <div className="flex w-fit items-center justify-center text-sm font-medium">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          {t("table.pagination.page", {
+            current: table.getState().pagination.pageIndex + 1,
+            total: table.getPageCount(),
+          })}
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -63,7 +67,9 @@ export const Pagination = <TData extends BaseRecord = BaseRecord>({
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
           >
-            <span className="sr-only">Go to first page</span>
+            <span className="sr-only">
+              {t("table.pagination.goToFirstPage")}
+            </span>
             <DoubleArrowLeftIcon className="h-4 w-4" />
           </Button>
           <Button
@@ -72,7 +78,9 @@ export const Pagination = <TData extends BaseRecord = BaseRecord>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            <span className="sr-only">{t("Go to previous page")}</span>
+            <span className="sr-only">
+              {t("table.pagination.goToPreviousPage")}
+            </span>
             <ChevronLeftIcon className="h-4 w-4" />
           </Button>
           <Button
@@ -81,7 +89,9 @@ export const Pagination = <TData extends BaseRecord = BaseRecord>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            <span className="sr-only">{t("Go to next page")}</span>
+            <span className="sr-only">
+              {t("table.pagination.goToNextPage")}
+            </span>
             <ChevronRightIcon className="h-4 w-4" />
           </Button>
           <Button
@@ -90,7 +100,9 @@ export const Pagination = <TData extends BaseRecord = BaseRecord>({
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
           >
-            <span className="sr-only">{t("Go to last page")}</span>
+            <span className="sr-only">
+              {t("table.pagination.goToLastPage")}
+            </span>
             <DoubleArrowRightIcon className="h-4 w-4" />
           </Button>
         </div>
