@@ -66,7 +66,10 @@ export const YamlImportDialog = ({
     resetProgress();
   };
 
-  const successCount = progress.results.filter((r) => r.success).length;
+  const successCount = progress.results.filter(
+    (r) => r.success && !r.skipped,
+  ).length;
+  const skippedCount = progress.results.filter((r) => r.skipped).length;
   const errorCount = progress.results.filter((r) => !r.success).length;
   const progressPercentage =
     progress.total > 0
@@ -187,6 +190,15 @@ export const YamlImportDialog = ({
                     <CheckCircle className="mr-1 h-3 w-3" />
                     {successCount} {t("components.yamlImport.success")}
                   </Badge>
+                  {skippedCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-100 text-gray-800"
+                    >
+                      <CheckCircle className="mr-1 h-3 w-3" />
+                      {skippedCount} {t("components.yamlImport.skipped")}
+                    </Badge>
+                  )}
                   {errorCount > 0 && (
                     <Badge
                       variant="secondary"
@@ -206,21 +218,25 @@ export const YamlImportDialog = ({
                       key={index}
                       className={cn(
                         "p-3 rounded-lg border",
-                        result.success
+                        result.success && !result.skipped
                           ? "bg-green-50 border-green-200"
-                          : "bg-red-50 border-red-200",
+                          : result.skipped
+                            ? "bg-gray-50 border-gray-200"
+                            : "bg-red-50 border-red-200",
                       )}
                     >
                       <div className="flex items-start gap-3">
-                        {result.success ? (
+                        {result.success && !result.skipped ? (
                           <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                        ) : result.skipped ? (
+                          <CheckCircle className="h-5 w-5 text-gray-600 mt-0.5" />
                         ) : (
                           <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 text-secondary">
                             <span className="font-medium">
-                              {result.resourceType}
+                              {t(`${result.resourceType}.title`)}
                             </span>
                             <span className="text-sm text-muted-foreground">
                               {result.resourceName}
@@ -234,9 +250,14 @@ export const YamlImportDialog = ({
                               {result.error}
                             </div>
                           )}
-                          {result.success && (
+                          {result.success && !result.skipped && (
                             <div className="text-sm text-green-700">
                               {t("components.yamlImport.successfullyCreated")}
+                            </div>
+                          )}
+                          {result.skipped && (
+                            <div className="text-sm text-gray-500">
+                              {t("components.yamlImport.skippedExisting")}
                             </div>
                           )}
                         </div>

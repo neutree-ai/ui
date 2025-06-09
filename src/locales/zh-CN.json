@@ -542,8 +542,10 @@
 			"importResults": "导入结果",
 			"success": "成功",
 			"error": "错误",
+			"skipped": "跳过",
 			"errorLabel": "错误",
 			"successfullyCreated": "成功创建",
+			"skippedExisting": "跳过（已存在）",
 			"importMore": "导入更多",
 			"close": "关闭"
 		},

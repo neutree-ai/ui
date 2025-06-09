@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import * as yaml from "js-yaml";
-import { useCreate } from "@refinedev/core";
+import { useCreate, useDataProvider } from "@refinedev/core";
 import { useWorkspace } from "@/components/theme/hooks";
 import type { Metadata } from "@/types";
 
@@ -15,6 +15,7 @@ interface ImportResult {
   resourceName: string;
   resourceType: string;
   success: boolean;
+  skipped?: boolean;
   error?: string;
 }
 
@@ -35,6 +36,33 @@ export const useYamlImport = () => {
 
   const { current: currentWorkspace } = useWorkspace();
   const { mutateAsync: createResource } = useCreate();
+  const dataProvider = useDataProvider();
+
+  // Check if a resource already exists
+  const checkResourceExists = useCallback(
+    async (
+      resourceType: string,
+      resourceName: string,
+      workspace: string,
+    ): Promise<boolean> => {
+      try {
+        const result = await dataProvider().getOne({
+          resource: resourceType,
+          id: resourceName,
+          meta: {
+            workspace,
+            idColumnName: "metadata->name",
+            workspaced: true,
+          },
+        });
+        return !!result.data;
+      } catch (error) {
+        // If getOne throws an error, it likely means the resource doesn't exist
+        return false;
+      }
+    },
+    [dataProvider],
+  );
 
   // Auto-generate resource type from kind using naming convention
   const getResourceType = useCallback((kind: string): string => {
@@ -135,30 +163,49 @@ export const useYamlImport = () => {
           setProgress({ ...newProgress });
 
           try {
-            const transformedResource = transformResourceForAPI(
-              resource,
-              resourceType,
-            );
-
             // Use workspace from resource metadata if available
             const workspaceForMeta =
               resource.metadata.workspace || currentWorkspace;
 
-            await createResource({
-              resource: resourceType,
-              values: transformedResource,
-              meta: {
-                workspace: workspaceForMeta,
-                idColumnName: "metadata->name",
-                workspaced: true,
-              },
-            });
+            // Check if resource already exists
+            const resourceExists = await checkResourceExists(
+              resourceType,
+              resource.metadata.name,
+              workspaceForMeta,
+            );
 
-            newProgress.results.push({
-              resourceName: resource.metadata.name,
-              resourceType: resourceType,
-              success: true,
-            });
+            if (resourceExists) {
+              // Resource already exists, skip it
+              newProgress.results.push({
+                resourceName: resource.metadata.name,
+                resourceType: resourceType,
+                success: true,
+                skipped: true,
+              });
+            } else {
+              // Resource doesn't exist, create it
+              const transformedResource = transformResourceForAPI(
+                resource,
+                resourceType,
+              );
+
+              await createResource({
+                resource: resourceType,
+                values: transformedResource,
+                meta: {
+                  workspace: workspaceForMeta,
+                  idColumnName: "metadata->name",
+                  workspaced: true,
+                },
+              });
+
+              newProgress.results.push({
+                resourceName: resource.metadata.name,
+                resourceType: resourceType,
+                success: true,
+                skipped: false,
+              });
+            }
           } catch (error) {
             console.error(
               `Error creating ${resourceType} "${resource.metadata.name}":`,
@@ -169,6 +216,7 @@ export const useYamlImport = () => {
               resourceName: resource.metadata.name,
               resourceType: resourceType,
               success: false,
+              skipped: false,
               error:
                 typeof error === "object" &&
                 error !== null &&
@@ -194,6 +242,7 @@ export const useYamlImport = () => {
       parseYamlContent,
       getResourceType,
       transformResourceForAPI,
+      checkResourceExists,
       createResource,
       currentWorkspace,
     ],

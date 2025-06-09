@@ -542,8 +542,10 @@
 			"importResults": "Import Results",
 			"success": "Success",
 			"error": "Error",
+			"skipped": "Skipped",
 			"errorLabel": "Error",
 			"successfullyCreated": "Successfully created",
+			"skippedExisting": "Skipped (already exists)",
 			"importMore": "Import More",
 			"close": "Close"
 		},
