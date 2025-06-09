@@ -121,6 +121,15 @@
 		"language": "Language",
 		"more": "More"
 	},
+	"accessibility": {
+		"openMenu": "Open menu"
+	},
+	"dialogs": {
+		"delete": {
+			"title": "Are you sure?",
+			"description": "This action cannot be undone."
+		}
+	},
 	"warnWhenUnsavedChanges": "Are you sure you want to leave? You have unsaved changes.",
 	"notifications": {
 		"success": "Successful",
@@ -172,6 +181,7 @@
 			"versions": "Versions",
 			"role": "Role",
 			"user": "User",
+			"email": "Email",
 			"permissions": "Permissions",
 			"permissionsCount": "{{count}} permissions"
 		}
@@ -550,7 +560,18 @@
 			"successfullyCreated": "Successfully created",
 			"skippedExisting": "Skipped (already exists)",
 			"importMore": "Import More",
-			"close": "Close"
+			"close": "Close",
+			"errors": {
+				"processingYamlContent": "Error processing YAML content",
+				"invalidResourceStructure": "Invalid resource structure",
+				"creatingResource": "Error creating {{resourceType}} \"{{resourceName}}\"",
+				"duringYamlImport": "Error during YAML import",
+				"readingFile": "Error reading file",
+				"failedToReadFile": "Failed to read file",
+				"fetchingYamlFromUrl": "Error fetching YAML from URL",
+				"failedToFetchFromUrl": "Failed to fetch from URL: {{status}} {{statusText}}",
+				"unknownError": "Unknown error"
+			}
 		},
 		"variablesInput": {
 			"key": "Key",

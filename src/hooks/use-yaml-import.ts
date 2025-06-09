@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import * as yaml from "js-yaml";
 import { useCreate, useDataProvider } from "@refinedev/core";
 import { useWorkspace } from "@/components/theme/hooks";
+import { useTranslation } from "@/lib/i18n";
 import type { Metadata } from "@/types";
 
 interface YamlResource {
@@ -27,6 +28,7 @@ interface ImportProgress {
 }
 
 export const useYamlImport = () => {
+  const { t } = useTranslation();
   const [progress, setProgress] = useState<ImportProgress>({
     total: 0,
     completed: 0,
@@ -102,27 +104,33 @@ export const useYamlImport = () => {
     [currentWorkspace],
   );
 
-  const parseYamlContent = useCallback((content: string): YamlResource[] => {
-    const resources: YamlResource[] = [];
+  const parseYamlContent = useCallback(
+    (content: string): YamlResource[] => {
+      const resources: YamlResource[] = [];
 
-    try {
-      // Use yaml.loadAll to handle multi-document YAML automatically
-      yaml.loadAll(content, (doc) => {
-        if (
-          doc &&
-          typeof doc === "object" &&
-          "apiVersion" in doc &&
-          "kind" in doc
-        ) {
-          resources.push(doc as YamlResource);
-        }
-      });
-    } catch (error) {
-      console.error("Error processing YAML content:", error);
-    }
+      try {
+        // Use yaml.loadAll to handle multi-document YAML automatically
+        yaml.loadAll(content, (doc) => {
+          if (
+            doc &&
+            typeof doc === "object" &&
+            "apiVersion" in doc &&
+            "kind" in doc
+          ) {
+            resources.push(doc as YamlResource);
+          }
+        });
+      } catch (error) {
+        console.error(
+          t("components.yamlImport.errors.processingYamlContent"),
+          error,
+        );
+      }
 
-    return resources;
-  }, []);
+      return resources;
+    },
+    [t],
+  );
 
   const importFromYaml = useCallback(
     async (yamlContent: string): Promise<ImportProgress> => {
@@ -145,7 +153,10 @@ export const useYamlImport = () => {
             !resource.kind ||
             !resource.metadata?.name
           ) {
-            console.warn("Invalid resource structure:", resource);
+            console.warn(
+              t("components.yamlImport.errors.invalidResourceStructure"),
+              resource,
+            );
             return false;
           }
           // Since we now auto-generate resource types, all valid structures are supported
@@ -208,7 +219,10 @@ export const useYamlImport = () => {
             }
           } catch (error) {
             console.error(
-              `Error creating ${resourceType} "${resource.metadata.name}":`,
+              t("components.yamlImport.errors.creatingResource", {
+                resourceType,
+                resourceName: resource.metadata.name,
+              }),
               error,
             );
 
@@ -222,7 +236,7 @@ export const useYamlImport = () => {
                 error !== null &&
                 "message" in error
                   ? String(error.message)
-                  : "Unknown error",
+                  : t("components.yamlImport.errors.unknownError"),
             });
           }
 
@@ -231,7 +245,10 @@ export const useYamlImport = () => {
           setProgress({ ...newProgress });
         }
       } catch (error) {
-        console.error("Error during YAML import:", error);
+        console.error(
+          t("components.yamlImport.errors.duringYamlImport"),
+          error,
+        );
       } finally {
         setIsImporting(false);
       }
@@ -245,6 +262,7 @@ export const useYamlImport = () => {
       checkResourceExists,
       createResource,
       currentWorkspace,
+      t,
     ],
   );
 
@@ -254,7 +272,7 @@ export const useYamlImport = () => {
         const content = await file.text();
         return await importFromYaml(content);
       } catch (error) {
-        console.error("Error reading file:", error);
+        console.error(t("components.yamlImport.errors.readingFile"), error);
         setIsImporting(false);
         return {
           total: 0,
@@ -265,13 +283,15 @@ export const useYamlImport = () => {
               resourceType: "file",
               success: false,
               error:
-                error instanceof Error ? error.message : "Failed to read file",
+                error instanceof Error
+                  ? error.message
+                  : t("components.yamlImport.errors.failedToReadFile"),
             },
           ],
         };
       }
     },
-    [importFromYaml],
+    [importFromYaml, t],
   );
 
   const importFromUrl = useCallback(
@@ -297,14 +317,20 @@ export const useYamlImport = () => {
 
         if (!response.ok) {
           throw new Error(
-            `Failed to fetch from URL: ${response.status} ${response.statusText}`,
+            t("components.yamlImport.errors.failedToFetchFromUrl", {
+              status: response.status,
+              statusText: response.statusText,
+            }),
           );
         }
 
         const content = await response.text();
         return await importFromYaml(content);
       } catch (error) {
-        console.error("Error fetching YAML from URL:", error);
+        console.error(
+          t("components.yamlImport.errors.fetchingYamlFromUrl"),
+          error,
+        );
         setIsImporting(false);
         return {
           total: 0,
@@ -317,13 +343,13 @@ export const useYamlImport = () => {
               error:
                 error instanceof Error
                   ? error.message
-                  : "Failed to fetch from URL",
+                  : t("components.yamlImport.errors.failedToFetchFromUrl"),
             },
           ],
         };
       }
     },
-    [importFromYaml],
+    [importFromYaml, t],
   );
 
   const resetProgress = useCallback(() => {

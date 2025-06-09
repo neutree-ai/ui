@@ -1,6 +1,6 @@
 import { ConfirmDialog } from "@/components/theme/components/confirm";
 import { useDeleteHelper, useOnBack } from "@/components/theme/hooks";
-import { useTranslate } from "@refinedev/core";
+import { useTranslation } from "@/lib/i18n";
 import type React from "react";
 import {
   type PropsWithChildren,
@@ -29,7 +29,7 @@ export function DeleteActionModal(props: DeleteContextType) {
     props.data?.row?.metadata.name,
   );
 
-  const translate = useTranslate();
+  const { t } = useTranslation();
 
   const onDelete = useCallback(() => {
     if (can) {
@@ -63,10 +63,10 @@ export function DeleteActionModal(props: DeleteContextType) {
     <ConfirmDialog
       open={can && props?.data?.toogle}
       loading={isLoading}
-      title={translate("todo", "Are you sure?")}
-      description={translate("todo", "This action cannot be undone.")}
-      okText={translate("todo", "Delete")}
-      cancelText={translate("todo", "Cancel")}
+      title={t("dialogs.delete.title")}
+      description={t("dialogs.delete.description")}
+      okText={t("buttons.delete")}
+      cancelText={t("buttons.cancel")}
       okButtonVariant={"destructive"}
       onOpenChange={() => {
         if (!isLoading) {

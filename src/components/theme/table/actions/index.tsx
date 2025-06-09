@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/theme/components/link";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { useTranslation } from "@/lib/i18n";
 import type { FC, PropsWithChildren, ReactNode } from "react";
 
 interface RowActionsProps {
@@ -20,7 +21,7 @@ export type RowActionProps = PropsWithChildren & {
   className?: string;
   disabled?: boolean;
   icon?: ReactNode;
-  onClick?: (event: any) => void;
+  onClick?: (event: React.MouseEvent) => void;
 };
 
 export const RowAction: FC<RowActionProps> = (props) => {
@@ -50,12 +51,14 @@ export const RowAction: FC<RowActionProps> = (props) => {
 RowAction.displayName = "RowAction";
 
 export function RowActions({ children }: RowActionsProps) {
+  const { t } = useTranslation();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <DotsHorizontalIcon className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
+          <span className="sr-only">{t("accessibility.openMenu")}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">

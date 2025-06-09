@@ -121,6 +121,15 @@
 		"language": "语言",
 		"more": "更多"
 	},
+	"accessibility": {
+		"openMenu": "打开菜单"
+	},
+	"dialogs": {
+		"delete": {
+			"title": "您确定吗？",
+			"description": "此操作无法撤销。"
+		}
+	},
 	"warnWhenUnsavedChanges": "您确定要离开吗？您有未保存的更改。",
 	"notifications": {
 		"success": "成功",
@@ -172,6 +181,7 @@
 			"versions": "版本",
 			"role": "角色",
 			"user": "用户",
+			"email": "邮箱",
 			"permissions": "权限",
 			"permissionsCount": "{{count}} 个权限"
 		}
@@ -550,7 +560,18 @@
 			"successfullyCreated": "成功创建",
 			"skippedExisting": "跳过（已存在）",
 			"importMore": "导入更多",
-			"close": "关闭"
+			"close": "关闭",
+			"errors": {
+				"processingYamlContent": "处理 YAML 内容时出错",
+				"invalidResourceStructure": "资源结构无效",
+				"creatingResource": "创建 {{resourceType}} \"{{resourceName}}\" 时出错",
+				"duringYamlImport": "YAML 导入过程中出错",
+				"readingFile": "读取文件时出错",
+				"failedToReadFile": "读取文件失败",
+				"fetchingYamlFromUrl": "从 URL 获取 YAML 时出错",
+				"failedToFetchFromUrl": "从 URL 获取失败: {{status}} {{statusText}}",
+				"unknownError": "未知错误"
+			}
 		},
 		"variablesInput": {
 			"key": "键",

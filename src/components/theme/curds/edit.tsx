@@ -40,10 +40,10 @@ export const EditPage: FC<EditProps> = ({
         title={
           title ??
           translate(
-            `${identifier}.titles.List`,
-            `Edit ${getUserFriendlyName(
+            `${identifier}.titles.edit`,
+            `${translate("actions.edit")} ${getUserFriendlyName(
               _resource?.meta?.label ?? identifier,
-              "plural",
+              "singular",
             )}`,
           )
         }

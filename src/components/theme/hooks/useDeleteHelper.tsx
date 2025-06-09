@@ -57,7 +57,7 @@ export const useDeleteHelper = (
     if (data?.reason) {
       return data.reason;
     }
-    return translate("You don't have permission to access");
+    return translate("notAccessTitle");
   };
 
   const { setWarnWhen } = useWarnAboutChange();
