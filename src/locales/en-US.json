@@ -609,6 +609,17 @@
 				"off": "Off"
 			},
 			"defaultPanelTitle": "Grafana Panel {{id}}"
+		},
+		"jsonSchemaValueVisualizer": {
+			"undefined": "undefined",
+			"null": "null",
+			"typeMismatch": "type miss match: expect {{expectedType}}, actual {{actualType}}",
+			"noValue": "no value",
+			"root": "Root"
+		},
+		"jsonSchemaVisualizer": {
+			"required": "required",
+			"root": "Root"
 		}
 	},
 	"status": {

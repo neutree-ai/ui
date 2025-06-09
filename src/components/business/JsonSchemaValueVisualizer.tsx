@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslation } from "@/lib/i18n";
 
 interface SchemaTypeIconProps {
   type: string;
@@ -70,6 +71,7 @@ interface ValueDisplayProps {
 }
 
 const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
+  const { t } = useTranslation();
   const getActualType = (val: any) => {
     if (val === null) return "null";
     if (Array.isArray(val)) return "array";
@@ -86,9 +88,9 @@ const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
 
   const formatValue = () => {
     if (value === undefined)
-      return <span className="italic text-muted-foreground">undefined</span>;
+      return <span className="italic text-muted-foreground">{t("components.jsonSchemaValueVisualizer.undefined")}</span>;
     if (value === null)
-      return <span className="italic text-muted-foreground">null</span>;
+      return <span className="italic text-muted-foreground">{t("components.jsonSchemaValueVisualizer.null")}</span>;
 
     switch (actualType) {
       case "string":
@@ -124,7 +126,10 @@ const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
           </TooltipTrigger>
           <TooltipContent>
             <p>
-              type miss match: expect {type}, actual {actualType}
+              {t("components.jsonSchemaValueVisualizer.typeMismatch", "type miss match: expect {{expectedType}}, actual {{actualType}}", {
+                expectedType: type,
+                actualType: actualType
+              })}
             </p>
           </TooltipContent>
         </Tooltip>
@@ -150,6 +155,7 @@ const PropertyNode = ({
   path = "",
   depth = 0,
 }: PropertyNodeProps) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(depth < 2);
 
   const hasChildren =
@@ -203,7 +209,7 @@ const PropertyNode = ({
             <ValueDisplay value={value} type={schema.type} />
           ) : (
             <span className="text-muted-foreground italic text-sm">
-              no value
+              {t("components.jsonSchemaValueVisualizer.noValue")}
             </span>
           )}
         </div>
@@ -254,10 +260,12 @@ const JSONSchemaValueVisualizer = ({
   schema,
   value,
 }: JSONSchemaValueVisualizerProps) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="w-full bg-background text-foreground">
       <PropertyNode
-        name={schema.title || "Root"}
+        name={schema.title || t("components.jsonSchemaValueVisualizer.root")}
         schema={schema}
         value={value}
       />

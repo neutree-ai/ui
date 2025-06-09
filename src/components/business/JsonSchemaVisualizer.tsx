@@ -11,6 +11,7 @@ import {
   Type,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/lib/i18n";
 
 // Type-safe icons mapping
 const SchemaTypeIcon = ({ type }: { type: string }) => {
@@ -49,6 +50,7 @@ const PropertyNode = ({
   required = false,
   depth = 0,
 }: PropertyNodeProps) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(depth < 2);
   const hasChildren =
     (schema.type === "object" && schema.properties) ||
@@ -111,7 +113,7 @@ const PropertyNode = ({
 
         {required && (
           <Badge variant="destructive" className="ml-2 text-xs">
-            required
+            {t("components.jsonSchemaVisualizer.required")}
           </Badge>
         )}
 
@@ -156,9 +158,11 @@ interface JSONSchemaVisualizerProps {
 }
 
 const JSONSchemaVisualizer = ({ schema }: JSONSchemaVisualizerProps) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="w-full bg-background text-foreground">
-      <PropertyNode name={schema.title || "Root"} schema={schema} />
+      <PropertyNode name={schema.title || t("components.jsonSchemaVisualizer.root")} schema={schema} />
     </div>
   );
 };

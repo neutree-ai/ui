@@ -609,6 +609,17 @@
 				"off": "关闭"
 			},
 			"defaultPanelTitle": "Grafana 面板 {{id}}"
+		},
+		"jsonSchemaValueVisualizer": {
+			"undefined": "未定义",
+			"null": "空值",
+			"typeMismatch": "类型不匹配：期望 {{expectedType}}，实际 {{actualType}}",
+			"noValue": "无值",
+			"root": "根节点"
+		},
+		"jsonSchemaVisualizer": {
+			"required": "必填",
+			"root": "根节点"
 		}
 	},
 	"status": {
