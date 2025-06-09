@@ -100,7 +100,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="relative my-4">
               <Separator className="my-4">
                 <span className="text-[hsl(var(--muted-foreground))] px-2">
-                  {translate("pages.login.Separator", "or")}
+                  {translate("pages.login.divider", "or")}
                 </span>
               </Separator>
             </div>
@@ -146,7 +146,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={translate(
+                    "pages.login.fields.emailPlaceholder",
+                    "you@example.com",
+                  )}
                   required
                   className="h-10"
                   autoComplete="email"
@@ -160,7 +163,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={translate(
+                    "pages.login.fields.passwordPlaceholder",
+                    "••••••••",
+                  )}
                   required
                   className="h-10"
                   autoComplete="current-password"
@@ -196,7 +202,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 disabled={isLoading}
               >
                 {isLoading
-                  ? "Loading..."
+                  ? translate("pages.login.buttons.loading", "Loading...")
                   : translate("pages.login.signin", "Sign in")}
               </Button>
             </div>

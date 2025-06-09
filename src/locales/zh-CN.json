@@ -12,7 +12,9 @@
 			"divider": "或",
 			"fields": {
 				"email": "邮箱",
-				"password": "密码"
+				"password": "密码",
+				"emailPlaceholder": "你的邮箱@example.com",
+				"passwordPlaceholder": "••••••••"
 			},
 			"errors": {
 				"validEmail": "无效的邮箱地址",
@@ -23,27 +25,36 @@
 				"submit": "登录",
 				"forgotPassword": "忘记密码？",
 				"noAccount": "没有账户？",
-				"rememberMe": "记住我"
+				"rememberMe": "记住我",
+				"loading": "加载中..."
 			}
 		},
 		"forgotPassword": {
 			"title": "忘记密码？",
+			"signin": "登录",
 			"fields": {
-				"email": "邮箱"
+				"email": "邮箱",
+				"emailPlaceholder": "你的邮箱@example.com"
 			},
 			"errors": {
 				"validEmail": "无效的邮箱地址",
 				"requiredEmail": "邮箱是必填项"
 			},
 			"buttons": {
-				"submit": "发送重置说明"
+				"submit": "发送重置说明",
+				"backLogin": "返回登录",
+				"loading": "加载中..."
 			}
 		},
 		"register": {
 			"title": "注册您的账户",
+			"signin": "登录",
+			"divider": "或",
 			"fields": {
 				"email": "邮箱",
-				"password": "密码"
+				"password": "密码",
+				"emailPlaceholder": "你的邮箱@example.com",
+				"passwordPlaceholder": "••••••••"
 			},
 			"errors": {
 				"validEmail": "无效的邮箱地址",
@@ -52,14 +63,17 @@
 			},
 			"buttons": {
 				"submit": "注册",
-				"haveAccount": "已有账户？"
+				"haveAccount": "已有账户？",
+				"loading": "加载中..."
 			}
 		},
 		"updatePassword": {
-			"title": "更新密码",
+			"title": "设置新密码",
 			"fields": {
 				"password": "新密码",
-				"confirmPassword": "确认新密码"
+				"confirmPassword": "确认新密码",
+				"passwordPlaceholder": "●●●●●●●●",
+				"confirmPasswordPlaceholder": "●●●●●●●●"
 			},
 			"errors": {
 				"confirmPasswordNotMatch": "密码不匹配",
@@ -67,7 +81,8 @@
 				"requiredConfirmPassword": "确认密码是必填项"
 			},
 			"buttons": {
-				"submit": "更新"
+				"submit": "更新",
+				"loading": "加载中..."
 			}
 		},
 		"error": {

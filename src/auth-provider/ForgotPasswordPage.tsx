@@ -84,7 +84,10 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={translate(
+                  "pages.forgotPassword.fields.emailPlaceholder",
+                  "you@example.com",
+                )}
                 required
                 className="h-10"
               />
@@ -95,7 +98,10 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
               disabled={isLoading}
             >
               {isLoading
-                ? "Loading..."
+                ? translate(
+                    "pages.forgotPassword.buttons.loading",
+                    "Loading...",
+                  )
                 : translate(
                     "pages.forgotPassword.buttons.submit",
                     "Send Reset Instructions",

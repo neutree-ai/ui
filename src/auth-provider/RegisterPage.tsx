@@ -92,7 +92,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             <div className="relative my-4">
               <Separator className="my-4">
                 <span className="text-[hsl(var(--muted-foreground))] px-2">
-                  {translate("pages.register.Separator", "or")}
+                  {translate("pages.register.divider", "or")}
                 </span>
               </Separator>
             </div>
@@ -137,7 +137,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={translate(
+                    "pages.register.fields.emailPlaceholder",
+                    "you@example.com",
+                  )}
                   required
                   className="h-10"
                 />
@@ -150,7 +153,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={translate(
+                    "pages.register.fields.passwordPlaceholder",
+                    "••••••••",
+                  )}
                   required
                   className="h-10"
                 />
@@ -161,7 +167,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 disabled={isLoading}
               >
                 {isLoading
-                  ? "Loading..."
+                  ? translate("pages.register.buttons.loading", "Loading...")
                   : translate("pages.register.buttons.submit", "Sign up")}
               </Button>
             </div>

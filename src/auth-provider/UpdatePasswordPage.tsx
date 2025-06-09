@@ -95,7 +95,10 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                 id="password"
                 name="password"
                 type="password"
-                placeholder="●●●●●●●●"
+                placeholder={translate(
+                  "pages.updatePassword.fields.passwordPlaceholder",
+                  "●●●●●●●●",
+                )}
                 required
                 className="h-10"
               />
@@ -111,7 +114,10 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder="●●●●●●●●"
+                placeholder={translate(
+                  "pages.updatePassword.fields.confirmPasswordPlaceholder",
+                  "●●●●●●●●",
+                )}
                 required
                 className="h-10"
               />
@@ -122,7 +128,10 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
               disabled={isLoading}
             >
               {isLoading
-                ? "Loading..."
+                ? translate(
+                    "pages.updatePassword.buttons.loading",
+                    "Loading...",
+                  )
                 : translate("pages.updatePassword.buttons.submit", "Update")}
             </Button>
           </div>

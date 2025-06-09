@@ -12,7 +12,9 @@
 			"divider": "or",
 			"fields": {
 				"email": "Email",
-				"password": "Password"
+				"password": "Password",
+				"emailPlaceholder": "you@example.com",
+				"passwordPlaceholder": "••••••••"
 			},
 			"errors": {
 				"validEmail": "Invalid email address",
@@ -22,28 +24,37 @@
 			"buttons": {
 				"submit": "Login",
 				"forgotPassword": "Forgot password?",
-				"noAccount": "Don’t have an account?",
-				"rememberMe": "Remember me"
+				"noAccount": "Don't have an account?",
+				"rememberMe": "Remember me",
+				"loading": "Loading..."
 			}
 		},
 		"forgotPassword": {
 			"title": "Forgot your password?",
+			"signin": "Sign in",
 			"fields": {
-				"email": "Email"
+				"email": "Email",
+				"emailPlaceholder": "you@example.com"
 			},
 			"errors": {
 				"validEmail": "Invalid email address",
 				"requiredEmail": "Email is required"
 			},
 			"buttons": {
-				"submit": "Send reset instructions"
+				"submit": "Send reset instructions",
+				"backLogin": "Back to login",
+				"loading": "Loading..."
 			}
 		},
 		"register": {
 			"title": "Sign up for your account",
+			"signin": "Sign in",
+			"divider": "or",
 			"fields": {
 				"email": "Email",
-				"password": "Password"
+				"password": "Password",
+				"emailPlaceholder": "you@example.com",
+				"passwordPlaceholder": "••••••••"
 			},
 			"errors": {
 				"validEmail": "Invalid email address",
@@ -51,15 +62,18 @@
 				"requiredPassword": "Password is required"
 			},
 			"buttons": {
-				"submit": "Register",
-				"haveAccount": "Have an account?"
+				"submit": "Sign up",
+				"haveAccount": "Have an account?",
+				"loading": "Loading..."
 			}
 		},
 		"updatePassword": {
-			"title": "Update password",
+			"title": "Set New Password",
 			"fields": {
 				"password": "New Password",
-				"confirmPassword": "Confirm new password"
+				"confirmPassword": "Confirm New Password",
+				"passwordPlaceholder": "●●●●●●●●",
+				"confirmPasswordPlaceholder": "●●●●●●●●"
 			},
 			"errors": {
 				"confirmPasswordNotMatch": "Passwords do not match",
@@ -67,7 +81,8 @@
 				"requiredConfirmPassword": "Confirm password is required"
 			},
 			"buttons": {
-				"submit": "Update"
+				"submit": "Update",
+				"loading": "Loading..."
 			}
 		},
 		"error": {

@@ -137,5 +137,13 @@
   "src/components/theme/table/fields/index.ts": "0a58e00ff6083e9098e8e6efc0a8cc4e",
   "src/components/theme/table/fields/pagination.tsx": "b37d83a2fb5569b4b834eefc543112e0",
   "src/components/theme/table/fields/sort.tsx": "2b1fc1281f2f16ad5d2380b0d7812b4a",
-  "src/components/theme/table/fields/table-filter-date-range-picker.tsx": "6f4c2fb309d2bc4433945b714d3d3fba"
+  "src/components/theme/table/fields/table-filter-date-range-picker.tsx": "6f4c2fb309d2bc4433945b714d3d3fba",
+  "src/auth-provider/AuthPage.tsx": "8fd74f6dee593413ec6fa79dbb38b64a",
+  "src/auth-provider/ForgotPasswordPage.tsx": "d9d0e22d5de85825876462bd15f34108",
+  "src/auth-provider/LoginPage.tsx": "96bd746ce5d59e07e6ee308f5a9418ac",
+  "src/auth-provider/RegisterPage.tsx": "79e67935c02d7f506f139e0557bda32d",
+  "src/auth-provider/ThemedTitle.tsx": "dcce61189c6f570059974ce1ef9adb70",
+  "src/auth-provider/UpdatePasswordPage.tsx": "1bb2a44294283df5f3e7758a802075d8",
+  "src/auth-provider/index.ts": "3c16cb62d0093dc1774c241749bbfc99",
+  "src/auth-provider/styles.ts": "e2ae7bdc30d0bd757b031104483ac3d3"
 }
