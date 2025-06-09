@@ -57,7 +57,7 @@ export function TableFilterDropdown({
                       variant="secondary"
                       className="rounded-sm p-1 text-xs h-3.5 font-normal"
                     >
-                      {selectedValues.size} {t("selected")}
+                      {selectedValues.size} {t("table.selected")}
                     </Badge>
                   ) : (
                     options
@@ -96,7 +96,7 @@ export function TableFilterDropdown({
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
-            <CommandEmpty>{t("No results found")}.</CommandEmpty>
+            <CommandEmpty>{t("table.noResultsFound")}.</CommandEmpty>
             <CommandGroup>
               {options?.map((option) => {
                 const isSelected = selectedValues.has(option.value);
@@ -146,7 +146,7 @@ export function TableFilterDropdown({
                     onSelect={() => column?.setFilterValue(undefined)}
                     className="justify-center text-center"
                   >
-                    {t("Clear filters")}
+                    {t("table.clearFilters")}
                   </CommandItem>
                 </CommandGroup>
               </>

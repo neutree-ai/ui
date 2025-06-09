@@ -115,7 +115,7 @@ export function TableFilterDateRangePickerFilter<
                 }}
               >
                 <FilterX size={16} className="mr-2" />
-                {t("Clear")}
+                {t("buttons.clear")}
               </Button>
             </div>
           </>
