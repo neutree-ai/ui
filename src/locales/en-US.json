@@ -426,6 +426,12 @@
 			"rayDashboard": "Ray Dashboard",
 			"monitor": "Monitor",
 			"playground": "Playground"
+		},
+		"monitor": {
+			"endpointMetrics": "Ray Metrics",
+			"vllmMetrics": "vLLM Engine Metrics",
+			"endpointDescription": "Ray Serve deployment metrics including requests, latency, and replica status",
+			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization"
 		}
 	},
 	"user_profiles": {

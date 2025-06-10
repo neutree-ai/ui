@@ -8,6 +8,14 @@ import { ShowButton, ShowPage } from "@/components/theme";
 import type { Endpoint, Engine } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import ChatPlayground from "@/components/business/ChatPlayground";
 import EmbeddingPlayground from "@/components/business/EmbeddingPlayground";
 import { getRayDashboardProxy } from "@/lib/api";
@@ -19,12 +27,15 @@ import EndpointEngine from "@/components/business/EndpointEngine";
 import ModelTask from "@/components/business/ModelTask";
 import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
 import Loader from "@/components/theme/components/loader";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import RerankPlayground from "@/components/business/RerankPlayground";
 import { useTranslation } from "react-i18next";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
 import { useSystemApi } from "@/hooks/use-system-api";
-import { getEndpointGrafanaProps } from "@/lib/grafana-configs";
+import {
+  getEndpointGrafanaProps,
+  getVllmGrafanaProps,
+} from "@/lib/grafana-configs";
 
 const RayDashboardTab = ({ record }: { record: Endpoint }) => {
   const { t } = useTranslation();
@@ -91,6 +102,9 @@ const RayDashboardTab = ({ record }: { record: Endpoint }) => {
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
   const { grafanaUrl } = useSystemApi();
+  const [monitorView, setMonitorView] = useState<"endpoint" | "vllm">(
+    "endpoint",
+  );
   const {
     query: { data, isLoading },
   } = useShow<Endpoint>();
@@ -247,13 +261,54 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
         >
           {grafanaUrl ? (
-            <GrafanaPanels
-              {...getEndpointGrafanaProps(
-                grafanaUrl,
-                record.metadata.name,
-                record.spec.cluster,
+            <div className="space-y-4">
+              {/* Monitor View Selector - only show if vLLM is available */}
+              {record.spec.engine.engine === "vllm" && (
+                <Card className="p-4">
+                  <div className="flex items-center justify-start">
+                    <Select
+                      value={monitorView}
+                      onValueChange={(value: "endpoint" | "vllm") =>
+                        setMonitorView(value)
+                      }
+                    >
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="endpoint">
+                          {t("endpoints.monitor.endpointMetrics")}
+                        </SelectItem>
+                        <SelectItem value="vllm">
+                          {t("endpoints.monitor.vllmMetrics")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground ml-4">
+                      {monitorView === "endpoint"
+                        ? t("endpoints.monitor.endpointDescription")
+                        : t("endpoints.monitor.vllmDescription")}
+                    </p>
+                  </div>
+                </Card>
               )}
-            />
+
+              {/* Render panels based on selection */}
+              {monitorView === "endpoint" ||
+              record.spec.engine.engine !== "vllm" ? (
+                <GrafanaPanels
+                  {...getEndpointGrafanaProps(
+                    grafanaUrl,
+                    record.metadata.name,
+                    record.spec.cluster,
+                  )}
+                />
+              ) : (
+                <GrafanaPanels
+                  {...getVllmGrafanaProps(grafanaUrl, record.spec.model.name)}
+                />
+              )}
+            </div>
           ) : (
             <div className="flex items-center justify-center h-full">
               <p className="text-muted-foreground">

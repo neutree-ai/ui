@@ -72,14 +72,14 @@
   "src/pages/endpoints/edit.tsx": "795fc3073f8152b518037d21bc299850",
   "src/pages/endpoints/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/endpoints/list.tsx": "d2670cbfb17bfb024062a69ecd1f6976",
-  "src/pages/endpoints/show.tsx": "ecdabf2d62846d2bce47773a6a65217f",
+  "src/pages/endpoints/show.tsx": "07abe6b84297d89246b5abd606b6d91d",
   "src/pages/endpoints/use-endpoint-form.tsx": "1fed70994184a0ed191c23552e161f41",
-  "src/pages/dashboard/Dashboard.tsx": "51cfa73256f015094645110a6344300c",
+  "src/pages/dashboard/Dashboard.tsx": "387deb3ef9df85de9d6243922d42c6d2",
   "src/pages/clusters/create.tsx": "2f02659fa8e8650574473bf54891aed6",
   "src/pages/clusters/edit.tsx": "1559ef7fc8e8e0f68179b7909c25e9f6",
   "src/pages/clusters/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/clusters/list.tsx": "baa6f7903aff5844daa51c33177a71f7",
-  "src/pages/clusters/show.tsx": "71067ce6b6a4389cf5e952e337e137db",
+  "src/pages/clusters/show.tsx": "739a675cb012a051037df0baf230c162",
   "src/pages/clusters/use-cluster-form.tsx": "bf338e5d0b50926400b20984a82cf150",
   "src/pages/api-keys/index.ts": "80f170840d928e44b4713f3978ebb7a3",
   "src/pages/api-keys/list.tsx": "5beaa7abd770a42e2b7949ba36920e6c",
@@ -181,5 +181,6 @@
   "src/components/theme/hooks/useOnBack.tsx": "f4087afd8d8f690aa96455f42f35fa5f",
   "src/components/theme/hooks/useWorkspace.ts": "85fbab0a6d4a8e6d93135678bf0c54c4",
   "src/components/theme/curds/create.tsx": "0f600519221fa63c2cb5a92873efe675",
-  "src/components/theme/curds/edit.tsx": "d968c54dd657ab32781900fff4632c79"
+  "src/components/theme/curds/edit.tsx": "d968c54dd657ab32781900fff4632c79",
+  "src/lib/grafana-configs.ts": "eeeb2ed3aba8dd307ab4112b2f24d1ed"
 }

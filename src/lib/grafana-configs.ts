@@ -99,6 +99,18 @@ const ENDPOINT_PANELS: PanelConfig[] = [
   { id: 15 },
 ];
 
+const VLLM_PANELS: PanelConfig[] = [
+  { id: 9 },
+  { id: 8 },
+  { id: 3 },
+  { id: 5 },
+  { id: 4 },
+  { id: 12 },
+  { id: 13 },
+  { id: 11 },
+  { id: 16 },
+];
+
 /**
  * One-stop function to get complete Grafana props for main dashboard
  */
@@ -162,5 +174,24 @@ export const getEndpointGrafanaProps = (
     },
   },
   panels: ENDPOINT_PANELS,
+  ...getCommonPanelProps(),
+});
+
+/**
+ * One-stop function to get complete Grafana props for vLLM engine monitoring
+ */
+export const getVllmGrafanaProps = (
+  grafanaUrl: string,
+  modelName: string,
+): GrafanaPanelsProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "vllm",
+    variables: {
+      ...getCommonVariables(),
+      model_name: modelName,
+    },
+  },
+  panels: VLLM_PANELS,
   ...getCommonPanelProps(),
 });

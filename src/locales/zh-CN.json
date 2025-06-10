@@ -426,6 +426,12 @@
 			"rayDashboard": "Ray 仪表板",
 			"monitor": "监控",
 			"playground": "测试平台"
+		},
+		"monitor": {
+			"endpointMetrics": "Ray 指标",
+			"vllmMetrics": "vLLM 引擎指标",
+			"endpointDescription": "Ray Serve 部署指标，包括请求、延迟和副本状态",
+			"vllmDescription": "vLLM 引擎特定指标，包括模型性能和资源利用率"
 		}
 	},
 	"user_profiles": {
