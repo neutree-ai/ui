@@ -13,6 +13,7 @@ import ClusterType from "@/components/business/ClusterType";
 import { useTranslation as useI18nTranslation } from "@/lib/i18n";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
 import { useSystemApi } from "@/hooks/use-system-api";
+import { getClusterGrafanaProps } from "@/lib/grafana-configs";
 
 export const ClustersShow = () => {
   const {
@@ -160,92 +161,7 @@ export const ClustersShow = () => {
         >
           {grafanaUrl ? (
             <GrafanaPanels
-              dashboardConfig={{
-                baseUrl: grafanaUrl,
-                dashboardId: "rayDefaultDashboard",
-                orgId: 1,
-                timezone: "browser",
-                variables: {
-                  datasource: "neutree-cluster",
-                  SessionName: "$__all",
-                  Instance: "$__all",
-                  Cluster: record.metadata.name,
-                },
-              }}
-              panels={[
-                {
-                  id: 26,
-                },
-                {
-                  id: 35,
-                },
-                {
-                  id: 38,
-                },
-                {
-                  id: 33,
-                },
-                {
-                  id: 42,
-                },
-                {
-                  id: 36,
-                },
-                {
-                  id: 27,
-                },
-                {
-                  id: 29,
-                },
-                {
-                  id: 28,
-                },
-                {
-                  id: 40,
-                },
-                {
-                  id: 2,
-                },
-                {
-                  id: 8,
-                },
-                {
-                  id: 6,
-                },
-                {
-                  id: 32,
-                },
-                {
-                  id: 4,
-                },
-                {
-                  id: 48,
-                },
-                {
-                  id: 44,
-                },
-                {
-                  id: 34,
-                },
-                {
-                  id: 37,
-                },
-                {
-                  id: 18,
-                },
-                {
-                  id: 20,
-                },
-                {
-                  id: 24,
-                },
-                {
-                  id: 41,
-                },
-              ]}
-              enableAutoRefresh={true}
-              refreshIntervals={[0, 5, 10, 30, 60, 300, 600]}
-              className="w-full"
+              {...getClusterGrafanaProps(grafanaUrl, record.metadata.name)}
             />
           ) : (
             <div className="flex items-center justify-center h-full">

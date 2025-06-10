@@ -24,6 +24,7 @@ import RerankPlayground from "@/components/business/RerankPlayground";
 import { useTranslation } from "react-i18next";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
 import { useSystemApi } from "@/hooks/use-system-api";
+import { getEndpointGrafanaProps } from "@/lib/grafana-configs";
 
 const RayDashboardTab = ({ record }: { record: Endpoint }) => {
   const { t } = useTranslation();
@@ -247,70 +248,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         >
           {grafanaUrl ? (
             <GrafanaPanels
-              dashboardConfig={{
-                baseUrl: grafanaUrl,
-                dashboardId: "rayServeDeploymentDashboard",
-                orgId: 1,
-                timezone: "browser",
-                variables: {
-                  datasource: "neutree-cluster",
-                  Application: record.metadata.name,
-                  Deployment: "$__all",
-                  Replica: "$__all",
-                  Route: "$__all",
-                  Cluster: record.spec.cluster,
-                },
-              }}
-              panels={[
-                {
-                  id: 1,
-                },
-                {
-                  id: 2,
-                },
-                {
-                  id: 3,
-                },
-                {
-                  id: 4,
-                },
-                {
-                  id: 5,
-                },
-                {
-                  id: 6,
-                },
-                {
-                  id: 7,
-                },
-                {
-                  id: 8,
-                },
-                {
-                  id: 9,
-                },
-                {
-                  id: 10,
-                },
-                {
-                  id: 11,
-                },
-                {
-                  id: 12,
-                },
-                {
-                  id: 13,
-                },
-                {
-                  id: 14,
-                },
-                {
-                  id: 15,
-                },
-              ]}
-              enableAutoRefresh={true}
-              refreshIntervals={[0, 5, 10, 30, 60, 300, 600]}
-              className="w-full"
+              {...getEndpointGrafanaProps(
+                grafanaUrl,
+                record.metadata.name,
+                record.spec.cluster,
+              )}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
