@@ -419,7 +419,10 @@
 		"messages": {
 			"rayDashboardNotAvailable": "Ray dashboard is not available.",
 			"fetching": "fetching...",
-			"modelNotFoundInRegistry": "Model not found in selected registry"
+			"modelNotFoundInRegistry": "Model not found in selected registry",
+			"fetchingClusterResources": "Fetching cluster resources",
+			"failedToFetchClusterResources": "Failed to fetch cluster resources",
+			"clusterResourcesUnavailable": "Cluster resources unavailable"
 		},
 		"tabs": {
 			"basic": "Basic",

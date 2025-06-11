@@ -30,6 +30,34 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+// Types for Ray cluster status API response
+type RayClusterResourceUsage = {
+  usage: Record<string, [number, number]>; // [used, total]
+  usageByNode: Record<string, Record<string, [number, number]>>;
+};
+
+type RayClusterStatus = {
+  result: boolean;
+  msg: string;
+  data: {
+    clusterStatus: {
+      loadMetricsReport: RayClusterResourceUsage;
+    };
+  };
+};
+
+type ClusterResources = {
+  cpu: { available: number; total: number };
+  memory: { available: number; total: number }; // in GiB
+  gpu: { available: number; total: number };
+  acceleratorTypes: Array<{
+    label: string;
+    value: string;
+    available: number;
+    total: number;
+  }>;
+};
+
 // Deep merge function for form data with smart overriding
 const deepMerge = (
   target: Record<string, unknown>,
@@ -69,6 +97,86 @@ const deepMerge = (
   }
 
   return result;
+};
+
+const resourceNameMapping: Record<string, string> = {
+  NVIDIAA10040G: "NVIDIA A100 40G",
+  NVIDIAA10080G: "NVIDIA A100 80G",
+  NVIDIATeslaV100: "NVIDIA TESLA V100",
+  NVIDIATeslaP100: "NVIDIA TESLA P100",
+  NVIDIATeslaT4: "NVIDIA TESLA T4",
+  NVIDIATeslaP4: "NVIDIA TESLA P4",
+  NVIDIATeslaK80: "NVIDIA TESLA K80",
+  NVIDIATeslaA10G: "NVIDIA TESLA A10G",
+  NVIDIAL40S: "NVIDIA L40S",
+  NVIDIAL4: "NVIDIA L4",
+  NVIDIAA100: "NVIDIA A100",
+  NVIDIAH100: "NVIDIA H100",
+  NVIDIAH200: "NVIDIA H200",
+};
+
+// Helper function to parse cluster resources from Ray API response
+const parseClusterResources = (
+  clusterStatus: RayClusterStatus | undefined,
+): ClusterResources | null => {
+  if (
+    !clusterStatus?.result ||
+    !clusterStatus.data?.clusterStatus?.loadMetricsReport?.usage
+  ) {
+    return null;
+  }
+
+  const usage = clusterStatus.data.clusterStatus.loadMetricsReport.usage;
+
+  // Parse CPU (in cores)
+  const cpuUsage = usage.CPU || [0, 0];
+  const cpu = {
+    available: Math.max(0, cpuUsage[1] - cpuUsage[0]),
+    total: cpuUsage[1],
+  };
+
+  // Parse Memory (convert from bytes to GiB)
+  const memoryUsage = usage.memory || [0, 0];
+  const memory = {
+    available: Math.max(0, (memoryUsage[1] - memoryUsage[0]) / 1024 ** 3),
+    total: memoryUsage[1] / 1024 ** 3,
+  };
+
+  // Parse GPU
+  const gpuUsage = usage.GPU || [0, 0];
+  const gpu = {
+    available: Math.max(0, gpuUsage[1] - gpuUsage[0]),
+    total: gpuUsage[1],
+  };
+
+  // Parse accelerator types
+  const acceleratorTypes = [];
+  for (const [key, value] of Object.entries(usage)) {
+    const name = resourceNameMapping[key];
+    if (name) {
+      acceleratorTypes.push({
+        label: name,
+        value: key,
+        available: Math.max(0, value[1] - value[0]),
+        total: value[1],
+      });
+    }
+  }
+
+  // Add generic option
+  acceleratorTypes.unshift({
+    label: "Generic",
+    value: "-",
+    available: gpu.available,
+    total: gpu.total,
+  });
+
+  return {
+    cpu,
+    memory,
+    gpu,
+    acceleratorTypes,
+  };
 };
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
@@ -137,6 +245,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const workspace = form.watch("metadata.workspace");
   const currentModelName = form.watch("spec.model.name");
   const currentRegistry = form.watch("spec.model.registry");
+  const currentCluster = form.watch("spec.cluster");
   const acceleratorValue = form.watch("spec.resources.accelerator");
   const engineSpec = form.watch("spec.engine");
 
@@ -166,6 +275,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     resource: "model_catalogs",
     meta,
   });
+
+  // Fetch cluster status for dynamic resource information
+  const clusterStatusQuery = useCustom<RayClusterStatus>({
+    url: `/ray-dashboard-proxy/${currentCluster}/api/cluster_status`,
+    method: "get",
+    queryOptions: {
+      enabled: Boolean(currentCluster),
+      refetchInterval: 30000, // Refresh every 30 seconds
+    },
+  });
+
+  // Parse cluster resources from API response
+  const clusterResources = useMemo(() => {
+    return parseClusterResources(clusterStatusQuery.data?.data);
+  }, [clusterStatusQuery.data?.data]);
 
   const isEdit = action === "edit";
 
@@ -419,8 +543,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("endpoints.fields.cpu")}
         >
           <div className="flex flex-col gap-2">
-            {form.watch("spec.resources.cpu")}
-            <Slider min={0} max={20} step={0.1} />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{form.watch("spec.resources.cpu")} cores</span>
+              {clusterResources && (
+                <span>
+                  Available: {clusterResources.cpu.available.toFixed(1)} /{" "}
+                  {clusterResources.cpu.total.toFixed(1)}
+                </span>
+              )}
+            </div>
+            <Slider
+              min={0}
+              max={clusterResources?.cpu.available ?? 0}
+              step={0.1}
+              disabled={clusterStatusQuery.isLoading || !currentCluster}
+            />
           </div>
         </Field>
 
@@ -430,19 +567,49 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("endpoints.fields.memoryGb")}
         >
           <div className="flex flex-col gap-2">
-            {form.watch("spec.resources.memory")}
-            <Slider min={0} max={50} step={0.5} />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{form.watch("spec.resources.memory")} GiB</span>
+              {clusterResources && (
+                <span>
+                  Available: {clusterResources.memory.available.toFixed(1)} /{" "}
+                  {clusterResources.memory.total.toFixed(1)} GiB
+                </span>
+              )}
+            </div>
+            <Slider
+              min={0}
+              max={clusterResources?.memory.available ?? 0}
+              step={0.5}
+              disabled={clusterStatusQuery.isLoading || !currentCluster}
+            />
           </div>
         </Field>
 
         <Field {...form} name="-" label={t("endpoints.fields.gpu")}>
           <Combobox
             placeholder={t("endpoints.placeholders.selectGpuType")}
-            options={[
-              { label: t("endpoints.options.generic"), value: "-" },
-              { label: t("endpoints.options.l4"), value: "NVIDIA_L4" },
-              { label: t("endpoints.options.t4"), value: "NVIDIA_TESLA_T4" },
-            ]}
+            options={
+              clusterResources?.acceleratorTypes || [
+                {
+                  label: t("endpoints.options.generic"),
+                  value: "-",
+                  available: 0,
+                  total: 0,
+                },
+                {
+                  label: t("endpoints.options.l4"),
+                  value: "NVIDIA_L4",
+                  available: 0,
+                  total: 0,
+                },
+                {
+                  label: t("endpoints.options.t4"),
+                  value: "NVIDIA_TESLA_T4",
+                  available: 0,
+                  total: 0,
+                },
+              ]
+            }
             value={Object.keys(acceleratorValue)[0]}
             onChange={(value) => {
               form.setValue("spec.resources.accelerator", {
@@ -450,15 +617,41 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   acceleratorValue[Object.keys(acceleratorValue)[0]],
               });
             }}
+            disabled={clusterStatusQuery.isLoading || !currentCluster}
           />
         </Field>
 
         <Field {...form} name="-" label={t("endpoints.fields.gpuCount")}>
           <div className="flex flex-col gap-2">
-            {Object.values(acceleratorValue)[0] as number}
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{Object.values(acceleratorValue)[0] as number} GPUs</span>
+              {clusterResources && (
+                <span>
+                  {(() => {
+                    const currentAcceleratorType =
+                      Object.keys(acceleratorValue)[0];
+                    const accelerator = clusterResources.acceleratorTypes.find(
+                      (acc) => acc.value === currentAcceleratorType,
+                    );
+                    return accelerator
+                      ? `Available: ${accelerator.available} / ${accelerator.total}`
+                      : `Available: ${clusterResources.gpu.available} / ${clusterResources.gpu.total}`;
+                  })()}
+                </span>
+              )}
+            </div>
             <Slider
               min={0}
-              max={2}
+              max={(() => {
+                if (!clusterResources) return 2;
+                const currentAcceleratorType = Object.keys(acceleratorValue)[0];
+                const accelerator = clusterResources.acceleratorTypes.find(
+                  (acc) => acc.value === currentAcceleratorType,
+                );
+                return (
+                  accelerator?.available ?? clusterResources.gpu.available ?? 0
+                );
+              })()}
               step={0.5}
               value={Object.values(acceleratorValue) as number[]}
               onValueChange={(value) => {
@@ -467,9 +660,29 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 });
                 form.setValue("spec.resources.gpu", (value[0] as number) ?? 0);
               }}
+              disabled={clusterStatusQuery.isLoading || !currentCluster}
             />
           </div>
         </Field>
+
+        {/* Cluster status indicator */}
+        {currentCluster && (
+          <div className="col-span-4 mt-2">
+            {clusterStatusQuery.isLoading ? (
+              <div className="text-sm text-muted-foreground">
+                {t("endpoints.messages.fetchingClusterResources")}...
+              </div>
+            ) : clusterStatusQuery.isError ? (
+              <div className="text-sm text-red-600">
+                {t("endpoints.messages.failedToFetchClusterResources")}
+              </div>
+            ) : !clusterResources ? (
+              <div className="text-sm text-yellow-600">
+                {t("endpoints.messages.clusterResourcesUnavailable")}
+              </div>
+            ) : null}
+          </div>
+        )}
       </FormCardGrid>
     ),
     // Collapsible customize section for both create and edit modes

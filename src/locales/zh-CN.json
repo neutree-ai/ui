@@ -419,7 +419,10 @@
 		"messages": {
 			"rayDashboardNotAvailable": "Ray 仪表板不可用。",
 			"fetching": "获取中...",
-			"modelNotFoundInRegistry": "在选定的仓库中未找到模型"
+			"modelNotFoundInRegistry": "在选定的仓库中未找到模型",
+			"fetchingClusterResources": "正在获取集群资源",
+			"failedToFetchClusterResources": "获取集群资源失败",
+			"clusterResourcesUnavailable": "集群资源不可用"
 		},
 		"tabs": {
 			"basic": "基础信息",
