@@ -654,7 +654,6 @@
 			},
 			"refresh": {
 				"refreshNow": "Refresh now",
-				"lastUpdated": "Last updated:",
 				"autoRefresh": "Auto-refresh:",
 				"off": "Off"
 			},

@@ -140,8 +140,8 @@ export default function GrafanaPanels({
   ); // Last 1 hour
   const [refreshInterval, setRefreshInterval] = useState<number>(0);
   const [isAutoRefreshing, setIsAutoRefreshing] = useState<boolean>(false);
-  const [lastRefreshTime, setLastRefreshTime] = useState<Date>(new Date());
-  const [refreshKey, setRefreshKey] = useState<number>(0);
+  // Manual refresh trigger for cache-busting when user clicks refresh button
+  const [manualRefreshTrigger, setManualRefreshTrigger] = useState<number>(0);
   const { theme } = useTheme();
 
   const buildCommonParams = useMemo(() => {
@@ -168,6 +168,15 @@ export default function GrafanaPanels({
     return params.toString();
   }, [dashboardConfig, theme]);
 
+  // Convert refresh interval to Grafana format
+  // This leverages Grafana's built-in auto-refresh capability instead of manually reloading iframes
+  const grafanaRefreshParam = useMemo(() => {
+    if (!isAutoRefreshing || refreshInterval === 0) return "";
+    if (refreshInterval < 60) return `${refreshInterval}s`;
+    if (refreshInterval < 3600) return `${Math.floor(refreshInterval / 60)}m`;
+    return `${Math.floor(refreshInterval / 3600)}h`;
+  }, [isAutoRefreshing, refreshInterval]);
+
   const panelUrls = useMemo(() => {
     return panels.map((panel) => {
       const url = new URL(
@@ -177,14 +186,23 @@ export default function GrafanaPanels({
       url.searchParams.append("panelId", panel.id.toString());
       url.searchParams.append("from", currentTimeRange.from);
       url.searchParams.append("to", currentTimeRange.to);
-      url.searchParams.append("refresh", refreshKey.toString());
 
+      if (grafanaRefreshParam) {
+        url.searchParams.append("refresh", grafanaRefreshParam);
+      }
+
+      // Add common dashboard parameters
       const commonParams = buildCommonParams;
       if (commonParams) {
         const params = new URLSearchParams(commonParams);
         for (const [key, value] of params) {
           url.searchParams.append(key, value);
         }
+      }
+
+      // Add manual refresh trigger as cache-busting parameter only when needed
+      if (manualRefreshTrigger > 0) {
+        url.searchParams.append("_t", manualRefreshTrigger.toString());
       }
 
       return url.toString();
@@ -194,13 +212,13 @@ export default function GrafanaPanels({
     dashboardConfig,
     currentTimeRange,
     buildCommonParams,
-    refreshKey,
+    grafanaRefreshParam,
+    manualRefreshTrigger,
   ]);
 
   const handleTimeRangeChange = useCallback(
     (range: TimeRange) => {
       setCurrentTimeRange(range);
-      setLastRefreshTime(new Date());
       onTimeRangeChange?.(range);
     },
     [onTimeRangeChange],
@@ -216,8 +234,13 @@ export default function GrafanaPanels({
   );
 
   const handleManualRefresh = useCallback(() => {
-    setRefreshKey((prev) => prev + 1);
-    setLastRefreshTime(new Date());
+    const timestamp = Date.now();
+    setManualRefreshTrigger(timestamp);
+
+    // Clear the manual refresh trigger after URL update to avoid permanent URL pollution
+    setTimeout(() => {
+      setManualRefreshTrigger(0);
+    }, 100);
   }, []);
 
   const toggleAutoRefresh = useCallback(() => {
@@ -225,24 +248,6 @@ export default function GrafanaPanels({
       setIsAutoRefreshing(!isAutoRefreshing);
     }
   }, [refreshInterval, isAutoRefreshing]);
-
-  // Auto refresh logic
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-
-    if (isAutoRefreshing && refreshInterval > 0) {
-      intervalId = setInterval(() => {
-        setRefreshKey((prev) => prev + 1);
-        setLastRefreshTime(new Date());
-      }, refreshInterval * 1000);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [isAutoRefreshing, refreshInterval]);
 
   const formatRefreshInterval = (seconds: number): string => {
     if (seconds === 0) return t("components.grafanaPanels.refresh.off");
@@ -345,11 +350,6 @@ export default function GrafanaPanels({
             <Separator orientation="vertical" className="h-6" />
 
             {/* Status Info */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <RotateCcw className="h-4 w-4" />
-              {t("components.grafanaPanels.refresh.lastUpdated")}{" "}
-              {lastRefreshTime.toLocaleTimeString()}
-            </div>
 
             {isAutoRefreshing && (
               <Badge
