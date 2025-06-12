@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/lib/i18n";
@@ -46,7 +45,6 @@ const SchemaTypeIcon = ({ type }: SchemaTypeIconProps) => {
   }
 };
 
-// Get type-specific icon color classes
 const getTypeColorClass = (type: string) => {
   switch (type) {
     case "object":
@@ -59,20 +57,62 @@ const getTypeColorClass = (type: string) => {
     case "number":
       return "text-amber-500 dark:text-amber-400";
     case "boolean":
-      return ""; // Special case handled in component
+      return "";
     default:
       return "text-muted-foreground";
   }
 };
 
+const inferSchemaFromValue = (value: unknown): Record<string, unknown> => {
+  if (value === null) {
+    return { type: "null" };
+  }
+
+  if (Array.isArray(value)) {
+    const itemType =
+      value.length > 0 ? inferSchemaFromValue(value[0]) : { type: "string" };
+    return {
+      type: "array",
+      items: itemType,
+    };
+  }
+
+  const actualType = typeof value;
+
+  switch (actualType) {
+    case "object": {
+      const properties: Record<string, unknown> = {};
+      for (const key of Object.keys(value as Record<string, unknown>)) {
+        properties[key] = inferSchemaFromValue(
+          (value as Record<string, unknown>)[key],
+        );
+      }
+      return {
+        type: "object",
+        properties,
+      };
+    }
+    case "string":
+      return { type: "string" };
+    case "number":
+      return {
+        type: Number.isInteger(value as number) ? "integer" : "number",
+      };
+    case "boolean":
+      return { type: "boolean" };
+    default:
+      return { type: "string" };
+  }
+};
+
 interface ValueDisplayProps {
-  value: any;
+  value: unknown;
   type: string;
 }
 
 const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
   const { t } = useTranslation();
-  const getActualType = (val: any) => {
+  const getActualType = (val: unknown) => {
     if (val === null) return "null";
     if (Array.isArray(val)) return "array";
     return typeof val;
@@ -103,16 +143,20 @@ const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
     switch (actualType) {
       case "string":
         return (
-          <span className="text-green-600 dark:text-green-400">"{value}"</span>
+          <span className="text-green-600 dark:text-green-400">
+            "{String(value)}"
+          </span>
         );
       case "number":
         return (
-          <span className="text-amber-600 dark:text-amber-400">{value}</span>
+          <span className="text-amber-600 dark:text-amber-400">
+            {String(value)}
+          </span>
         );
       case "boolean":
         return (
           <span className="text-teal-600 dark:text-teal-400">
-            {value.toString()}
+            {String(value)}
           </span>
         );
       case "object":
@@ -153,8 +197,8 @@ const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
 
 interface PropertyNodeProps {
   name: string;
-  schema: any;
-  value: any;
+  schema: Record<string, unknown>;
+  value: unknown;
   path?: string;
   required?: boolean;
   depth?: number;
@@ -170,13 +214,35 @@ const PropertyNode = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(depth < 2);
 
-  const hasChildren =
-    (schema.type === "object" &&
-      schema.properties &&
-      value &&
-      typeof value === "object" &&
-      !Array.isArray(value)) ||
-    (schema.type === "array" && schema.items && Array.isArray(value));
+  const getAllProperties = () => {
+    const schemaProperties =
+      (schema?.properties as Record<string, unknown>) || {};
+    const extraProperties: Record<string, Record<string, unknown>> = {};
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const valueObj = value as Record<string, unknown>;
+      for (const key of Object.keys(valueObj)) {
+        if (!schemaProperties[key]) {
+          extraProperties[key] = inferSchemaFromValue(valueObj[key]);
+        }
+      }
+    }
+
+    return { schemaProperties, extraProperties };
+  };
+
+  const { schemaProperties, extraProperties } = getAllProperties();
+
+  const hasChildren = Boolean(
+    (String(schema.type) === "object" &&
+      ((schema.properties &&
+        Object.keys(schema.properties as object).length > 0) ||
+        (value &&
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          Object.keys(value).length > 0))) ||
+      (String(schema.type) === "array" && schema.items && Array.isArray(value)),
+  );
 
   const hasValue = value !== undefined;
 
@@ -185,6 +251,9 @@ const PropertyNode = ({
   };
 
   const rowStyle = "flex items-center py-1 hover:bg-accent/50 rounded";
+
+  const schemaType = String(schema.type || "unknown");
+  const schemaFormat = schema.format ? String(schema.format) : undefined;
 
   return (
     <div className="w-full">
@@ -205,20 +274,20 @@ const PropertyNode = ({
           <span className="w-4 mr-1" />
         )}
 
-        <div className={getTypeColorClass(schema.type)}>
-          <SchemaTypeIcon type={schema.type} />
+        <div className={getTypeColorClass(schemaType)}>
+          <SchemaTypeIcon type={schemaType} />
         </div>
 
         <span className="ml-2 font-medium text-foreground">{name}</span>
 
-        <Badge variant="outline" className="ml-2 text-xs">
-          {schema.type}
-          {schema.format ? `:${schema.format}` : ""}
+        <Badge variant="secondary" className={"ml-2 text-xs"}>
+          {schemaType}
+          {schemaFormat ? `:${schemaFormat}` : ""}
         </Badge>
 
         <div className="ml-4">
           {hasValue ? (
-            <ValueDisplay value={value} type={schema.type} />
+            <ValueDisplay value={value} type={schemaType} />
           ) : (
             <span className="text-muted-foreground italic text-sm">
               {t("components.jsonSchemaValueVisualizer.noValue")}
@@ -229,29 +298,40 @@ const PropertyNode = ({
 
       {isOpen && hasChildren && (
         <div className="mt-1">
-          {schema.type === "object" &&
-            schema.properties &&
-            Object.entries(schema.properties).map(
-              ([childName, childSchema]) => (
+          {schemaType === "object" &&
+            Object.entries(schemaProperties).map(([childName, childSchema]) => (
+              <PropertyNode
+                key={`${path}.${childName}`}
+                name={childName}
+                schema={childSchema as Record<string, unknown>}
+                value={(value as Record<string, unknown>)?.[childName]}
+                path={`${path}.${childName}`}
+                depth={depth + 1}
+              />
+            ))}
+
+          {schemaType === "object" &&
+            Object.entries(extraProperties).map(
+              ([childName, inferredSchema]) => (
                 <PropertyNode
-                  key={`${path}.${childName}`}
+                  key={`${path}.${childName}_extra`}
                   name={childName}
-                  schema={childSchema}
-                  value={value?.[childName]}
+                  schema={inferredSchema}
+                  value={(value as Record<string, unknown>)?.[childName]}
                   path={`${path}.${childName}`}
                   depth={depth + 1}
                 />
               ),
             )}
 
-          {schema.type === "array" &&
-            schema.items &&
+          {schemaType === "array" &&
+            Boolean(schema.items) &&
             Array.isArray(value) &&
             value.map((item, index) => (
               <PropertyNode
                 key={`${path}[${index}]`}
                 name={`[${index}]`}
-                schema={schema.items}
+                schema={schema.items as Record<string, unknown>}
                 value={item}
                 path={`${path}[${index}]`}
                 depth={depth + 1}
@@ -264,8 +344,8 @@ const PropertyNode = ({
 };
 
 interface JSONSchemaValueVisualizerProps {
-  schema: any;
-  value: any;
+  schema: Record<string, unknown>;
+  value: unknown;
 }
 
 const JSONSchemaValueVisualizer = ({
@@ -277,7 +357,11 @@ const JSONSchemaValueVisualizer = ({
   return (
     <div className="w-full bg-background text-foreground">
       <PropertyNode
-        name={schema.title || t("components.jsonSchemaValueVisualizer.root")}
+        name={
+          schema.title
+            ? String(schema.title)
+            : t("components.jsonSchemaValueVisualizer.root")
+        }
         schema={schema}
         value={value}
       />
