@@ -82,18 +82,6 @@ export const ModelCatalogsShow = () => {
               </ShowPage.Row>
             </div>
             <div className="grid grid-cols-4 gap-8">
-              <ShowPage.Row title={t("model_catalogs.fields.registry")}>
-                <ShowButton
-                  recordItemId={record.spec.model.registry}
-                  meta={{
-                    workspace: record.metadata.workspace,
-                  }}
-                  variant="link"
-                  resource="model_registries"
-                >
-                  {record.spec.model.registry}
-                </ShowButton>
-              </ShowPage.Row>
               <ShowPage.Row title={t("model_catalogs.fields.modelFile")}>
                 {record.spec.model.file}
               </ShowPage.Row>
