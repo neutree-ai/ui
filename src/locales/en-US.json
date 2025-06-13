@@ -582,6 +582,43 @@
 				"unknownError": "Unknown error"
 			}
 		},
+		"yamlExport": {
+			"exportYaml": "Export YAML",
+			"title": "Export Resources to YAML",
+			"description": "Select resources and entities to export as YAML. Configure export options to customize the output format.",
+			"exportOptions": "Export Options",
+			"resourceSelection": "Resource Selection",
+			"selectAll": "Select All",
+			"deselectAll": "Deselect All",
+			"loadingAll": "Loading All...",
+			"entitiesSelected": "entities selected",
+			"loading": "Loading",
+			"noEntitiesFound": "No entities found",
+			"exportingResources": "Exporting resources",
+			"exporting": "Exporting...",
+			"generateYaml": "Generate YAML",
+			"generatedYaml": "Generated YAML",
+			"copyToClipboard": "Copy to Clipboard",
+			"downloadFile": "Download File",
+			"yamlContentPlaceholder": "Generated YAML content will appear here...",
+			"backToSelection": "Back to Selection",
+			"reset": "Reset",
+			"close": "Close",
+			"copySuccess": "Copied to clipboard",
+			"copySuccessDescription": "YAML content has been copied to your clipboard",
+			"downloadSuccess": "File downloaded",
+			"downloadSuccessDescription": "YAML file has been downloaded successfully",
+			"options": {
+				"removeStatus": "Remove status fields",
+				"removeIds": "Remove auto-generated IDs",
+				"removeTimestamps": "Remove timestamps"
+			},
+			"errors": {
+				"generateFailed": "Failed to generate YAML",
+				"copyFailed": "Failed to copy to clipboard",
+				"unknownError": "Unknown error"
+			}
+		},
 		"variablesInput": {
 			"key": "Key",
 			"value": "Value",

@@ -85,6 +85,7 @@ import { ApiKeysShow } from "./pages/api-keys/show";
 import { UserDropdown } from "./components/business/UserDropdown";
 import WorkspaceSelect from "./components/business/WorkspaceSelect";
 import { YamlImportButton } from "./components/business/YamlImportButton";
+import { YamlExportButton } from "./components/business/YamlExportButton";
 import Dashboard from "./pages/dashboard/Dashboard";
 
 const resources: ResourceProps[] = [
@@ -315,8 +316,9 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                         ),
                         rightSide: (
                           <>
-                            <div className="mr-2">
+                            <div className="mr-2 flex gap-2">
                               <YamlImportButton />
+                              <YamlExportButton />
                             </div>
                             <ModeToggle />
                             <UserDropdown />

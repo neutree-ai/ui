@@ -582,6 +582,43 @@
 				"unknownError": "未知错误"
 			}
 		},
+		"yamlExport": {
+			"exportYaml": "导出 YAML",
+			"title": "导出资源为 YAML",
+			"description": "选择要导出为 YAML 的资源和实体。配置导出选项以自定义输出格式。",
+			"exportOptions": "导出选项",
+			"resourceSelection": "资源选择",
+			"selectAll": "全选",
+			"deselectAll": "取消全选",
+			"loadingAll": "全部加载中...",
+			"entitiesSelected": "个实体已选择",
+			"loading": "加载中",
+			"noEntitiesFound": "未找到实体",
+			"exportingResources": "正在导出资源",
+			"exporting": "导出中...",
+			"generateYaml": "生成 YAML",
+			"generatedYaml": "生成的 YAML",
+			"copyToClipboard": "复制到剪贴板",
+			"downloadFile": "下载文件",
+			"yamlContentPlaceholder": "生成的 YAML 内容将显示在这里...",
+			"backToSelection": "返回选择",
+			"reset": "重置",
+			"close": "关闭",
+			"copySuccess": "已复制到剪贴板",
+			"copySuccessDescription": "YAML 内容已复制到您的剪贴板",
+			"downloadSuccess": "文件已下载",
+			"downloadSuccessDescription": "YAML 文件已成功下载",
+			"options": {
+				"removeStatus": "移除状态字段",
+				"removeIds": "移除自动生成的 ID",
+				"removeTimestamps": "移除时间戳"
+			},
+			"errors": {
+				"generateFailed": "生成 YAML 失败",
+				"copyFailed": "复制到剪贴板失败",
+				"unknownError": "未知错误"
+			}
+		},
 		"variablesInput": {
 			"key": "键",
 			"value": "值",
