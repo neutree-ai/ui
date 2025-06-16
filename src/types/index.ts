@@ -11,3 +11,4 @@ export * from "./basic-types";
 export * from "./user-types";
 export * from "./role-types";
 export * from "./system-types";
+export * from "./chat-types";

@@ -120,9 +120,9 @@ export const YamlImportDialog = ({
 
         <div className="flex-1 overflow-auto">
           {!showResults ? (
-            <div className="space-y-6">
+            <div className="space-y-2">
               {/* File Upload Section */}
-              <div className="space-y-3">
+              <div className="space-y-1">
                 <Label htmlFor="file-upload" className="text-base font-medium">
                   {t("components.yamlImport.uploadYamlFile")}
                 </Label>
@@ -150,7 +150,7 @@ export const YamlImportDialog = ({
               </div>
 
               {/* URL Input Section */}
-              <div className="space-y-3">
+              <div className="space-y-1">
                 <Label htmlFor="yaml-url" className="text-base font-medium">
                   {t("components.yamlImport.importFromUrl")}
                 </Label>
@@ -187,7 +187,7 @@ export const YamlImportDialog = ({
               </div>
 
               {/* Text Input Section */}
-              <div className="space-y-3">
+              <div className="space-y-1">
                 <Label htmlFor="yaml-text" className="text-base font-medium">
                   {t("components.yamlImport.pasteYamlContent")}
                 </Label>
@@ -202,7 +202,7 @@ export const YamlImportDialog = ({
 
               {/* Import Progress */}
               {isImporting && (
-                <div className="space-y-3">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">
                       {t("components.yamlImport.importingResources")}
@@ -265,7 +265,7 @@ export const YamlImportDialog = ({
               </div>
 
               <ScrollArea className="flex-1 border rounded-md">
-                <div className="p-4 space-y-3">
+                <div className="p-4 space-y-1">
                   {progress.results.map((result, index: number) => (
                     <div
                       key={index}

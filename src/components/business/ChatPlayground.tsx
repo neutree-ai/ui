@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MaxLengthSelector } from "./maxlength-selector";
 import { TemperatureSelector } from "./temperature-selector";
 import { TopPSelector } from "./top-p-selector";
+import { ChatSidebar } from "./ChatSidebar";
+import { useChatState } from "@/hooks/use-chat-state";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Endpoint } from "@/types";
@@ -14,8 +16,17 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import "github-markdown-css/github-markdown-light.css";
 import { useCustom } from "@refinedev/core";
-import { streamText, type CoreMessage } from "ai";
+import {
+  streamText,
+  type CoreMessage,
+  tool,
+  type ToolSet,
+  jsonSchema,
+  type TextPart,
+  type ToolCallPart,
+} from "ai";
 import { useTranslation } from "react-i18next";
+import { Trash2 } from "lucide-react";
 
 type FormValue = {
   model: string;
@@ -30,6 +41,9 @@ type ChatPlaygroundProps = {
 
 export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   const { t } = useTranslation();
+  const { systemMessage, functions, updateSystemMessage, updateFunctions } =
+    useChatState();
+
   const { ...form } = useForm({
     mode: "all",
     defaultValues: {
@@ -78,25 +92,69 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
+    // Build messages array with system message if present
+    const messagesToSend: CoreMessage[] = [];
+
+    if (systemMessage.trim()) {
+      messagesToSend.push({ role: "system", content: systemMessage.trim() });
+    }
+
+    messagesToSend.push(...messages, { role: "user", content: input });
+
     const stream = streamText({
       model: openai(model),
-      messages: [...messages, { role: "user", content: input }],
+      messages: messagesToSend,
       temperature,
       maxTokens: max_length,
       topP: top_p,
+      tools: functions
+        .filter((fn) => fn.enabled)
+        .reduce<ToolSet>((prev, cur) => {
+          prev[cur.name] = tool({
+            description: cur.description || "",
+            parameters: jsonSchema(cur.parameters),
+          });
+          return prev;
+        }, {}),
     });
 
     const assistantIndex = messages.length + 1;
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
     setStatus("streaming");
 
-    for await (const delta of stream.textStream) {
+    for await (const delta of stream.fullStream) {
       setMessages((prev) => {
         const next = [...prev];
-        next[assistantIndex] = {
-          role: "assistant",
-          content: next[assistantIndex].content + (delta ?? ""),
-        };
+        if (!next[assistantIndex]) {
+          next[assistantIndex] = { role: "assistant", content: [] };
+        }
+
+        const contentArray = next[assistantIndex].content as Array<
+          ToolCallPart | TextPart
+        >;
+        const lastPart = contentArray[contentArray.length - 1];
+
+        switch (delta.type) {
+          case "text-delta": {
+            if (lastPart && lastPart.type === "text") {
+              // append
+              lastPart.text += delta.textDelta;
+            } else {
+              // create new text part
+              contentArray.push({
+                type: "text",
+                text: delta.textDelta,
+              });
+            }
+            break;
+          }
+          case "tool-call": {
+            contentArray.push(delta);
+            break;
+          }
+          default:
+            console.log("Unhandled delta type:", delta);
+        }
+
         return next;
       });
     }
@@ -107,106 +165,161 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     setStatus("idle");
   };
 
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
   return (
     <Form {...form}>
-      <form className="h-full flex-col" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="h-full">
-          <div className="h-full">
-            <div className="container h-full py-6">
-              <div className="grid h-full items-stretch gap-6 md:grid-cols-[1fr_300px]">
-                <div className="flex-col space-y-4 sm:flex md:order-2 h-full">
-                  <Controller
-                    name="model"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Combobox
-                        placeholder={t(
-                          "components.playground.chat.selectModel",
-                        )}
-                        triggerClassName="sm:w-[300px]"
-                        popoverClassName="w-[300px]"
-                        options={(modelsData.data?.data.data || []).map(
-                          (v: { id: string }) => ({
-                            label: v.id,
-                            value: v.id,
-                          }),
-                        )}
-                        {...field}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="temperature"
-                    control={form.control}
-                    render={({ field }) => <TemperatureSelector {...field} />}
-                  />
-                  <Controller
-                    name="max_length"
-                    control={form.control}
-                    render={({ field }) => <MaxLengthSelector {...field} />}
-                  />
-                  <Controller
-                    name="top_p"
-                    control={form.control}
-                    render={({ field }) => <TopPSelector {...field} />}
-                  />
-                </div>
-                <div className="md:order-1 relative w-full space-y-2 h-full overflow-auto">
-                  <ScrollArea className="p-2" ref={scrollAreaRef}>
-                    {messages.map((message, index) => (
-                      <div key={index} className="mb-4">
-                        <div className="font-bold text-sm uppercase dark:text-gray-300">
-                          {message.role}
-                        </div>
-                        <div className="markdown-body dark:bg-transparent dark:text-gray-200 rounded-md p-2">
-                          <ReactMarkdown>
-                            {typeof message.content === "string"
-                              ? message.content
-                              : ""}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    ))}
-                  </ScrollArea>
-                  <div className="flex flex-col space-y-2 border dark:border-gray-700 rounded-md shadow-sm p-1 sticky bottom-2 right-0 left-0 bg-white dark:bg-gray-800">
-                    <Textarea
-                      placeholder={
-                        !form.getValues().model
-                          ? t("components.playground.chat.selectModelFirst")
-                          : t("components.playground.chat.chatPlaceholder")
-                      }
-                      className="flex-1 p-4 border-0 outline-none focus:ring-0 focus-visible:ring-0 focus:outline-none resize-none shadow-none bg-transparent dark:text-gray-200 dark:placeholder:text-gray-400"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      disabled={
-                        ["streaming", "submitted"].includes(status) ||
-                        !form.getValues().model
-                      }
-                      onKeyDown={(e) => {
-                        if (e.metaKey && e.key === "Enter") {
-                          form.handleSubmit(onSubmit)();
-                        }
-                      }}
-                    />
-                    <div className="flex items-center space-x-2 justify-end">
-                      {status === "streaming" ? (
-                        <Button variant="secondary" onClick={stop}>
-                          {t("components.playground.chat.stop")}
-                        </Button>
-                      ) : (
-                        <Button
-                          type="submit"
-                          disabled={
-                            status === "submitted" ||
-                            !input.trim() ||
-                            !form.getValues().model
-                          }
-                        >
-                          {t("components.playground.chat.send")}
-                        </Button>
-                      )}
+      <form className="h-full flex" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="h-full flex flex-1 gap-1">
+          {/* Sidebar */}
+          <ChatSidebar
+            systemMessage={systemMessage}
+            onSystemMessageChange={updateSystemMessage}
+            functions={functions}
+            onFunctionsChange={updateFunctions}
+          >
+            <Controller
+              name="model"
+              control={form.control}
+              render={({ field }) => (
+                <Combobox
+                  placeholder={t("components.playground.chat.selectModel")}
+                  triggerClassName="w-full"
+                  popoverClassName="w-[320px]"
+                  options={(modelsData.data?.data.data || []).map(
+                    (v: { id: string }) => ({
+                      label: v.id,
+                      value: v.id,
+                    }),
+                  )}
+                  {...field}
+                />
+              )}
+            />
+            <Controller
+              name="temperature"
+              control={form.control}
+              render={({ field }) => <TemperatureSelector {...field} />}
+            />
+            <Controller
+              name="max_length"
+              control={form.control}
+              render={({ field }) => <MaxLengthSelector {...field} />}
+            />
+            <Controller
+              name="top_p"
+              control={form.control}
+              render={({ field }) => <TopPSelector {...field} />}
+            />
+          </ChatSidebar>
+
+          {/* Main Chat Area */}
+          <div className="flex-1 flex flex-col min-w-0 ">
+            <div className="flex-1 relative overflow-hidden bg-card">
+              <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                      <p className="text-lg mb-2">
+                        {t("components.playground.chat.chatPlaceholder")}
+                      </p>
                     </div>
                   </div>
+                ) : (
+                  messages.map((message, index) => (
+                    <div key={index} className="mb-4">
+                      <div className="font-bold text-sm uppercase dark:text-gray-300">
+                        {message.role}
+                      </div>
+                      <div className="markdown-body dark:bg-transparent dark:text-gray-200 rounded-md p-2">
+                        {typeof message.content === "string" && (
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        )}
+                        {typeof message.content !== "string" &&
+                          message.content.map((part, partIndex) => {
+                            if (part.type === "text") {
+                              return (
+                                <ReactMarkdown key={partIndex}>
+                                  {part.text}
+                                </ReactMarkdown>
+                              );
+                            }
+                            if (part.type === "tool-call") {
+                              return (
+                                <pre
+                                  className="whitespace-pre-wrap break-words mt-1 rounded-md"
+                                  key={partIndex}
+                                >
+                                  <code>
+                                    {part.toolName}(
+                                    {JSON.stringify(part.args, null, 2)})
+                                  </code>
+                                </pre>
+                              );
+                            }
+                            return null;
+                          })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </ScrollArea>
+              {messages.length > 0 && (
+                <div className="absolute top-4 right-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearMessages}
+                    className="bg-background/80 backdrop-blur"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Input Area */}
+            <div className="p-4">
+              <div className="flex flex-col space-y-2 border dark:border-gray-700 rounded-md shadow-sm p-1 bg-white dark:bg-gray-800">
+                <Textarea
+                  placeholder={
+                    !form.getValues().model
+                      ? t("components.playground.chat.selectModelFirst")
+                      : t("components.playground.chat.chatPlaceholder")
+                  }
+                  className="flex-1 p-4 border-0 outline-none focus:ring-0 focus-visible:ring-0 focus:outline-none resize-none shadow-none bg-transparent dark:text-gray-200 dark:placeholder:text-gray-400"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={
+                    ["streaming", "submitted"].includes(status) ||
+                    !form.getValues().model
+                  }
+                  onKeyDown={(e) => {
+                    if (e.metaKey && e.key === "Enter") {
+                      form.handleSubmit(onSubmit)();
+                    }
+                  }}
+                />
+                <div className="flex items-center space-x-2 justify-end">
+                  {status === "streaming" ? (
+                    <Button variant="secondary" onClick={stop}>
+                      {t("components.playground.chat.stop")}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={
+                        status === "submitted" ||
+                        !input.trim() ||
+                        !form.getValues().model
+                      }
+                    >
+                      {t("components.playground.chat.send")}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
