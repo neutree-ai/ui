@@ -183,6 +183,8 @@ export const getEndpointGrafanaProps = (
 export const getVllmGrafanaProps = (
   grafanaUrl: string,
   modelName: string,
+  endpointName: string,
+  clusterName: string,
 ): GrafanaPanelsProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
@@ -190,6 +192,8 @@ export const getVllmGrafanaProps = (
     variables: {
       ...getCommonVariables(),
       model_name: modelName,
+      Cluster: clusterName,
+      Application: endpointName,
     },
   },
   panels: VLLM_PANELS,

@@ -305,7 +305,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 />
               ) : (
                 <GrafanaPanels
-                  {...getVllmGrafanaProps(grafanaUrl, record.spec.model.name)}
+                  {...getVllmGrafanaProps(
+                    grafanaUrl,
+                    record.spec.model.name,
+                    record.metadata.name,
+                    record.spec.cluster,
+                  )}
                 />
               )}
             </div>
