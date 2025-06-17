@@ -74,6 +74,17 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   });
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const selectedModel = form.watch("model");
+
+  // Auto-select first model when models data is loaded and has results
+  useEffect(() => {
+    const models = modelsData.data?.data.data || [];
+    if (models.length > 0 && !selectedModel) {
+      form.setValue("model", models[0].id);
+    }
+  }, [modelsData.data, form.setValue, selectedModel]);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: trigger scroll on messages change
   useEffect(() => {
     const outerEl = scrollAreaRef.current?.parentElement;
@@ -151,6 +162,10 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
             contentArray.push(delta);
             break;
           }
+          case "step-start":
+          case "step-finish":
+          case "finish":
+            break;
           default:
             console.log("Unhandled delta type:", delta);
         }
@@ -286,7 +301,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
               <div className="flex flex-col space-y-2 border dark:border-gray-700 rounded-md shadow-sm p-1 bg-white dark:bg-gray-800">
                 <Textarea
                   placeholder={
-                    !form.getValues().model
+                    !selectedModel
                       ? t("components.playground.chat.selectModelFirst")
                       : t("components.playground.chat.chatPlaceholder")
                   }
@@ -295,7 +310,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                   onChange={(e) => setInput(e.target.value)}
                   disabled={
                     ["streaming", "submitted"].includes(status) ||
-                    !form.getValues().model
+                    !selectedModel
                   }
                   onKeyDown={(e) => {
                     if (e.metaKey && e.key === "Enter") {
@@ -314,7 +329,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                       disabled={
                         status === "submitted" ||
                         !input.trim() ||
-                        !form.getValues().model
+                        !selectedModel
                       }
                     >
                       {t("components.playground.chat.send")}

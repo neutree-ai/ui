@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCustom } from "@refinedev/core";
 import type { Endpoint } from "@/types";
 import { useTranslation } from "react-i18next";
@@ -119,6 +119,16 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
       value: v.id,
     }),
   );
+
+  const selectedModel = form.watch("model");
+
+  // Auto-select first model when models data is loaded and has results
+  useEffect(() => {
+    const modelList = modelsData.data?.data?.data || [];
+    if (modelList.length > 0 && !selectedModel) {
+      form.setValue("model", modelList[0].id);
+    }
+  }, [modelsData.data, form.setValue, selectedModel]);
 
   // Function to add a new document
   const addDocument = () => {

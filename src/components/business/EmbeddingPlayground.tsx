@@ -17,7 +17,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useForm, Controller } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCustom } from "@refinedev/core";
 import type { Endpoint } from "@/types";
 import { PCA } from "ml-pca";
@@ -136,6 +136,16 @@ export default function EmbeddingPlayground({
     value: v.id,
   }));
 
+  const selectedModel = form.watch("model");
+
+  // Auto-select first model when models data is loaded and has results
+  useEffect(() => {
+    const modelList = modelsData.data?.data?.data || [];
+    if (modelList.length > 0 && !selectedModel) {
+      form.setValue("model", modelList[0].id);
+    }
+  }, [modelsData.data, form.setValue, selectedModel]);
+
   // Function to add a new document
   const addDocument = () => {
     const newId =
@@ -157,7 +167,7 @@ export default function EmbeddingPlayground({
 
   // Function to generate embeddings
   const generateEmbeddings = async () => {
-    if (!form.getValues().model) {
+    if (!selectedModel) {
       alert(t("components.playground.embedding.selectModelFirst"));
       return;
     }
@@ -172,7 +182,7 @@ export default function EmbeddingPlayground({
       const embeddings = await Promise.all(
         documents.map(async (d) => {
           const { embedding } = await embed({
-            model: openai.textEmbeddingModel(form.getValues().model),
+            model: openai.textEmbeddingModel(selectedModel),
             value: d.text,
           });
           return embedding;
