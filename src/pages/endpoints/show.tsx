@@ -26,7 +26,7 @@ import EndpointEngine from "@/components/business/EndpointEngine";
 import ModelTask from "@/components/business/ModelTask";
 import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
 import Loader from "@/components/theme/components/loader";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, Suspense, lazy } from "react";
 import RerankPlayground from "@/components/business/RerankPlayground";
 import { useTranslation } from "react-i18next";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
@@ -35,7 +35,13 @@ import {
   getEndpointGrafanaProps,
   getVllmGrafanaProps,
 } from "@/lib/grafana-configs";
-import { EndpointLogTabs } from "@/components/business/EndpointLogTabs";
+
+// Lazy load EndpointLogTabs
+const EndpointLogTabs = lazy(() =>
+  import("@/components/business/EndpointLogTabs").then((module) => ({
+    default: module.EndpointLogTabs,
+  })),
+);
 
 const RayDashboardTab = ({ record }: { record: Endpoint }) => {
   const { t } = useTranslation();
@@ -326,7 +332,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           value="logs"
           className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
         >
-          <EndpointLogTabs endpoint={record} />
+          <Suspense fallback={<Loader width="20" height="20" />}>
+            <EndpointLogTabs endpoint={record} />
+          </Suspense>
         </TabsContent>
         <TabsContent
           value="playground"
