@@ -99,20 +99,30 @@ const deepMerge = (
   return result;
 };
 
-const resourceNameMapping: Record<string, string> = {
-  NVIDIAA10040G: "NVIDIA A100 40G",
-  NVIDIAA10080G: "NVIDIA A100 80G",
-  NVIDIATeslaV100: "NVIDIA TESLA V100",
-  NVIDIATeslaP100: "NVIDIA TESLA P100",
-  NVIDIATeslaT4: "NVIDIA TESLA T4",
-  NVIDIATeslaP4: "NVIDIA TESLA P4",
-  NVIDIATeslaK80: "NVIDIA TESLA K80",
-  NVIDIATeslaA10G: "NVIDIA TESLA A10G",
-  NVIDIAL40S: "NVIDIA L40S",
-  NVIDIAL4: "NVIDIA L4",
-  NVIDIAA100: "NVIDIA A100",
-  NVIDIAH100: "NVIDIA H100",
-  NVIDIAH200: "NVIDIA H200",
+const resourceMapping: Record<string, { label: string; apiValue: string }> = {
+  NVIDIAA10040G: { label: "NVIDIA A100 40G", apiValue: "NVIDIA_A100_40G" },
+  NVIDIAA10080G: { label: "NVIDIA A100 80G", apiValue: "NVIDIA_A100_80G" },
+  NVIDIATeslaV100: {
+    label: "NVIDIA TESLA V100",
+    apiValue: "NVIDIA_TESLA_V100",
+  },
+  NVIDIATeslaP100: {
+    label: "NVIDIA TESLA P100",
+    apiValue: "NVIDIA_TESLA_P100",
+  },
+  NVIDIATeslaT4: { label: "NVIDIA TESLA T4", apiValue: "NVIDIA_TESLA_T4" },
+  NVIDIATeslaP4: { label: "NVIDIA TESLA P4", apiValue: "NVIDIA_TESLA_P4" },
+  NVIDIATeslaK80: { label: "NVIDIA TESLA K80", apiValue: "NVIDIA_TESLA_K80" },
+  NVIDIATeslaA10G: {
+    label: "NVIDIA TESLA A10G",
+    apiValue: "NVIDIA_TESLA_A10G",
+  },
+  NVIDIAL40S: { label: "NVIDIA L40S", apiValue: "NVIDIA_L40S" },
+  NVIDIAL4: { label: "NVIDIA L4", apiValue: "NVIDIA_L4" },
+  NVIDIAL20: { label: "NVIDIA L20", apiValue: "NVIDIA_L20" },
+  NVIDIAA100: { label: "NVIDIA A100", apiValue: "NVIDIA_A100" },
+  NVIDIAH100: { label: "NVIDIA H100", apiValue: "NVIDIA_H100" },
+  NVIDIAH200: { label: "NVIDIA H200", apiValue: "NVIDIA_H200" },
 };
 
 // Helper function to parse cluster resources from Ray API response
@@ -152,11 +162,11 @@ const parseClusterResources = (
   // Parse accelerator types
   const acceleratorTypes = [];
   for (const [key, value] of Object.entries(usage)) {
-    const name = resourceNameMapping[key];
-    if (name) {
+    const resource = resourceMapping[key];
+    if (resource) {
       acceleratorTypes.push({
-        label: name,
-        value: key,
+        label: resource.label,
+        value: resource.apiValue,
         available: Math.max(0, value[1] - value[0]),
         total: value[1],
       });
