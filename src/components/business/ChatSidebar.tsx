@@ -25,7 +25,7 @@ export function ChatSidebar({
   return (
     <div className="w-80 bg-card">
       <ScrollArea className="h-full">
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-6 max-w-80">
           {/* System Message Section */}
           <div className="space-y-2">
             <Label>{t("components.playground.chat.systemMessage")}</Label>
