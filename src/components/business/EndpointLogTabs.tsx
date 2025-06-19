@@ -6,7 +6,6 @@ import { LogViewer } from "./LogViewer";
 import { useEndpointLogUrls } from "@/hooks/use-endpoint-log-urls";
 import type { Endpoint } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 
 interface EndpointLogTabsProps {
   endpoint: Endpoint;
@@ -58,7 +57,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     },
     queryOptions: {
       enabled: !!activeLogUrl,
-      staleTime: 10 * 1000, // 10 seconds
+      refetchInterval: 10 * 1000, // Refresh every 10 seconds
     },
   });
 
@@ -83,7 +82,6 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   if (!rayApplicationInfo) {
     return (
       <Alert>
-        <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           {t("endpoints.logs.failedToLoadRayApplication")}
         </AlertDescription>
@@ -94,7 +92,6 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   if (!backendLogs.application && !backendLogs.stderr && !backendLogs.stdout) {
     return (
       <Alert>
-        <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           {t("endpoints.logs.noBackendDeploymentFound")}
         </AlertDescription>
@@ -138,7 +135,6 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
             />
           ) : (
             <Alert>
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 {t("endpoints.logs.applicationLogsNotAvailable")}
               </AlertDescription>
@@ -163,7 +159,6 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
             />
           ) : (
             <Alert>
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 {t("endpoints.logs.stderrLogsNotAvailable")}
               </AlertDescription>
@@ -188,7 +183,6 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
             />
           ) : (
             <Alert>
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 {t("endpoints.logs.stdoutLogsNotAvailable")}
               </AlertDescription>

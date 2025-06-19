@@ -99,7 +99,7 @@ export const useEndpointLogUrls = (
     method: "get",
     queryOptions: {
       enabled: !!endpoint,
-      staleTime: 30 * 1000, // 30 seconds
+      staleTime: 30 * 1000,
     },
   });
 
@@ -144,6 +144,10 @@ export const useEndpointLogUrls = (
     )) {
       for (const replica of deployment.replicas) {
         const { node_id, actor_id, log_file_path, replica_id } = replica;
+
+        if (!log_file_path) {
+          continue;
+        }
 
         // Ensure log_file_path doesn't start with '/' (Ray expects relative path)
         const normalizedLogFilePath = log_file_path.startsWith("/")

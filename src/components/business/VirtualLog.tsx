@@ -26,18 +26,22 @@ type HastNode = {
 const uniqueKeySelector = () => Math.random().toString(16).slice(-8);
 
 // Helper function to filter logs by timestamp
-const filterByTimestamp = (line: string, startTime?: string, endTime?: string): boolean => {
+const filterByTimestamp = (
+  line: string,
+  startTime?: string,
+  endTime?: string,
+): boolean => {
   const timestampMatch = line.match(/^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}/);
   if (!timestampMatch) {
     return true; // Include lines without recognizable timestamps
   }
-  
+
   const ts = Date.parse(timestampMatch[0]);
   if (Number.isNaN(ts)) return true;
-  
+
   if (startTime && ts < Date.parse(startTime)) return false;
   if (endTime && ts > Date.parse(endTime)) return false;
-  
+
   return true;
 };
 
@@ -65,9 +69,12 @@ const value2react = (
         // Case-insensitive search
         const lowerValue = value.toLowerCase();
         const lowerKeywords = keywords.toLowerCase();
-        
+
         if (lowerValue.includes(lowerKeywords)) {
-          const regex = new RegExp(`(${keywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+          const regex = new RegExp(
+            `(${keywords.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+            "gi",
+          );
           const parts = value.split(regex);
           const result: React.ReactNode[] = [];
 
@@ -80,7 +87,7 @@ const value2react = (
                     className="bg-yellow-200 dark:bg-yellow-800/80 text-yellow-900 dark:text-yellow-100 rounded-sm font-medium"
                   >
                     {parts[i]}
-                  </mark>
+                  </mark>,
                 );
               } else {
                 result.push(parts[i]);
@@ -138,8 +145,8 @@ export const VirtualLog: FC<VirtualLogProps> = ({
     const rawLines = log.split("\n").filter((line) => line.trim());
 
     // Time filter using the abstracted helper function
-    const filtered = rawLines.filter((line) => 
-      filterByTimestamp(line, startTime, endTime)
+    const filtered = rawLines.filter((line) =>
+      filterByTimestamp(line, startTime, endTime),
     );
 
     if (reverse) filtered.reverse();
@@ -218,12 +225,13 @@ export const VirtualLog: FC<VirtualLogProps> = ({
             ...style,
             fontSize: `${fontSize}px`,
             lineHeight: `${fontSize + 6}px`,
+            minWidth: "max-content",
           }}
           className={cn(
             "group flex items-start gap-3 px-2 py-0 font-mono text-sm",
             "border-l-2 border-r border-r-transparent",
-            "relative",
-            "whitespace-pre-wrap break-words overflow-hidden",
+            "relative virtual-log-line",
+            "whitespace-nowrap overflow-visible",
             levelStyles,
           )}
         >
@@ -233,7 +241,7 @@ export const VirtualLog: FC<VirtualLogProps> = ({
           </span>
 
           {/* Log content with syntax highlighting */}
-          <span className="flex-1 relative z-10">{content}</span>
+          <span className="relative z-10 whitespace-nowrap">{content}</span>
         </div>
       );
     },
@@ -298,7 +306,7 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   }
 
   return (
-    <div className={cn("flex-1 overflow-hidden", hlThemeClass)}>
+    <div className={cn("flex-1 virtual-log-container", hlThemeClass)}>
       {/* @ts-ignore - react-window type compatibility issue */}
       <List
         ref={listRef}
@@ -307,7 +315,7 @@ export const VirtualLog: FC<VirtualLogProps> = ({
         itemSize={lineHeight}
         width="100%"
         onScroll={handleScroll}
-        className={cn("font-mono", hlThemeClass)}
+        className={cn("font-mono virtual-log-list", hlThemeClass)}
       >
         {renderLine}
       </List>
