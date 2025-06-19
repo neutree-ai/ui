@@ -322,13 +322,14 @@ export const dataProvider = (
       return postgrestClient.url;
     },
 
-    custom: async ({ url, method, query, payload }) => {
+    custom: async ({ url, method, query, payload, meta }) => {
       return fetch(`${postgrestClient.url}${url}`, {
         method,
         body: payload ? JSON.stringify(payload) : undefined,
         headers: {
           "Content-Type": "application/json",
           ...postgrestClient.headers,
+          ...meta?.headers,
         },
       })
         .then((res) => {
@@ -336,6 +337,9 @@ export const dataProvider = (
             throw new Error(
               `Error: ${res.status} ${res.statusText} ${res.url}`,
             );
+          }
+          if (meta?.headers?.["Content-Type"] === "text/plain") {
+            return res.text();
           }
           return res.json();
         })

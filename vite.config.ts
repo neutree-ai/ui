@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api/v1": {
-        target: `http://${NODE_IP}:3000`,
+        target: `http://${NODE_IP}`,
       },
     },
   },

@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import ChatPlayground from "@/components/business/ChatPlayground";
 import EmbeddingPlayground from "@/components/business/EmbeddingPlayground";
 import { getRayDashboardProxy } from "@/lib/api";
@@ -36,6 +35,7 @@ import {
   getEndpointGrafanaProps,
   getVllmGrafanaProps,
 } from "@/lib/grafana-configs";
+import { EndpointLogTabs } from "@/components/business/EndpointLogTabs";
 
 const RayDashboardTab = ({ record }: { record: Endpoint }) => {
   const { t } = useTranslation();
@@ -143,6 +143,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <TabsTrigger value="monitor">
             {t("endpoints.tabs.monitor")}
           </TabsTrigger>
+          <TabsTrigger value="logs">{t("endpoints.tabs.logs")}</TabsTrigger>
           <TabsTrigger value="playground">
             {t("endpoints.tabs.playground")}
           </TabsTrigger>
@@ -320,6 +321,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               </p>
             </div>
           )}
+        </TabsContent>
+        <TabsContent
+          value="logs"
+          className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
+        >
+          <EndpointLogTabs endpoint={record} />
         </TabsContent>
         <TabsContent
           value="playground"

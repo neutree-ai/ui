@@ -223,7 +223,8 @@
 		"tabs": {
 			"basic": "基础信息",
 			"monitor": "监控",
-			"rayDashboard": "Ray 仪表板"
+			"rayDashboard": "Ray 仪表板",
+			"logs": "日志"
 		},
 		"fields": {
 			"status": "状态",
@@ -428,6 +429,7 @@
 			"basic": "基础信息",
 			"rayDashboard": "Ray 仪表板",
 			"monitor": "监控",
+			"logs": "日志",
 			"playground": "测试平台"
 		},
 		"monitor": {
@@ -435,6 +437,18 @@
 			"vllmMetrics": "vLLM 引擎指标",
 			"endpointDescription": "Ray Serve 部署指标，包括请求、延迟和副本状态",
 			"vllmDescription": "vLLM 引擎特定指标，包括模型性能和资源利用率"
+		},
+		"logs": {
+			"application": "应用日志",
+			"stderr": "错误输出",
+			"stdout": "标准输出",
+			"loading": "正在加载日志...",
+			"noLogsAvailable": "暂无日志",
+			"applicationLogsNotAvailable": "应用日志不可用",
+			"stderrLogsNotAvailable": "错误输出日志不可用",
+			"stdoutLogsNotAvailable": "标准输出日志不可用",
+			"failedToLoadRayApplication": "无法加载 Ray 应用信息。请检查集群是否可访问。",
+			"noBackendDeploymentFound": "未找到该端点的后端部署，或日志尚不可用。"
 		}
 	},
 	"user_profiles": {
@@ -730,6 +744,20 @@
 		"jsonSchemaVisualizer": {
 			"required": "必填",
 			"root": "根节点"
+		},
+		"logViewer": {
+			"search": "搜索关键词",
+			"reverse": "倒序",
+			"startTime": "开始时间",
+			"endTime": "结束时间",
+			"refresh": "刷新",
+			"download": "下载",
+			"fontSize": "字体大小",
+			"noLogs": "暂无日志",
+			"loading": "加载日志中...",
+			"loadMore": "加载更多日志",
+			"searchPlaceholder": "输入搜索关键词...",
+			"timeFilter": "时间过滤"
 		}
 	},
 	"status": {

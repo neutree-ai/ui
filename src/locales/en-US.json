@@ -223,7 +223,8 @@
 		"tabs": {
 			"basic": "Basic",
 			"monitor": "Monitor",
-			"rayDashboard": "Ray Dashboard"
+			"rayDashboard": "Ray Dashboard",
+			"logs": "Logs"
 		},
 		"fields": {
 			"status": "Status",
@@ -428,6 +429,7 @@
 			"basic": "Basic",
 			"rayDashboard": "Ray Dashboard",
 			"monitor": "Monitor",
+			"logs": "Logs",
 			"playground": "Playground"
 		},
 		"monitor": {
@@ -435,6 +437,18 @@
 			"vllmMetrics": "vLLM Engine Metrics",
 			"endpointDescription": "Ray Serve deployment metrics including requests, latency, and replica status",
 			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization"
+		},
+		"logs": {
+			"application": "Application",
+			"stderr": "Stderr",
+			"stdout": "Stdout",
+			"loading": "Loading logs...",
+			"noLogsAvailable": "No logs available",
+			"applicationLogsNotAvailable": "Application logs not available",
+			"stderrLogsNotAvailable": "Stderr logs not available",
+			"stdoutLogsNotAvailable": "Stdout logs not available",
+			"failedToLoadRayApplication": "Failed to load Ray application information. Please check if the cluster is accessible.",
+			"noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
 		}
 	},
 	"user_profiles": {
@@ -730,6 +744,20 @@
 		"jsonSchemaVisualizer": {
 			"required": "required",
 			"root": "Root"
+		},
+		"logViewer": {
+			"search": "Search keyword",
+			"reverse": "Reverse",
+			"startTime": "Start",
+			"endTime": "End",
+			"refresh": "Refresh",
+			"download": "Download",
+			"fontSize": "Font Size",
+			"noLogs": "No logs available",
+			"loading": "Loading logs...",
+			"loadMore": "Load more logs",
+			"searchPlaceholder": "Enter search term...",
+			"timeFilter": "Time Filter"
 		}
 	},
 	"status": {
