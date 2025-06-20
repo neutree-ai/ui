@@ -191,10 +191,14 @@ export const authProvider: AuthProvider = {
   },
   check: async () => {
     try {
-      const { data } = await auth.getSession();
-      const { session } = data;
+      const {
+        data: { session },
+      } = await auth.getSession();
+      const {
+        data: { user },
+      } = await auth.getUser();
 
-      if (!session) {
+      if (!session || !user) {
         return {
           authenticated: false,
           error: {
