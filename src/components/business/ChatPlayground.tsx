@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
 import { Combobox } from "@/components/ui/combobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,9 +25,10 @@ import {
   jsonSchema,
   type TextPart,
   type ToolCallPart,
+  type ImagePart,
 } from "ai";
 import { useTranslation } from "react-i18next";
-import { Trash2 } from "lucide-react";
+import { Trash2, Image, X } from "lucide-react";
 
 type FormValue = {
   model: string;
@@ -59,6 +61,65 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   const [status, setStatus] = useState<"idle" | "streaming" | "submitted">(
     "idle",
   );
+  const [selectedImages, setSelectedImages] = useState<
+    Array<{
+      file: File;
+      preview: string;
+      dataUri: string;
+    }>
+  >([]);
+
+  // Helper function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          // Extract base64 part from data URL
+          const base64 = reader.result.split(",")[1];
+          resolve(base64);
+        } else {
+          reject(new Error("Failed to convert file to base64"));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Handle image file selection
+  const handleImageSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files || []);
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+
+    const imagePromises = imageFiles.map(async (file) => {
+      const base64 = await fileToBase64(file);
+      const dataUri = `data:${file.type};base64,${base64}`;
+      return {
+        file,
+        preview: URL.createObjectURL(file),
+        dataUri,
+      };
+    });
+
+    const newImages = await Promise.all(imagePromises);
+    setSelectedImages((prev) => [...prev, ...newImages]);
+
+    // Clear the input to allow selecting the same file again
+    event.target.value = "";
+  };
+
+  // Remove selected image
+  const removeImage = (index: number) => {
+    setSelectedImages((prev) => {
+      const updated = [...prev];
+      URL.revokeObjectURL(updated[index].preview);
+      updated.splice(index, 1);
+      return updated;
+    });
+  };
 
   const openai = createOpenAI({
     baseURL: `/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,
@@ -94,14 +155,48 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     });
   }, [messages]);
 
+  // Cleanup image URLs on unmount
+  useEffect(() => {
+    return () => {
+      for (const image of selectedImages) {
+        URL.revokeObjectURL(image.preview);
+      }
+    };
+  }, [selectedImages]);
+
   const onSubmit: SubmitHandler<FormValue> = async (
     { model, temperature, max_length, top_p },
     e,
   ) => {
     setStatus("submitted");
-    const userMsg = { role: "user" as const, content: input };
+
+    // Build user message content with text and images
+    const userContent: Array<TextPart | ImagePart> = [];
+
+    // Add text content if present
+    if (input.trim()) {
+      userContent.push({ type: "text", text: input });
+    }
+
+    // Add images if present
+    for (const image of selectedImages) {
+      userContent.push({
+        type: "image",
+        image: image.dataUri,
+      });
+    }
+
+    const userMsg = {
+      role: "user" as const,
+      content:
+        userContent.length === 1 && userContent[0].type === "text"
+          ? userContent[0].text // Keep simple string format for text-only messages
+          : userContent,
+    };
+
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setSelectedImages([]);
 
     // Build messages array with system message if present
     const messagesToSend: CoreMessage[] = [];
@@ -110,7 +205,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
       messagesToSend.push({ role: "system", content: systemMessage.trim() });
     }
 
-    messagesToSend.push(...messages, { role: "user", content: input });
+    messagesToSend.push(...messages, userMsg);
 
     const stream = streamText({
       model: openai(model),
@@ -261,6 +356,18 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                                 </ReactMarkdown>
                               );
                             }
+                            if (part.type === "image") {
+                              return (
+                                <img
+                                  key={partIndex}
+                                  src={part.image as string}
+                                  alt={t(
+                                    "components.playground.chat.uploadImages",
+                                  )}
+                                  className="max-w-xs max-h-48 object-contain rounded border mt-2"
+                                />
+                              );
+                            }
                             if (part.type === "tool-call") {
                               return (
                                 <pre
@@ -299,6 +406,32 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
             {/* Input Area */}
             <div className="p-4">
               <div className="flex flex-col space-y-2 border dark:border-gray-700 rounded-md shadow-sm p-1 bg-white dark:bg-gray-800">
+                {/* Image previews */}
+                {selectedImages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-2">
+                    {selectedImages.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image.preview}
+                          alt={t("components.playground.chat.uploadImages")}
+                          className="w-16 h-16 object-cover rounded border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-1 -right-1 rounded-full w-5 h-5 p-0 flex items-center justify-center text-xs"
+                          aria-label={t(
+                            "components.playground.chat.removeImage",
+                          )}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <Textarea
                   placeholder={
                     !selectedModel
@@ -318,23 +451,54 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                     }
                   }}
                 />
-                <div className="flex items-center space-x-2 justify-end">
-                  {status === "streaming" ? (
-                    <Button variant="secondary" onClick={stop}>
-                      {t("components.playground.chat.stop")}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
+                <div className="flex items-center space-x-2 justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="image-upload"
                       disabled={
-                        status === "submitted" ||
-                        !input.trim() ||
+                        ["streaming", "submitted"].includes(status) ||
+                        !selectedModel
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        document.getElementById("image-upload")?.click()
+                      }
+                      disabled={
+                        ["streaming", "submitted"].includes(status) ||
                         !selectedModel
                       }
                     >
-                      {t("components.playground.chat.send")}
+                      <Image className="w-4 h-4 mr-1" />
+                      {t("components.playground.chat.images")}
                     </Button>
-                  )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {status === "streaming" ? (
+                      <Button variant="secondary" onClick={stop}>
+                        {t("components.playground.chat.stop")}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={
+                          status === "submitted" ||
+                          (!input.trim() && selectedImages.length === 0) ||
+                          !selectedModel
+                        }
+                      >
+                        {t("components.playground.chat.send")}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
