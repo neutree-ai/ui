@@ -97,7 +97,6 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                 type="password"
                 placeholder={translate(
                   "pages.updatePassword.fields.passwordPlaceholder",
-                  "●●●●●●●●",
                 )}
                 required
                 className="h-10"
@@ -116,7 +115,6 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                 type="password"
                 placeholder={translate(
                   "pages.updatePassword.fields.confirmPasswordPlaceholder",
-                  "●●●●●●●●",
                 )}
                 required
                 className="h-10"

@@ -72,8 +72,7 @@
 			"fields": {
 				"password": "新密码",
 				"confirmPassword": "确认新密码",
-				"passwordPlaceholder": "●●●●●●●●",
-				"confirmPasswordPlaceholder": "●●●●●●●●"
+				"passwordPlaceholder": "••••••••"
 			},
 			"errors": {
 				"confirmPasswordNotMatch": "密码不匹配",
@@ -119,7 +118,8 @@
 	},
 	"ui": {
 		"language": "语言",
-		"more": "更多"
+		"more": "更多",
+		"version": "版本"
 	},
 	"accessibility": {
 		"openMenu": "打开菜单"
@@ -259,7 +259,7 @@
 			"sshUserExample": "例如 root"
 		},
 		"options": {
-			"multipleStaticNodes": "多个静态节点",
+			"multipleStaticNodes": "静态节点",
 			"kubernetes": "Kubernetes",
 			"loadBalancer": "负载均衡器",
 			"ingress": "入口"

@@ -14,6 +14,7 @@ import LogoutButton from "./LogoutButton";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Globe, Check } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { useSystemApi } from "@/hooks/use-system-api";
 
 export const UserDropdown = () => {
   const { t } = useTranslation();
@@ -23,6 +24,7 @@ export const UserDropdown = () => {
     };
     email?: string;
   }>();
+  const { systemInfo } = useSystemApi();
 
   const locale = useGetLocale();
   const setLocale = useSetLocale();
@@ -45,7 +47,7 @@ export const UserDropdown = () => {
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuItem className="cursor-default focus:bg-transparent">
           <div className="flex flex-col py-1">
-            <div className="font-medium">
+            <div className="font-medium text-foreground">
               {identity?.user_metadata.username}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -53,6 +55,20 @@ export const UserDropdown = () => {
             </div>
           </div>
         </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem className="cursor-default focus:bg-transparent">
+          <div className="flex py-1 w-full items-center justify-between">
+            <div className="text-sm font-medium text-muted-foreground">
+              {t("ui.version")}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {systemInfo?.version || "-"}
+            </div>
+          </div>
+        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
 
         <DropdownMenuSub>

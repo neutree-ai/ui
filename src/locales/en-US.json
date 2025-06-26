@@ -72,8 +72,7 @@
 			"fields": {
 				"password": "New Password",
 				"confirmPassword": "Confirm New Password",
-				"passwordPlaceholder": "●●●●●●●●",
-				"confirmPasswordPlaceholder": "●●●●●●●●"
+				"passwordPlaceholder": "••••••••"
 			},
 			"errors": {
 				"confirmPasswordNotMatch": "Passwords do not match",
@@ -119,7 +118,8 @@
 	},
 	"ui": {
 		"language": "Language",
-		"more": "More"
+		"more": "More",
+		"version": "Version"
 	},
 	"accessibility": {
 		"openMenu": "Open menu"
