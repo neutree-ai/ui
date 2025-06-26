@@ -74,7 +74,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   if (isLoadingApp) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">{t("common.loading")}</p>
+        <p className="text-muted-foreground">{t("loading")}</p>
       </div>
     );
   }

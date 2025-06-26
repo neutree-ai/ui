@@ -5,6 +5,7 @@
 	"type": "module",
 	"dependencies": {
 		"@ai-sdk/openai": "^1.2.1",
+		"@ai-sdk/openai-compatible": "^0.2.14",
 		"@hookform/resolvers": "^4.1.0",
 		"@radix-ui/react-alert-dialog": "^1.1.6",
 		"@radix-ui/react-checkbox": "^1.1.4",
@@ -32,7 +33,7 @@
 		"@supabase/auth-js": "^2.68.0",
 		"@supabase/postgrest-js": "^1.18.1",
 		"@types/js-yaml": "^4.0.9",
-		"ai": "^4.1.54",
+		"ai": "^4.3.16",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "1.0.0",

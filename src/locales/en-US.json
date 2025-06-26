@@ -677,7 +677,9 @@
 				"invalidJsonSchema": "Invalid JSON schema",
 				"toggleSidebar": "Toggle Sidebar",
 				"clearChat": "Clear Chat",
-				"modelParameters": "Model & Parameters"
+				"modelParameters": "Model & Parameters",
+				"error": "Error",
+				"reasoning": "Thinking..."
 			},
 			"embedding": {
 				"title": "Embedding",

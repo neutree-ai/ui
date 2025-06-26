@@ -677,7 +677,9 @@
 				"invalidJsonSchema": "无效的JSON模式",
 				"toggleSidebar": "切换侧边栏",
 				"clearChat": "清除聊天",
-				"modelParameters": "模型与参数"
+				"modelParameters": "模型与参数",
+				"error": "错误",
+				"reasoning": "思考中..."
 			},
 			"embedding": {
 				"title": "嵌入向量",

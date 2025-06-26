@@ -11,7 +11,7 @@ import { TopPSelector } from "./top-p-selector";
 import { ChatSidebar } from "./ChatSidebar";
 import { useChatState } from "@/hooks/use-chat-state";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Endpoint } from "@/types";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -29,6 +29,27 @@ import {
 } from "ai";
 import { useTranslation } from "react-i18next";
 import { Trash2, Image, X } from "lucide-react";
+import { clientPostgrest } from "@/lib/api";
+
+// Custom error part type for handling errors in chat
+type ErrorPart = {
+  type: "error";
+  error: string;
+};
+
+// Custom reasoning part type for handling reasoning in chat
+type ReasoningPart = {
+  type: "reasoning";
+  reasoning: string;
+};
+
+// Extended content part type that includes error handling and reasoning
+type ChatContentPart =
+  | TextPart
+  | ToolCallPart
+  | ImagePart
+  | ErrorPart
+  | ReasoningPart;
 
 type FormValue = {
   model: string;
@@ -121,9 +142,15 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     });
   };
 
-  const openai = createOpenAI({
-    baseURL: `/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,
+  const openai = createOpenAICompatible({
+    name: "neutree",
+    baseURL: `${location.protocol}//${
+      location.host
+    }/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,
     apiKey: "no",
+    headers: {
+      ...clientPostgrest.headers,
+    },
   });
 
   const modelsData = useCustom({
@@ -205,69 +232,135 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
       messagesToSend.push({ role: "system", content: systemMessage.trim() });
     }
 
-    messagesToSend.push(...messages, userMsg);
+    // Filter out error parts from messages before sending to API
+    const filteredMessages = messages
+      .map((msg) => {
+        if (typeof msg.content === "string") {
+          return msg;
+        }
 
-    const stream = streamText({
-      model: openai(model),
-      messages: messagesToSend,
-      temperature,
-      maxTokens: max_length,
-      topP: top_p,
-      tools: functions
-        .filter((fn) => fn.enabled)
-        .reduce<ToolSet>((prev, cur) => {
-          prev[cur.name] = tool({
-            description: cur.description || "",
-            parameters: jsonSchema(cur.parameters),
-          });
-          return prev;
-        }, {}),
-    });
+        // Filter out error parts and reasoning parts from content array
+        const filteredContent = (msg.content as ChatContentPart[]).filter(
+          (part) => part.type !== "error" && part.type !== "reasoning",
+        );
+
+        // If no content left after filtering, skip this message
+        if (filteredContent.length === 0) {
+          return null;
+        }
+
+        return {
+          ...msg,
+          content: filteredContent,
+        };
+      })
+      .filter((msg) => msg !== null) as CoreMessage[];
+
+    messagesToSend.push(...filteredMessages, userMsg);
 
     const assistantIndex = messages.length + 1;
     setStatus("streaming");
 
-    for await (const delta of stream.fullStream) {
+    try {
+      const stream = streamText({
+        model: openai(model),
+        messages: messagesToSend,
+        temperature,
+        maxTokens: max_length,
+        topP: top_p,
+        tools: functions
+          .filter((fn) => fn.enabled)
+          .reduce<ToolSet>((prev, cur) => {
+            prev[cur.name] = tool({
+              description: cur.description || "",
+              parameters: jsonSchema(cur.parameters),
+            });
+            return prev;
+          }, {}),
+      });
+
+      for await (const delta of stream.fullStream) {
+        setMessages((prev) => {
+          const next = [...prev];
+          if (!next[assistantIndex]) {
+            next[assistantIndex] = { role: "assistant", content: [] };
+          }
+
+          const contentArray = next[assistantIndex]
+            .content as Array<ChatContentPart>;
+          const lastPart = contentArray[contentArray.length - 1];
+
+          switch (delta.type) {
+            case "text-delta": {
+              if (lastPart && lastPart.type === "text") {
+                // append
+                lastPart.text += delta.textDelta;
+              } else {
+                // create new text part
+                contentArray.push({
+                  type: "text",
+                  text: delta.textDelta,
+                });
+              }
+              break;
+            }
+            case "reasoning": {
+              // Handle reasoning content - using textDelta for reasoning content
+              if (lastPart && lastPart.type === "reasoning") {
+                // append to existing reasoning
+                lastPart.reasoning += delta.textDelta;
+              } else {
+                // create new reasoning part
+                contentArray.push({
+                  type: "reasoning",
+                  reasoning: delta.textDelta,
+                });
+              }
+              break;
+            }
+            case "tool-call": {
+              contentArray.push(delta);
+              break;
+            }
+            case "error": {
+              // Handle error delta
+              contentArray.push({
+                type: "error",
+                error: String(delta.error || "Unknown error occurred"),
+              });
+              break;
+            }
+            case "step-start":
+            case "step-finish":
+            case "finish":
+              break;
+            default:
+              console.log("Unhandled delta type:", delta);
+          }
+
+          return next;
+        });
+      }
+    } catch (error) {
+      // Handle streaming errors
       setMessages((prev) => {
         const next = [...prev];
         if (!next[assistantIndex]) {
           next[assistantIndex] = { role: "assistant", content: [] };
         }
 
-        const contentArray = next[assistantIndex].content as Array<
-          ToolCallPart | TextPart
-        >;
-        const lastPart = contentArray[contentArray.length - 1];
+        const contentArray = next[assistantIndex]
+          .content as Array<ChatContentPart>;
 
-        switch (delta.type) {
-          case "text-delta": {
-            if (lastPart && lastPart.type === "text") {
-              // append
-              lastPart.text += delta.textDelta;
-            } else {
-              // create new text part
-              contentArray.push({
-                type: "text",
-                text: delta.textDelta,
-              });
-            }
-            break;
-          }
-          case "tool-call": {
-            contentArray.push(delta);
-            break;
-          }
-          case "step-start":
-          case "step-finish":
-          case "finish":
-            break;
-          default:
-            console.log("Unhandled delta type:", delta);
-        }
+        contentArray.push({
+          type: "error",
+          error: error instanceof Error ? error.message : String(error),
+        });
 
         return next;
       });
     }
+
     setStatus("idle");
   };
 
@@ -348,41 +441,79 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         )}
                         {typeof message.content !== "string" &&
-                          message.content.map((part, partIndex) => {
-                            if (part.type === "text") {
-                              return (
-                                <ReactMarkdown key={partIndex}>
-                                  {part.text}
-                                </ReactMarkdown>
-                              );
-                            }
-                            if (part.type === "image") {
-                              return (
-                                <img
-                                  key={partIndex}
-                                  src={part.image as string}
-                                  alt={t(
-                                    "components.playground.chat.uploadImages",
-                                  )}
-                                  className="max-w-xs max-h-48 object-contain rounded border mt-2"
-                                />
-                              );
-                            }
-                            if (part.type === "tool-call") {
-                              return (
-                                <pre
-                                  className="whitespace-pre-wrap break-words mt-1 rounded-md"
-                                  key={partIndex}
-                                >
-                                  <code>
-                                    {part.toolName}(
-                                    {JSON.stringify(part.args, null, 2)})
-                                  </code>
-                                </pre>
-                              );
-                            }
-                            return null;
-                          })}
+                          (message.content as ChatContentPart[]).map(
+                            (part, partIndex) => {
+                              if (part.type === "text") {
+                                return (
+                                  <ReactMarkdown key={partIndex}>
+                                    {part.text}
+                                  </ReactMarkdown>
+                                );
+                              }
+                              if (part.type === "image") {
+                                return (
+                                  <img
+                                    key={partIndex}
+                                    src={part.image as string}
+                                    alt={t(
+                                      "components.playground.chat.uploadImages",
+                                    )}
+                                    className="max-w-xs max-h-48 object-contain rounded border mt-2"
+                                  />
+                                );
+                              }
+                              if (part.type === "tool-call") {
+                                return (
+                                  <pre
+                                    className="whitespace-pre-wrap break-words mt-1 rounded-md"
+                                    key={partIndex}
+                                  >
+                                    <code>
+                                      {part.toolName}(
+                                      {JSON.stringify(part.args, null, 2)})
+                                    </code>
+                                  </pre>
+                                );
+                              }
+                              // Handle custom error type
+                              if (part.type === "error") {
+                                return (
+                                  <div
+                                    key={partIndex}
+                                    className="bg-destructive/10 border border-destructive/20 text-destructive rounded-md p-3 mt-2"
+                                  >
+                                    <div className="font-medium text-sm mb-1">
+                                      {t("components.playground.chat.error")}
+                                    </div>
+                                    <div className="text-sm whitespace-pre-wrap">
+                                      {part.error}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              // Handle reasoning type
+                              if (part.type === "reasoning") {
+                                return (
+                                  <div
+                                    key={partIndex}
+                                    className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500 rounded-md p-1 my-1"
+                                  >
+                                    <div className="font-medium text-sm mb-1 flex items-center">
+                                      {t(
+                                        "components.playground.chat.reasoning",
+                                      ) || "Reasoning"}
+                                    </div>
+                                    <div className="text-sm whitespace-pre-wrap">
+                                      <ReactMarkdown>
+                                        {part.reasoning}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            },
+                          )}
                       </div>
                     </div>
                   ))

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { useState, useEffect } from "react";
-import { useCustom } from "@refinedev/core";
+import { useCustom, useCustomMutation } from "@refinedev/core";
 import type { Endpoint } from "@/types";
 import { useTranslation } from "react-i18next";
 
@@ -122,6 +122,9 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
 
   const selectedModel = form.watch("model");
 
+  // Use mutation for rerank API call
+  const { mutateAsync: rerankMutation } = useCustomMutation();
+
   // Auto-select first model when models data is loaded and has results
   useEffect(() => {
     const modelList = modelsData.data?.data?.data || [];
@@ -173,27 +176,16 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
 
     setIsProcessing(true);
     try {
-      const response = await fetch(
-        `/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1/rerank`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: values.model,
-            query: values.query,
-            documents: validDocuments.map((doc) => doc.text),
-            top_n: 0, // Return all documents
-          }),
+      const { data } = await rerankMutation({
+        url: `/serve-proxy/${endpoint?.metadata?.name}/v1/rerank`,
+        method: "post",
+        values: {
+          model: values.model,
+          query: values.query,
+          documents: validDocuments.map((doc) => doc.text),
+          top_n: 0, // Return all documents
         },
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      });
 
       // Check if we have valid rerank results
       if (!data.results || !Array.isArray(data.results)) {
@@ -205,7 +197,10 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
 
       // Process the reranked results
       const ranked: RankedDocument[] = data.results.map(
-        (result: any, newIndex: number) => {
+        (
+          result: { index: number; relevance_score: number },
+          newIndex: number,
+        ) => {
           const originalDoc = docMap.get(result.index);
           if (!originalDoc) {
             throw new Error(`Invalid document index: ${result.index}`);

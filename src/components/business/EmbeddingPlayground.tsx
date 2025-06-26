@@ -24,6 +24,7 @@ import { PCA } from "ml-pca";
 import { embed } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { useTranslation } from "react-i18next";
+import { clientPostgrest } from "@/lib/api";
 
 // Custom tooltip to show the text content when hovering on a point
 const CustomTooltip = ({ active, payload }: any) => {
@@ -175,6 +176,9 @@ export default function EmbeddingPlayground({
     const openai = createOpenAI({
       baseURL: `/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,
       apiKey: "no",
+      headers: {
+        ...clientPostgrest.headers,
+      },
     });
 
     setIsProcessing(true);
