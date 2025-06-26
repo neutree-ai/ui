@@ -114,7 +114,8 @@
 		"undo": "Undo",
 		"import": "Import",
 		"clone": "Clone",
-		"notAccessTitle": "You don't have permission to access"
+		"notAccessTitle": "You don't have permission to access",
+		"updatePassword": "Update Password"
 	},
 	"ui": {
 		"language": "Language",

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ThemedTitle } from "./ThemedTitle";
-import { authStyles } from "./styles";
+import { toast } from "sonner";
 
 type UpdatePasswordPageProps = {
   contentProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -66,7 +66,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
             const confirmPassword = data.get("confirmPassword") as string;
 
             if (password !== confirmPassword) {
-              alert(
+              toast.error(
                 translate(
                   "pages.updatePassword.errors.confirmPasswordNotMatch",
                   "Passwords do not match",
@@ -114,7 +114,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                 name="confirmPassword"
                 type="password"
                 placeholder={translate(
-                  "pages.updatePassword.fields.confirmPasswordPlaceholder",
+                  "pages.updatePassword.fields.passwordPlaceholder",
                 )}
                 required
                 className="h-10"
@@ -140,18 +140,18 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
 
   return (
     <div
-      className={cn(authStyles.container, wrapperProps?.className)}
+      className={cn(
+        "w-full flex justify-center items-start pt-8",
+        wrapperProps?.className,
+      )}
       {...wrapperProps}
     >
-      <div className="w-full flex flex-col items-center justify-center px-4 py-12">
-        {renderContent ? (
-          renderContent(Content, PageTitle)
-        ) : (
-          <>
-            {PageTitle}
-            {Content}
-          </>
+      <div
+        className={cn(
+          "w-full flex flex-col items-center justify-start max-w-md",
         )}
+      >
+        {renderContent ? renderContent(Content, PageTitle) : <>{Content}</>}
       </div>
     </div>
   );

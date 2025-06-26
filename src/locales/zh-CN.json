@@ -114,7 +114,8 @@
 		"undo": "撤销",
 		"import": "导入",
 		"clone": "克隆",
-		"notAccessTitle": "您没有访问权限"
+		"notAccessTitle": "您没有访问权限",
+		"updatePassword": "更新密码"
 	},
 	"ui": {
 		"language": "语言",

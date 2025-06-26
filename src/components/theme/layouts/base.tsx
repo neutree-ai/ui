@@ -52,7 +52,7 @@ export const BaseLayout = ({
         disableHoverableContent={true}
       >
         {children}
-        <Toaster />
+        <Toaster richColors />
       </TooltipProvider>
     </ThemeProvider>
   );

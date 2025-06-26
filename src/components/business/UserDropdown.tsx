@@ -12,9 +12,10 @@ import {
 import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
 import LogoutButton from "./LogoutButton";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Globe, Check } from "lucide-react";
+import { ChevronDown, Globe, Check, KeyRound } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useSystemApi } from "@/hooks/use-system-api";
+import { Link } from "@/components/theme/components/link";
 
 export const UserDropdown = () => {
   const { t } = useTranslation();
@@ -94,6 +95,15 @@ export const UserDropdown = () => {
             </DropdownMenuSubContent>
           </DropdownMenuPortal>
         </DropdownMenuSub>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem asChild>
+          <Link href="/update-password" className="flex w-full">
+            <KeyRound size={16} className="mr-2" />
+            {t("buttons.updatePassword")}
+          </Link>
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
         <DropdownMenuItem>

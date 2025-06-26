@@ -336,6 +336,12 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   element={<NavigateToResource resource="dashboard" />}
                 />
                 <Route path="/dashboard" index element={<Dashboard />} />
+
+                <Route
+                  path="/update-password"
+                  element={<AuthPage type="updatePassword" />}
+                />
+
                 <Route path="/workspaces">
                   <Route index element={<WorkspacesList />} />
                   <Route path="show/:id" element={<WorkspacesShow />} />
@@ -418,10 +424,6 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route
                   path="/forgot-password"
                   element={<AuthPage type="forgotPassword" />}
-                />
-                <Route
-                  path="/update-password"
-                  element={<AuthPage type="updatePassword" />}
                 />
               </Route>
 
