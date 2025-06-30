@@ -143,7 +143,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   };
 
   const openai = createOpenAICompatible({
-    name: "neutree",
+    name: "ai-platform",
     baseURL: `${location.protocol}//${
       location.host
     }/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,

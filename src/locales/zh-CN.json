@@ -91,6 +91,59 @@
 			"notFound": "404 未找到",
 			"backHome": "返回首页",
 			"unknown": "未知错误"
+		},
+		"vramCalculator": {
+			"title": "显存计算器",
+			"sections": {
+				"performanceMemory": "性能与内存结果",
+				"memoryAllocation": "内存分配",
+				"cpuResources": "CPU 与内存资源需求"
+			},
+			"fields": {
+				"selectModel": "选择模型",
+				"quantization": "推理量化",
+				"kvQuantization": "KV缓存量化",
+				"hardwareConfig": "硬件配置",
+				"gpuCount": "GPU数量",
+				"customVram": "自定义显存 (GB)",
+				"batchSize": "批量大小",
+				"sequenceLength": "序列长度",
+				"concurrentUsers": "并发用户数"
+			},
+			"placeholders": {
+				"selectModel": "选择模型...",
+				"selectGpu": "选择GPU...",
+				"selectQuantization": "选择量化方式",
+				"selectKvQuantization": "选择KV缓存量化"
+			},
+			"validation": {
+				"selectModel": "请选择一个模型",
+				"selectGpu": "请选择GPU"
+			},
+			"metrics": {
+				"generationSpeed": "生成速度",
+				"totalThroughput": "总吞吐量",
+				"recommendedMemory": "推荐内存",
+				"recommendedCores": "推荐核心数",
+				"totalVram": "共",
+				"vramUsage": "显存",
+				"parameters": "参数量",
+				"layers": "层数",
+				"hiddenDim": "隐藏维度",
+				"attention": "注意力",
+				"mode": "模式",
+				"batch": "批量",
+				"users": "用户",
+				"cores": "核",
+				"inference": "推理"
+			},
+			"memoryTypes": {
+				"modelWeights": "模型权重",
+				"kvCache": "KV缓存",
+				"activations": "激活",
+				"multiDeviceOverhead": "多设备通信",
+				"frameworkOverhead": "框架开销"
+			}
 		}
 	},
 	"actions": {
@@ -800,5 +853,11 @@
 			"LoadBalancer": "负载均衡器",
 			"Ingress": "入口"
 		}
+	},
+	"tools": {
+		"title": "工具"
+	},
+	"vram_calculator": {
+		"title": "显存计算器"
 	}
 }

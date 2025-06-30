@@ -129,7 +129,7 @@ export const YamlExportDialog = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `neutree-resources-${new Date().toISOString().split("T")[0]}.yaml`;
+    a.download = `resources-${new Date().toISOString().split("T")[0]}.yaml`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

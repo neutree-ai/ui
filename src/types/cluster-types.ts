@@ -98,7 +98,7 @@ export type ClusterSpec = {
   config: RaySSHProvisionClusterConfig | RayKubernetesProvisionClusterConfig;
   image_registry: string;
   /**
-   * The neutree serving version, if not specified, the default version will be used
+   * The cluster image version.
    */
   version?: string;
 };
@@ -124,9 +124,6 @@ export type ClusterStatus = {
    * The desired number of nodes in the cluster
    */
   desired_nodes?: number;
-  /**
-   * The current neutree serving version
-   */
   version?: string;
   /**
    * Ray version

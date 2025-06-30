@@ -91,6 +91,59 @@
 			"notFound": "404 not found",
 			"backHome": "Back Home",
 			"unknown": "Unknown Error"
+		},
+		"vramCalculator": {
+			"title": "VRAM Calculator",
+			"sections": {
+				"performanceMemory": "Performance & Memory Results",
+				"memoryAllocation": "Memory Allocation",
+				"cpuResources": "CPU & Memory Resources"
+			},
+			"fields": {
+				"selectModel": "Select Model",
+				"quantization": "Inference Quantization",
+				"kvQuantization": "KV Cache Quantization",
+				"hardwareConfig": "Hardware Configuration",
+				"gpuCount": "GPU Count",
+				"customVram": "Custom VRAM (GB)",
+				"batchSize": "Batch Size",
+				"sequenceLength": "Sequence Length",
+				"concurrentUsers": "Concurrent Users"
+			},
+			"placeholders": {
+				"selectModel": "Select model...",
+				"selectGpu": "Select GPU...",
+				"selectQuantization": "Select quantization method",
+				"selectKvQuantization": "Select KV cache quantization"
+			},
+			"validation": {
+				"selectModel": "Please select a model",
+				"selectGpu": "Please select GPU"
+			},
+			"metrics": {
+				"generationSpeed": "Generation Speed",
+				"totalThroughput": "Total Throughput",
+				"recommendedMemory": "Recommended Memory",
+				"recommendedCores": "Recommended Cores",
+				"totalVram": "Total VRAM",
+				"vramUsage": "VRAM",
+				"parameters": "Parameters",
+				"layers": "Layers",
+				"hiddenDim": "Hidden Dimension",
+				"attention": "Attention",
+				"mode": "Mode",
+				"batch": "Batch",
+				"users": "Users",
+				"cores": "cores",
+				"inference": "Inference"
+			},
+			"memoryTypes": {
+				"modelWeights": "Model Weights",
+				"kvCache": "KV Cache",
+				"activations": "Activations",
+				"multiDeviceOverhead": "Multi-device Overhead",
+				"frameworkOverhead": "Framework Overhead"
+			}
 		}
 	},
 	"actions": {
@@ -800,5 +853,11 @@
 			"LoadBalancer": "Load Balancer",
 			"Ingress": "Ingress"
 		}
+	},
+	"tools": {
+		"title": "Tools"
+	},
+	"vram_calculator": {
+		"title": "VRAM Calculator"
 	}
 }
