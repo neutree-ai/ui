@@ -95,8 +95,8 @@
 		"vramCalculator": {
 			"title": "显存计算器",
 			"sections": {
-				"performanceMemory": "性能与内存结果",
-				"memoryAllocation": "内存分配",
+				"performanceMemory": "性能与显存结果",
+				"memoryAllocation": "显存分配",
 				"cpuResources": "CPU 与内存资源需求"
 			},
 			"fields": {

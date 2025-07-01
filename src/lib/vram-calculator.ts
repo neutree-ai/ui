@@ -112,11 +112,21 @@ function calculateKVCache(
   const bytesPerToken = getQuantizationBytes(kvQuantization);
   const kvCoeff = getKVCacheCoeff(model.attentionStructure);
 
-  const effectiveBatch = Math.max(batchSize, concurrentUsers);
+  // For inference, KV cache grows with batch size, but not as dramatically as training
+  // vLLM and similar engines use PagedAttention which reduces actual memory usage
+  // The effective batch for KV cache is typically the actual batch size being processed
+  const effectiveBatch = batchSize;
+
+  // Use key-value head count and calculated head dimension for more accurate calculation
+  // KV cache size = 2 (K+V) * layers * kv_heads * head_dim * seq_len * batch * bytes
+  const kvHeads = model.kvHeads;
+  const headDim = model.hiddenSize / model.attentionHeads; // Head dimension
+
   const kvCacheSize =
-    2 *
+    2 * // K and V
     model.layers *
-    model.hiddenSize *
+    kvHeads *
+    headDim *
     sequenceLength *
     effectiveBatch *
     bytesPerToken *
@@ -130,8 +140,15 @@ function calculateActivations(
   batchSize: number,
   sequenceLength: number,
 ): number {
-  const activationSize =
-    batchSize * sequenceLength * model.hiddenSize * model.layers * 4;
+  // For inference, activations are much smaller than training
+  // Only forward pass activations are needed, not backward pass gradients
+  // Modern frameworks use activation checkpointing and memory optimization
+
+  // Rough estimation: activation memory scales more moderately with batch size
+  // Formula based on transformer architecture: roughly hiddenSize * seqLen * batchSize * layers
+  // But with optimizations, the multiplier is much smaller (around 0.5-1 instead of 4)
+  const activationSize = batchSize * sequenceLength * model.hiddenSize * 0.5; // Much smaller coefficient for inference
+
   return activationSize / 1024 ** 3;
 }
 
@@ -284,8 +301,14 @@ export function calculateVRAMRequirements(
   );
   const activations = calculateActivations(model, batchSize, sequenceLength);
 
+  // Apply inference optimization factor for modern engines like vLLM
+  // These engines use techniques like PagedAttention, continuous batching, etc.
+  const inferenceOptimizationFactor = 0.7; // 30% reduction from optimizations
+  const optimizedKvCache = kvCache * inferenceOptimizationFactor;
+  const optimizedActivations = activations * inferenceOptimizationFactor;
+
   const baseVramUsage =
-    modelWeights + kvCache / numGpus + activations / numGpus;
+    modelWeights + optimizedKvCache / numGpus + optimizedActivations / numGpus;
   const multiDeviceOverhead = calculateMultiDeviceOverhead(
     baseVramUsage,
     numGpus,
@@ -293,7 +316,11 @@ export function calculateVRAMRequirements(
   const framework = calculateFrameworkOverhead(customVram, numGpus);
 
   const totalVram =
-    modelWeights + kvCache + activations + multiDeviceOverhead + framework;
+    modelWeights +
+    optimizedKvCache +
+    optimizedActivations +
+    multiDeviceOverhead +
+    framework;
 
   const totalUtilization = (totalVram / totalAvailableVram) * 100;
 
@@ -301,10 +328,15 @@ export function calculateVRAMRequirements(
 
   const memoryBreakdown: MemoryItem[] = [
     createMemoryItem("modelWeights", modelWeights, customVram, "#3b82f6"),
-    createMemoryItem("kvCache", kvCache / numGpus, customVram, "#e879f9"),
+    createMemoryItem(
+      "kvCache",
+      optimizedKvCache / numGpus,
+      customVram,
+      "#e879f9",
+    ),
     createMemoryItem(
       "activations",
-      activations / numGpus,
+      optimizedActivations / numGpus,
       customVram,
       "#10b981",
     ),
@@ -320,8 +352,8 @@ export function calculateVRAMRequirements(
 
   const singleGpuTotalUsed =
     modelWeights +
-    kvCache / numGpus +
-    activations / numGpus +
+    optimizedKvCache / numGpus +
+    optimizedActivations / numGpus +
     multiDeviceOverhead +
     framework;
 
@@ -335,17 +367,17 @@ export function calculateVRAMRequirements(
     },
     {
       key: "kvCache",
-      memoryGB: kvCache / numGpus,
-      percentage: (kvCache / numGpus / singleGpuTotalUsed) * 100,
+      memoryGB: optimizedKvCache / numGpus,
+      percentage: (optimizedKvCache / numGpus / singleGpuTotalUsed) * 100,
       color: "#e879f9",
-      label: `${((kvCache / numGpus / singleGpuTotalUsed) * 100).toFixed(1)}%`,
+      label: `${((optimizedKvCache / numGpus / singleGpuTotalUsed) * 100).toFixed(1)}%`,
     },
     {
       key: "activations",
-      memoryGB: activations / numGpus,
-      percentage: (activations / numGpus / singleGpuTotalUsed) * 100,
+      memoryGB: optimizedActivations / numGpus,
+      percentage: (optimizedActivations / numGpus / singleGpuTotalUsed) * 100,
       color: "#10b981",
-      label: `${((activations / numGpus / singleGpuTotalUsed) * 100).toFixed(1)}%`,
+      label: `${((optimizedActivations / numGpus / singleGpuTotalUsed) * 100).toFixed(1)}%`,
     },
   ];
 
@@ -394,8 +426,8 @@ export function calculateVRAMRequirements(
     numGpus,
     raw: {
       modelWeights,
-      kvCache,
-      activations,
+      kvCache: optimizedKvCache,
+      activations: optimizedActivations,
       multiDeviceOverhead,
       framework,
     },

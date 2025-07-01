@@ -67,7 +67,7 @@ const VRAMCalculator: React.FC = () => {
           .min(1, t("pages.vramCalculator.validation.selectGpu")),
         customVram: z.number().min(1).max(1000),
         numGpus: z.number().min(1).max(8),
-        batchSize: z.number().min(1).max(32),
+        batchSize: z.number().min(1).max(512),
         sequenceLength: z.number().min(1024).max(131072),
         concurrentUsers: z.number().min(1).max(32),
       }),
@@ -411,19 +411,13 @@ const VRAMCalculator: React.FC = () => {
                     <FormControl>
                       <Slider
                         min={1}
-                        max={32}
+                        max={512}
                         step={1}
                         value={[field.value]}
                         onValueChange={(value) => field.onChange(value[0])}
                         className="w-full"
                       />
                     </FormControl>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>1</span>
-                      <span>8</span>
-                      <span>16</span>
-                      <span>32</span>
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -448,12 +442,6 @@ const VRAMCalculator: React.FC = () => {
                         className="w-full"
                       />
                     </FormControl>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>1K</span>
-                      <span>32K</span>
-                      <span>64K</span>
-                      <span>131K</span>
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -478,12 +466,6 @@ const VRAMCalculator: React.FC = () => {
                         className="w-full"
                       />
                     </FormControl>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>1</span>
-                      <span>8</span>
-                      <span>16</span>
-                      <span>32</span>
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
