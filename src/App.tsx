@@ -24,6 +24,7 @@ import "./variables.css";
 
 import { clientPostgrest } from "./lib/api";
 import { useTranslation } from "./lib/i18n";
+import { Logo } from "@/components/business/Logo";
 import {
   Layers,
   Cpu,
@@ -38,6 +39,7 @@ import {
   Server,
   BookOpen,
   Calculator,
+  Settings,
 } from "lucide-react";
 
 import {
@@ -89,6 +91,7 @@ import { YamlImportButton } from "./components/business/YamlImportButton";
 import { YamlExportButton } from "./components/business/YamlExportButton";
 import Dashboard from "./pages/dashboard/Dashboard";
 import VRAMCalculator from "./pages/vram-calculator/VramCalculatorPage";
+import { OemConfigShow } from "./pages/oem-config";
 
 const resources: ResourceProps[] = [
   {
@@ -251,6 +254,15 @@ const resources: ResourceProps[] = [
       parent: "tools",
     },
   },
+  {
+    name: "oem_configs",
+    list: "/oem-configs",
+    meta: {
+      icon: <Settings />,
+      parent: "tools",
+      idColumnName: "metadata->name",
+    },
+  },
 ];
 
 function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
@@ -303,23 +315,8 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                       defaultLayout={[]}
                       navCollapsedSize={4}
                       logo={{
-                        default: (
-                          <div className="flex justify-center items-center">
-                            <img
-                              alt="logo"
-                              src="/logo.png"
-                              className="w-8 h-8 block"
-                            />
-                            <div className="text-sm font-bold">Neutree</div>
-                          </div>
-                        ),
-                        collapsed: (
-                          <img
-                            alt="logo"
-                            src="/logo.png"
-                            className="w-8 h-8 block"
-                          />
-                        ),
+                        default: <Logo />,
+                        collapsed: <Logo collapsed />,
                       }}
                       navbar={{
                         leftSide: (
@@ -414,6 +411,9 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route path="/:workspace/api-keys">
                   <Route index element={<ApiKeysList />} />
                   <Route path="show/:id" element={<ApiKeysShow />} />
+                </Route>
+                <Route path="/oem-configs">
+                  <Route index element={<OemConfigShow />} />
                 </Route>
               </Route>
 

@@ -859,5 +859,32 @@
 	},
 	"vram_calculator": {
 		"title": "显存计算器"
+	},
+	"oem_configs": {
+		"title": "自定义外观",
+		"description": "自定义应用程序的外观",
+		"fields": {
+			"brandName": "品牌名称",
+			"mainLogo": "主要 Logo",
+			"collapsedLogo": "折叠 Logo",
+			"brandSettings": "品牌设置"
+		},
+		"placeholders": {
+			"brandName": "输入品牌名称"
+		},
+		"descriptions": {
+			"brandName": "这将显示在导航栏和登录页面中",
+			"mainLogo": "推荐尺寸：64x64px。支持 PNG、JPG、SVG 格式。",
+			"collapsedLogo": "在侧边栏折叠时使用。如果未提供，将使用主要 Logo。"
+		},
+		"buttons": {
+			"uploadLogo": "上传 Logo",
+			"uploadCollapsedLogo": "上传折叠 Logo",
+			"resetToDefault": "重置为默认",
+			"saveConfiguration": "保存配置"
+		},
+		"labels": {
+			"optional": "（可选）"
+		}
 	}
 }

@@ -96,7 +96,6 @@ export const useYamlImport = () => {
           labels: resource.metadata.labels || {},
         },
         spec: resource.spec,
-        status: null,
       };
 
       return baseResource;

@@ -152,7 +152,7 @@ const ActionNode = ({
   const fullPermission = `${resource}:${action}`;
 
   return (
-    <div className="flex items-center p-2 rounded bg-card border border-border hover:bg-accent text-card-foreground">
+    <div className="flex items-center p-2 rounded bg-card border border-border text-card-foreground">
       <div className="mr-2">{actionIcon}</div>
 
       <div className="text-xs ml-1 text-muted-foreground font-mono">

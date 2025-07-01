@@ -859,5 +859,32 @@
 	},
 	"vram_calculator": {
 		"title": "VRAM Calculator"
+	},
+	"oem_configs": {
+		"title": "Customize Appearance",
+		"description": "Customize your application's appearance",
+		"fields": {
+			"brandName": "Brand Name",
+			"mainLogo": "Main Logo",
+			"collapsedLogo": "Collapsed Logo",
+			"brandSettings": "Brand Settings"
+		},
+		"placeholders": {
+			"brandName": "Enter brand name"
+		},
+		"descriptions": {
+			"brandName": "This will be displayed in the navigation and login pages",
+			"mainLogo": "Recommended size: 64x64px. Supports PNG, JPG, SVG formats.",
+			"collapsedLogo": "Used when the sidebar is collapsed. If not provided, the main logo will be used."
+		},
+		"buttons": {
+			"uploadLogo": "Upload Logo",
+			"uploadCollapsedLogo": "Upload Collapsed Logo",
+			"resetToDefault": "Reset to Default",
+			"saveConfiguration": "Save Configuration"
+		},
+		"labels": {
+			"optional": "(Optional)"
+		}
 	}
 }
