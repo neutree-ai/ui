@@ -5,7 +5,6 @@ import {
   useRefineContext,
   useResource,
   useTranslate,
-  useUserFriendlyName,
 } from "@refinedev/core";
 import { type FC, isValidElement } from "react";
 import { Row } from "./row";
@@ -96,7 +95,7 @@ export const ShowPage: FC<ShowProps> & {
         }
         isBack
       />
-      <div className="relative pt-4 !mt-0 grow overflow-hidden">{children}</div>
+      <div className="relative pt-4 !mt-0 grow overflow-auto">{children}</div>
     </DeleteProvider>
   );
 };

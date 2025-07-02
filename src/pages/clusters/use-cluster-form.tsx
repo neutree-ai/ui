@@ -12,6 +12,12 @@ import { useTranslation } from "react-i18next";
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
+
+  const acceleratorTypes = [
+    { label: "NVIDIA GPU", value: "nvidia.com/gpu" },
+    { label: "Ascend310P", value: "huawei.com/Ascend310P" },
+  ];
+
   const form = useForm<Cluster>({
     mode: "all",
     defaultValues: {
@@ -44,6 +50,47 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const workerResources = form.watch(
     "spec.config.worker_group_specs.0.resources",
   );
+
+  const getAcceleratorInfo = (
+    resources: Record<string, string | number> | undefined,
+  ) => {
+    if (!resources) return { type: "nvidia.com/gpu", count: "0" };
+
+    for (const acceleratorType of acceleratorTypes) {
+      if (resources[acceleratorType.value]) {
+        return {
+          type: acceleratorType.value,
+          count: resources[acceleratorType.value] as string,
+        };
+      }
+    }
+    return { type: "nvidia.com/gpu", count: "0" };
+  };
+
+  const headAccelerator = getAcceleratorInfo(headResources);
+  const workerAccelerator = getAcceleratorInfo(workerResources);
+
+  const updateAcceleratorResources = (
+    resourcesPath: string,
+    currentResources: Record<string, string | number> | undefined,
+    newType: string,
+    newCount: string,
+  ) => {
+    if (!currentResources) return;
+
+    const newResources = { ...currentResources };
+    for (const type of acceleratorTypes) {
+      delete newResources[type.value];
+    }
+
+    newResources[newType] = newCount;
+
+    if (resourcesPath === "spec.config.head_node_spec.resources") {
+      form.setValue("spec.config.head_node_spec.resources", newResources);
+    } else if (resourcesPath === "spec.config.worker_group_specs.0.resources") {
+      form.setValue("spec.config.worker_group_specs.0.resources", newResources);
+    }
+  };
 
   const meta = {
     workspace,
@@ -166,125 +213,184 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         )}
 
         {isKubernetes && (
-          <>
-            <Field
-              {...form}
-              name="spec.config.kubeconfig"
-              label={t("clusters.fields.kubeconfig")}
-              className="col-span-4"
-            >
-              <Input type="password" disabled={isEdit} />
-            </Field>
-            <Field
-              {...form}
-              name="spec.config.head_node_spec.access_mode"
-              label={t("clusters.fields.headAccessMode")}
-            >
-              <Select
-                options={[
-                  {
-                    label: t("clusters.options.loadBalancer"),
-                    value: "LoadBalancer",
-                  },
-                  { label: t("clusters.options.ingress"), value: "Ingress" },
-                ]}
-                disabled={isEdit}
-              />
-            </Field>
-
-            <Field
-              {...form}
-              name="spec.config.head_node_spec.resources.cpu"
-              label={t("clusters.fields.headNodeCpu")}
-            >
-              <Input disabled={isEdit} />
-            </Field>
-
-            <Field
-              {...form}
-              name="spec.config.head_node_spec.resources.memory"
-              label={t("clusters.fields.headNodeMemory")}
-            >
-              <Input disabled={isEdit} />
-            </Field>
-
-            <Field
-              {...form}
-              name="spec.config.head_node_spec.resources['nvidia\.com/gpu']"
-              label={t("clusters.fields.headNodeGpu")}
-            >
-              <Input
-                disabled={isEdit}
-                value={headResources["nvidia.com/gpu"] as string}
-                onChange={(evt) => {
-                  const value = evt.target.value;
-                  form.setValue("spec.config.head_node_spec.resources", {
-                    ...headResources,
-                    "nvidia.com/gpu": value,
-                  });
-                }}
-              />
-            </Field>
-
-            <Field
-              {...form}
-              name="spec.config.worker_group_specs.0.min_replicas"
-              label={t("clusters.fields.workerNodeReplica")}
-            >
-              <Input
-                type="number"
-                disabled={isEdit}
-                onChange={(evt) => {
-                  const value = Number(evt.target.value);
-                  form.setValue(
-                    "spec.config.worker_group_specs.0.min_replicas",
-                    value,
-                  );
-                  form.setValue(
-                    "spec.config.worker_group_specs.0.max_replicas",
-                    value,
-                  );
-                }}
-              />
-            </Field>
-
-            <Field
-              {...form}
-              name="spec.config.worker_group_specs.0.resources.cpu"
-              label={t("clusters.fields.workerNodeCpu")}
-            >
-              <Input disabled={isEdit} />
-            </Field>
-
-            <Field
-              {...form}
-              name="spec.config.worker_group_specs.0.resources.memory"
-              label={t("clusters.fields.workerNodeMemory")}
-            >
-              <Input disabled={isEdit} />
-            </Field>
-
-            <Field
-              {...form}
-              name="spec.config.worker_group_specs.0.resources['nvidia\.com/gpu']"
-              label={t("clusters.fields.workerNodeGpu")}
-            >
-              <Input
-                disabled={isEdit}
-                value={workerResources["nvidia.com/gpu"] as string}
-                onChange={(evt) => {
-                  const value = evt.target.value;
-                  form.setValue("spec.config.worker_group_specs.0.resources", {
-                    ...workerResources,
-                    "nvidia.com/gpu": value,
-                  });
-                }}
-              />
-            </Field>
-          </>
+          <Field
+            {...form}
+            name="spec.config.kubeconfig"
+            label={t("clusters.fields.kubeconfig")}
+            className="col-span-4"
+          >
+            <Input type="password" disabled={isEdit} />
+          </Field>
         )}
       </FormCardGrid>
     ),
+    headNodeFields: isKubernetes ? (
+      <FormCardGrid title={t("clusters.sections.headNode")}>
+        <Field
+          {...form}
+          name="spec.config.head_node_spec.access_mode"
+          label={t("clusters.fields.accessMode")}
+        >
+          <Select
+            options={[
+              {
+                label: t("clusters.options.loadBalancer"),
+                value: "LoadBalancer",
+              },
+              { label: t("clusters.options.ingress"), value: "Ingress" },
+            ]}
+            disabled={isEdit}
+          />
+        </Field>
+
+        <Field
+          {...form}
+          name="spec.config.head_node_spec.resources.cpu"
+          label={t("clusters.fields.cpu")}
+        >
+          <Input disabled={isEdit} />
+        </Field>
+
+        <Field
+          {...form}
+          name="spec.config.head_node_spec.resources.memory"
+          label={t("clusters.fields.memory")}
+        >
+          <Input disabled={isEdit} />
+        </Field>
+
+        <div />
+
+        <Field
+          {...form}
+          name="spec.config.head_node_spec.accelerator_type"
+          label={t("clusters.fields.acceleratorType")}
+        >
+          <Select
+            options={acceleratorTypes}
+            value={headAccelerator.type}
+            onChange={(value) => {
+              updateAcceleratorResources(
+                "spec.config.head_node_spec.resources",
+                headResources,
+                value,
+                headAccelerator.count,
+              );
+            }}
+            disabled={isEdit}
+          />
+        </Field>
+
+        <Field
+          {...form}
+          name="spec.config.head_node_spec.accelerator_count"
+          label={t("clusters.fields.acceleratorCount")}
+        >
+          <Input
+            disabled={isEdit}
+            value={headAccelerator.count}
+            onChange={(evt) => {
+              const value = evt.target.value;
+              updateAcceleratorResources(
+                "spec.config.head_node_spec.resources",
+                headResources,
+                headAccelerator.type,
+                value,
+              );
+            }}
+          />
+        </Field>
+
+        <div />
+        <div />
+      </FormCardGrid>
+    ) : null,
+    workerNodeFields: isKubernetes ? (
+      <FormCardGrid title={t("clusters.sections.workerNode")}>
+        <Field
+          {...form}
+          name="spec.config.worker_group_specs.0.min_replicas"
+          label={t("clusters.fields.replicas")}
+        >
+          <Input
+            type="number"
+            disabled={isEdit}
+            onChange={(evt) => {
+              const value = Number(evt.target.value);
+              form.setValue(
+                "spec.config.worker_group_specs.0.min_replicas",
+                value,
+              );
+              form.setValue(
+                "spec.config.worker_group_specs.0.max_replicas",
+                value,
+              );
+            }}
+          />
+        </Field>
+
+        <Field
+          {...form}
+          name="spec.config.worker_group_specs.0.resources.cpu"
+          label={t("clusters.fields.cpu")}
+        >
+          <Input disabled={isEdit} />
+        </Field>
+
+        <Field
+          {...form}
+          name="spec.config.worker_group_specs.0.resources.memory"
+          label={t("clusters.fields.memory")}
+        >
+          <Input disabled={isEdit} />
+        </Field>
+
+        <div />
+
+        <Field
+          {...form}
+          name="spec.config.worker_group_specs.0.accelerator_type"
+          label={t("clusters.fields.acceleratorType")}
+        >
+          <Select
+            options={acceleratorTypes}
+            value={workerAccelerator.type}
+            onChange={(value) => {
+              updateAcceleratorResources(
+                "spec.config.worker_group_specs.0.resources",
+                workerResources,
+                value,
+                workerAccelerator.count,
+              );
+            }}
+            disabled={isEdit}
+          />
+        </Field>
+
+        <Field
+          {...form}
+          name="spec.config.worker_group_specs.0.accelerator_count"
+          label={t("clusters.fields.acceleratorCount")}
+        >
+          <Input
+            disabled={isEdit}
+            value={workerAccelerator.count}
+            onChange={(evt) => {
+              const value = evt.target.value;
+              updateAcceleratorResources(
+                "spec.config.worker_group_specs.0.resources",
+                workerResources,
+                workerAccelerator.type,
+                value,
+              );
+            }}
+          />
+        </Field>
+
+        <div />
+        <div />
+      </FormCardGrid>
+    ) : null,
     authFields: isKubernetes ? null : (
       <FormCardGrid title={t("clusters.sections.nodeAuthentication")}>
         <Field

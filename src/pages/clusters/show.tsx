@@ -38,6 +38,34 @@ export const ClustersShow = () => {
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
 
+  // Calculate accelerator info for head node
+  const headNodeAcceleratorEntry =
+    record && "kubeconfig" in record.spec.config
+      ? Object.entries(record.spec.config.head_node_spec?.resources || {}).find(
+          ([key]) => key.includes("gpu") || key.includes("Ascend"),
+        )
+      : null;
+
+  const headNodeAcceleratorCount = headNodeAcceleratorEntry?.[1];
+  const hasHeadNodeAccelerator =
+    headNodeAcceleratorCount &&
+    typeof headNodeAcceleratorCount === "string" &&
+    Number.parseInt(headNodeAcceleratorCount) > 0;
+
+  // Calculate accelerator info for worker node
+  const workerNodeAcceleratorEntry =
+    record && "kubeconfig" in record.spec.config
+      ? Object.entries(
+          record.spec.config.worker_group_specs?.[0]?.resources || {},
+        ).find(([key]) => key.includes("gpu") || key.includes("Ascend"))
+      : null;
+
+  const workerNodeAcceleratorCount = workerNodeAcceleratorEntry?.[1];
+  const hasWorkerNodeAccelerator =
+    workerNodeAcceleratorCount &&
+    typeof workerNodeAcceleratorCount === "string" &&
+    Number.parseInt(workerNodeAcceleratorCount) > 0;
+
   return (
     <ShowPage record={record}>
       <Tabs defaultValue="basic" className="h-full">
@@ -88,40 +116,89 @@ export const ClustersShow = () => {
                 </div>
               )}
               {"kubeconfig" in record.spec.config && (
-                <div>
-                  <div className="grid grid-cols-4 gap-8">
-                    <ShowPage.Row title={t("clusters.fields.accessMode")}>
-                      {record.spec.config.head_node_spec?.access_mode ?? ""}
-                    </ShowPage.Row>
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t("clusters.sections.headNode")}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-4 gap-8">
+                        <ShowPage.Row title={t("clusters.fields.accessMode")}>
+                          {record.spec.config.head_node_spec?.access_mode ?? ""}
+                        </ShowPage.Row>
 
-                    <ShowPage.Row title={t("clusters.fields.headNodeCpu")}>
-                      {record.spec.config.head_node_spec?.resources?.cpu ?? ""}
-                    </ShowPage.Row>
+                        <ShowPage.Row title={t("clusters.fields.cpu")}>
+                          {record.spec.config.head_node_spec?.resources?.cpu ??
+                            ""}
+                        </ShowPage.Row>
 
-                    <ShowPage.Row title={t("clusters.fields.headNodeMemory")}>
-                      {record.spec.config.head_node_spec?.resources?.memory ??
-                        ""}
-                    </ShowPage.Row>
-                  </div>
+                        <ShowPage.Row title={t("clusters.fields.memory")}>
+                          {record.spec.config.head_node_spec?.resources
+                            ?.memory ?? ""}
+                        </ShowPage.Row>
 
-                  <div className="grid grid-cols-4 gap-8">
-                    <ShowPage.Row
-                      title={t("clusters.fields.workerNodeReplica")}
-                    >
-                      {record.spec.config.worker_group_specs?.[0]
-                        ?.max_replicas ?? ""}
-                    </ShowPage.Row>
+                        <div />
 
-                    <ShowPage.Row title={t("clusters.fields.workerNodeCpu")}>
-                      {record.spec.config.worker_group_specs?.[0].resources
-                        ?.cpu ?? ""}
-                    </ShowPage.Row>
+                        {hasHeadNodeAccelerator && (
+                          <>
+                            <ShowPage.Row
+                              title={t("clusters.fields.acceleratorType")}
+                            >
+                              {headNodeAcceleratorEntry?.[0]}
+                            </ShowPage.Row>
 
-                    <ShowPage.Row title={t("clusters.fields.workerNodeMemory")}>
-                      {record.spec.config.worker_group_specs?.[0].resources
-                        ?.memory ?? ""}
-                    </ShowPage.Row>
-                  </div>
+                            <ShowPage.Row
+                              title={t("clusters.fields.acceleratorCount")}
+                            >
+                              {headNodeAcceleratorCount}
+                            </ShowPage.Row>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t("clusters.sections.workerNode")}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-4 gap-8">
+                        <ShowPage.Row title={t("clusters.fields.replicas")}>
+                          {record.spec.config.worker_group_specs?.[0]
+                            ?.max_replicas ?? ""}
+                        </ShowPage.Row>
+
+                        <ShowPage.Row title={t("clusters.fields.cpu")}>
+                          {record.spec.config.worker_group_specs?.[0].resources
+                            ?.cpu ?? ""}
+                        </ShowPage.Row>
+
+                        <ShowPage.Row title={t("clusters.fields.memory")}>
+                          {record.spec.config.worker_group_specs?.[0].resources
+                            ?.memory ?? ""}
+                        </ShowPage.Row>
+
+                        <div />
+
+                        {hasWorkerNodeAccelerator && (
+                          <>
+                            <ShowPage.Row
+                              title={t("clusters.fields.acceleratorType")}
+                            >
+                              {workerNodeAcceleratorEntry?.[0]}
+                            </ShowPage.Row>
+
+                            <ShowPage.Row
+                              title={t("clusters.fields.acceleratorCount")}
+                            >
+                              {workerNodeAcceleratorCount}
+                            </ShowPage.Row>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
             </CardContent>
