@@ -204,9 +204,13 @@ export const ApiKeysList = () => {
         </DialogContent>
       </Dialog>
 
-      <Table enableSorting enableFilters refineCoreProps={{
-        sorters: defaultSorters,
-      }}>
+      <Table
+        enableSorting
+        enableFilters
+        refineCoreProps={{
+          sorters: defaultSorters,
+        }}
+      >
         {metadataColumns.name}
         {metadataColumns.workspace}
 

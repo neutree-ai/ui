@@ -465,8 +465,6 @@
 		},
 		"options": {
 			"generic": "通用",
-			"l4": "L4",
-			"t4": "T4",
 			"powerOfTwo": "二的幂",
 			"consistentHashing": "一致性哈希"
 		},

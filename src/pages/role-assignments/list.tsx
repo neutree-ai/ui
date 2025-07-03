@@ -9,9 +9,13 @@ export const RoleAssignmentsList = () => {
 
   return (
     <ListPage>
-      <Table enableSorting enableFilters refineCoreProps={{
-        sorters: defaultSorters,
-      }}>
+      <Table
+        enableSorting
+        enableFilters
+        refineCoreProps={{
+          sorters: defaultSorters,
+        }}
+      >
         {metadataColumns.name}
         {roleAssignmentColumns.workspace}
         {roleAssignmentColumns.role}

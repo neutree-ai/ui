@@ -465,8 +465,6 @@
 		},
 		"options": {
 			"generic": "Generic",
-			"l4": "L4",
-			"t4": "T4",
 			"powerOfTwo": "Power of two",
 			"consistentHashing": "Consistent hashing"
 		},

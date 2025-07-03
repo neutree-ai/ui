@@ -9,9 +9,13 @@ export const UsersList = () => {
 
   return (
     <ListPage>
-      <Table enableSorting enableFilters refineCoreProps={{
-        sorters: defaultSorters,
-      }}>
+      <Table
+        enableSorting
+        enableFilters
+        refineCoreProps={{
+          sorters: defaultSorters,
+        }}
+      >
         {metadataColumns.name}
         {userColumns.email}
 
