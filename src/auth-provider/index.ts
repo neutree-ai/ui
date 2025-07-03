@@ -4,7 +4,7 @@ import { AuthClient } from "@supabase/auth-js";
 
 const GOTRUE_URL = `${REST_URL}/auth`;
 
-export const auth = new AuthClient({ url: GOTRUE_URL });
+export const auth = new AuthClient({ url: GOTRUE_URL, autoRefreshToken: true });
 
 export const authProvider: AuthProvider = {
   login: async ({ email, password, providerName }) => {
