@@ -1,6 +1,7 @@
 import { ListPage, Table } from "@/components/theme";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useWorkflowColumns } from "@/components/theme/table/columns/workflow-columns";
+import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const WorkspacesList = () => {
   const metadataColumns = useMetadataColumns();
@@ -8,7 +9,13 @@ export const WorkspacesList = () => {
 
   return (
     <ListPage>
-      <Table enableSorting enableFilters>
+      <Table
+        enableSorting
+        enableFilters
+        refineCoreProps={{
+          sorters: defaultSorters,
+        }}
+      >
         {metadataColumns.name}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}

@@ -2,6 +2,7 @@ import { ModelTaskFilter } from "@/components/business/ModelTaskFilter";
 import { ListPage, Table } from "@/components/theme";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useModelCatalogColumns } from "@/components/theme/table/columns/model-catalog-columns";
+import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const ModelCatalogsList = () => {
   const metadataColumns = useMetadataColumns();
@@ -12,6 +13,9 @@ export const ModelCatalogsList = () => {
       <Table
         enableSorting
         enableFilters
+        refineCoreProps={{
+          sorters: defaultSorters,
+        }}
         filters={({ filters, setFilters }) => (
           <ModelTaskFilter filters={filters} setFilters={setFilters} />
         )}

@@ -3,6 +3,7 @@ import { ListPage, Table } from "@/components/theme";
 import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useTranslation } from "react-i18next";
+import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const EndpointsList = () => {
   const { t } = useTranslation();
@@ -14,6 +15,9 @@ export const EndpointsList = () => {
       <Table
         enableSorting
         enableFilters
+        refineCoreProps={{
+          sorters: defaultSorters,
+        }}
         filters={({ filters, setFilters }) => (
           <ModelTaskFilter filters={filters} setFilters={setFilters} />
         )}

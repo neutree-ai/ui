@@ -1,6 +1,7 @@
 import { ListPage, Table } from "@/components/theme";
 import { useImageRegistryColumns } from "@/components/theme/table/columns/image-registry-columns";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
+import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const ImageRegistriesList = () => {
   const metadataColumns = useMetadataColumns();
@@ -8,7 +9,9 @@ export const ImageRegistriesList = () => {
 
   return (
     <ListPage>
-      <Table enableSorting enableFilters>
+      <Table enableSorting enableFilters refineCoreProps={{
+        sorters: defaultSorters,
+      }}>
         {metadataColumns.name}
         {metadataColumns.workspace}
         {imageRegistryColumns.status}

@@ -1,6 +1,7 @@
 import { ListPage, Table } from "@/components/theme";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useRoleAssignmentColumns } from "@/components/theme/table/columns/role-assignment-columns";
+import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const RoleAssignmentsList = () => {
   const metadataColumns = useMetadataColumns();
@@ -8,7 +9,9 @@ export const RoleAssignmentsList = () => {
 
   return (
     <ListPage>
-      <Table enableSorting enableFilters>
+      <Table enableSorting enableFilters refineCoreProps={{
+        sorters: defaultSorters,
+      }}>
         {metadataColumns.name}
         {roleAssignmentColumns.workspace}
         {roleAssignmentColumns.role}

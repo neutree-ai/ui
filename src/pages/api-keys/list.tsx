@@ -25,6 +25,7 @@ import {
 import { useForm } from "@refinedev/react-hook-form";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useApiKeyColumns } from "@/components/theme/table/columns/api-key-columns";
+import { defaultSorters } from "@/components/theme/table/sorter";
 import type { ApiKey } from "@/types";
 
 const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
@@ -203,7 +204,9 @@ export const ApiKeysList = () => {
         </DialogContent>
       </Dialog>
 
-      <Table enableSorting enableFilters>
+      <Table enableSorting enableFilters refineCoreProps={{
+        sorters: defaultSorters,
+      }}>
         {metadataColumns.name}
         {metadataColumns.workspace}
 

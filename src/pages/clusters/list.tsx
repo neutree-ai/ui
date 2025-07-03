@@ -1,6 +1,7 @@
 import { ListPage, Table } from "@/components/theme";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useClusterColumns } from "@/components/theme/table/columns/cluster-columns";
+import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const ClustersList = () => {
   const metadataColumns = useMetadataColumns();
@@ -8,7 +9,9 @@ export const ClustersList = () => {
 
   return (
     <ListPage>
-      <Table enableSorting enableFilters>
+      <Table enableSorting enableFilters refineCoreProps={{
+        sorters: defaultSorters,
+      }}>
         {metadataColumns.name}
         {metadataColumns.workspace}
         {clusterColumns.status}
