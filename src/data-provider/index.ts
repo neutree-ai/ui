@@ -142,7 +142,7 @@ export const dataProvider = (
         };
       }
 
-      delete (variables as any)["-"];
+      cleanInternalFields(variables);
 
       const client = meta?.schema
         ? postgrestClient.schema(meta.schema)
@@ -184,7 +184,7 @@ export const dataProvider = (
     },
 
     update: async ({ resource, id, variables, meta }) => {
-      delete (variables as any)["-"];
+      cleanInternalFields(variables);
 
       const client = meta?.schema
         ? postgrestClient.schema(meta.schema)
@@ -351,3 +351,11 @@ export const dataProvider = (
     },
   };
 };
+
+function cleanInternalFields(variables: any) {
+  for (const key in variables) {
+    if (key.startsWith("-")) {
+      delete variables[key];
+    }
+  }
+}

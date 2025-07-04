@@ -27,6 +27,7 @@ import ModelTask from "@/components/business/ModelTask";
 import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
 import Loader from "@/components/theme/components/loader";
 import { useCallback, useRef, useState, Suspense, lazy } from "react";
+import React from "react";
 import RerankPlayground from "@/components/business/RerankPlayground";
 import { useTranslation } from "react-i18next";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
@@ -124,6 +125,44 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     },
   });
 
+  // Calculate resource display logic
+  const resourceDisplay = React.useMemo(() => {
+    if (!record?.spec.resources) {
+      return { hasGpu: false, hasNpu: false, gpuValue: "-", npuValue: "-" };
+    }
+
+    const accelerator = record.spec.resources.accelerator || {};
+    const gpuField = record.spec.resources.gpu;
+
+    // Check for GPU resources
+    const gpuAcceleratorKeys = Object.keys(accelerator).filter(
+      (key) =>
+        key !== "-" &&
+        key !== "NPU" &&
+        key.startsWith("NVIDIA_") &&
+        accelerator[key] > 0,
+    );
+    const hasGpu = Boolean(
+      gpuAcceleratorKeys.length > 0 || (gpuField && gpuField > 0),
+    );
+    const gpuValue =
+      gpuAcceleratorKeys.length > 0
+        ? accelerator[gpuAcceleratorKeys[0]]
+        : gpuField || "-";
+
+    // Check for NPU resources
+    const npuAcceleratorKeys = Object.keys(accelerator).filter(
+      (key) =>
+        (key === "NPU" || !key.startsWith("NVIDIA_")) && accelerator[key] > 0,
+    );
+    const hasNpu = npuAcceleratorKeys.length > 0;
+    const npuValue = hasNpu ? accelerator[npuAcceleratorKeys[0]] : "-";
+
+    const hasAccelerator = hasGpu || hasNpu;
+
+    return { hasGpu, hasNpu, gpuValue, npuValue, hasAccelerator };
+  }, [record?.spec.resources]);
+
   const url = record?.status?.service_url ?? "";
 
   if (isLoading) {
@@ -211,11 +250,18 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={t("endpoints.fields.gpu")}>
-                  {Object.values(record.spec.resources?.accelerator || {})[0] ??
-                    record.spec.resources?.gpu ??
-                    "-"}
-                </ShowPage.Row>
+                {resourceDisplay.hasGpu && (
+                  <ShowPage.Row title={t("endpoints.fields.gpu")}>
+                    {resourceDisplay.gpuValue}
+                  </ShowPage.Row>
+                )}
+
+                {resourceDisplay.hasNpu && (
+                  <ShowPage.Row title={t("endpoints.fields.npu")}>
+                    {resourceDisplay.npuValue}
+                  </ShowPage.Row>
+                )}
+
                 <ShowPage.Row title={t("endpoints.fields.cpu")}>
                   {record.spec.resources?.cpu ?? "-"}
                 </ShowPage.Row>
@@ -224,12 +270,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Row>
               </div>
 
-              {record.spec.resources?.accelerator && (
-                <ShowPage.Row
-                  title={Object.keys(record.spec.resources?.accelerator)[0]}
-                >
-                  {Object.values(record.spec.resources.accelerator)[0] ?? "-"}
-                </ShowPage.Row>
+              {resourceDisplay.hasAccelerator && (
+                <div className="mt-4">
+                  <ShowPage.Row
+                    title={`${t("clusters.fields.acceleratorType")}: ${Object.keys(record.spec.resources?.accelerator || {})[0]}`}
+                  >
+                    {Object.values(
+                      record.spec.resources?.accelerator || {},
+                    )[0] ?? "-"}
+                  </ShowPage.Row>
+                </div>
               )}
             </CardContent>
           </Card>

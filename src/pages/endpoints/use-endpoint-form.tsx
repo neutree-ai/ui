@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { useWorkspace } from "@/components/theme/hooks";
 import { useCustom, useSelect } from "@refinedev/core";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { CommandLoading } from "@/components/ui/command";
 import { Slider } from "@/components/ui/slider";
@@ -246,11 +246,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
 
-  const previousValuesRef = useRef<{
-    currentModelName?: string;
-    currentRegistry?: string;
-  }>({});
-
   const form = useForm<Endpoint>({
     mode: "all",
     defaultValues: {
@@ -277,9 +272,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           cpu: 1,
           memory: 1,
           gpu: 0,
-          npu: 0,
           accelerator: {
             "-": 0,
+            NPU: 0,
           },
         },
         replicas: {
@@ -297,10 +292,32 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     },
     refineCoreProps: {
       autoSave: {
-        enabled: true,
+        enabled: false,
       },
     },
     warnWhenUnsavedChanges: true,
+    resolver: (values) => {
+      const errors: Record<string, unknown> = {};
+
+      if (action === "create" && currentRegistry && currentModelName) {
+        const modelExists =
+          modelsData.data?.data.some(
+            (model: GeneralModel) => model.name === currentModelName,
+          ) ?? false;
+
+        if (!modelExists) {
+          errors["-model-catalog"] = {
+            type: "manual",
+            message: t("endpoints.messages.modelNotFoundInRegistry"),
+          };
+        }
+      }
+
+      return {
+        values,
+        errors,
+      };
+    },
   });
 
   const workspace = form.watch("metadata.workspace");
@@ -354,32 +371,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const isEdit = action === "edit";
 
-  // Auto-initialize model search with template model name when available
-  const effectiveModelSearch = useMemo(() => {
-    if (modelSearch) return modelSearch;
-    if (currentRegistry && currentModelName && !isEdit) {
-      return currentModelName;
-    }
-    return "";
-  }, [modelSearch, currentRegistry, currentModelName, isEdit]);
+  // Auto-initialize model search with current model name for better UX
+  const effectiveModelSearch = modelSearch || currentModelName || "";
 
-  const shouldFetchModels = Boolean(currentRegistry && effectiveModelSearch);
   const modelsData = useCustom({
-    url: `/workspaces/${workspace}/model_registries/${currentRegistry}/models?search=${effectiveModelSearch}`,
+    url: `/workspaces/${workspace}/model_registries/${currentRegistry}/models?${effectiveModelSearch ? `search=${effectiveModelSearch}` : ""}&limit=20`,
     method: "get",
     queryOptions: {
-      enabled: shouldFetchModels,
+      enabled: Boolean(currentRegistry),
     },
   });
-
-  const isModelFoundInRegistry = useMemo(() => {
-    if (!modelsData.data?.data || !currentModelName || !currentRegistry) {
-      return false;
-    }
-    return modelsData.data.data.some(
-      (model: GeneralModel) => model.name === currentModelName,
-    );
-  }, [modelsData.data?.data, currentModelName, currentRegistry]);
 
   const { engineNames, engineVersions, engineTasks } = useMemo(() => {
     const engineNames: string[] = [];
@@ -406,41 +407,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         )?.values_schema
       : undefined;
   }, [engineSpec.engine, engineSpec.version, engineVersions]);
-
-  useEffect(() => {
-    const prev = previousValuesRef.current;
-
-    if (
-      prev.currentModelName === currentModelName &&
-      prev.currentRegistry === currentRegistry
-    ) {
-      return;
-    }
-
-    previousValuesRef.current = {
-      currentModelName,
-      currentRegistry,
-    };
-
-    if (action === "create" && currentRegistry && currentModelName) {
-      if (!isModelFoundInRegistry && modelsData.data) {
-        form.setError("spec.model.name", {
-          type: "manual",
-          message: `${t("endpoints.messages.modelNotFoundInRegistry")}`,
-        });
-      } else if (isModelFoundInRegistry) {
-        form.clearErrors("spec.model.name");
-      }
-    }
-  }, [
-    isModelFoundInRegistry,
-    currentRegistry,
-    currentModelName,
-    modelsData.data,
-    action,
-    form,
-    t,
-  ]);
 
   // Handle model catalog selection with merge logic
   const handleModelCatalogSelect = (catalogId: string) => {
@@ -530,6 +496,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       (acc) => acc.value === currentAcceleratorType && acc.type === type,
     );
 
+    // Extract computed values
+    const currentAcceleratorValue = acceleratorValue[currentAcceleratorType] || 0;
+    const specificAccelerator = clusterResources?.acceleratorTypes.find(
+      (acc) => acc.value === currentAcceleratorType && acc.type === type,
+    );
+    const maxSliderValue = !clusterResources ? 2 : 
+      (specificAccelerator?.available ?? totalResources?.available ?? 0);
+
     const typeLabel = isGpu
       ? t("endpoints.fields.gpu")
       : t("endpoints.fields.npu");
@@ -543,26 +517,40 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
     return (
       <>
-        <Field {...form} name="-" label={typeLabel}>
+        <Field {...form} name="-accelerator-type" label={typeLabel}>
           <Combobox
             placeholder={t(placeholderKey)}
             options={typeOptions}
             value={Object.keys(acceleratorValue)[0]}
             onChange={(value) => {
+              const currentCount =
+                acceleratorValue[Object.keys(acceleratorValue)[0]];
               form.setValue("spec.resources.accelerator", {
-                [value as string]:
-                  acceleratorValue[Object.keys(acceleratorValue)[0]],
+                [value as string]: currentCount,
               });
+              
+              // Update the corresponding accelerator field based on type
+              if (type === "npu") {
+                form.setValue(
+                  "spec.resources.accelerator.NPU",
+                  (currentCount as number) ?? 0,
+                );
+              } else {
+                form.setValue(
+                  `spec.resources.${type}`,
+                  (currentCount as number) ?? 0,
+                );
+              }
             }}
             disabled={clusterStatusQuery.isLoading || !currentCluster}
           />
         </Field>
 
-        <Field {...form} name="-" label={countLabel}>
+        <Field {...form} name="-accelerator-value" label={countLabel}>
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>
-                {Object.values(acceleratorValue)[0] as number} {unitLabel}
+                {currentAcceleratorValue} {unitLabel}
               </span>
               {clusterResources && (
                 <span>
@@ -574,25 +562,29 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </div>
             <Slider
               min={0}
-              max={(() => {
-                if (!clusterResources) return 2;
-                const currentAcceleratorType = Object.keys(acceleratorValue)[0];
-                const accelerator = clusterResources.acceleratorTypes.find(
-                  (acc) =>
-                    acc.value === currentAcceleratorType && acc.type === type,
-                );
-                return accelerator?.available ?? totalResources?.available ?? 0;
-              })()}
+              max={maxSliderValue}
               step={0.5}
-              value={Object.values(acceleratorValue) as number[]}
+              value={[currentAcceleratorValue]}
               onValueChange={(value) => {
+                const currentAcceleratorType = Object.keys(acceleratorValue)[0];
                 form.setValue("spec.resources.accelerator", {
-                  [Object.keys(acceleratorValue)[0]]: value[0],
+                  [currentAcceleratorType]: value[0],
                 });
-                form.setValue(
-                  `spec.resources.${type}`,
-                  (value[0] as number) ?? 0,
-                );
+                
+                // Update the corresponding accelerator field based on type
+                if (type === "npu") {
+                  form.setValue(
+                    "spec.resources.accelerator.NPU",
+                    (value[0] as number) ?? 0,
+                  );
+                } else {
+                  form.setValue(
+                    `spec.resources.${type}`,
+                    (value[0] as number) ?? 0,
+                  );
+                }
+
+                console.log(form.getValues());
               }}
               disabled={clusterStatusQuery.isLoading || !currentCluster}
             />
@@ -664,13 +656,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             }))}
             onChange={(value) => {
               form.setValue("spec.model.registry", value as string);
-              // Reset model search when registry changes
+              // Reset model search and catalog selection when registry changes
               setModelSearch("");
             }}
           />
         </Field>
         {!isEdit && (
-          <Field {...form} name="-" label={t("endpoints.fields.modelCatalog")}>
+          <Field
+            {...form}
+            name="-model-catalog"
+            label={t("endpoints.fields.modelCatalog")}
+          >
             <Combobox
               placeholder={t("endpoints.placeholders.selectModelCatalog")}
               disabled={modelCatalogs.query.isLoading}
@@ -816,28 +812,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     shouldFilter={false}
                     onSearchChange={setModelSearch}
                     triggerClassName="w-full"
-                    // Disable if no registry selected OR model not found in registry after search
-                    disabled={
-                      !currentRegistry ||
-                      (!isModelFoundInRegistry && !!modelsData.data)
-                    }
-                    // Show template model name even when disabled
+                    // Only disable if no registry is selected
+                    disabled={!currentRegistry}
+                    // Show current model name
                     value={currentModelName}
                     // Handle model selection
                     onChange={(value: string) => {
                       form.setValue("spec.model.name", value);
                     }}
                   />
-                  {/* Show validation status */}
-                  {currentRegistry && currentModelName && modelsData.data && (
-                    <div className="text-sm">
-                      {isModelFoundInRegistry ? null : (
-                        <span className="text-red-600">
-                          {t("endpoints.messages.modelNotFoundInRegistry")}
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
             </Field>
