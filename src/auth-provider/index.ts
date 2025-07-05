@@ -6,6 +6,14 @@ const GOTRUE_URL = `${REST_URL}/auth`;
 
 export const auth = new AuthClient({ url: GOTRUE_URL, autoRefreshToken: true });
 
+auth.onAuthStateChange((event, session) => {
+  if (session?.access_token) {
+    clientPostgrest.headers.Authorization = `Bearer ${session.access_token}`;
+  } else {
+    delete clientPostgrest.headers.Authorization;
+  }
+});
+
 export const authProvider: AuthProvider = {
   login: async ({ email, password, providerName }) => {
     // sign in with oauth
@@ -47,10 +55,10 @@ export const authProvider: AuthProvider = {
           success: true,
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error,
+        error: error as Error,
       };
     }
 
@@ -84,10 +92,10 @@ export const authProvider: AuthProvider = {
           success: true,
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error,
+        error: error as Error,
       };
     }
 
@@ -117,10 +125,10 @@ export const authProvider: AuthProvider = {
           success: true,
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error,
+        error: error as Error,
       };
     }
 
@@ -151,10 +159,10 @@ export const authProvider: AuthProvider = {
           redirectTo: "/",
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error,
+        error: error as Error,
       };
     }
     return {
@@ -211,10 +219,10 @@ export const authProvider: AuthProvider = {
       }
 
       clientPostgrest.headers.Authorization = `Bearer ${session.access_token}`;
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         authenticated: false,
-        error: error || {
+        error: (error as Error) || {
           message: "Check failed",
           name: "Session not found",
         },
