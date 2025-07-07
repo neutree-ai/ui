@@ -237,7 +237,8 @@
 			"user": "User",
 			"email": "Email",
 			"permissions": "Permissions",
-			"permissionsCount": "{{count}} permissions"
+			"permissionsCount": "{{count}} permissions",
+			"labels": "Labels"
 		}
 	},
 	"documentTitle": {

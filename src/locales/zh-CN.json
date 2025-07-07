@@ -237,7 +237,8 @@
 			"user": "用户",
 			"email": "邮箱",
 			"permissions": "权限",
-			"permissionsCount": "{{count}} 个权限"
+			"permissionsCount": "{{count}} 个权限",
+			"labels": "标签"
 		}
 	},
 	"documentTitle": {
