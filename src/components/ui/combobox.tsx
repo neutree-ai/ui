@@ -31,6 +31,7 @@ type ComboboxProps = {
   popoverClassName?: string;
   allowUnselect?: boolean;
   disabled?: boolean;
+  asField?: boolean;
 };
 
 export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
@@ -47,6 +48,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
       triggerClassName,
       popoverClassName,
       disabled,
+      asField = true,
     }: ComboboxProps,
     ref,
   ) => {
@@ -55,27 +57,30 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
     const defaultPlaceholder =
       placeholder || t("components.ui.combobox.select");
 
+    const trigger = (
+      <Button
+        type="button"
+        variant="outline"
+        // biome-ignore lint/a11y/useSemanticElements: follow shadcn-ui
+        role="combobox"
+        aria-expanded={open}
+        className={cn(
+          "w-full flex justify-between overflow-clip",
+          !value && "text-muted-foreground",
+          triggerClassName,
+        )}
+      >
+        {value
+          ? options.find((item) => item.value === value)?.label
+          : defaultPlaceholder}
+        <ChevronsUpDown className="opacity-50" />
+      </Button>
+    );
+
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger disabled={disabled} asChild>
-          <FormControl>
-            <Button
-              variant="outline"
-              // biome-ignore lint/a11y/useSemanticElements: follow shadcn-ui
-              role="combobox"
-              aria-expanded={open}
-              className={cn(
-                "w-full flex justify-between overflow-clip",
-                !value && "text-muted-foreground",
-                triggerClassName,
-              )}
-            >
-              {value
-                ? options.find((item) => item.value === value)?.label
-                : defaultPlaceholder}
-              <ChevronsUpDown className="opacity-50" />
-            </Button>
-          </FormControl>
+          {asField ? <FormControl>{trigger}</FormControl> : trigger}
         </PopoverTrigger>
         <PopoverContent className={cn("w-[400px] p-0", popoverClassName)}>
           <Command

@@ -692,10 +692,10 @@
 			"key": "键",
 			"value": "值",
 			"selectValue": "选择值",
-			"true": "真",
-			"false": "假",
+			"true": "是",
+			"false": "否",
 			"newValue": "新值",
-			"selectFromSchema": "从架构中选择",
+			"selectFromSchema": "从 Schema 中选择",
 			"orTypeCustomKey": "或输入自定义键",
 			"newKey": "新键"
 		},

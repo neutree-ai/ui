@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Plus, Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -64,6 +65,13 @@ export const VariablesInput = React.forwardRef<
       const schemaKeys = Object.keys(schema);
       return schemaKeys.filter((key) => !usedKeys.includes(key));
     }, [value, schema]);
+
+    const schemaKeyOptions = useMemo(() => {
+      return availableSchemaKeys.map((key) => ({
+        label: schema[key]?.title || key,
+        value: key,
+      }));
+    }, [availableSchemaKeys, schema]);
 
     const handleAddVariable = () => {
       if (!newKey.trim()) return;
@@ -267,27 +275,17 @@ export const VariablesInput = React.forwardRef<
                 <TableCell>
                   {availableSchemaKeys.length > 0 ? (
                     <div className="flex gap-2">
-                      <Select
+                      <Combobox
                         value={
                           availableSchemaKeys.includes(newKey) ? newKey : ""
                         }
-                        onValueChange={setNewKey}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={t(
-                              "components.variablesInput.selectFromSchema",
-                            )}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableSchemaKeys.map((key) => (
-                            <SelectItem key={key} value={key}>
-                              {schema[key]?.title || key}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={setNewKey}
+                        options={schemaKeyOptions}
+                        placeholder={t(
+                          "components.variablesInput.selectFromSchema",
+                        )}
+                        asField={false}
+                      />
                       <Input
                         placeholder={t(
                           "components.variablesInput.orTypeCustomKey",
