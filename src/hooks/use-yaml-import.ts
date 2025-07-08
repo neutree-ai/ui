@@ -75,8 +75,16 @@ export const useYamlImport = () => {
       .toLowerCase()
       .substring(1); // Remove leading underscore
 
-    // Add plural 's' if not already plural
-    const plural = snakeCase.endsWith("s") ? snakeCase : `${snakeCase}s`;
+    // TODO: better plural lib
+    let plural: string;
+    if (snakeCase.endsWith("s")) {
+      plural = snakeCase;
+    } else if (snakeCase.endsWith("y")) {
+      // For words ending in 'y', replace 'y' with 'ies'
+      plural = `${snakeCase.slice(0, -1)}ies`;
+    } else {
+      plural = `${snakeCase}s`;
+    }
 
     return plural;
   }, []);
@@ -351,20 +359,11 @@ export const useYamlImport = () => {
     [importFromYaml, t],
   );
 
-  const resetProgress = useCallback(() => {
-    setProgress({
-      total: 0,
-      completed: 0,
-      results: [],
-    });
-  }, []);
-
   return {
     progress,
     isImporting,
     importFromYaml,
     importFromFile,
     importFromUrl,
-    resetProgress,
   };
 };

@@ -51,6 +51,7 @@ export const YamlExportDialog = ({
 }: YamlExportDialogProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
   const [yamlContent, setYamlContent] = useState("");
   const [showYamlOutput, setShowYamlOutput] = useState(false);
   const [expandedResourceTypes, setExpandedResourceTypes] = useState<
@@ -140,13 +141,6 @@ export const YamlExportDialog = ({
     });
   };
 
-  const resetDialog = () => {
-    setYamlContent("");
-    setShowYamlOutput(false);
-    resetSelections();
-    setExpandedResourceTypes(new Set());
-  };
-
   const progressPercentage =
     exportProgress.total > 0
       ? Math.round((exportProgress.completed / exportProgress.total) * 100)
@@ -158,7 +152,7 @@ export const YamlExportDialog = ({
       onOpenChange={(open) => {
         setIsOpen(open);
         if (!open) {
-          resetDialog();
+          setDialogKey((prev) => prev + 1);
         }
       }}
     >
@@ -170,7 +164,10 @@ export const YamlExportDialog = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+      <DialogContent
+        key={dialogKey}
+        className="max-w-6xl max-h-[90vh] flex flex-col"
+      >
         <DialogHeader>
           <DialogTitle>{t("components.yamlExport.title")}</DialogTitle>
           <DialogDescription>
@@ -403,7 +400,7 @@ export const YamlExportDialog = ({
 
               {/* Action Buttons */}
               <div className="flex justify-between">
-                <Button variant="outline" onClick={resetDialog}>
+                <Button variant="outline" onClick={resetSelections}>
                   {t("components.yamlExport.reset")}
                 </Button>
                 <Button

@@ -31,17 +31,13 @@ export const YamlImportDialog = ({
 }: YamlImportDialogProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
   const [yamlContent, setYamlContent] = useState("");
   const [yamlUrl, setYamlUrl] = useState("");
   const [showResults, setShowResults] = useState(false);
 
-  const {
-    progress,
-    isImporting,
-    importFromYaml,
-    importFromUrl,
-    resetProgress,
-  } = useYamlImport();
+  const { progress, isImporting, importFromYaml, importFromUrl } =
+    useYamlImport();
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -61,7 +57,6 @@ export const YamlImportDialog = ({
     if (!yamlContent.trim()) return;
 
     setShowResults(false);
-    resetProgress();
     const result = await importFromYaml(yamlContent);
     setShowResults(true);
   };
@@ -70,16 +65,8 @@ export const YamlImportDialog = ({
     if (!yamlUrl.trim()) return;
 
     setShowResults(false);
-    resetProgress();
     const result = await importFromUrl(yamlUrl);
     setShowResults(true);
-  };
-
-  const resetDialog = () => {
-    setYamlContent("");
-    setYamlUrl("");
-    setShowResults(false);
-    resetProgress();
   };
 
   const successCount = progress.results.filter(
@@ -98,7 +85,7 @@ export const YamlImportDialog = ({
       onOpenChange={(open) => {
         setIsOpen(open);
         if (!open) {
-          resetDialog();
+          setDialogKey((prev) => prev + 1);
         }
       }}
     >
@@ -110,7 +97,10 @@ export const YamlImportDialog = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent
+        key={dialogKey}
+        className="max-w-4xl max-h-[90vh] flex flex-col"
+      >
         <DialogHeader>
           <DialogTitle>{t("components.yamlImport.title")}</DialogTitle>
           <DialogDescription>
@@ -321,7 +311,7 @@ export const YamlImportDialog = ({
               </ScrollArea>
 
               <div className="flex justify-between">
-                <Button variant="outline" onClick={resetDialog}>
+                <Button variant="outline" onClick={() => setShowResults(false)}>
                   {t("components.yamlImport.importMore")}
                 </Button>
                 <Button onClick={() => setIsOpen(false)}>
