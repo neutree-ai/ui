@@ -1,14 +1,14 @@
-import {
-  useState,
-  useEffect,
-  forwardRef,
-  type ChangeEventHandler,
-} from "react";
-import { Plus, Trash, AlertCircle } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { AlertCircle, Plus, Trash } from "lucide-react";
+import {
+  forwardRef,
+  useEffect,
+  useState,
+  type ChangeEventHandler
+} from "react";
 
 // IP address validation regex
 const ipRegex =
@@ -19,15 +19,22 @@ type IpsValue = {
   worker_ips: string[];
 };
 
-type NodeIPsFieldProps = Partial<{
-  value: IpsValue;
-  onChange: (value: IpsValue) => void;
-  disabled: boolean;
-}>;
+type NodeIPsFieldProps = {
+  value?: IpsValue;
+  onChange?: (value: IpsValue) => void;
+  disabled?: boolean;
+  name?: string;
+};
 
 const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
   (
-    { value = { head_ip: "", worker_ips: [] }, onChange, disabled = false },
+    { 
+      value = { head_ip: "", worker_ips: [] }, 
+      onChange, 
+      disabled = false,
+      name,
+      ...props 
+    },
     ref,
   ) => {
     const [headIp, setHeadIp] = useState(value.head_ip || "");
@@ -39,12 +46,20 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
       newWorkerIp: "",
     });
 
+    useEffect(() => {
+      setHeadIp(value.head_ip || "");
+    }, [value.head_ip]);
+
+    useEffect(() => { 
+      setworkerIps(value.worker_ips || []);
+    }, [JSON.stringify(value.worker_ips)]);
+
     // Update the parent form when values change
     useEffect(() => {
       if (onChange) {
         onChange({ head_ip: headIp, worker_ips: workerIps });
       }
-    }, [headIp, workerIps, onChange]);
+    }, [headIp, JSON.stringify(workerIps), onChange]);
 
     // Validate an IP address
     const validateIp = (ip: string) => {
@@ -122,7 +137,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     };
 
     return (
-      <div className="space-y-4" ref={ref}>
+      <div className="space-y-4" ref={ref} {...props}>
         {/* Head Node IP */}
         <Card className="border border-border">
           <CardHeader className="bg-secondary text-secondary-foreground py-2 px-4">
