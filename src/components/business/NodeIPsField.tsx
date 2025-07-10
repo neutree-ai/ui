@@ -1,14 +1,14 @@
-import { Badge } from "@/components/ui/badge";
+import {
+  useState,
+  useEffect,
+  forwardRef,
+  type ChangeEventHandler,
+} from "react";
+import { Plus, Trash, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { AlertCircle, Plus, Trash } from "lucide-react";
-import {
-  forwardRef,
-  useEffect,
-  useState,
-  type ChangeEventHandler
-} from "react";
+import { Badge } from "@/components/ui/badge";
 
 // IP address validation regex
 const ipRegex =
