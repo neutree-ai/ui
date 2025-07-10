@@ -46,11 +46,19 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
       }
     }, [headIp, workerIps, onChange]);
 
+    // Check for duplications
+    const ipIsDuplicated = (ip: string) => {
+      if (workerIps.includes(ip) || ip === headIp) {
+        return true;
+      }
+      return false;
+    };
+
     // Validate an IP address
     const validateIp = (ip: string) => {
       if (!ip) return "IP address is required";
       if (!ipRegex.test(ip)) return "Invalid IP address format";
-      if (workerIps.includes(ip) || ip === headIp) {
+      if (ipIsDuplicated(ip)) {
         return "This IP address is already in use";
       }
       return "";
