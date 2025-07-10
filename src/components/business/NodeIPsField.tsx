@@ -3,6 +3,7 @@ import {
   useEffect,
   forwardRef,
   type ChangeEventHandler,
+  useCallback,
 } from "react";
 import { Plus, Trash, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,12 @@ type NodeIPsFieldProps = Partial<{
   disabled: boolean;
 }>;
 
+interface ValidationErrors {
+  headIp: string;
+  workerIps: Record<string, string>;
+  newWorkerIp: string;
+}
+
 const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
   (
     { value = { head_ip: "", worker_ips: [] }, onChange, disabled = false },
@@ -33,7 +40,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     const [headIp, setHeadIp] = useState(value.head_ip || "");
     const [workerIps, setworkerIps] = useState(value.worker_ips || []);
     const [newWorkerIp, setNewWorkerIp] = useState("");
-    const [errors, setErrors] = useState({
+    const [errors, setErrors] = useState<ValidationErrors>({
       headIp: "",
       workerIps: {},
       newWorkerIp: "",
@@ -47,7 +54,25 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     }, [headIp, workerIps, onChange]);
 
     // Check for duplications
-    const ipIsDuplicated = (ip: string) => workerIps.includes(ip) || ip === headIp;
+    const ipIsDuplicated = useCallback(
+      (ip: string) =>  workerIps.includes(ip) || ip === headIp,
+      [workerIps, headIp],
+    );
+
+    useEffect(() => {
+      if (!headIp || !ipRegex.test(headIp)) {
+        return
+      }
+      const updatedErrors: ValidationErrors = {
+        ...errors,
+        newWorkerIp: newWorkerIp ? (ipIsDuplicated(newWorkerIp) ? "This IP address is already in use" : "") : "",
+        workerIps: {},
+      };
+      
+      setErrors(updatedErrors);
+    }, [headIp]);
+
+    
 
     // Validate an IP address
     const validateIp = (ip: string) => {
