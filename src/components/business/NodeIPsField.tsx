@@ -55,43 +55,39 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Check for duplications
     const ipIsDuplicated = useCallback(
-      (ip: string) =>  workerIps.includes(ip) || ip === headIp,
+      (ip: string) => workerIps.includes(ip) || ip === headIp,
       [workerIps, headIp],
     );
 
-    useEffect(() => {
-      if (!headIp || !ipRegex.test(headIp)) {
-        return
-      }
-      const updatedErrors: ValidationErrors = {
-        ...errors,
-        newWorkerIp: newWorkerIp ? (ipIsDuplicated(newWorkerIp) ? "This IP address is already in use" : "") : "",
-        workerIps: {},
-      };
-      
-      setErrors(updatedErrors);
-    }, [headIp]);
-
-    
-
     // Validate an IP address
-    const validateIp = (ip: string) => {
+    const validateIp = useCallback((ip: string) => {
       if (!ip) return "IP address is required";
       if (!ipRegex.test(ip)) return "Invalid IP address format";
       if (ipIsDuplicated(ip)) {
         return "This IP address is already in use";
       }
       return "";
-    };
+    }, [ipIsDuplicated]);
+
+    // Update newWorkerIp validation when dependencies change
+    useEffect(() => {
+      if (newWorkerIp) {
+        const newError = validateIp(newWorkerIp);
+        setErrors(prev => ({
+          ...prev,
+          newWorkerIp: newError,
+        }));
+      }
+    }, [newWorkerIp, validateIp]);
 
     // Handle head node IP change
     const handleheadIpChange: ChangeEventHandler<HTMLInputElement> = (e) => {
       const ip = e.target.value;
       setHeadIp(ip);
-      setErrors({
-        ...errors,
+      setErrors(prev => ({
+        ...prev,
         headIp: validateIp(ip),
-      });
+      }));
     };
 
     // Handle new worker IP input change
@@ -100,33 +96,26 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     ) => {
       const ip = e.target.value;
       setNewWorkerIp(ip);
-      setErrors({
-        ...errors,
-        newWorkerIp: ip ? validateIp(ip) : "",
-      });
+      setErrors(prev => ({
+        ...prev,
+        newWorkerIp: validateIp(ip),
+      }));
     };
 
     // Add a new worker node IP
     const addWorkerNodeIp = () => {
       if (disabled) return;
 
-      // Validate the new IP
-      const error = validateIp(newWorkerIp);
-      if (error) {
-        setErrors({
-          ...errors,
-          newWorkerIp: error,
-        });
-        return;
-      }
+      // Block adding if there are errors
+      if (!newWorkerIp || errors.newWorkerIp) return;
 
       // Add the new IP and clear the input
       setworkerIps([...workerIps, newWorkerIp]);
       setNewWorkerIp("");
-      setErrors({
-        ...errors,
+      setErrors(prev => ({
+        ...prev,
         newWorkerIp: "",
-      });
+      }));
     };
 
     // Remove a worker node IP
@@ -136,11 +125,17 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
       setworkerIps(workerIps.filter((ip) => ip !== ipToRemove));
 
       // Clear any errors for this IP
-      const updatedErrors = { ...errors };
-      if (ipToRemove in updatedErrors.workerIps) {
-        delete (updatedErrors.workerIps as Record<string, unknown>)[ipToRemove];
-      }
-      setErrors(updatedErrors);
+      setErrors(prev => {
+        const updatedErrors = { ...prev };
+        if (ipToRemove in updatedErrors.workerIps) {
+          delete (updatedErrors.workerIps as Record<string, unknown>)[ipToRemove];
+        }
+        if (ipToRemove === headIp) {
+          // invariant: headIP === ipToRemove is valid as the ipToRemove has been validated upon adding
+          updatedErrors.headIp = "";
+        }
+        return updatedErrors;
+      });
     };
 
     return (
