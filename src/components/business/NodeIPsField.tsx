@@ -50,6 +50,9 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     const validateIp = (ip: string) => {
       if (!ip) return "IP address is required";
       if (!ipRegex.test(ip)) return "Invalid IP address format";
+      if (workerIps.includes(ip) || ip === headIp) {
+        return "This IP address is already in use";
+      }
       return "";
     };
 
@@ -85,15 +88,6 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
         setErrors({
           ...errors,
           newWorkerIp: error,
-        });
-        return;
-      }
-
-      // Check for duplicates
-      if (workerIps.includes(newWorkerIp) || newWorkerIp === headIp) {
-        setErrors({
-          ...errors,
-          newWorkerIp: "This IP address is already in use",
         });
         return;
       }
