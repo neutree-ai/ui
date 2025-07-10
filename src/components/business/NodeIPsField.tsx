@@ -47,12 +47,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     }, [headIp, workerIps, onChange]);
 
     // Check for duplications
-    const ipIsDuplicated = (ip: string) => {
-      if (workerIps.includes(ip) || ip === headIp) {
-        return true;
-      }
-      return false;
-    };
+    const ipIsDuplicated = (ip: string) => workerIps.includes(ip) || ip === headIp;
 
     // Validate an IP address
     const validateIp = (ip: string) => {
