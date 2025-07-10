@@ -26,12 +26,6 @@ type NodeIPsFieldProps = Partial<{
   disabled: boolean;
 }>;
 
-interface ValidationErrors {
-  headIp: string;
-  workerIps: Record<string, string>;
-  newWorkerIp: string;
-}
-
 const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
   (
     { value = { head_ip: "", worker_ips: [] }, onChange, disabled = false },
@@ -40,7 +34,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     const [headIp, setHeadIp] = useState(value.head_ip || "");
     const [workerIps, setworkerIps] = useState(value.worker_ips || []);
     const [newWorkerIp, setNewWorkerIp] = useState("");
-    const [errors, setErrors] = useState<ValidationErrors>({
+    const [errors, setErrors] = useState({
       headIp: "",
       workerIps: {},
       newWorkerIp: "",
