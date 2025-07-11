@@ -316,7 +316,8 @@
 			"multipleStaticNodes": "静态节点",
 			"kubernetes": "Kubernetes",
 			"loadBalancer": "负载均衡器",
-			"ingress": "入口"
+			"ingress": "入口",
+			"none": "不使用"
 		},
 		"messages": {
 			"notFound": "404 未找到",
@@ -824,18 +825,18 @@
 		"phases": {
 			"apiKey": {
 				"Pending": "等待中",
-				"Created": "已创建", 
+				"Created": "已创建",
 				"Deleted": "已删除"
 			},
 			"cluster": {
 				"Pending": "等待中",
 				"Running": "运行中",
-				"Failed": "失败", 
+				"Failed": "失败",
 				"Deleted": "已删除"
 			},
 			"endpoint": {
 				"Pending": "等待中",
-				"Running": "运行中", 
+				"Running": "运行中",
 				"Failed": "失败",
 				"Deleted": "已删除"
 			},

@@ -13,10 +13,13 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
 
+  const NO_ACCELERATOR = "none"
   const acceleratorTypes = [
+    { label: t("clusters.options.none"), value:NO_ACCELERATOR},
     { label: "NVIDIA GPU", value: "nvidia.com/gpu" },
     { label: "Ascend310P", value: "huawei.com/Ascend310P" },
   ];
+
 
   const form = useForm<Cluster>({
     mode: "all",
@@ -267,7 +270,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorType")}
         >
           <Select
-            options={[{label: "None", value:"none"},...acceleratorTypes]}
+            options={acceleratorTypes}
             value={headAccelerator.type}
             onChange={(value) => {
               updateAcceleratorResources(
@@ -287,7 +290,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorCount")}
         >
           <Input
-            disabled={isEdit || headAccelerator.type === "none"}
+            disabled={isEdit || headAccelerator.type === NO_ACCELERATOR}
             value={headAccelerator.count}
             onChange={(evt) => {
               const value = evt.target.value;
@@ -353,7 +356,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorType")}
         >
           <Select
-            options={[{label: "None", value:"none"},...acceleratorTypes]}
+            options={acceleratorTypes}
             value={workerAccelerator.type}
             onChange={(value) => {
               updateAcceleratorResources(
@@ -373,7 +376,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorCount")}
         >
           <Input
-            disabled={isEdit || workerAccelerator.type === "none"}
+            disabled={isEdit || workerAccelerator.type === NO_ACCELERATOR}
             value={workerAccelerator.count}
             onChange={(evt) => {
               const value = evt.target.value;

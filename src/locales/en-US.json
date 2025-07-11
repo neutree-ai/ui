@@ -294,7 +294,7 @@
 			"acceleratorType": "Accelerator Type",
 			"acceleratorCount": "Accelerator Count",
 			"cpu": "CPU",
-			"memory": "Memory", 
+			"memory": "Memory",
 			"replicas": "Replicas",
 			"sshUser": "SSH User",
 			"sshPrivateKey": "SSH Private Key"
@@ -316,7 +316,8 @@
 			"multipleStaticNodes": "Multiple Static Nodes",
 			"kubernetes": "Kubernetes",
 			"loadBalancer": "LoadBalancer",
-			"ingress": "Ingress"
+			"ingress": "Ingress",
+			"none": "None"
 		},
 		"messages": {
 			"notFound": "404 not found",
@@ -824,18 +825,18 @@
 		"phases": {
 			"apiKey": {
 				"Pending": "Pending",
-				"Created": "Created", 
+				"Created": "Created",
 				"Deleted": "Deleted"
 			},
 			"cluster": {
 				"Pending": "Pending",
 				"Running": "Running",
-				"Failed": "Failed", 
+				"Failed": "Failed",
 				"Deleted": "Deleted"
 			},
 			"endpoint": {
 				"Pending": "Pending",
-				"Running": "Running", 
+				"Running": "Running",
 				"Failed": "Failed",
 				"Deleted": "Deleted"
 			},
