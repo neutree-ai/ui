@@ -57,7 +57,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const getAcceleratorInfo = (
     resources: Record<string, string | number> | undefined,
   ) => {
-    if (!resources) return { type: "none", count: "0" };
+    if (!resources) return { type: NO_ACCELERATOR, count: "0" };
 
     for (const acceleratorType of acceleratorTypes) {
       if (resources[acceleratorType.value]) {
@@ -67,7 +67,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         };
       }
     }
-    return { type: "none", count: "0" };
+    return { type: NO_ACCELERATOR, count: "0" };
   };
 
   const headAccelerator = getAcceleratorInfo(headResources);
@@ -85,7 +85,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     for (const type of acceleratorTypes) {
       delete newResources[type.value];
     }
-    if (newType !== "none" && newCount) {
+    if (newType !== NO_ACCELERATOR && newCount) {
       newResources[newType] = newCount;
     }
 
