@@ -54,7 +54,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const getAcceleratorInfo = (
     resources: Record<string, string | number> | undefined,
   ) => {
-    if (!resources) return { type: "nvidia.com/gpu", count: "0" };
+    if (!resources) return { type: "none", count: "0" };
 
     for (const acceleratorType of acceleratorTypes) {
       if (resources[acceleratorType.value]) {
@@ -64,7 +64,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         };
       }
     }
-    return { type: "nvidia.com/gpu", count: "0" };
+    return { type: "none", count: "0" };
   };
 
   const headAccelerator = getAcceleratorInfo(headResources);
@@ -82,8 +82,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     for (const type of acceleratorTypes) {
       delete newResources[type.value];
     }
-
-    newResources[newType] = newCount;
+    if (newType !== "none" && newCount) {
+      newResources[newType] = newCount;
+    }
 
     if (resourcesPath === "spec.config.head_node_spec.resources") {
       form.setValue("spec.config.head_node_spec.resources", newResources);
@@ -181,7 +182,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                     resources: {
                       cpu: "1",
                       memory: "2Gi",
-                      "nvidia.com/gpu": "0",
                     },
                   },
                   worker_group_specs: [
@@ -267,7 +267,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorType")}
         >
           <Select
-            options={acceleratorTypes}
+            options={[{label: "None", value:"none"},...acceleratorTypes]}
             value={headAccelerator.type}
             onChange={(value) => {
               updateAcceleratorResources(
@@ -287,7 +287,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorCount")}
         >
           <Input
-            disabled={isEdit}
+            disabled={isEdit || headAccelerator.type === "none"}
             value={headAccelerator.count}
             onChange={(evt) => {
               const value = evt.target.value;
@@ -353,7 +353,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorType")}
         >
           <Select
-            options={acceleratorTypes}
+            options={[{label: "None", value:"none"},...acceleratorTypes]}
             value={workerAccelerator.type}
             onChange={(value) => {
               updateAcceleratorResources(
@@ -373,7 +373,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("clusters.fields.acceleratorCount")}
         >
           <Input
-            disabled={isEdit}
+            disabled={isEdit || workerAccelerator.type === "none"}
             value={workerAccelerator.count}
             onChange={(evt) => {
               const value = evt.target.value;
