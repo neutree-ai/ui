@@ -1,3 +1,4 @@
+import { Mode } from "fs";
 import type { Metadata } from "./basic-types";
 
 export type RayClusterConfig = {
@@ -78,6 +79,18 @@ export type RayKubernetesProvisionClusterConfig = {
   kubeconfig?: string;
   head_node_spec?: HeadNodeSpec;
   worker_group_specs?: WorkerGroupSpec[];
+  model_caches?: ModelCache[];
+};
+
+export type ModelCache = {
+  nfs?: {
+    server: string;
+    path: string;
+  };
+  host_path?: {
+    path: string;
+  };
+  model_registry_type: string;
 };
 
 export type Cluster = {
