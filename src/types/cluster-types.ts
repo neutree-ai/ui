@@ -1,4 +1,3 @@
-import { Mode } from "fs";
 import type { Metadata } from "./basic-types";
 
 export type RayClusterConfig = {
