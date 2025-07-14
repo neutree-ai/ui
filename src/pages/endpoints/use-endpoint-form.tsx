@@ -550,7 +550,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>
-                {currentAcceleratorValue} {unitLabel}
+                {currentAcceleratorValue.toFixed(1)} {unitLabel}
               </span>
               {clusterResources && (
                 <span>
@@ -691,7 +691,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{form.watch("spec.resources.cpu")} cores</span>
+              <span>{parseFloat(form.watch("spec.resources.cpu")).toFixed(1)} cores</span>
               {clusterResources && (
                 <span>
                   Available: {clusterResources.cpu.available.toFixed(1)} /{" "}
@@ -719,7 +719,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{form.watch("spec.resources.memory")} GiB</span>
+              <span>{parseFloat(form.watch("spec.resources.memory")).toFixed(1)} GiB</span>
               {clusterResources && (
                 <span>
                   Available: {clusterResources.memory.available.toFixed(1)} /{" "}
