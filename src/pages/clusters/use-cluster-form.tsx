@@ -6,6 +6,7 @@ import { useWorkspace } from "@/components/theme/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { Cluster, ImageRegistry } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
@@ -473,11 +474,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <Field
-                    {...form}
-                    name={`spec.config.model_caches.${index}.cache_type_selector`}
-                    label={t("clusters.fields.modelCache.cacheType")}
-                  >
+                <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      {t("clusters.fields.modelCache.cacheType")}
+                    </Label>
                     <Select
                       options={[
                         { label: t("clusters.options.nfs"), value: "nfs" },
@@ -489,7 +489,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                       }}
                       disabled={isEdit}
                     />
-                  </Field>
+                  </div>
 
                   <Field
                     {...form}
