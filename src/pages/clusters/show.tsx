@@ -224,8 +224,7 @@ export const ClustersShow = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {record.spec.config.model_caches.length > 0 ? (
-                    record.spec.config.model_caches.map((cache, index) => {
+                  { record.spec.config.model_caches.map((cache, index) => {
                       const cacheType = isNFSCache(cache) ? "nfs" : "host_path";
 
                       return (
@@ -306,13 +305,7 @@ export const ClustersShow = () => {
                           </CardContent>
                         </Card>
                       );
-                    })
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <div className="text-4xl mb-2">📦</div>
-                      <p>{t("clusters.messages.noModelCaches")}</p>
-                    </div>
-                  )}
+                    }) }
                 </div>
               </CardContent>
             </Card>
