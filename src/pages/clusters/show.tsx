@@ -5,7 +5,7 @@ import { ShowButton, ShowPage, Table } from "@/components/theme";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Loader from "@/components/theme/components/loader";
 import MetadataCard from "@/components/business/MetadataCard";
-import type { Cluster } from "@/types";
+import type { Cluster, HostPathCache, ModelCache, NFSCache } from "@/types";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
 import ClusterStatus from "@/components/business/ClusterStatus";
@@ -66,6 +66,15 @@ export const ClustersShow = () => {
     typeof workerNodeAcceleratorCount === "string" &&
     Number.parseInt(workerNodeAcceleratorCount) > 0;
 
+  const isNFSCache = (cache: ModelCache): cache is NFSCache => {
+    return 'nfs' in cache;
+  };
+  
+  const isHostPathCache = (cache: ModelCache): cache is HostPathCache => {
+    return 'host_path' in cache;
+  };
+    
+
   return (
     <ShowPage record={record}>
       <Tabs defaultValue="basic" className="h-full">
@@ -124,7 +133,10 @@ export const ClustersShow = () => {
                     <CardContent>
                       <div className="grid grid-cols-4 gap-8">
                         <ShowPage.Row title={t("clusters.fields.accessMode")}>
-                          {record.spec.config.head_node_spec?.access_mode ?? ""}
+                          {record.spec.config.head_node_spec?.access_mode ===
+                          "LoadBalancer"
+                            ? t("status.accessModes.LoadBalancer")
+                            : t("status.accessModes.Ingress")}
                         </ShowPage.Row>
 
                         <ShowPage.Row title={t("clusters.fields.cpu")}>
@@ -203,6 +215,108 @@ export const ClustersShow = () => {
               )}
             </CardContent>
           </Card>
+          {record.spec.config.model_caches ? (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>
+                  {translate("clusters.fields.modelCache.title")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {record.spec.config.model_caches.length > 0 ? (
+                    record.spec.config.model_caches.map((cache, index) => {
+                      const cacheType = isNFSCache(cache) ? "nfs" : "host_path";
+
+                      return (
+                        <Card key={index}>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium flex items-center gap-1">
+                              <span className=" mr-1 py-1 rounded text-xs">
+                                #{index + 1}
+                              </span>
+                              {t(
+                                `clusters.fields.modelCache.type.${cacheType}`,
+                              )}
+                            </CardTitle>
+                          </CardHeader>
+
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <ShowPage.Row
+                                title={t(
+                                  "clusters.fields.modelCache.cacheType",
+                                )}
+                              >
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  {cacheType === "nfs"
+                                    ? t("clusters.options.nfs")
+                                    : t("clusters.options.hostPath")}
+                                </span>
+                              </ShowPage.Row>
+
+                              <ShowPage.Row
+                                title={t(
+                                  "clusters.fields.modelCache.modelRegistry",
+                                )}
+                              >
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  {cache.model_registry_type === "hugging-face"
+                                    ? "Hugging Face"
+                                    : "BentoML"}
+                                </span>
+                              </ShowPage.Row>
+
+                              {isNFSCache(cache) && cache.nfs && (
+                                <>
+                                  <ShowPage.Row
+                                    title={t(
+                                      "clusters.fields.modelCache.nfsServer",
+                                    )}
+                                  >
+                                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                      {cache.nfs.server}
+                                    </code>
+                                  </ShowPage.Row>
+
+                                  <ShowPage.Row
+                                    title={t(
+                                      "clusters.fields.modelCache.cachePath",
+                                    )}
+                                  >
+                                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                      {cache.nfs.path}
+                                    </code>
+                                  </ShowPage.Row>
+                                </>
+                              )}
+
+                              {isHostPathCache(cache) && cache.host_path && (
+                                <ShowPage.Row
+                                  title={t(
+                                    "clusters.fields.modelCache.cachePath",
+                                  )}
+                                >
+                                  <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                    {cache.host_path.path}
+                                  </code>
+                                </ShowPage.Row>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <div className="text-4xl mb-2">📦</div>
+                      <p>{t("clusters.messages.noModelCaches")}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
           <Card className="mt-4">
             <CardHeader>
               <CardTitle>{translate("endpoints.title")}</CardTitle>
