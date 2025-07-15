@@ -23,8 +23,8 @@ export const ClustersCreate = () => {
       {providerFields}
       {headNodeFields}
       {workerNodeFields}
-      {modelCacheFields}
       {authFields}
+      {modelCacheFields}
     </Form>
   );
 };

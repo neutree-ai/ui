@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isValidIPAddress, isValidPath } from "@/lib/utils";
-import type { Cluster, ImageRegistry } from "@/types";
+import type { Cluster, HostPathCache, ImageRegistry, ModelCache } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
@@ -120,13 +120,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const isEdit = action === "edit";
 
   const addModelCache = () => {
-      append({
-        nfs: {
-          server: '',
-          path: '',
-        },
-        model_registry_type: ''
-      });
+      append({ host_path: {path: '' }, model_registry_type: '' } as HostPathCache); // Default to host_path with empty path
   };
 
   const getCacheType = (index: number): 'nfs' | 'host_path' => {
@@ -455,7 +449,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <div />
       </FormCardGrid>
     ) : null,
-    modelCacheFields: isKubernetes ? (<div>
+    modelCacheFields: (<div>
       <FormCardGrid title={t("clusters.sections.modelCaches")}>
       <div className="col-span-full space-y-4">
 
@@ -490,10 +484,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                       {t("clusters.fields.modelCache.cacheType")}
                     </Label>
                     <Select
-                      options={[
+                      options={isKubernetes ? [
+                        { label: t("clusters.options.hostPath"), value: "host_path" },
                         { label: t("clusters.options.nfs"), value: "nfs" },
-                        { label: t("clusters.options.hostPath"), value: "host_path" }
-                      ]}
+                      ] : [{ label: t("clusters.options.hostPath"), value: "host_path" }]}
                       value={cacheType}
                       onChange={(value) => {
                         switchCacheType(index, value as 'nfs' | 'host_path');
@@ -521,6 +515,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   {cacheType === 'nfs' && (
                     <>
                       <Field
+                        {...form}
                         label={t("clusters.fields.modelCache.nfsServer")}
                         {...form.register(`spec.config.model_caches.${index}.nfs.server`,
                         {
@@ -572,21 +567,20 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                     <>
                     <Field
                       {...form}
-                      name={`spec.config.model_caches.${index}.host_path.path`}
                       label={t("clusters.fields.modelCache.cachePath")}
-                      rules={{
+                      {...form.register(`spec.config.model_caches.${index}.host_path.path`, {
                         required: {
                           value: true,
                           message: t("clusters.validation.cachePathRequired") || "Cache path is required"
                         },
                         validate: (value: string) => {
                           if (!value) return true;
-                          return isValidPath(value) || t("clusters.validation.invalidPath") || "Please enter a valid path (e.g., /home/bentoml)";
+                          return isValidPath(value) || t("clusters.validation.invalidPath") || "Please enter a valid path (e.g., /dir/cache)";
                         }
-                      }}
+                      })}
                     >
                       <Input
-                        placeholder="/home/bentoml"
+                        placeholder="/path/to/cache"
                         disabled={isEdit}
                         className={`col-span-2 ${form.formState.errors[`spec.config.model_caches.${index}.host_path.path`] ? "border-red-500 focus:border-red-500" : ""}`}
                       />
@@ -620,7 +614,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </div>
       </div>
     </FormCardGrid>
-    </div>) : null,
+    </div>),
     authFields: isKubernetes ? null : (
       <FormCardGrid title={t("clusters.sections.nodeAuthentication")}>
         <Field
