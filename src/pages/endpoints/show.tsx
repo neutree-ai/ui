@@ -36,6 +36,7 @@ import {
   getEndpointGrafanaProps,
   getVllmGrafanaProps,
 } from "@/lib/grafana-configs";
+import { formatToDecimal } from "@/lib/utils";
 
 // Lazy load EndpointLogTabs
 const EndpointLogTabs = lazy(() =>
@@ -153,9 +154,13 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     // Check for NPU resources
     const npuAcceleratorKeys = Object.keys(accelerator).filter(
       (key) =>
-        (key === "NPU" || !key.startsWith("NVIDIA_")) && accelerator[key] > 0,
-    );
+        key !== "-" &&
+        (key === "NPU" || !key.startsWith("NVIDIA_")) &&
+        accelerator[key] > 0,
+     );
+
     const hasNpu = npuAcceleratorKeys.length > 0;
+    
     const npuValue = hasNpu ? accelerator[npuAcceleratorKeys[0]] : "-";
 
     const hasAccelerator = hasGpu || hasNpu;
@@ -252,21 +257,21 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               <div className="grid grid-cols-4 gap-8">
                 {resourceDisplay.hasGpu && (
                   <ShowPage.Row title={t("endpoints.fields.gpu")}>
-                    {resourceDisplay.gpuValue}
+                    {formatToDecimal(resourceDisplay.gpuValue) ?? "-"}
                   </ShowPage.Row>
                 )}
 
                 {resourceDisplay.hasNpu && (
                   <ShowPage.Row title={t("endpoints.fields.npu")}>
-                    {resourceDisplay.npuValue}
+                    {formatToDecimal(resourceDisplay.npuValue) ?? "-"}
                   </ShowPage.Row>
                 )}
 
                 <ShowPage.Row title={t("endpoints.fields.cpu")}>
-                  {record.spec.resources?.cpu ?? "-"}
+                  {formatToDecimal(record.spec.resources?.cpu) ?? "-"}
                 </ShowPage.Row>
                 <ShowPage.Row title={t("endpoints.fields.memory")}>
-                  {record.spec.resources?.memory ?? "-"}
+                  {formatToDecimal(record.spec.resources?.memory) ?? "-"}
                 </ShowPage.Row>
               </div>
 
@@ -275,9 +280,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <ShowPage.Row
                     title={`${t("clusters.fields.acceleratorType")}: ${Object.keys(record.spec.resources?.accelerator || {})[0]}`}
                   >
-                    {Object.values(
-                      record.spec.resources?.accelerator || {},
-                    )[0] ?? "-"}
+                    {formatToDecimal(Object.values(record.spec.resources?.accelerator || {},)[0]) ?? "-"}
                   </ShowPage.Row>
                 </div>
               )}

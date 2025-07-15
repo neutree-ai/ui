@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatToDecimal } from "@/lib/utils";
 
 // Types for Ray cluster status API response
 type RayClusterResourceUsage = {
@@ -550,7 +551,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>
-                {currentAcceleratorValue.toFixed(1)} {unitLabel}
+                {formatToDecimal(currentAcceleratorValue)} {unitLabel}
               </span>
               {clusterResources && (
                 <span>
@@ -583,8 +584,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     (value[0] as number) ?? 0,
                   );
                 }
-
-                console.log(form.getValues());
               }}
               disabled={clusterStatusQuery.isLoading || !currentCluster}
             />
@@ -691,11 +690,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{parseFloat(form.watch("spec.resources.cpu")).toFixed(1)} cores</span>
+              <span>{formatToDecimal(form.watch("spec.resources.cpu"))} cores</span>
               {clusterResources && (
                 <span>
-                  Available: {clusterResources.cpu.available.toFixed(1)} /{" "}
-                  {clusterResources.cpu.total.toFixed(1)}
+                  Available: {formatToDecimal(clusterResources.cpu.available)} /{" "}
+                  {formatToDecimal(clusterResources.cpu.total)}
                 </span>
               )}
             </div>
@@ -719,11 +718,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{parseFloat(form.watch("spec.resources.memory")).toFixed(1)} GiB</span>
+              <span>{formatToDecimal(form.watch("spec.resources.memory"))} GiB</span>
               {clusterResources && (
                 <span>
-                  Available: {clusterResources.memory.available.toFixed(1)} /{" "}
-                  {clusterResources.memory.total.toFixed(1)} GiB
+                  Available: {formatToDecimal(clusterResources.memory.available)} /{" "}
+                  {formatToDecimal(clusterResources.memory.total)} GiB
                 </span>
               )}
             </div>
