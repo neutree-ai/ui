@@ -299,15 +299,15 @@
 			"sshUser": "SSH 用户",
 			"sshPrivateKey": "SSH 私钥",
 			"modelCache": {
+				"title": "模型缓存",
 				"type": {
 					"host_path": "主机缓存",
 					"nfs": "文件服务器缓存"
 				},
 				"cacheType": "缓存类型",
 				"modelRegistry": "模型仓库",
-				"hostPath": "主机路径",
-				"nfsServer": "文件服务器地址",
-				"nfsPath": "文件路径"
+				"cachePath": "缓存路径",
+				"nfsServer": "文件服务器地址"
 			}
 		},
 		"sections": {
@@ -341,6 +341,12 @@
 		},
 		"actions": {
 			"addModelCache": "添加模型缓存"
+		},
+		"validation": {
+			"nfsServerRequired": "服务器地址是必填项",
+			"invalidIPAddress": "无效的 IP 地址",
+			"cachePathRequired": "缓存路径是必填项",
+			"invalidPath": "无效的路径(需以 / 开头)"
 		}
 	},
 	"model_registries": {

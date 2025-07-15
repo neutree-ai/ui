@@ -299,15 +299,15 @@
 			"sshUser": "SSH User",
 			"sshPrivateKey": "SSH Private Key",
 			"modelCache": {
+				"title": "Model Cache",
 				"type": {
 					"host_path": "Local",
 					"nfs": "NFS"
 				},
 				"cacheType": "Cache Type",
 				"modelRegistry": "Model Registry",
-				"hostPath": "Host Path",
-				"nfsServer": "NFS Server",
-				"nfsPath": "NFS Path"
+				"cachePath": "Cache Path",
+				"nfsServer": "NFS Server"
 			}
 		},
 		"sections": {
@@ -341,6 +341,12 @@
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache"
+		},
+		"validation": {
+			"nfsServerRequired": "Server address is required",
+			"invalidIPAddress": "Invalid IP address",
+			"cachePathRequired": "Cache path is required",
+			"invalidPath": "Invalid path (Must start with /)"
 		}
 	},
 	"model_registries": {

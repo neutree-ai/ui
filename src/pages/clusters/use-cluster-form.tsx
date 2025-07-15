@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isValidIPAddress, isValidPath } from "@/lib/utils";
 import type { Cluster, ImageRegistry } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
@@ -152,6 +153,16 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         model_registry_type: currentCache.model_registry_type || 'bentoml'
       });
     }
+  };
+
+  const FieldError = ({ error }: { error?: { message?: string } }) => {
+    if (!error?.message) return null;
+    
+    return (
+      <p className="text-sm text-red-500 mt-1">
+        {error.message}
+      </p>
+    );
   };
 
   return {
@@ -510,41 +521,78 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   {cacheType === 'nfs' && (
                     <>
                       <Field
-                        {...form}
-                        name={`spec.config.model_caches.${index}.nfs.server`}
                         label={t("clusters.fields.modelCache.nfsServer")}
+                        {...form.register(`spec.config.model_caches.${index}.nfs.server`,
+                        {
+                          required: {
+                            value: true,
+                            message: t("clusters.validation.nfsServerRequired") || "NFS server is required"
+                          },
+                          validate: (value: string) => {
+                            if (!value) return true; // Let required rule handle empty values
+                            return isValidIPAddress(value) || t("clusters.validation.invalidIPAddress") || "Please enter a valid IP address";
+                          }
+                        }
+                        )}
                       >
                         <Input
                           placeholder="10.255.1.54"
                           disabled={isEdit}
+                          className={form.formState.errors[`spec.config.model_caches.${index}.nfs.server`] ? "border-red-500 focus:border-red-500" : ""}
                         />
                       </Field>
+                      <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.nfs.server`]}/>
 
                       <Field
                         {...form}
-                        name={`spec.config.model_caches.${index}.nfs.path`}
-                        label={t("clusters.fields.modelCache.nfsPath")}
-                      >
+                        label={t("clusters.fields.modelCache.cachePath")}
+                        {...form.register(`spec.config.model_caches.${index}.nfs.path`, 
+                          {
+                            required: {
+                              value: true,
+                              message: t("clusters.validation.cachePathRequired") || "Cache path is required"
+                            },
+                            validate: (value: string) => {
+                              if (!value) return true; // Let required rule handle empty values
+                              return isValidPath(value) || t("clusters.validation.invalidPath") || "Please enter a valid path (e.g., /path/to/cache)";
+                            }
+                          }
+                        )}>
                         <Input
                           placeholder="/path/to/cache"
                           disabled={isEdit}
+                          className={form.formState.errors[`spec.config.model_caches.${index}.nfs.path`] ? "border-red-500 focus:border-red-500" : ""}
                         />
                       </Field>
+                      <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.nfs.path`]}/>
                     </>
                   )}
 
                   {cacheType === 'host_path' && (
+                    <>
                     <Field
                       {...form}
                       name={`spec.config.model_caches.${index}.host_path.path`}
-                      label={t("clusters.fields.modelCache.hostPath")}
+                      label={t("clusters.fields.modelCache.cachePath")}
+                      rules={{
+                        required: {
+                          value: true,
+                          message: t("clusters.validation.cachePathRequired") || "Cache path is required"
+                        },
+                        validate: (value: string) => {
+                          if (!value) return true;
+                          return isValidPath(value) || t("clusters.validation.invalidPath") || "Please enter a valid path (e.g., /home/bentoml)";
+                        }
+                      }}
                     >
                       <Input
                         placeholder="/home/bentoml"
                         disabled={isEdit}
-                        className="col-span-2"
+                        className={`col-span-2 ${form.formState.errors[`spec.config.model_caches.${index}.host_path.path`] ? "border-red-500 focus:border-red-500" : ""}`}
                       />
                     </Field>
+                    <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.host_path.path`]} />
+                    </>
                   )}
                 </div>
               </CardContent>
