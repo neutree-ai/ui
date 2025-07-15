@@ -55,6 +55,7 @@ export type Auth = {
 export type RaySSHProvisionClusterConfig = {
   provider: Provider;
   auth: Auth;
+  model_caches?: HostPathCache[];
 };
 
 export enum KubernetesAccessMode {
@@ -81,12 +82,18 @@ export type RayKubernetesProvisionClusterConfig = {
   model_caches?: ModelCache[];
 };
 
-export type ModelCache = {
+export type ModelCache = NFSCache | HostPathCache;
+
+export type NFSCache = {
   nfs?: {
     server: string;
     path: string;
   };
-  host_path?: {
+  model_registry_type: string;
+};
+
+export type HostPathCache = {
+  host_path: {
     path: string;
   };
   model_registry_type: string;
