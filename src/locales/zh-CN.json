@@ -343,6 +343,7 @@
 			"addModelCache": "添加模型缓存"
 		},
 		"validation": {
+			"modelRegistryRequired": "模型仓库是必填项",
 			"nfsServerRequired": "服务器地址是必填项",
 			"invalidIPAddress": "无效的 IP 地址",
 			"cachePathRequired": "缓存路径是必填项",

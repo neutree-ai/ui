@@ -2,7 +2,6 @@ import FormCardGrid from "@/components/business/FormCardGrid";
 import NodeIPsField from "@/components/business/NodeIPsField";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { Combobox, Field, Select } from "@/components/theme";
-import { FieldError } from "@/components/theme/components/fieldError";
 import { useWorkspace } from "@/components/theme/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,14 +137,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           server: '',
           path: '',
         },
-        model_registry_type: ""
+        model_registry_type: null,
       });
     } else {
       form.setValue(`spec.config.model_caches.${index}`, {
         host_path: {
           path: '',
         },
-        model_registry_type: ""
+        model_registry_type: null,
       });
     }
   };
@@ -489,8 +488,13 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
                   <Field
                     {...form}
-                    name={`spec.config.model_caches.${index}.model_registry_type`}
                     label={t("clusters.fields.modelCache.modelRegistry")}
+                    {...form.register(`spec.config.model_caches.${index}.model_registry_type`, {
+                      required: {
+                        value: true,
+                        message: t("clusters.validation.modelRegistryRequired") || "Model registry type is required"
+                      }
+                    })}
                   >
                     <Select
                       options={[
@@ -527,7 +531,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           className={form.formState.errors[`spec.config.model_caches.${index}.nfs.server`] ? "border-red-500 focus:border-red-500" : ""}
                         />
                       </Field>
-                      <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.nfs.server`]}/>
 
                       <Field
                         {...form}
@@ -550,7 +553,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           className={form.formState.errors[`spec.config.model_caches.${index}.nfs.path`] ? "border-red-500 focus:border-red-500" : ""}
                         />
                       </Field>
-                      <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.nfs.path`]}/>
                     </>
                   )}
 
@@ -576,7 +578,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                         className={`col-span-2 ${form.formState.errors[`spec.config.model_caches.${index}.host_path.path`] ? "border-red-500 focus:border-red-500" : ""}`}
                       />
                     </Field>
-                    <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.host_path.path`]} />
                     </>
                   )}
                 </div>

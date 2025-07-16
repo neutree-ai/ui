@@ -343,6 +343,7 @@
 			"addModelCache": "Add Model Cache"
 		},
 		"validation": {
+			"modelRegistryRequired": "Model registry type is required",
 			"nfsServerRequired": "Server address is required",
 			"invalidIPAddress": "Invalid IP address",
 			"cachePathRequired": "Cache path is required",
