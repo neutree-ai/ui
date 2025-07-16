@@ -2,7 +2,7 @@ import FormCardGrid from "@/components/business/FormCardGrid";
 import NodeIPsField from "@/components/business/NodeIPsField";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { Combobox, Field, Select } from "@/components/theme";
-import { FieldError } from "@/components/theme/components/FieldError";
+import { FieldError } from "@/components/theme/components/fieldError";
 import { useWorkspace } from "@/components/theme/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,14 +138,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           server: '',
           path: '',
         },
-        model_registry_type: currentCache.model_registry_type || 'hugging-face'
+        model_registry_type: ""
       });
     } else {
       form.setValue(`spec.config.model_caches.${index}`, {
         host_path: {
           path: '',
         },
-        model_registry_type: currentCache.model_registry_type || 'bentoml'
+        model_registry_type: ""
       });
     }
   };
