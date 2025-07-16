@@ -297,7 +297,18 @@
 			"memory": "Memory",
 			"replicas": "Replicas",
 			"sshUser": "SSH User",
-			"sshPrivateKey": "SSH Private Key"
+			"sshPrivateKey": "SSH Private Key",
+			"modelCache": {
+				"title": "Model Cache",
+				"type": {
+					"host_path": "Local",
+					"nfs": "NFS"
+				},
+				"cacheType": "Cache Type",
+				"modelRegistry": "Model Registry",
+				"cachePath": "Cache Path",
+				"nfsServer": "NFS Server"
+			}
 		},
 		"sections": {
 			"basicInformation": "Basic Information",
@@ -305,23 +316,37 @@
 			"provider": "Provider",
 			"headNode": "Head Node",
 			"workerNode": "Worker Node",
+			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication"
 		},
 		"placeholders": {
 			"clusterName": "Cluster Name",
 			"selectImageRegistry": "Select A Image Registry",
-			"sshUserExample": "e.g root"
+			"sshUserExample": "e.g root",
+			"nfsServerExample": "192.168.1.1"
 		},
 		"options": {
 			"multipleStaticNodes": "Multiple Static Nodes",
 			"kubernetes": "Kubernetes",
 			"loadBalancer": "LoadBalancer",
 			"ingress": "Ingress",
-			"none": "None"
+			"none": "None",
+			"hostPath": "Host Path",
+			"nfs": "NFS"
 		},
 		"messages": {
 			"notFound": "404 not found",
-			"rayDashboardTitle": "Ray Dashboard"
+			"rayDashboardTitle": "Ray Dashboard",
+			"noModelCaches": "No model caches"
+		},
+		"actions": {
+			"addModelCache": "Add Model Cache"
+		},
+		"validation": {
+			"nfsServerRequired": "Server address is required",
+			"invalidIPAddress": "Invalid IP address",
+			"cachePathRequired": "Cache path is required",
+			"invalidPath": "Invalid path (Must start with /)"
 		}
 	},
 	"model_registries": {

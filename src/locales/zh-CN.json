@@ -297,7 +297,18 @@
 			"memory": "内存",
 			"replicas": "副本数",
 			"sshUser": "SSH 用户",
-			"sshPrivateKey": "SSH 私钥"
+			"sshPrivateKey": "SSH 私钥",
+			"modelCache": {
+				"title": "模型缓存",
+				"type": {
+					"host_path": "主机缓存",
+					"nfs": "文件服务器缓存"
+				},
+				"cacheType": "缓存类型",
+				"modelRegistry": "模型仓库",
+				"cachePath": "缓存路径",
+				"nfsServer": "文件服务器地址"
+			}
 		},
 		"sections": {
 			"basicInformation": "基础信息",
@@ -305,23 +316,37 @@
 			"provider": "提供商",
 			"headNode": "主节点",
 			"workerNode": "工作节点",
+			"modelCaches": "模型缓存",
 			"nodeAuthentication": "节点认证"
 		},
 		"placeholders": {
 			"clusterName": "集群名称",
 			"selectImageRegistry": "选择镜像仓库",
-			"sshUserExample": "例如 root"
+			"sshUserExample": "例如 root",
+			"nfsServerExample": "192.168.1.1"
 		},
 		"options": {
 			"multipleStaticNodes": "静态节点",
 			"kubernetes": "Kubernetes",
 			"loadBalancer": "负载均衡器",
 			"ingress": "入口",
-			"none": "不使用"
+			"none": "不使用",
+			"hostPath": "主机缓存",
+			"nfs": "文件服务器缓存"
 		},
 		"messages": {
 			"notFound": "404 未找到",
-			"rayDashboardTitle": "Ray 仪表板"
+			"rayDashboardTitle": "Ray 仪表板",
+			"noModelCaches": "没有模型缓存"
+		},
+		"actions": {
+			"addModelCache": "添加模型缓存"
+		},
+		"validation": {
+			"nfsServerRequired": "服务器地址是必填项",
+			"invalidIPAddress": "无效的 IP 地址",
+			"cachePathRequired": "缓存路径是必填项",
+			"invalidPath": "无效的路径(需以 / 开头)"
 		}
 	},
 	"model_registries": {

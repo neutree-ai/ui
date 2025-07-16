@@ -7,7 +7,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { type ReactElement, cloneElement } from "react";
+import { type ReactElement, cloneElement, forwardRef } from "react";
 import type {
   ControllerRenderProps,
   FieldPath,
@@ -27,7 +27,7 @@ export type FieldProps<
     field: ControllerRenderProps<TFieldValues, TName>;
   }>;
 };
-export const Field = (props: FieldProps) => {
+export const Field = forwardRef<HTMLDivElement, FieldProps>((props: FieldProps, _) => {
   return (
     <FormField
       control={props.control}
@@ -63,4 +63,4 @@ export const Field = (props: FieldProps) => {
       }}
     />
   );
-};
+});

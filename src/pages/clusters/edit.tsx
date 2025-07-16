@@ -12,6 +12,7 @@ export const ClustersEdit = () => {
     providerFields,
     headNodeFields,
     workerNodeFields,
+    modelCacheFields,
     authFields,
   } = useClusterForm({ action: "edit" });
   return (
@@ -22,6 +23,7 @@ export const ClustersEdit = () => {
       {providerFields}
       {headNodeFields}
       {workerNodeFields}
+      {modelCacheFields}
       {authFields}
     </Form>
   );

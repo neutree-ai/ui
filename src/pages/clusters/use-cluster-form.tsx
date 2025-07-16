@@ -3,10 +3,16 @@ import NodeIPsField from "@/components/business/NodeIPsField";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { Combobox, Field, Select } from "@/components/theme";
 import { useWorkspace } from "@/components/theme/hooks";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { Cluster, ImageRegistry } from "@/types";
+import { Label } from "@/components/ui/label";
+import { isValidIPAddress, isValidPath } from "@/lib/utils";
+import type { Cluster, HostPathCache, ImageRegistry, ModelCache } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
+import { Plus, Trash2 } from "lucide-react";
+import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
@@ -18,6 +24,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     { label: t("clusters.options.none"), value:NO_ACCELERATOR},
     { label: "NVIDIA GPU", value: "nvidia.com/gpu" },
     { label: "Ascend310P", value: "huawei.com/Ascend310P" },
+    { label: "AMD GPU", value: "amd.com/gpu" },
   ];
 
 
@@ -53,6 +60,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const workerResources = form.watch(
     "spec.config.worker_group_specs.0.resources",
   );
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "spec.config.model_caches"
+  });
 
   const getAcceleratorInfo = (
     resources: Record<string, string | number> | undefined,
@@ -106,6 +118,46 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const isEdit = action === "edit";
+
+  const addModelCache = () => {
+      append({ host_path: {path: '' }, model_registry_type: '' } as HostPathCache); // Default to host_path with empty path
+  };
+
+  const getCacheType = (index: number): 'nfs' | 'host_path' => {
+    const cache = form.watch(`spec.config.model_caches.${index}`);
+    return cache?.nfs ? 'nfs' : 'host_path';
+  };
+
+  const switchCacheType = (index: number, newType: 'nfs' | 'host_path') => {
+    const currentCache = form.getValues(`spec.config.model_caches.${index}`);
+    
+    if (newType === 'nfs') {
+      form.setValue(`spec.config.model_caches.${index}`, {
+        nfs: {
+          server: '',
+          path: '',
+        },
+        model_registry_type: currentCache.model_registry_type || 'hugging-face'
+      });
+    } else {
+      form.setValue(`spec.config.model_caches.${index}`, {
+        host_path: {
+          path: '',
+        },
+        model_registry_type: currentCache.model_registry_type || 'bentoml'
+      });
+    }
+  };
+
+  const FieldError = ({ error }: { error?: { message?: string } }) => {
+    if (!error?.message) return null;
+    
+    return (
+      <p className="text-sm text-red-500 mt-1">
+        {error.message}
+      </p>
+    );
+  };
 
   return {
     form,
@@ -198,6 +250,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                         "nvidia.com/gpu": "0",
                       },
                     },
+                  ],
+                  model_caches: [
+                    
                   ],
                 });
               }
@@ -394,6 +449,172 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <div />
       </FormCardGrid>
     ) : null,
+    modelCacheFields: (<div>
+      <FormCardGrid title={t("clusters.sections.modelCaches")}>
+      <div className="col-span-full space-y-4">
+
+
+      {fields.map((field, index) => {
+          const cacheType = getCacheType(index);
+          
+          return (
+            <Card key={field.id} className="relative">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium">
+                  #{index + 1} -  {t(`clusters.fields.modelCache.type.${cacheType}`)}
+                  </CardTitle>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => remove(index)}
+                    disabled={isEdit}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      {t("clusters.fields.modelCache.cacheType")}
+                    </Label>
+                    <Select
+                      options={isKubernetes ? [
+                        { label: t("clusters.options.hostPath"), value: "host_path" },
+                        { label: t("clusters.options.nfs"), value: "nfs" },
+                      ] : [{ label: t("clusters.options.hostPath"), value: "host_path" }]}
+                      value={cacheType}
+                      onChange={(value) => {
+                        switchCacheType(index, value as 'nfs' | 'host_path');
+                      }}
+                      disabled={isEdit}
+                    />
+                  </div>
+
+                  <Field
+                    {...form}
+                    name={`spec.config.model_caches.${index}.model_registry_type`}
+                    label={t("clusters.fields.modelCache.modelRegistry")}
+                  >
+                    <Select
+                      options={[
+                        { label: "Hugging Face", value: "hugging-face" },
+                        { label: "BentoML", value: "bentoml" }
+                      ]}
+                      disabled={isEdit}
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {cacheType === 'nfs' && (
+                    <>
+                      <Field
+                        {...form}
+                        label={t("clusters.fields.modelCache.nfsServer")}
+                        {...form.register(`spec.config.model_caches.${index}.nfs.server`,
+                        {
+                          required: {
+                            value: true,
+                            message: t("clusters.validation.nfsServerRequired") || "NFS server is required"
+                          },
+                          validate: (value: string) => {
+                            if (!value) return true; // Let required rule handle empty values
+                            return isValidIPAddress(value) || t("clusters.validation.invalidIPAddress") || "Please enter a valid IP address";
+                          }
+                        }
+                        )}
+                      >
+                        <Input
+                          placeholder="10.255.1.54"
+                          disabled={isEdit}
+                          className={form.formState.errors[`spec.config.model_caches.${index}.nfs.server`] ? "border-red-500 focus:border-red-500" : ""}
+                        />
+                      </Field>
+                      <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.nfs.server`]}/>
+
+                      <Field
+                        {...form}
+                        label={t("clusters.fields.modelCache.cachePath")}
+                        {...form.register(`spec.config.model_caches.${index}.nfs.path`, 
+                          {
+                            required: {
+                              value: true,
+                              message: t("clusters.validation.cachePathRequired") || "Cache path is required"
+                            },
+                            validate: (value: string) => {
+                              if (!value) return true; // Let required rule handle empty values
+                              return isValidPath(value) || t("clusters.validation.invalidPath") || "Please enter a valid path (e.g., /path/to/cache)";
+                            }
+                          }
+                        )}>
+                        <Input
+                          placeholder="/path/to/cache"
+                          disabled={isEdit}
+                          className={form.formState.errors[`spec.config.model_caches.${index}.nfs.path`] ? "border-red-500 focus:border-red-500" : ""}
+                        />
+                      </Field>
+                      <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.nfs.path`]}/>
+                    </>
+                  )}
+
+                  {cacheType === 'host_path' && (
+                    <>
+                    <Field
+                      {...form}
+                      label={t("clusters.fields.modelCache.cachePath")}
+                      {...form.register(`spec.config.model_caches.${index}.host_path.path`, {
+                        required: {
+                          value: true,
+                          message: t("clusters.validation.cachePathRequired") || "Cache path is required"
+                        },
+                        validate: (value: string) => {
+                          if (!value) return true;
+                          return isValidPath(value) || t("clusters.validation.invalidPath") || "Please enter a valid path (e.g., /dir/cache)";
+                        }
+                      })}
+                    >
+                      <Input
+                        placeholder="/path/to/cache"
+                        disabled={isEdit}
+                        className={`col-span-2 ${form.formState.errors[`spec.config.model_caches.${index}.host_path.path`] ? "border-red-500 focus:border-red-500" : ""}`}
+                      />
+                    </Field>
+                    <FieldError error={form.formState.errors[`spec.config.model_caches.${index}.host_path.path`]} />
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}        
+
+      {fields.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          {t("clusters.messages.noModelCaches")}
+        </div>
+      )}
+      <div className="flex gap-2 pt-2">          
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addModelCache}
+          disabled={isEdit}
+          className="flex ml-auto gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          {t("clusters.actions.addModelCache")}
+        </Button>
+      </div>
+      </div>
+    </FormCardGrid>
+    </div>),
     authFields: isKubernetes ? null : (
       <FormCardGrid title={t("clusters.sections.nodeAuthentication")}>
         <Field

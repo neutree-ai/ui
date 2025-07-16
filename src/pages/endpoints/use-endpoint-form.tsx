@@ -146,6 +146,11 @@ const resourceMapping: Record<
     apiValue: "NVIDIA_TESLA_A10G",
     type: "gpu",
   },
+  AMDInstinctMI300XVF: {
+    label: "AMD Instinct MI300X VF",
+    apiValue: "AMD_Instinct_MI300X_VF",
+    type: "gpu",
+  },
   NVIDIAL40S: { label: "NVIDIA L40S", apiValue: "NVIDIA_L40S", type: "gpu" },
   NVIDIAL4: { label: "NVIDIA L4", apiValue: "NVIDIA_L4", type: "gpu" },
   NVIDIAL20: { label: "NVIDIA L20", apiValue: "NVIDIA_L20", type: "gpu" },
@@ -216,14 +221,14 @@ const parseClusterResources = (
   }
 
   // Add generic options
-  acceleratorTypes.unshift({
+  gpu.total && acceleratorTypes.unshift({
     label: "Generic",
     value: "-",
     available: gpu.available,
     total: gpu.total,
     type: "gpu",
   });
-  acceleratorTypes.unshift({
+  npu.total && acceleratorTypes.unshift({
     label: "Generic",
     value: "-",
     available: npu.available,
