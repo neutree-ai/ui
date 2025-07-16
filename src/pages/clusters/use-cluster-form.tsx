@@ -487,7 +487,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   </div>
 
                   <Field
-                    {...form}
                     label={t("clusters.fields.modelCache.modelRegistry")}
                     {...form.register(`spec.config.model_caches.${index}.model_registry_type`, {
                       required: {
