@@ -509,7 +509,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   {cacheType === 'nfs' && (
                     <>
                       <Field
-                        {...form}
                         label={t("clusters.fields.modelCache.nfsServer")}
                         {...form.register(`spec.config.model_caches.${index}.nfs.server`,
                         {
@@ -532,7 +531,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                       </Field>
 
                       <Field
-                        {...form}
                         label={t("clusters.fields.modelCache.cachePath")}
                         {...form.register(`spec.config.model_caches.${index}.nfs.path`, 
                           {
@@ -558,7 +556,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   {cacheType === 'host_path' && (
                     <>
                     <Field
-                      {...form}
                       label={t("clusters.fields.modelCache.cachePath")}
                       {...form.register(`spec.config.model_caches.${index}.host_path.path`, {
                         required: {
