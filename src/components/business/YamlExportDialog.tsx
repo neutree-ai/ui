@@ -76,8 +76,12 @@ export const YamlExportDialog = ({
   } = useYamlExport();
 
   useEffect(() => {
-    Object.entries(resourceTypes).forEach(([_, resourceType]) => {
-      resourceType.loaded = false;
+    setResourceTypes((prevResourceTypes) => {
+      const updatedResourceTypes = { ...prevResourceTypes };
+      Object.entries(updatedResourceTypes).forEach(([_, resourceType]) => {
+        resourceType.loaded = false;
+      });
+      return updatedResourceTypes;
     });
   }, [isOpen]);
 
