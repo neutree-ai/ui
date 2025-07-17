@@ -4,12 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "../../lib/i18n";
-import {
-  MODELS,
-  GPUS,
-  type ModelConfig,
-  type GPUConfig,
-} from "../../data/models";
+import { MODELS, GPUS } from "../../data/models";
 import {
   calculateVRAMRequirements,
   formatMemorySize,
@@ -27,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -562,30 +556,6 @@ const VRAMCalculator: React.FC = () => {
 
             <div className="border border-border rounded-lg p-6">
               <MemoryAllocation />
-            </div>
-
-            <div className="border border-border rounded-lg p-6">
-              <h4 className="font-medium text-foreground mb-3">
-                {t("pages.vramCalculator.sections.cpuResources")}
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground">
-                    {t("pages.vramCalculator.metrics.recommendedMemory")}
-                  </div>
-                  <div className="font-semibold text-foreground">
-                    {formatMemorySize(results.cpuMemory)}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground">
-                    {t("pages.vramCalculator.metrics.recommendedCores")}
-                  </div>
-                  <div className="font-semibold text-foreground">
-                    {results.cpuCores} {t("pages.vramCalculator.metrics.cores")}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

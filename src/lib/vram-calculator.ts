@@ -2,6 +2,25 @@ import type { ModelConfig } from "../data/models";
 
 export type QuantizationType = "fp32" | "fp16" | "bf16" | "int8" | "int4";
 
+// Inference configuration constants - centralized management of empirical parameters
+const INFERENCE_CONFIG = {
+  ACTIVATION_COEFFICIENT: 0.5, // Activation coefficient (reduction compared to training)
+  OPTIMIZATION_FACTOR: 0.7, // Inference engine optimization factor (KV Cache and activation reduction)
+  MULTI_DEVICE_OVERHEAD: 0.05, // Multi-GPU communication overhead factor
+  BASE_GENERATION_SPEED: 100, // Base generation speed (tokens/sec)
+  KV_COMPONENTS: 2, // Number of KV Cache components (Key + Value)
+} as const;
+
+// vLLM specific configuration for PagedAttention and continuous batching
+const VLLM_CONFIG = {
+  // Fraction of concurrent users that are typically active simultaneously
+  // In practice, not all concurrent users are being processed at the same time
+  ACTIVE_USER_RATIO: 0.3,
+
+  // vLLM memory pool additional overhead for page management
+  MEMORY_POOL_OVERHEAD: 1.15,
+} as const;
+
 export interface CalculationInputs {
   model: ModelConfig;
   quantization: QuantizationType;
@@ -50,8 +69,6 @@ export interface CalculationResults {
   statusColor: string;
   generationSpeed: number;
   totalThroughput: number;
-  cpuMemory: number;
-  cpuCores: number;
   numGpus: number;
 
   raw: {
@@ -112,27 +129,37 @@ function calculateKVCache(
   const bytesPerToken = getQuantizationBytes(kvQuantization);
   const kvCoeff = getKVCacheCoeff(model.attentionStructure);
 
-  // For inference, KV cache grows with batch size, but not as dramatically as training
-  // vLLM and similar engines use PagedAttention which reduces actual memory usage
-  // The effective batch for KV cache is typically the actual batch size being processed
-  const effectiveBatch = batchSize;
-
-  // Use key-value head count and calculated head dimension for more accurate calculation
-  // KV cache size = 2 (K+V) * layers * kv_heads * head_dim * seq_len * batch * bytes
   const kvHeads = model.kvHeads;
-  const headDim = model.hiddenSize / model.attentionHeads; // Head dimension
+  const headDim = model.hiddenSize / model.attentionHeads;
 
-  const kvCacheSize =
-    2 * // K and V
+  // Base KV Cache size per token per sequence
+  const cachePerToken =
+    INFERENCE_CONFIG.KV_COMPONENTS * // K and V components
     model.layers *
     kvHeads *
     headDim *
-    sequenceLength *
-    effectiveBatch *
     bytesPerToken *
     kvCoeff;
 
-  return kvCacheSize / 1024 ** 3;
+  // vLLM KV Cache calculation:
+  // 1. Primary factor: effective batch size (sequences being processed simultaneously)
+  // 2. PagedAttention allows dynamic allocation and sharing
+  // 3. Concurrent users affect the scheduling but not direct memory usage
+
+  // Effective batch size considering vLLM's continuous batching
+  // Not all concurrent users are processed simultaneously
+  const effectiveBatch = Math.min(
+    batchSize,
+    Math.ceil(concurrentUsers * VLLM_CONFIG.ACTIVE_USER_RATIO),
+  );
+
+  // Total KV Cache: effective batch × sequence length × cache per token
+  const kvCacheSize = effectiveBatch * sequenceLength * cachePerToken;
+
+  // Apply vLLM memory pool overhead for page management
+  const finalCacheSize = kvCacheSize * VLLM_CONFIG.MEMORY_POOL_OVERHEAD;
+
+  return finalCacheSize / 1024 ** 3;
 }
 
 function calculateActivations(
@@ -146,8 +173,12 @@ function calculateActivations(
 
   // Rough estimation: activation memory scales more moderately with batch size
   // Formula based on transformer architecture: roughly hiddenSize * seqLen * batchSize * layers
-  // But with optimizations, the multiplier is much smaller (around 0.5-1 instead of 4)
-  const activationSize = batchSize * sequenceLength * model.hiddenSize * 0.5; // Much smaller coefficient for inference
+  // But with optimizations, the multiplier is much smaller (empirical coefficient for inference)
+  const activationSize =
+    batchSize *
+    sequenceLength *
+    model.hiddenSize *
+    INFERENCE_CONFIG.ACTIVATION_COEFFICIENT;
 
   return activationSize / 1024 ** 3;
 }
@@ -156,20 +187,30 @@ function calculateFrameworkOverhead(
   availableVramPerGpu: number,
   numGpus = 1,
 ): number {
+  // Framework overhead includes:
+  // 1. CUDA context and driver overhead
+  // 2. Framework runtime (PyTorch, vLLM engine)
+  // 3. Model loading and initialization buffers
+  // 4. Operator kernels and temporary buffers
+  // 5. Memory fragmentation and alignment overhead
+
   let baseOverhead = 1.0;
 
+  // Scale overhead with GPU memory capacity
+  // Larger GPUs typically run more complex workloads requiring more framework overhead
   if (availableVramPerGpu >= 80) {
-    baseOverhead = 2.0;
+    baseOverhead = 2.0; // H100, A100 80GB
   } else if (availableVramPerGpu >= 40) {
-    baseOverhead = 1.5;
+    baseOverhead = 1.5; // A100 40GB, A6000
   } else if (availableVramPerGpu >= 24) {
-    baseOverhead = 1.2;
+    baseOverhead = 1.2; // RTX 4090, RTX 3090
   } else if (availableVramPerGpu >= 16) {
-    baseOverhead = 1.0;
+    baseOverhead = 1.0; // RTX 4070 Ti, V100
   } else {
-    baseOverhead = 0.8;
+    baseOverhead = 0.8; // Smaller GPUs
   }
 
+  // Multi-GPU setups have slightly lower per-GPU overhead due to shared components
   const multiGpuEfficiency = numGpus > 1 ? 0.9 : 1.0;
 
   return baseOverhead * multiGpuEfficiency;
@@ -183,10 +224,14 @@ function calculateMultiDeviceOverhead(
     return 0;
   }
 
-  const overheadFactor = 0.05;
+  // Multi-GPU overhead includes:
+  // 1. NCCL/communication library overhead
+  // 2. Synchronization buffers
+  // 3. Model sharding metadata
+  // 4. All-reduce temporary buffers
   const scalingFactor = Math.sqrt(numGpus);
 
-  return baseVramUsage * overheadFactor * scalingFactor;
+  return baseVramUsage * INFERENCE_CONFIG.MULTI_DEVICE_OVERHEAD * scalingFactor;
 }
 
 function getMemoryStatus(utilizationPercent: number): {
@@ -232,47 +277,16 @@ function estimateGenerationSpeed(
   availableVram: number,
   batchSize: number,
 ): number {
-  const baseSpeed = 100;
   const modelSizeFactor = Math.max(0.1, 1 / Math.sqrt(model.params / 7));
   const memoryFactor = Math.min(2, availableVram / 24);
   const batchFactor = 1 / Math.sqrt(batchSize);
 
-  return baseSpeed * modelSizeFactor * memoryFactor * batchFactor;
-}
-
-function calculateCPUMemory(
-  model: ModelConfig,
-  quantization: QuantizationType,
-  sequenceLength: number,
-  mode: "uvm" | "control_plane" = "control_plane",
-): number {
-  if (mode === "uvm") {
-    const P = model.params * 10 ** 9;
-    const B = getQuantizationBytes(quantization);
-    const alpha = 1.25;
-    const L = sequenceLength;
-    const delta = 0.2;
-
-    const W_CPU = P * B;
-    const K_CPU = P * alpha * L * B;
-    const RAM_CPU = (W_CPU + K_CPU) * (1 + delta);
-
-    return RAM_CPU / 1024 ** 3;
-  }
-
-  const R_fw = 10;
-  const R_os = 6;
-  const R_mon = 3;
-  const delta = 0.2;
-
-  return (R_fw + R_os + R_mon) * (1 + delta);
-}
-
-function calculateCPUCores(numGpus: number, concurrentUsers: number): number {
-  const c_g = 10;
-  const c_r = 5;
-
-  return numGpus * c_g + concurrentUsers * c_r;
+  return (
+    INFERENCE_CONFIG.BASE_GENERATION_SPEED *
+    modelSizeFactor *
+    memoryFactor *
+    batchFactor
+  );
 }
 
 export function calculateVRAMRequirements(
@@ -303,9 +317,9 @@ export function calculateVRAMRequirements(
 
   // Apply inference optimization factor for modern engines like vLLM
   // These engines use techniques like PagedAttention, continuous batching, etc.
-  const inferenceOptimizationFactor = 0.7; // 30% reduction from optimizations
-  const optimizedKvCache = kvCache * inferenceOptimizationFactor;
-  const optimizedActivations = activations * inferenceOptimizationFactor;
+  const optimizedKvCache = kvCache * INFERENCE_CONFIG.OPTIMIZATION_FACTOR;
+  const optimizedActivations =
+    activations * INFERENCE_CONFIG.OPTIMIZATION_FACTOR;
 
   const baseVramUsage =
     modelWeights + optimizedKvCache / numGpus + optimizedActivations / numGpus;
@@ -406,9 +420,6 @@ export function calculateVRAMRequirements(
   );
   const totalThroughput = generationSpeed * batchSize;
 
-  const cpuMemory = calculateCPUMemory(model, quantization, sequenceLength);
-  const cpuCores = calculateCPUCores(numGpus, concurrentUsers);
-
   return {
     total: {
       totalVram,
@@ -421,8 +432,6 @@ export function calculateVRAMRequirements(
     statusColor: statusInfo.color,
     generationSpeed,
     totalThroughput,
-    cpuMemory,
-    cpuCores,
     numGpus,
     raw: {
       modelWeights,
