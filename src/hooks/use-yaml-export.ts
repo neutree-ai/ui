@@ -56,7 +56,7 @@ export const useYamlExport = () => {
   const { current: currentWorkspace } = useWorkspace();
   const dataProvider = useDataProvider();
   const { resources } = useResource();
-
+  
   // Filter exportable resources from all configured resources
   const exportableResources = useMemo(() => {
     return resources
@@ -164,7 +164,7 @@ export const useYamlExport = () => {
   const loadEntities = useCallback(
     async (type: ExportableResource) => {
       if (resourceTypes[type].loaded) return;
-
+    
       // Set loading state for this resource
       setLoadingResources((prev) => new Set(prev).add(type));
 
@@ -373,9 +373,7 @@ export const useYamlExport = () => {
     setIsSelectingAll(true);
     const newResourceTypes = { ...resourceTypes };
 
-    try {
-      for (const type of EXPORTABLE_RESOURCES) {
-        // Load entities if not loaded
+    const resourcePromises = EXPORTABLE_RESOURCES.map(async (type) => {
         if (!newResourceTypes[type].loaded) {
           // Set loading state for this resource
           setLoadingResources((prev) => new Set(prev).add(type));
@@ -414,14 +412,18 @@ export const useYamlExport = () => {
               }),
             );
 
-            newResourceTypes[type] = {
-              ...newResourceTypes[type],
+            return {
+              type,
               entities,
-              loaded: true,
+              success: true,
             };
           } catch (error) {
             console.error(`Failed to load entities for ${type}:`, error);
-            continue;
+            return {
+              type,
+              entities: [],
+              success: false,
+            };
           } finally {
             // Remove loading state for this resource
             setLoadingResources((prev) => {
@@ -431,7 +433,27 @@ export const useYamlExport = () => {
             });
           }
         }
+        
+        // Return existing data if already loaded
+        return {
+          type,
+          entities: newResourceTypes[type].entities,
+          success: true,
+        };
+      });
 
+    try {
+      const results = await Promise.all(resourcePromises);
+
+      results.forEach(({ type, entities, success }) => {
+        if (success) {
+          newResourceTypes[type] = {
+            ...newResourceTypes[type],
+            entities,
+            loaded: true,
+          };
+        }
+        
         // Select the resource type and all its entities
         newResourceTypes[type] = {
           ...newResourceTypes[type],
@@ -440,7 +462,7 @@ export const useYamlExport = () => {
             newResourceTypes[type].entities.map((e) => String(e.id)),
           ),
         };
-      }
+      });
 
       setResourceTypes(newResourceTypes);
     } finally {
