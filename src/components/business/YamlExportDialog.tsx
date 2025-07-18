@@ -66,6 +66,7 @@ export const YamlExportDialog = ({
     areAllResourcesSelected,
     isSelectingAll,
     loadingResources,
+    setResourceTypes,
     toggleResourceType,
     toggleEntity,
     loadEntities,

@@ -484,6 +484,7 @@ export const useYamlExport = () => {
     areAllResourcesSelected,
     isSelectingAll,
     loadingResources,
+    setResourceTypes,
     toggleResourceType,
     toggleEntity,
     loadEntities,
