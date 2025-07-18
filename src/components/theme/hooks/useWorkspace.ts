@@ -8,8 +8,9 @@ export const ALL_WORKSPACES = "_all_";
 export const useWorkspace = () => {
   const { params } = useParsed();
   const [value, setValue] = useLocalStorage<string>(WORKSPACE_STORAGE_KEY);
+  
   useEffect(() => {
-    if (params?.workspace !== value) {
+    if (params?.workspace && params?.workspace !== value) {
       setValue(params?.workspace);
     }
   }, [params?.workspace, setValue, value]);
@@ -21,12 +22,12 @@ export const useWorkspace = () => {
   const preferred =
     data?.data?.find((workspace) => workspace.metadata.name === value)?.metadata
       .name || ALL_WORKSPACES;
-  const current =
-    data?.data?.find(
-      (workspace) => workspace.metadata.name === params?.workspace,
-    )?.metadata.name ||
-    preferred ||
-    ALL_WORKSPACES;
+
+  const current = params?.workspace 
+    ? (data?.data?.find(
+        (workspace) => workspace.metadata.name === params?.workspace,
+      )?.metadata.name || params?.workspace)
+    : preferred;
 
   return {
     current,
