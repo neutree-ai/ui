@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { useWorkspace } from "@/components/theme/hooks";
 import { useCustom, useSelect } from "@refinedev/core";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { CommandLoading } from "@/components/ui/command";
 import { Slider } from "@/components/ui/slider";
@@ -305,6 +305,34 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     resolver: (values) => {
       const errors: Record<string, unknown> = {};
 
+      if (!values.spec?.cluster) {
+        errors["spec.cluster"] = {
+          type: "required",
+          message: t("endpoints.validation.clusterRequired"),
+        };
+      }
+
+      if (!values.spec?.model?.registry) {
+        errors["spec.model.registry"] = {
+          type: "required", 
+          message: t("endpoints.validation.modelRegistryRequired"),
+        };
+      }
+
+      if (!values.spec?.engine?.engine) {
+        errors["spec.engine.engine"] = {
+          type: "required",
+          message: t("endpoints.validation.engineRequired"),
+        };
+      }
+
+      if (!values.spec?.model?.name) {
+        errors["spec.model.name"] = {
+          type: "required",
+          message: t("endpoints.validation.modelNameRequired"),
+        };
+      }
+
       if (action === "create" && currentRegistry && currentModelName) {
         const modelExists =
           modelsData.data?.data.some(
@@ -332,6 +360,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentCluster = form.watch("spec.cluster");
   const acceleratorValue = form.watch("spec.resources.accelerator");
   const engineSpec = form.watch("spec.engine");
+
+  useEffect(() => {
+    setIsCustomizeOpen(!!form.formState.errors["spec.engine.engine"] || !!form.formState.errors["spec.model.name"]);
+  }, [form.formState.errors["spec.engine.engine"], form.formState.errors["spec.model.name"]]);
 
   const meta = useMemo(
     () => ({
@@ -640,10 +672,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={t("endpoints.placeholders.selectCluster")}
             options={(clusters.query?.data?.data || []).map((e) => {
               return {
-                label: e.metadata.name,
-                value: e.metadata.name,
+                label: e.metadata?.name || "Unknown Cluster",
+                value: e.metadata?.name || "",
               };
-            })}
+            }).filter(option => option.value !== "")}
+            onChange={(value) => {
+              if (value && typeof value === "string" && value.trim() !== "") {
+                form.setValue("spec.cluster", value);
+                form.clearErrors("spec.cluster");
+              }
+            }}
           />
         </Field>
         <Field
@@ -654,14 +692,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           <Combobox
             placeholder={t("endpoints.placeholders.selectModelRegistry")}
             disabled={modelRegistries.query.isLoading}
-            options={(modelRegistries.query.data?.data || []).map((e) => ({
-              label: e.metadata.name,
-              value: e.metadata.name,
-            }))}
+            options={(modelRegistries.query.data?.data || [])
+              .filter(e => e.metadata?.name && e.metadata.name.trim() !== "")
+              .map((e) => ({
+                label: e.metadata.name,
+                value: e.metadata.name,
+              }))}
             onChange={(value) => {
-              form.setValue("spec.model.registry", value as string);
-              // Reset model search and catalog selection when registry changes
-              setModelSearch("");
+              if (value && typeof value === "string" && value.trim() !== "") {
+                form.setValue("spec.model.registry", value);
+                form.clearErrors("spec.model.registry");
+                setModelSearch("");
+              }
             }}
           />
         </Field>
@@ -823,6 +865,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     // Handle model selection
                     onChange={(value: string) => {
                       form.setValue("spec.model.name", value);
+                      form.clearErrors("spec.model.name");
                     }}
                   />
                 </div>
@@ -853,20 +896,30 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <Combobox
                 placeholder={t("endpoints.placeholders.selectEngine")}
                 disabled={engines.query.isLoading}
-                options={engineNames.map((v) => ({
-                  label: v,
-                  value: v,
-                }))}
+                options={engineNames
+                  .filter(name => name && name.trim() !== "")
+                  .map((v) => ({
+                    label: v,
+                    value: v,
+                  }))}
                 onChange={(value) => {
-                  form.setValue("spec.engine", {
-                    engine: value,
-                    version: engineVersions[String(value)][0].version,
-                  });
-                  form.setValue(
-                    "spec.model.task",
-                    engineTasks[String(value)][0],
-                  );
-                  form.trigger("spec.engine.engine");
+                  if (value && typeof value === "string" && value.trim() !== "") {
+                    const selectedEngine = value;
+                    const availableVersions = engineVersions[selectedEngine];
+                    const availableTasks = engineTasks[selectedEngine];
+                    
+                    if (availableVersions && availableVersions.length > 0) {
+                      form.setValue("spec.engine", {
+                        engine: selectedEngine,
+                        version: availableVersions[0].version,
+                      });
+                    }
+                    form.formState.errors["spec.engine"] = undefined;
+                    
+                    if (availableTasks && availableTasks.length > 0) {
+                      form.setValue("spec.model.task", availableTasks[0]);
+                    }
+                  }
                 }}
               />
             </Field>

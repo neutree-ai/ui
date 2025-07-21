@@ -531,6 +531,12 @@
 			"stdoutLogsNotAvailable": "标准输出日志不可用",
 			"failedToLoadRayApplication": "无法加载 Ray 应用信息。请检查集群是否可访问。",
 			"noBackendDeploymentFound": "未找到该端点的后端部署，或日志尚不可用。"
+		},
+		"validation": {
+			"clusterRequired": "集群是必选项",
+			"modelRegistryRequired": "模型仓库是必选项",
+			"engineRequired": "引擎是必选项",
+			"modelNameRequired": "模型是必选项"
 		}
 	},
 	"user_profiles": {

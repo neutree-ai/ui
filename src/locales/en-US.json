@@ -531,6 +531,12 @@
 			"stdoutLogsNotAvailable": "Stdout logs not available",
 			"failedToLoadRayApplication": "Failed to load Ray application information. Please check if the cluster is accessible.",
 			"noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
+		},
+		"validation": {
+			"clusterRequired": "Cluster is required",
+			"modelRegistryRequired": "Model registry is required",
+			"engineRequired": "Engine is required",
+			"modelNameRequired": "Model is required"
 		}
 	},
 	"user_profiles": {
