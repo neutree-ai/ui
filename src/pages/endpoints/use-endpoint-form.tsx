@@ -314,7 +314,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
       if (!values.spec?.model?.registry) {
         errors["spec.model.registry"] = {
-          type: "required", 
+          type: "required",
           message: t("endpoints.validation.modelRegistryRequired"),
         };
       }
