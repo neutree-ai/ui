@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { useWorkspace } from "@/components/theme/hooks";
 import { useCustom, useSelect } from "@refinedev/core";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { CommandLoading } from "@/components/ui/command";
 import { Slider } from "@/components/ui/slider";
@@ -361,9 +361,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const acceleratorValue = form.watch("spec.resources.accelerator");
   const engineSpec = form.watch("spec.engine");
 
+  const _setIsCustomizeOpen = useCallback((isOpen: boolean) => {
+    setIsCustomizeOpen(isOpen);
+  }, []);
+
   useEffect(() => {
-    setIsCustomizeOpen(!!form.formState.errors["spec.engine.engine"] || !!form.formState.errors["spec.model.name"]);
-  }, [form.formState.errors["spec.engine.engine"], form.formState.errors["spec.model.name"]]);
+    if (!!form.formState.errors["spec.engine.engine"] || !!form.formState.errors["spec.model.name"]) {
+      _setIsCustomizeOpen(true);
+    }
+  }, [form.formState.errors["spec.engine.engine"], form.formState.errors["spec.model.name"], _setIsCustomizeOpen]);
 
   const meta = useMemo(
     () => ({
@@ -672,10 +678,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={t("endpoints.placeholders.selectCluster")}
             options={(clusters.query?.data?.data || []).map((e) => {
               return {
-                label: e.metadata?.name || "Unknown Cluster",
-                value: e.metadata?.name || "",
+                label: e.metadata?.name,
+                value: e.metadata?.name,
               };
-            }).filter(option => option.value !== "")}
+            })}
             onChange={(value) => {
               if (value && typeof value === "string" && value.trim() !== "") {
                 form.setValue("spec.cluster", value);
@@ -914,7 +920,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         version: availableVersions[0].version,
                       });
                     }
-                    form.formState.errors["spec.engine"] = undefined;
+                    form.clearErrors("spec.engine.engine");
                     
                     if (availableTasks && availableTasks.length > 0) {
                       form.setValue("spec.model.task", availableTasks[0]);
