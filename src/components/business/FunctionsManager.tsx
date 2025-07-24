@@ -8,6 +8,7 @@ import { Trash2, Edit, Plus } from "lucide-react";
 import { FunctionDialog } from "./FunctionDialog";
 import type { ChatFunction } from "@/types/chat-types";
 import { cn } from "@/lib/utils";
+import { v4 } from "uuid";
 
 interface FunctionsManagerProps {
   functions: ChatFunction[];
@@ -47,7 +48,7 @@ export function FunctionsManager({
       // Create new function
       const newFunction: ChatFunction = {
         ...functionData,
-        id: crypto.randomUUID(),
+        id: v4(),
         enabled: true,
       };
       onFunctionsChange([...functions, newFunction]);
