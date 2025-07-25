@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { useWorkspace } from "@/components/theme/hooks";
 import { useCustom, useSelect } from "@refinedev/core";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { CommandLoading } from "@/components/ui/command";
 import { Slider } from "@/components/ui/slider";
@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatToDecimal } from "@/lib/unit";
+import useEndpointResources from "@/hooks/use-endpoint-resources";
 
 // Types for Ray cluster status API response
 type RayClusterResourceUsage = {
@@ -327,17 +328,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     },
   });
 
-  const originalResources = useMemo(() => {
-    const formValues = form.getValues() || form.formState.defaultValues;
-    const resources = {
-      cpu: formValues?.spec?.resources?.cpu || 0,
-      memory: formValues?.spec?.resources?.memory || 0,
-      gpu: formValues?.spec?.resources?.gpu || 0,
-      npu: formValues?.spec?.resources?.accelerator?.NPU || 0,
-      accelerator: formValues?.spec?.resources?.accelerator || { "-": 0, NPU: 0 }
-    };
-    return resources;
-  }, [form.formState.defaultValues]); 
+  const formValues = form.getValues();
+  const currentUsage = useEndpointResources(
+    formValues.spec?.resources,
+    formValues.metadata,
+    action
+  );
 
   const workspace = form.watch("metadata.workspace");
   const currentModelName = form.watch("spec.model.name");
@@ -389,23 +385,30 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   }, [clusterStatusQuery.data?.data]);
 
   const maxAvailable = useMemo(() => {
-    if (!clusterResources || !originalResources) {
-      return { cpu: 0, memory: 0, gpu: 0, npu: 0, accelerator: {} };
+    if (!clusterResources) {
+      return { cpu: 0, memory: 0, gpu: 0, npu: 0, accelerator: {"-": 0} };
     }
+
+    const remainingAvailable = clusterResources.acceleratorTypes?.reduce((acc, item) => {
+      acc[item.value] = Number(item.available || 0);
+      return acc;
+    }, {} as Record<string, number>);
+
+    const accelerator = Object.keys(remainingAvailable).reduce((acc, key) => {
+      const usage = Number(currentUsage.accelerator[key] || 0);
+      const available = remainingAvailable?.[key] || 0;
+      acc[key] = usage + available;
+      return acc;
+    }, {} as Record<string, number>);
+
     return {
-      cpu: Number(clusterResources.cpu?.available || 0) + Number(originalResources.cpu || 0),
-      memory: Number(clusterResources.memory?.available || 0) + Number(originalResources.memory || 0),
-      gpu: Number(clusterResources.gpu?.available || 0) + Number(originalResources.gpu || 0),
-      npu: Number(clusterResources.npu?.available || 0) + Number(originalResources.npu || 0),
-      accelerator: Object.keys(originalResources.accelerator).reduce((acc, key) => {
-        const specificAccelerator = clusterResources.acceleratorTypes.find(
-          acc => acc.value === key
-        );
-        acc[key] = Number(specificAccelerator?.available || 0) + Number(originalResources.accelerator[key] || 0);
-        return acc;
-      }, {} as Record<string, number>)
+      cpu: Number(clusterResources.cpu?.available || 0) + Number(currentUsage.cpu || 0),
+      memory: Number(clusterResources.memory?.available || 0) + Number(currentUsage.memory || 0),
+      gpu: Number(clusterResources.gpu?.available || 0) + Number(currentUsage.gpu || 0),
+      npu: Number(clusterResources.npu?.available || 0) + Number(currentUsage.npu || 0),
+      accelerator
     };
-  }, [clusterResources, originalResources]);
+  }, [clusterResources, currentUsage, action]);
 
   const dynamicAvailability = useMemo(() => {
     const currentCpu = form.watch("spec.resources.cpu") || 0;
@@ -423,7 +426,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const isEdit = action === "edit";
 
-  // Auto-initialize model search with current model name for better UX
   const effectiveModelSearch = modelSearch || currentModelName || "";
 
   const modelsData = useCustom({
@@ -575,7 +577,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               const currentCount =
                 acceleratorValue[Object.keys(acceleratorValue)[0]];
               form.setValue("spec.resources.accelerator", {
-                [value as string]: currentCount,
+                [value as string]: Math.min(currentCount, maxAvailable.accelerator[value as string]),
               });
               
               // Update the corresponding accelerator field based on type
@@ -773,7 +775,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </div>
             <Slider
               min={0}
-              max={clusterResources?.memory.available ?? 0}
+              max={maxAvailable.memory}
               step={0.5}
               value={[form.watch("spec.resources.memory")]}
               onValueChange={(value) => {
