@@ -59,8 +59,7 @@ const useEndpointResources = (
     action, 
     metadata?.name,
     resources,
-    isInitialized,
-    currentUsage
+    isInitialized
   ]);
 
   return currentUsage || {

@@ -408,7 +408,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       npu: Number(clusterResources.npu?.available || 0) + Number(currentUsage.npu || 0),
       accelerator
     };
-  }, [clusterResources, currentUsage, action]);
+  }, [clusterResources, currentUsage]);
 
   const dynamicAvailability = useMemo(() => {
     const currentCpu = form.watch("spec.resources.cpu") || 0;
@@ -577,7 +577,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               const currentCount =
                 acceleratorValue[Object.keys(acceleratorValue)[0]];
               form.setValue("spec.resources.accelerator", {
-                [value as string]: Math.min(currentCount, maxAvailable.accelerator[value as string]),
+                [value as string]: Math.min(currentCount, maxAvailable.accelerator[value as string] || 0),
               });
               
               // Update the corresponding accelerator field based on type
