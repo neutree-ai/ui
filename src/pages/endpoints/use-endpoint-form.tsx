@@ -768,7 +768,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <span>{formatToDecimal(form.watch("spec.resources.memory"))} GiB</span>
               {clusterResources && (
                 <span>
-                  Remaining: {formatToDecimal(clusterResources.memory.available)} /{" "}
+                  Remaining: {formatToDecimal(dynamicAvailability.memory)} /{" "}
                   {formatToDecimal(clusterResources.memory.total)} GiB
                 </span>
               )}

@@ -24,7 +24,7 @@ const useEndpointResources = (
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (isInitialized || currentUsage) return;
+    if (isInitialized) return;
 
     if (action === "create") {
       const usage = {
@@ -68,7 +68,7 @@ const useEndpointResources = (
     memory: 0,
     gpu: 0,
     npu: 0,
-    accelerator: { "-": 0, NPU: 0 }
+    accelerator: {}
   };
 };
 
