@@ -914,5 +914,15 @@
 		"labels": {
 			"optional": "（可选）"
 		}
+	},
+	"permissions": {
+		"create": "创建",
+		"read": "读取",
+		"update": "更新",
+		"delete": "删除",
+		"system_admin": "系统管理"
+	},
+	"systems": {
+		"title": "系统"
 	}
 }

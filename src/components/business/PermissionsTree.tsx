@@ -10,7 +10,6 @@ import {
   Pencil,
   Trash,
   Database,
-  Users,
   Box,
   Server,
   Cpu,
@@ -19,8 +18,11 @@ import {
   FileText,
   UserCheck,
   LayoutTemplate,
+  BookOpen,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getResourcePlural } from "@/lib/plural";
+import { useTranslation } from "react-i18next";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,
@@ -38,6 +40,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   model_registry: <Layers className="h-5 w-5" />,
   engine: <Cpu className="h-5 w-5" />,
   cluster: <HardDrive className="h-5 w-5" />,
+  model_catalog: <BookOpen className="h-5 w-5" />,
 };
 
 const parsePermissionsToTree = (permissions: string[]) => {
@@ -92,15 +95,15 @@ const ResourceNode = ({
   resource: string;
   actions: string[];
 }) => {
+  const { t } = useTranslation();
+
   const [isOpen, setIsOpen] = useState(true);
   const sortedActions = actions.sort();
   const resourceIcon = resourceIcons[resource] || <Box className="h-5 w-5" />;
 
   const formatResourceName = (name: string) => {
-    return name
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    const plural = getResourcePlural(name);
+    return t(`${plural}.title`);
   };
 
   return (
@@ -120,7 +123,7 @@ const ResourceNode = ({
         <h3 className="font-medium">{formatResourceName(resource)}</h3>
 
         <Badge variant="outline" className="ml-2">
-          {sortedActions.length} permissions
+          {sortedActions.length} {t("roles.fields.permissions")}
         </Badge>
       </div>
 
@@ -148,8 +151,14 @@ const ActionNode = ({
   action: string;
   resource: string;
 }) => {
+  const { t } = useTranslation();
+
   const actionIcon = actionIcons[action] || <Eye className="h-4 w-4" />;
-  const fullPermission = `${resource}:${action}`;
+
+  const plural = getResourcePlural(resource);
+  const fullPermission = ["system"].includes(resource)
+    ? t(`permissions.${resource}_${action}`)
+    : `${t(`${plural}.title`)}:${t(`permissions.${action}`)}`;
 
   return (
     <div className="flex items-center p-2 rounded bg-card border border-border text-card-foreground">

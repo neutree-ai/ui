@@ -21,6 +21,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ALL_PERMISSIONS } from "@/types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { getResourcePlural } from "@/lib/plural";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,
@@ -173,6 +175,8 @@ const ResourceNode = ({
   toggleAllResourcePermissions: (resource: string, selectAll: boolean) => void;
   disabled?: boolean;
 }) => {
+  const { t } = useTranslation();
+
   const [isOpen, setIsOpen] = useState(true);
   const { actions, selectedActions } = resourceData;
   const sortedActions = [...actions].sort();
@@ -182,10 +186,8 @@ const ResourceNode = ({
   const someSelected = selectedActions.length > 0 && !allSelected;
 
   const formatResourceName = (name: string) => {
-    return name
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    const plural = getResourcePlural(name);
+    return t(`${plural}.title`);
   };
 
   return (
@@ -226,7 +228,8 @@ const ResourceNode = ({
           <h3 className="font-medium">{formatResourceName(resource)}</h3>
 
           <Badge variant="outline" className="ml-2">
-            {selectedActions.length}/{sortedActions.length} permissions
+            {selectedActions.length}/{sortedActions.length}{" "}
+            {t("roles.fields.permissions")}
           </Badge>
         </div>
       </div>
@@ -264,8 +267,14 @@ const ActionNode = ({
   onToggle: () => void;
   disabled?: boolean;
 }) => {
+  const { t } = useTranslation();
+
   const actionIcon = actionIcons[action] || <Eye className="h-4 w-4" />;
-  const fullPermission = `${resource}:${action}`;
+
+  const plural = getResourcePlural(resource);
+  const fullPermission = ["system"].includes(resource)
+    ? t(`permissions.${resource}_${action}`)
+    : `${t(`${plural}.title`)}:${t(`permissions.${action}`)}`;
 
   return (
     <div

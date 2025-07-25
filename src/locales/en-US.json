@@ -914,5 +914,15 @@
 		"labels": {
 			"optional": "(Optional)"
 		}
+	},
+	"permissions": {
+		"create": "Create",
+		"read": "Read",
+		"update": "Update",
+		"delete": "Delete",
+		"system_admin": "System Admin"
+	},
+	"systems": {
+		"title": "Systems"
 	}
 }
