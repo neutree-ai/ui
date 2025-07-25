@@ -256,7 +256,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       <FormCardGrid title={t("clusters.sections.provider")}>
         {type === "ssh" && (
           <Field {...form} name="spec.config.provider" className="col-span-4">
-            <NodeIPsField />
+            <NodeIPsField disabled={isEdit} />
           </Field>
         )}
 

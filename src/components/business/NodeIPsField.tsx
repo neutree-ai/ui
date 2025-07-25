@@ -113,7 +113,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Add a new worker node IP
     const addWorkerNodeIp = () => {
-      if (disabled) return;
+      // if (disabled) return;
 
       // Block adding if there are errors
       if (!newWorkerIp || errors.newWorkerIp) return;
@@ -129,7 +129,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Remove a worker node IP
     const removeWorkerNodeIp = (ipToRemove: string) => {
-      if (disabled) return;
+      // if (disabled) return;
 
       setworkerIps(workerIps.filter((ip) => ip !== ipToRemove));
 
@@ -202,7 +202,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                     <div className="flex items-center">
                       <span className="font-mono text-sm">{ip}</span>
                     </div>
-                    {!disabled && (
+                    {(
                       <Button
                         variant="ghost"
                         size="sm"
@@ -218,7 +218,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
             </div>
 
             {/* Add new worker node IP */}
-            {!disabled && (
+            {(
               <div className="flex flex-col">
                 <div className="flex items-center">
                   <Input
