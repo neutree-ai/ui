@@ -1,18 +1,28 @@
+import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
 import type { ModelRegistry } from "@/types";
+import { Folder } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ModelRegistryType = ({ type }: Pick<ModelRegistry["spec"], "type">) => {
+  const { t } = useTranslation();
   return (
     <div className="flex gap-1 items-center">
-      <img
-        className="w-6 h-6"
-        src={
-          type === "bentoml"
-            ? "https://docs.bentoml.com/en/latest/_static/img/logo-light.svg"
-            : "https://huggingface.co/front/assets/huggingface_logo-noborder.svg"
-        }
-        alt="Model Registry Icon"
-      />
-      <div>{type}</div>
+      {type === "hugging-face" && (
+        <img
+          className="w-6 h-6"
+          src={
+            "https://huggingface.co/front/assets/huggingface_logo-noborder.svg"
+          }
+          alt="Model Registry Icon"
+        />
+      )}
+      {type === PRIVATE_MODEL_REGISTRY_TYPE && <Folder className="w-6 h-6" />}
+
+      <div>
+        {type === PRIVATE_MODEL_REGISTRY_TYPE
+          ? t("model_registries.types.fileSystem")
+          : type}
+      </div>
     </div>
   );
 };

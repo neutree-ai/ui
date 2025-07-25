@@ -6,6 +6,7 @@ import FormCardGrid from "@/components/business/FormCardGrid";
 import { Input } from "@/components/ui/input";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { useTranslation } from "@/lib/i18n";
+import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
 
 export const useModelRegistryForm = ({
   action,
@@ -80,7 +81,7 @@ export const useModelRegistryForm = ({
               },
               {
                 label: t("model_registries.types.fileSystem"),
-                value: "bentoml",
+                value: PRIVATE_MODEL_REGISTRY_TYPE,
               },
             ]}
           />
