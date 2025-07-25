@@ -1,3 +1,4 @@
+import { useNavigation } from "@refinedev/core";
 import type { RowActionProps } from ".";
 import { RowAction } from ".";
 import { useGetEditUrl } from "@/components/theme/hooks";
@@ -15,14 +16,17 @@ export function EditAction({
   disabled,
   ...props
 }: EditActionProps) {
-  const edit = useGetEditUrl(resource, row.metadata.name);
+  const edit = useGetEditUrl(resource, row.metadata.name, row.metadata.workspace);
+  const navigation = useNavigation();
+  const editUrl = navigation.editUrl(resource, row.id, row.metadata);
+
 
   return (
     <RowAction
       {...props}
       disabled={!edit.can || disabled}
       title={!edit?.can ? edit?.reason : title}
-      to={edit.url}
+      to={editUrl}
     />
   );
 }
