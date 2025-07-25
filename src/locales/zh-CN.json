@@ -715,6 +715,13 @@
 				"unknownError": "未知错误"
 			}
 		},
+		"apiKey": {
+			"copySuccess": "已复制到剪贴板",
+			"copySuccessDescription": "API 密钥已复制到您的剪贴板",
+			"errors": {
+				"copyFailed": "复制到剪贴板失败"
+			}
+		},
 		"variablesInput": {
 			"key": "键",
 			"value": "值",
