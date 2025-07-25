@@ -104,6 +104,7 @@ const VLLM_PANELS: PanelConfig[] = [
   { id: 8 },
   { id: 3 },
   { id: 5 },
+  { id: 10 },
   { id: 4 },
   { id: 12 },
   { id: 13 },
