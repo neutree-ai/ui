@@ -62,4 +62,9 @@ export const ALL_PERMISSIONS = [
   "cluster:create",
   "cluster:update",
   "cluster:delete",
+  "model_catalog:read",
+  "model_catalog:create",
+  "model_catalog:update",
+  "model_catalog:delete",
+  "system:admin",
 ];

@@ -16,6 +16,7 @@ import {
   FileText,
   CheckSquare,
   Square,
+  BookOpen,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ALL_PERMISSIONS } from "@/types";
@@ -37,6 +38,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   model_registry: <Layers className="h-5 w-5" />,
   engine: <Cpu className="h-5 w-5" />,
   cluster: <HardDrive className="h-5 w-5" />,
+  model_catalog: <BookOpen className="h-5 w-5" />,
 };
 
 type PermissionsTreeData = Record<
