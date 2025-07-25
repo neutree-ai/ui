@@ -715,6 +715,13 @@
 				"unknownError": "Unknown error"
 			}
 		},
+		"apiKey": {
+			"copySuccess": "Copied to clipboard",
+			"copySuccessDescription": "API key has been copied to your clipboard",
+			"errors": {
+				"copyFailed": "Failed to copy to clipboard"
+			}
+		},
 		"variablesInput": {
 			"key": "Key",
 			"value": "Value",

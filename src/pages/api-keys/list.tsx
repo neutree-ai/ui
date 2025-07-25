@@ -27,6 +27,8 @@ import { useMetadataColumns } from "@/components/theme/table/columns/metadata-co
 import { useApiKeyColumns } from "@/components/theme/table/columns/api-key-columns";
 import { defaultSorters } from "@/components/theme/table/sorter";
 import type { ApiKey } from "@/types";
+import * as clipboard from "clipboard-polyfill";
+import { toast } from "sonner";
 
 const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   const { t } = useTranslation();
@@ -48,11 +50,14 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await clipboard.writeText(text);
+      toast.success(t("components.apiKey.copySuccess"), {
+        description: t("components.apiKey.copySuccessDescription"),
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy text: ", err);
+      toast.error(t("components.apiKey.errors.copyFailed"));
     }
   };
 

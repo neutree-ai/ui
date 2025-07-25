@@ -39,6 +39,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import * as clipboard from "clipboard-polyfill";
 
 interface YamlExportDialogProps {
   trigger?: React.ReactNode;
@@ -122,7 +123,7 @@ export const YamlExportDialog = ({
 
   const handleCopyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(yamlContent);
+      await clipboard.writeText(yamlContent);
       toast.success(t("components.yamlExport.copySuccess"), {
         description: t("components.yamlExport.copySuccessDescription"),
       });
