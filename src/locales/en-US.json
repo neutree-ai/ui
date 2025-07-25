@@ -551,6 +551,10 @@
 		"sections": {
 			"globalRoles": "Global Roles",
 			"joinedWorkspaces": "Joined Workspaces"
+		},
+		"validation": {
+			"confirmPasswordRequired": "Confirm password is required",
+			"confirmPasswordNotMatch": "Passwords do not match"
 		}
 	},
 	"roles": {

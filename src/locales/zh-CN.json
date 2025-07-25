@@ -551,6 +551,10 @@
 		"sections": {
 			"globalRoles": "全局角色",
 			"joinedWorkspaces": "已加入的工作空间"
+		},
+		"validation": {
+			"confirmPasswordRequired": "确认密码是必填项",
+			"confirmPasswordNotMatch": "密码不匹配"
 		}
 	},
 	"roles": {
