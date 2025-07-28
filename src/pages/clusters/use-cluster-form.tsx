@@ -464,7 +464,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                         variant="ghost"
                         size="sm"
                         onClick={() => remove(index)}
-                        disabled={isEdit}
                         className="text-red-500 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -505,7 +504,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                               value as "nfs" | "host_path",
                             );
                           }}
-                          disabled={isEdit}
                         />
                       </div>
 
@@ -535,7 +533,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                               value: PRIVATE_MODEL_REGISTRY_TYPE,
                             },
                           ]}
-                          disabled={isEdit}
                         />
                       </Field>
                     </div>
@@ -567,8 +564,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                             )}
                           >
                             <Input
-                              placeholder="10.255.1.54"
-                              disabled={isEdit}
                               className={
                                 form.formState.errors[
                                   `spec.config.model_caches.${index}.nfs.server`
@@ -604,7 +599,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           >
                             <Input
                               placeholder="/path/to/cache"
-                              disabled={isEdit}
                               className={
                                 form.formState.errors[
                                   `spec.config.model_caches.${index}.nfs.path`
@@ -642,7 +636,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                         >
                           <Input
                             placeholder="/path/to/cache"
-                            disabled={isEdit}
                             className={`col-span-2 ${form.formState.errors[`spec.config.model_caches.${index}.host_path.path`] ? "border-red-500 focus:border-red-500" : ""}`}
                           />
                         </Field>
@@ -664,7 +657,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                 variant="outline"
                 size="sm"
                 onClick={addModelCache}
-                disabled={isEdit}
                 className="flex ml-auto gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -682,7 +674,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           name="spec.config.auth.ssh_user"
           label={t("clusters.fields.sshUser")}
         >
-          <Input placeholder={t("clusters.placeholders.sshUserExample")} disabled={isEdit}/>
+          <Input
+            placeholder={t("clusters.placeholders.sshUserExample")}
+            disabled={isEdit}
+          />
         </Field>
         <Field
           {...form}
