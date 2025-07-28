@@ -65,24 +65,27 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           name="password"
           label={translate("user_profiles.fields.password")}
         >
-          <Input type="password" placeholder={"••••••••"} />
+          <Input type="password" />
         </Field>
         <Field
           {...form}
           label={translate("user_profiles.fields.confirmPassword")}
-          {...form.register("confirmPassword",
-            {
-              required: {
-                value: true,
-                message: (translate("user_profiles.validation.confirmPasswordRequired")),
-              },
-              validate: (value: string) => {
-                return value === form.getValues("password") || translate("user_profiles.validation.confirmPasswordNotMatch");
-              }
-            }
-          )}
+          {...form.register("confirmPassword", {
+            required: {
+              value: true,
+              message: translate(
+                "user_profiles.validation.confirmPasswordRequired",
+              ),
+            },
+            validate: (value: string) => {
+              return (
+                value === form.getValues("password") ||
+                translate("user_profiles.validation.confirmPasswordNotMatch")
+              );
+            },
+          })}
         >
-          <Input type="password" placeholder={"••••••••"} />
+          <Input type="password" />
         </Field>
       </FormCardGrid>
     ),

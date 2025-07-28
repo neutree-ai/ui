@@ -29,12 +29,12 @@ type NodeIPsFieldProps = {
 
 const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
   (
-    { 
-      value = { head_ip: "", worker_ips: [] }, 
-      onChange, 
+    {
+      value = { head_ip: "", worker_ips: [] },
+      onChange,
       disabled = false,
       name,
-      ...props 
+      ...props
     },
     ref,
   ) => {
@@ -51,7 +51,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
       setHeadIp(value.head_ip || "");
     }, [value.head_ip]);
 
-    useEffect(() => { 
+    useEffect(() => {
       setworkerIps(value.worker_ips || []);
     }, [JSON.stringify(value.worker_ips)]);
 
@@ -69,20 +69,23 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     );
 
     // Validate an IP address
-    const validateIp = useCallback((ip: string) => {
-      if (!ip) return "IP address is required";
-      if (!ipRegex.test(ip)) return "Invalid IP address format";
-      if (ipIsDuplicated(ip)) {
-        return "This IP address is already in use";
-      }
-      return "";
-    }, [ipIsDuplicated]);
+    const validateIp = useCallback(
+      (ip: string) => {
+        if (!ip) return "IP address is required";
+        if (!ipRegex.test(ip)) return "Invalid IP address format";
+        if (ipIsDuplicated(ip)) {
+          return "This IP address is already in use";
+        }
+        return "";
+      },
+      [ipIsDuplicated],
+    );
 
     // Update newWorkerIp validation when dependencies change
     useEffect(() => {
       if (newWorkerIp) {
         const newError = validateIp(newWorkerIp);
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
           newWorkerIp: newError,
         }));
@@ -93,7 +96,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     const handleheadIpChange: ChangeEventHandler<HTMLInputElement> = (e) => {
       const ip = e.target.value;
       setHeadIp(ip);
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         headIp: validateIp(ip),
       }));
@@ -105,7 +108,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     ) => {
       const ip = e.target.value;
       setNewWorkerIp(ip);
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         newWorkerIp: validateIp(ip),
       }));
@@ -113,15 +116,13 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Add a new worker node IP
     const addWorkerNodeIp = () => {
-      // if (disabled) return;
-
       // Block adding if there are errors
       if (!newWorkerIp || errors.newWorkerIp) return;
 
       // Add the new IP and clear the input
       setworkerIps([...workerIps, newWorkerIp]);
       setNewWorkerIp("");
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         newWorkerIp: "",
       }));
@@ -129,15 +130,15 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Remove a worker node IP
     const removeWorkerNodeIp = (ipToRemove: string) => {
-      // if (disabled) return;
-
       setworkerIps(workerIps.filter((ip) => ip !== ipToRemove));
 
       // Clear any errors for this IP
-      setErrors(prev => {
+      setErrors((prev) => {
         const updatedErrors = { ...prev };
         if (ipToRemove in updatedErrors.workerIps) {
-          delete (updatedErrors.workerIps as Record<string, unknown>)[ipToRemove];
+          delete (updatedErrors.workerIps as Record<string, unknown>)[
+            ipToRemove
+          ];
         }
         if (ipToRemove === headIp) {
           // invariant: headIP === ipToRemove is valid as the ipToRemove has been validated upon adding
@@ -202,7 +203,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                     <div className="flex items-center">
                       <span className="font-mono text-sm">{ip}</span>
                     </div>
-                    {(
+                    {
                       <Button
                         variant="ghost"
                         size="sm"
@@ -211,14 +212,14 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                       >
                         <Trash className="h-4 w-4 text-destructive" />
                       </Button>
-                    )}
+                    }
                   </div>
                 ))
               )}
             </div>
 
             {/* Add new worker node IP */}
-            {(
+            {
               <div className="flex flex-col">
                 <div className="flex items-center">
                   <Input
@@ -251,7 +252,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                   </div>
                 )}
               </div>
-            )}
+            }
           </CardContent>
         </Card>
       </div>
