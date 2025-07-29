@@ -18,7 +18,7 @@ export function EditAction({
 }: EditActionProps) {
   const edit = useGetEditUrl(resource, row.metadata.name, row.metadata.workspace);
   const navigation = useNavigation();
-  const editUrl = navigation.editUrl(resource, row.id, row.metadata);
+  const editUrl = navigation.editUrl(resource, row.metadata.name, row.metadata);
 
 
   return (
