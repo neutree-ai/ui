@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
+import { cn } from "@/lib/utils";
 import { isValidIPAddress, isValidPath } from "@/lib/validate";
 import type {
   Cluster,
@@ -156,6 +157,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       });
     }
   };
+
+  const getInputErrorClasses = (hasError: boolean, baseClasses?: string) => 
+  cn(
+    baseClasses,
+    hasError && ["border-red-500", "focus:border-red-500"]
+  );
 
   return {
     form,
@@ -548,9 +555,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                                 required: {
                                   value: true,
                                   message:
-                                    t(
-                                      "clusters.validation.nfsServerRequired",
-                                    ) || "NFS server is required",
+                                    t("clusters.validation.nfsServerRequired") || 
+                                    "NFS server is required",
                                 },
                                 validate: (value: string) => {
                                   if (!value) return true; // Let required rule handle empty values
@@ -564,13 +570,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                             )}
                           >
                             <Input
-                              className={
-                                form.formState.errors[
-                                  `spec.config.model_caches.${index}.nfs.server`
-                                ]
-                                  ? "border-red-500 focus:border-red-500"
-                                  : ""
-                              }
+                              className={getInputErrorClasses(
+                                !!form.formState.errors[`spec.config.model_caches.${index}.nfs.server`]
+                              )}
                             />
                           </Field>
 
@@ -582,9 +584,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                                 required: {
                                   value: true,
                                   message:
-                                    t(
-                                      "clusters.validation.cachePathRequired",
-                                    ) || "Cache path is required",
+                                    t("clusters.validation.cachePathRequired") || 
+                                    "Cache path is required",
                                 },
                                 validate: (value: string) => {
                                   if (!value) return true; // Let required rule handle empty values
@@ -599,13 +600,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           >
                             <Input
                               placeholder="/path/to/cache"
-                              className={
-                                form.formState.errors[
-                                  `spec.config.model_caches.${index}.nfs.path`
-                                ]
-                                  ? "border-red-500 focus:border-red-500"
-                                  : ""
-                              }
+                              className={getInputErrorClasses(
+                                !!form.formState.errors[`spec.config.model_caches.${index}.nfs.path`]
+                              )}
                             />
                           </Field>
                         </>
@@ -636,7 +633,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                         >
                           <Input
                             placeholder="/path/to/cache"
-                            className={`col-span-2 ${form.formState.errors[`spec.config.model_caches.${index}.host_path.path`] ? "border-red-500 focus:border-red-500" : ""}`}
+                            className={getInputErrorClasses(
+                              !!form.formState.errors[`spec.config.model_caches.${index}.host_path.path`],
+                              "col-span-2"
+                            )}
                           />
                         </Field>
                       )}
