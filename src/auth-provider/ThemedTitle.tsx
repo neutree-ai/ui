@@ -12,15 +12,13 @@ export const ThemedTitle: React.FC<ThemedTitleProps> = ({
   text,
   icon,
 }) => {
-  const { brandName, isLoading } = useOemConfig();
-  let displayText = text || brandName;
-  if (isLoading) {
-    displayText = "...";
-  }
+  const { brandName, logoBase64, isLoading } = useOemConfig();
+  const displayText = isLoading ? "..." : text || brandName;
+  const displayIcon = icon ?? (<img alt="logo" src={(logoBase64 || "/logo.png")} className="w-[64px] h-[64px]" />);
 
   return (
-    <div className="flex items-center gap-2">
-      {icon && <div className="flex items-center justify-center">{icon}</div>}
+    <div className="flex flex-col items-center gap-2">
+      {displayIcon && (<div className="flex items-center justify-center">{displayIcon}</div>)}
       {!collapsed && <div className="font-bold text-xl">{displayText}</div>}
     </div>
   );

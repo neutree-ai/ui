@@ -69,7 +69,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const PageTitle =
     title === false ? null : (
       <div className="flex flex-col items-center">
-        <img alt="logo" src="/logo.png" className="w-20 h-20" />
         <div className="flex justify-center mb-8 text-xl">
           {title ?? <ThemedTitle collapsed={false} />}
         </div>
