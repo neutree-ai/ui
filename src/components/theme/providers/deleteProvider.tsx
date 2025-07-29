@@ -27,6 +27,7 @@ export function DeleteActionModal(props: DeleteContextType) {
   const { can, isLoading, mutate } = useDeleteHelper(
     props.data?.resource,
     props.data?.row?.metadata.name,
+    props.data?.row?.metadata
   );
 
   const { t } = useTranslation();

@@ -44,7 +44,7 @@ export const useDeleteHelper = (
   const { data } = useCan({
     resource: _resource?.name,
     action: "delete",
-    params: { id: recordItemId ?? id, resource: _resource },
+    params: { id: recordItemId ?? id, resource: _resource, meta: pickNotDeprecated(meta) },
     queryOptions: {
       enabled: accessControlEnabled,
     },

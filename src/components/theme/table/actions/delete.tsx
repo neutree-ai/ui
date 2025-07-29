@@ -19,7 +19,8 @@ export function DeleteAction({
   onAfterHandle,
   ...props
 }: DeleteActionProps) {
-  const { can, reason } = useDeleteHelper(resource, row.id);
+  const meta = row.metadata;
+  const { can, reason } = useDeleteHelper(resource, row.id, meta);
   const deleteContext = useContext(DeleteContext);
 
   return (
