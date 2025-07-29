@@ -90,7 +90,7 @@ import WorkspaceSelect from "./components/business/WorkspaceSelect";
 import { YamlImportButton } from "./components/business/YamlImportButton";
 import { YamlExportButton } from "./components/business/YamlExportButton";
 import Dashboard from "./pages/dashboard/Dashboard";
-import VRAMCalculator from "./pages/vram-calculator/VramCalculatorPage";
+// import VRAMCalculator from "./pages/vram-calculator/VramCalculatorPage";
 import { OemConfigShow } from "./pages/oem-config";
 
 const resources: ResourceProps[] = [
@@ -246,14 +246,14 @@ const resources: ResourceProps[] = [
   {
     name: "tools",
   },
-  {
-    name: "vram_calculator",
-    list: "/vram-calculator",
-    meta: {
-      icon: <Calculator />,
-      parent: "tools",
-    },
-  },
+  // {
+  //   name: "vram_calculator",
+  //   list: "/vram-calculator",
+  //   meta: {
+  //     icon: <Calculator />,
+  //     parent: "tools",
+  //   },
+  // },
   {
     name: "oem_configs",
     list: "/oem-configs",
@@ -346,7 +346,7 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   element={<NavigateToResource resource="dashboard" />}
                 />
                 <Route path="/dashboard" index element={<Dashboard />} />
-                <Route path="/vram-calculator" element={<VRAMCalculator />} />
+                {/* <Route path="/vram-calculator" element={<VRAMCalculator />} /> */}
 
                 <Route
                   path="/update-password"
