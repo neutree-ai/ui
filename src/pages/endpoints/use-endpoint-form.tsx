@@ -332,7 +332,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentUsage = useEndpointResources(
     formValues.spec?.resources,
     formValues.metadata,
-    action
   );
 
   const workspace = form.watch("metadata.workspace");
