@@ -16,7 +16,7 @@ export function EditAction({
   disabled,
   ...props
 }: EditActionProps) {
-  const edit = useGetEditUrl(resource, row.metadata.name, row.metadata.workspace);
+  const edit = useGetEditUrl(resource, row.metadata.id, row.metadata.workspace);
   const navigation = useNavigation();
   const editUrl = navigation.editUrl(resource, row.metadata.name, row.metadata);
 
