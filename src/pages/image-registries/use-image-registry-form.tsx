@@ -1,12 +1,12 @@
-import { useWorkspace } from "@/components/theme/hooks";
-import { useForm } from "@refinedev/react-hook-form";
-import { Field, Select } from "@/components/theme";
-import type { ImageRegistry } from "@/types";
 import FormCardGrid from "@/components/business/FormCardGrid";
-import { Input } from "@/components/ui/input";
 import WorkspaceField from "@/components/business/WorkspaceField";
+import { Field, Select } from "@/components/theme";
+import { useWorkspace } from "@/components/theme/hooks";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
+import type { ImageRegistry } from "@/types";
+import { useForm } from "@refinedev/react-hook-form";
 
 export const useImageRegistryForm = ({
   action,

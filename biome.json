@@ -21,7 +21,8 @@
 		"rules": {
 			"recommended": true,
 			"correctness": {
-				"noChildrenProp": "off"
+				"noChildrenProp": "off",
+				"useExhaustiveDependencies": "warn"
 			},
 			"suspicious": {
 				"noExplicitAny": "warn",
@@ -32,6 +33,9 @@
 			},
 			"performance": {
 				"noDelete": "off"
+			},
+			"complexity": {
+				"noForEach": "off"
 			}
 		}
 	},

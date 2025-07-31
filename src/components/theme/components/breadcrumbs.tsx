@@ -6,6 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { cn } from "@/lib/utils";
 import {
   matchResourceFromRoute,
   useBreadcrumb,
@@ -13,10 +14,9 @@ import {
   useResource,
 } from "@refinedev/core";
 import type { RefineBreadcrumbProps } from "@refinedev/ui-types";
+import { HomeIcon } from "lucide-react";
 import { type FC, Fragment } from "react";
 import { Link } from "./link";
-import { HomeIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 export type BreadcrumbProps = RefineBreadcrumbProps & {
   record?: Record<string, any>;
 };

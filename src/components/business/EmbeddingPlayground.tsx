@@ -1,30 +1,30 @@
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Form } from "@/components/ui/form";
-import { Combobox } from "@/components/ui/combobox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
+import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { clientPostgrest } from "@/lib/api";
+import type { Endpoint } from "@/types";
+import { createOpenAI } from "@ai-sdk/openai";
+import { useCustom } from "@refinedev/core";
+import { embed } from "ai";
 import { PlusIcon, TrashIcon } from "lucide-react";
+import { PCA } from "ml-pca";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
-  ScatterChart,
+  CartesianGrid,
+  ResponsiveContainer,
   Scatter,
+  ScatterChart,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
-import { useForm, Controller } from "react-hook-form";
-import { useState, useEffect } from "react";
-import { useCustom } from "@refinedev/core";
-import type { Endpoint } from "@/types";
-import { PCA } from "ml-pca";
-import { embed } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
-import { useTranslation } from "react-i18next";
-import { clientPostgrest } from "@/lib/api";
 
 // Custom tooltip to show the text content when hovering on a point
 const CustomTooltip = ({ active, payload }: any) => {

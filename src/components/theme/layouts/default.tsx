@@ -1,9 +1,9 @@
 import { AppSidebar } from "@/components/theme/components";
-import { cn } from "@/lib/utils";
 import type { LayoutProps } from "@/components/theme/types";
-import { BaseLayout } from "./base";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+import { BaseLayout } from "./base";
 
 export const DefaultLayout = ({
   children,

@@ -1,3 +1,4 @@
+import { Link } from "@/components/theme/components/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -5,9 +6,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/theme/components/link";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { useTranslation } from "@/lib/i18n";
+import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import type { FC, PropsWithChildren, ReactNode } from "react";
 
 interface RowActionsProps {

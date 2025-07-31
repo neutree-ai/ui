@@ -6,7 +6,7 @@ import {
 } from "@radix-ui/react-icons";
 import type { UseTableReturnType as Table } from "@refinedev/react-table";
 
-import { type BaseRecord, useTranslate } from "@refinedev/core";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { type BaseRecord, useTranslate } from "@refinedev/core";
 import React, { FC } from "react";
 
 interface DataTablePaginationProps<TData extends BaseRecord = BaseRecord> {

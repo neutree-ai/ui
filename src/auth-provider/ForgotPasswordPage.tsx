@@ -1,10 +1,4 @@
-import type React from "react";
-import {
-  useForgotPassword,
-  useTranslate,
-  useActiveAuthProvider,
-} from "@refinedev/core";
-import type { ForgotPasswordFormTypes } from "@refinedev/core";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,10 +6,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import {
+  useActiveAuthProvider,
+  useForgotPassword,
+  useTranslate,
+} from "@refinedev/core";
+import type { ForgotPasswordFormTypes } from "@refinedev/core";
+import type React from "react";
 import { ThemedTitle } from "./ThemedTitle";
 import { authStyles } from "./styles";
 
@@ -28,7 +28,7 @@ type ForgotPasswordPageProps = {
   ) => React.ReactNode;
   formProps?: React.ComponentProps<"form">;
   title?: React.ReactNode;
-  mutationVariables?: any;
+  mutationVariables: Partial<ForgotPasswordFormTypes>;
 };
 
 export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({

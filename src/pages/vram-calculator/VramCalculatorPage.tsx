@@ -1,35 +1,5 @@
-import type React from "react";
-import { useMemo } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useTranslation } from "../../lib/i18n";
-import {
-  MODELS,
-  GPUS,
-  type ModelConfig,
-  type GPUConfig,
-} from "../../data/models";
-import {
-  calculateVRAMRequirements,
-  formatMemorySize,
-  formatPerformance,
-  type CalculationInputs,
-  type CalculationResults,
-  type QuantizationType,
-} from "../../lib/vram-calculator";
 import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import {
   Form,
   FormControl,
@@ -38,6 +8,36 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type React from "react";
+import { useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import {
+  type GPUConfig,
+  GPUS,
+  MODELS,
+  type ModelConfig,
+} from "../../data/models";
+import { useTranslation } from "../../lib/i18n";
+import {
+  type CalculationInputs,
+  type CalculationResults,
+  type QuantizationType,
+  calculateVRAMRequirements,
+  formatMemorySize,
+  formatPerformance,
+} from "../../lib/vram-calculator";
 
 type VRAMFormData = {
   selectedModelId: string;

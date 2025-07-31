@@ -1,16 +1,16 @@
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Form } from "@/components/ui/form";
-import { Combobox } from "@/components/ui/combobox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
+import { Form } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, ArrowUp, ArrowDown, Minus } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
-import { useState, useEffect } from "react";
-import { useCustom, useCustomMutation } from "@refinedev/core";
+import { Textarea } from "@/components/ui/textarea";
 import type { Endpoint } from "@/types";
+import { useCustom, useCustomMutation } from "@refinedev/core";
+import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 const getRankChangeDisplay = (change: number) => {

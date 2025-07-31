@@ -8,7 +8,7 @@ const useEndpointResources = (
     npu?: number;
     accelerator?: Record<string, number>;
   },
-  metadata?: Record<string, any>
+  metadata?: Record<string, any>,
 ) => {
   return useMemo(() => {
     const hasRealData = metadata?.name && metadata.name !== "" && resources;
@@ -19,21 +19,18 @@ const useEndpointResources = (
         memory: resources?.memory || 0,
         gpu: resources?.gpu || 0,
         npu: resources?.accelerator?.NPU || 0,
-        accelerator: resources?.accelerator || { "-": 0 }
+        accelerator: resources?.accelerator || { "-": 0 },
       };
     }
-    
+
     return {
       cpu: 0,
       memory: 0,
       gpu: 0,
       npu: 0,
-      accelerator: {}
+      accelerator: {},
     };
-  }, [
-    metadata?.name,
-    resources
-  ]);
+  }, [metadata?.name, resources]);
 };
 
 export default useEndpointResources;

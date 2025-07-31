@@ -1,27 +1,27 @@
 import type { Role } from "@/types";
 
-import type React from "react";
-import { useState, useMemo } from "react";
-import {
-  ChevronRight,
-  ChevronDown,
-  Eye,
-  Plus,
-  Pencil,
-  Trash,
-  Database,
-  Box,
-  Server,
-  Cpu,
-  HardDrive,
-  Layers,
-  FileText,
-  UserCheck,
-  LayoutTemplate,
-  BookOpen,
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getResourcePlural } from "@/lib/plural";
+import {
+  BookOpen,
+  Box,
+  ChevronDown,
+  ChevronRight,
+  Cpu,
+  Database,
+  Eye,
+  FileText,
+  HardDrive,
+  Layers,
+  LayoutTemplate,
+  Pencil,
+  Plus,
+  Server,
+  Trash,
+  UserCheck,
+} from "lucide-react";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const actionIcons: Record<string, React.ReactNode> = {

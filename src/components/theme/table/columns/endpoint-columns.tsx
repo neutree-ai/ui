@@ -1,11 +1,11 @@
-import EndpointModel from "@/components/business/EndpointModel";
-import ModelTask from "@/components/business/ModelTask";
-import { Table } from "..";
-import { ShowButton } from "../../buttons";
 import EndpointEngine from "@/components/business/EndpointEngine";
+import EndpointModel from "@/components/business/EndpointModel";
 import EndpointStatus from "@/components/business/EndpointStatus";
+import ModelTask from "@/components/business/ModelTask";
 import type { Endpoint, EndpointPhase } from "@/types";
 import { useTranslate } from "@refinedev/core";
+import { Table } from "..";
+import { ShowButton } from "../../buttons";
 
 export const useEndpointColumns = () => {
   const t = useTranslate();

@@ -1,36 +1,36 @@
-import { useForm } from "@refinedev/react-hook-form";
+import FormCardGrid from "@/components/business/FormCardGrid";
+import VariablesInput, {
+  type Schema,
+} from "@/components/business/VariablesInput";
+import WorkspaceField from "@/components/business/WorkspaceField";
 import { Combobox, Field } from "@/components/theme";
+import { useWorkspace } from "@/components/theme/hooks";
+import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
+import { CommandLoading } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import useEndpointResources from "@/hooks/use-endpoint-resources";
+import { formatToDecimal } from "@/lib/unit";
 import type {
   Cluster,
   Endpoint,
   Engine,
   EngineVersion,
   GeneralModel,
-  ModelRegistry,
   ModelCatalog,
+  ModelRegistry,
 } from "@/types";
-import FormCardGrid from "@/components/business/FormCardGrid";
-import { Input } from "@/components/ui/input";
-import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
-import { useWorkspace } from "@/components/theme/hooks";
 import { useCustom, useSelect } from "@refinedev/core";
-import { useMemo, useState } from "react";
-import WorkspaceField from "@/components/business/WorkspaceField";
-import { CommandLoading } from "@/components/ui/command";
-import { Slider } from "@/components/ui/slider";
-import VariablesInput, {
-  type Schema,
-} from "@/components/business/VariablesInput";
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
+import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { formatToDecimal } from "@/lib/unit";
-import useEndpointResources from "@/hooks/use-endpoint-resources";
 
 // Types for Ray cluster status API response
 type RayClusterResourceUsage = {
@@ -222,20 +222,22 @@ const parseClusterResources = (
   }
 
   // Add generic options
-  gpu.total && acceleratorTypes.unshift({
-    label: "Generic",
-    value: "-",
-    available: gpu.available,
-    total: gpu.total,
-    type: "gpu",
-  });
-  npu.total && acceleratorTypes.unshift({
-    label: "Generic",
-    value: "-",
-    available: npu.available,
-    total: npu.total,
-    type: "npu",
-  });
+  gpu.total &&
+    acceleratorTypes.unshift({
+      label: "Generic",
+      value: "-",
+      available: gpu.available,
+      total: gpu.total,
+      type: "gpu",
+    });
+  npu.total &&
+    acceleratorTypes.unshift({
+      label: "Generic",
+      value: "-",
+      available: npu.available,
+      total: npu.total,
+      type: "npu",
+    });
 
   return {
     cpu,
@@ -252,7 +254,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
-  
 
   const form = useForm<Endpoint>({
     mode: "all",
@@ -385,43 +386,64 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const maxAvailable = useMemo(() => {
     if (!clusterResources) {
-      return { cpu: 0, memory: 0, gpu: 0, npu: 0, accelerator: {"-": 0} };
+      return { cpu: 0, memory: 0, gpu: 0, npu: 0, accelerator: { "-": 0 } };
     }
 
-    const remainingAvailable = clusterResources.acceleratorTypes?.reduce((acc, item) => {
-      acc[item.value] = Number(item.available || 0);
-      return acc;
-    }, {} as Record<string, number>);
+    const remainingAvailable = clusterResources.acceleratorTypes?.reduce(
+      (acc, item) => {
+        acc[item.value] = Number(item.available || 0);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
-    const accelerator = Object.keys(remainingAvailable).reduce((acc, key) => {
-      const usage = Number(currentUsage.accelerator[key] || 0);
-      const available = remainingAvailable?.[key] || 0;
-      acc[key] = usage + available;
-      return acc;
-    }, {} as Record<string, number>);
+    const accelerator = Object.keys(remainingAvailable).reduce(
+      (acc, key) => {
+        const usage = Number(currentUsage.accelerator[key] || 0);
+        const available = remainingAvailable?.[key] || 0;
+        acc[key] = usage + available;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
-      cpu: Number(clusterResources.cpu?.available || 0) + Number(currentUsage.cpu || 0),
-      memory: Number(clusterResources.memory?.available || 0) + Number(currentUsage.memory || 0),
-      gpu: Number(clusterResources.gpu?.available || 0) + Number(currentUsage.gpu || 0),
-      npu: Number(clusterResources.npu?.available || 0) + Number(currentUsage.npu || 0),
-      accelerator
+      cpu:
+        Number(clusterResources.cpu?.available || 0) +
+        Number(currentUsage.cpu || 0),
+      memory:
+        Number(clusterResources.memory?.available || 0) +
+        Number(currentUsage.memory || 0),
+      gpu:
+        Number(clusterResources.gpu?.available || 0) +
+        Number(currentUsage.gpu || 0),
+      npu:
+        Number(clusterResources.npu?.available || 0) +
+        Number(currentUsage.npu || 0),
+      accelerator,
     };
   }, [clusterResources, currentUsage]);
 
+  // Watch form values outside the useMemo to avoid dependency issues
+  const cpuUsage = form.watch("spec.resources.cpu");
+  const memoryUsage = form.watch("spec.resources.memory");
+
   const dynamicAvailability = useMemo(() => {
-    const currentCpu = form.watch("spec.resources.cpu") || 0;
-    const currentMemory = form.watch("spec.resources.memory") || 0;
+    const currentCpu = cpuUsage || 0;
+    const currentMemory = memoryUsage || 0;
     const currentAcceleratorType = Object.keys(acceleratorValue)[0];
-    const currentAcceleratorValue = acceleratorValue[currentAcceleratorType] || 0;
+    const currentAcceleratorValue =
+      acceleratorValue[currentAcceleratorType] || 0;
     return {
       cpu: maxAvailable.cpu - currentCpu,
       memory: maxAvailable.memory - currentMemory,
       accelerator: {
-        [currentAcceleratorType]: (maxAvailable.accelerator[currentAcceleratorType] || 0) - currentAcceleratorValue
-      }
+        [currentAcceleratorType]:
+          (maxAvailable.accelerator[currentAcceleratorType] || 0) -
+          currentAcceleratorValue,
+      },
     };
-  }, [maxAvailable, form.watch("spec.resources.cpu"), form.watch("spec.resources.memory"), acceleratorValue]);
+  }, [maxAvailable, cpuUsage, memoryUsage, acceleratorValue]);
 
   const isEdit = action === "edit";
 
@@ -547,12 +569,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const currentAcceleratorType = Object.keys(acceleratorValue)[0];
 
     // Extract computed values
-    const currentAcceleratorValue = acceleratorValue[currentAcceleratorType] || 0;
+    const currentAcceleratorValue =
+      acceleratorValue[currentAcceleratorType] || 0;
     const specificAccelerator = clusterResources?.acceleratorTypes.find(
       (acc) => acc.value === currentAcceleratorType && acc.type === type,
     );
-    const maxSliderValue = !clusterResources ? 0 : (maxAvailable.accelerator[currentAcceleratorType] || 0);
-    const availableCount = dynamicAvailability.accelerator[currentAcceleratorType] || 0;
+    const maxSliderValue = !clusterResources
+      ? 0
+      : maxAvailable.accelerator[currentAcceleratorType] || 0;
+    const availableCount =
+      dynamicAvailability.accelerator[currentAcceleratorType] || 0;
 
     const typeLabel = isGpu
       ? t("endpoints.fields.gpu")
@@ -576,9 +602,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               const currentCount =
                 acceleratorValue[Object.keys(acceleratorValue)[0]];
               form.setValue("spec.resources.accelerator", {
-                [value as string]: Math.min(currentCount, maxAvailable.accelerator[value as string] || 0),
+                [value as string]: Math.min(
+                  currentCount,
+                  maxAvailable.accelerator[value as string] || 0,
+                ),
               });
-              
+
               // Update the corresponding accelerator field based on type
               if (type === "npu") {
                 form.setValue(
@@ -604,8 +633,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </span>
               {clusterResources && (
                 <span>
-                  Remaining: {formatToDecimal(availableCount)} / {formatToDecimal(
-                    specificAccelerator?.total ?? totalResources?.total ?? 0
+                  Remaining: {formatToDecimal(availableCount)} /{" "}
+                  {formatToDecimal(
+                    specificAccelerator?.total ?? totalResources?.total ?? 0,
                   )}
                 </span>
               )}
@@ -620,7 +650,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 form.setValue("spec.resources.accelerator", {
                   [currentAcceleratorType]: value[0],
                 });
-                
+
                 // Update the corresponding accelerator field based on type
                 if (type === "npu") {
                   form.setValue(
@@ -739,10 +769,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{formatToDecimal(form.watch("spec.resources.cpu"))} cores</span>
+              <span>
+                {formatToDecimal(form.watch("spec.resources.cpu"))} cores
+              </span>
               {clusterResources && (
                 <span>
-                  Remaining: {formatToDecimal(dynamicAvailability.cpu)} / {formatToDecimal(clusterResources.cpu.total)}
+                  Remaining: {formatToDecimal(dynamicAvailability.cpu)} /{" "}
+                  {formatToDecimal(clusterResources.cpu.total)}
                 </span>
               )}
             </div>
@@ -751,7 +784,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               max={maxAvailable.cpu}
               step={0.1}
               value={[form.watch("spec.resources.cpu")]}
-              onValueChange={(value) => form.setValue("spec.resources.cpu", value[0])}
+              onValueChange={(value) =>
+                form.setValue("spec.resources.cpu", value[0])
+              }
               disabled={clusterStatusQuery.isLoading || !currentCluster}
             />
           </div>
@@ -764,7 +799,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{formatToDecimal(form.watch("spec.resources.memory"))} GiB</span>
+              <span>
+                {formatToDecimal(form.watch("spec.resources.memory"))} GiB
+              </span>
               {clusterResources && (
                 <span>
                   Remaining: {formatToDecimal(dynamicAvailability.memory)} /{" "}

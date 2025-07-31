@@ -7,9 +7,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { CrudFilter, LogicalFilter } from "@refinedev/core";
 import { ChevronDown } from "lucide-react";
 import { useMemo } from "react";
-import type { CrudFilter, LogicalFilter } from "@refinedev/core";
 import type { TableListFilterOption } from "../theme";
 
 interface ModelTaskFilterProps {

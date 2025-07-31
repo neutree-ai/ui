@@ -1,14 +1,4 @@
-import type React from "react";
-import {
-  useRegister,
-  useTranslate,
-  useRouterContext,
-  useRouterType,
-  useLink,
-  useActiveAuthProvider,
-  type OAuthProvider,
-} from "@refinedev/core";
-import type { RegisterFormTypes } from "@refinedev/core";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,11 +6,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import {
+  type OAuthProvider,
+  useActiveAuthProvider,
+  useLink,
+  useRegister,
+  useRouterContext,
+  useRouterType,
+  useTranslate,
+} from "@refinedev/core";
+import type { RegisterFormTypes } from "@refinedev/core";
+import type React from "react";
 import { ThemedTitle } from "./ThemedTitle";
 import { authStyles } from "./styles";
 
@@ -36,7 +36,7 @@ type RegisterPageProps = {
   formProps?: React.ComponentProps<"form">;
   title?: React.ReactNode;
   hideForm?: boolean;
-  mutationVariables?: any;
+  mutationVariables?: Partial<RegisterFormTypes>;
 };
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({

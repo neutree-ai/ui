@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,16 +8,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { useYamlImport } from "@/hooks/use-yaml-import";
-import { Upload, FileText, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CheckCircle, FileText, Upload, XCircle } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface YamlImportDialogProps {

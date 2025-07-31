@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { useCustom } from "@refinedev/core";
 import type { Endpoint } from "@/types/endpoint-types";
+import { useCustom } from "@refinedev/core";
+import { useMemo } from "react";
 
 /**
  * Interface for Ray application information

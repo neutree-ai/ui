@@ -5,9 +5,9 @@ import { ShowPage } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "@/lib/i18n";
 import type { ModelRegistry } from "@/types";
 import { useShow } from "@refinedev/core";
-import { useTranslation } from "@/lib/i18n";
 
 export const ModelRegistriesShow = () => {
   const { t } = useTranslation();

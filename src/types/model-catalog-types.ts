@@ -1,11 +1,11 @@
+import type { Json } from "./api-gen";
 import type { Metadata } from "./basic-types";
 import type {
-  ModelSpec,
   EndpointEngineSpec,
-  ResourceSpec,
+  ModelSpec,
   ReplicaSpec,
+  ResourceSpec,
 } from "./endpoint-types";
-import type { Json } from "./api-gen";
 
 export enum ModelCatalogPhase {
   PENDING = "Pending",

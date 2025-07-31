@@ -1,8 +1,4 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -14,14 +10,18 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import React from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { useMenu, useResourceParams } from "@refinedev/core";
 import type { TreeMenuItem } from "@refinedev/core/dist/hooks/menu/useMenu";
+import React from "react";
 import { useLocation } from "react-router";
 import { useWorkspace } from "../hooks";
 import type { LayoutProps } from "../types";
-import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 import { Link } from "./link";
 
 const GetIcon = (item: TreeMenuItem) => {

@@ -1,7 +1,7 @@
 import UserCell from "@/components/business/UserCell";
+import { useTranslate } from "@refinedev/core";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
-import { useTranslate } from "@refinedev/core";
 
 export const useRoleAssignmentColumns = () => {
   const t = useTranslate();

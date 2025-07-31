@@ -1,9 +1,9 @@
-import type { ModelCatalogPhase } from "@/types";
-import { Table } from "..";
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
-import { Trash2 } from "lucide-react";
+import type { ModelCatalogPhase } from "@/types";
 import { useTranslate } from "@refinedev/core";
+import { Trash2 } from "lucide-react";
+import { Table } from "..";
 
 export const useModelCatalogColumns = () => {
   const t = useTranslate();

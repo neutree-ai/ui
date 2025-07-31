@@ -1,5 +1,5 @@
-import type { ClusterPhase } from "@/types";
 import { useTranslation } from "@/lib/i18n";
+import type { ClusterPhase } from "@/types";
 
 export default function ClusterStatus({
   phase,

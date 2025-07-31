@@ -1,8 +1,8 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { ShowButton, ShowPage } from "@/components/theme";
-import Timestamp from "./Timestamp";
-import { useTranslation } from "@refinedev/core";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Metadata } from "@/types";
+import { useTranslation } from "@refinedev/core";
+import Timestamp from "./Timestamp";
 
 type MetadataCardProps = {
   metadata: Metadata;

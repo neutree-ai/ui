@@ -1,11 +1,11 @@
-import { type FC, useState, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { useCustom } from "@refinedev/core";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogViewer } from "./LogViewer";
 import { useEndpointLogUrls } from "@/hooks/use-endpoint-log-urls";
 import type { Endpoint } from "@/types";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useCustom } from "@refinedev/core";
+import { type FC, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { LogViewer } from "./LogViewer";
 
 interface EndpointLogTabsProps {
   endpoint: Endpoint;

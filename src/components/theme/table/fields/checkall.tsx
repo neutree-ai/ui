@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DotsVerticalIcon } from "@radix-ui/react-icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,11 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DotsVerticalIcon } from "@radix-ui/react-icons";
 
 import { type BaseRecord, type HttpError, useTranslate } from "@refinedev/core";
 import type { UseTableReturnType } from "@refinedev/react-table";
 
-import { type FC, forwardRef, type PropsWithChildren } from "react";
+import { type FC, type PropsWithChildren, forwardRef } from "react";
 
 type CheckAllProps = React.ComponentPropsWithoutRef<typeof Checkbox> &
   PropsWithChildren<{

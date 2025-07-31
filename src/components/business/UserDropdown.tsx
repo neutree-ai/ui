@@ -1,21 +1,21 @@
+import { Link } from "@/components/theme/components/link";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
   DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
-import LogoutButton from "./LogoutButton";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, Globe, Check, KeyRound } from "lucide-react";
-import { useTranslation } from "@/lib/i18n";
 import { useSystemApi } from "@/hooks/use-system-api";
-import { Link } from "@/components/theme/components/link";
+import { useTranslation } from "@/lib/i18n";
+import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
+import { Check, ChevronDown, Globe, KeyRound } from "lucide-react";
+import LogoutButton from "./LogoutButton";
 
 export const UserDropdown = () => {
   const { t } = useTranslation();

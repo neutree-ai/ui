@@ -1,9 +1,9 @@
-import type React from "react";
 import type { AuthPageProps } from "@refinedev/core";
+import type React from "react";
 
+import { ForgotPasswordPage } from "./ForgotPasswordPage";
 import { LoginPage } from "./LoginPage";
 import { RegisterPage } from "./RegisterPage";
-import { ForgotPasswordPage } from "./ForgotPasswordPage";
 import { UpdatePasswordPage } from "./UpdatePasswordPage";
 
 export type AuthProps = AuthPageProps & {

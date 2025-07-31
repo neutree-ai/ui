@@ -1,10 +1,10 @@
 import i18n from "i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
 import {
+  I18nextProvider,
   initReactI18next,
   useTranslation,
-  I18nextProvider,
 } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 
 import en from "../locales/en-US.json";
 import zh from "../locales/zh-CN.json";

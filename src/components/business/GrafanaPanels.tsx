@@ -1,17 +1,11 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
-import dayjs from "dayjs";
-import {
-  Clock,
-  Calendar,
-  RefreshCw,
-  Play,
-  Pause,
-  ChevronDown,
-  RotateCcw,
-} from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -19,14 +13,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import dayjs from "dayjs";
+import {
+  Calendar,
+  ChevronDown,
+  Clock,
+  Pause,
+  Play,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import { useTheme } from "next-themes";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface PanelConfig {
   id: number;

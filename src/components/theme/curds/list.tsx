@@ -1,7 +1,7 @@
 import { CreateButton } from "@/components/theme/buttons";
 import { Breadcrumbs, PageHeader } from "@/components/theme/components";
-import { cn } from "@/lib/utils";
 import type { ListProps } from "@/components/theme/types";
+import { cn } from "@/lib/utils";
 import {
   useRefineContext,
   useResource,

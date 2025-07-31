@@ -1,35 +1,35 @@
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Form } from "@/components/ui/form";
 import { Combobox } from "@/components/ui/combobox";
+import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 
+import { useChatState } from "@/hooks/use-chat-state";
+import type { Endpoint } from "@/types";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { useEffect, useRef, useState } from "react";
+import { Controller, type SubmitHandler, useForm } from "react-hook-form";
+import ReactMarkdown from "react-markdown";
+import { ChatSidebar } from "./ChatSidebar";
 import { MaxLengthSelector } from "./maxlength-selector";
 import { TemperatureSelector } from "./temperature-selector";
 import { TopPSelector } from "./top-p-selector";
-import { ChatSidebar } from "./ChatSidebar";
-import { useChatState } from "@/hooks/use-chat-state";
-import { useForm, Controller, type SubmitHandler } from "react-hook-form";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { Endpoint } from "@/types";
-import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
 import "github-markdown-css/github-markdown-light.css";
+import { clientPostgrest } from "@/lib/api";
 import { useCustom } from "@refinedev/core";
 import {
-  streamText,
   type CoreMessage,
-  tool,
-  type ToolSet,
-  jsonSchema,
+  type ImagePart,
   type TextPart,
   type ToolCallPart,
-  type ImagePart,
+  type ToolSet,
+  jsonSchema,
+  streamText,
+  tool,
 } from "ai";
+import { Image, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Trash2, Image, X } from "lucide-react";
-import { clientPostgrest } from "@/lib/api";
 
 // Custom error part type for handling errors in chat
 type ErrorPart = {

@@ -6,92 +6,92 @@ import {
 } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
+import {
+  BaseLayout,
+  DefaultLayout,
+  ModeToggle,
+  notificationProvider,
+} from "@/components/theme";
 import routerProvider, {
   CatchAllNavigate,
   NavigateToResource,
 } from "@refinedev/react-router";
+import { HashRouter, Outlet, Route, Routes } from "react-router-dom";
 import { dataProvider } from "./data-provider";
-import { Outlet, Route, Routes, HashRouter } from "react-router-dom";
-import {
-  DefaultLayout,
-  BaseLayout,
-  notificationProvider,
-  ModeToggle,
-} from "@/components/theme";
 
 import "./global.css";
 import "./variables.css";
 
-import { clientPostgrest } from "./lib/api";
-import { useTranslation } from "./lib/i18n";
 import { Logo } from "@/components/business/Logo";
 import {
-  Layers,
-  Cpu,
-  LayoutDashboard,
-  LayoutTemplate,
-  User,
-  UserCheck,
-  FileText,
-  Key,
-  HardDrive,
-  Database,
-  Server,
   BookOpen,
   Calculator,
+  Cpu,
+  Database,
+  FileText,
+  HardDrive,
+  Key,
+  Layers,
+  LayoutDashboard,
+  LayoutTemplate,
+  Server,
   Settings,
+  User,
+  UserCheck,
 } from "lucide-react";
+import { clientPostgrest } from "./lib/api";
+import { useTranslation } from "./lib/i18n";
 
+import { authProvider } from "./auth-provider";
+import { AuthPage } from "./auth-provider/AuthPage";
+import { UserDropdown } from "./components/business/UserDropdown";
+import WorkspaceSelect from "./components/business/WorkspaceSelect";
+import { YamlExportButton } from "./components/business/YamlExportButton";
+import { YamlImportButton } from "./components/business/YamlImportButton";
+import { ApiKeysList } from "./pages/api-keys";
+import { ApiKeysShow } from "./pages/api-keys/show";
 import {
   ClustersCreate,
   ClustersEdit,
   ClustersList,
   ClustersShow,
 } from "./pages/clusters";
-import {
-  ModelRegistriesCreate,
-  ModelRegistriesEdit,
-  ModelRegistriesList,
-  ModelRegistriesShow,
-} from "./pages/model-registries";
-import { ModelCatalogsList, ModelCatalogsShow } from "./pages/model-catalogs";
-import {
-  ImageRegistriesCreate,
-  ImageRegistriesEdit,
-  ImageRegistriesList,
-  ImageRegistriesShow,
-} from "./pages/image-registries";
-import { EnginesList, EnginesShow } from "./pages/engines";
+import Dashboard from "./pages/dashboard/Dashboard";
 import {
   EndpointsCreate,
   EndpointsEdit,
   EndpointsList,
   EndpointsShow,
 } from "./pages/endpoints";
-import { authProvider } from "./auth-provider";
-import { AuthPage } from "./auth-provider/AuthPage";
+import { EnginesList, EnginesShow } from "./pages/engines";
 import {
-  WorkspacesList,
-  WorkspacesShow,
-  WorkspacesCreate,
-} from "./pages/workspaces";
-import { UsersList, UsersShow, UsersEdit, UsersCreate } from "./pages/users";
-import { RolesList, RolesShow, RolesEdit, RolesCreate } from "./pages/roles";
+  ImageRegistriesCreate,
+  ImageRegistriesEdit,
+  ImageRegistriesList,
+  ImageRegistriesShow,
+} from "./pages/image-registries";
+import { ModelCatalogsList, ModelCatalogsShow } from "./pages/model-catalogs";
 import {
-  RoleAssignmentsList,
-  RoleAssignmentsShow,
-  RoleAssignmentsEdit,
-  RoleAssignmentsCreate,
-} from "./pages/role-assignments";
-import { ApiKeysList } from "./pages/api-keys";
-import { ApiKeysShow } from "./pages/api-keys/show";
-import { UserDropdown } from "./components/business/UserDropdown";
-import WorkspaceSelect from "./components/business/WorkspaceSelect";
-import { YamlImportButton } from "./components/business/YamlImportButton";
-import { YamlExportButton } from "./components/business/YamlExportButton";
-import Dashboard from "./pages/dashboard/Dashboard";
+  ModelRegistriesCreate,
+  ModelRegistriesEdit,
+  ModelRegistriesList,
+  ModelRegistriesShow,
+} from "./pages/model-registries";
 // import VRAMCalculator from "./pages/vram-calculator/VramCalculatorPage";
 import { OemConfigShow } from "./pages/oem-config";
+import {
+  RoleAssignmentsCreate,
+  RoleAssignmentsEdit,
+  RoleAssignmentsList,
+  RoleAssignmentsShow,
+} from "./pages/role-assignments";
+import { RolesCreate, RolesEdit, RolesList, RolesShow } from "./pages/roles";
+import { UsersCreate, UsersEdit, UsersList, UsersShow } from "./pages/users";
+import {
+  WorkspacesCreate,
+  WorkspacesList,
+  WorkspacesShow,
+} from "./pages/workspaces";
 
 const resources: ResourceProps[] = [
   {

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import type { ChatFunction } from "@/types/chat-types";
+import { useState } from "react";
 
 export function useChatState() {
   const [systemMessage, setSystemMessage] = useState("");

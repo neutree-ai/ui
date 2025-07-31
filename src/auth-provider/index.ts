@@ -1,4 +1,4 @@
-import { clientPostgrest, REST_URL } from "@/lib/api";
+import { REST_URL, clientPostgrest } from "@/lib/api";
 import type { AuthProvider } from "@refinedev/core";
 import { AuthClient } from "@supabase/auth-js";
 

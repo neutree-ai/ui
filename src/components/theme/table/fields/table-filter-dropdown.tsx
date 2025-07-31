@@ -1,15 +1,5 @@
-import { CheckIcon } from "@radix-ui/react-icons";
-import { FilterIcon, FilterX } from "lucide-react";
-import type { TableFilterProps } from "..";
-import { cn } from "@/lib/utils";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -19,7 +9,17 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { CheckIcon } from "@radix-ui/react-icons";
 import { useTranslate } from "@refinedev/core";
+import { FilterIcon, FilterX } from "lucide-react";
+import type { TableFilterProps } from "..";
 
 export function TableFilterDropdown({
   column,

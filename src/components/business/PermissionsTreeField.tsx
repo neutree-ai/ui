@@ -1,28 +1,28 @@
-import React, { useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { getResourcePlural } from "@/lib/plural";
+import { cn } from "@/lib/utils";
+import { ALL_PERMISSIONS } from "@/types";
 import {
-  ChevronRight,
-  ChevronDown,
-  Eye,
-  Plus,
-  Pencil,
-  Trash,
-  Database,
-  Users,
+  BookOpen,
   Box,
-  Server,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
   Cpu,
+  Database,
+  Eye,
+  FileText,
   HardDrive,
   Layers,
-  FileText,
-  CheckSquare,
+  Pencil,
+  Plus,
+  Server,
   Square,
-  BookOpen,
+  Trash,
+  Users,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { ALL_PERMISSIONS } from "@/types";
-import { cn } from "@/lib/utils";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getResourcePlural } from "@/lib/plural";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,

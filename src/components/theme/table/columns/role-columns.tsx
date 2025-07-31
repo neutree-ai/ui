@@ -1,7 +1,7 @@
+import { useTranslate } from "@refinedev/core";
 import { Edit, Lock, Trash2 } from "lucide-react";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
-import { useTranslate } from "@refinedev/core";
 
 export const useRoleColumns = () => {
   const t = useTranslate();

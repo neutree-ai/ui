@@ -4,9 +4,9 @@ import Loader from "@/components/theme/components/loader";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useRoleAssignmentColumns } from "@/components/theme/table/columns/role-assignment-columns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "@/lib/i18n";
 import type { UserProfile } from "@/types";
 import { useShow } from "@refinedev/core";
-import { useTranslation } from "@/lib/i18n";
 
 export const UsersShow = () => {
   const { t } = useTranslation();

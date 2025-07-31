@@ -1,5 +1,5 @@
-import { Trash2 } from "lucide-react";
 import { useTranslate } from "@refinedev/core";
+import { Trash2 } from "lucide-react";
 import { Table } from "..";
 
 export const useApiKeyColumns = () => {

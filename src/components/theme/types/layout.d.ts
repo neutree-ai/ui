@@ -1,3 +1,4 @@
+import type { ThemeProvider } from "@/components/theme/providers/theme-provider";
 import type { LucideIcon } from "lucide-react";
 import {
   ComponentProps,
@@ -5,7 +6,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import type { ThemeProvider } from "@/components/theme/providers/theme-provider";
 
 export type LayoutResource = {
   title: string;

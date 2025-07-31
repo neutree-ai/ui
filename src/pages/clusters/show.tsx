@@ -1,20 +1,20 @@
-import { getRayDashboardProxy } from "@/lib/api";
-import { useShow, useTranslation } from "@refinedev/core";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShowButton, ShowPage, Table } from "@/components/theme";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Loader from "@/components/theme/components/loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import type { Cluster, HostPathCache, ModelCache, NFSCache } from "@/types";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
 import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
-import { useTranslation as useI18nTranslation } from "@/lib/i18n";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
-import { useSystemApi } from "@/hooks/use-system-api";
-import { getClusterGrafanaProps } from "@/lib/grafana-configs";
+import MetadataCard from "@/components/business/MetadataCard";
 import ModelRegistryType from "@/components/business/ModelRegistryType";
+import { ShowButton, ShowPage, Table } from "@/components/theme";
+import Loader from "@/components/theme/components/loader";
+import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
+import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSystemApi } from "@/hooks/use-system-api";
+import { getRayDashboardProxy } from "@/lib/api";
+import { getClusterGrafanaProps } from "@/lib/grafana-configs";
+import { useTranslation as useI18nTranslation } from "@/lib/i18n";
+import type { Cluster, HostPathCache, ModelCache, NFSCache } from "@/types";
+import { useShow, useTranslation } from "@refinedev/core";
 
 export const ClustersShow = () => {
   const {

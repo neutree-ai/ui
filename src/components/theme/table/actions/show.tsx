@@ -1,6 +1,6 @@
+import { useGetShowUrl } from "@/components/theme/hooks";
 import type { RowActionProps } from ".";
 import { RowAction } from ".";
-import { useGetShowUrl } from "@/components/theme/hooks";
 
 type ShowActionProps = RowActionProps & {
   row: any;

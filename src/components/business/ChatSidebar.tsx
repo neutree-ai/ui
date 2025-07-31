@@ -1,9 +1,9 @@
-import { useTranslation } from "react-i18next";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FunctionsManager } from "./FunctionsManager";
+import { Textarea } from "@/components/ui/textarea";
 import type { ChatFunction } from "@/types/chat-types";
+import { useTranslation } from "react-i18next";
+import { FunctionsManager } from "./FunctionsManager";
 
 interface ChatSidebarProps {
   systemMessage: string;

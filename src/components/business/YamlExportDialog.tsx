@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -8,12 +9,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,25 +16,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  useYamlExport,
   type ExportableResource,
+  useYamlExport,
 } from "@/hooks/use-yaml-export";
+import { cn } from "@/lib/utils";
+import * as clipboard from "clipboard-polyfill";
 import {
-  Download,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
   Copy,
+  Download,
   FileDown,
-  Settings,
-  CheckCircle,
-  Package,
   Loader2,
+  Package,
+  Settings,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import * as clipboard from "clipboard-polyfill";
 
 interface YamlExportDialogProps {
   trigger?: React.ReactNode;
@@ -78,14 +78,16 @@ export const YamlExportDialog = ({
   } = useYamlExport();
 
   useEffect(() => {
-    setResourceTypes((prevResourceTypes) => {
-      const updatedResourceTypes = { ...prevResourceTypes };
-      Object.entries(updatedResourceTypes).forEach(([_, resourceType]) => {
-        resourceType.loaded = false;
+    if (isOpen) {
+      setResourceTypes((prevResourceTypes) => {
+        const updatedResourceTypes = { ...prevResourceTypes };
+        Object.entries(updatedResourceTypes).forEach(([_, resourceType]) => {
+          resourceType.loaded = false;
+        });
+        return updatedResourceTypes;
       });
-      return updatedResourceTypes;
-    });
-  }, [isOpen]);
+    }
+  }, [isOpen, setResourceTypes]);
 
   const handleResourceTypeToggle = async (type: ExportableResource) => {
     // Load entities if not loaded yet
@@ -313,9 +315,10 @@ export const YamlExportDialog = ({
                             />
                             <Label className="font-medium flex items-center gap-2">
                               {resourceType.label}
-                              {loadingResources.has(resourceType.type) && !resourceType.selected && (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              )}
+                              {loadingResources.has(resourceType.type) &&
+                                !resourceType.selected && (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                )}
                             </Label>
                           </div>
                           <Button

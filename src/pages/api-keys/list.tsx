@@ -1,9 +1,8 @@
-import { ListPage, Table, Combobox } from "@/components/theme";
-import { Copy, Check } from "lucide-react";
-import type { UseTableReturnType } from "@refinedev/react-table";
-import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Combobox, ListPage, Table } from "@/components/theme";
+import { useApiKeyColumns } from "@/components/theme/table/columns/api-key-columns";
+import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
+import { defaultSorters } from "@/components/theme/table/sorter";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,8 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Form,
   FormControl,
@@ -22,12 +19,15 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { useForm } from "@refinedev/react-hook-form";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { useApiKeyColumns } from "@/components/theme/table/columns/api-key-columns";
-import { defaultSorters } from "@/components/theme/table/sorter";
+import { Input } from "@/components/ui/input";
 import type { ApiKey } from "@/types";
+import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
+import { useForm } from "@refinedev/react-hook-form";
+import type { UseTableReturnType } from "@refinedev/react-table";
 import * as clipboard from "clipboard-polyfill";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {

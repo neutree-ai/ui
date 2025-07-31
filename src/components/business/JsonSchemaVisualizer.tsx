@@ -1,17 +1,17 @@
-import { useState } from "react";
-import {
-  ChevronRight,
-  ChevronDown,
-  File,
-  Box,
-  List,
-  Hash,
-  CheckSquare,
-  XSquare,
-  Type,
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/lib/i18n";
+import {
+  Box,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  File,
+  Hash,
+  List,
+  Type,
+  XSquare,
+} from "lucide-react";
+import { useState } from "react";
 
 // Type-safe icons mapping
 const SchemaTypeIcon = ({ type }: { type: string }) => {

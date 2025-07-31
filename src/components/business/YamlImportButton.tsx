@@ -1,6 +1,6 @@
-import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
+import { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
 
 // Lazy load the YamlImportDialog component

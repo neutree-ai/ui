@@ -77,24 +77,25 @@
 		"@types/react-window": "^1.8.8",
 		"@vitejs/plugin-react": "^4.0.0",
 		"autoprefixer": "^10.4.20",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.2",
 		"postcss": "^8.5.3",
 		"tailwindcss": "^3",
 		"typescript": "^5.4.2",
 		"vite": "^4.3.1"
 	},
 	"scripts": {
+		"prepare": "husky",
 		"dev": "vite",
 		"build": "tsc -b && vite build",
-		"lint": "biome lint --write",
-		"format": "biome format --write",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint --write .",
+		"format": "biome format --write .",
+		"check": "biome check --write .",
 		"preview": "vite preview"
 	},
 	"browserslist": {
-		"production": [
-			">0.2%",
-			"not dead",
-			"not op_mini all"
-		],
+		"production": [">0.2%", "not dead", "not op_mini all"],
 		"development": [
 			"last 1 chrome version",
 			"last 1 firefox version",
@@ -103,5 +104,10 @@
 	},
 	"refine": {
 		"projectId": "v0Ljpi-IWabEY-BiaBKL"
+	},
+	"lint-staged": {
+		"*.{ts,tsx,js,jsx,json,jsonc}": [
+			"biome check --write --no-errors-on-unmatched"
+		]
 	}
 }

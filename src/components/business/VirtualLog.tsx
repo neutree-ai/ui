@@ -1,9 +1,9 @@
-import { type FC, useCallback, useEffect, useMemo, useRef } from "react";
-import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
-import { useTranslation } from "react-i18next";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { createLowlight } from "lowlight";
+import { useTheme } from "next-themes";
+import { type FC, useCallback, useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 import "./log-viewer.css";
 
 // Initialize lowlight

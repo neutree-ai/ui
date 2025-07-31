@@ -1,12 +1,12 @@
-import { useWorkspace } from "@/components/theme/hooks";
-import { useForm } from "@refinedev/react-hook-form";
-import { Field, Select } from "@/components/theme";
-import type { ModelRegistry } from "@/types";
 import FormCardGrid from "@/components/business/FormCardGrid";
-import { Input } from "@/components/ui/input";
 import WorkspaceField from "@/components/business/WorkspaceField";
-import { useTranslation } from "@/lib/i18n";
+import { Field, Select } from "@/components/theme";
+import { useWorkspace } from "@/components/theme/hooks";
+import { Input } from "@/components/ui/input";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
+import { useTranslation } from "@/lib/i18n";
+import type { ModelRegistry } from "@/types";
+import { useForm } from "@refinedev/react-hook-form";
 
 export const useModelRegistryForm = ({
   action,

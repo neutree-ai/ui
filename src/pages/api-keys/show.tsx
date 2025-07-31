@@ -1,5 +1,6 @@
-import { useCustomMutation, useShow } from "@refinedev/core";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MetadataCard from "@/components/business/MetadataCard";
+import { ShowPage } from "@/components/theme";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -8,11 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShowPage } from "@/components/theme";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCustomMutation, useShow } from "@refinedev/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import MetadataCard from "@/components/business/MetadataCard";
 
 export const ApiKeysShow = () => {
   const { t } = useTranslation();

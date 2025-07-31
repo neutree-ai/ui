@@ -1,7 +1,7 @@
-import { CaretDownIcon, CaretUpIcon } from "@radix-ui/react-icons";
-import type { TableFilterProps } from "..";
 import { cn } from "@/lib/utils";
+import { CaretDownIcon, CaretUpIcon } from "@radix-ui/react-icons";
 import type { BaseRecord } from "@refinedev/core";
+import type { TableFilterProps } from "..";
 
 export const SortAction = <TData extends BaseRecord = BaseRecord>({
   column,

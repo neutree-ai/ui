@@ -1,5 +1,5 @@
-import type { EnginePhase } from "@/types";
 import { useTranslation } from "@/lib/i18n";
+import type { EnginePhase } from "@/types";
 
 export default function EngineStatus({
   phase,

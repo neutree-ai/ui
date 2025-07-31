@@ -2,8 +2,8 @@ import { ModelTaskFilter } from "@/components/business/ModelTaskFilter";
 import { ListPage, Table } from "@/components/theme";
 import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { useTranslation } from "react-i18next";
 import { defaultSorters } from "@/components/theme/table/sorter";
+import { useTranslation } from "react-i18next";
 
 export const EndpointsList = () => {
   const { t } = useTranslation();

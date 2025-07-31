@@ -3,23 +3,23 @@ github.com style (c) Vasily Polovnyov <vast@whiteants.net>
 */
 
 .hljs-light {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  color: #333;
+	display: block;
+	overflow-x: auto;
+	padding: 0.5em;
+	color: #333;
 }
 
 .hljs-light .hljs-comment,
 .hljs-light .hljs-quote {
-  color: #998;
-  font-style: italic;
+	color: #998;
+	font-style: italic;
 }
 
 .hljs-light .hljs-keyword,
 .hljs-light .hljs-selector-tag,
 .hljs-light .hljs-subst {
-  color: #333;
-  font-weight: bold;
+	color: #333;
+	font-weight: bold;
 }
 
 .hljs-light .hljs-number,
@@ -27,72 +27,72 @@ github.com style (c) Vasily Polovnyov <vast@whiteants.net>
 .hljs-light .hljs-variable,
 .hljs-light .hljs-template-variable,
 .hljs-light .hljs-tag .hljs-attr {
-  color: #008080;
+	color: #008080;
 }
 
 .hljs-light .hljs-string,
 .hljs-light .hljs-doctag {
-  color: #d14;
+	color: #d14;
 }
 
 .hljs-light .hljs-title,
 .hljs-light .hljs-section,
 .hljs-light .hljs-selector-id {
-  color: #900;
-  font-weight: bold;
+	color: #900;
+	font-weight: bold;
 }
 
 .hljs-light .hljs-subst {
-  font-weight: normal;
+	font-weight: normal;
 }
 
 .hljs-light .hljs-type,
 .hljs-light .hljs-class .hljs-title {
-  color: #458;
-  font-weight: bold;
+	color: #458;
+	font-weight: bold;
 }
 
 .hljs-light .hljs-tag,
 .hljs-light .hljs-name,
 .hljs-light .hljs-attribute {
-  color: #000080;
-  font-weight: normal;
+	color: #000080;
+	font-weight: normal;
 }
 
 .hljs-light .hljs-regexp,
 .hljs-light .hljs-link {
-  color: #009926;
+	color: #009926;
 }
 
 .hljs-light .hljs-symbol,
 .hljs-light .hljs-bullet {
-  color: #990073;
+	color: #990073;
 }
 
 .hljs-light .hljs-built_in,
 .hljs-light .hljs-builtin-name {
-  color: #0086b3;
+	color: #0086b3;
 }
 
 .hljs-light .hljs-meta {
-  color: #999;
-  font-weight: bold;
+	color: #999;
+	font-weight: bold;
 }
 
 .hljs-light .hljs-deletion {
-  background: #fdd;
+	background: #fdd;
 }
 
 .hljs-light .hljs-addition {
-  background: #dfd;
+	background: #dfd;
 }
 
 .hljs-light .hljs-emphasis {
-  font-style: italic;
+	font-style: italic;
 }
 
 .hljs-light .hljs-strong {
-  font-weight: bold;
+	font-weight: bold;
 }
 
 /*
@@ -105,10 +105,10 @@ http://zenorocha.mit-license.org
 @author Zeno Rocha <hi@zenorocha.com>
 */
 .hljs-dark {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  color: #f8f8f2;
+	display: block;
+	overflow-x: auto;
+	padding: 0.5em;
+	color: #f8f8f2;
 }
 
 .hljs-dark .hljs-number,
@@ -117,11 +117,11 @@ http://zenorocha.mit-license.org
 .hljs-dark .hljs-literal,
 .hljs-dark .hljs-section,
 .hljs-dark .hljs-link {
-  color: #8be9fd;
+	color: #8be9fd;
 }
 
 .hljs-dark .hljs-function .hljs-keyword {
-  color: #ff79c6;
+	color: #ff79c6;
 }
 
 .hljs-dark .hljs-string,
@@ -135,14 +135,14 @@ http://zenorocha.mit-license.org
 .hljs-dark .hljs-variable,
 .hljs-dark .hljs-template-tag,
 .hljs-dark .hljs-template-variable {
-  color: #f1fa8c;
+	color: #f1fa8c;
 }
 
 .hljs-dark .hljs-comment,
 .hljs-dark .hljs-quote,
 .hljs-dark .hljs-deletion,
 .hljs-dark .hljs-meta {
-  color: #6272a4;
+	color: #6272a4;
 }
 
 .hljs-dark .hljs-keyword,
@@ -154,59 +154,59 @@ http://zenorocha.mit-license.org
 .hljs-dark .hljs-type,
 .hljs-dark .hljs-name,
 .hljs-dark .hljs-strong {
-  font-weight: bold;
+	font-weight: bold;
 }
 
 .hljs-dark .hljs-emphasis {
-  font-style: italic;
+	font-style: italic;
 }
 
 /* Virtual log horizontal scrolling support */
 .virtual-log-container {
-  overflow-x: auto;
-  overflow-y: hidden;
+	overflow-x: auto;
+	overflow-y: hidden;
 }
 
 .virtual-log-line {
-  white-space: nowrap;
-  min-width: max-content;
+	white-space: nowrap;
+	min-width: max-content;
 }
 
 /* Ensure react-window supports horizontal scrolling */
 .virtual-log-list [role="presentation"] {
-  overflow-x: auto !important;
+	overflow-x: auto !important;
 }
 
 /* Custom scrollbar styling for better UX */
 .virtual-log-container::-webkit-scrollbar,
 .virtual-log-list::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+	height: 8px;
+	width: 8px;
 }
 
 .virtual-log-container::-webkit-scrollbar-track,
 .virtual-log-list::-webkit-scrollbar-track {
-  background: transparent;
+	background: transparent;
 }
 
 .virtual-log-container::-webkit-scrollbar-thumb,
 .virtual-log-list::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+	background-color: rgba(0, 0, 0, 0.2);
+	border-radius: 4px;
 }
 
 .virtual-log-container::-webkit-scrollbar-thumb:hover,
 .virtual-log-list::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.3);
+	background-color: rgba(0, 0, 0, 0.3);
 }
 
 /* Dark theme scrollbar */
 .dark .virtual-log-container::-webkit-scrollbar-thumb,
 .dark .virtual-log-list::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+	background-color: rgba(255, 255, 255, 0.2);
 }
 
 .dark .virtual-log-container::-webkit-scrollbar-thumb:hover,
 .dark .virtual-log-list::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+	background-color: rgba(255, 255, 255, 0.3);
 }

@@ -1,7 +1,7 @@
 import type {
   DashboardConfig,
-  PanelConfig,
   GrafanaPanelsProps,
+  PanelConfig,
 } from "@/components/business/GrafanaPanels";
 
 /**

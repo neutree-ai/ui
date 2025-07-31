@@ -1,6 +1,6 @@
+import type { UserProfile } from "@/types";
 import { useList } from "@refinedev/core";
 import { ShowButton } from "../theme";
-import type { UserProfile } from "@/types";
 
 const UserCell = ({ id }: { id: string }) => {
   const { data } = useList<UserProfile>({

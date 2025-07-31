@@ -1,5 +1,5 @@
-import type { EndpointPhase } from "@/types";
 import { useTranslation } from "@/lib/i18n";
+import type { EndpointPhase } from "@/types";
 
 export default function EndpointStatus({
   phase,

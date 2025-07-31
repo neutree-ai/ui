@@ -1,4 +1,5 @@
 import Loader from "@/components/theme/components/loader";
+import { DeleteProvider } from "@/components/theme/providers";
 import {
   TableBody,
   TableCell,
@@ -21,12 +22,12 @@ import {
   useTable,
 } from "@refinedev/react-table";
 import {
+  type Cell,
   type CellContext,
   type Column,
   type ColumnDef,
   type ColumnDefTemplate,
   type Row,
-  type Cell,
   type TableOptionsResolved,
   flexRender,
 } from "@tanstack/react-table";
@@ -40,6 +41,7 @@ import {
   useState,
 } from "react";
 import { RowAction, RowActions } from "./actions";
+import { DeleteAction } from "./actions/delete";
 import { EditAction } from "./actions/edit";
 import { ShowAction } from "./actions/show";
 import {
@@ -51,8 +53,6 @@ import { CheckAll } from "./fields/checkall";
 import { Pagination } from "./fields/pagination";
 import { SortAction } from "./fields/sort";
 import { DataTableToolbar } from "./toolbar";
-import { DeleteAction } from "./actions/delete";
-import { DeleteProvider } from "@/components/theme/providers";
 
 export type TableListFilterOption = BaseOption & {
   icon?: React.ComponentType<{ className?: string }>;

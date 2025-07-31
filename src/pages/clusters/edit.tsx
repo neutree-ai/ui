@@ -1,6 +1,6 @@
 import { Form } from "@/components/theme";
-import { useClusterForm } from "./use-cluster-form";
 import { useTranslation } from "@/lib/i18n";
+import { useClusterForm } from "./use-cluster-form";
 
 export const ClustersEdit = () => {
   const { t } = useTranslation();

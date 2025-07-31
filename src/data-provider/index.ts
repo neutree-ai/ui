@@ -1,8 +1,8 @@
+import { auth } from "@/auth-provider";
+import { ALL_WORKSPACES } from "@/components/theme/hooks";
 import type { DataProvider } from "@refinedev/core";
 import type { PostgrestClient } from "@supabase/postgrest-js";
 import { generateFilter, handleError } from "./utils";
-import { ALL_WORKSPACES } from "@/components/theme/hooks";
-import { auth } from "@/auth-provider";
 
 export const dataProvider = (
   postgrestClient: PostgrestClient<any, any, any>,

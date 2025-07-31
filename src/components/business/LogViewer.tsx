@@ -1,9 +1,6 @@
-import { type FC, useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
-import dayjs from "dayjs";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -11,7 +8,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import dayjs from "dayjs";
 import { CalendarIcon, Download, RefreshCw, Search, X } from "lucide-react";
+import { type FC, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { VirtualLog } from "./VirtualLog";
 
 export interface LogViewerProps {

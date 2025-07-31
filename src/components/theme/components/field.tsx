@@ -1,12 +1,12 @@
-import { cn } from "@/lib/utils";
 import {
-  FormField,
   FormControl,
   FormDescription,
+  FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 import { type ReactElement, cloneElement, forwardRef } from "react";
 import type {
   ControllerRenderProps,
@@ -27,40 +27,42 @@ export type FieldProps<
     field: ControllerRenderProps<TFieldValues, TName>;
   }>;
 };
-export const Field = forwardRef<HTMLDivElement, FieldProps>((props: FieldProps, _) => {
-  return (
-    <FormField
-      control={props.control}
-      name={props.name}
-      render={({ field }: { field: any }) => {
-        return (
-          <FormItem
-            className={cn(
-              props.className,
-              props.isCheckbox
-                ? "flex flex-row items-center space-x-3 space-y-0"
-                : "",
-            )}
-          >
-            {!props.isCheckbox && <FormLabel>{props.label}</FormLabel>}
-            <FormControl>
-              {cloneElement(props.children, {
-                ...field,
-                ...props.children.props,
-              })}
-            </FormControl>
-            {props.isCheckbox && (
-              <FormLabel className="text-sm font-normal">
-                {props.label}
-              </FormLabel>
-            )}
-            {props.description && (
-              <FormDescription>{props.description}</FormDescription>
-            )}
-            <FormMessage />
-          </FormItem>
-        );
-      }}
-    />
-  );
-});
+export const Field = forwardRef<HTMLDivElement, FieldProps>(
+  (props: FieldProps, _) => {
+    return (
+      <FormField
+        control={props.control}
+        name={props.name}
+        render={({ field }: { field: any }) => {
+          return (
+            <FormItem
+              className={cn(
+                props.className,
+                props.isCheckbox
+                  ? "flex flex-row items-center space-x-3 space-y-0"
+                  : "",
+              )}
+            >
+              {!props.isCheckbox && <FormLabel>{props.label}</FormLabel>}
+              <FormControl>
+                {cloneElement(props.children, {
+                  ...field,
+                  ...props.children.props,
+                })}
+              </FormControl>
+              {props.isCheckbox && (
+                <FormLabel className="text-sm font-normal">
+                  {props.label}
+                </FormLabel>
+              )}
+              {props.description && (
+                <FormDescription>{props.description}</FormDescription>
+              )}
+              <FormMessage />
+            </FormItem>
+          );
+        }}
+      />
+    );
+  },
+);

@@ -8,7 +8,7 @@ import {
 } from "@radix-ui/react-icons";
 import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
 
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -19,6 +19,14 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
+import { FormControl } from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import type {
   BaseOption,
   BaseRecord,
@@ -26,18 +34,10 @@ import type {
 } from "@refinedev/core";
 import {
   type ComponentPropsWithoutRef,
+  type ElementRef,
   forwardRef,
   useState,
-  type ElementRef,
 } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { FormControl } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 type ComboboxProps = ComponentPropsWithoutRef<typeof Command> &
   Pick<UseSelectReturnType<BaseOption, any>, "options"> & {

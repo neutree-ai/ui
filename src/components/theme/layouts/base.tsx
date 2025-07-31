@@ -1,8 +1,8 @@
+import { ThemeProvider } from "@/components/theme/providers";
 import type { LayoutProps } from "@/components/theme/types";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { PropsWithChildren } from "react";
-import { ThemeProvider } from "@/components/theme/providers";
 
 type Props = PropsWithChildren<
   Pick<

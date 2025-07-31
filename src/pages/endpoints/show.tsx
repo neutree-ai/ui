@@ -1,13 +1,17 @@
-import {
-  type IResourceComponentsProps,
-  useList,
-  useOne,
-  useShow,
-} from "@refinedev/core";
+import ChatPlayground from "@/components/business/ChatPlayground";
+import EmbeddingPlayground from "@/components/business/EmbeddingPlayground";
+import EndpointEngine from "@/components/business/EndpointEngine";
+import EndpointModel from "@/components/business/EndpointModel";
+import EndpointStatus from "@/components/business/EndpointStatus";
+import GrafanaPanels from "@/components/business/GrafanaPanels";
+import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
+import MetadataCard from "@/components/business/MetadataCard";
+import ModelTask from "@/components/business/ModelTask";
+import RerankPlayground from "@/components/business/RerankPlayground";
 import { ShowButton, ShowPage } from "@/components/theme";
-import type { Endpoint, Engine } from "@/types";
+import Loader from "@/components/theme/components/loader";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -15,28 +19,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ChatPlayground from "@/components/business/ChatPlayground";
-import EmbeddingPlayground from "@/components/business/EmbeddingPlayground";
-import { getRayDashboardProxy } from "@/lib/api";
-import MetadataCard from "@/components/business/MetadataCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import EndpointStatus from "@/components/business/EndpointStatus";
-import EndpointModel from "@/components/business/EndpointModel";
-import EndpointEngine from "@/components/business/EndpointEngine";
-import ModelTask from "@/components/business/ModelTask";
-import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
-import Loader from "@/components/theme/components/loader";
-import { useCallback, useRef, useState, Suspense, lazy } from "react";
-import React from "react";
-import RerankPlayground from "@/components/business/RerankPlayground";
-import { useTranslation } from "react-i18next";
-import GrafanaPanels from "@/components/business/GrafanaPanels";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSystemApi } from "@/hooks/use-system-api";
+import { getRayDashboardProxy } from "@/lib/api";
 import {
   getEndpointGrafanaProps,
   getVllmGrafanaProps,
 } from "@/lib/grafana-configs";
 import { formatToDecimal } from "@/lib/unit";
+import type { Endpoint, Engine } from "@/types";
+import {
+  type IResourceComponentsProps,
+  useList,
+  useOne,
+  useShow,
+} from "@refinedev/core";
+import { Suspense, lazy, useCallback, useRef, useState } from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 
 // Lazy load EndpointLogTabs
 const EndpointLogTabs = lazy(() =>
@@ -157,10 +157,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         key !== "-" &&
         (key === "NPU" || !key.startsWith("NVIDIA_")) &&
         accelerator[key] > 0,
-     );
+    );
 
     const hasNpu = npuAcceleratorKeys.length > 0;
-    
+
     const npuValue = hasNpu ? accelerator[npuAcceleratorKeys[0]] : "-";
 
     const hasAccelerator = hasGpu || hasNpu;
@@ -280,7 +280,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <ShowPage.Row
                     title={`${t("clusters.fields.acceleratorType")}: ${Object.keys(record.spec.resources?.accelerator || {})[0]}`}
                   >
-                    {formatToDecimal(Object.values(record.spec.resources?.accelerator || {},)[0]) ?? "-"}
+                    {formatToDecimal(
+                      Object.values(
+                        record.spec.resources?.accelerator || {},
+                      )[0],
+                    ) ?? "-"}
                   </ShowPage.Row>
                 </div>
               )}

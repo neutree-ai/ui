@@ -1,14 +1,4 @@
-import type React from "react";
-import {
-  useLogin,
-  useTranslate,
-  useRouterContext,
-  useRouterType,
-  useLink,
-  useActiveAuthProvider,
-  type OAuthProvider,
-} from "@refinedev/core";
-import type { LoginFormTypes } from "@refinedev/core";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,12 +6,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import {
+  type OAuthProvider,
+  useActiveAuthProvider,
+  useLink,
+  useLogin,
+  useRouterContext,
+  useRouterType,
+  useTranslate,
+} from "@refinedev/core";
+import type { LoginFormTypes } from "@refinedev/core";
+import type React from "react";
 import { ThemedTitle } from "./ThemedTitle";
 import { authStyles } from "./styles";
 
@@ -39,7 +39,7 @@ type LoginPageProps = {
   formProps?: React.ComponentProps<"form">;
   title?: React.ReactNode;
   hideForm?: boolean;
-  mutationVariables?: any;
+  mutationVariables?: Partial<LoginFormTypes>;
 };
 
 export const LoginPage: React.FC<LoginPageProps> = ({

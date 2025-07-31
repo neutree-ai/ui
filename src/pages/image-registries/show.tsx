@@ -3,9 +3,9 @@ import MetadataCard from "@/components/business/MetadataCard";
 import { ShowPage } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "@/lib/i18n";
 import type { ImageRegistry } from "@/types";
 import { useShow } from "@refinedev/core";
-import { useTranslation } from "@/lib/i18n";
 
 export const ImageRegistriesShow = () => {
   const { t } = useTranslation();

@@ -1,9 +1,9 @@
-import { useState, useCallback, useMemo } from "react";
-import * as yaml from "js-yaml";
-import { useDataProvider, useResource } from "@refinedev/core";
 import { useWorkspace } from "@/components/theme/hooks";
 import { useTranslation } from "@/lib/i18n";
 import type { Metadata } from "@/types";
+import { useDataProvider, useResource } from "@refinedev/core";
+import * as yaml from "js-yaml";
+import { useCallback, useMemo, useState } from "react";
 
 // Available resource types for export
 export const EXPORTABLE_RESOURCES = [
@@ -56,7 +56,7 @@ export const useYamlExport = () => {
   const { current: currentWorkspace } = useWorkspace();
   const dataProvider = useDataProvider();
   const { resources } = useResource();
-  
+
   // Filter exportable resources from all configured resources
   const exportableResources = useMemo(() => {
     return resources
@@ -164,7 +164,7 @@ export const useYamlExport = () => {
   const loadEntities = useCallback(
     async (type: ExportableResource) => {
       if (resourceTypes[type].loaded) return;
-    
+
       // Set loading state for this resource
       setLoadingResources((prev) => new Set(prev).add(type));
 
@@ -374,73 +374,71 @@ export const useYamlExport = () => {
     const newResourceTypes = { ...resourceTypes };
 
     const resourcePromises = EXPORTABLE_RESOURCES.map(async (type) => {
-        if (!newResourceTypes[type].loaded) {
-          // Set loading state for this resource
-          setLoadingResources((prev) => new Set(prev).add(type));
+      if (!newResourceTypes[type].loaded) {
+        // Set loading state for this resource
+        setLoadingResources((prev) => new Set(prev).add(type));
 
-          try {
-            const resourceConfig = exportableResources.find(
-              (r) => r.type === type,
-            );
-            const resourceMeta = resourceConfig?.meta || {};
+        try {
+          const resourceConfig = exportableResources.find(
+            (r) => r.type === type,
+          );
+          const resourceMeta = resourceConfig?.meta || {};
 
-            const meta: Record<string, unknown> = {
-              ...resourceMeta,
-            };
+          const meta: Record<string, unknown> = {
+            ...resourceMeta,
+          };
 
-            if (resourceMeta.workspaced && currentWorkspace) {
-              meta.workspace = currentWorkspace;
-            }
-
-            const result = await dataProvider().getList({
-              resource: type,
-              pagination: { mode: "off" as const },
-              meta,
-            });
-
-            const entities = result.data.map(
-              (item: Record<string, unknown>) => ({
-                id:
-                  (item.id as string | number) ||
-                  (item.metadata as Metadata)?.name ||
-                  "",
-                metadata: item.metadata as Metadata,
-                kind: item.kind as string,
-                api_version: item.api_version as string,
-                spec: item.spec as Record<string, unknown> | undefined,
-                status: item.status as Record<string, unknown> | undefined,
-              }),
-            );
-
-            return {
-              type,
-              entities,
-              success: true,
-            };
-          } catch (error) {
-            console.error(`Failed to load entities for ${type}:`, error);
-            return {
-              type,
-              entities: [],
-              success: false,
-            };
-          } finally {
-            // Remove loading state for this resource
-            setLoadingResources((prev) => {
-              const updated = new Set(prev);
-              updated.delete(type);
-              return updated;
-            });
+          if (resourceMeta.workspaced && currentWorkspace) {
+            meta.workspace = currentWorkspace;
           }
+
+          const result = await dataProvider().getList({
+            resource: type,
+            pagination: { mode: "off" as const },
+            meta,
+          });
+
+          const entities = result.data.map((item: Record<string, unknown>) => ({
+            id:
+              (item.id as string | number) ||
+              (item.metadata as Metadata)?.name ||
+              "",
+            metadata: item.metadata as Metadata,
+            kind: item.kind as string,
+            api_version: item.api_version as string,
+            spec: item.spec as Record<string, unknown> | undefined,
+            status: item.status as Record<string, unknown> | undefined,
+          }));
+
+          return {
+            type,
+            entities,
+            success: true,
+          };
+        } catch (error) {
+          console.error(`Failed to load entities for ${type}:`, error);
+          return {
+            type,
+            entities: [],
+            success: false,
+          };
+        } finally {
+          // Remove loading state for this resource
+          setLoadingResources((prev) => {
+            const updated = new Set(prev);
+            updated.delete(type);
+            return updated;
+          });
         }
-        
-        // Return existing data if already loaded
-        return {
-          type,
-          entities: newResourceTypes[type].entities,
-          success: true,
-        };
-      });
+      }
+
+      // Return existing data if already loaded
+      return {
+        type,
+        entities: newResourceTypes[type].entities,
+        success: true,
+      };
+    });
 
     try {
       const results = await Promise.all(resourcePromises);
@@ -453,7 +451,7 @@ export const useYamlExport = () => {
             loaded: true,
           };
         }
-        
+
         // Select the resource type and all its entities
         newResourceTypes[type] = {
           ...newResourceTypes[type],

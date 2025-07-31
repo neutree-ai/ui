@@ -1,14 +1,14 @@
+import EndpointModel from "@/components/business/EndpointModel";
+import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
 import MetadataCard from "@/components/business/MetadataCard";
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
-import EndpointModel from "@/components/business/EndpointModel";
 import ModelTask from "@/components/business/ModelTask";
-import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
-import { ShowPage, ShowButton } from "@/components/theme";
+import { ShowButton, ShowPage } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ModelCatalog, Engine } from "@/types";
-import { useShow, useOne } from "@refinedev/core";
 import { useTranslation } from "@/lib/i18n";
+import type { Engine, ModelCatalog } from "@/types";
+import { useOne, useShow } from "@refinedev/core";
 
 export const ModelCatalogsShow = () => {
   const { t } = useTranslation();

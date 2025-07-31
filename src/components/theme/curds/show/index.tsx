@@ -1,24 +1,24 @@
 import { Breadcrumbs, PageHeader } from "@/components/theme/components";
 import type { ShowProps } from "@/components/theme/types";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   useNavigation,
   useRefineContext,
   useResource,
   useTranslate,
 } from "@refinedev/core";
+import { Edit, Trash2 } from "lucide-react";
 import { type FC, isValidElement } from "react";
-import { Row } from "./row";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { DeleteProvider } from "../../providers";
 import { DeleteAction } from "../../table/actions/delete";
-import { Edit, Trash2 } from "lucide-react";
 import { EditAction } from "../../table/actions/edit";
+import { Row } from "./row";
 
 export const ShowPage: FC<ShowProps> & {
   Row: typeof Row;

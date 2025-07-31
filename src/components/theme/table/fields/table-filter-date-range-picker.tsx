@@ -3,18 +3,18 @@ import { FilterIcon, FilterX } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
 
-import type { TableFilterProps } from "..";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { type BaseRecord, useTranslate } from "@refinedev/core";
+import type { TableFilterProps } from "..";
 
 export function TableFilterDateRangePickerFilter<
   T extends BaseRecord = BaseRecord,

@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
-import * as yaml from "js-yaml";
-import { useCreate, useDataProvider } from "@refinedev/core";
 import { useWorkspace } from "@/components/theme/hooks";
 import { useTranslation } from "@/lib/i18n";
 import type { Metadata } from "@/types";
+import { useCreate, useDataProvider } from "@refinedev/core";
+import * as yaml from "js-yaml";
+import { useCallback, useState } from "react";
 
 interface YamlResource {
   apiVersion: string;

@@ -1,8 +1,8 @@
-import { useOemConfigForm } from "@/pages/oem-config/use-oem-config-form";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/theme";
-import { useTranslation } from "@/lib/i18n";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOemConfig } from "@/hooks/use-oem-config";
+import { useTranslation } from "@/lib/i18n";
+import { useOemConfigForm } from "@/pages/oem-config/use-oem-config-form";
 import { Loader2 } from "lucide-react";
 
 export function OemConfigShow() {

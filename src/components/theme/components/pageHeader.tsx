@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import type { PageHeaderProps } from "@/components/theme/types/pageHeader";
+import { cn } from "@/lib/utils";
 import type { FC } from "react";
 
 export const PageHeader: FC<PageHeaderProps> = ({ extra, ...props }) => {

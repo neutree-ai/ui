@@ -1,9 +1,9 @@
+import { ConfirmDialog } from "@/components/theme";
 import type { DeleteButtonProps } from "@/components/theme/types";
 import { Button } from "@/components/ui/button";
 import { useDeleteButton } from "@refinedev/core";
 import { Loader2, Trash2Icon } from "lucide-react";
 import type { FC } from "react";
-import { ConfirmDialog } from "@/components/theme";
 
 export const DeleteButton: FC<DeleteButtonProps> = ({
   resource,

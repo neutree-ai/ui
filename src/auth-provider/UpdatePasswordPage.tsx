@@ -1,17 +1,17 @@
-import type React from "react";
-import {
-  useUpdatePassword,
-  useTranslate,
-  useActiveAuthProvider,
-} from "@refinedev/core";
-import type { UpdatePasswordFormTypes } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { ThemedTitle } from "./ThemedTitle";
+import {
+  useActiveAuthProvider,
+  useTranslate,
+  useUpdatePassword,
+} from "@refinedev/core";
+import type { UpdatePasswordFormTypes } from "@refinedev/core";
+import type React from "react";
 import { toast } from "sonner";
+import { ThemedTitle } from "./ThemedTitle";
 
 type UpdatePasswordPageProps = {
   contentProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -22,7 +22,7 @@ type UpdatePasswordPageProps = {
   ) => React.ReactNode;
   formProps?: React.ComponentProps<"form">;
   title?: React.ReactNode;
-  mutationVariables?: any;
+  mutationVariables?: Partial<UpdatePasswordFormTypes>;
 };
 
 export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({

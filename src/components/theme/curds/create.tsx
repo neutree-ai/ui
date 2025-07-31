@@ -8,7 +8,7 @@ import {
   useUserFriendlyName,
 } from "@refinedev/core";
 import type React from "react";
-import { isValidElement, type ReactNode } from "react";
+import { type ReactNode, isValidElement } from "react";
 
 export const CreatePage: React.FC<CreateProps> = ({
   title,

@@ -1,11 +1,11 @@
+import MetadataCard from "@/components/business/MetadataCard";
 import { ShowPage, Table } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
-import type { Workspace } from "@/types";
-import { useShow, useTranslation } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import MetadataCard from "@/components/business/MetadataCard";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { useRoleAssignmentColumns } from "@/components/theme/table/columns/role-assignment-columns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Workspace } from "@/types";
+import { useShow, useTranslation } from "@refinedev/core";
 
 export const WorkspacesShow = () => {
   const {

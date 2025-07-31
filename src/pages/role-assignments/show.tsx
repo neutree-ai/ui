@@ -3,9 +3,9 @@ import UserCell from "@/components/business/UserCell";
 import { ShowButton, ShowPage } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "@/lib/i18n";
 import type { RoleAssignment } from "@/types";
 import { useShow } from "@refinedev/core";
-import { useTranslation } from "@/lib/i18n";
 
 export const RoleAssignmentsShow = () => {
   const { t } = useTranslation();

@@ -1,15 +1,15 @@
-import {
-  useState,
-  useEffect,
-  forwardRef,
-  type ChangeEventHandler,
-  useCallback,
-} from "react";
-import { Plus, Trash, AlertCircle } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { AlertCircle, Plus, Trash } from "lucide-react";
+import {
+  type ChangeEventHandler,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 // IP address validation regex
 const ipRegex =
@@ -39,7 +39,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     ref,
   ) => {
     const [headIp, setHeadIp] = useState(value.head_ip || "");
-    const [workerIps, setworkerIps] = useState(value.worker_ips || []);
+    const [workerIps, setWorkerIps] = useState(value.worker_ips || []);
     const [newWorkerIp, setNewWorkerIp] = useState("");
     const [errors, setErrors] = useState({
       headIp: "",
@@ -52,7 +52,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     }, [value.head_ip]);
 
     useEffect(() => {
-      setworkerIps(value.worker_ips || []);
+      setWorkerIps(value.worker_ips || []);
     }, [JSON.stringify(value.worker_ips)]);
 
     // Update the parent form when values change
@@ -120,7 +120,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
       if (!newWorkerIp || errors.newWorkerIp) return;
 
       // Add the new IP and clear the input
-      setworkerIps([...workerIps, newWorkerIp]);
+      setWorkerIps([...workerIps, newWorkerIp]);
       setNewWorkerIp("");
       setErrors((prev) => ({
         ...prev,
@@ -130,7 +130,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Remove a worker node IP
     const removeWorkerNodeIp = (ipToRemove: string) => {
-      setworkerIps(workerIps.filter((ip) => ip !== ipToRemove));
+      setWorkerIps(workerIps.filter((ip) => ip !== ipToRemove));
 
       // Clear any errors for this IP
       setErrors((prev) => {

@@ -1,5 +1,5 @@
-import { useCustom } from "@refinedev/core";
 import type { SystemInfo } from "@/types";
+import { useCustom } from "@refinedev/core";
 
 export const useSystemApi = () => {
   const { data, isLoading, error, refetch } = useCustom<SystemInfo>({

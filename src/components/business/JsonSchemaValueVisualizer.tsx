@@ -1,15 +1,3 @@
-import { useState } from "react";
-import {
-  ChevronRight,
-  ChevronDown,
-  Box,
-  List,
-  Type,
-  Hash,
-  CheckSquare,
-  XSquare,
-  AlertCircle,
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -17,6 +5,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/lib/i18n";
+import {
+  AlertCircle,
+  Box,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  Hash,
+  List,
+  Type,
+  XSquare,
+} from "lucide-react";
+import { useState } from "react";
 
 interface SchemaTypeIconProps {
   type: string;

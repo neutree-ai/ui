@@ -1,14 +1,14 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import type { ChatFunction } from "@/types/chat-types";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Edit, Plus } from "lucide-react";
-import { FunctionDialog } from "./FunctionDialog";
-import type { ChatFunction } from "@/types/chat-types";
-import { cn } from "@/lib/utils";
 import { v4 } from "uuid";
+import { FunctionDialog } from "./FunctionDialog";
 
 interface FunctionsManagerProps {
   functions: ChatFunction[];
