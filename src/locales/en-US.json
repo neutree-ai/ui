@@ -347,7 +347,9 @@
 			"nfsServerRequired": "Server address is required",
 			"invalidIPAddress": "Invalid IP address",
 			"cachePathRequired": "Cache path is required",
-			"invalidPath": "Invalid path (Must start with /)"
+			"invalidPath": "Invalid path (Must start with /)",
+			"acceleratorCountRequired": "Accelerator count is required",
+			"acceleratorCountInvalid": "Accelerator count is invalid"
 		}
 	},
 	"model_registries": {

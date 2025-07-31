@@ -347,7 +347,9 @@
 			"nfsServerRequired": "服务器地址是必填项",
 			"invalidIPAddress": "无效的 IP 地址",
 			"cachePathRequired": "缓存路径是必填项",
-			"invalidPath": "无效的路径(需以 / 开头)"
+			"invalidPath": "无效的路径(需以 / 开头)",
+			"acceleratorCountRequired": "加速器数量是必填项",
+			"acceleratorCountInvalid": "无效的加速器数量"
 		}
 	},
 	"model_registries": {
