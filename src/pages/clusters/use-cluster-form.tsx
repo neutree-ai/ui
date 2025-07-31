@@ -19,6 +19,7 @@ import type {
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -72,24 +73,24 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     name: "spec.config.model_caches",
   });
 
-  const getAcceleratorInfo = (
-    resources: Record<string, string | number> | undefined,
-  ) => {
-    if (!resources) return { type: NO_ACCELERATOR, count: "0" };
-
-    for (const acceleratorType of acceleratorTypes) {
-      if (resources[acceleratorType.value]) {
-        return {
-          type: acceleratorType.value,
-          count: resources[acceleratorType.value] as string,
-        };
-      }
-    }
-    return { type: NO_ACCELERATOR, count: "0" };
+  const getAcceleratorTypeFromResources = (resources?: Record<string, string | number>) => {
+    if (!resources) return NO_ACCELERATOR;
+    const match = acceleratorTypes.find(({ value }) => value !== NO_ACCELERATOR && resources[value]);
+    return match?.value || NO_ACCELERATOR;
   };
 
-  const headAccelerator = getAcceleratorInfo(headResources);
-  const workerAccelerator = getAcceleratorInfo(workerResources);
+  const [headAcceleratorType, setHeadAcceleratorType] = useState(() => getAcceleratorTypeFromResources(headResources));
+
+  const [workerAcceleratorType, setWorkerAcceleratorType] = useState(() => getAcceleratorTypeFromResources(workerResources));
+
+  const createAcceleratorState = (type: string, resources?: Record<string, string>) => ({
+    type,
+    count: type === NO_ACCELERATOR ? "" : (resources?.[type] || "")
+  });
+
+  const headAccelerator = useMemo(() => createAcceleratorState(headAcceleratorType, headResources),[headAcceleratorType, headResources]);
+  
+  const workerAccelerator = useMemo(() => createAcceleratorState(workerAcceleratorType, workerResources),[workerAcceleratorType, workerResources]);
 
   const updateAcceleratorResources = (
     resourcesPath: string,
@@ -100,12 +101,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     if (!currentResources) return;
 
     const newResources = { ...currentResources };
-    for (const type of acceleratorTypes) {
-      delete newResources[type.value];
-    }
-    if (newType !== NO_ACCELERATOR && newCount) {
-      newResources[newType] = newCount;
-    }
+    acceleratorTypes.filter(type => type.value !== NO_ACCELERATOR).forEach(type => delete newResources[type.value]);
+    if (newType !== NO_ACCELERATOR && newCount) newResources[newType] = newCount;
 
     if (resourcesPath === "spec.config.head_node_spec.resources") {
       form.setValue("spec.config.head_node_spec.resources", newResources);
@@ -113,6 +110,38 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       form.setValue("spec.config.worker_group_specs.0.resources", newResources);
     }
   };
+
+  const validateAccelerator = (type: string, count: string) => {
+    if (type === NO_ACCELERATOR) return true;
+    if (!count || count === "") return t("clusters.validation.acceleratorCountRequired") || "Accelerator count is required";
+    
+    const numValue = parseInt(count, 10);
+    if (isNaN(numValue) || numValue <= 0 || numValue.toString() !== count) { 
+      return t("clusters.validation.acceleratorCountInvalid") || "Please enter a valid accelerator count";
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    if (isKubernetes) {
+      form.register("head_accelerator_count", {
+        validate: () => validateAccelerator(headAccelerator.type, headAccelerator.count)
+      });
+      
+      form.register("worker_accelerator_count", {
+        validate: () => validateAccelerator(workerAccelerator.type, workerAccelerator.count)
+      });
+
+      form.trigger("head_accelerator_count");
+      form.trigger("worker_accelerator_count");
+    }
+  }, [
+    isKubernetes,
+    headAccelerator.type, 
+    headAccelerator.count, 
+    workerAccelerator.type, 
+    workerAccelerator.count
+  ]);
 
   const meta = {
     workspace,
@@ -138,8 +167,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   };
 
   const switchCacheType = (index: number, newType: "nfs" | "host_path") => {
-    const currentCache = form.getValues(`spec.config.model_caches.${index}`);
-
     if (newType === "nfs") {
       form.setValue(`spec.config.model_caches.${index}`, {
         nfs: {
@@ -331,12 +358,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             options={acceleratorTypes}
             value={headAccelerator.type}
             onChange={(value) => {
+              setHeadAcceleratorType(value);
               updateAcceleratorResources(
                 "spec.config.head_node_spec.resources",
                 headResources,
                 value,
-                headAccelerator.count,
+                value === NO_ACCELERATOR ? "" : headAccelerator.count
               );
+              form.trigger("head_accelerator_count");
             }}
             disabled={isEdit}
           />
@@ -344,7 +373,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="spec.config.head_node_spec.accelerator_count"
+          name="head_accelerator_count"
           label={t("clusters.fields.acceleratorCount")}
         >
           <Input
@@ -356,9 +385,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                 "spec.config.head_node_spec.resources",
                 headResources,
                 headAccelerator.type,
-                value,
+                value
               );
+              form.trigger("head_accelerator_count");
             }}
+            className={getInputErrorClasses(headAccelerator.type !== NO_ACCELERATOR && (!headAccelerator.count || !!form.formState.errors.head_accelerator_count))}
           />
         </Field>
 
@@ -416,12 +447,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             options={acceleratorTypes}
             value={workerAccelerator.type}
             onChange={(value) => {
+              setWorkerAcceleratorType(value);
               updateAcceleratorResources(
                 "spec.config.worker_group_specs.0.resources",
                 workerResources,
                 value,
-                workerAccelerator.count,
+                value === NO_ACCELERATOR ? "" : workerAccelerator.count
               );
+              form.trigger("worker_accelerator_count");
             }}
             disabled={isEdit}
           />
@@ -429,7 +462,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="spec.config.worker_group_specs.0.accelerator_count"
+          name="worker_accelerator_count"
           label={t("clusters.fields.acceleratorCount")}
         >
           <Input
@@ -441,9 +474,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                 "spec.config.worker_group_specs.0.resources",
                 workerResources,
                 workerAccelerator.type,
-                value,
+                value
               );
+              form.trigger("worker_accelerator_count");
             }}
+            className={getInputErrorClasses(workerAccelerator.type !== NO_ACCELERATOR && (!workerAccelerator.count || !!form.formState.errors.worker_accelerator_count))}
           />
         </Field>
 
