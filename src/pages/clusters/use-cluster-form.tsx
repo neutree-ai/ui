@@ -88,9 +88,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     count: type === NO_ACCELERATOR ? "" : (resources?.[type] || "")
   });
 
-  const headAccelerator = useMemo(() => createAcceleratorState(headAcceleratorType, headResources),[headAcceleratorType, headResources]);
+  const headAccelerator = useMemo(() => createAcceleratorState(headAcceleratorType, headResources), [headAcceleratorType, headResources]);
   
-  const workerAccelerator = useMemo(() => createAcceleratorState(workerAcceleratorType, workerResources),[workerAcceleratorType, workerResources]);
+  const workerAccelerator = useMemo(() => createAcceleratorState(workerAcceleratorType, workerResources), [workerAcceleratorType, workerResources]);
 
   const updateAcceleratorResources = (
     resourcesPath: string,
@@ -115,8 +115,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     if (type === NO_ACCELERATOR) return true;
     if (!count || count === "") return t("clusters.validation.acceleratorCountRequired") || "Accelerator count is required";
     
-    const numValue = parseInt(count, 10);
-    if (isNaN(numValue) || numValue <= 0 || numValue.toString() !== count) { 
+    const numValue = parseFloat(count);
+    if (!Number.isInteger(numValue) || numValue <= 0 ) { 
       return t("clusters.validation.acceleratorCountInvalid") || "Please enter a valid accelerator count";
     }
     return true;
@@ -140,7 +140,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     headAccelerator.type, 
     headAccelerator.count, 
     workerAccelerator.type, 
-    workerAccelerator.count
+    workerAccelerator.count,
+    form.register,
+    form.trigger,
   ]);
 
   const meta = {
