@@ -469,7 +469,8 @@
 			"taskType": "Task Type",
 			"replicas": "Replicas",
 			"schedulerType": "Scheduler Type",
-			"engineVariables": "Engine Variables"
+			"engineVariables": "Engine Variables",
+			"remaining": "Remaining"
 		},
 		"sections": {
 			"basicInformation": "Basic Information",

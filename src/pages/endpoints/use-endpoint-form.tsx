@@ -774,7 +774,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </span>
               {clusterResources && (
                 <span>
-                  Remaining: {formatToDecimal(dynamicAvailability.cpu)} /{" "}
+                  {t("endpoints.fields.remaining")}:{" "}
+                  {formatToDecimal(dynamicAvailability.cpu)} /{" "}
                   {formatToDecimal(clusterResources.cpu.total)}
                 </span>
               )}

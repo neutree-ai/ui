@@ -469,7 +469,8 @@
 			"taskType": "任务类型",
 			"replicas": "副本数",
 			"schedulerType": "调度器类型",
-			"engineVariables": "引擎变量"
+			"engineVariables": "引擎变量",
+			"remaining": "剩余"
 		},
 		"sections": {
 			"basicInformation": "基础信息",
