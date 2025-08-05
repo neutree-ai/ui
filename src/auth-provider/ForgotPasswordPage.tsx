@@ -28,7 +28,7 @@ type ForgotPasswordPageProps = {
   ) => React.ReactNode;
   formProps?: React.ComponentProps<"form">;
   title?: React.ReactNode;
-  mutationVariables: Partial<ForgotPasswordFormTypes>;
+  mutationVariables?: Partial<ForgotPasswordFormTypes>;
 };
 
 export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
@@ -37,7 +37,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
   renderContent,
   formProps,
   title,
-  mutationVariables,
+  mutationVariables = {},
 }) => {
   const translate = useTranslate();
   const authProvider = useActiveAuthProvider();
