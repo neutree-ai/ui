@@ -125,7 +125,7 @@ export default function EmbeddingPlayground({
 
   // Fetch available models
   const modelsData = useCustom({
-    url: `/serve-proxy/${endpoint?.metadata?.name}/v1/models`,
+    url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/models`,
     method: "get",
     queryOptions: {
       enabled: Boolean(endpoint?.metadata?.name),
@@ -174,7 +174,7 @@ export default function EmbeddingPlayground({
     }
 
     const openai = createOpenAI({
-      baseURL: `/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,
+      baseURL: `/api/v1/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1`,
       apiKey: "no",
       headers: {
         ...clientPostgrest.headers,

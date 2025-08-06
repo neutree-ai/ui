@@ -371,7 +371,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   // Fetch cluster status for dynamic resource information
   const clusterStatusQuery = useCustom<RayClusterStatus>({
-    url: `/ray-dashboard-proxy/${currentCluster}/api/cluster_status`,
+    url: `/ray-dashboard-proxy/${workspace}/${currentCluster}/api/cluster_status`,
     method: "get",
     queryOptions: {
       enabled: Boolean(currentCluster),

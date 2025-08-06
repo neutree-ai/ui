@@ -94,7 +94,7 @@ export const useEndpointLogUrls = (
     refetch,
   } = useCustom<RayApplicationInfo>({
     url: endpoint
-      ? `/ray-dashboard-proxy/${endpoint.spec.cluster}/api/serve/applications/`
+      ? `/ray-dashboard-proxy/${endpoint.metadata.workspace}/${endpoint.spec.cluster}/api/serve/applications/`
       : "",
     method: "get",
     queryOptions: {
@@ -135,8 +135,8 @@ export const useEndpointLogUrls = (
     }
 
     const urls: LogUrl[] = [];
-    const viewBaseUrl = `/ray-dashboard-proxy/${clusterName}/api/v0/logs/file`;
-    const downloadBaseUrl = `/api/v1/ray-dashboard-proxy/${clusterName}/api/v0/logs/file`;
+    const viewBaseUrl = `/ray-dashboard-proxy/${endpoint.metadata.workspace}/${clusterName}/api/v0/logs/file`;
+    const downloadBaseUrl = `/api/v1/ray-dashboard-proxy/${endpoint.metadata.workspace}/${clusterName}/api/v0/logs/file`;
 
     // Iterate through all deployments and replicas
     for (const [deploymentName, deployment] of Object.entries(
