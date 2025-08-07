@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { isValidIPAddress } from "@/lib/validate";
 import { AlertCircle, Plus, Trash } from "lucide-react";
 import {
   type ChangeEventHandler,
@@ -10,10 +11,6 @@ import {
   useEffect,
   useState,
 } from "react";
-
-// IP address validation regex
-const ipRegex =
-  /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
 type IpsValue = {
   head_ip: string;
@@ -43,7 +40,6 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     const [newWorkerIp, setNewWorkerIp] = useState("");
     const [errors, setErrors] = useState({
       headIp: "",
-      workerIps: {},
       newWorkerIp: "",
     });
 
@@ -72,7 +68,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     const validateIp = useCallback(
       (ip: string) => {
         if (!ip) return "IP address is required";
-        if (!ipRegex.test(ip)) return "Invalid IP address format";
+        if (!isValidIPAddress(ip)) return "Invalid IP address format";
         if (ipIsDuplicated(ip)) {
           return "This IP address is already in use";
         }
@@ -130,16 +126,11 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Remove a worker node IP
     const removeWorkerNodeIp = (ipToRemove: string) => {
-      setWorkerIps(workerIps.filter((ip) => ip !== ipToRemove));
+      setWorkerIps(workerIps.filter((ip: string) => ip !== ipToRemove));
 
       // Clear any errors for this IP
       setErrors((prev) => {
         const updatedErrors = { ...prev };
-        if (ipToRemove in updatedErrors.workerIps) {
-          delete (updatedErrors.workerIps as Record<string, unknown>)[
-            ipToRemove
-          ];
-        }
         if (ipToRemove === headIp) {
           // invariant: headIP === ipToRemove is valid as the ipToRemove has been validated upon adding
           updatedErrors.headIp = "";
@@ -195,7 +186,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                   No worker nodes added. Add at least one worker node.
                 </div>
               ) : (
-                workerIps.map((ip, index) => (
+                workerIps.map((ip: string, index: number) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 bg-card border border-border rounded"
