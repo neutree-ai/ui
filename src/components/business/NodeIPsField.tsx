@@ -89,7 +89,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     }, [newWorkerIp, validateIp]);
 
     // Handle head node IP change
-    const handleheadIpChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+    const handleHeadIpChange: ChangeEventHandler<HTMLInputElement> = (e) => {
       const ip = e.target.value;
       setHeadIp(ip);
       setErrors((prev) => ({
@@ -153,7 +153,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
               <div className="flex items-center">
                 <Input
                   value={headIp}
-                  onChange={handleheadIpChange}
+                  onChange={handleHeadIpChange}
                   placeholder="e.g 192.168.1.1"
                   disabled={disabled}
                   className={errors.headIp ? "border-destructive" : ""}
