@@ -130,7 +130,9 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
         e.preventDefault();
         e.stopPropagation();
 
-        setWorkerIps((prev) => prev.filter((ip) => ip !== ipToRemove));
+        setWorkerIps((prev: string[]) =>
+          prev.filter((ip: string) => ip !== ipToRemove),
+        );
 
         setErrors((prev) => {
           const updatedErrors = { ...prev };
@@ -197,7 +199,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
             <div className="space-y-2 mb-4">
               {workerIps.length === 0 ? (
                 <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                  No worker nodes added. Add at least one worker node.
+                  No worker nodes added.
                 </div>
               ) : (
                 workerIps.map((ip: string, index: number) => (

@@ -62,6 +62,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const workspace = form.watch("metadata.workspace");
   const type = form.watch("spec.type");
   const isKubernetes = type === "kubernetes";
+  const isSSH = type === "ssh";
 
   const headResources = form.watch("spec.config.head_node_spec.resources");
   const workerResources = form.watch(
@@ -90,6 +91,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const [workerAcceleratorType, setWorkerAcceleratorType] = useState(() =>
     getAcceleratorTypeFromResources(workerResources),
   );
+
+  const validateNodeIPs = (value: {
+    head_ip: string;
+    worker_ips: string[];
+  }) => {
+    const { head_ip, worker_ips } = value;
+    return isValidIPAddress(head_ip) && !worker_ips.includes(head_ip);
+  };
 
   const createAcceleratorState = (
     type: string,
@@ -164,8 +173,18 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       form.trigger("head_accelerator_count");
       form.trigger("worker_accelerator_count");
     }
+
+    // Register validation for SSH provider
+    if (isSSH) {
+      form.register("spec.config.provider", {
+        validate: validateNodeIPs,
+      });
+
+      form.trigger("spec.config.provider");
+    }
   }, [
     isKubernetes,
+    isSSH,
     headAccelerator.type,
     headAccelerator.count,
     workerAccelerator.type,
