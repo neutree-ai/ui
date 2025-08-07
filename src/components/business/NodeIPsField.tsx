@@ -125,19 +125,33 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
     };
 
     // Remove a worker node IP
-    const removeWorkerNodeIp = (ipToRemove: string) => {
-      setWorkerIps(workerIps.filter((ip: string) => ip !== ipToRemove));
+    const removeWorkerNodeIp = useCallback(
+      (ipToRemove: string) => (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-      // Clear any errors for this IP
-      setErrors((prev) => {
-        const updatedErrors = { ...prev };
-        if (ipToRemove === headIp) {
-          // invariant: headIP === ipToRemove is valid as the ipToRemove has been validated upon adding
-          updatedErrors.headIp = "";
+        setWorkerIps((prev) => prev.filter((ip) => ip !== ipToRemove));
+
+        setErrors((prev) => {
+          const updatedErrors = { ...prev };
+          if (ipToRemove === headIp) {
+            updatedErrors.headIp = "";
+          }
+          return updatedErrors;
+        });
+      },
+      [headIp],
+    );
+
+    const handleNewWorkerIpKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addWorkerNodeIp();
         }
-        return updatedErrors;
-      });
-    };
+      },
+      [addWorkerNodeIp],
+    );
 
     return (
       <div className="space-y-4" ref={ref} {...props}>
@@ -198,8 +212,9 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeWorkerNodeIp(ip)}
+                        onClick={removeWorkerNodeIp(ip)}
                         className="h-8 w-8 p-0"
+                        type="button"
                       >
                         <Trash className="h-4 w-4 text-destructive" />
                       </Button>
@@ -210,40 +225,34 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
             </div>
 
             {/* Add new worker node IP */}
-            {
-              <div className="flex flex-col">
-                <div className="flex items-center">
-                  <Input
-                    value={newWorkerIp}
-                    onChange={handleNewWorkerIpChange}
-                    placeholder="Add new worker node IP"
-                    className={`flex-1 ${
-                      errors.newWorkerIp ? "border-destructive" : ""
-                    }`}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addWorkerNodeIp();
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={addWorkerNodeIp}
-                    className="ml-2"
-                    disabled={!newWorkerIp || !!errors.newWorkerIp}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </div>
-                {errors.newWorkerIp && (
-                  <div className="flex items-center mt-1 text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    <span>{errors.newWorkerIp}</span>
-                  </div>
-                )}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <Input
+                  value={newWorkerIp}
+                  onChange={handleNewWorkerIpChange}
+                  placeholder="Add new worker node IP"
+                  className={`flex-1 ${
+                    errors.newWorkerIp ? "border-destructive" : ""
+                  }`}
+                  onKeyDown={handleNewWorkerIpKeyDown}
+                />
+                <Button
+                  onClick={addWorkerNodeIp}
+                  className="ml-2"
+                  disabled={!newWorkerIp || !!errors.newWorkerIp}
+                  type="button"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
               </div>
-            }
+              {errors.newWorkerIp && (
+                <div className="flex items-center mt-1 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  <span>{errors.newWorkerIp}</span>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
