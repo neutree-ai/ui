@@ -884,6 +884,12 @@
 				"Failed": "Failed",
 				"Deleted": "Deleted"
 			},
+			"catalog": {
+				"Pending": "Pending",
+				"Ready": "Ready",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
 			"endpoint": {
 				"Pending": "Pending",
 				"Running": "Running",

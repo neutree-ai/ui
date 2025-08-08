@@ -884,6 +884,12 @@
 				"Failed": "失败",
 				"Deleted": "已删除"
 			},
+			"catalog": {
+				"Pending": "等待中",
+				"Ready": "已就绪",
+				"Failed": "失败",
+				"Deleted": "已删除"
+			},
 			"endpoint": {
 				"Pending": "等待中",
 				"Running": "运行中",

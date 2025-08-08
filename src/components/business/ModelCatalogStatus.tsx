@@ -1,3 +1,4 @@
+import { useTranslation } from "@/lib/i18n";
 import type { ModelCatalogPhase } from "@/types";
 
 interface ModelCatalogStatusProps {
@@ -5,6 +6,7 @@ interface ModelCatalogStatusProps {
 }
 
 const ModelCatalogStatus = ({ phase }: ModelCatalogStatusProps) => {
+  const { t } = useTranslation();
   if (!phase) {
     return "-";
   }
@@ -16,11 +18,13 @@ const ModelCatalogStatus = ({ phase }: ModelCatalogStatusProps) => {
     Deleted: "bg-gray-100 text-gray-800",
   }[phase];
 
+  const translatedPhase = t(`status.phases.catalog.${phase}`);
+
   return (
     <span
       className={`px-2 py-1 text-xs font-semibold rounded-lg ${classMapping}`}
     >
-      {phase}
+      {translatedPhase}
     </span>
   );
 };
