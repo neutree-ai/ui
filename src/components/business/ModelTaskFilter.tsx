@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "@/lib/i18n";
 import type { CrudFilter, LogicalFilter } from "@refinedev/core";
 import { ChevronDown } from "lucide-react";
 import { useMemo } from "react";
@@ -17,29 +18,31 @@ interface ModelTaskFilterProps {
   setFilters: (filters: CrudFilter[], behavior?: "merge" | "replace") => void;
 }
 
-const MODEL_TASK_OPTIONS: TableListFilterOption[] = [
-  {
-    label: "All",
-    value: "all",
-  },
-  {
-    label: "Text Generation",
-    value: "text-generation",
-  },
-  {
-    label: "Text Embedding",
-    value: "text-embedding",
-  },
-  {
-    label: "Text Rerank",
-    value: "text-rerank",
-  },
-].map((o) => ({
-  ...o,
-  value: JSON.stringify(o.value),
-}));
-
 export function ModelTaskFilter({ filters, setFilters }: ModelTaskFilterProps) {
+  const { t } = useTranslation();
+
+  const MODEL_TASK_OPTIONS: TableListFilterOption[] = [
+    {
+      label: t("components.ui.filter.selectAll"),
+      value: "all",
+    },
+    {
+      label: t("models.tasks.text-generation"),
+      value: "text-generation",
+    },
+    {
+      label: t("models.tasks.text-embedding"),
+      value: "text-embedding",
+    },
+    {
+      label: t("models.tasks.text-rerank"),
+      value: "text-rerank",
+    },
+  ].map((o) => ({
+    ...o,
+    value: JSON.stringify(o.value),
+  }));
+
   // Find the current task filter
   const taskFilter = useMemo(() => {
     return filters.find(
@@ -95,7 +98,9 @@ export function ModelTaskFilter({ filters, setFilters }: ModelTaskFilterProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[200px]" align="start">
-        <DropdownMenuLabel>Filter by Task</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          {t("components.ui.filter.modelTask.title")}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {MODEL_TASK_OPTIONS.map((option) => (
           <DropdownMenuItem

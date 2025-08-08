@@ -659,6 +659,12 @@
 				"title": "侧边栏",
 				"description": "显示移动端侧边栏。",
 				"toggle": "切换侧边栏"
+			},
+			"filter": {
+				"selectAll": "全部",
+				"modelTask": {
+					"title": "按任务类型筛选"
+				}
 			}
 		},
 		"yamlImport": {

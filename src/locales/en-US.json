@@ -659,6 +659,12 @@
 				"title": "Sidebar",
 				"description": "Displays the mobile sidebar.",
 				"toggle": "Toggle Sidebar"
+			},
+			"filter": {
+				"selectAll": "All",
+				"modelTask": {
+					"title": "Filter by Task"
+				}
 			}
 		},
 		"yamlImport": {
