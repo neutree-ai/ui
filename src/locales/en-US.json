@@ -153,6 +153,7 @@
 		"show": "Show"
 	},
 	"buttons": {
+		"add": "Add",
 		"create": "Create",
 		"save": "Save",
 		"logout": "Logout",
@@ -296,6 +297,8 @@
 			"cpu": "CPU",
 			"memory": "Memory",
 			"replicas": "Replicas",
+			"sshHeadNodeIP": "Head Node IP",
+			"sshWorkerNodeIPs": "Worker Node IPs",
 			"sshUser": "SSH User",
 			"sshPrivateKey": "SSH Private Key",
 			"modelCache": {
@@ -322,8 +325,13 @@
 		"placeholders": {
 			"clusterName": "Cluster Name",
 			"selectImageRegistry": "Select A Image Registry",
+			"sshHeadNodeExample": "e.g 192.168.1.1",
 			"sshUserExample": "e.g root",
+			"sshAddNewWorkerNode": "Add New Worker Node IP",
 			"nfsServerExample": "192.168.1.1"
+		},
+		"labels": {
+			"nodes": "nodes"
 		},
 		"options": {
 			"multipleStaticNodes": "Multiple Static Nodes",
@@ -337,12 +345,15 @@
 		"messages": {
 			"notFound": "404 not found",
 			"rayDashboardTitle": "Ray Dashboard",
+			"sshEmptyWorkerNodeIPs": "No worker nodes added",
 			"noModelCaches": "No model caches"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache"
 		},
 		"validation": {
+			"ipRequired": "IP address is required",
+			"ipDuplicated": "IP address is already in use",
 			"modelRegistryRequired": "Model registry type is required",
 			"nfsServerRequired": "Server address is required",
 			"invalidIPAddress": "Invalid IP address",

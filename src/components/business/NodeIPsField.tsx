@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/lib/i18n";
 import { isValidIPAddress } from "@/lib/validate";
 import { AlertCircle, Plus, Trash } from "lucide-react";
 import {
@@ -43,6 +44,8 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
       newWorkerIp: "",
     });
 
+    const { t } = useTranslation();
+
     useEffect(() => {
       setHeadIp(value.head_ip || "");
     }, [value.head_ip]);
@@ -66,11 +69,13 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
 
     // Validate an IP address
     const validateIp = useCallback(
-      (ip: string) => {
-        if (!ip) return "IP address is required";
-        if (!isValidIPAddress(ip)) return "Invalid IP address format";
+      (ip: string, isrequired = false) => {
+        if (!isrequired && !ip) return "";
+        if (!ip) return t("clusters.validation.ipRequired");
+        if (!isValidIPAddress(ip))
+          return t("clusters.validation.invalidIPAddress");
         if (ipIsDuplicated(ip)) {
-          return "This IP address is already in use";
+          return t("clusters.validation.ipDuplicated");
         }
         return "";
       },
@@ -94,7 +99,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
       setHeadIp(ip);
       setErrors((prev) => ({
         ...prev,
-        headIp: validateIp(ip),
+        headIp: validateIp(ip, true),
       }));
     };
 
@@ -161,7 +166,9 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
         <Card className="border border-border">
           <CardHeader className="bg-secondary text-secondary-foreground py-2 px-4">
             <div className="flex items-center">
-              <CardTitle className="text-sm">Head Node IP</CardTitle>
+              <CardTitle className="text-sm">
+                {t("clusters.fields.sshHeadNodeIP")}
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4">
@@ -170,7 +177,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                 <Input
                   value={headIp}
                   onChange={handleHeadIpChange}
-                  placeholder="e.g 192.168.1.1"
+                  placeholder={t("clusters.placeholders.sshHeadNodeExample")}
                   disabled={disabled}
                   className={errors.headIp ? "border-destructive" : ""}
                 />
@@ -189,9 +196,13 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
           <CardHeader className="bg-secondary text-secondary-foreground py-2 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <CardTitle className="text-sm">Worker Node IPs</CardTitle>
+                <CardTitle className="text-sm">
+                  {t("clusters.fields.sshWorkerNodeIPs")}
+                </CardTitle>
               </div>
-              <Badge variant="outline">{workerIps.length} nodes</Badge>
+              <Badge variant="outline">
+                {workerIps.length} {t("clusters.labels.nodes")}
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="p-4">
@@ -199,7 +210,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
             <div className="space-y-2 mb-4">
               {workerIps.length === 0 ? (
                 <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                  No worker nodes added.
+                  {t("clusters.messages.sshEmptyWorkerNodeIPs")}
                 </div>
               ) : (
                 workerIps.map((ip: string, index: number) => (
@@ -232,7 +243,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                 <Input
                   value={newWorkerIp}
                   onChange={handleNewWorkerIpChange}
-                  placeholder="Add new worker node IP"
+                  placeholder={t("clusters.placeholders.sshAddNewWorkerNode")}
                   className={`flex-1 ${
                     errors.newWorkerIp ? "border-destructive" : ""
                   }`}
@@ -245,7 +256,7 @@ const NodeIPsField = forwardRef<HTMLDivElement, NodeIPsFieldProps>(
                   type="button"
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Add
+                  {t("buttons.add")}
                 </Button>
               </div>
               {errors.newWorkerIp && (

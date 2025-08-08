@@ -153,6 +153,7 @@
 		"show": "详情"
 	},
 	"buttons": {
+		"add": "添加",
 		"create": "创建",
 		"save": "保存",
 		"logout": "登出",
@@ -296,6 +297,8 @@
 			"cpu": "CPU",
 			"memory": "内存",
 			"replicas": "副本数",
+			"sshHeadNodeIP": "配置头节点IP",
+			"sshWorkerNodeIPs": "配置工作节点IP",
 			"sshUser": "SSH 用户",
 			"sshPrivateKey": "SSH 私钥",
 			"modelCache": {
@@ -322,8 +325,13 @@
 		"placeholders": {
 			"clusterName": "集群名称",
 			"selectImageRegistry": "选择镜像仓库",
+			"sshHeadNodeExample": "例如 192.168.1.1",
 			"sshUserExample": "例如 root",
+			"sshAddNewWorkerNode": "新工作节点IP",
 			"nfsServerExample": "192.168.1.1"
+		},
+		"labels": {
+			"nodes": "个节点"
 		},
 		"options": {
 			"multipleStaticNodes": "静态节点",
@@ -337,12 +345,15 @@
 		"messages": {
 			"notFound": "404 未找到",
 			"rayDashboardTitle": "Ray 仪表板",
+			"sshEmptyWorkerNodeIPs": "未添加工作节点",
 			"noModelCaches": "没有模型缓存"
 		},
 		"actions": {
 			"addModelCache": "添加模型缓存"
 		},
 		"validation": {
+			"ipRequired": "IP 地址是必填项",
+			"ipDuplicated": "IP 地址已被使用",
 			"modelRegistryRequired": "模型仓库是必填项",
 			"nfsServerRequired": "服务器地址是必填项",
 			"invalidIPAddress": "无效的 IP 地址",
