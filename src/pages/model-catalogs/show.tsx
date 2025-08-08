@@ -131,8 +131,14 @@ export const ModelCatalogsShow = () => {
                 typeof record.spec.deployment_options.scheduler === "object" &&
                 record.spec.deployment_options.scheduler &&
                 "type" in record.spec.deployment_options.scheduler
-                  ? String(record.spec.deployment_options.scheduler.type)
-                  : t("model_catalogs.values.powerOfTwo")}
+                  ? record.spec.deployment_options.scheduler.type ===
+                    "consistent_hash"
+                    ? t("models.scheduler.consistentHashing")
+                    : record.spec.deployment_options.scheduler.type ===
+                        "powerOfTwo"
+                      ? t("models.scheduler.powerOfTwo")
+                      : String(record.spec.deployment_options.scheduler.type)
+                  : t("models.scheduler.unavailable")}
               </ShowPage.Row>
             </div>
           </CardContent>

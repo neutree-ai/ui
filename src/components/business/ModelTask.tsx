@@ -1,22 +1,24 @@
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/lib/i18n";
 
 interface ModelTaskProps {
   task: string | null | undefined;
   variant?: "default" | "outline" | "secondary" | "destructive";
 }
 
+// Format task name for better display
+export const formatTaskName = (taskName: string) => {
+  return taskName
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const ModelTask = ({ task, variant = "outline" }: ModelTaskProps) => {
+  const { t } = useTranslation();
   if (!task) {
     return <span className="text-muted-foreground">-</span>;
   }
-
-  // Format task name for better display
-  const formatTaskName = (taskName: string) => {
-    return taskName
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
 
   // Define color variants for different task types
   const getTaskColor = (taskName: string) => {
@@ -43,7 +45,12 @@ const ModelTask = ({ task, variant = "outline" }: ModelTaskProps) => {
       variant={variant}
       className={`${customClassName} text-xs font-medium`}
     >
-      {formatTaskName(task)}
+      {(() => {
+        const translated = t(`models.tasks.${task}`);
+        return translated === `models.tasks.${task}`
+          ? formatTaskName(task)
+          : translated;
+      })()}
     </Badge>
   );
 };

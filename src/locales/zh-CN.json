@@ -9,6 +9,18 @@
 		"dark": "深色模式",
 		"system": "跟随系统"
 	},
+	"models": {
+		"scheduler": {
+			"powerOfTwo": "二的幂",
+			"consistentHashing": "一致性哈希",
+			"unavailable": "不可用"
+		},
+		"tasks": {
+			"text-generation": "文本生成",
+			"text-embedding": "文本嵌入",
+			"text-rerank": "文本重排序"
+		}
+	},
 	"pages": {
 		"login": {
 			"title": "登录您的账户",
@@ -402,9 +414,6 @@
 			"replica": "副本",
 			"scheduler": "调度器",
 			"variables": "变量"
-		},
-		"values": {
-			"powerOfTwo": "二的幂"
 		}
 	},
 	"image_registries": {
@@ -502,9 +511,7 @@
 			"selectSchedulerType": "选择调度器类型"
 		},
 		"options": {
-			"generic": "通用",
-			"powerOfTwo": "二的幂",
-			"consistentHashing": "一致性哈希"
+			"generic": "通用"
 		},
 		"messages": {
 			"rayDashboardNotAvailable": "Ray 仪表板不可用。",

@@ -1,4 +1,5 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
+import { formatTaskName } from "@/components/business/ModelTask";
 import VariablesInput, {
   type Schema,
 } from "@/components/business/VariablesInput";
@@ -975,7 +976,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 options={(
                   engineTasks[form.getValues().spec.engine.engine] || []
                 ).map((v) => ({
-                  label: v,
+                  label:
+                    t(`models.tasks.${v}`) === `models.tasks.${v}`
+                      ? formatTaskName(v)
+                      : t(`models.tasks.${v}`),
                   value: v,
                 }))}
               />
@@ -999,9 +1003,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <Combobox
                 placeholder={t("endpoints.placeholders.selectSchedulerType")}
                 options={[
-                  { label: t("endpoints.options.powerOfTwo"), value: "pow2" },
+                  { label: t("models.scheduler.powerOfTwo"), value: "pow2" },
                   {
-                    label: t("endpoints.options.consistentHashing"),
+                    label: t("models.scheduler.consistentHashing"),
                     value: "consistent_hash",
                   },
                 ]}

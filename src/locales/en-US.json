@@ -9,6 +9,18 @@
 		"dark": "Dark Mode",
 		"system": "Follow System"
 	},
+	"models": {
+		"scheduler": {
+			"powerOfTwo": "Power of two",
+			"consistentHashing": "Consistent hashing",
+			"unavailable": "Unavailable"
+		},
+		"tasks": {
+			"text-generation": "Text Generation",
+			"text-embedding": "Text Embedding",
+			"text-rerank": "Text Rerank"
+		}
+	},
 	"pages": {
 		"login": {
 			"title": "Sign in to your account",
@@ -402,9 +414,6 @@
 			"replica": "Replica",
 			"scheduler": "Scheduler",
 			"variables": "Variables"
-		},
-		"values": {
-			"powerOfTwo": "Power of two"
 		}
 	},
 	"image_registries": {
@@ -502,9 +511,7 @@
 			"selectSchedulerType": "Select Scheduler Type"
 		},
 		"options": {
-			"generic": "Generic",
-			"powerOfTwo": "Power of two",
-			"consistentHashing": "Consistent hashing"
+			"generic": "Generic"
 		},
 		"messages": {
 			"rayDashboardNotAvailable": "Ray dashboard is not available.",
