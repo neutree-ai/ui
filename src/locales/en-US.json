@@ -650,7 +650,16 @@
 	"components": {
 		"ui": {
 			"combobox": {
-				"select": "Select"
+				"select": "Select",
+				"placeholders": {
+					"SearchPlaceholder": "Type a command or search..."
+				},
+				"messages": {
+					"noResults": "No results found"
+				},
+				"headings": {
+					"suggestions": "Suggestions"
+				}
 			},
 			"dialog": {
 				"close": "Close"

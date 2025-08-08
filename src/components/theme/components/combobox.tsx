@@ -26,6 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type {
   BaseOption,
@@ -50,6 +51,7 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> &
 
 export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
   ({ ...props }, ref) => {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
     const value = () => {
@@ -78,17 +80,25 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
               {value()
                 ? props.options?.find((option) => option.value === value())
                     ?.label
-                : (props.placeholder ?? "Select")}
+                : (props.placeholder ?? t("components.ui.combobox.select"))}
               <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </FormControl>
         </PopoverTrigger>
         <PopoverContent className="w-[400px] max-w-full p-0">
           <Command className="rounded-lg border shadow-md" ref={ref}>
-            <CommandInput placeholder="Type a command or search..." />
+            <CommandInput
+              placeholder={t(
+                "components.ui.combobox.placeholders.SearchPlaceholder",
+              )}
+            />
             <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup heading="Suggestions">
+              <CommandEmpty>
+                {t("components.ui.combobox.messages.noResults")}
+              </CommandEmpty>
+              <CommandGroup
+                heading={t("components.ui.combobox.headings.suggestions")}
+              >
                 <ScrollArea className="max-h-52 overflow-y-auto">
                   {props.options?.map((option) => (
                     <CommandItem

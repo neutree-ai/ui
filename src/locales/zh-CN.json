@@ -650,7 +650,16 @@
 	"components": {
 		"ui": {
 			"combobox": {
-				"select": "选择"
+				"select": "选择",
+				"placeholders": {
+					"SearchPlaceholder": "输入命令或搜索..."
+				},
+				"messages": {
+					"noResults": "未找到结果"
+				},
+				"headings": {
+					"suggestions": "建议"
+				}
 			},
 			"dialog": {
 				"close": "关闭"
