@@ -123,22 +123,25 @@ export const dataProvider = (
 
     create: async ({ resource, variables, meta }) => {
       if (resource === "user_profiles") {
-        const { data, error } = await auth.signUp({
+        const userData = {
           email: (variables as { email: string }).email,
           password: (variables as { password: string }).password,
-          options: {
-            data: {
-              username: (variables as { name: string }).name,
-            },
+          username: (variables as { name: string }).name,
+        };
+
+        const userToken = "";
+
+        const response = await fetch("/api/v1/admin/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userToken}`,
           },
+          body: JSON.stringify(userData),
         });
 
-        if (error) {
-          return handleError(error);
-        }
-
         return {
-          data: data.user,
+          data: await response.json(),
         };
       }
 
