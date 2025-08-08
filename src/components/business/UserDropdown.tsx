@@ -74,7 +74,7 @@ export const UserDropdown = () => {
 
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
-            <Globe size={16} className="" />
+            <Globe size={16} className="mr-2" />
             <span>{t("ui.language")}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
@@ -97,9 +97,8 @@ export const UserDropdown = () => {
         </DropdownMenuSub>
 
         <DropdownMenuSeparator />
-
-        <DropdownMenuItem asChild>
-          <Link href="/update-password" className="flex w-full">
+        <DropdownMenuItem>
+          <Link href="/update-password" className="flex flex-row gap-2 w-full">
             <KeyRound size={16} className="mr-2" />
             {t("buttons.updatePassword")}
           </Link>
