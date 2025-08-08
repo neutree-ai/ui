@@ -4,6 +4,11 @@
 			"grafanaNotConfigured": "Grafana 监控未配置。"
 		}
 	},
+	"appearance": {
+		"light": "浅色模式",
+		"dark": "深色模式",
+		"system": "跟随系统"
+	},
 	"pages": {
 		"login": {
 			"title": "登录您的账户",
@@ -870,6 +875,12 @@
 			"cluster": {
 				"Pending": "等待中",
 				"Running": "运行中",
+				"Failed": "失败",
+				"Deleted": "已删除"
+			},
+			"registry": {
+				"Pending": "等待中",
+				"Connected": "已连接",
 				"Failed": "失败",
 				"Deleted": "已删除"
 			},

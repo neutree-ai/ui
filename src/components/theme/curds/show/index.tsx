@@ -73,7 +73,7 @@ export const ShowPage: FC<ShowProps> & {
                   >
                     {canEdit && (
                       <EditAction
-                        title="Edit"
+                        title={translate("buttons.edit")}
                         row={record}
                         resource={resource?.name || ""}
                         icon={<Edit size={16} />}
@@ -83,7 +83,7 @@ export const ShowPage: FC<ShowProps> & {
                       <DeleteAction
                         row={record}
                         resource={resource?.name ?? ""}
-                        title="Delete"
+                        title={translate("buttons.delete")}
                         icon={<Trash2 size={16} />}
                       />
                     )}

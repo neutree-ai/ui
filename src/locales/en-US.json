@@ -4,6 +4,11 @@
 			"grafanaNotConfigured": "Grafana monitoring is not configured."
 		}
 	},
+	"appearance": {
+		"light": "Light Mode",
+		"dark": "Dark Mode",
+		"system": "Follow System"
+	},
 	"pages": {
 		"login": {
 			"title": "Sign in to your account",
@@ -870,6 +875,12 @@
 			"cluster": {
 				"Pending": "Pending",
 				"Running": "Running",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
+			"registry": {
+				"Pending": "Pending",
+				"Connected": "Connected",
 				"Failed": "Failed",
 				"Deleted": "Deleted"
 			},

@@ -297,8 +297,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   {record.spec.replicas?.num ?? 1}
                 </ShowPage.Row>
                 <ShowPage.Row title={t("endpoints.fields.scheduler")}>
-                  {record.spec.deployment_options?.scheduler.type ??
-                    t("model_catalogs.values.powerOfTwo")}
+                  {t(
+                    `endpoints.options.${record.spec.deployment_options?.scheduler.type === "consistent_hash" ? "consistentHashing" : "powerOfTwo"}`,
+                  )}
                 </ShowPage.Row>
               </div>
             </CardContent>
