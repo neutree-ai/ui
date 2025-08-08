@@ -41,6 +41,7 @@ export type SaveButtonProps = ButtonProps &
   RefineSaveButtonProps &
   RefineButtonResourceProps &
   RefineButtonSingleProps & {
+    loading?: boolean;
     access?: Omit<
       React.ComponentProps<typeof CanAccess>,
       "children" | "action" | "resource" | "params"

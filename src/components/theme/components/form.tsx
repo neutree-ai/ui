@@ -121,7 +121,7 @@ export const Form = <
 
             <SaveButton
               type="submit"
-              loading={props.refineCore.formLoading.toString()}
+              loading={props.refineCore.formLoading}
               {...saveButtonProps}
             />
           </div>

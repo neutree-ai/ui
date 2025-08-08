@@ -12,6 +12,7 @@ export const SaveButton: FC<SaveButtonProps> = ({
   access,
   resource,
   recordItemId,
+  loading,
   ...props
 }) => {
   const { label } = useSaveButton();
@@ -30,7 +31,7 @@ export const SaveButton: FC<SaveButtonProps> = ({
       action="save"
       {...access}
     >
-      <Button {...props}>
+      <Button {...props} disabled={loading}>
         <SaveIcon className="mr-2 w-4 h-4" />
         {!hideText && (children ?? label)}
       </Button>
