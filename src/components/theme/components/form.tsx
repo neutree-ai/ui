@@ -2,7 +2,6 @@ import type { SaveButtonProps } from "@/components/theme/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Form as FormUI } from "@/components/ui/form";
-import { useTranslation } from "@/lib/i18n";
 import {
   type BaseRecord,
   type HttpError,
@@ -79,7 +78,6 @@ export const Form = <
   const routerType = useRouterType();
   const back = useBack();
   const { goBack } = useNavigation();
-  const { t } = useTranslation();
 
   const onBack =
     action !== "list" || typeof action !== "undefined"
@@ -117,7 +115,7 @@ export const Form = <
                 disabled={props.refineCore.formLoading}
                 variant="outline"
               >
-                {t("buttons.cancel")}
+                Cancel
               </Button>
             )}
 
