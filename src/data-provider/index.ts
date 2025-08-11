@@ -129,7 +129,10 @@ export const dataProvider = (
           username: (variables as { name: string }).name,
         };
 
-        const userToken = "";
+        const {
+          data: { session },
+        } = await auth.getSession();
+        const userToken = session?.access_token || "";
 
         const response = await fetch("/api/v1/admin/users", {
           method: "POST",
