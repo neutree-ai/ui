@@ -106,7 +106,7 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
 
   // Fetch available models
   const modelsData = useCustom({
-    url: `/serve-proxy/${endpoint?.metadata?.name}/v1/models`,
+    url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/models`,
     method: "get",
     queryOptions: {
       enabled: Boolean(endpoint?.metadata?.name),
@@ -177,7 +177,7 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
     setIsProcessing(true);
     try {
       const { data } = await rerankMutation({
-        url: `/serve-proxy/${endpoint?.metadata?.name}/v1/rerank`,
+        url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/rerank`,
         method: "post",
         values: {
           model: values.model,

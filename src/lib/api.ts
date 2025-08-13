@@ -14,7 +14,9 @@ export const getRayDashboardProxy = (cluster?: unknown) => {
     return null;
   }
 
-  return `${REST_URL}/ray-dashboard-proxy/${
-    (cluster as Cluster).metadata.name
+  const { metadata } = cluster as Cluster;
+
+  return `${REST_URL}/ray-dashboard-proxy/${metadata.workspace}/${
+    metadata.name
   }/`;
 };

@@ -146,7 +146,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     name: "ai-platform",
     baseURL: `${location.protocol}//${
       location.host
-    }/api/v1/serve-proxy/${endpoint?.metadata?.name}/v1`,
+    }/api/v1/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1`,
     apiKey: "no",
     headers: {
       ...clientPostgrest.headers,
@@ -154,7 +154,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   });
 
   const modelsData = useCustom({
-    url: `/serve-proxy/${endpoint.metadata.name}/v1/models`,
+    url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/models`,
     method: "get",
     queryOptions: {
       enabled: Boolean(endpoint.metadata.name),
