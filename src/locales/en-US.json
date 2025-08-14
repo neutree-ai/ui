@@ -626,7 +626,7 @@
 			"workspace": "Workspace",
 			"secretKey": "Secret Key",
 			"date": "Date",
-			"model": "Model",
+			"endpoint": "Endpoint",
 			"usage": "Usage"
 		},
 		"placeholders": {

@@ -1,5 +1,6 @@
 import MetadataCard from "@/components/business/MetadataCard";
 import { ShowPage } from "@/components/theme";
+import { ShowButton } from "@/components/theme/buttons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -9,10 +10,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCustomMutation, useShow } from "@refinedev/core";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+type ApiUsageRecord = {
+  date: string;
+  api_key_id: string;
+  api_key_name: string;
+  endpoint_name: string;
+  workspace: string;
+  usage: number;
+};
 
 export const ApiKeysShow = () => {
   const { t } = useTranslation();
@@ -21,22 +30,40 @@ export const ApiKeysShow = () => {
   } = useShow();
   const record = data?.data;
 
-  const [usageData, setUsageData] = useState<any[]>([]);
+  const [usageData, setUsageData] = useState<ApiUsageRecord[]>([]);
 
   const { mutateAsync } = useCustomMutation();
+
+  const fetchUsageData = useCallback(async () => {
+    if (!record?.id) return;
+
+    try {
+      const res = await mutateAsync({
+        url: "/rpc/get_usage_by_dimension",
+        method: "post",
+        values: {
+          p_start_date: "2025-01-01",
+          p_end_date: new Date().toISOString(),
+          p_api_key_id: record?.id,
+        },
+      });
+      setUsageData(res.data as ApiUsageRecord[]);
+    } catch (error) {
+      console.error("Failed to fetch usage data:", error);
+    }
+  }, [record?.id, mutateAsync]);
+
   useEffect(() => {
-    mutateAsync({
-      url: "/rpc/get_usage_by_dimension",
-      method: "post",
-      values: {
-        p_start_date: "2025-01-01",
-        p_end_date: new Date().toISOString(),
-        p_api_key_id: record?.id,
-      },
-    }).then((res) => {
-      setUsageData(res.data as any[]);
-    });
-  }, [record, mutateAsync]);
+    fetchUsageData();
+  }, [fetchUsageData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchUsageData();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [fetchUsageData]);
 
   if (isLoading) {
     return <div>{t("api_keys.messages.loading")}</div>;
@@ -61,8 +88,7 @@ export const ApiKeysShow = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("api_keys.fields.date")}</TableHead>
-                  <TableHead>{t("api_keys.fields.name")}</TableHead>
-                  <TableHead>{t("api_keys.fields.model")}</TableHead>
+                  <TableHead>{t("api_keys.fields.endpoint")}</TableHead>
                   <TableHead>{t("api_keys.fields.workspace")}</TableHead>
                   <TableHead className="text-right">
                     {t("api_keys.fields.usage")}
@@ -73,9 +99,28 @@ export const ApiKeysShow = () => {
                 {usageData.map((row, index) => (
                   <TableRow key={index}>
                     <TableCell>{row.date}</TableCell>
-                    <TableCell>{row.api_key_name}</TableCell>
-                    <TableCell>{row.model}</TableCell>
-                    <TableCell>{row.workspace}</TableCell>
+                    <TableCell>
+                      <ShowButton
+                        recordItemId={row.endpoint_name}
+                        variant="link"
+                        meta={{
+                          workspace: row.workspace,
+                        }}
+                        resource="endpoints"
+                      >
+                        {row.endpoint_name}
+                      </ShowButton>
+                    </TableCell>
+                    <TableCell>
+                      <ShowButton
+                        recordItemId={row.workspace}
+                        variant="link"
+                        meta={{}}
+                        resource="workspaces"
+                      >
+                        {row.workspace}
+                      </ShowButton>
+                    </TableCell>
                     <TableCell className="text-right font-medium">
                       {row.usage} {t("api_keys.usage.tokens")}
                     </TableCell>
