@@ -98,7 +98,7 @@ const RayDashboardTab = ({ record }: { record: Endpoint }) => {
 
   return (
     <iframe
-      src={`${rayDashboardUrl}#/serve/applications/${record.metadata.name}`}
+      src={`${rayDashboardUrl}#/serve/applications/${record.metadata.workspace}_${record.metadata.name}`}
       className="w-full h-full"
       onLoad={handleIframeLoad}
       ref={iframeRef}
