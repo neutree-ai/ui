@@ -102,7 +102,6 @@ export const useEndpointLogUrls = (
       staleTime: 30 * 1000,
     },
   });
-
   const rayApplicationInfo = rayApplicationData?.data;
 
   const logUrls = useMemo((): LogUrl[] => {
@@ -129,7 +128,10 @@ export const useEndpointLogUrls = (
     const endpointName = endpoint.metadata.name;
 
     // Find the corresponding application
-    const application = rayApplicationInfo.applications[endpointName];
+    const application =
+      rayApplicationInfo.applications[
+        `${endpoint.metadata.workspace}_${endpointName}`
+      ];
     if (!application) {
       return [];
     }
