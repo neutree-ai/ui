@@ -386,6 +386,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   };
 
   const clearMessages = () => {
+    stop(); // Stop any ongoing streaming
     setMessages([]);
   };
 
