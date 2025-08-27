@@ -89,6 +89,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
       dataUri: string;
     }>
   >([]);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   // Helper function to convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -196,6 +197,10 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     e,
   ) => {
     setStatus("submitted");
+    
+    // Create a new abort controller for this request
+    const newAbortController = new AbortController();
+    setAbortController(newAbortController);
 
     // Build user message content with text and images
     const userContent: Array<TextPart | ImagePart> = [];
@@ -268,6 +273,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
         temperature,
         maxTokens: max_length,
         topP: top_p,
+        abortSignal: newAbortController.signal,
         tools: functions
           .filter((fn) => fn.enabled)
           .reduce<ToolSet>((prev, cur) => {
@@ -280,6 +286,10 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
       });
 
       for await (const delta of stream.fullStream) {
+        // Check if the request was aborted
+        if (newAbortController.signal.aborted) {
+          break;
+        }
         setMessages((prev) => {
           const next = [...prev];
           if (!next[assistantIndex]) {
@@ -342,33 +352,41 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
         });
       }
     } catch (error) {
-      // Handle streaming errors
-      setMessages((prev) => {
-        const next = [...prev];
-        if (!next[assistantIndex]) {
-          next[assistantIndex] = { role: "assistant", content: [] };
-        }
+      // Handle streaming errors - don't show error if it was aborted intentionally
+      if (!newAbortController.signal.aborted) {
+        setMessages((prev) => {
+          const next = [...prev];
+          if (!next[assistantIndex]) {
+            next[assistantIndex] = { role: "assistant", content: [] };
+          }
 
-        const contentArray = next[assistantIndex]
-          .content as Array<ChatContentPart>;
+          const contentArray = next[assistantIndex]
+            .content as Array<ChatContentPart>;
 
-        contentArray.push({
-          type: "error",
-          error: error instanceof Error ? error.message : String(error),
+          contentArray.push({
+            type: "error",
+            error: error instanceof Error ? error.message : String(error),
+          });
+
+          return next;
         });
-
-        return next;
-      });
+      }
+    } finally {
+      // Clean up abort controller and reset status
+      setAbortController(null);
+      setStatus("idle");
     }
-
-    setStatus("idle");
   };
 
   const stop = () => {
+    if (abortController) {
+      abortController.abort();
+    }
     setStatus("idle");
   };
 
   const clearMessages = () => {
+    stop(); // Stop any ongoing streaming
     setMessages([]);
   };
 
