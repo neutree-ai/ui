@@ -1,10 +1,12 @@
 import { Combobox } from "@/components/ui/combobox";
 import { Form } from "@/components/ui/form";
+import { useTranslation } from "@/lib/i18n";
 import { useGo, useResource, useResourceParams } from "@refinedev/core";
 import { useForm } from "react-hook-form";
 import { ALL_WORKSPACES, useWorkspace } from "../theme/hooks";
 
 export default function WorkspaceSelect() {
+  const { t } = useTranslation();
   const { current, data } = useWorkspace();
   const form = useForm({
     mode: "all",
@@ -25,7 +27,7 @@ export default function WorkspaceSelect() {
       <Combobox
         options={[
           {
-            label: "All workspaces",
+            label: t("workspaces.options.allWorkspaces"),
             value: ALL_WORKSPACES,
           },
         ].concat(
@@ -35,7 +37,7 @@ export default function WorkspaceSelect() {
           })),
         )}
         triggerClassName="w-[280px]"
-        placeholder="Select a workspace"
+        placeholder={t("workspaces.placeholders.selectWorkspace")}
         value={current}
         allowUnselect={false}
         onChange={(value) => {

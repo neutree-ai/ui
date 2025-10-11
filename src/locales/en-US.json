@@ -286,7 +286,11 @@
 			"basicInformation": "Basic Information"
 		},
 		"placeholders": {
-			"workspaceName": "Workspace Name"
+			"workspaceName": "Workspace Name",
+			"selectWorkspace": "Select a workspace"
+		},
+		"options": {
+			"allWorkspaces": "All workspaces"
 		}
 	},
 	"clusters": {
@@ -813,7 +817,11 @@
 				"clearChat": "Clear Chat",
 				"modelParameters": "Model & Parameters",
 				"error": "Error",
-				"reasoning": "Thinking..."
+				"reasoning": "Thinking...",
+				"temperature": "Temperature",
+				"temperatureDescription": "Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.",
+				"maximumLength": "Maximum Length",
+				"maximumLengthDescription": "The maximum number of tokens to generate. Requests can use up to 2,048 or 4,000 tokens, shared between prompt and completion. The exact limit varies by model."
 			},
 			"embedding": {
 				"title": "Embedding",

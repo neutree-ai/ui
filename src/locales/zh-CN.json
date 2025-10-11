@@ -286,7 +286,11 @@
 			"basicInformation": "基础信息"
 		},
 		"placeholders": {
-			"workspaceName": "工作空间名称"
+			"workspaceName": "工作空间名称",
+			"selectWorkspace": "选择工作空间"
+		},
+		"options": {
+			"allWorkspaces": "所有工作空间"
 		}
 	},
 	"clusters": {
@@ -813,7 +817,11 @@
 				"clearChat": "清除聊天",
 				"modelParameters": "模型与参数",
 				"error": "错误",
-				"reasoning": "思考中..."
+				"reasoning": "思考中...",
+				"temperature": "温度",
+				"temperatureDescription": "控制随机性：降低温度会使生成结果更确定。当温度接近零时，模型将变得确定性和重复性。",
+				"maximumLength": "最大长度",
+				"maximumLengthDescription": "生成的最大令牌数。请求可以使用最多 2,048 或 4,000 个令牌，在提示和补全之间共享。确切的限制因模型而异。"
 			},
 			"embedding": {
 				"title": "嵌入向量",
