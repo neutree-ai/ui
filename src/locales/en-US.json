@@ -1,4 +1,5 @@
 {
+	"nativeName": "English",
 	"common": {
 		"messages": {
 			"grafanaNotConfigured": "Grafana monitoring is not configured."

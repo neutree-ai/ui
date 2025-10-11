@@ -13,6 +13,10 @@ dist-ssr
 \*.local
 *.tsbuildinfo
 
+# Locale files (except English, which is the default)
+src/locales/*
+!src/locales/en-US.json
+
 # Editor directories and files
 
 .vscode/_

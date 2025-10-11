@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSystemApi } from "@/hooks/use-system-api";
-import { useTranslation } from "@/lib/i18n";
+import { AVAILABLE_LOCALES, LOCALE_LABELS, useTranslation } from "@/lib/i18n";
 import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
 import { Check, ChevronDown, Globe, KeyRound } from "lucide-react";
 import LogoutButton from "./LogoutButton";
@@ -32,10 +32,11 @@ export const UserDropdown = () => {
 
   const currentLocale = locale() || "en-US";
 
-  const languages = [
-    { code: "en-US", label: "English" },
-    { code: "zh-CN", label: "中文" },
-  ];
+  // Dynamically build language list from available locales
+  const languages = AVAILABLE_LOCALES.map((code) => ({
+    code,
+    label: LOCALE_LABELS[code],
+  }));
 
   return (
     <DropdownMenu>

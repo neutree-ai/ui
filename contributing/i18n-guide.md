@@ -83,7 +83,7 @@ node tools/i18n-tracker.cjs update src/pages/users/list.tsx
 
 1. **Modify your component** to use `t()` for all user-facing strings
 
-2. **Add translation keys** to both `en-US.json` and `zh-CN.json`
+2. **Add translation keys** to locales JSON
 
 3. **Update the tracker**:
    ```bash
@@ -92,7 +92,7 @@ node tools/i18n-tracker.cjs update src/pages/users/list.tsx
 
 4. **Commit all changes** including the updated `.i18n-tracker.lock` file:
    ```bash
-   git add src/locales/en-US.json src/locales/zh-CN.json .i18n-tracker.lock
+   git add src/locales/*.json .i18n-tracker.lock
    git commit -m "Add i18n translations for MyComponent"
    ```
 
