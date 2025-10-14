@@ -1,28 +1,24 @@
 import { useTranslation } from "@/lib/i18n";
-import type { ModelRegistry } from "@/types";
+import type { BaseStatus as BaseStatusType } from "@/types";
+import BaseStatus from "./BaseStatus";
 
-export default function ModelRegistryStatus({
-  phase,
-}: Partial<Pick<Exclude<ModelRegistry["status"], null>, "phase">>) {
+export default function ModelRegistryStatus(status: BaseStatusType) {
   const { t } = useTranslation();
-  if (!phase) {
-    return "-";
-  }
 
   const classMapping = {
     Connected: "bg-green-100 text-green-800",
     Failed: "bg-red-100 text-red-800",
     Pending: "bg-yellow-100 text-yellow-800",
     Deleted: "bg-gray-100 text-gray-800",
-  }[phase];
+  }[status.phase ?? "-"];
 
-  const translatedPhase = t(`status.phases.registry.${phase}`);
+  const translatedPhase = t(`status.phases.registry.${status.phase}`);
 
   return (
-    <span
-      className={`px-2 py-1 text-xs font-semibold rounded-lg ${classMapping}`}
-    >
-      {translatedPhase}
-    </span>
+    <BaseStatus
+      {...status}
+      className={classMapping}
+      translatedPhase={translatedPhase}
+    />
   );
 }

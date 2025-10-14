@@ -2,7 +2,7 @@ import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointModel from "@/components/business/EndpointModel";
 import EndpointStatus from "@/components/business/EndpointStatus";
 import ModelTask from "@/components/business/ModelTask";
-import type { Endpoint, EndpointPhase } from "@/types";
+import type { BaseStatus, Endpoint } from "@/types";
 import { useTranslate } from "@refinedev/core";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
@@ -36,13 +36,11 @@ export const useEndpointColumns = () => {
     status: (
       <Table.Column
         header={t("table.column.status")}
-        accessorKey="status.phase"
+        accessorKey="status"
         id="status"
         enableHiding
         cell={({ getValue }) => {
-          return (
-            <EndpointStatus phase={getValue() as unknown as EndpointPhase} />
-          );
+          return <EndpointStatus {...(getValue() as unknown as BaseStatus)} />;
         }}
       />
     ),

@@ -30,7 +30,7 @@ export const ModelRegistriesShow = () => {
       <Card className="mt-4">
         <CardContent>
           <ShowPage.Row title={t("model_registries.fields.status")}>
-            <ModelRegistryStatus phase={record.status?.phase} />
+            <ModelRegistryStatus {...record.status} />
           </ShowPage.Row>
           <div className="grid grid-cols-4 gap-8">
             <ShowPage.Row title={t("model_registries.fields.type")}>

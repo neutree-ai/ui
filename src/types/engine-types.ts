@@ -1,4 +1,4 @@
-import type { Metadata } from "./basic-types";
+import type { BaseStatus, Metadata } from "./basic-types";
 
 export type Engine = {
   id: number;
@@ -19,11 +19,7 @@ export type EngineVersion = {
   values_schema: Record<string, string | number | boolean>;
 };
 
-export type EngineStatus = {
-  phase: EnginePhase | null;
-  last_transition_time: string | null;
-  error_message: string | null;
-};
+export type EngineStatus = BaseStatus<EnginePhase>;
 
 export enum EnginePhase {
   PENDING = "Pending",

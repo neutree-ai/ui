@@ -1,5 +1,5 @@
 import ImageRegistryStatus from "@/components/business/ImageRegistryStatus";
-import type { ImageRegistryPhase } from "@/types";
+import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
 import { Table } from "..";
 
@@ -9,14 +9,12 @@ export const useImageRegistryColumns = () => {
     status: (
       <Table.Column
         header={t("table.column.status")}
-        accessorKey="status.phase"
+        accessorKey="status"
         id="status"
         enableHiding
         cell={({ getValue }) => {
           return (
-            <ImageRegistryStatus
-              phase={getValue() as unknown as ImageRegistryPhase}
-            />
+            <ImageRegistryStatus {...(getValue() as unknown as BaseStatus)} />
           );
         }}
       />

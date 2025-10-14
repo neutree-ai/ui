@@ -51,7 +51,7 @@ export const EnginesShow = () => {
       <Card className="mt-4">
         <CardContent>
           <ShowPage.Row title={t("engines.fields.status")}>
-            <EngineStatus phase={record.status?.phase} />
+            <EngineStatus {...record.status} />
           </ShowPage.Row>
           <ShowPage.Row title={t("engines.fields.supportedTasks")}>
             {record.spec.supported_tasks.map((task) => {

@@ -1,4 +1,4 @@
-import type { Metadata } from "./basic-types";
+import type { BaseStatus, Metadata } from "./basic-types";
 
 export type RayClusterConfig = {
   cluster_name: string;
@@ -129,12 +129,9 @@ export const NodeProvisionStatus = {
 export type NodeProvisionStatus =
   (typeof NodeProvisionStatus)[keyof typeof NodeProvisionStatus];
 
-export type ClusterStatus = {
-  phase: ClusterPhase | null;
+export type ClusterStatus = BaseStatus<ClusterPhase> & {
   image: string | null;
   dashboard_url: string | null;
-  last_transition_time: string | null;
-  error_message: string | null;
   /**
    * The number of ready nodes in the cluster
    */

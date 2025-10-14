@@ -1,4 +1,4 @@
-import type { Metadata } from "./basic-types";
+import type { BaseStatus, Metadata } from "./basic-types";
 
 export type ModelRegistry = {
   id: number;
@@ -15,11 +15,7 @@ export type ModelRegistrySpec = {
   credentials: string;
 };
 
-export type ModelRegistryStatus = {
-  phase: ModelRegistryPhase | null;
-  last_transition_time: string | null;
-  error_message: string | null;
-};
+export type ModelRegistryStatus = BaseStatus<ModelRegistryPhase>;
 
 export enum ModelRegistryPhase {
   PENDING = "Pending",

@@ -95,7 +95,7 @@ export const ClustersShow = () => {
           <Card className="mt-4">
             <CardContent>
               <ShowPage.Row title={t("clusters.fields.status")}>
-                <ClusterStatus phase={record.status?.phase} />
+                <ClusterStatus {...record.status} />
               </ShowPage.Row>
               <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("clusters.fields.type")}>

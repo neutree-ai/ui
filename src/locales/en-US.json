@@ -953,7 +953,8 @@
 		"accessModes": {
 			"LoadBalancer": "Load Balancer",
 			"Ingress": "Ingress"
-		}
+		},
+		"last_transition": "Last Transition Time: "
 	},
 	"tools": {
 		"title": "Tools"

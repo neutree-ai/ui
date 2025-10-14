@@ -1,6 +1,6 @@
 import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
-import type { ClusterPhase } from "@/types";
+import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
@@ -46,13 +46,11 @@ export const useClusterColumns = () => {
     status: (
       <Table.Column
         header={t("table.column.status")}
-        accessorKey="status.phase"
+        accessorKey="status"
         id="status"
         enableHiding
         cell={({ getValue }) => {
-          return (
-            <ClusterStatus phase={getValue() as unknown as ClusterPhase} />
-          );
+          return <ClusterStatus {...(getValue() as unknown as BaseStatus)} />;
         }}
       />
     ),

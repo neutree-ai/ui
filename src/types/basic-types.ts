@@ -6,3 +6,9 @@ export type Metadata = {
   update_timestamp: string;
   labels: Record<string, string>;
 };
+
+export type BaseStatus<TPhase = string> = {
+  phase?: TPhase;
+  error_message?: string | null;
+  last_transition_time?: string | null;
+};

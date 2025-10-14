@@ -1,4 +1,4 @@
-import type { Metadata } from "./basic-types";
+import type { BaseStatus, Metadata } from "./basic-types";
 
 export type ImageRegistry = {
   id: number;
@@ -20,11 +20,7 @@ export type ImageRegistrySpec = {
   ca: string;
 };
 
-export type ImageRegistryStatus = {
-  phase: ImageRegistryPhase | null;
-  last_transition_time: string | null;
-  error_message: string | null;
-};
+export type ImageRegistryStatus = BaseStatus<ImageRegistryPhase>;
 
 export enum ImageRegistryPhase {
   PENDING = "Pending",

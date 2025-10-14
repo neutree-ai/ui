@@ -1,5 +1,5 @@
 import type { Json } from "./api-gen";
-import type { Metadata } from "./basic-types";
+import type { BaseStatus, Metadata } from "./basic-types";
 import type {
   EndpointEngineSpec,
   ModelSpec,
@@ -23,11 +23,7 @@ export type ModelCatalogSpec = {
   variables: Json | null;
 };
 
-export type ModelCatalogStatus = {
-  phase: ModelCatalogPhase | null;
-  last_transition_time: string | null;
-  error_message: string | null;
-};
+export type ModelCatalogStatus = BaseStatus<ModelCatalogPhase>;
 
 export type ModelCatalog = {
   id: number;

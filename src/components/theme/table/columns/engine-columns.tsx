@@ -1,6 +1,6 @@
 import EngineStatus from "@/components/business/EngineStatus";
 import EngineVersions from "@/components/business/EngineVersions";
-import type { EnginePhase, EngineVersion } from "@/types";
+import type { BaseStatus, EngineVersion } from "@/types";
 import { useTranslate } from "@refinedev/core";
 import { Table } from "..";
 
@@ -25,11 +25,11 @@ export const useEngineColumns = () => {
     status: (
       <Table.Column
         header={t("table.column.status")}
-        accessorKey="status.phase"
+        accessorKey="status"
         id="status"
         enableHiding
         cell={({ getValue }) => {
-          return <EngineStatus phase={getValue() as unknown as EnginePhase} />;
+          return <EngineStatus {...(getValue() as unknown as BaseStatus)} />;
         }}
       />
     ),

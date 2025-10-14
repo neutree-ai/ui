@@ -1,4 +1,4 @@
-import type { Metadata } from "./basic-types";
+import type { BaseStatus, Metadata } from "./basic-types";
 
 export enum EndpointPhase {
   PENDING = "Pending",
@@ -49,11 +49,8 @@ export type EndpointSpec = {
   variables: Record<string, string> | null;
 };
 
-export type EndpointStatus = {
-  phase: EndpointPhase | null;
+export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
-  last_transition_time: string | null;
-  error_message: string | null;
 };
 
 export type Endpoint = {

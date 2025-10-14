@@ -28,7 +28,7 @@ export const ImageRegistriesShow = () => {
       <Card className="mt-4">
         <CardContent>
           <ShowPage.Row title={t("image_registries.fields.status")}>
-            <ImageRegistryStatus phase={record.status?.phase} />
+            <ImageRegistryStatus {...record.status} />
           </ShowPage.Row>
           <div className="grid grid-cols-4 gap-8">
             <ShowPage.Row title={t("image_registries.fields.repo")}>

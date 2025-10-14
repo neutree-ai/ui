@@ -1,6 +1,6 @@
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
-import type { ModelCatalogPhase } from "@/types";
+import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
 import { Trash2 } from "lucide-react";
 import { Table } from "..";
@@ -39,12 +39,13 @@ export const useModelCatalogColumns = () => {
     status: (
       <Table.Column
         header={t("table.column.status")}
-        accessorKey="status.phase"
+        accessorKey="status"
         id="status"
         enableHiding
         cell={({ getValue }) => {
-          const phase = getValue() as unknown as ModelCatalogPhase;
-          return <ModelCatalogStatus phase={phase} />;
+          return (
+            <ModelCatalogStatus {...(getValue() as unknown as BaseStatus)} />
+          );
         }}
       />
     ),

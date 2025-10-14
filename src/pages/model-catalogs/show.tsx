@@ -44,25 +44,9 @@ export const ModelCatalogsShow = () => {
 
         <Card className="mt-4">
           <CardContent>
-            <div className="grid grid-cols-4 gap-8">
-              <ShowPage.Row title={t("model_catalogs.fields.status")}>
-                <ModelCatalogStatus phase={record.status?.phase} />
-              </ShowPage.Row>
-              {record.status?.last_transition_time && (
-                <ShowPage.Row title={t("model_catalogs.fields.lastTransition")}>
-                  {new Date(
-                    record.status.last_transition_time,
-                  ).toLocaleString()}
-                </ShowPage.Row>
-              )}
-            </div>
-            {record.status?.error_message && (
-              <ShowPage.Row title={t("model_catalogs.fields.errorMessage")}>
-                <span className="text-destructive">
-                  {record.status.error_message}
-                </span>
-              </ShowPage.Row>
-            )}
+            <ShowPage.Row title={t("model_catalogs.fields.status")}>
+              <ModelCatalogStatus {...record.status} />
+            </ShowPage.Row>
           </CardContent>
         </Card>
 

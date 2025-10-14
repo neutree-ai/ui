@@ -207,7 +207,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             <CardContent>
               <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("endpoints.fields.status")}>
-                  <EndpointStatus phase={record.status?.phase} />
+                  <EndpointStatus {...record.status} />
                 </ShowPage.Row>
                 <ShowPage.Row
                   title={t("endpoints.fields.serviceUrl")}
