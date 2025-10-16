@@ -61,8 +61,8 @@ export const UserDropdown = () => {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem className="cursor-default focus:bg-transparent">
-          <div className="flex py-1 w-full items-center justify-between">
-            <div className="text-sm font-medium text-muted-foreground">
+          <div className="flex flex-col py-1">
+            <div className="text-sm font-medium text-foreground">
               {t("ui.version")}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
