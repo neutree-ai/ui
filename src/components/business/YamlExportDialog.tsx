@@ -24,7 +24,6 @@ import {
   type ExportableResource,
   useYamlExport,
 } from "@/hooks/use-yaml-export";
-import { cn } from "@/lib/utils";
 import * as clipboard from "clipboard-polyfill";
 import {
   CheckCircle,

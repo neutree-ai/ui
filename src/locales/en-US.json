@@ -187,7 +187,8 @@
 		"import": "Import",
 		"clone": "Clone",
 		"notAccessTitle": "You don't have permission to access",
-		"updatePassword": "Update Password"
+		"updatePassword": "Update Password",
+		"license": "License"
 	},
 	"ui": {
 		"language": "Language",
@@ -998,5 +999,54 @@
 	},
 	"systems": {
 		"title": "Systems"
+	},
+	"license": {
+		"title": "License Information",
+		"loading": "Loading license information...",
+		"noLicense": "Enterprise license not activated yet",
+		"unlimited": "Unlimited",
+		"fields": {
+			"status": "Status",
+			"edition": "Edition",
+			"vendor": "Vendor",
+			"licenseType": "License Type",
+			"signDate": "Sign Date",
+			"period": "Valid Period",
+			"days": "days",
+			"maxGpus": "Max GPUs",
+			"serial": "Serial Number"
+		},
+		"usage": {
+			"title": "Resource Usage",
+			"workspace": "Workspace"
+		},
+		"update": {
+			"title": "Update License",
+			"codeLabel": "License Code",
+			"codePlaceholder": "Enter your license code here...",
+			"submit": "Update License",
+			"updating": "Updating..."
+		},
+		"errors": {
+			"emptyCode": "License code cannot be empty",
+			"updateFailed": "Failed to update license"
+		},
+		"success": {
+			"updated": "License updated successfully",
+			"serialCopied": "Serial number copied to clipboard"
+		},
+		"phase": {
+			"active": "Active",
+			"expired": "Expired",
+			"pending": "Pending"
+		},
+		"edition": {
+			"enterprise": "Enterprise"
+		},
+		"licenseType": {
+			"trial": "Trial",
+			"perpetual": "Perpetual",
+			"subscription": "Subscription"
+		}
 	}
 }

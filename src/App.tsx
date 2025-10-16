@@ -25,7 +25,6 @@ import "./variables.css";
 import { Logo } from "@/components/business/Logo";
 import {
   BookOpen,
-  Calculator,
   Cpu,
   Database,
   FileText,
@@ -70,6 +69,7 @@ import {
   ImageRegistriesList,
   ImageRegistriesShow,
 } from "./pages/image-registries";
+import { LicenseShow } from "./pages/license";
 import { ModelCatalogsList, ModelCatalogsShow } from "./pages/model-catalogs";
 import {
   ModelRegistriesCreate,
@@ -352,6 +352,8 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   path="/update-password"
                   element={<AuthPage type="updatePassword" />}
                 />
+
+                <Route path="/license" element={<LicenseShow />} />
 
                 <Route path="/workspaces">
                   <Route index element={<WorkspacesList />} />

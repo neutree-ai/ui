@@ -1,6 +1,6 @@
 import { auth } from "@/auth-provider";
 import { ALL_WORKSPACES } from "@/components/theme/hooks";
-import type { DataProvider } from "@refinedev/core";
+import type { DataProvider, HttpError } from "@refinedev/core";
 import type { PostgrestClient } from "@supabase/postgrest-js";
 import { generateFilter, handleError } from "./utils";
 
@@ -334,9 +334,11 @@ export const dataProvider = (
       })
         .then((res) => {
           if (!res.ok) {
-            throw new Error(
+            const error = new Error(
               `Error: ${res.status} ${res.statusText} ${res.url}`,
-            );
+            ) as unknown as HttpError;
+            error.statusCode = res.status;
+            throw error;
           }
           if (meta?.headers?.["Content-Type"] === "text/plain") {
             return res.text();

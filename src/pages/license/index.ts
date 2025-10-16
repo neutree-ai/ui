@@ -1,0 +1,1 @@
+export { LicenseShow } from "./show";
