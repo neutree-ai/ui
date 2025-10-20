@@ -49,7 +49,7 @@
   "src/pages/role-assignments/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/role-assignments/list.tsx": "6a3ee61b2cad6e97f882962bbb383590",
   "src/pages/role-assignments/show.tsx": "f2c297e427cfe4864fe4794ddd93937e",
-  "src/pages/role-assignments/use-role-assignment-form.tsx": "1ab2176c3ca85146d7bdfe5ca1412b73",
+  "src/pages/role-assignments/use-role-assignment-form.tsx": "1d6b1d218cccd7a755bfb2dabb7b179f",
   "src/pages/model-registries/create.tsx": "5e56242831188783dbca506f948a5729",
   "src/pages/model-registries/edit.tsx": "f146cccbac79261b7bc19f7a7260a8cf",
   "src/pages/model-registries/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
@@ -260,7 +260,8 @@
   "src/components/theme/buttons/save.tsx": "79aabc128a1db52565f9509fe3643a48",
   "src/components/theme/buttons/show.tsx": "7f27f8868512d3c367976bdd55ca23ed",
   "src/components/business/BaseStatus.tsx": "190cef66384fb38e9ddb5ae8feeb0b0e",
-  "src/types/license.ts": "69c31cdfa3972295df0416e3c1bfd5a9",
+  "src/types/license.ts": "301be52a7cf55d7fb1282cb553f89ffc",
   "src/pages/license/index.ts": "715344215e07c363bc72a7e0d003012e",
-  "src/pages/license/show.tsx": "afdbe446742b8f940b51424cf3e217c2"
+  "src/pages/license/show.tsx": "68c3cb1ab61a4f717fc3949c5251aa91",
+  "src/hooks/use-license.ts": "dc23352a3dbdabb3a719831750e5a654"
 }

@@ -2,9 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useLicense } from "@/hooks/use-license";
 import { cn } from "@/lib/utils";
-import type { License } from "@/types/license";
-import { useCustom, useCustomMutation } from "@refinedev/core";
 import * as clipboard from "clipboard-polyfill";
 import { Check, Copy } from "lucide-react";
 import type React from "react";
@@ -39,23 +38,7 @@ export const LicenseShow: React.FC = () => {
   const [licenseCode, setLicenseCode] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const {
-    data: licenseData,
-    refetch,
-    isLoading,
-    error,
-  } = useCustom<License>({
-    url: "/license",
-    method: "get",
-    queryOptions: {
-      retry: false,
-    },
-    errorNotification: false,
-  });
-
-  const { mutate: updateLicense, isLoading: isMutating } = useCustomMutation();
-
-  const license = licenseData?.data;
+  const { license, isLoading, isUpdating, error, updateLicense } = useLicense();
 
   const copySerialNumber = async (serial: string) => {
     try {
@@ -69,30 +52,11 @@ export const LicenseShow: React.FC = () => {
   };
 
   const handleUpdateLicense = () => {
-    if (!licenseCode.trim()) {
-      toast.error(t("license.errors.emptyCode"));
-      return;
-    }
-
-    updateLicense(
-      {
-        url: "/license",
-        method: "patch",
-        values: {
-          code: licenseCode,
-        },
+    updateLicense(licenseCode, {
+      onSuccess: () => {
+        setLicenseCode("");
       },
-      {
-        onSuccess: () => {
-          toast.success(t("license.success.updated"));
-          setLicenseCode("");
-          refetch();
-        },
-        onError: (error: any) => {
-          toast.error(error?.message || t("license.errors.updateFailed"));
-        },
-      },
-    );
+    });
   };
 
   return (
@@ -281,10 +245,10 @@ export const LicenseShow: React.FC = () => {
             </div>
             <Button
               onClick={handleUpdateLicense}
-              disabled={isMutating}
+              disabled={isUpdating}
               className="w-full md:w-auto"
             >
-              {isMutating
+              {isUpdating
                 ? t("license.update.updating")
                 : t("license.update.submit")}
             </Button>

@@ -2,6 +2,7 @@ import FormCardGrid from "@/components/business/FormCardGrid";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import { Combobox, Field, Select } from "@/components/theme";
 import { Input } from "@/components/ui/input";
+import { useLicense } from "@/hooks/use-license";
 import { useTranslation } from "@/lib/i18n";
 import type { Role, RoleAssignment, UserProfile } from "@/types";
 import { useSelect } from "@refinedev/core";
@@ -13,6 +14,8 @@ export const useRoleAssignmentForm = ({
   action: "create" | "edit";
 }) => {
   const { t } = useTranslation();
+  const { supportMultiWorkspace } = useLicense();
+
   const form = useForm<RoleAssignment>({
     mode: "all",
     defaultValues: {
@@ -24,7 +27,7 @@ export const useRoleAssignmentForm = ({
       spec: {
         user_id: "",
         workspace: "",
-        global: false,
+        global: !supportMultiWorkspace,
         role: "",
       },
     },
@@ -102,6 +105,7 @@ export const useRoleAssignmentForm = ({
           description={t("role_assignments.descriptions.policyScope")}
         >
           <Select
+            disabled={!supportMultiWorkspace}
             options={[
               { label: t("role_assignments.options.global"), value: true },
               { label: t("role_assignments.options.workspace"), value: false },
