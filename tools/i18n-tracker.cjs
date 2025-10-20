@@ -4,7 +4,8 @@
  * --------
  *   • Uses .i18n-tracker.lock at repo root to store { path: md5 }.
  *   • Scan mode never writes hashes.
- *   • Update mode rewrites only the given file’s hash (creates file if absent).
+ *   • Update mode rewrites only the given file's hash (creates file if absent).
+ *   • Update-all mode rewrites all pending files' hashes.
  */
 
 const fs = require("node:fs");
@@ -66,6 +67,51 @@ if (
   process.exit(0);
 }
 
+/* ---------- sub-command: update-all ---------- */
+if (
+  process.argv[2] === "update-all" ||
+  process.argv[2] === "--update-all"
+) {
+  const hashes = loadHashes();
+  let updated = 0;
+
+  // Get git depth if specified
+  let depth = null;
+  if (process.argv[3] === "-g" || process.argv[3] === "--git") {
+    depth = Number.parseInt(process.argv[4], 10);
+  }
+
+  // Collect files to update
+  const targets = depth ? gitFiles(depth) : walk(ROOT);
+  const pending = [];
+
+  for (const rel of targets) {
+    const abs = path.join(ROOT, rel);
+    if (!fs.existsSync(abs)) continue;
+    const curHash = md5Of(abs);
+    if (!hashes[rel] || hashes[rel] !== curHash) {
+      pending.push(rel);
+    }
+  }
+
+  if (pending.length === 0) {
+    console.log("All files are already up to date.");
+    process.exit(0);
+  }
+
+  console.log(`Updating ${pending.length} file(s)...`);
+  for (const rel of pending) {
+    const abs = path.join(ROOT, rel);
+    hashes[rel] = md5Of(abs);
+    updated++;
+    console.log(`  ✓ ${rel}`);
+  }
+
+  saveHashes(hashes);
+  console.log(`\nSuccessfully updated ${updated} file(s).`);
+  process.exit(0);
+}
+
 /* ---------- scan mode CLI parsing ---------- */
 let gitDepth = null;
 let limit = null;
@@ -84,13 +130,17 @@ for (let i = 0; i < args.length; i++) {
     case "-h":
     case "--help":
       console.log(`Usage:
-  Scan mode   : node i18n-tracker.cjs [-g <n>] [-l <n>]
-  Update mode : node i18n-tracker.cjs update <relativePath>
+  Scan mode        : node i18n-tracker.cjs [-g <n>] [-l <n>]
+  Update mode      : node i18n-tracker.cjs update <relativePath>
+  Update all mode  : node i18n-tracker.cjs update-all [-g <n>]
 
 Options (scan):
   -g, --git <n>      scan files modified in the last <n> commits
   -l, --limit <n>    show at most <n> pending files
   -h, --help         display this help
+
+Options (update-all):
+  -g, --git <n>      update only files modified in the last <n> commits
 `);
       process.exit(0);
       break;
