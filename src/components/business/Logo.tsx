@@ -24,7 +24,7 @@ export const Logo: React.FC<LogoProps> = ({ collapsed = false }) => {
   return (
     <div className="flex justify-center items-center">
       <img alt="logo" src={logoSrc} className="w-8 h-8 block" />
-      <div className="text-sm font-bold">{brandName}</div>
+      <div className="text-sm font-bold break-all">{brandName}</div>
     </div>
   );
 };

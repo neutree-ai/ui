@@ -17,7 +17,7 @@ export default function MetadataCard({ metadata }: MetadataCardProps) {
         <div className="grid grid-cols-4 gap-8">
           <ShowPage.Row
             title={translate("table.column.name")}
-            children={metadata.name}
+            children={<span className="break-all">{metadata.name}</span>}
           />
           {metadata.workspace && (
             <ShowPage.Row
