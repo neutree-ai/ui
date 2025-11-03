@@ -25,11 +25,12 @@ export const Pagination = <TData extends BaseRecord = BaseRecord>({
   table,
 }: DataTablePaginationProps<TData>) => {
   const t = useTranslate();
+  const total = table.refineCore.tableQuery.data?.total ?? 0;
+
   return (
     <div className="flex flex-col sm:flex-row gap-y-4 sm-gap-y-0 items-center justify-between">
       <div className="flex-1 text-sm text-muted-foreground">
-        {/* {table.getFilteredSelectedRowModel().rows.length} of{" "}
-        {table.getFilteredRowModel().rows.length} row(s) selected. */}
+        {t("table.pagination.totalItems", { total })}
       </div>
       <div className="flex relative flex-col-reverse gap-y-4 sm:gap-y-0 sm:flex-row items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">

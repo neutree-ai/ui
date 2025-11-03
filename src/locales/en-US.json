@@ -233,6 +233,7 @@
 		"selectAll": "Select all",
 		"bulkActions": "Bulk Actions",
 		"pagination": {
+			"totalItems": "Total: {{total}} items",
 			"rowsPerPage": "Rows per page",
 			"page": "Page {{current}} of {{total}}",
 			"goToFirstPage": "Go to first page",
