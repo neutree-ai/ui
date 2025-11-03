@@ -30,6 +30,14 @@ export const UsersShow = () => {
     <ShowPage record={record}>
       <MetadataCard metadata={record.metadata} />
       <Card className="mt-4">
+        <CardContent className="pt-6">
+          <ShowPage.Row
+            title={t("user_profiles.fields.email")}
+            children={record.spec.email}
+          />
+        </CardContent>
+      </Card>
+      <Card className="mt-4">
         <CardHeader>
           <CardTitle>{t("user_profiles.sections.globalRoles")}</CardTitle>
         </CardHeader>
