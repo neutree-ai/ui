@@ -285,7 +285,7 @@ const ActionNode = ({
     >
       <div className="mr-2 flex items-center justify-center w-5 h-5">
         {isSelected ? (
-          <CheckSquare className="h-4 w-4 text-primary" />
+          <CheckSquare className="h-4 w-4 text-accent-foreground" />
         ) : (
           <Square className="h-4 w-4" />
         )}
