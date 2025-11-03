@@ -73,14 +73,16 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
               role="combobox"
               aria-expanded={open}
               className={cn(
-                "w-full flex justify-between",
+                "w-full justify-between overflow-hidden",
                 !value() && "text-muted-foreground",
               )}
             >
-              {value()
-                ? props.options?.find((option) => option.value === value())
-                    ?.label
-                : (props.placeholder ?? t("components.ui.combobox.select"))}
+              <span className="truncate flex-1 text-left">
+                {value()
+                  ? props.options?.find((option) => option.value === value())
+                      ?.label
+                  : (props.placeholder ?? t("components.ui.combobox.select"))}
+              </span>
               <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </FormControl>
