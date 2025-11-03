@@ -324,7 +324,12 @@ export const YamlImportDialog = ({
                 <Button variant="outline" onClick={resetDialog}>
                   {t("components.yamlImport.importMore")}
                 </Button>
-                <Button onClick={() => setIsOpen(false)}>
+                <Button
+                  onClick={() => {
+                    resetDialog();
+                    setIsOpen(false);
+                  }}
+                >
                   {t("components.yamlImport.close")}
                 </Button>
               </div>
