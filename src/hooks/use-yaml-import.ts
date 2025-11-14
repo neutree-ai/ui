@@ -1,5 +1,6 @@
 import { useWorkspace } from "@/components/theme/hooks";
 import { useTranslation } from "@/lib/i18n";
+import { getResourcePlural } from "@/lib/plural";
 import type { Metadata } from "@/types";
 import { useCreate, useDataProvider } from "@refinedev/core";
 import * as yaml from "js-yaml";
@@ -69,16 +70,22 @@ export const useYamlImport = () => {
   // Auto-generate resource type from kind using naming convention
   const getResourceType = useCallback((kind: string): string => {
     // Convert PascalCase kind to snake_case resource type
-    // e.g., ModelRegistry -> model_registries, Cluster -> clusters
+    // e.g., ModelRegistry -> model_registry, Cluster -> cluster
     const snakeCase = kind
       .replace(/([A-Z])/g, "_$1")
       .toLowerCase()
       .substring(1); // Remove leading underscore
 
-    // Add plural 's' if not already plural
-    const plural = snakeCase.endsWith("s") ? snakeCase : `${snakeCase}s`;
+    // Split into words and pluralize each word that needs pluralization
+    // For compound words like "model_registry", we only pluralize the last word
+    const parts = snakeCase.split("_");
+    if (parts.length > 0) {
+      const lastPart = parts[parts.length - 1];
+      const pluralizedLastPart = getResourcePlural(lastPart);
+      parts[parts.length - 1] = pluralizedLastPart;
+    }
 
-    return plural;
+    return parts.join("_");
   }, []);
 
   const transformResourceForAPI = useCallback(

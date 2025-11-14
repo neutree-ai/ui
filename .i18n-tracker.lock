@@ -16,7 +16,7 @@
   "src/components/business/VariablesInput.tsx": "2c6d2e38f3950d48753df4b29485d106",
   "src/components/business/YamlImportButton.tsx": "6a4ef354414cd46d8ed8f259bf4ad26a",
   "src/components/business/YamlImportDialog.tsx": "4f866704dba50960109a05c83c57b8c8",
-  "src/hooks/use-yaml-import.ts": "800ad90ad018e5394005172ede67cc4e",
+  "src/hooks/use-yaml-import.ts": "98f7dfb678fe5973c93a8eab8e516c6d",
   "src/types/endpoint-types.ts": "b9cf8040f04823ebc4e52369d6c1d53c",
   "src/types/engine-types.ts": "cb1b151b08b6dfacdc8bf30bc7c566bf",
   "src/types/image-registry-types.ts": "e5a6f117027ee08cb7e4306f1fba71bf",
@@ -186,7 +186,7 @@
   "src/components/business/WorkspaceSelect.tsx": "9cfc7436ea48e163f6fc4dc64443737f",
   "src/types/chat-types.ts": "c31082555c7146ce3cb384794d530d87",
   "src/lib/constant.ts": "9065e6a19b4fe8499eae6b7ec59f495c",
-  "src/lib/plural.ts": "e0551b1ad402fe01cd741dde6270a997",
+  "src/lib/plural.ts": "5d10922518b7de7bf6db90ce2e078f5f",
   "src/lib/unit.ts": "22ffe4a8ff95c7f176c4cbb461044d07",
   "src/lib/validate.ts": "01789f50cc82f272165eadf25f498e8a",
   "src/lib/vram-calculator.ts": "5590cfe374aa3dfbf823ec758c3643ba",
@@ -263,5 +263,7 @@
   "src/types/license.ts": "301be52a7cf55d7fb1282cb553f89ffc",
   "src/pages/license/index.ts": "715344215e07c363bc72a7e0d003012e",
   "src/pages/license/show.tsx": "68c3cb1ab61a4f717fc3949c5251aa91",
-  "src/hooks/use-license.ts": "dc23352a3dbdabb3a719831750e5a654"
+  "src/hooks/use-license.ts": "dc23352a3dbdabb3a719831750e5a654",
+  "vitest.config.ts": "d5305068f61f78241684b1bf880ee204",
+  "src/lib/plural.test.ts": "3d6e0a7af57eeee2ff8eae0678241f47"
 }
