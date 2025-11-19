@@ -1,6 +1,6 @@
 import type { Endpoint } from "@/types";
 import { useInvalidate, useTranslate, useUpdate } from "@refinedev/core";
-import { PauseCircle } from "lucide-react";
+import { PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { RowActionProps } from "../theme/table/actions";
 import { RowAction } from "../theme/table/actions";
@@ -10,23 +10,57 @@ type EndpointPauseActionProps = RowActionProps & {
   resource?: string;
 };
 
+const LAST_REPLICA_LABEL = "neutree.ui/last_replicas";
+
+const parseReplicaCount = (value: unknown): number | undefined => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+  return parsed;
+};
+
 export const EndpointPauseAction = ({
   endpoint,
   resource = "endpoints",
   title,
   disabled,
-  icon = <PauseCircle size={16} />,
+  icon,
   ...props
 }: EndpointPauseActionProps) => {
   const translate = useTranslate();
   const invalidate = useInvalidate();
   const { mutateAsync, isLoading } = useUpdate<Endpoint>();
 
-  const replicas = endpoint.spec.replicas;
-  const isPaused = (replicas?.num ?? 0) === 0;
+  const rawReplicaCount = endpoint.spec.replicas?.num;
+  const replicaCount =
+    typeof rawReplicaCount === "number" ? rawReplicaCount : 1;
+  const labels = (endpoint.metadata.labels ?? {}) as Record<string, unknown>;
+  const storedReplicaCount = parseReplicaCount(labels[LAST_REPLICA_LABEL]);
+  const isPaused = replicaCount === 0;
+  const resumeReplicaCount =
+    storedReplicaCount ?? (replicaCount > 0 ? replicaCount : 1);
 
-  const handlePause = async () => {
-    if (isPaused || isLoading) return;
+  const handleToggle = async () => {
+    if (isLoading) return;
+
+    const nextReplicaCount = isPaused
+      ? resumeReplicaCount > 0
+        ? resumeReplicaCount
+        : 1
+      : 0;
+
+    const nextLabels = { ...labels };
+    if (isPaused) {
+      delete nextLabels[LAST_REPLICA_LABEL];
+    } else {
+      const previousReplicas =
+        replicaCount > 0 ? replicaCount : (storedReplicaCount ?? 1);
+      nextLabels[LAST_REPLICA_LABEL] = previousReplicas;
+    }
+
+    const metadataLabels =
+      Object.keys(nextLabels).length > 0 ? nextLabels : null;
 
     try {
       await mutateAsync({
@@ -34,14 +68,19 @@ export const EndpointPauseAction = ({
         id: endpoint.metadata.name,
         values: {
           ...endpoint,
+          metadata: {
+            ...endpoint.metadata,
+            labels: metadataLabels,
+          },
           spec: {
             ...endpoint.spec,
             replicas: {
-              ...(endpoint.spec.replicas ?? { num: 0 }),
-              num: 0,
+              ...(endpoint.spec.replicas ?? { num: nextReplicaCount }),
+              num: nextReplicaCount,
             },
           },
         },
+        mutationMode: "pessimistic",
         meta: {
           idColumnName: "metadata->name",
           workspace: endpoint.metadata.workspace,
@@ -51,7 +90,13 @@ export const EndpointPauseAction = ({
         errorNotification: false,
       });
 
-      toast.success(translate("endpoints.messages.pauseSuccess"));
+      toast.success(
+        translate(
+          isPaused
+            ? "endpoints.messages.resumeSuccess"
+            : "endpoints.messages.pauseSuccess",
+        ),
+      );
 
       await invalidate({
         resource,
@@ -61,26 +106,34 @@ export const EndpointPauseAction = ({
     } catch (error) {
       toast.error(
         error instanceof Error
-          ? error?.message
-          : translate("endpoints.messages.pauseFailed"),
+          ? error.message
+          : translate(
+              isPaused
+                ? "endpoints.messages.resumeFailed"
+                : "endpoints.messages.pauseFailed",
+            ),
       );
     }
   };
 
   const handleClick = () => {
-    void handlePause();
+    void handleToggle();
   };
+
+  const actionIcon =
+    icon ?? (isPaused ? <PlayCircle size={16} /> : <PauseCircle size={16} />);
 
   return (
     <RowAction
       {...props}
-      icon={icon}
+      icon={actionIcon}
       title={
-        isPaused
-          ? translate("endpoints.messages.alreadyPaused")
-          : (title ?? translate("endpoints.actions.pause"))
+        title ??
+        translate(
+          isPaused ? "endpoints.actions.resume" : "endpoints.actions.pause",
+        )
       }
-      disabled={disabled || isPaused || isLoading}
+      disabled={disabled || isLoading}
       onClick={handleClick}
     />
   );

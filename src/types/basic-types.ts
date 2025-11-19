@@ -5,6 +5,7 @@ export type Metadata = {
   creation_timestamp: string;
   update_timestamp: string;
   labels: Record<string, string>;
+  annotations: Record<string, string>;
 };
 
 export type BaseStatus<TPhase = string> = {

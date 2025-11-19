@@ -533,7 +533,8 @@
 			"generic": "Generic"
 		},
 		"actions": {
-			"pause": "Pause"
+			"pause": "Pause",
+			"resume": "Resume"
 		},
 		"messages": {
 			"rayDashboardNotAvailable": "Ray dashboard is not available.",
@@ -544,7 +545,8 @@
 			"clusterResourcesUnavailable": "Cluster resources unavailable",
 			"pauseSuccess": "Endpoint paused successfully",
 			"pauseFailed": "Failed to pause endpoint",
-			"alreadyPaused": "Endpoint is already paused"
+			"resumeSuccess": "Endpoint resumed successfully",
+			"resumeFailed": "Failed to resume endpoint"
 		},
 		"tabs": {
 			"basic": "Basic",

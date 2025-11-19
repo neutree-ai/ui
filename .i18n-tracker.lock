@@ -4,7 +4,7 @@
   "src/Root.tsx": "3536ed5c6ea3a62c0070ca8c5865bb57",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
   "src/types/api-gen.ts": "35dd55788f746fc9407b8f3eeda537aa",
-  "src/types/basic-types.ts": "d06add9d27a70cc3932af828f1ae2222",
+  "src/types/basic-types.ts": "3c00d4c7117e24a442c303c7c0ff3bfa",
   "src/types/api-key-types.ts": "36b08f0def4c8c347e7c7b8f2dc52386",
   "src/types/cluster-types.ts": "68896e92505a48a8ba78cb88d12a53c0",
   "src/components/business/ChatPlayground.tsx": "35752a9aa6b8efd66f52a086a0744e1b",
@@ -266,5 +266,5 @@
   "src/hooks/use-license.ts": "dc23352a3dbdabb3a719831750e5a654",
   "vitest.config.ts": "d5305068f61f78241684b1bf880ee204",
   "src/lib/plural.test.ts": "3d6e0a7af57eeee2ff8eae0678241f47",
-  "src/components/business/EndpointPauseAction.tsx": "7309bfcc595f389bb07815e7e5ae66b9"
+  "src/components/business/EndpointPauseAction.tsx": "aa16ba2307492a0b845b745eac1be6b9"
 }
