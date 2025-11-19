@@ -2,6 +2,7 @@ import ChatPlayground from "@/components/business/ChatPlayground";
 import EmbeddingPlayground from "@/components/business/EmbeddingPlayground";
 import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointModel from "@/components/business/EndpointModel";
+import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
 import EndpointStatus from "@/components/business/EndpointStatus";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
 import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
@@ -183,7 +184,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   )?.values_schema;
 
   return (
-    <ShowPage record={record}>
+    <ShowPage
+      record={record}
+      extraActions={() => <EndpointPauseAction endpoint={record} />}
+    >
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
           <TabsTrigger value="basic">{t("endpoints.tabs.basic")}</TabsTrigger>

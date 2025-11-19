@@ -2,9 +2,16 @@ import Timestamp from "@/components/business/Timestamp";
 import { ShowButton } from "@/components/theme/buttons";
 import { useResource, useTranslation } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Table } from "..";
 
-export const useMetadataColumns = (options?: { resource: string }) => {
+type MetadataColumnOptions = {
+  resource?: string;
+  // biome-ignore lint/suspicious/noExplicitAny: row can be any type
+  extraActions?: (row: any) => ReactNode;
+};
+
+export const useMetadataColumns = (options?: MetadataColumnOptions) => {
   const { translate } = useTranslation();
   const { resource: hookResource } = useResource();
 
@@ -87,6 +94,7 @@ export const useMetadataColumns = (options?: { resource: string }) => {
         id={"actions"}
         cell={({ row: { original } }) => (
           <Table.Actions>
+            {options?.extraActions?.(original)}
             <Table.EditAction
               title={translate("buttons.edit")}
               row={original}

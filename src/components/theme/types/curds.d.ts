@@ -51,4 +51,5 @@ export type ShowProps = RefineCrudShowProps<
   Partial<{
     extra: React.ReactNode;
     record: Record<string, any>;
+    extraActions: (record?: Record<string, any>) => React.ReactNode;
   }>;

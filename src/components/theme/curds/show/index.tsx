@@ -29,6 +29,7 @@ export const ShowPage: FC<ShowProps> & {
   canDelete = true,
   canEdit = true,
   extra,
+  extraActions,
   record,
   children,
 }) => {
@@ -71,6 +72,7 @@ export const ShowPage: FC<ShowProps> & {
                     className="w-[160px]"
                     forceMount
                   >
+                    {extraActions?.(record)}
                     {canEdit && (
                       <EditAction
                         title={translate("buttons.edit")}

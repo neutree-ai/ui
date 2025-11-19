@@ -532,13 +532,19 @@
 		"options": {
 			"generic": "Generic"
 		},
+		"actions": {
+			"pause": "Pause"
+		},
 		"messages": {
 			"rayDashboardNotAvailable": "Ray dashboard is not available.",
 			"fetching": "fetching...",
 			"modelNotFoundInRegistry": "Model not found in selected registry",
 			"fetchingClusterResources": "Fetching cluster resources",
 			"failedToFetchClusterResources": "Failed to fetch cluster resources",
-			"clusterResourcesUnavailable": "Cluster resources unavailable"
+			"clusterResourcesUnavailable": "Cluster resources unavailable",
+			"pauseSuccess": "Endpoint paused successfully",
+			"pauseFailed": "Failed to pause endpoint",
+			"alreadyPaused": "Endpoint is already paused"
 		},
 		"tabs": {
 			"basic": "Basic",
