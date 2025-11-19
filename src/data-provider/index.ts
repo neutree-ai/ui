@@ -1,4 +1,3 @@
-import { auth } from "@/auth-provider";
 import { ALL_WORKSPACES } from "@/components/theme/hooks";
 import type { DataProvider, HttpError } from "@refinedev/core";
 import type { PostgrestClient } from "@supabase/postgrest-js";
@@ -122,31 +121,27 @@ export const dataProvider = (
     },
 
     create: async ({ resource, variables, meta }) => {
+      const client = meta?.schema
+        ? postgrestClient.schema(meta.schema)
+        : postgrestClient;
+
       if (resource === "user_profiles") {
-        const { data, error } = await auth.signUp({
-          email: (variables as { email: string }).email,
-          password: (variables as { password: string }).password,
-          options: {
-            data: {
-              username: (variables as { name: string }).name,
-            },
-          },
+        const resp = await fetch("/api/v1/auth/admin/users", {
+          method: "POST",
+          body: JSON.stringify({
+            email: (variables as { email: string }).email,
+            password: (variables as { password: string }).password,
+            username: (variables as { name: string }).name,
+          }),
+          headers: client.headers,
         });
 
-        if (error) {
-          return handleError(error);
-        }
-
         return {
-          data: data.user,
+          data: await resp.json(),
         };
       }
 
       cleanInternalFields(variables);
-
-      const client = meta?.schema
-        ? postgrestClient.schema(meta.schema)
-        : postgrestClient;
 
       const query = client.from(resource).insert(variables);
 
