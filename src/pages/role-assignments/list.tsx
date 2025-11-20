@@ -22,7 +22,7 @@ export const RoleAssignmentsList = () => {
         {roleAssignmentColumns.user}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {roleAssignmentColumns.action}
       </Table>
     </ListPage>
   );

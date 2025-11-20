@@ -22,8 +22,15 @@ export const RoleAssignmentsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
+  const isAdminGlobalAssignment =
+    record.metadata.name === "admin-global-role-assignment";
+
   return (
-    <ShowPage record={record}>
+    <ShowPage
+      record={record}
+      canDelete={!isAdminGlobalAssignment}
+      canEdit={!isAdminGlobalAssignment}
+    >
       <MetadataCard metadata={record.metadata} />
       <Card className="mt-4">
         <CardContent>
