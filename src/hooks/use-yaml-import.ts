@@ -2,7 +2,7 @@ import { useWorkspace } from "@/components/theme/hooks";
 import { useTranslation } from "@/lib/i18n";
 import { getResourcePlural } from "@/lib/plural";
 import type { Metadata } from "@/types";
-import { useCreate, useDataProvider } from "@refinedev/core";
+import { useCreate, useDataProvider, useResource } from "@refinedev/core";
 import * as yaml from "js-yaml";
 import { useCallback, useState } from "react";
 
@@ -40,6 +40,7 @@ export const useYamlImport = () => {
   const { current: currentWorkspace } = useWorkspace();
   const { mutateAsync: createResource } = useCreate();
   const dataProvider = useDataProvider();
+  const { resources: resourcesConfigs } = useResource();
 
   // Check if a resource already exists
   const checkResourceExists = useCallback(
@@ -47,16 +48,23 @@ export const useYamlImport = () => {
       resourceType: string,
       resourceName: string,
       workspace: string,
+      isWorkspaced: boolean,
     ): Promise<boolean> => {
       try {
+        const meta: Record<string, unknown> = {
+          idColumnName: "metadata->name",
+        };
+
+        // Only add workspace filtering if the resource is workspace-scoped
+        if (isWorkspaced) {
+          meta.workspace = workspace;
+          meta.workspaced = true;
+        }
+
         const result = await dataProvider().getOne({
           resource: resourceType,
           id: resourceName,
-          meta: {
-            workspace,
-            idColumnName: "metadata->name",
-            workspaced: true,
-          },
+          meta,
         });
         return !!result.data;
       } catch (error) {
@@ -184,11 +192,18 @@ export const useYamlImport = () => {
             const workspaceForMeta =
               resource.metadata.workspace || currentWorkspace;
 
+            // Get resource configuration to determine if it's workspace-scoped
+            const resourceConfig = resourcesConfigs.find(
+              (r) => r.name === resourceType,
+            );
+            const isWorkspaced = resourceConfig?.meta?.workspaced || false;
+
             // Check if resource already exists
             const resourceExists = await checkResourceExists(
               resourceType,
               resource.metadata.name,
               workspaceForMeta,
+              isWorkspaced,
             );
 
             if (resourceExists) {
@@ -206,14 +221,20 @@ export const useYamlImport = () => {
                 resourceType,
               );
 
+              const createMeta: Record<string, unknown> = {
+                idColumnName: "metadata->name",
+              };
+
+              // Only add workspace context if the resource is workspace-scoped
+              if (isWorkspaced) {
+                createMeta.workspace = workspaceForMeta;
+                createMeta.workspaced = true;
+              }
+
               await createResource({
                 resource: resourceType,
                 values: transformedResource,
-                meta: {
-                  workspace: workspaceForMeta,
-                  idColumnName: "metadata->name",
-                  workspaced: true,
-                },
+                meta: createMeta,
               });
 
               newProgress.results.push({
