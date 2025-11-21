@@ -1,6 +1,6 @@
 import { ALL_WORKSPACES } from "@/components/theme/hooks";
 import type { DataProvider, HttpError } from "@refinedev/core";
-import type { PostgrestClient } from "@supabase/postgrest-js";
+import { type PostgrestClient, PostgrestError } from "@supabase/postgrest-js";
 import { generateFilter, handleError } from "./utils";
 
 export const dataProvider = (
@@ -136,8 +136,21 @@ export const dataProvider = (
           headers: client.headers,
         });
 
+        const result = await resp.json();
+
+        if ("error" in result) {
+          return handleError(
+            new PostgrestError({
+              message: result.error,
+              code: "20001",
+              details: "",
+              hint: "",
+            }),
+          );
+        }
+
         return {
-          data: await resp.json(),
+          data: result,
         };
       }
 
