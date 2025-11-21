@@ -79,13 +79,13 @@ export const useRoleAssignmentColumns = () => {
               <Table.EditAction
                 title={t("buttons.edit")}
                 row={original}
-                resource="role-assignments"
+                resource="role_assignments"
                 icon={<Edit size={16} />}
               />
               <Table.DeleteAction
                 title={t("buttons.delete")}
                 row={original}
-                resource="role-assignments"
+                resource="role_assignments"
                 icon={<Trash2 size={16} />}
               />
             </Table.Actions>

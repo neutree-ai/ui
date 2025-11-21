@@ -30,11 +30,7 @@ export const useModelRegistryForm = ({
         credentials: "",
       },
     },
-    refineCoreProps: {
-      autoSave: {
-        enabled: true,
-      },
-    },
+    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

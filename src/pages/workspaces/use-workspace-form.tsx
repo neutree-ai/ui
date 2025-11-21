@@ -18,11 +18,7 @@ export const useWorkspaceForm = ({ action }: { action: "create" | "edit" }) => {
         name: "",
       },
     },
-    refineCoreProps: {
-      autoSave: {
-        enabled: true,
-      },
-    },
+    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

@@ -21,11 +21,7 @@ export const useRoleForm = ({ action }: { action: "create" | "edit" }) => {
         permissions: [],
       },
     },
-    refineCoreProps: {
-      autoSave: {
-        enabled: true,
-      },
-    },
+    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

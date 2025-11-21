@@ -35,11 +35,7 @@ export const useImageRegistryForm = ({
         ca: "",
       },
     },
-    refineCoreProps: {
-      autoSave: {
-        enabled: true,
-      },
-    },
+    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

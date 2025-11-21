@@ -31,11 +31,7 @@ export const useRoleAssignmentForm = ({
         role: "",
       },
     },
-    refineCoreProps: {
-      autoSave: {
-        enabled: true,
-      },
-    },
+    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

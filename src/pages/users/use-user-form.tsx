@@ -28,11 +28,7 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           password: "",
           confirmPassword: "",
         },
-    refineCoreProps: {
-      autoSave: {
-        enabled: true,
-      },
-    },
+    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

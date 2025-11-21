@@ -42,9 +42,6 @@ export const useOemConfigForm = ({ action }: { action: "create" | "edit" }) => {
     refineCoreProps: {
       action,
       id: action === "edit" ? "default" : undefined,
-      autoSave: {
-        enabled: true,
-      },
     },
     warnWhenUnsavedChanges: true,
   });
