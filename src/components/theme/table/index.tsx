@@ -8,12 +8,14 @@ import {
   TableRow,
   Table as TableUi,
 } from "@/components/ui/table";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import type { PopoverContentProps } from "@radix-ui/react-popover";
 import {
   type BaseOption,
   type BaseRecord,
   type CrudFilter,
   type HttpError,
+  useResource,
   useTranslate,
 } from "@refinedev/core";
 import {
@@ -119,6 +121,15 @@ export function Table<
   ...props
 }: TableProps<TData, TError>) {
   const t = useTranslate();
+  const { resource } = useResource();
+
+  // Column visibility persistence
+  const {
+    columnVisibility,
+    setColumnVisibility: saveColumnVisibility,
+    isLoaded,
+  } = useColumnVisibility(resource?.name || "");
+
   const mapColumn = useCallback(
     ({
       id,
@@ -159,6 +170,12 @@ export function Table<
     return [];
   }, [children, mapColumn]);
 
+  // Extract valid column IDs for cleanup
+  const validColumnIds = useMemo(
+    () => columns.map((col) => col.id as string).filter(Boolean),
+    [columns],
+  );
+
   const table = useTable({
     columns,
     ...props,
@@ -167,6 +184,18 @@ export function Table<
         refetchInterval: 3_000,
       },
       ...props.refineCoreProps,
+    },
+    initialState: {
+      columnVisibility: {},
+      ...props.initialState,
+    },
+    state: {
+      columnVisibility: isLoaded ? columnVisibility : {},
+      ...props.state,
+    },
+    onColumnVisibilityChange: (updater) => {
+      if (!isLoaded) return;
+      saveColumnVisibility(updater, validColumnIds);
     },
   });
 
