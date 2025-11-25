@@ -791,7 +791,8 @@
 			"newValue": "New value",
 			"selectFromSchema": "Select from schema",
 			"orTypeCustomKey": "Or type custom key",
-			"newKey": "New key"
+			"newKey": "New key",
+			"addVariable": "Add Variable"
 		},
 		"playground": {
 			"chat": {

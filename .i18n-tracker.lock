@@ -13,7 +13,7 @@
   "src/components/business/EndpointStatus.tsx": "00cdecf60ffa4b247f1624e4aaf0e4f3",
   "src/components/business/EngineStatus.tsx": "38c169ba3e38e6769e12dcc60754a9f8",
   "src/components/business/RerankPlayground.tsx": "000e9eb8559f3764068037279d4c4890",
-  "src/components/business/VariablesInput.tsx": "2c6d2e38f3950d48753df4b29485d106",
+  "src/components/business/VariablesInput.tsx": "496b5531d8041ca98527e5f2673684dc",
   "src/components/business/YamlImportButton.tsx": "6a4ef354414cd46d8ed8f259bf4ad26a",
   "src/components/business/YamlImportDialog.tsx": "4f866704dba50960109a05c83c57b8c8",
   "src/hooks/use-yaml-import.ts": "83e2b5b0fd03d40b7e153286881f8f9d",
@@ -37,7 +37,7 @@
   "src/pages/users/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/users/list.tsx": "6e29a383c066bb2009dfeff67034e0fc",
   "src/pages/users/show.tsx": "a6e5b6ca4d271f3a280d243b8997efb8",
-  "src/pages/users/use-user-form.tsx": "57b7d9f8a4a7c9a041886d2572bf6642",
+  "src/pages/users/use-user-form.tsx": "e2fd723f409aaeaee3ac971bb19fe91b",
   "src/pages/roles/create.tsx": "d2369b3baf16b39b94c3c9dc09facdd3",
   "src/pages/roles/edit.tsx": "68ef87401f5cdc949b2b103b1caf15f7",
   "src/pages/roles/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
@@ -270,5 +270,7 @@
   "src/lib/column-visibility-storage.test.ts": "51e002f8159185363e7bc952a8c41e1f",
   "src/lib/column-visibility-storage.ts": "1cebde1281db69529273f6b8e564d086",
   "src/hooks/use-column-visibility.test.ts": "60759eae0e68f7183948edb19ba49ad3",
-  "src/hooks/use-column-visibility.ts": "5c79260bb52315e0380e612ff9294c64"
+  "src/hooks/use-column-visibility.ts": "5c79260bb52315e0380e612ff9294c64",
+  "src/components/business/use-variables-input.test.ts": "20168d24d2afed603d3cd78e804f7ab0",
+  "src/components/business/use-variables-input.ts": "41d6474af74de1009052afc81601b684"
 }
