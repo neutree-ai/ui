@@ -34,7 +34,7 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
 
   return {
     form,
-    registerFields: (
+    registerFields: isEdit ? null : (
       <FormCardGrid>
         <Field
           {...form}
