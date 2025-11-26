@@ -73,7 +73,7 @@
   "src/pages/endpoints/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/endpoints/list.tsx": "1233e4d4088b097a0c774a9526807ff9",
   "src/pages/endpoints/show.tsx": "875ad977afea54af1f7b8fb2282b2c08",
-  "src/pages/endpoints/use-endpoint-form.tsx": "1df942a9157485fa893a1096ca1e4386",
+  "src/pages/endpoints/use-endpoint-form.tsx": "5623e9da824da2efcb8bc6f5b0bd2f7e",
   "src/pages/dashboard/Dashboard.tsx": "f1e3b51e2280849d847c23b4b877212f",
   "src/pages/clusters/create.tsx": "60f8a53ce5abfc90bab7813e3ccd1df1",
   "src/pages/clusters/edit.tsx": "938a7e3f437e2399529ef2712a326c74",
