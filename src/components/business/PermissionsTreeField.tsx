@@ -17,6 +17,7 @@ import {
   Pencil,
   Plus,
   Server,
+  Settings,
   Square,
   Trash,
   Users,
@@ -41,6 +42,8 @@ const resourceIcons: Record<string, React.ReactNode> = {
   engine: <Cpu className="h-5 w-5" />,
   cluster: <HardDrive className="h-5 w-5" />,
   model_catalog: <BookOpen className="h-5 w-5" />,
+  system: <Settings className="h-5 w-5" />,
+  user_profile: <Users className="h-5 w-5" />,
 };
 
 type PermissionsTreeData = Record<

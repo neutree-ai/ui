@@ -67,4 +67,8 @@ export const ALL_PERMISSIONS = [
   "model_catalog:update",
   "model_catalog:delete",
   "system:admin",
+  "user_profile:read",
+  "user_profile:create",
+  "user_profile:update",
+  "user_profile:delete",
 ];
