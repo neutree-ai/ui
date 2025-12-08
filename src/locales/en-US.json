@@ -329,12 +329,16 @@
 				"title": "Model Cache",
 				"type": {
 					"host_path": "Local",
-					"nfs": "NFS"
+					"nfs": "NFS",
+					"pvc": "PVC"
 				},
+				"name": "Name",
 				"cacheType": "Cache Type",
 				"modelRegistry": "Model Registry",
 				"cachePath": "Cache Path",
-				"nfsServer": "NFS Server"
+				"nfsServer": "NFS Server",
+				"storage": "Storage",
+				"storageClassName": "Storage Class Name"
 			}
 		},
 		"sections": {
@@ -343,6 +347,7 @@
 			"provider": "Provider",
 			"headNode": "Head Node",
 			"workerNode": "Worker Node",
+			"router": "Router",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication"
 		},
@@ -352,7 +357,11 @@
 			"sshHeadNodeExample": "e.g 192.168.1.1",
 			"sshUserExample": "e.g root",
 			"sshAddNewWorkerNode": "Add New Worker Node IP",
-			"nfsServerExample": "192.168.1.1"
+			"nfsServerExample": "192.168.1.1",
+			"modelCacheName": "Model Cache Name",
+			"cachePath": "/path/to/cache",
+			"storage": "10Gi",
+			"storageClassName": "e.g standard, fast"
 		},
 		"labels": {
 			"nodes": "nodes"
@@ -361,10 +370,12 @@
 			"multipleStaticNodes": "Multiple Static Nodes",
 			"kubernetes": "Kubernetes",
 			"loadBalancer": "LoadBalancer",
+			"nodePort": "NodePort",
 			"ingress": "Ingress",
 			"none": "None",
 			"hostPath": "Host Path",
-			"nfs": "NFS"
+			"nfs": "NFS",
+			"pvc": "PVC"
 		},
 		"messages": {
 			"notFound": "404 not found",
@@ -384,7 +395,10 @@
 			"cachePathRequired": "Cache path is required",
 			"invalidPath": "Invalid path (Must start with /)",
 			"acceleratorCountRequired": "Accelerator count is required",
-			"acceleratorCountInvalid": "Accelerator count is invalid"
+			"acceleratorCountInvalid": "Accelerator count is invalid",
+			"storageRequired": "Storage is required",
+			"invalidStorageFormat": "Invalid storage format (e.g., 10Gi, 100Mi, 1Ti)",
+			"invalidK8sName": "Invalid name format (lowercase alphanumeric and hyphens only, max 253 characters)"
 		}
 	},
 	"model_registries": {
@@ -967,6 +981,7 @@
 		},
 		"accessModes": {
 			"LoadBalancer": "Load Balancer",
+			"NodePort": "NodePort",
 			"Ingress": "Ingress"
 		},
 		"last_transition": "Last Transition Time: "

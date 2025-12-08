@@ -52,51 +52,58 @@ export type Auth = {
   ssh_private_key?: string;
 };
 
-export type RaySSHProvisionClusterConfig = {
-  provider: Provider;
-  auth: Auth;
-  model_caches?: HostPathCache[];
-};
-
-export enum KubernetesAccessMode {
-  LoadBalancer = "LoadBalancer",
-  Ingress = "Ingress",
-}
-
-export type HeadNodeSpec = {
-  access_mode?: KubernetesAccessMode;
-  resources?: Record<string, string>;
-};
-
-export type WorkerGroupSpec = {
-  group_name?: string;
-  min_replicas?: number;
-  max_replicas?: number;
-  resources?: Record<string, string>;
-};
-
-export type RayKubernetesProvisionClusterConfig = {
-  kubeconfig?: string;
-  head_node_spec?: HeadNodeSpec;
-  worker_group_specs?: WorkerGroupSpec[];
+// Common configuration for all cluster types
+export type CommonClusterConfig = {
+  accelerator_type?: string | null;
   model_caches?: ModelCache[];
 };
 
-export type ModelCache = NFSCache | HostPathCache;
+export type RaySSHProvisionClusterConfig = {
+  provider: Provider;
+  auth: Auth;
+} & CommonClusterConfig;
 
-export type NFSCache = {
+export enum KubernetesAccessMode {
+  LoadBalancer = "LoadBalancer",
+  NodePort = "NodePort",
+  Ingress = "Ingress",
+}
+
+export type RouterSpec = {
+  version?: string;
+  access_mode?: KubernetesAccessMode;
+  replicas?: number;
+  resources?: Record<string, string>;
+};
+
+export type KubernetesClusterConfig = {
+  kubeconfig?: string;
+  router?: RouterSpec;
+} & CommonClusterConfig;
+
+export type ModelCache = {
+  name?: string;
+  host_path?: {
+    path: string;
+    type?: string;
+  };
   nfs?: {
     server: string;
     path: string;
+    readOnly?: boolean;
   };
-  model_registry_type: string;
-};
-
-export type HostPathCache = {
-  host_path: {
-    path: string;
+  pvc?: {
+    // PersistentVolumeClaimSpec fields
+    accessModes?: string[];
+    resources?: {
+      requests?: {
+        storage?: string;
+      };
+    };
+    storageClassName?: string;
+    volumeMode?: string;
+    volumeName?: string;
   };
-  model_registry_type: string;
 };
 
 export type Cluster = {
@@ -114,7 +121,7 @@ export type ClusterSpec = {
    * supported: 'ssh' | 'kubernetes'
    */
   type: string;
-  config: RaySSHProvisionClusterConfig | RayKubernetesProvisionClusterConfig;
+  config: RaySSHProvisionClusterConfig | KubernetesClusterConfig;
   image_registry: string;
   /**
    * The cluster image version.
@@ -153,6 +160,14 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
    * The cluster all node provision status
    */
   node_provision_status?: NodeProvisionStatus;
+  /**
+   * Cluster resource information
+   */
+  resource_info?: any; // ClusterResources type - can be defined later if needed
+  /**
+   * Accelerator type (e.g. nvidia_gpu, amd_gpu)
+   */
+  accelerator_type?: string | null;
 };
 
 export enum ClusterPhase {
