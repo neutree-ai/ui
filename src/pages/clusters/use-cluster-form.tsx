@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
 import { cn } from "@/lib/utils";
 import { isValidIPAddress, isValidPath } from "@/lib/validate";
-import type { Cluster, HostPathCache, ImageRegistry } from "@/types";
+import type { Cluster, ImageRegistry } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
@@ -92,10 +92,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const isKubernetes = type === "kubernetes";
   const isSSH = type === "ssh";
 
-  const headResources = form.watch("spec.config.head_node_spec.resources");
-  const workerResources = form.watch(
-    "spec.config.worker_group_specs.0.resources",
-  );
+  const routerResources = form.watch("spec.config.router.resources");
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -112,12 +109,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     return match?.value || NO_ACCELERATOR;
   };
 
-  const [headAcceleratorType, setHeadAcceleratorType] = useState(() =>
-    getAcceleratorTypeFromResources(headResources),
-  );
-
-  const [workerAcceleratorType, setWorkerAcceleratorType] = useState(() =>
-    getAcceleratorTypeFromResources(workerResources),
+  const [routerAcceleratorType, setRouterAcceleratorType] = useState(() =>
+    getAcceleratorTypeFromResources(routerResources),
   );
 
   const validateNodeIPs = (value: {
@@ -128,6 +121,19 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     return isValidIPAddress(head_ip) && !worker_ips.includes(head_ip);
   };
 
+  // Kubernetes storage quantity validation
+  const validateStorageQuantity = (value: string) => {
+    if (!value) return true;
+    const storageRegex = /^\d+(\.\d+)?(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$/;
+    if (storageRegex.test(value)) {
+      return true;
+    }
+    return (
+      t("clusters.validation.invalidStorageFormat") ||
+      "Invalid storage format (e.g., 10Gi, 100Mi)"
+    );
+  };
+
   const createAcceleratorState = (
     type: string,
     resources?: Record<string, string>,
@@ -136,14 +142,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     count: type === NO_ACCELERATOR ? "" : resources?.[type] || "",
   });
 
-  const headAccelerator = useMemo(
-    () => createAcceleratorState(headAcceleratorType, headResources),
-    [headAcceleratorType, headResources],
-  );
-
-  const workerAccelerator = useMemo(
-    () => createAcceleratorState(workerAcceleratorType, workerResources),
-    [workerAcceleratorType, workerResources],
+  const routerAccelerator = useMemo(
+    () => createAcceleratorState(routerAcceleratorType, routerResources),
+    [routerAcceleratorType, routerResources],
   );
 
   const updateAcceleratorResources = (
@@ -161,10 +162,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     if (newType !== NO_ACCELERATOR && newCount)
       newResources[newType] = newCount;
 
-    if (resourcesPath === "spec.config.head_node_spec.resources") {
-      form.setValue("spec.config.head_node_spec.resources", newResources);
-    } else if (resourcesPath === "spec.config.worker_group_specs.0.resources") {
-      form.setValue("spec.config.worker_group_specs.0.resources", newResources);
+    if (resourcesPath === "spec.config.router.resources") {
+      form.setValue("spec.config.router.resources", newResources);
     }
   };
 
@@ -188,18 +187,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   useEffect(() => {
     if (isKubernetes) {
-      form.register("head_accelerator_count", {
+      form.register("router_accelerator_count", {
         validate: () =>
-          validateAccelerator(headAccelerator.type, headAccelerator.count),
+          validateAccelerator(routerAccelerator.type, routerAccelerator.count),
       });
 
-      form.register("worker_accelerator_count", {
-        validate: () =>
-          validateAccelerator(workerAccelerator.type, workerAccelerator.count),
-      });
-
-      form.trigger("head_accelerator_count");
-      form.trigger("worker_accelerator_count");
+      form.trigger("router_accelerator_count");
     }
 
     // Register validation for SSH provider
@@ -213,10 +206,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   }, [
     isKubernetes,
     isSSH,
-    headAccelerator.type,
-    headAccelerator.count,
-    workerAccelerator.type,
-    workerAccelerator.count,
+    routerAccelerator.type,
+    routerAccelerator.count,
     form.register,
     form.trigger,
   ]);
@@ -234,31 +225,51 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const addModelCache = () => {
     append({
+      name: "",
       host_path: { path: "" },
-      model_registry_type: "",
-    } as HostPathCache); // Default to host_path with empty path
+    });
   };
 
-  const getCacheType = (index: number): "nfs" | "host_path" => {
+  const getCacheType = (index: number): "nfs" | "host_path" | "pvc" => {
     const cache = form.watch(`spec.config.model_caches.${index}`);
-    return cache?.nfs ? "nfs" : "host_path";
+    if (cache?.nfs) return "nfs";
+    if (cache?.pvc) return "pvc";
+    return "host_path";
   };
 
-  const switchCacheType = (index: number, newType: "nfs" | "host_path") => {
+  const switchCacheType = (
+    index: number,
+    newType: "nfs" | "host_path" | "pvc",
+  ) => {
+    const currentCache = form.watch(`spec.config.model_caches.${index}`);
+    const name = currentCache?.name || "";
+
     if (newType === "nfs") {
       form.setValue(`spec.config.model_caches.${index}`, {
+        name,
         nfs: {
           server: "",
           path: "",
         },
-        model_registry_type: null,
+      });
+    } else if (newType === "pvc") {
+      form.setValue(`spec.config.model_caches.${index}`, {
+        name,
+        pvc: {
+          accessModes: ["ReadWriteOnce"],
+          resources: {
+            requests: {
+              storage: "10Gi",
+            },
+          },
+        },
       });
     } else {
       form.setValue(`spec.config.model_caches.${index}`, {
+        name,
         host_path: {
           path: "",
         },
-        model_registry_type: null,
       });
     }
   };
@@ -308,7 +319,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <Field {...form} name="spec.type" label={t("clusters.fields.type")}>
           <Select
             options={[
-              // { label: "Single Local Node", value: "local" },
               {
                 label: t("clusters.options.multipleStaticNodes"),
                 value: "ssh",
@@ -327,37 +337,22 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                     ssh_user: "",
                     ssh_private_key: "",
                   },
-                });
-              } else if (value === "local") {
-                form.setValue("spec.config", {
-                  provider: {},
-                  auth: {
-                    ssh_user: "",
-                    ssh_private_key: "",
-                  },
+                  accelerator_type: null,
+                  model_caches: [],
                 });
               } else if (value === "kubernetes") {
                 form.setValue("spec.config", {
                   kubeconfig: "",
-                  head_node_spec: {
+                  router: {
+                    version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
                     access_mode: "LoadBalancer",
+                    replicas: 2,
                     resources: {
                       cpu: "1",
-                      memory: "2Gi",
+                      memory: "1Gi",
                     },
                   },
-                  worker_group_specs: [
-                    {
-                      group_name: "default",
-                      min_replicas: 1,
-                      max_replicas: 1,
-                      resources: {
-                        cpu: "1",
-                        memory: "2Gi",
-                        "nvidia.com/gpu": "0",
-                      },
-                    },
-                  ],
+                  accelerator_type: null,
                   model_caches: [],
                 });
               }
@@ -382,16 +377,16 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             label={t("clusters.fields.kubeconfig")}
             className="col-span-4"
           >
-            <Input type="password" disabled={isEdit} />
+            <Textarea disabled={isEdit} />
           </Field>
         )}
       </FormCardGrid>
     ),
-    headNodeFields: isKubernetes ? (
-      <FormCardGrid title={t("clusters.sections.headNode")}>
+    routerFields: isKubernetes ? (
+      <FormCardGrid title={t("clusters.sections.router")}>
         <Field
           {...form}
-          name="spec.config.head_node_spec.access_mode"
+          name="spec.config.router.access_mode"
           label={t("clusters.fields.accessMode")}
         >
           <Select
@@ -400,6 +395,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                 label: t("clusters.options.loadBalancer"),
                 value: "LoadBalancer",
               },
+              { label: t("clusters.options.nodePort"), value: "NodePort" },
               { label: t("clusters.options.ingress"), value: "Ingress" },
             ]}
             disabled={isEdit}
@@ -408,100 +404,15 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="spec.config.head_node_spec.resources.cpu"
-          label={t("clusters.fields.cpu")}
-        >
-          <Input disabled={isEdit} />
-        </Field>
-
-        <Field
-          {...form}
-          name="spec.config.head_node_spec.resources.memory"
-          label={t("clusters.fields.memory")}
-        >
-          <Input disabled={isEdit} />
-        </Field>
-
-        <div />
-
-        <Field
-          {...form}
-          name="spec.config.head_node_spec.accelerator_type"
-          label={t("clusters.fields.acceleratorType")}
-        >
-          <Select
-            options={acceleratorTypes}
-            value={headAccelerator.type}
-            onChange={(value) => {
-              setHeadAcceleratorType(value);
-              updateAcceleratorResources(
-                "spec.config.head_node_spec.resources",
-                headResources,
-                value,
-                value === NO_ACCELERATOR ? "" : headAccelerator.count,
-              );
-              form.trigger("head_accelerator_count");
-            }}
-            disabled={isEdit}
-          />
-        </Field>
-
-        <Field
-          {...form}
-          name="head_accelerator_count"
-          label={t("clusters.fields.acceleratorCount")}
-        >
-          <Input
-            disabled={isEdit || headAccelerator.type === NO_ACCELERATOR}
-            value={headAccelerator.count}
-            onChange={(evt) => {
-              const value = evt.target.value;
-              updateAcceleratorResources(
-                "spec.config.head_node_spec.resources",
-                headResources,
-                headAccelerator.type,
-                value,
-              );
-              form.trigger("head_accelerator_count");
-            }}
-            className={getInputErrorClasses(
-              headAccelerator.type !== NO_ACCELERATOR &&
-                (!headAccelerator.count ||
-                  !!form.formState.errors.head_accelerator_count),
-            )}
-          />
-        </Field>
-
-        <div />
-        <div />
-      </FormCardGrid>
-    ) : null,
-    workerNodeFields: isKubernetes ? (
-      <FormCardGrid title={t("clusters.sections.workerNode")}>
-        <Field
-          {...form}
-          name="spec.config.worker_group_specs.0.min_replicas"
+          name="spec.config.router.replicas"
           label={t("clusters.fields.replicas")}
         >
-          <Input
-            type="number"
-            onChange={(evt) => {
-              const value = Number(evt.target.value);
-              form.setValue(
-                "spec.config.worker_group_specs.0.min_replicas",
-                value,
-              );
-              form.setValue(
-                "spec.config.worker_group_specs.0.max_replicas",
-                value,
-              );
-            }}
-          />
+          <Input type="number" disabled={isEdit} />
         </Field>
 
         <Field
           {...form}
-          name="spec.config.worker_group_specs.0.resources.cpu"
+          name="spec.config.router.resources.cpu"
           label={t("clusters.fields.cpu")}
         >
           <Input disabled={isEdit} />
@@ -509,31 +420,29 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="spec.config.worker_group_specs.0.resources.memory"
+          name="spec.config.router.resources.memory"
           label={t("clusters.fields.memory")}
         >
           <Input disabled={isEdit} />
         </Field>
 
-        <div />
-
         <Field
           {...form}
-          name="spec.config.worker_group_specs.0.accelerator_type"
+          name="spec.config.router.accelerator_type"
           label={t("clusters.fields.acceleratorType")}
         >
           <Select
             options={acceleratorTypes}
-            value={workerAccelerator.type}
+            value={routerAccelerator.type}
             onChange={(value) => {
-              setWorkerAcceleratorType(value);
+              setRouterAcceleratorType(value);
               updateAcceleratorResources(
-                "spec.config.worker_group_specs.0.resources",
-                workerResources,
+                "spec.config.router.resources",
+                routerResources,
                 value,
-                value === NO_ACCELERATOR ? "" : workerAccelerator.count,
+                value === NO_ACCELERATOR ? "" : routerAccelerator.count,
               );
-              form.trigger("worker_accelerator_count");
+              form.trigger("router_accelerator_count");
             }}
             disabled={isEdit}
           />
@@ -541,26 +450,26 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="worker_accelerator_count"
+          name="router_accelerator_count"
           label={t("clusters.fields.acceleratorCount")}
         >
           <Input
-            disabled={isEdit || workerAccelerator.type === NO_ACCELERATOR}
-            value={workerAccelerator.count}
+            disabled={isEdit || routerAccelerator.type === NO_ACCELERATOR}
+            value={routerAccelerator.count}
             onChange={(evt) => {
               const value = evt.target.value;
               updateAcceleratorResources(
-                "spec.config.worker_group_specs.0.resources",
-                workerResources,
-                workerAccelerator.type,
+                "spec.config.router.resources",
+                routerResources,
+                routerAccelerator.type,
                 value,
               );
-              form.trigger("worker_accelerator_count");
+              form.trigger("router_accelerator_count");
             }}
             className={getInputErrorClasses(
-              workerAccelerator.type !== NO_ACCELERATOR &&
-                (!workerAccelerator.count ||
-                  !!form.formState.errors.worker_accelerator_count),
+              routerAccelerator.type !== NO_ACCELERATOR &&
+                (!routerAccelerator.count ||
+                  !!form.formState.errors.router_accelerator_count),
             )}
           />
         </Field>
@@ -598,6 +507,23 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
+                      <Field
+                        label={t("clusters.fields.modelCache.name")}
+                        {...form.register(
+                          `spec.config.model_caches.${index}.name`,
+                        )}
+                      >
+                        <Input
+                          placeholder={t(
+                            "clusters.placeholders.modelCacheName",
+                          )}
+                          className={getInputErrorClasses(
+                            !!(form.formState.errors.spec as any)?.config
+                              ?.model_caches?.[index]?.name,
+                          )}
+                        />
+                      </Field>
+
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">
                           {t("clusters.fields.modelCache.cacheType")}
@@ -614,6 +540,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                                     label: t("clusters.options.nfs"),
                                     value: "nfs",
                                   },
+                                  {
+                                    label: t("clusters.options.pvc"),
+                                    value: "pvc",
+                                  },
                                 ]
                               : [
                                   {
@@ -626,40 +556,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           onChange={(value) => {
                             switchCacheType(
                               index,
-                              value as "nfs" | "host_path",
+                              value as "nfs" | "host_path" | "pvc",
                             );
                           }}
                         />
                       </div>
-
-                      <Field
-                        label={t("clusters.fields.modelCache.modelRegistry")}
-                        {...form.register(
-                          `spec.config.model_caches.${index}.model_registry_type`,
-                          {
-                            required: {
-                              value: true,
-                              message:
-                                t(
-                                  "clusters.validation.modelRegistryRequired",
-                                ) || "Model registry type is required",
-                            },
-                          },
-                        )}
-                      >
-                        <Select
-                          options={[
-                            {
-                              label: t("model_registries.types.huggingFace"),
-                              value: "hugging-face",
-                            },
-                            {
-                              label: t("model_registries.types.fileSystem"),
-                              value: PRIVATE_MODEL_REGISTRY_TYPE,
-                            },
-                          ]}
-                        />
-                      </Field>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -721,7 +622,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                             )}
                           >
                             <Input
-                              placeholder="/path/to/cache"
+                              placeholder={t("clusters.placeholders.cachePath")}
                               className={getInputErrorClasses(
                                 !!form.formState.errors[
                                   `spec.config.model_caches.${index}.nfs.path`
@@ -756,7 +657,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           )}
                         >
                           <Input
-                            placeholder="/path/to/cache"
+                            placeholder={t("clusters.placeholders.cachePath")}
                             className={getInputErrorClasses(
                               !!form.formState.errors[
                                 `spec.config.model_caches.${index}.host_path.path`
@@ -765,6 +666,55 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                             )}
                           />
                         </Field>
+                      )}
+
+                      {cacheType === "pvc" && (
+                        <>
+                          <Field
+                            label={t("clusters.fields.modelCache.storage")}
+                            {...form.register(
+                              `spec.config.model_caches.${index}.pvc.resources.requests.storage`,
+                              {
+                                required: {
+                                  value: true,
+                                  message:
+                                    t("clusters.validation.storageRequired") ||
+                                    "Storage is required",
+                                },
+                                validate: validateStorageQuantity,
+                              },
+                            )}
+                          >
+                            <Input
+                              placeholder={t("clusters.placeholders.storage")}
+                              className={getInputErrorClasses(
+                                !!(form.formState.errors.spec as any)?.config
+                                  ?.model_caches?.[index]?.pvc?.resources
+                                  ?.requests?.storage,
+                              )}
+                            />
+                          </Field>
+
+                          <Field
+                            label={t(
+                              "clusters.fields.modelCache.storageClassName",
+                            )}
+                            {...form.register(
+                              `spec.config.model_caches.${index}.pvc.storageClassName`,
+                            )}
+                          >
+                            <Input
+                              placeholder={t(
+                                "clusters.placeholders.storageClassName",
+                              )}
+                              className={getInputErrorClasses(
+                                !!(form.formState.errors.spec as any)?.config
+                                  ?.model_caches?.[index]?.pvc
+                                  ?.storageClassName,
+                              )}
+                            />
+                          </Field>
+                        </>
                       )}
                     </div>
                   </CardContent>

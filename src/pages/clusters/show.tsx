@@ -2,7 +2,6 @@ import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
 import MetadataCard from "@/components/business/MetadataCard";
-import ModelRegistryType from "@/components/business/ModelRegistryType";
 import { ShowButton, ShowPage, Table } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
 import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
@@ -13,7 +12,7 @@ import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
 import { getClusterGrafanaProps } from "@/lib/grafana-configs";
 import { useTranslation as useI18nTranslation } from "@/lib/i18n";
-import type { Cluster, HostPathCache, ModelCache, NFSCache } from "@/types";
+import type { Cluster, ModelCache } from "@/types";
 import { useShow, useTranslation } from "@refinedev/core";
 
 export const ClustersShow = () => {
@@ -39,40 +38,24 @@ export const ClustersShow = () => {
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
 
-  // Calculate accelerator info for head node
-  const headNodeAcceleratorEntry =
+  // Calculate accelerator info for router
+  const routerAcceleratorEntry =
     record && "kubeconfig" in record.spec.config
-      ? Object.entries(record.spec.config.head_node_spec?.resources || {}).find(
+      ? Object.entries(record.spec.config.router?.resources || {}).find(
           ([key]) => key.includes("gpu") || key.includes("Ascend"),
         )
       : null;
 
-  const headNodeAcceleratorCount = headNodeAcceleratorEntry?.[1];
-  const hasHeadNodeAccelerator =
-    headNodeAcceleratorCount &&
-    typeof headNodeAcceleratorCount === "string" &&
-    Number.parseInt(headNodeAcceleratorCount) > 0;
+  const routerAcceleratorCount = routerAcceleratorEntry?.[1];
+  const hasRouterAccelerator =
+    routerAcceleratorCount &&
+    typeof routerAcceleratorCount === "string" &&
+    Number.parseInt(routerAcceleratorCount) > 0;
 
-  // Calculate accelerator info for worker node
-  const workerNodeAcceleratorEntry =
-    record && "kubeconfig" in record.spec.config
-      ? Object.entries(
-          record.spec.config.worker_group_specs?.[0]?.resources || {},
-        ).find(([key]) => key.includes("gpu") || key.includes("Ascend"))
-      : null;
-
-  const workerNodeAcceleratorCount = workerNodeAcceleratorEntry?.[1];
-  const hasWorkerNodeAccelerator =
-    workerNodeAcceleratorCount &&
-    typeof workerNodeAcceleratorCount === "string" &&
-    Number.parseInt(workerNodeAcceleratorCount) > 0;
-
-  const isNFSCache = (cache: ModelCache): cache is NFSCache => {
-    return "nfs" in cache;
-  };
-
-  const isHostPathCache = (cache: ModelCache): cache is HostPathCache => {
-    return "host_path" in cache;
+  const getCacheType = (cache: ModelCache): "nfs" | "host_path" | "pvc" => {
+    if (cache.nfs) return "nfs";
+    if (cache.pvc) return "pvc";
+    return "host_path";
   };
 
   return (
@@ -125,93 +108,55 @@ export const ClustersShow = () => {
                 </div>
               )}
               {"kubeconfig" in record.spec.config && (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t("clusters.sections.headNode")}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-4 gap-8">
-                        <ShowPage.Row title={t("clusters.fields.accessMode")}>
-                          {record.spec.config.head_node_spec?.access_mode ===
-                          "LoadBalancer"
-                            ? t("status.accessModes.LoadBalancer")
-                            : t("status.accessModes.Ingress")}
-                        </ShowPage.Row>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("clusters.sections.router")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-4 gap-8">
+                      <ShowPage.Row title={t("clusters.fields.accessMode")}>
+                        {record.spec.config.router?.access_mode ===
+                        "LoadBalancer"
+                          ? t("status.accessModes.LoadBalancer")
+                          : record.spec.config.router?.access_mode ===
+                              "NodePort"
+                            ? t("status.accessModes.NodePort")
+                            : record.spec.config.router?.access_mode ===
+                                "Ingress"
+                              ? t("status.accessModes.Ingress")
+                              : "-"}
+                      </ShowPage.Row>
 
-                        <ShowPage.Row title={t("clusters.fields.cpu")}>
-                          {record.spec.config.head_node_spec?.resources?.cpu ??
-                            ""}
-                        </ShowPage.Row>
+                      <ShowPage.Row title={t("clusters.fields.replicas")}>
+                        {record.spec.config.router?.replicas ?? ""}
+                      </ShowPage.Row>
 
-                        <ShowPage.Row title={t("clusters.fields.memory")}>
-                          {record.spec.config.head_node_spec?.resources
-                            ?.memory ?? ""}
-                        </ShowPage.Row>
+                      <ShowPage.Row title={t("clusters.fields.cpu")}>
+                        {record.spec.config.router?.resources?.cpu ?? ""}
+                      </ShowPage.Row>
 
-                        <div />
+                      <ShowPage.Row title={t("clusters.fields.memory")}>
+                        {record.spec.config.router?.resources?.memory ?? ""}
+                      </ShowPage.Row>
 
-                        {hasHeadNodeAccelerator && (
-                          <>
-                            <ShowPage.Row
-                              title={t("clusters.fields.acceleratorType")}
-                            >
-                              {headNodeAcceleratorEntry?.[0]}
-                            </ShowPage.Row>
+                      {hasRouterAccelerator && (
+                        <>
+                          <ShowPage.Row
+                            title={t("clusters.fields.acceleratorType")}
+                          >
+                            {routerAcceleratorEntry?.[0]}
+                          </ShowPage.Row>
 
-                            <ShowPage.Row
-                              title={t("clusters.fields.acceleratorCount")}
-                            >
-                              {headNodeAcceleratorCount}
-                            </ShowPage.Row>
-                          </>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t("clusters.sections.workerNode")}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-4 gap-8">
-                        <ShowPage.Row title={t("clusters.fields.replicas")}>
-                          {record.spec.config.worker_group_specs?.[0]
-                            ?.max_replicas ?? ""}
-                        </ShowPage.Row>
-
-                        <ShowPage.Row title={t("clusters.fields.cpu")}>
-                          {record.spec.config.worker_group_specs?.[0].resources
-                            ?.cpu ?? ""}
-                        </ShowPage.Row>
-
-                        <ShowPage.Row title={t("clusters.fields.memory")}>
-                          {record.spec.config.worker_group_specs?.[0].resources
-                            ?.memory ?? ""}
-                        </ShowPage.Row>
-
-                        <div />
-
-                        {hasWorkerNodeAccelerator && (
-                          <>
-                            <ShowPage.Row
-                              title={t("clusters.fields.acceleratorType")}
-                            >
-                              {workerNodeAcceleratorEntry?.[0]}
-                            </ShowPage.Row>
-
-                            <ShowPage.Row
-                              title={t("clusters.fields.acceleratorCount")}
-                            >
-                              {workerNodeAcceleratorCount}
-                            </ShowPage.Row>
-                          </>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                          <ShowPage.Row
+                            title={t("clusters.fields.acceleratorCount")}
+                          >
+                            {routerAcceleratorCount}
+                          </ShowPage.Row>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </CardContent>
           </Card>
@@ -226,7 +171,7 @@ export const ClustersShow = () => {
                 <div className="space-y-4">
                   {(record.spec.config.model_caches || []).map(
                     (cache, index) => {
-                      const cacheType = isNFSCache(cache) ? "nfs" : "host_path";
+                      const cacheType = getCacheType(cache);
 
                       return (
                         <Card key={index}>
@@ -235,14 +180,23 @@ export const ClustersShow = () => {
                               <span className=" mr-1 py-1 rounded text-xs">
                                 #{index + 1}
                               </span>
-                              {t(
-                                `clusters.fields.modelCache.type.${cacheType}`,
-                              )}
+                              {cache.name ||
+                                t(
+                                  `clusters.fields.modelCache.type.${cacheType}`,
+                                )}
                             </CardTitle>
                           </CardHeader>
 
                           <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              {cache.name && (
+                                <ShowPage.Row
+                                  title={t("clusters.fields.modelCache.name")}
+                                >
+                                  {cache.name}
+                                </ShowPage.Row>
+                              )}
+
                               <ShowPage.Row
                                 title={t(
                                   "clusters.fields.modelCache.cacheType",
@@ -251,22 +205,13 @@ export const ClustersShow = () => {
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                   {cacheType === "nfs"
                                     ? t("clusters.options.nfs")
-                                    : t("clusters.options.hostPath")}
+                                    : cacheType === "pvc"
+                                      ? t("clusters.options.pvc")
+                                      : t("clusters.options.hostPath")}
                                 </span>
                               </ShowPage.Row>
 
-                              <ShowPage.Row
-                                title={t(
-                                  "clusters.fields.modelCache.modelRegistry",
-                                )}
-                              >
-                                {" "}
-                                <ModelRegistryType
-                                  type={cache.model_registry_type}
-                                />
-                              </ShowPage.Row>
-
-                              {isNFSCache(cache) && cache.nfs && (
+                              {cache.nfs && (
                                 <>
                                   <ShowPage.Row
                                     title={t(
@@ -290,7 +235,7 @@ export const ClustersShow = () => {
                                 </>
                               )}
 
-                              {isHostPathCache(cache) && cache.host_path && (
+                              {cache.host_path && (
                                 <ShowPage.Row
                                   title={t(
                                     "clusters.fields.modelCache.cachePath",
@@ -300,6 +245,29 @@ export const ClustersShow = () => {
                                     {cache.host_path.path}
                                   </code>
                                 </ShowPage.Row>
+                              )}
+
+                              {cache.pvc && (
+                                <>
+                                  <ShowPage.Row
+                                    title={t(
+                                      "clusters.fields.modelCache.storage",
+                                    )}
+                                  >
+                                    {cache.pvc.resources?.requests?.storage ??
+                                      ""}
+                                  </ShowPage.Row>
+
+                                  {cache.pvc.storageClassName && (
+                                    <ShowPage.Row
+                                      title={t(
+                                        "clusters.fields.modelCache.storageClassName",
+                                      )}
+                                    >
+                                      {cache.pvc.storageClassName}
+                                    </ShowPage.Row>
+                                  )}
+                                </>
                               )}
                             </div>
                           </CardContent>
