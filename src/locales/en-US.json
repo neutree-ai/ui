@@ -920,6 +920,9 @@
 		}
 	},
 	"status": {
+		"copyErrorMessage": "Copy error message",
+		"copyErrorSuccess": "Error message copied to clipboard",
+		"copyErrorFailed": "Failed to copy error message",
 		"phases": {
 			"apiKey": {
 				"Pending": "Pending",
@@ -930,7 +933,8 @@
 				"Pending": "Pending",
 				"Running": "Running",
 				"Failed": "Failed",
-				"Deleted": "Deleted"
+				"Deleted": "Deleted",
+				"Initializing": "Initializing"
 			},
 			"registry": {
 				"Pending": "Pending",

@@ -121,11 +121,7 @@ export const Form = <
               </Button>
             )}
 
-            <SaveButton
-              type="submit"
-              loading={props.refineCore.formLoading}
-              {...saveButtonProps}
-            />
+            <SaveButton type="submit" loading={props.refineCore.formLoading} />
           </div>
         </div>
       </form>

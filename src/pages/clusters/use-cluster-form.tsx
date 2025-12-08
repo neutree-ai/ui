@@ -7,21 +7,42 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
 import { cn } from "@/lib/utils";
 import { isValidIPAddress, isValidPath } from "@/lib/validate";
-import type {
-  Cluster,
-  HostPathCache,
-  ImageRegistry,
-  ModelCache,
-} from "@/types";
+import type { Cluster, HostPathCache, ImageRegistry } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
+export const transformValues = (values: Cluster) => {
+  const transformedValues = { ...values };
+
+  const config = transformedValues.spec?.config;
+
+  // Transform SSH private key for SSH type clusters
+  if ("auth" in config) {
+    if (config.auth.ssh_private_key && values.spec.type === "ssh") {
+      if (!config.auth.ssh_private_key.endsWith("\n")) {
+        config.auth.ssh_private_key += "\n";
+      }
+      config.auth.ssh_private_key = btoa(config.auth.ssh_private_key);
+    }
+  }
+
+  // Transform kubeconfig for Kubernetes type clusters
+  if ("kubeconfig" in config) {
+    if (config.kubeconfig && values.spec.type === "kubernetes") {
+      config.kubeconfig = btoa(config.kubeconfig);
+    }
+  }
+
+  return transformedValues;
+};
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -58,6 +79,13 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       },
     },
   });
+
+  const originalOnFinish = form.refineCore.onFinish;
+  form.refineCore.onFinish = async (values) => {
+    const transformedValues = transformValues(values as Cluster);
+
+    return originalOnFinish(transformedValues);
+  };
 
   const workspace = form.watch("metadata.workspace");
   const type = form.watch("spec.type");
@@ -782,7 +810,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           name="spec.config.auth.ssh_private_key"
           label={t("clusters.fields.sshPrivateKey")}
         >
-          <Input type="password" disabled={isEdit} />
+          <Textarea disabled={isEdit} />
         </Field>
       </FormCardGrid>
     ),

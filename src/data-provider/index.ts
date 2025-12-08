@@ -340,14 +340,24 @@ export const dataProvider = (
           ...meta?.headers,
         },
       })
-        .then((res) => {
+        .then(async (res) => {
           if (!res.ok) {
+            const errorText = await res.text();
+            try {
+              const errorData = JSON.parse(errorText);
+              if ("code" in errorData && "message" in errorData) {
+                // postgrest error format
+                return handleError(errorData);
+              }
+            } catch {}
+
             const error = new Error(
-              `Error: ${res.status} ${res.statusText} ${res.url}`,
+              `Error: ${res.status} ${res.statusText} ${res.url} ${errorText}`,
             ) as unknown as HttpError;
             error.statusCode = res.status;
             throw error;
           }
+
           if (meta?.headers?.["Content-Type"] === "text/plain") {
             return res.text();
           }

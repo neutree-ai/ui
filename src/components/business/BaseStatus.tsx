@@ -5,7 +5,10 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { BaseStatus as BaseStatusType } from "@/types";
+import * as clipboard from "clipboard-polyfill";
+import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import Timestamp from "./Timestamp";
 
 type BaseStatusProps = BaseStatusType & {
@@ -22,6 +25,17 @@ export default function BaseStatus({
 }: BaseStatusProps) {
   const { t } = useTranslation();
 
+  const copyErrorMessage = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!error_message) return;
+    try {
+      await clipboard.writeText(error_message);
+      toast.success(t("status.copyErrorSuccess"));
+    } catch (err) {
+      toast.error(t("status.copyErrorFailed"));
+    }
+  };
+
   if (!phase) {
     return "-";
   }
@@ -29,18 +43,32 @@ export default function BaseStatus({
   return (
     <Tooltip>
       <TooltipTrigger>
-        <span
-          className={cn(
-            "px-2 py-1 text-xs font-semibold rounded-lg",
-            className,
+        <span className="inline-flex items-center gap-1">
+          <span
+            className={cn(
+              "px-2 py-1 text-xs font-semibold rounded-lg",
+              className,
+            )}
+          >
+            {translatedPhase}
+          </span>
+          {error_message && (
+            <button
+              type="button"
+              onClick={copyErrorMessage}
+              className="p-1 rounded hover:bg-muted transition-colors"
+              title={t("status.copyErrorMessage")}
+            >
+              <Copy className="h-3 w-3 text-muted-foreground" />
+            </button>
           )}
-        >
-          {translatedPhase}
         </span>
       </TooltipTrigger>
       <TooltipContent className={cn(className, "max-w-lg")}>
         <div className="gap-2 flex flex-col">
-          {error_message && <div>{error_message}</div>}
+          {error_message && (
+            <pre className="overflow-auto max-h-96">{error_message}</pre>
+          )}
           {last_transition_time && (
             <div>
               {t("status.last_transition")}
