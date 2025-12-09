@@ -607,9 +607,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           >
                             <Input
                               className={getInputErrorClasses(
-                                !!form.formState.errors[
-                                  `spec.config.model_caches.${index}.nfs.server`
-                                ],
+                                !!(form.formState.errors.spec as any)?.config
+                                  ?.model_caches?.[index]?.nfs?.server,
                               )}
                             />
                           </Field>
@@ -640,9 +639,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                             <Input
                               placeholder={t("clusters.placeholders.cachePath")}
                               className={getInputErrorClasses(
-                                !!form.formState.errors[
-                                  `spec.config.model_caches.${index}.nfs.path`
-                                ],
+                                !!(form.formState.errors.spec as any)?.config
+                                  ?.model_caches?.[index]?.nfs?.path,
                               )}
                             />
                           </Field>
@@ -675,9 +673,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           <Input
                             placeholder={t("clusters.placeholders.cachePath")}
                             className={getInputErrorClasses(
-                              !!form.formState.errors[
-                                `spec.config.model_caches.${index}.host_path.path`
-                              ],
+                              !!(form.formState.errors.spec as any)?.config
+                                ?.model_caches?.[index]?.host_path?.path,
                               "col-span-2",
                             )}
                           />
