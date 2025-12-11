@@ -112,6 +112,15 @@ const VLLM_PANELS: PanelConfig[] = [
   { id: 16 },
 ];
 
+const K8S_ROUTER_PANELS: PanelConfig[] = [
+  { id: 1 },
+  { id: 3 },
+  { id: 19 },
+  { id: 15 },
+  { id: 16 },
+  { id: 17 },
+];
+
 /**
  * One-stop function to get complete Grafana props for main dashboard
  */
@@ -135,24 +144,47 @@ export const getDashboardGrafanaProps = (
 
 /**
  * One-stop function to get complete Grafana props for cluster monitoring
+ * @param grafanaUrl - The Grafana base URL
+ * @param clusterName - The cluster name
+ * @param clusterType - The cluster type ('ssh' | 'kubernetes')
  */
 export const getClusterGrafanaProps = (
   grafanaUrl: string,
   clusterName: string,
-): GrafanaPanelsProps => ({
-  dashboardConfig: {
-    ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: "rayDefaultDashboard",
-    variables: {
-      ...getCommonVariables(),
-      SessionName: "$__all",
-      Instance: "$__all",
-      Cluster: clusterName,
+  clusterType: string,
+): GrafanaPanelsProps => {
+  // For kubernetes clusters, use the router dashboard
+  if (clusterType === "kubernetes") {
+    return {
+      dashboardConfig: {
+        ...getBaseDashboardConfig(grafanaUrl),
+        dashboardId: "router",
+        variables: {
+          ...getCommonVariables(),
+          Cluster: clusterName,
+        },
+      },
+      panels: K8S_ROUTER_PANELS,
+      ...getCommonPanelProps(),
+    };
+  }
+
+  // For ssh clusters (default), use the ray default dashboard
+  return {
+    dashboardConfig: {
+      ...getBaseDashboardConfig(grafanaUrl),
+      dashboardId: "rayDefaultDashboard",
+      variables: {
+        ...getCommonVariables(),
+        SessionName: "$__all",
+        Instance: "$__all",
+        Cluster: clusterName,
+      },
     },
-  },
-  panels: CLUSTER_PANELS,
-  ...getCommonPanelProps(),
-});
+    panels: CLUSTER_PANELS,
+    ...getCommonPanelProps(),
+  };
+};
 
 /**
  * One-stop function to get complete Grafana props for endpoint monitoring

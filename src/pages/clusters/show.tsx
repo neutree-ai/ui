@@ -66,9 +66,11 @@ export const ClustersShow = () => {
           <TabsTrigger value="monitor">
             {t("clusters.tabs.monitor")}
           </TabsTrigger>
-          <TabsTrigger value="ray">
-            {t("clusters.tabs.rayDashboard")}
-          </TabsTrigger>
+          {record.spec.type === "ssh" && (
+            <TabsTrigger value="ray">
+              {t("clusters.tabs.rayDashboard")}
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent
           value="basic"
@@ -314,7 +316,11 @@ export const ClustersShow = () => {
         >
           {grafanaUrl ? (
             <GrafanaPanels
-              {...getClusterGrafanaProps(grafanaUrl, record.metadata.name)}
+              {...getClusterGrafanaProps(
+                grafanaUrl,
+                record.metadata.name,
+                record.spec.type,
+              )}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -324,15 +330,20 @@ export const ClustersShow = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="ray" className="h-[calc(100%-theme('spacing.9'))]">
-          {dashboardUrl && (
-            <iframe
-              src={dashboardUrl}
-              className="w-full h-full"
-              title={t("clusters.messages.rayDashboardTitle")}
-            />
-          )}
-        </TabsContent>
+        {record.spec.type === "ssh" && (
+          <TabsContent
+            value="ray"
+            className="h-[calc(100%-theme('spacing.9'))]"
+          >
+            {dashboardUrl && (
+              <iframe
+                src={dashboardUrl}
+                className="w-full h-full"
+                title={t("clusters.messages.rayDashboardTitle")}
+              />
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </ShowPage>
   );
