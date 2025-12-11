@@ -46,22 +46,14 @@ const EndpointLogTabs = lazy(() =>
   })),
 );
 
-const RayDashboardTab = ({ record }: { record: Endpoint }) => {
+const RayDashboardTab = ({
+  record,
+  cluster,
+}: {
+  record: Endpoint;
+  cluster?: unknown;
+}) => {
   const { t } = useTranslation();
-  const { data: clusterData, isLoading } = useList({
-    resource: "clusters",
-    filters: [
-      {
-        field: "metadata->name",
-        operator: "eq",
-        value: JSON.stringify(record.spec.cluster),
-      },
-    ],
-    queryOptions: {
-      enabled: Boolean(record.spec.cluster),
-    },
-  });
-
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleIframeLoad = useCallback(() => {
@@ -81,11 +73,7 @@ const RayDashboardTab = ({ record }: { record: Endpoint }) => {
     doc.head.appendChild(style);
   }, []);
 
-  if (isLoading) {
-    return <Loader className="h-4 text-primary" />;
-  }
-
-  const rayDashboardUrl = getRayDashboardProxy(clusterData?.data[0]);
+  const rayDashboardUrl = getRayDashboardProxy(cluster);
 
   if (!rayDashboardUrl) {
     return (
@@ -124,6 +112,20 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     id: record?.spec.engine.engine,
     queryOptions: {
       enabled: Boolean(record?.spec.engine.engine),
+    },
+  });
+
+  const { data: clusterData } = useList({
+    resource: "clusters",
+    filters: [
+      {
+        field: "metadata->name",
+        operator: "eq",
+        value: JSON.stringify(record?.spec.cluster),
+      },
+    ],
+    queryOptions: {
+      enabled: Boolean(record?.spec.cluster),
     },
   });
 
@@ -183,6 +185,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     (v) => v.version === record.spec.engine.version,
   )?.values_schema;
 
+  const clusterType = clusterData?.data?.[0]?.spec?.type;
+  const isSSHCluster = clusterType === "ssh";
+  const isVllmEngine = record.spec.engine.engine === "vllm";
+  const shouldShowRayDashboard = isSSHCluster;
+  const shouldShowMonitorSelector = isSSHCluster && isVllmEngine;
+  const shouldShowVllmMetrics =
+    shouldShowMonitorSelector && monitorView === "vllm";
+
   return (
     <ShowPage
       record={record}
@@ -191,9 +201,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
           <TabsTrigger value="basic">{t("endpoints.tabs.basic")}</TabsTrigger>
-          <TabsTrigger value="ray">
-            {t("endpoints.tabs.rayDashboard")}
-          </TabsTrigger>
+          {shouldShowRayDashboard && (
+            <TabsTrigger value="ray">
+              {t("endpoints.tabs.rayDashboard")}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="monitor">
             {t("endpoints.tabs.monitor")}
           </TabsTrigger>
@@ -322,17 +334,21 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             </Card>
           )}
         </TabsContent>
-        <TabsContent value="ray" className="h-[calc(100%-theme('spacing.9'))]">
-          <RayDashboardTab record={record} />
-        </TabsContent>{" "}
+        {shouldShowRayDashboard && (
+          <TabsContent
+            value="ray"
+            className="h-[calc(100%-theme('spacing.9'))]"
+          >
+            <RayDashboardTab record={record} cluster={clusterData?.data?.[0]} />
+          </TabsContent>
+        )}
         <TabsContent
           value="monitor"
           className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
         >
           {grafanaUrl ? (
             <div className="space-y-4">
-              {/* Monitor View Selector - only show if vLLM is available */}
-              {record.spec.engine.engine === "vllm" && (
+              {shouldShowMonitorSelector && (
                 <Card className="p-4">
                   <div className="flex items-center justify-start">
                     <Select
@@ -362,11 +378,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </Card>
               )}
 
-              {/* Render panels based on selection */}
-              {monitorView === "endpoint" ||
-              record.spec.engine.engine !== "vllm" ? (
+              {shouldShowVllmMetrics ? (
                 <GrafanaPanels
-                  {...getEndpointGrafanaProps(
+                  {...getVllmGrafanaProps(
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
@@ -374,7 +388,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 />
               ) : (
                 <GrafanaPanels
-                  {...getVllmGrafanaProps(
+                  {...getEndpointGrafanaProps(
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
