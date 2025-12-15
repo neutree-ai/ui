@@ -39,6 +39,11 @@ export const transformValues = (values: Cluster) => {
     if (config.kubeconfig && values.spec.type === "kubernetes") {
       config.kubeconfig = btoa(config.kubeconfig);
     }
+
+    // Transform router replicas to number
+    if (config.router?.replicas) {
+      config.router.replicas = Number(config.router.replicas);
+    }
   }
 
   return transformedValues;
