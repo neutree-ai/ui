@@ -394,8 +394,6 @@
 			"invalidIPAddress": "Invalid IP address",
 			"cachePathRequired": "Cache path is required",
 			"invalidPath": "Invalid path (Must start with /)",
-			"acceleratorCountRequired": "Accelerator count is required",
-			"acceleratorCountInvalid": "Accelerator count is invalid",
 			"storageRequired": "Storage is required",
 			"invalidStorageFormat": "Invalid storage format (e.g., 10Gi, 100Mi, 1Ti)",
 			"invalidK8sName": "Invalid name format (lowercase alphanumeric and hyphens only, max 253 characters)"

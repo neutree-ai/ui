@@ -38,20 +38,6 @@ export const ClustersShow = () => {
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
 
-  // Calculate accelerator info for router
-  const routerAcceleratorEntry =
-    record && "kubeconfig" in record.spec.config
-      ? Object.entries(record.spec.config.router?.resources || {}).find(
-          ([key]) => key.includes("gpu") || key.includes("Ascend"),
-        )
-      : null;
-
-  const routerAcceleratorCount = routerAcceleratorEntry?.[1];
-  const hasRouterAccelerator =
-    routerAcceleratorCount &&
-    typeof routerAcceleratorCount === "string" &&
-    Number.parseInt(routerAcceleratorCount) > 0;
-
   const getCacheType = (cache: ModelCache): "nfs" | "host_path" | "pvc" => {
     if (cache.nfs) return "nfs";
     if (cache.pvc) return "pvc";
@@ -140,22 +126,6 @@ export const ClustersShow = () => {
                       <ShowPage.Row title={t("clusters.fields.memory")}>
                         {record.spec.config.router?.resources?.memory ?? ""}
                       </ShowPage.Row>
-
-                      {hasRouterAccelerator && (
-                        <>
-                          <ShowPage.Row
-                            title={t("clusters.fields.acceleratorType")}
-                          >
-                            {routerAcceleratorEntry?.[0]}
-                          </ShowPage.Row>
-
-                          <ShowPage.Row
-                            title={t("clusters.fields.acceleratorCount")}
-                          >
-                            {routerAcceleratorCount}
-                          </ShowPage.Row>
-                        </>
-                      )}
                     </div>
                   </CardContent>
                 </Card>

@@ -48,14 +48,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
 
-  const NO_ACCELERATOR = "none";
-  const acceleratorTypes = [
-    { label: t("clusters.options.none"), value: NO_ACCELERATOR },
-    { label: "NVIDIA GPU", value: "nvidia.com/gpu" },
-    { label: "Ascend310P", value: "huawei.com/Ascend310P" },
-    { label: "AMD GPU", value: "amd.com/gpu" },
-  ];
-
   const form = useForm<Cluster>({
     mode: "all",
     defaultValues: {
@@ -92,26 +84,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const isKubernetes = type === "kubernetes";
   const isSSH = type === "ssh";
 
-  const routerResources = form.watch("spec.config.router.resources");
-
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "spec.config.model_caches",
   });
-
-  const getAcceleratorTypeFromResources = (
-    resources?: Record<string, string | number>,
-  ) => {
-    if (!resources) return NO_ACCELERATOR;
-    const match = acceleratorTypes.find(
-      ({ value }) => value !== NO_ACCELERATOR && resources[value],
-    );
-    return match?.value || NO_ACCELERATOR;
-  };
-
-  const [routerAcceleratorType, setRouterAcceleratorType] = useState(() =>
-    getAcceleratorTypeFromResources(routerResources),
-  );
 
   const validateNodeIPs = (value: {
     head_ip: string;
@@ -134,67 +110,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     );
   };
 
-  const createAcceleratorState = (
-    type: string,
-    resources?: Record<string, string>,
-  ) => ({
-    type,
-    count: type === NO_ACCELERATOR ? "" : resources?.[type] || "",
-  });
-
-  const routerAccelerator = useMemo(
-    () => createAcceleratorState(routerAcceleratorType, routerResources),
-    [routerAcceleratorType, routerResources],
-  );
-
-  const updateAcceleratorResources = (
-    resourcesPath: string,
-    currentResources: Record<string, string | number> | undefined,
-    newType: string,
-    newCount: string,
-  ) => {
-    if (!currentResources) return;
-
-    const newResources = { ...currentResources };
-    acceleratorTypes
-      .filter((type) => type.value !== NO_ACCELERATOR)
-      .forEach((type) => delete newResources[type.value]);
-    if (newType !== NO_ACCELERATOR && newCount)
-      newResources[newType] = newCount;
-
-    if (resourcesPath === "spec.config.router.resources") {
-      form.setValue("spec.config.router.resources", newResources);
-    }
-  };
-
-  const validateAccelerator = (type: string, count: string) => {
-    if (type === NO_ACCELERATOR) return true;
-    if (!count || count === "")
-      return (
-        t("clusters.validation.acceleratorCountRequired") ||
-        "Accelerator count is required"
-      );
-
-    const numValue = Number.parseFloat(count);
-    if (!Number.isInteger(numValue) || numValue <= 0) {
-      return (
-        t("clusters.validation.acceleratorCountInvalid") ||
-        "Please enter a valid accelerator count"
-      );
-    }
-    return true;
-  };
-
   useEffect(() => {
-    if (isKubernetes) {
-      form.register("router_accelerator_count", {
-        validate: () =>
-          validateAccelerator(routerAccelerator.type, routerAccelerator.count),
-      });
-
-      form.trigger("router_accelerator_count");
-    }
-
     // Register validation for SSH provider
     if (isSSH) {
       form.register("spec.config.provider", {
@@ -203,14 +119,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
       form.trigger("spec.config.provider");
     }
-  }, [
-    isKubernetes,
-    isSSH,
-    routerAccelerator.type,
-    routerAccelerator.count,
-    form.register,
-    form.trigger,
-  ]);
+  }, [isSSH, form.register, form.trigger]);
 
   const meta = {
     workspace,
@@ -337,7 +246,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                     ssh_user: "",
                     ssh_private_key: "",
                   },
-                  accelerator_type: null,
                   model_caches: [],
                 });
               } else if (value === "kubernetes") {
@@ -352,7 +260,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                       memory: "1Gi",
                     },
                   },
-                  accelerator_type: null,
                   model_caches: [],
                 });
               }
@@ -425,57 +332,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <Input disabled={isEdit} />
         </Field>
-
-        <Field
-          {...form}
-          name="spec.config.router.accelerator_type"
-          label={t("clusters.fields.acceleratorType")}
-        >
-          <Select
-            options={acceleratorTypes}
-            value={routerAccelerator.type}
-            onChange={(value) => {
-              setRouterAcceleratorType(value);
-              updateAcceleratorResources(
-                "spec.config.router.resources",
-                routerResources,
-                value,
-                value === NO_ACCELERATOR ? "" : routerAccelerator.count,
-              );
-              form.trigger("router_accelerator_count");
-            }}
-            disabled={isEdit}
-          />
-        </Field>
-
-        <Field
-          {...form}
-          name="router_accelerator_count"
-          label={t("clusters.fields.acceleratorCount")}
-        >
-          <Input
-            disabled={isEdit || routerAccelerator.type === NO_ACCELERATOR}
-            value={routerAccelerator.count}
-            onChange={(evt) => {
-              const value = evt.target.value;
-              updateAcceleratorResources(
-                "spec.config.router.resources",
-                routerResources,
-                routerAccelerator.type,
-                value,
-              );
-              form.trigger("router_accelerator_count");
-            }}
-            className={getInputErrorClasses(
-              routerAccelerator.type !== NO_ACCELERATOR &&
-                (!routerAccelerator.count ||
-                  !!form.formState.errors.router_accelerator_count),
-            )}
-          />
-        </Field>
-
-        <div />
-        <div />
       </FormCardGrid>
     ) : null,
     modelCacheFields: (
