@@ -1,5 +1,85 @@
 import type { BaseStatus, Metadata } from "./basic-types";
 
+// ============================================================================
+// Cluster Resource Information Types
+// These types are used for cluster-level resource tracking and reporting.
+// They follow Kubernetes Node Status pattern for organizing resources by dimensions.
+// ============================================================================
+
+/**
+ * AcceleratorType represents the type of accelerator (e.g., "nvidia_gpu", "amd_gpu", "neuron")
+ */
+export type AcceleratorType = string;
+
+/**
+ * AcceleratorProduct represents the product model name (e.g., "Tesla-V100", "Tesla-T4", "MI100")
+ */
+export type AcceleratorProduct = string;
+
+/**
+ * AcceleratorGroup represents accelerator resources grouped by type.
+ * It supports heterogeneous clusters where multiple accelerator types can coexist.
+ */
+export type AcceleratorGroup = {
+  /**
+   * Quantity is the total number of accelerators of this type.
+   * Unit: count (e.g., 8.0 means 8 accelerators)
+   */
+  quantity: number;
+
+  /**
+   * ProductGroups contains accelerators further grouped by product model.
+   * This enables fine-grained resource tracking for heterogeneous accelerator types.
+   * Key: product model name (e.g., "Tesla-V100", "Tesla-T4", "MI100")
+   * Value: number of accelerators of that product model
+   */
+  product_groups: Record<AcceleratorProduct, number> | null;
+};
+
+/**
+ * ResourceInfo represents a complete set of resources including CPU, Memory, and Accelerators.
+ * All resources are organized in a flat structure for easy access and type safety.
+ */
+export type ResourceInfo = {
+  /**
+   * CPU represents the number of CPU cores.
+   * Unit: cores (e.g., 96.0 means 96 CPU cores)
+   */
+  cpu: number;
+
+  /**
+   * Memory represents the amount of memory.
+   * Unit: GiB (e.g., 512.0 means 512 GiB)
+   */
+  memory: number;
+
+  /**
+   * AcceleratorGroups contains accelerator resources grouped by type.
+   * Key: accelerator type (e.g., "nvidia_gpu", "amd_gpu", "neuron")
+   * Value: AcceleratorGroup containing details for that accelerator type
+   */
+  accelerator_groups: Record<AcceleratorType, AcceleratorGroup> | null;
+};
+
+/**
+ * ClusterResources represents the complete resource information of a cluster,
+ * organized by dimensions (Allocatable and Available).
+ * This follows Kubernetes Node Status pattern for consistency and clarity.
+ */
+export type ClusterResources = {
+  /**
+   * Allocatable represents the total resources that can be allocated in the cluster.
+   * This corresponds to the sum of all node's allocatable resources.
+   */
+  allocatable: ResourceInfo | null;
+
+  /**
+   * Available represents the currently available (unallocated) resources in the cluster.
+   * Available = Allocatable - Allocated
+   */
+  available: ResourceInfo | null;
+};
+
 export type RayClusterConfig = {
   cluster_name: string;
   provider: Partial<{
@@ -163,7 +243,7 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
   /**
    * Cluster resource information
    */
-  resource_info?: any; // ClusterResources type - can be defined later if needed
+  resource_info?: ClusterResources | null;
   /**
    * Accelerator type (e.g. nvidia_gpu, amd_gpu)
    */

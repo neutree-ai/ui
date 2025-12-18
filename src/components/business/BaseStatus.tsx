@@ -53,21 +53,21 @@ export default function BaseStatus({
             {translatedPhase}
           </span>
           {error_message && (
-            <button
-              type="button"
+            <div
               onClick={copyErrorMessage}
-              className="p-1 rounded hover:bg-muted transition-colors"
-              title={t("status.copyErrorMessage")}
+              className="p-1 rounded hover:bg-muted transition-colors cursor-pointer"
             >
               <Copy className="h-3 w-3 text-muted-foreground" />
-            </button>
+            </div>
           )}
         </span>
       </TooltipTrigger>
       <TooltipContent className={cn(className, "max-w-lg")}>
         <div className="gap-2 flex flex-col">
           {error_message && (
-            <pre className="overflow-auto max-h-96">{error_message}</pre>
+            <pre className="overflow-auto max-h-96 max-w-lg whitespace-pre-wrap break-words">
+              {error_message}
+            </pre>
           )}
           {last_transition_time && (
             <div>

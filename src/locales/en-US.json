@@ -341,6 +341,10 @@
 				"storageClassName": "Storage Class Name"
 			}
 		},
+		"acceleratorTypes": {
+			"nvidia_gpu": "NVIDIA GPU",
+			"amd_gpu": "AMD GPU"
+		},
 		"sections": {
 			"basicInformation": "Basic Information",
 			"clusterType": "Cluster Type",
@@ -349,7 +353,8 @@
 			"workerNode": "Worker Node",
 			"router": "Router",
 			"modelCaches": "Model Caches",
-			"nodeAuthentication": "Node Authentication"
+			"nodeAuthentication": "Node Authentication",
+			"resources": "Resources"
 		},
 		"placeholders": {
 			"clusterName": "Cluster Name",
@@ -514,7 +519,10 @@
 			"replicas": "Replicas",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
-			"remaining": "Remaining"
+			"remaining": "Remaining",
+			"environment": "Environment Variables",
+			"acceleratorType": "Accelerator Type",
+			"acceleratorProduct": "Accelerator Product"
 		},
 		"sections": {
 			"basicInformation": "Basic Information",
@@ -526,7 +534,8 @@
 			"modelSettings": "Model Settings",
 			"engineSettings": "Engine Settings",
 			"replicaSettings": "Replica Settings",
-			"advancedOptions": "Advanced Options"
+			"advancedOptions": "Advanced Options",
+			"environmentVariables": "Environment Variables"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
@@ -932,7 +941,6 @@
 		}
 	},
 	"status": {
-		"copyErrorMessage": "Copy error message",
 		"copyErrorSuccess": "Error message copied to clipboard",
 		"copyErrorFailed": "Failed to copy error message",
 		"phases": {

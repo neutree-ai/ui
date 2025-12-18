@@ -7,11 +7,13 @@ import Loader from "@/components/theme/components/loader";
 import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
 import { getClusterGrafanaProps } from "@/lib/grafana-configs";
 import { useTranslation as useI18nTranslation } from "@/lib/i18n";
+import { formatToDecimal } from "@/lib/unit";
 import type { Cluster, ModelCache } from "@/types";
 import { useShow, useTranslation } from "@refinedev/core";
 
@@ -132,6 +134,149 @@ export const ClustersShow = () => {
               )}
             </CardContent>
           </Card>
+          {record.status?.resource_info && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>{t("clusters.sections.resources")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* CPU */}
+                  {record.status.resource_info.allocatable && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">
+                          {t("clusters.fields.cpu")}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {formatToDecimal(
+                            record.status.resource_info.allocatable.cpu -
+                              (record.status.resource_info.available?.cpu || 0),
+                          )}{" "}
+                          /{" "}
+                          {formatToDecimal(
+                            record.status.resource_info.allocatable.cpu,
+                          )}{" "}
+                          cores (
+                          {Math.round(
+                            ((record.status.resource_info.allocatable.cpu -
+                              (record.status.resource_info.available?.cpu ||
+                                0)) /
+                              record.status.resource_info.allocatable.cpu) *
+                              100,
+                          )}
+                          %)
+                        </span>
+                      </div>
+                      <Progress
+                        value={
+                          ((record.status.resource_info.allocatable.cpu -
+                            (record.status.resource_info.available?.cpu || 0)) /
+                            record.status.resource_info.allocatable.cpu) *
+                          100
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* Memory */}
+                  {record.status.resource_info.allocatable && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">
+                          {t("clusters.fields.memory")}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {formatToDecimal(
+                            record.status.resource_info.allocatable.memory -
+                              (record.status.resource_info.available?.memory ||
+                                0),
+                          )}{" "}
+                          /{" "}
+                          {formatToDecimal(
+                            record.status.resource_info.allocatable.memory,
+                          )}{" "}
+                          GiB (
+                          {Math.round(
+                            ((record.status.resource_info.allocatable.memory -
+                              (record.status.resource_info.available?.memory ||
+                                0)) /
+                              record.status.resource_info.allocatable.memory) *
+                              100,
+                          )}
+                          %)
+                        </span>
+                      </div>
+                      <Progress
+                        value={
+                          ((record.status.resource_info.allocatable.memory -
+                            (record.status.resource_info.available?.memory ||
+                              0)) /
+                            record.status.resource_info.allocatable.memory) *
+                          100
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* Accelerators */}
+                  {record.status.resource_info.allocatable
+                    ?.accelerator_groups &&
+                    Object.entries(
+                      record.status.resource_info.allocatable
+                        .accelerator_groups,
+                    ).map(([type, allocatableGroup]) => {
+                      const availableGroup =
+                        record.status?.resource_info?.available
+                          ?.accelerator_groups?.[type];
+                      const used =
+                        allocatableGroup.quantity -
+                        (availableGroup?.quantity || 0);
+                      const usagePercent = Math.round(
+                        (used / allocatableGroup.quantity) * 100,
+                      );
+
+                      return (
+                        <div key={type}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">
+                              {t(`clusters.acceleratorTypes.${type}`, {
+                                defaultValue: type,
+                              })}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {formatToDecimal(used)} /{" "}
+                              {formatToDecimal(allocatableGroup.quantity)} (
+                              {usagePercent}%)
+                            </span>
+                          </div>
+                          <Progress value={usagePercent} />
+
+                          {/* Product breakdown */}
+                          {allocatableGroup.product_groups &&
+                            Object.keys(allocatableGroup.product_groups)
+                              .length > 0 && (
+                              <div className="mt-2 ml-4 space-y-1">
+                                {Object.entries(
+                                  allocatableGroup.product_groups,
+                                ).map(([product, quantity]) => (
+                                  <div
+                                    key={product}
+                                    className="text-xs text-muted-foreground flex items-center justify-between"
+                                  >
+                                    <span>{product}</span>
+                                    <span>{formatToDecimal(quantity)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {Number(record.spec.config.model_caches?.length) > 0 ? (
             <Card className="mt-4">
               <CardHeader>
