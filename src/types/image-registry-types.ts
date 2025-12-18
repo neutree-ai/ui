@@ -17,7 +17,6 @@ export type ImageRegistrySpec = {
     password?: string;
     auth?: string;
   };
-  ca: string;
 };
 
 export type ImageRegistryStatus = BaseStatus<ImageRegistryPhase>;

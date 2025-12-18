@@ -32,7 +32,6 @@ export const useImageRegistryForm = ({
           password: "",
           auth: "",
         },
-        ca: "",
       },
     },
     refineCoreProps: {},
@@ -80,18 +79,6 @@ export const useImageRegistryForm = ({
             label={t("image_registries.fields.repository")}
           >
             <Input />
-          </Field>
-          <div className="col-span-2" />
-          <Field
-            {...form}
-            name="spec.ca"
-            label={t("image_registries.fields.certificateAuthority")}
-            description={t(
-              "image_registries.descriptions.certificateAuthority",
-            )}
-            className="col-span-2"
-          >
-            <Textarea />
           </Field>
         </FormCardGrid>
         <FormCardGrid title={t("image_registries.fields.authentication")}>
