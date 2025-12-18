@@ -1,8 +1,8 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEndpointLogUrls } from "@/hooks/use-endpoint-log-urls";
+import { useEndpointLogSources } from "@/hooks/use-endpoint-log-sources";
+import { useStreamingLogs } from "@/hooks/use-streaming-logs";
 import type { Endpoint } from "@/types";
-import { useCustom } from "@refinedev/core";
 import { type FC, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LogViewer } from "./LogViewer";
@@ -12,66 +12,85 @@ interface EndpointLogTabsProps {
 }
 
 /**
- * Component for displaying endpoint logs in tabs (Application, Stderr, Stdout)
- * Only shows logs for Backend deployment
+ * Component for displaying endpoint logs in tabs
+ * Supports multiple log types (logs, application, stderr, stdout) from both Ray and Kubernetes
  */
 export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<
-    "application" | "stderr" | "stdout"
-  >("application");
 
-  // Generate log URLs using the hook (now includes Ray application data fetching)
+  // Fetch log sources using the new unified API
   const {
-    logUrlsByDeployment,
-    isLoading: isLoadingApp,
-    refetch: refetchApp,
-    rayApplicationInfo,
-  } = useEndpointLogUrls(endpoint);
+    deployments,
+    isLoading: isLoadingLogSources,
+    refetch: refetchLogSources,
+  } = useEndpointLogSources(endpoint);
 
-  // Get Backend deployment logs only
-  const backendLogs = useMemo(() => {
-    const backend = logUrlsByDeployment.Backend || [];
-    return {
-      application: backend.find((log) => log.type === "application"),
-      stderr: backend.find((log) => log.type === "error"),
-      stdout: backend.find((log) => log.type === "stdout"),
-    };
-  }, [logUrlsByDeployment]);
+  // Find Backend deployment (or use first deployment if Backend not found)
+  const backendDeployment = useMemo(() => {
+    return deployments.find((d) => d.name === "Backend") || deployments[0];
+  }, [deployments]);
 
-  // Fetch log content for active tab
-  const activeLogUrl = backendLogs[activeTab]?.url;
-  const activeDownloadUrl = backendLogs[activeTab]?.downloadUrl;
+  // Get logs from first replica of backend deployment
+  const availableLogs = useMemo(() => {
+    if (!backendDeployment || !backendDeployment.replicas.length) {
+      return [];
+    }
+    return backendDeployment.replicas[0].logs;
+  }, [backendDeployment]);
+
+  // Determine available log types and set initial active tab
+  const logTypeMap = useMemo(() => {
+    const map: Record<string, { url: string; downloadUrl: string }> = {};
+    availableLogs.forEach((log) => {
+      map[log.type] = {
+        url: log.url,
+        downloadUrl: log.download_url,
+      };
+    });
+    return map;
+  }, [availableLogs]);
+
+  // Available tab keys in priority order
+  const availableTabKeys = useMemo(() => {
+    const priority = ["application", "logs", "stderr", "stdout"];
+    return priority.filter((key) => key in logTypeMap);
+  }, [logTypeMap]);
+
+  const [activeTab, setActiveTab] = useState<string>(
+    () => availableTabKeys[0] || "application",
+  );
+
+  // Ensure activeTab is valid when availableTabKeys change
+  useMemo(() => {
+    if (!availableTabKeys.includes(activeTab) && availableTabKeys.length > 0) {
+      setActiveTab(availableTabKeys[0]);
+    }
+  }, [availableTabKeys, activeTab]);
+
+  // Stream logs for active tab
+  const activeLogInfo = logTypeMap[activeTab];
+
+  // Remove /api/v1 prefix from URL if present (hook will add REST_URL automatically)
+  const relativeUrl = activeLogInfo?.url
+    ? activeLogInfo.url.replace(/^\/api\/v1/, "")
+    : null;
 
   const {
-    data: logResponse,
-    isLoading: isLoadingLog,
-    refetch: refetchLog,
-  } = useCustom({
-    url: activeLogUrl || "",
-    method: "get",
-    meta: {
-      headers: {
-        "Content-Type": "text/plain",
-      },
-    },
-    queryOptions: {
-      enabled: !!activeLogUrl,
-      refetchInterval: 10 * 1000, // Refresh every 10 seconds
-    },
-  });
-
-  const logData =
-    typeof logResponse?.data === "string"
-      ? logResponse.data
-      : String(logResponse?.data || "");
+    logs: streamedLogs,
+    isLoading: isLoadingLogs,
+    error: logsError,
+    refetch: refetchLogs,
+  } = useStreamingLogs(
+    relativeUrl ? `${relativeUrl}?lines=1000` : null,
+    !!relativeUrl,
+  );
 
   const handleRefresh = () => {
-    refetchApp();
-    refetchLog();
+    refetchLogSources();
+    refetchLogs();
   };
 
-  if (isLoadingApp) {
+  if (isLoadingLogSources) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">{t("loading")}</p>
@@ -79,116 +98,67 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     );
   }
 
-  if (!rayApplicationInfo) {
+  if (!backendDeployment || !availableLogs.length) {
     return (
       <Alert>
         <AlertDescription>
-          {t("endpoints.logs.failedToLoadRayApplication")}
+          {t("endpoints.logs.noLogsAvailable")}
         </AlertDescription>
       </Alert>
     );
   }
 
-  if (!backendLogs.application && !backendLogs.stderr && !backendLogs.stdout) {
-    return (
-      <Alert>
-        <AlertDescription>
-          {t("endpoints.logs.noBackendDeploymentFound")}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  // Helper function to get tab label based on log type
+  const getTabLabel = (logType: string) => {
+    const labels: Record<string, string> = {
+      application: t("endpoints.logs.application"),
+      logs: t("endpoints.logs.logs"),
+      stderr: t("endpoints.logs.stderr"),
+      stdout: t("endpoints.logs.stdout"),
+    };
+    return labels[logType] || logType;
+  };
+
+  // Get appropriate grid class based on number of tabs
+  const getGridClass = () => {
+    const count = availableTabKeys.length;
+    if (count === 1) return "grid-cols-1";
+    if (count === 2) return "grid-cols-2";
+    if (count === 3) return "grid-cols-3";
+    return "grid-cols-4";
+  };
 
   return (
     <div className="h-full flex flex-col">
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as typeof activeTab)}
-        className="h-full"
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="application" disabled={!backendLogs.application}>
-            {t("endpoints.logs.application")}
-          </TabsTrigger>
-          <TabsTrigger value="stderr" disabled={!backendLogs.stderr}>
-            {t("endpoints.logs.stderr")}
-          </TabsTrigger>
-          <TabsTrigger value="stdout" disabled={!backendLogs.stdout}>
-            {t("endpoints.logs.stdout")}
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+        <TabsList className={`grid w-full ${getGridClass()}`}>
+          {availableTabKeys.map((logType) => (
+            <TabsTrigger key={logType} value={logType}>
+              {getTabLabel(logType)}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent
-          value="application"
-          className="h-[calc(100%-theme('spacing.10'))] mt-4"
-        >
-          {backendLogs.application ? (
+        {availableTabKeys.map((logType) => (
+          <TabsContent
+            key={logType}
+            value={logType}
+            className="h-[calc(100%-theme('spacing.10'))] mt-4"
+          >
             <LogViewer
               source={
-                isLoadingLog
+                isLoadingLogs
                   ? t("endpoints.logs.loading")
-                  : logData || t("endpoints.logs.noLogsAvailable")
+                  : logsError
+                    ? `Error: ${logsError}`
+                    : streamedLogs || t("endpoints.logs.noLogsAvailable")
               }
-              downloadUrl={activeDownloadUrl}
+              downloadUrl={logTypeMap[logType]?.downloadUrl}
               height="100%"
               onRefresh={handleRefresh}
             />
-          ) : (
-            <Alert>
-              <AlertDescription>
-                {t("endpoints.logs.applicationLogsNotAvailable")}
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-
-        <TabsContent
-          value="stderr"
-          className="h-[calc(100%-theme('spacing.10'))] mt-4"
-        >
-          {backendLogs.stderr ? (
-            <LogViewer
-              source={
-                isLoadingLog
-                  ? t("endpoints.logs.loading")
-                  : logData || t("endpoints.logs.noLogsAvailable")
-              }
-              downloadUrl={activeDownloadUrl}
-              height="100%"
-              onRefresh={handleRefresh}
-            />
-          ) : (
-            <Alert>
-              <AlertDescription>
-                {t("endpoints.logs.stderrLogsNotAvailable")}
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-
-        <TabsContent
-          value="stdout"
-          className="h-[calc(100%-theme('spacing.10'))] mt-4"
-        >
-          {backendLogs.stdout ? (
-            <LogViewer
-              source={
-                isLoadingLog
-                  ? t("endpoints.logs.loading")
-                  : logData || t("endpoints.logs.noLogsAvailable")
-              }
-              downloadUrl={activeDownloadUrl}
-              height="100%"
-              onRefresh={handleRefresh}
-            />
-          ) : (
-            <Alert>
-              <AlertDescription>
-                {t("endpoints.logs.stdoutLogsNotAvailable")}
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );

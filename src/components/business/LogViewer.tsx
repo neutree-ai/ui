@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { auth } from "@/auth-provider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import { CalendarIcon, Download, RefreshCw, Search, X } from "lucide-react";
 import { type FC, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { VirtualLog } from "./VirtualLog";
+import { toast } from "sonner";
 
 export interface LogViewerProps {
   source: string; // Complete log content
@@ -68,6 +70,60 @@ export const LogViewer: FC<LogViewerProps> = ({
       onRefresh();
     }
   }, [onRefresh]);
+
+  /**
+   * Handle download with auth headers
+   */
+  const handleDownload = useCallback(async () => {
+    if (!downloadUrl) return;
+
+    try {
+      const { data } = await auth.getSession();
+      const token = data.session?.access_token;
+
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(downloadUrl, {
+        headers,
+      });
+
+      if (!response.ok) {
+        toast.error(`Download failed: ${await response.text()}`);
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      // Try to get filename from Content-Disposition header
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = "log.txt";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch?.[1]) {
+          filename = filenameMatch[1];
+        }
+      } else {
+        // Fallback to filename from URL
+        const urlParts = downloadUrl.split("/");
+        const lastPart = urlParts[urlParts.length - 1];
+        if (lastPart) filename = lastPart;
+      }
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      toast.error(`Download error: ${String(error)}`);
+    }
+  }, [downloadUrl]);
 
   /**
    * Toolbar component
@@ -192,11 +248,14 @@ export const LogViewer: FC<LogViewerProps> = ({
         </Button>
 
         {downloadUrl && (
-          <Button variant="outline" size="sm" asChild className="gap-2">
-            <a href={downloadUrl} download>
-              <Download className="h-4 w-4" />
-              {t("components.logViewer.download")}
-            </a>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {t("components.logViewer.download")}
           </Button>
         )}
       </div>

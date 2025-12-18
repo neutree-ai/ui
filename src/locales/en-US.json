@@ -586,6 +586,7 @@
 			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization"
 		},
 		"logs": {
+			"logs": "Logs",
 			"application": "Application",
 			"stderr": "Stderr",
 			"stdout": "Stdout",

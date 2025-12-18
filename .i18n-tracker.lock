@@ -207,14 +207,14 @@
   "src/components/business/ChatSidebar.tsx": "a76cfa3fecd72e857612088352456d88",
   "src/components/business/ClusterType.tsx": "4d77aa74df9037a64f2fae5f64930ff7",
   "src/components/business/EndpointEngine.tsx": "922a4cd6706e6829f36a95e80a0aaedd",
-  "src/components/business/EndpointLogTabs.tsx": "78bcb06ecfffd295754804d05d286a8a",
+  "src/components/business/EndpointLogTabs.tsx": "98f06a24619d85a180fcbc9c9965d6ed",
   "src/components/business/EndpointModel.tsx": "1c2825767a197b91238a6d23f8593847",
   "src/components/business/EngineVersions.tsx": "edb83d68f7a9a99b22f45d21dbd0529a",
   "src/components/business/FormCardGrid.tsx": "9b1c61e5139d5afe2fad4858930c7a8c",
   "src/components/business/FunctionDialog.tsx": "49b39a00cd1da0f246eb00cdae990847",
   "src/components/business/FunctionsManager.tsx": "f47cfc36467af7eeeb5eebfb201a0c0c",
   "src/components/business/ImageRegistryStatus.tsx": "c8ec0b8d312e45dd85674d35e9763b1a",
-  "src/components/business/LogViewer.tsx": "8a8bb8ec7b309e979f1b8c4630ea4c9a",
+  "src/components/business/LogViewer.tsx": "f27cfd32cb9d6be795b5dc75b90b8cfa",
   "src/components/business/Logo.tsx": "7f263b63a8484c0cf7ba506911e70f75",
   "src/components/business/MetadataCard.tsx": "a75d0346e393e6973c904a7491d7a88d",
   "src/components/business/ModelCatalogStatus.tsx": "ed48d82e7734578dd33bce181b222250",
@@ -268,5 +268,7 @@
   "src/components/business/EndpointPauseAction.tsx": "aa16ba2307492a0b845b745eac1be6b9",
   "src/lib/column-visibility-storage.ts": "1cebde1281db69529273f6b8e564d086",
   "src/hooks/use-column-visibility.ts": "5c79260bb52315e0380e612ff9294c64",
-  "src/components/business/use-variables-input.ts": "5476a9ad541e20633247cad46270d109"
+  "src/components/business/use-variables-input.ts": "5476a9ad541e20633247cad46270d109",
+  "src/hooks/use-endpoint-log-sources.ts": "5380c4d10afeb1ce234bd81a16280b1a",
+  "src/hooks/use-streaming-logs.ts": "5b2ec0b40b82351bee79c0a3d2dad1da"
 }
