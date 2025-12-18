@@ -24,6 +24,8 @@ export const useLicense = () => {
 
   const { mutate: updateLicense, isLoading: isUpdating } = useCustomMutation();
 
+  const licenseNotAvailable = error?.statusCode === 404;
+
   const license = licenseData?.data;
 
   // Check if license supports multiple workspaces
@@ -80,5 +82,6 @@ export const useLicense = () => {
     refetch,
     updateLicense: handleUpdateLicense,
     supportMultiWorkspace,
+    licenseNotAvailable,
   };
 };
