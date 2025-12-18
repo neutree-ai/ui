@@ -308,7 +308,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                 value: "LoadBalancer",
               },
               { label: t("clusters.options.nodePort"), value: "NodePort" },
-              { label: t("clusters.options.ingress"), value: "Ingress" },
+              // not supported yet
+              // { label: t("clusters.options.ingress"), value: "Ingress" },
             ]}
             disabled={isEdit}
           />
