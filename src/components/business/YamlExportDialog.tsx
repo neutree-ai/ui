@@ -19,12 +19,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
 import {
   type ExportableResource,
   useYamlExport,
 } from "@/hooks/use-yaml-export";
-import * as clipboard from "clipboard-polyfill";
+import {
+  copyYamlToClipboard,
+  downloadYamlFile,
+  generateEntitiesFilename,
+} from "@/lib/yaml-utils";
 import {
   CheckCircle,
   ChevronDown,
@@ -39,6 +42,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { YamlOutputSection } from "./YamlOutputSection";
 
 interface YamlExportDialogProps {
   trigger?: React.ReactNode;
@@ -124,29 +128,15 @@ export const YamlExportDialog = ({
 
   const handleCopyToClipboard = async () => {
     try {
-      await clipboard.writeText(yamlContent);
-      toast.success(t("components.yamlExport.copySuccess"), {
-        description: t("components.yamlExport.copySuccessDescription"),
-      });
+      await copyYamlToClipboard(yamlContent, t);
     } catch (error) {
-      toast.error(t("components.yamlExport.errors.copyFailed"));
+      // Error handling is done in the utility function
     }
   };
 
   const handleDownloadFile = () => {
-    const blob = new Blob([yamlContent], { type: "application/yaml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `resources-${new Date().toISOString().split("T")[0]}.yaml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast.success(t("components.yamlExport.downloadSuccess"), {
-      description: t("components.yamlExport.downloadSuccessDescription"),
-    });
+    const filename = generateEntitiesFilename();
+    downloadYamlFile(yamlContent, filename, t);
   };
 
   const resetDialog = () => {
@@ -430,58 +420,14 @@ export const YamlExportDialog = ({
               </div>
             </div>
           ) : (
-            /* YAML Output Section */
-            <div className="space-y-4 h-full flex flex-col">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  {t("components.yamlExport.generatedYaml")}
-                </h3>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyToClipboard}
-                    className="flex items-center gap-2"
-                  >
-                    <Copy className="h-4 w-4" />
-                    {t("components.yamlExport.copyToClipboard")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadFile}
-                    className="flex items-center gap-2"
-                  >
-                    <FileDown className="h-4 w-4" />
-                    {t("components.yamlExport.downloadFile")}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex-1 border rounded-md">
-                <Textarea
-                  value={yamlContent}
-                  readOnly
-                  className="h-full min-h-[500px] font-mono text-sm resize-none"
-                  placeholder={t(
-                    "components.yamlExport.yamlContentPlaceholder",
-                  )}
-                />
-              </div>
-
-              <div className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowYamlOutput(false)}
-                >
-                  {t("components.yamlExport.backToSelection")}
-                </Button>
-                <Button onClick={() => setIsOpen(false)}>
-                  {t("components.yamlExport.close")}
-                </Button>
-              </div>
-            </div>
+            <YamlOutputSection
+              yamlContent={yamlContent}
+              onCopyToClipboard={handleCopyToClipboard}
+              onDownloadFile={handleDownloadFile}
+              onBack={() => setShowYamlOutput(false)}
+              onClose={() => setIsOpen(false)}
+              showBackButton={true}
+            />
           )}
         </div>
       </DialogContent>

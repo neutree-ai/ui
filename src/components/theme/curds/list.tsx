@@ -1,9 +1,9 @@
+import { GlobalYamlExportDialog } from "@/components/business/GlobalYamlExportDialog";
 import { CreateButton } from "@/components/theme/buttons";
 import { Breadcrumbs, PageHeader } from "@/components/theme/components";
 import type { ListProps } from "@/components/theme/types";
 import { cn } from "@/lib/utils";
 import {
-  useRefineContext,
   useResource,
   useTranslate,
   useUserFriendlyName,
@@ -53,6 +53,7 @@ export const ListPage: FC<ListProps> = ({
         }
       />
       <div className={cn("pt-2 sm:pt-4 !mt-0", className)}>{children}</div>
+      <GlobalYamlExportDialog />
     </>
   );
 };

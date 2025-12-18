@@ -2,6 +2,7 @@ import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
 import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
+import { Trash2 } from "lucide-react";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
 
@@ -52,6 +53,22 @@ export const useClusterColumns = () => {
         cell={({ getValue }) => {
           return <ClusterStatus {...(getValue() as unknown as BaseStatus)} />;
         }}
+      />
+    ),
+    action: (
+      <Table.Column
+        accessorKey={"id"}
+        id={"actions"}
+        cell={({ row: { original } }) => (
+          <Table.Actions>
+            <Table.DeleteAction
+              title={t("buttons.delete")}
+              row={original}
+              resource="clusters"
+              icon={<Trash2 size={16} />}
+            />
+          </Table.Actions>
+        )}
       />
     ),
   };

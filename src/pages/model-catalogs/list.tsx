@@ -5,7 +5,10 @@ import { useModelCatalogColumns } from "@/components/theme/table/columns/model-c
 import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const ModelCatalogsList = () => {
-  const metadataColumns = useMetadataColumns();
+  const metadataColumns = useMetadataColumns({
+    resource: "model_catalogs",
+    showEditAction: false,
+  });
   const modelCatalogColumns = useModelCatalogColumns();
 
   return (
@@ -28,7 +31,7 @@ export const ModelCatalogsList = () => {
         {modelCatalogColumns.status}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {modelCatalogColumns.action}
+        {metadataColumns.action}
       </Table>
     </ListPage>
   );

@@ -42,33 +42,5 @@ export const useRoleColumns = () => {
         }}
       />
     ),
-    action: (
-      <Table.Column
-        accessorKey={"id"}
-        id={"actions"}
-        cell={({ row: { original } }) => {
-          const isPreset = Boolean(original.spec.preset_key);
-          if (isPreset) {
-            return null;
-          }
-          return (
-            <Table.Actions>
-              <Table.EditAction
-                title={t("buttons.edit")}
-                row={original}
-                resource="roles"
-                icon={<Edit size={16} />}
-              />
-              <Table.DeleteAction
-                title={t("buttons.delete")}
-                row={original}
-                resource="roles"
-                icon={<Trash2 size={16} />}
-              />
-            </Table.Actions>
-          );
-        }}
-      />
-    ),
   };
 };

@@ -1,6 +1,5 @@
 import UserCell from "@/components/business/UserCell";
 import { useTranslate } from "@refinedev/core";
-import { Edit, Trash2 } from "lucide-react";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
 
@@ -61,35 +60,6 @@ export const useRoleAssignmentColumns = () => {
         cell={({ row }) => {
           const { user_id } = row.original.spec;
           return <UserCell id={user_id} />;
-        }}
-      />
-    ),
-    action: (
-      <Table.Column
-        accessorKey={"id"}
-        id={"actions"}
-        cell={({ row: { original } }) => {
-          const isAdminGlobalAssignment =
-            original.metadata.name === "admin-global-role-assignment";
-          if (isAdminGlobalAssignment) {
-            return null;
-          }
-          return (
-            <Table.Actions>
-              <Table.EditAction
-                title={t("buttons.edit")}
-                row={original}
-                resource="role_assignments"
-                icon={<Edit size={16} />}
-              />
-              <Table.DeleteAction
-                title={t("buttons.delete")}
-                row={original}
-                resource="role_assignments"
-                icon={<Trash2 size={16} />}
-              />
-            </Table.Actions>
-          );
         }}
       />
     ),

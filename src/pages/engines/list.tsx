@@ -4,7 +4,11 @@ import { useMetadataColumns } from "@/components/theme/table/columns/metadata-co
 import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const EnginesList = () => {
-  const metadataColumns = useMetadataColumns();
+  const metadataColumns = useMetadataColumns({
+    showEditAction: false,
+    showDeleteAction: false,
+    showExportAction: true,
+  });
   const engineColumns = useEngineColumns();
 
   return (
@@ -22,6 +26,7 @@ export const EnginesList = () => {
         {engineColumns.versions}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
+        {metadataColumns.action}
       </Table>
     </ListPage>
   );
