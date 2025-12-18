@@ -522,7 +522,8 @@
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"acceleratorType": "Accelerator Type",
-			"acceleratorProduct": "Accelerator Product"
+			"acceleratorProduct": "Accelerator Product",
+			"accelerator": "Accelerator"
 		},
 		"sections": {
 			"basicInformation": "Basic Information",
@@ -548,6 +549,7 @@
 			"selectEngine": "Select An Engine",
 			"selectVersion": "Select A Version",
 			"selectTaskType": "Select A Support Task Type",
+			"selectAccelerator": "Select An Accelerator",
 			"selectSchedulerType": "Select Scheduler Type"
 		},
 		"options": {
@@ -567,7 +569,8 @@
 			"pauseSuccess": "Endpoint paused successfully",
 			"pauseFailed": "Failed to pause endpoint",
 			"resumeSuccess": "Endpoint resumed successfully",
-			"resumeFailed": "Failed to resume endpoint"
+			"resumeFailed": "Failed to resume endpoint",
+			"noAcceleratorsAvailable": "No accelerators available in this cluster"
 		},
 		"tabs": {
 			"basic": "Basic",
@@ -813,7 +816,9 @@
 			"selectFromSchema": "Select from schema",
 			"orTypeCustomKey": "Or type custom key",
 			"newKey": "New key",
-			"addVariable": "Add Variable"
+			"addVariable": "Add Variable",
+			"selectOrTypeKey": "Select from schema or type custom key",
+			"noSchemaKeys": "No schema keys available"
 		},
 		"playground": {
 			"chat": {

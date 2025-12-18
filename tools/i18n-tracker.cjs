@@ -50,9 +50,9 @@ if (
     console.error(`File not found: ${rel}`);
     process.exit(1);
   }
-  // Skip .d.ts files
-  if (rel.endsWith(".d.ts")) {
-    console.log(`Skipping .d.ts file: ${rel}`);
+
+  if (rel.includes(".d.ts") || rel.includes('.test.ts')) {
+    console.log(`Skipping .d.ts or test file: ${rel}`);
     process.exit(0);
   }
   // Check if file matches our regex pattern
@@ -164,7 +164,7 @@ function walk(dir) {
       else if (
         stat.isFile() &&
         FILE_REGEX.test(item) &&
-        !item.endsWith(".d.ts")
+        !item.includes(".d.ts") && !item.includes('.test.ts')
       ) {
         out.push(path.relative(ROOT, p));
       }
@@ -182,7 +182,7 @@ function gitFiles(depth) {
       .split("\n")
       .filter(
         (f) =>
-          f.trim() && FILE_REGEX.test(f.trim()) && !f.trim().endsWith(".d.ts"),
+          f.trim() && FILE_REGEX.test(f.trim()) && !f.trim().includes(".d.ts") && !f.trim().includes('.test.ts'),
       );
   } catch (e) {
     console.error(`Git command failed: ${e.message}`);

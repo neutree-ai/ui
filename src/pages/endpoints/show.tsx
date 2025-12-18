@@ -132,41 +132,27 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   // Calculate resource display logic
   const resourceDisplay = React.useMemo(() => {
     if (!record?.spec.resources) {
-      return { hasGpu: false, hasNpu: false, gpuValue: "-", npuValue: "-" };
+      return {
+        hasGpu: false,
+        hasNpu: false,
+        gpuValue: "-",
+        npuValue: "-",
+        hasAccelerator: false,
+      };
     }
 
-    const accelerator = record.spec.resources.accelerator || {};
+    const accelerator = record.spec.resources.accelerator;
     const gpuField = record.spec.resources.gpu;
 
     // Check for GPU resources
-    const gpuAcceleratorKeys = Object.keys(accelerator).filter(
-      (key) =>
-        key !== "-" &&
-        key !== "NPU" &&
-        key.startsWith("NVIDIA_") &&
-        accelerator[key] > 0,
-    );
-    const hasGpu = Boolean(
-      gpuAcceleratorKeys.length > 0 || (gpuField && gpuField > 0),
-    );
-    const gpuValue =
-      gpuAcceleratorKeys.length > 0
-        ? accelerator[gpuAcceleratorKeys[0]]
-        : gpuField || "-";
+    const hasGpu = Boolean(gpuField && gpuField > 0);
+    const gpuValue = gpuField || "-";
 
-    // Check for NPU resources
-    const npuAcceleratorKeys = Object.keys(accelerator).filter(
-      (key) =>
-        key !== "-" &&
-        (key === "NPU" || !key.startsWith("NVIDIA_")) &&
-        accelerator[key] > 0,
-    );
+    // Check for NPU resources (NPU count would be in a separate field if supported)
+    const hasNpu = false;
+    const npuValue = "-";
 
-    const hasNpu = npuAcceleratorKeys.length > 0;
-
-    const npuValue = hasNpu ? accelerator[npuAcceleratorKeys[0]] : "-";
-
-    const hasAccelerator = hasGpu || hasNpu;
+    const hasAccelerator = Boolean(accelerator?.type && accelerator?.product);
 
     return { hasGpu, hasNpu, gpuValue, npuValue, hasAccelerator };
   }, [record?.spec.resources]);
@@ -291,19 +277,24 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Row>
               </div>
 
-              {resourceDisplay.hasAccelerator && (
-                <div className="mt-4">
-                  <ShowPage.Row
-                    title={`${t("clusters.fields.acceleratorType")}: ${Object.keys(record.spec.resources?.accelerator || {})[0]}`}
-                  >
-                    {formatToDecimal(
-                      Object.values(
-                        record.spec.resources?.accelerator || {},
-                      )[0],
-                    ) ?? "-"}
-                  </ShowPage.Row>
-                </div>
-              )}
+              {resourceDisplay.hasAccelerator &&
+                record.spec.resources?.accelerator && (
+                  <div className="mt-4">
+                    <ShowPage.Row title={t("endpoints.fields.acceleratorType")}>
+                      {t(
+                        `clusters.acceleratorTypes.${record.spec.resources.accelerator.type}`,
+                        {
+                          defaultValue: record.spec.resources.accelerator.type,
+                        },
+                      )}
+                    </ShowPage.Row>
+                    <ShowPage.Row
+                      title={t("endpoints.fields.acceleratorProduct")}
+                    >
+                      {record.spec.resources.accelerator.product}
+                    </ShowPage.Row>
+                  </div>
+                )}
             </CardContent>
           </Card>
           <Card className="mt-4">
@@ -330,6 +321,24 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   schema={engineVersionSchema}
                   value={record.spec.variables.engine_args}
                 />
+              </CardContent>
+            </Card>
+          )}
+          {record.spec.env && Object.keys(record.spec.env).length > 0 && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>
+                  {t("endpoints.sections.environmentVariables")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(record.spec.env).map(([key, value]) => (
+                    <ShowPage.Row key={key} title={key}>
+                      {value}
+                    </ShowPage.Row>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}

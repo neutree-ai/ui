@@ -61,7 +61,32 @@ export function useVariablesInput({
 
   const handleEditingKeyChange = (id: string, newKey: string) => {
     setEditingRows((prev) =>
-      prev.map((row) => (row.id === id ? { ...row, key: newKey } : row)),
+      prev.map((row) => {
+        if (row.id !== id) return row;
+
+        // If the new key exists in schema, auto-fill default value based on type
+        if (schema[newKey]) {
+          const { type } = schema[newKey];
+          let defaultValue = "";
+
+          switch (type) {
+            case "boolean":
+              defaultValue = "false";
+              break;
+            case "number":
+            case "float":
+            case "integer":
+              defaultValue = "0";
+              break;
+            default:
+              defaultValue = "";
+          }
+
+          return { ...row, key: newKey, value: defaultValue };
+        }
+
+        return { ...row, key: newKey };
+      }),
     );
   };
 
@@ -90,7 +115,8 @@ export function useVariablesInput({
   const saveEditingRow = (id: string) => {
     setEditingRows((prev) => {
       const row = prev.find((r) => r.id === id);
-      if (!row || !row.key.trim()) return prev;
+      // Don't save if key or value is empty
+      if (!row || !row.key.trim() || !row.value.trim()) return prev;
 
       // Check if key already exists
       if (value[row.key]) return prev;
@@ -113,14 +139,11 @@ export function useVariablesInput({
     });
   };
 
-  const handleEditingRowKeyDown = (
-    id: string,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
+  const handleEditingRowBlur = (id: string) => {
+    // Use setTimeout to allow dropdown clicks to complete first
+    setTimeout(() => {
       saveEditingRow(id);
-    }
+    }, 200);
   };
 
   const handleRemoveEditingRow = (id: string) => {
@@ -157,7 +180,7 @@ export function useVariablesInput({
     handleAddNewRow,
     handleEditingKeyChange,
     handleEditingValueChange,
-    handleEditingRowKeyDown,
+    handleEditingRowBlur,
     handleRemoveEditingRow,
     handleRemoveVariable,
     handleUpdateValue,

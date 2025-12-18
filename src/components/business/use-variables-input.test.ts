@@ -248,7 +248,7 @@ describe("useVariablesInput", () => {
       expect(onChange).toHaveBeenCalledWith({ strKey: "hello" });
     });
 
-    it("should handle empty number value correctly", () => {
+    it("should not save editing row with empty value", () => {
       const onChange = vi.fn();
       const schema: Schema = {
         numKey: { type: "number" },
@@ -264,7 +264,8 @@ describe("useVariablesInput", () => {
         result.current.saveEditingRow(rowId);
       });
 
-      expect(onChange).toHaveBeenCalledWith({ numKey: "" });
+      // Should not save when value is empty
+      expect(onChange).not.toHaveBeenCalled();
     });
   });
 
@@ -305,47 +306,43 @@ describe("useVariablesInput", () => {
   });
 
   describe("keyboard interaction", () => {
-    it("should save editing row on Enter key press", () => {
+    it("should save editing row on blur", () => {
+      vi.useFakeTimers();
       const onChange = vi.fn();
       const { result } = renderHook(() => useVariablesInput({ onChange }));
-
-      const mockEvent = {
-        key: "Enter",
-        preventDefault: vi.fn(),
-      } as unknown as React.KeyboardEvent<HTMLInputElement>;
 
       act(() => {
         const rowId = result.current.editingRows[0].id;
         result.current.handleEditingKeyChange(rowId, "myKey");
         result.current.handleEditingValueChange(rowId, "myValue");
-        result.current.handleEditingRowKeyDown(rowId, mockEvent);
+        result.current.handleEditingRowBlur(rowId);
       });
 
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+
       expect(onChange).toHaveBeenCalledWith({ myKey: "myValue" });
+      vi.useRealTimers();
     });
 
-    it("should not save on other key press", () => {
+    it("should not save editing row with empty key on blur", () => {
+      vi.useFakeTimers();
       const onChange = vi.fn();
       const { result } = renderHook(() => useVariablesInput({ onChange }));
-      const rowId = result.current.editingRows[0].id;
 
       act(() => {
-        result.current.handleEditingKeyChange(rowId, "myKey");
+        const rowId = result.current.editingRows[0].id;
         result.current.handleEditingValueChange(rowId, "myValue");
+        result.current.handleEditingRowBlur(rowId);
       });
-
-      const mockEvent = {
-        key: "Tab",
-        preventDefault: vi.fn(),
-      } as unknown as React.KeyboardEvent<HTMLInputElement>;
 
       act(() => {
-        result.current.handleEditingRowKeyDown(rowId, mockEvent);
+        vi.advanceTimersByTime(200);
       });
 
-      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
       expect(onChange).not.toHaveBeenCalled();
+      vi.useRealTimers();
     });
   });
 });

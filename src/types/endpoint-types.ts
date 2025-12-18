@@ -23,7 +23,7 @@ export type EndpointEngineSpec = {
 export type ResourceSpec = {
   cpu: number | null;
   gpu: number | null;
-  accelerator: Record<string, number> | null;
+  accelerator: { type: string; product: string } | null;
   memory: number | null;
 };
 
@@ -34,8 +34,6 @@ export type ReplicaSpec = {
 export type DeploymentOptions = {
   scheduler: {
     type: string;
-    virtual_nodes: number;
-    load_factor: number;
   };
 };
 
@@ -46,7 +44,8 @@ export type EndpointSpec = {
   resources: ResourceSpec | null;
   replicas: ReplicaSpec | null;
   deployment_options: DeploymentOptions | null;
-  variables: Record<string, string> | null;
+  variables: Record<string, any> | null;
+  env: Record<string, string> | null;
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {

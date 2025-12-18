@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,7 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash } from "lucide-react";
-import React from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   type EditingRow,
@@ -40,14 +48,43 @@ export const VariablesInput = React.forwardRef<
   const { t } = useTranslation();
   const {
     editingRows,
+    schemaKeyOptions,
     handleAddNewRow,
     handleEditingKeyChange,
     handleEditingValueChange,
-    handleEditingRowKeyDown,
+    handleEditingRowBlur,
     handleRemoveEditingRow,
     handleRemoveVariable,
     handleUpdateValue,
   } = useVariablesInput({ value, onChange, schema });
+
+  // Track which editing row is focused
+  const [focusedRowId, setFocusedRowId] = useState<string | null>(null);
+
+  // Track input refs and dropdown position for portal
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  // Calculate dropdown position when focused row changes
+  useEffect(() => {
+    if (focusedRowId && inputRefs.current[focusedRowId]) {
+      const input = inputRefs.current[focusedRowId];
+      if (input) {
+        const rect = input.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        });
+      }
+    } else {
+      setDropdownPosition(null);
+    }
+  }, [focusedRowId]);
 
   // Render appropriate input based on schema type for existing variables
   const renderValueInput = (key: string, val: any) => {
@@ -144,7 +181,7 @@ export const VariablesInput = React.forwardRef<
               value={row.value}
               step="any"
               onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
-              onKeyDown={(e) => handleEditingRowKeyDown(row.id, e)}
+              onBlur={() => handleEditingRowBlur(row.id)}
               className="w-full"
             />
           );
@@ -156,7 +193,7 @@ export const VariablesInput = React.forwardRef<
               value={row.value}
               step="1"
               onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
-              onKeyDown={(e) => handleEditingRowKeyDown(row.id, e)}
+              onBlur={() => handleEditingRowBlur(row.id)}
               className="w-full"
             />
           );
@@ -169,7 +206,7 @@ export const VariablesInput = React.forwardRef<
         placeholder={t("components.variablesInput.newValue")}
         value={row.value}
         onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
-        onKeyDown={(e) => handleEditingRowKeyDown(row.id, e)}
+        onBlur={() => handleEditingRowBlur(row.id)}
         className="w-full"
       />
     );
@@ -212,32 +249,114 @@ export const VariablesInput = React.forwardRef<
               </TableRow>
             ))}
             {/* Editing rows */}
-            {editingRows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>
-                  <Input
-                    value={row.key}
-                    onChange={(e) =>
-                      handleEditingKeyChange(row.id, e.target.value)
-                    }
-                    onKeyDown={(e) => handleEditingRowKeyDown(row.id, e)}
-                    placeholder={t("components.variablesInput.newKey")}
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>{renderEditingValueInput(row)}</TableCell>
-                <TableCell>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveEditingRow(row.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {editingRows.map((row) => {
+              const isFocused = focusedRowId === row.id;
+
+              // Filter schema options based on current input
+              const filteredOptions = !row.key
+                ? schemaKeyOptions
+                : schemaKeyOptions.filter((opt) => {
+                    const searchLower = row.key.toLowerCase();
+                    return (
+                      opt.value.toLowerCase().includes(searchLower) ||
+                      opt.label.toLowerCase().includes(searchLower)
+                    );
+                  });
+
+              const showSuggestions =
+                isFocused &&
+                schemaKeyOptions.length > 0 &&
+                filteredOptions.length > 0;
+
+              return (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    <Input
+                      ref={(el) => {
+                        inputRefs.current[row.id] = el;
+                      }}
+                      value={row.key}
+                      onChange={(e) =>
+                        handleEditingKeyChange(row.id, e.target.value)
+                      }
+                      onFocus={() => setFocusedRowId(row.id)}
+                      onBlur={() => {
+                        setTimeout(() => setFocusedRowId(null), 200);
+                        handleEditingRowBlur(row.id);
+                      }}
+                      placeholder={
+                        schemaKeyOptions.length > 0
+                          ? t("components.variablesInput.selectOrTypeKey")
+                          : t("components.variablesInput.newKey")
+                      }
+                      className="w-full"
+                    />
+                    {/* Schema key suggestions dropdown - rendered via portal */}
+                    {showSuggestions &&
+                      dropdownPosition &&
+                      focusedRowId === row.id &&
+                      createPortal(
+                        <div
+                          style={{
+                            position: "fixed",
+                            top: `${dropdownPosition.top}px`,
+                            left: `${dropdownPosition.left}px`,
+                            width: `${dropdownPosition.width}px`,
+                            zIndex: 50,
+                          }}
+                        >
+                          <Command className="rounded-lg border shadow-md bg-popover">
+                            <CommandList>
+                              <CommandEmpty>
+                                {t("components.variablesInput.noSchemaKeys")}
+                              </CommandEmpty>
+                              <CommandGroup className="max-h-[200px] overflow-y-auto">
+                                {filteredOptions.map((option) => (
+                                  <CommandItem
+                                    key={option.value}
+                                    value={option.value}
+                                    onSelect={() => {
+                                      handleEditingKeyChange(
+                                        row.id,
+                                        option.value,
+                                      );
+                                      setFocusedRowId(null);
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {option.label}
+                                      </span>
+                                      {option.label !== option.value && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {option.value}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </div>,
+                        document.body,
+                      )}
+                  </TableCell>
+                  <TableCell>{renderEditingValueInput(row)}</TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveEditingRow(row.id)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
         {/* Bottom + button */}

@@ -5,8 +5,7 @@ const useEndpointResources = (
     cpu?: number;
     memory?: number;
     gpu?: number;
-    npu?: number;
-    accelerator?: Record<string, number>;
+    accelerator?: { type: string; product: string };
   },
   metadata?: Record<string, any>,
 ) => {
@@ -18,8 +17,7 @@ const useEndpointResources = (
         cpu: resources?.cpu || 0,
         memory: resources?.memory || 0,
         gpu: resources?.gpu || 0,
-        npu: resources?.accelerator?.NPU || 0,
-        accelerator: resources?.accelerator || { "-": 0 },
+        accelerator: resources?.accelerator || null,
       };
     }
 
@@ -27,7 +25,6 @@ const useEndpointResources = (
       cpu: 0,
       memory: 0,
       gpu: 0,
-      npu: 0,
       accelerator: {},
     };
   }, [metadata?.name, resources]);

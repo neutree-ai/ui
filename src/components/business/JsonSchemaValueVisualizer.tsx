@@ -202,6 +202,7 @@ interface PropertyNodeProps {
   path?: string;
   required?: boolean;
   depth?: number;
+  hideEmptyValues?: boolean;
 }
 
 const PropertyNode = ({
@@ -210,6 +211,7 @@ const PropertyNode = ({
   value,
   path = "",
   depth = 0,
+  hideEmptyValues = true,
 }: PropertyNodeProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(depth < 2);
@@ -245,6 +247,11 @@ const PropertyNode = ({
   );
 
   const hasValue = value !== undefined;
+
+  // Hide this property if hideEmptyValues is true and there's no value
+  if (hideEmptyValues && !hasValue) {
+    return null;
+  }
 
   const indentStyle = {
     paddingLeft: `${depth * 20}px`,
@@ -307,6 +314,7 @@ const PropertyNode = ({
                 value={(value as Record<string, unknown>)?.[childName]}
                 path={`${path}.${childName}`}
                 depth={depth + 1}
+                hideEmptyValues={hideEmptyValues}
               />
             ))}
 
@@ -320,6 +328,7 @@ const PropertyNode = ({
                   value={(value as Record<string, unknown>)?.[childName]}
                   path={`${path}.${childName}`}
                   depth={depth + 1}
+                  hideEmptyValues={hideEmptyValues}
                 />
               ),
             )}
@@ -335,6 +344,7 @@ const PropertyNode = ({
                 value={item}
                 path={`${path}[${index}]`}
                 depth={depth + 1}
+                hideEmptyValues={hideEmptyValues}
               />
             ))}
         </div>
@@ -346,11 +356,13 @@ const PropertyNode = ({
 interface JSONSchemaValueVisualizerProps {
   schema: Record<string, unknown>;
   value: unknown;
+  hideEmptyValues?: boolean;
 }
 
 const JSONSchemaValueVisualizer = ({
   schema,
   value,
+  hideEmptyValues = true,
 }: JSONSchemaValueVisualizerProps) => {
   const { t } = useTranslation();
 
@@ -364,6 +376,7 @@ const JSONSchemaValueVisualizer = ({
         }
         schema={schema}
         value={value}
+        hideEmptyValues={hideEmptyValues}
       />
     </div>
   );

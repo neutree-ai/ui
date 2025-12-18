@@ -53,7 +53,7 @@ export const useLicense = () => {
     updateLicense(
       {
         url: "/license",
-        method: "patch",
+        method: "PATCH" as "patch",
         values: {
           code,
         },

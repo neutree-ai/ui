@@ -32,34 +32,19 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-// Types for Ray cluster status API response
-type RayClusterResourceUsage = {
-  usage: Record<string, [number, number]>; // [used, total]
-  usageByNode: Record<string, Record<string, [number, number]>>;
-};
-
-type RayClusterStatus = {
-  result: boolean;
-  msg: string;
-  data: {
-    clusterStatus: {
-      loadMetricsReport: RayClusterResourceUsage;
-    };
-  };
-};
-
-type ClusterResources = {
+// Types for cluster resources
+type ClusterResourceSummary = {
   cpu: { available: number; total: number };
   memory: { available: number; total: number }; // in GiB
-  gpu: { available: number; total: number };
-  npu: { available: number; total: number };
-  acceleratorTypes: Array<{
-    label: string;
-    value: string;
-    available: number;
-    total: number;
-    type: string;
-  }>;
+};
+
+type AcceleratorOption = {
+  label: string; // Display label: "NVIDIA GPU - Tesla-V100"
+  value: string; // Unique value: "nvidia_gpu:Tesla-V100"
+  type: string; // Accelerator type: "nvidia_gpu"
+  product: string; // Product name: "Tesla-V100"
+  available: number;
+  total: number;
 };
 
 // Deep merge function for form data with smart overriding
@@ -103,149 +88,85 @@ const deepMerge = (
   return result;
 };
 
-const resourceMapping: Record<
-  string,
-  { label: string; apiValue: string; type: "gpu" | "npu" }
-> = {
-  NVIDIAA10040G: {
-    label: "NVIDIA A100 40G",
-    apiValue: "NVIDIA_A100_40G",
-    type: "gpu",
-  },
-  NVIDIAA10080G: {
-    label: "NVIDIA A100 80G",
-    apiValue: "NVIDIA_A100_80G",
-    type: "gpu",
-  },
-  NVIDIATeslaV100: {
-    label: "NVIDIA TESLA V100",
-    apiValue: "NVIDIA_TESLA_V100",
-    type: "gpu",
-  },
-  NVIDIATeslaP100: {
-    label: "NVIDIA TESLA P100",
-    apiValue: "NVIDIA_TESLA_P100",
-    type: "gpu",
-  },
-  NVIDIATeslaT4: {
-    label: "NVIDIA TESLA T4",
-    apiValue: "NVIDIA_TESLA_T4",
-    type: "gpu",
-  },
-  NVIDIATeslaP4: {
-    label: "NVIDIA TESLA P4",
-    apiValue: "NVIDIA_TESLA_P4",
-    type: "gpu",
-  },
-  NVIDIATeslaK80: {
-    label: "NVIDIA TESLA K80",
-    apiValue: "NVIDIA_TESLA_K80",
-    type: "gpu",
-  },
-  NVIDIATeslaA10G: {
-    label: "NVIDIA TESLA A10G",
-    apiValue: "NVIDIA_TESLA_A10G",
-    type: "gpu",
-  },
-  AMDInstinctMi300XVf: {
-    label: "AMD Instinct MI300X VF",
-    apiValue: "AMD_Instinct_MI300X_VF",
-    type: "gpu",
-  },
-  NVIDIAL40S: { label: "NVIDIA L40S", apiValue: "NVIDIA_L40S", type: "gpu" },
-  NVIDIAL4: { label: "NVIDIA L4", apiValue: "NVIDIA_L4", type: "gpu" },
-  NVIDIAL20: { label: "NVIDIA L20", apiValue: "NVIDIA_L20", type: "gpu" },
-  NVIDIAA100: { label: "NVIDIA A100", apiValue: "NVIDIA_A100", type: "gpu" },
-  NVIDIAH100: { label: "NVIDIA H100", apiValue: "NVIDIA_H100", type: "gpu" },
-  NVIDIAH200: { label: "NVIDIA H200", apiValue: "NVIDIA_H200", type: "gpu" },
-  HUAWEIAscend310P3: {
-    label: "HUAWEI Ascend 310P3",
-    apiValue: "HUAWEI_Ascend310P3",
-    type: "npu",
-  },
-};
-
-// Helper function to parse cluster resources from Ray API response
+// Helper function to parse cluster resources from cluster.status.resource_info
 const parseClusterResources = (
-  clusterStatus: RayClusterStatus | undefined,
-): ClusterResources | null => {
-  if (
-    !clusterStatus?.result ||
-    !clusterStatus.data?.clusterStatus?.loadMetricsReport?.usage
-  ) {
-    return null;
+  cluster: Cluster | undefined,
+  t: (key: string, options?: { defaultValue?: string }) => string,
+): {
+  summary: ClusterResourceSummary | null;
+  acceleratorOptions: AcceleratorOption[];
+} => {
+  if (!cluster?.status?.resource_info) {
+    return { summary: null, acceleratorOptions: [] };
   }
 
-  const usage = clusterStatus.data.clusterStatus.loadMetricsReport.usage;
+  const resourceInfo = cluster.status.resource_info;
+  const allocatable = resourceInfo.allocatable;
+  const available = resourceInfo.available;
 
-  // Parse CPU (in cores)
-  const cpuUsage = usage.CPU || [0, 0];
-  const cpu = {
-    available: Math.max(0, cpuUsage[1] - cpuUsage[0]),
-    total: cpuUsage[1],
+  if (!allocatable || !available) {
+    return { summary: null, acceleratorOptions: [] };
+  }
+
+  const summary: ClusterResourceSummary = {
+    cpu: {
+      available: available.cpu || 0,
+      total: allocatable.cpu || 0,
+    },
+    memory: {
+      available: available.memory || 0,
+      total: allocatable.memory || 0,
+    },
   };
 
-  // Parse Memory (convert from bytes to GiB)
-  const memoryUsage = usage.memory || [0, 0];
-  const memory = {
-    available: Math.max(0, (memoryUsage[1] - memoryUsage[0]) / 1024 ** 3),
-    total: memoryUsage[1] / 1024 ** 3,
-  };
+  // Build accelerator options from accelerator_groups
+  const acceleratorOptions: AcceleratorOption[] = [];
 
-  // Parse GPU
-  const gpuUsage = usage.GPU || [0, 0];
-  const gpu = {
-    available: Math.max(0, gpuUsage[1] - gpuUsage[0]),
-    total: gpuUsage[1],
-  };
+  if (allocatable.accelerator_groups) {
+    for (const [type, allocatableGroup] of Object.entries(
+      allocatable.accelerator_groups,
+    )) {
+      const availableGroup = available.accelerator_groups?.[type];
+      const availableQuantity = availableGroup?.quantity || 0;
+      const totalQuantity = allocatableGroup.quantity || 0;
 
-  // Parse NPU
-  const npuUsage = usage.NPU || [0, 0];
-  const npu = {
-    available: Math.max(0, npuUsage[1] - npuUsage[0]),
-    total: npuUsage[1],
-  };
-
-  // Parse accelerator types
-  const acceleratorTypes = [];
-  for (const [key, value] of Object.entries(usage)) {
-    const resource = resourceMapping[key];
-    if (resource) {
-      acceleratorTypes.push({
-        label: resource.label,
-        value: resource.apiValue,
-        available: Math.max(0, value[1] - value[0]),
-        total: value[1],
-        type: resource.type,
+      // Get translated type name
+      const translatedType = t(`clusters.acceleratorTypes.${type}`, {
+        defaultValue: type,
       });
+
+      if (allocatableGroup.product_groups) {
+        // Create an option for each product
+        for (const [product, productTotal] of Object.entries(
+          allocatableGroup.product_groups,
+        )) {
+          const productAvailable =
+            availableGroup?.product_groups?.[product] || 0;
+
+          acceleratorOptions.push({
+            label: `${translatedType} - ${product}`,
+            value: `${type}:${product}`,
+            type,
+            product,
+            available: productAvailable,
+            total: productTotal,
+          });
+        }
+      } else {
+        // No product breakdown, create a generic option
+        acceleratorOptions.push({
+          label: translatedType,
+          value: `${type}:generic`,
+          type,
+          product: "",
+          available: availableQuantity,
+          total: totalQuantity,
+        });
+      }
     }
   }
 
-  // Add generic options
-  gpu.total &&
-    acceleratorTypes.unshift({
-      label: "Generic",
-      value: "-",
-      available: gpu.available,
-      total: gpu.total,
-      type: "gpu",
-    });
-  npu.total &&
-    acceleratorTypes.unshift({
-      label: "Generic",
-      value: "-",
-      available: npu.available,
-      total: npu.total,
-      type: "npu",
-    });
-
-  return {
-    cpu,
-    memory,
-    gpu,
-    npu,
-    acceleratorTypes,
-  };
+  return { summary, acceleratorOptions };
 };
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
@@ -282,8 +203,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           memory: 0,
           gpu: 0,
           accelerator: {
-            "-": 0,
-            NPU: 0,
+            type: "",
+            product: "",
           },
         },
         replicas: {
@@ -297,6 +218,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         variables: {
           engine_args: {},
         },
+        env: {},
       },
     },
     refineCoreProps: {
@@ -339,7 +261,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentModelName = form.watch("spec.model.name");
   const currentRegistry = form.watch("spec.model.registry");
   const currentCluster = form.watch("spec.cluster");
-  const acceleratorValue = form.watch("spec.resources.accelerator");
   const engineSpec = form.watch("spec.engine");
 
   const meta = useMemo(
@@ -369,43 +290,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
-  // Fetch cluster status for dynamic resource information
-  const clusterStatusQuery = useCustom<RayClusterStatus>({
-    url: `/ray-dashboard-proxy/${workspace}/${currentCluster}/api/cluster_status`,
-    method: "get",
-    queryOptions: {
-      enabled: Boolean(currentCluster),
-      refetchInterval: 30000, // Refresh every 30 seconds
-    },
-  });
+  // Get the selected cluster object
+  const selectedCluster = useMemo(() => {
+    if (!currentCluster || !clusters.query.data?.data) {
+      return undefined;
+    }
+    return clusters.query.data?.data.find(
+      (opt) => opt.metadata.name === currentCluster,
+    ) as unknown as Cluster | undefined;
+  }, [currentCluster, clusters.query.data?.data]);
 
-  // Parse cluster resources from API response
-  const clusterResources = useMemo(() => {
-    return parseClusterResources(clusterStatusQuery.data?.data);
-  }, [clusterStatusQuery.data?.data]);
+  // Parse cluster resources from cluster.status.resource_info
+  const { summary: clusterResources, acceleratorOptions } = useMemo(() => {
+    return parseClusterResources(selectedCluster, t);
+  }, [selectedCluster, t]);
 
   const maxAvailable = useMemo(() => {
     if (!clusterResources) {
-      return { cpu: 0, memory: 0, gpu: 0, npu: 0, accelerator: { "-": 0 } };
+      return { cpu: 0, memory: 0 };
     }
-
-    const remainingAvailable = clusterResources.acceleratorTypes?.reduce(
-      (acc, item) => {
-        acc[item.value] = Number(item.available || 0);
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    const accelerator = Object.keys(remainingAvailable).reduce(
-      (acc, key) => {
-        const usage = Number(currentUsage.accelerator[key] || 0);
-        const available = remainingAvailable?.[key] || 0;
-        acc[key] = usage + available;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
 
     return {
       cpu:
@@ -414,13 +317,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       memory:
         Number(clusterResources.memory?.available || 0) +
         Number(currentUsage.memory || 0),
-      gpu:
-        Number(clusterResources.gpu?.available || 0) +
-        Number(currentUsage.gpu || 0),
-      npu:
-        Number(clusterResources.npu?.available || 0) +
-        Number(currentUsage.npu || 0),
-      accelerator,
     };
   }, [clusterResources, currentUsage]);
 
@@ -431,19 +327,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const dynamicAvailability = useMemo(() => {
     const currentCpu = cpuUsage || 0;
     const currentMemory = memoryUsage || 0;
-    const currentAcceleratorType = Object.keys(acceleratorValue)[0];
-    const currentAcceleratorValue =
-      acceleratorValue[currentAcceleratorType] || 0;
     return {
       cpu: maxAvailable.cpu - currentCpu,
       memory: maxAvailable.memory - currentMemory,
-      accelerator: {
-        [currentAcceleratorType]:
-          (maxAvailable.accelerator[currentAcceleratorType] || 0) -
-          currentAcceleratorValue,
-      },
     };
-  }, [maxAvailable, cpuUsage, memoryUsage, acceleratorValue]);
+  }, [maxAvailable, cpuUsage, memoryUsage]);
 
   const isEdit = action === "edit";
 
@@ -553,125 +441,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
-  // Helper function to render accelerator fields (GPU/NPU)
-  const renderAcceleratorFields = (type: "gpu" | "npu") => {
-    const isGpu = type === "gpu";
-    const totalResources = clusterResources?.[type];
-
-    if (!totalResources?.total) {
-      return null;
-    }
-
-    const typeOptions = (clusterResources?.acceleratorTypes || []).filter(
-      (v) => v.type === type,
-    );
-
-    const currentAcceleratorType = Object.keys(acceleratorValue)[0];
-
-    // Extract computed values
-    const currentAcceleratorValue =
-      acceleratorValue[currentAcceleratorType] || 0;
-    const specificAccelerator = clusterResources?.acceleratorTypes.find(
-      (acc) => acc.value === currentAcceleratorType && acc.type === type,
-    );
-    const maxSliderValue = !clusterResources
-      ? 0
-      : maxAvailable.accelerator[currentAcceleratorType] || 0;
-    const availableCount =
-      dynamicAvailability.accelerator[currentAcceleratorType] || 0;
-
-    const typeLabel = isGpu
-      ? t("endpoints.fields.gpu")
-      : t("endpoints.fields.npu");
-    const countLabel = isGpu
-      ? t("endpoints.fields.gpuCount")
-      : t("endpoints.fields.npuCount");
-    const unitLabel = isGpu ? "GPUs" : "NPUs";
-    const placeholderKey = isGpu
-      ? "endpoints.placeholders.selectGpuType"
-      : "endpoints.placeholders.selectNpuType";
-
-    return (
-      <>
-        <Field {...form} name="-accelerator-type" label={typeLabel}>
-          <Combobox
-            placeholder={t(placeholderKey)}
-            options={typeOptions}
-            value={Object.keys(acceleratorValue)[0]}
-            onChange={(value) => {
-              const currentCount =
-                acceleratorValue[Object.keys(acceleratorValue)[0]];
-              form.setValue("spec.resources.accelerator", {
-                [value as string]: Math.min(
-                  currentCount,
-                  maxAvailable.accelerator[value as string] || 0,
-                ),
-              });
-
-              // Update the corresponding accelerator field based on type
-              if (type === "npu") {
-                form.setValue(
-                  "spec.resources.accelerator.NPU",
-                  (currentCount as number) ?? 0,
-                );
-              } else {
-                form.setValue(
-                  `spec.resources.${type}`,
-                  (currentCount as number) ?? 0,
-                );
-              }
-            }}
-            disabled={clusterStatusQuery.isLoading || !currentCluster}
-          />
-        </Field>
-
-        <Field {...form} name="-accelerator-value" label={countLabel}>
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>
-                {formatToDecimal(currentAcceleratorValue)} {unitLabel}
-              </span>
-              {clusterResources && (
-                <span>
-                  Remaining: {formatToDecimal(availableCount)} /{" "}
-                  {formatToDecimal(
-                    specificAccelerator?.total ?? totalResources?.total ?? 0,
-                  )}
-                </span>
-              )}
-            </div>
-            <Slider
-              min={0}
-              max={maxSliderValue}
-              step={0.5}
-              value={[currentAcceleratorValue]}
-              onValueChange={(value) => {
-                const currentAcceleratorType = Object.keys(acceleratorValue)[0];
-                form.setValue("spec.resources.accelerator", {
-                  [currentAcceleratorType]: value[0],
-                });
-
-                // Update the corresponding accelerator field based on type
-                if (type === "npu") {
-                  form.setValue(
-                    "spec.resources.accelerator.NPU",
-                    (value[0] as number) ?? 0,
-                  );
-                } else {
-                  form.setValue(
-                    `spec.resources.${type}`,
-                    (value[0] as number) ?? 0,
-                  );
-                }
-              }}
-              disabled={clusterStatusQuery.isLoading || !currentCluster}
-            />
-          </div>
-        </Field>
-      </>
-    );
-  };
-
   return {
     form,
     metadataFields: (
@@ -766,6 +535,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="spec.resources.cpu"
           label={t("endpoints.fields.cpu")}
+          className="col-span-2"
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
@@ -788,7 +558,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               onValueChange={(value) =>
                 form.setValue("spec.resources.cpu", value[0])
               }
-              disabled={clusterStatusQuery.isLoading || !currentCluster}
+              disabled={!currentCluster}
             />
           </div>
         </Field>
@@ -797,6 +567,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="spec.resources.memory"
           label={t("endpoints.fields.memoryGb")}
+          className="col-span-2"
         >
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm text-muted-foreground">
@@ -818,33 +589,113 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               onValueChange={(value) => {
                 form.setValue("spec.resources.memory", value[0]);
               }}
-              disabled={clusterStatusQuery.isLoading || !currentCluster}
+              disabled={!currentCluster}
             />
           </div>
         </Field>
 
-        {/* GPU Fields */}
-        {renderAcceleratorFields("gpu")}
+        {/* Accelerator Selector */}
+        <Field
+          {...form}
+          name="spec.resources.accelerator"
+          label={t("endpoints.fields.accelerator")}
+          className="col-span-4"
+        >
+          <Combobox
+            options={acceleratorOptions.map((opt) => ({
+              label: opt.label,
+              value: opt.value,
+            }))}
+            value={
+              form.watch("spec.resources.accelerator.type") &&
+              form.watch("spec.resources.accelerator.product")
+                ? `${form.watch("spec.resources.accelerator.type")}:${form.watch("spec.resources.accelerator.product")}`
+                : ""
+            }
+            onChange={(value) => {
+              // Parse "type:product" format
+              const selectedOption = acceleratorOptions.find(
+                (opt) => opt.value === value,
+              );
+              if (selectedOption) {
+                form.setValue(
+                  "spec.resources.accelerator.type",
+                  selectedOption.type,
+                );
+                form.setValue(
+                  "spec.resources.accelerator.product",
+                  selectedOption.product,
+                );
+              }
+            }}
+            placeholder={t("endpoints.placeholders.selectAccelerator")}
+            disabled={
+              isEdit || !currentCluster || acceleratorOptions.length === 0
+            }
+            emptyMessage={t("endpoints.messages.noAcceleratorsAvailable")}
+          />
+        </Field>
 
-        {/* NPU Fields */}
-        {renderAcceleratorFields("npu")}
+        {/* GPU Count Slider */}
+        {form.watch("spec.resources.accelerator.type") &&
+          form.watch("spec.resources.accelerator.product") && (
+            <Field
+              {...form}
+              name="spec.resources.gpu"
+              label={t("endpoints.fields.gpuCount")}
+              className="col-span-4"
+            >
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>
+                    {formatToDecimal(form.watch("spec.resources.gpu") || 0)}
+                  </span>
+                  {(() => {
+                    const selectedValue = `${form.watch("spec.resources.accelerator.type")}:${form.watch("spec.resources.accelerator.product")}`;
+                    const selectedAccelerator = acceleratorOptions.find(
+                      (opt) => opt.value === selectedValue,
+                    );
+                    if (selectedAccelerator) {
+                      const currentGpu = form.watch("spec.resources.gpu") || 0;
+                      const remaining =
+                        selectedAccelerator.available - currentGpu;
+                      return (
+                        <span>
+                          {t("endpoints.fields.remaining")}:{" "}
+                          {formatToDecimal(remaining)} /{" "}
+                          {formatToDecimal(selectedAccelerator.total)}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+                <Slider
+                  min={0}
+                  max={(() => {
+                    const selectedValue = `${form.watch("spec.resources.accelerator.type")}:${form.watch("spec.resources.accelerator.product")}`;
+                    const selectedAccelerator = acceleratorOptions.find(
+                      (opt) => opt.value === selectedValue,
+                    );
+                    return selectedAccelerator?.available || 0;
+                  })()}
+                  step={0.1}
+                  value={[form.watch("spec.resources.gpu") || 0]}
+                  onValueChange={(value) => {
+                    form.setValue("spec.resources.gpu", value[0]);
+                  }}
+                  disabled={!currentCluster}
+                />
+              </div>
+            </Field>
+          )}
 
         {/* Cluster status indicator */}
-        {currentCluster && (
+        {currentCluster && !clusterResources && (
           <div className="col-span-4 mt-2">
-            {clusterStatusQuery.isLoading ? (
-              <div className="text-sm text-muted-foreground">
-                {t("endpoints.messages.fetchingClusterResources")}...
-              </div>
-            ) : clusterStatusQuery.isError ? (
-              <div className="text-sm text-red-600">
-                {t("endpoints.messages.failedToFetchClusterResources")}
-              </div>
-            ) : !clusterResources ? (
-              <div className="text-sm text-yellow-600">
-                {t("endpoints.messages.clusterResourcesUnavailable")}
-              </div>
-            ) : null}
+            <div className="text-sm text-yellow-600">
+              {t("endpoints.messages.clusterResourcesUnavailable")}
+            </div>
           </div>
         )}
       </FormCardGrid>
@@ -1023,6 +874,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <VariablesInput
                 schema={engineValueSchema?.properties as unknown as Schema}
               />
+            </Field>
+            <Field
+              {...form}
+              name="spec.env"
+              label={t("endpoints.fields.environment")}
+              className="col-span-4"
+            >
+              <VariablesInput schema={{}} />
             </Field>
           </FormCardGrid>
         </CollapsibleContent>
