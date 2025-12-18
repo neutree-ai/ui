@@ -305,7 +305,15 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Row>
                 <ShowPage.Row title={t("endpoints.fields.scheduler")}>
                   {t(
-                    `models.scheduler.${record.spec.deployment_options?.scheduler.type === "consistent_hash" ? "consistentHashing" : "powerOfTwo"}`,
+                    `models.scheduler.${
+                      record.spec.deployment_options?.scheduler.type ===
+                      "consistent_hash"
+                        ? "consistentHashing"
+                        : record.spec.deployment_options?.scheduler.type ===
+                            "roundrobin"
+                          ? "roundRobin"
+                          : "unavailable"
+                    }`,
                   )}
                 </ShowPage.Row>
               </div>

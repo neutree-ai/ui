@@ -12,7 +12,7 @@
 	},
 	"models": {
 		"scheduler": {
-			"powerOfTwo": "Power of two",
+			"roundRobin": "Round robin",
 			"consistentHashing": "Consistent hashing",
 			"unavailable": "Unavailable"
 		},

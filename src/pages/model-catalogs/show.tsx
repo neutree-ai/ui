@@ -119,8 +119,8 @@ export const ModelCatalogsShow = () => {
                     "consistent_hash"
                     ? t("models.scheduler.consistentHashing")
                     : record.spec.deployment_options.scheduler.type ===
-                        "powerOfTwo"
-                      ? t("models.scheduler.powerOfTwo")
+                        "roundrobin"
+                      ? t("models.scheduler.roundRobin")
                       : String(record.spec.deployment_options.scheduler.type)
                   : t("models.scheduler.unavailable")}
               </ShowPage.Row>

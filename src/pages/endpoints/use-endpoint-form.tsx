@@ -854,7 +854,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <Combobox
                 placeholder={t("endpoints.placeholders.selectSchedulerType")}
                 options={[
-                  { label: t("models.scheduler.powerOfTwo"), value: "pow2" },
+                  {
+                    label: t("models.scheduler.roundRobin"),
+                    value: "roundrobin",
+                  },
                   {
                     label: t("models.scheduler.consistentHashing"),
                     value: "consistent_hash",
