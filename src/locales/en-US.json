@@ -11,6 +11,7 @@
 		"system": "Follow System"
 	},
 	"models": {
+		"title": "Models",
 		"scheduler": {
 			"roundRobin": "Round robin",
 			"consistentHashing": "Consistent hashing",
@@ -1036,6 +1037,8 @@
 		"read": "Read",
 		"update": "Update",
 		"delete": "Delete",
+		"push": "Push",
+		"pull": "Pull",
 		"system_admin": "System Admin"
 	},
 	"systems": {

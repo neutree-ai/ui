@@ -10,16 +10,19 @@ import {
   ChevronRight,
   Cpu,
   Database,
+  Download,
   Eye,
   FileText,
   HardDrive,
   Layers,
+  Package,
   Pencil,
   Plus,
   Server,
   Settings,
   Square,
   Trash,
+  Upload,
   Users,
 } from "lucide-react";
 import React, { useState, useMemo } from "react";
@@ -30,6 +33,8 @@ const actionIcons: Record<string, React.ReactNode> = {
   create: <Plus className="h-4 w-4" />,
   update: <Pencil className="h-4 w-4" />,
   delete: <Trash className="h-4 w-4" />,
+  push: <Upload className="h-4 w-4" />,
+  pull: <Download className="h-4 w-4" />,
 };
 
 const resourceIcons: Record<string, React.ReactNode> = {
@@ -39,6 +44,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   endpoint: <Server className="h-5 w-5" />,
   image_registry: <Database className="h-5 w-5" />,
   model_registry: <Layers className="h-5 w-5" />,
+  model: <Package className="h-5 w-5" />,
   engine: <Cpu className="h-5 w-5" />,
   cluster: <HardDrive className="h-5 w-5" />,
   model_catalog: <BookOpen className="h-5 w-5" />,
