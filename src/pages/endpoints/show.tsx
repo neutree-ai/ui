@@ -21,6 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  type MonitorPanelType,
+  useMonitorPanels,
+} from "@/hooks/use-monitor-panels";
 import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
 import {
@@ -35,7 +39,7 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { Suspense, lazy, useCallback, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useRef } from "react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -99,9 +103,6 @@ const RayDashboardTab = ({
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
   const { grafanaUrl } = useSystemApi();
-  const [monitorView, setMonitorView] = useState<"endpoint" | "vllm">(
-    "endpoint",
-  );
   const {
     query: { data, isLoading },
   } = useShow<Endpoint>();
@@ -127,6 +128,21 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     queryOptions: {
       enabled: Boolean(record?.spec.cluster),
     },
+  });
+
+  const clusterType = clusterData?.data?.[0]?.spec?.type;
+  const isSSHCluster = clusterType === "ssh";
+  const shouldShowRayDashboard = isSSHCluster;
+
+  const {
+    panels,
+    selectedPanel,
+    setSelectedPanel,
+    showMonitorTab,
+    showSelector,
+  } = useMonitorPanels({
+    clusterType,
+    engineType: record?.spec.engine.engine,
   });
 
   // Calculate resource display logic
@@ -171,14 +187,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     (v) => v.version === record.spec.engine.version,
   )?.values_schema;
 
-  const clusterType = clusterData?.data?.[0]?.spec?.type;
-  const isSSHCluster = clusterType === "ssh";
-  const isVllmEngine = record.spec.engine.engine === "vllm";
-  const shouldShowRayDashboard = isSSHCluster;
-  const shouldShowMonitorSelector = isSSHCluster && isVllmEngine;
-  const shouldShowVllmMetrics =
-    shouldShowMonitorSelector && monitorView === "vllm";
-
   return (
     <ShowPage
       record={record}
@@ -192,9 +200,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               {t("endpoints.tabs.rayDashboard")}
             </TabsTrigger>
           )}
-          <TabsTrigger value="monitor">
-            {t("endpoints.tabs.monitor")}
-          </TabsTrigger>
+          {showMonitorTab && (
+            <TabsTrigger value="monitor">
+              {t("endpoints.tabs.monitor")}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="logs">{t("endpoints.tabs.logs")}</TabsTrigger>
           <TabsTrigger value="playground">
             {t("endpoints.tabs.playground")}
@@ -365,29 +375,33 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         >
           {grafanaUrl ? (
             <div className="space-y-4">
-              {shouldShowMonitorSelector && (
+              {showSelector && (
                 <Card className="p-4">
                   <div className="flex items-center justify-start">
                     <Select
-                      value={monitorView}
-                      onValueChange={(value: "endpoint" | "vllm") =>
-                        setMonitorView(value)
+                      value={selectedPanel || undefined}
+                      onValueChange={(value: MonitorPanelType) =>
+                        setSelectedPanel(value)
                       }
                     >
                       <SelectTrigger className="w-[220px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="endpoint">
-                          {t("endpoints.monitor.endpointMetrics")}
-                        </SelectItem>
-                        <SelectItem value="vllm">
-                          {t("endpoints.monitor.vllmMetrics")}
-                        </SelectItem>
+                        {panels.includes("endpoint") && (
+                          <SelectItem value="endpoint">
+                            {t("endpoints.monitor.endpointMetrics")}
+                          </SelectItem>
+                        )}
+                        {panels.includes("vllm") && (
+                          <SelectItem value="vllm">
+                            {t("endpoints.monitor.vllmMetrics")}
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground ml-4">
-                      {monitorView === "endpoint"
+                      {selectedPanel === "endpoint"
                         ? t("endpoints.monitor.endpointDescription")
                         : t("endpoints.monitor.vllmDescription")}
                     </p>
@@ -395,7 +409,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </Card>
               )}
 
-              {shouldShowVllmMetrics ? (
+              {selectedPanel === "vllm" ? (
                 <GrafanaPanels
                   {...getVllmGrafanaProps(
                     grafanaUrl,
@@ -403,7 +417,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     record.spec.cluster,
                   )}
                 />
-              ) : (
+              ) : selectedPanel === "endpoint" ? (
                 <GrafanaPanels
                   {...getEndpointGrafanaProps(
                     grafanaUrl,
@@ -411,7 +425,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     record.spec.cluster,
                   )}
                 />
-              )}
+              ) : null}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">

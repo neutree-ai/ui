@@ -72,7 +72,7 @@
   "src/pages/endpoints/edit.tsx": "795fc3073f8152b518037d21bc299850",
   "src/pages/endpoints/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/endpoints/list.tsx": "1233e4d4088b097a0c774a9526807ff9",
-  "src/pages/endpoints/show.tsx": "ec8b271556f25b810cdca0648c1de07f",
+  "src/pages/endpoints/show.tsx": "bf85e87ab07e14d379b202368f14d145",
   "src/pages/endpoints/use-endpoint-form.tsx": "e57133f4771130c412ed6a2f66e8a8da",
   "src/pages/dashboard/Dashboard.tsx": "f1e3b51e2280849d847c23b4b877212f",
   "src/pages/clusters/create.tsx": "33ea5aa8713c5956a70d17e52689f952",
@@ -270,5 +270,6 @@
   "src/hooks/use-column-visibility.ts": "5c79260bb52315e0380e612ff9294c64",
   "src/components/business/use-variables-input.ts": "5476a9ad541e20633247cad46270d109",
   "src/hooks/use-endpoint-log-sources.ts": "5380c4d10afeb1ce234bd81a16280b1a",
-  "src/hooks/use-streaming-logs.ts": "5b2ec0b40b82351bee79c0a3d2dad1da"
+  "src/hooks/use-streaming-logs.ts": "5b2ec0b40b82351bee79c0a3d2dad1da",
+  "src/hooks/use-monitor-panels.ts": "81fade5d4150193918c0ae143325b7c1"
 }
