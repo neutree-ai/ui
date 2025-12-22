@@ -201,11 +201,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         resources: {
           cpu: 0,
           memory: 0,
-          gpu: 0,
-          accelerator: {
-            type: "",
-            product: "",
-          },
+          gpu: null,
+          accelerator: null,
         },
         replicas: {
           num: 1,
@@ -607,9 +604,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               value: opt.value,
             }))}
             value={
-              form.watch("spec.resources.accelerator.type") &&
-              form.watch("spec.resources.accelerator.product")
-                ? `${form.watch("spec.resources.accelerator.type")}:${form.watch("spec.resources.accelerator.product")}`
+              form.watch("spec.resources.accelerator")?.type &&
+              form.watch("spec.resources.accelerator")?.product
+                ? `${form.watch("spec.resources.accelerator").type}:${form.watch("spec.resources.accelerator").product}`
                 : ""
             }
             onChange={(value) => {
@@ -618,14 +615,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 (opt) => opt.value === value,
               );
               if (selectedOption) {
-                form.setValue(
-                  "spec.resources.accelerator.type",
-                  selectedOption.type,
-                );
-                form.setValue(
-                  "spec.resources.accelerator.product",
-                  selectedOption.product,
-                );
+                form.setValue("spec.resources.accelerator", {
+                  type: selectedOption.type,
+                  product: selectedOption.product,
+                });
+              } else {
+                form.setValue("spec.resources.accelerator", null);
               }
             }}
             placeholder={t("endpoints.placeholders.selectAccelerator")}
@@ -637,8 +632,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </Field>
 
         {/* GPU Count Slider */}
-        {form.watch("spec.resources.accelerator.type") &&
-          form.watch("spec.resources.accelerator.product") && (
+        {form.watch("spec.resources.accelerator")?.type &&
+          form.watch("spec.resources.accelerator")?.product && (
             <Field
               {...form}
               name="spec.resources.gpu"
@@ -651,7 +646,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     {formatToDecimal(form.watch("spec.resources.gpu") || 0)}
                   </span>
                   {(() => {
-                    const selectedValue = `${form.watch("spec.resources.accelerator.type")}:${form.watch("spec.resources.accelerator.product")}`;
+                    const accelerator = form.watch(
+                      "spec.resources.accelerator",
+                    );
+                    if (!accelerator?.type || !accelerator?.product)
+                      return null;
+                    const selectedValue = `${accelerator.type}:${accelerator.product}`;
                     const selectedAccelerator = acceleratorOptions.find(
                       (opt) => opt.value === selectedValue,
                     );
@@ -673,7 +673,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 <Slider
                   min={0}
                   max={(() => {
-                    const selectedValue = `${form.watch("spec.resources.accelerator.type")}:${form.watch("spec.resources.accelerator.product")}`;
+                    const accelerator = form.watch(
+                      "spec.resources.accelerator",
+                    );
+                    if (!accelerator?.type || !accelerator?.product) return 0;
+                    const selectedValue = `${accelerator.type}:${accelerator.product}`;
                     const selectedAccelerator = acceleratorOptions.find(
                       (opt) => opt.value === selectedValue,
                     );
