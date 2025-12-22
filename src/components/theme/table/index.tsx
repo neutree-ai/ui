@@ -45,6 +45,7 @@ import {
 import { RowAction, RowActions } from "./actions";
 import { DeleteAction } from "./actions/delete";
 import { EditAction } from "./actions/edit";
+import { ExportYamlTableAction } from "./actions/export-yaml";
 import { ShowAction } from "./actions/show";
 import {
   TableFilterDateRangePickerFilter,
@@ -322,6 +323,7 @@ Table.Column = TableColumn;
 Table.CheckAll = CheckAll;
 Table.Actions = RowActions;
 Table.Action = RowAction;
+Table.ExportYamlAction = ExportYamlTableAction;
 Table.EditAction = EditAction;
 Table.ShowAction = ShowAction;
 Table.DeleteAction = DeleteAction;

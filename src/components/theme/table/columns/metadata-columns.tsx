@@ -1,12 +1,5 @@
 import Timestamp from "@/components/business/Timestamp";
 import { ShowButton } from "@/components/theme/buttons";
-import {
-  copyYamlToClipboard,
-  downloadYamlFile,
-  generateEntityFilename,
-  generateYamlContentFromEntity,
-  getDefaultExportOptions,
-} from "@/lib/yaml-utils";
 import { useResource, useTranslation } from "@refinedev/core";
 import { Download, Edit, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -27,15 +20,6 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
   const { resource: hookResource } = useResource();
 
   const resource = options?.resource ?? hookResource?.name ?? "";
-
-  // Export single entity as YAML
-  const handleExportEntity = async (entity: any) => {
-    // Emit custom event to trigger global dialog
-    const event = new CustomEvent("export-yaml", {
-      detail: { entity, resource },
-    });
-    window.dispatchEvent(event);
-  };
 
   return {
     name: (
@@ -114,63 +98,53 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
         id={"actions"}
         cell={({ row: { original } }) => {
           const extraActionsResult = options?.extraActions?.(original);
-          // 如果extraActions返回null，隐藏所有action
+          // if extraActions returns null, hide all actions
           if (extraActionsResult === null) {
             return null;
           }
+
+          const showExport =
+            typeof options?.showExportAction === "function"
+              ? options.showExportAction(original)
+              : (options?.showExportAction ?? true);
+
+          const showEdit =
+            typeof options?.showEditAction === "function"
+              ? options.showEditAction(original)
+              : (options?.showEditAction ?? true);
+
+          const showDelete =
+            typeof options?.showDeleteAction === "function"
+              ? options.showDeleteAction(original)
+              : (options?.showDeleteAction ?? true);
+
           return (
-            <>
-              <Table.Actions>
-                {extraActionsResult}
-                {(() => {
-                  const showExport =
-                    typeof options?.showExportAction === "function"
-                      ? options.showExportAction(original)
-                      : (options?.showExportAction ?? true);
-                  return (
-                    showExport && (
-                      <Table.Action
-                        title={translate("buttons.exportYaml")}
-                        icon={<Download size={16} />}
-                        onClick={() => handleExportEntity(original)}
-                      />
-                    )
-                  );
-                })()}
-                {(() => {
-                  const showEdit =
-                    typeof options?.showEditAction === "function"
-                      ? options.showEditAction(original)
-                      : (options?.showEditAction ?? true);
-                  return (
-                    showEdit && (
-                      <Table.EditAction
-                        title={translate("buttons.edit")}
-                        row={original}
-                        resource={resource}
-                        icon={<Edit size={16} />}
-                      />
-                    )
-                  );
-                })()}
-                {(() => {
-                  const showDelete =
-                    typeof options?.showDeleteAction === "function"
-                      ? options.showDeleteAction(original)
-                      : (options?.showDeleteAction ?? true);
-                  return (
-                    showDelete && (
-                      <Table.DeleteAction
-                        title={translate("buttons.delete")}
-                        row={original}
-                        resource={resource}
-                        icon={<Trash2 size={16} />}
-                      />
-                    )
-                  );
-                })()}
-              </Table.Actions>
-            </>
+            <Table.Actions>
+              {extraActionsResult}
+              {showExport && (
+                <Table.ExportYamlAction
+                  row={original}
+                  resource={resource}
+                  icon={<Download size={16} />}
+                />
+              )}
+              {showEdit && (
+                <Table.EditAction
+                  title={translate("buttons.edit")}
+                  row={original}
+                  resource={resource}
+                  icon={<Edit size={16} />}
+                />
+              )}
+              {showDelete && (
+                <Table.DeleteAction
+                  title={translate("buttons.delete")}
+                  row={original}
+                  resource={resource}
+                  icon={<Trash2 size={16} />}
+                />
+              )}
+            </Table.Actions>
           );
         }}
       />

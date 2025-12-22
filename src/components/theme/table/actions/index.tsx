@@ -9,6 +9,7 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import type { FC, PropsWithChildren, ReactNode } from "react";
+export { ExportYamlAction, ExportYamlTableAction } from "./export-yaml";
 
 interface RowActionsProps {
   children?: ReactNode;
