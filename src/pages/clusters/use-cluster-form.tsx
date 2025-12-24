@@ -25,25 +25,30 @@ export const transformValues = (values: Cluster) => {
   const config = transformedValues.spec?.config;
 
   // Transform SSH private key for SSH type clusters
-  if ("auth" in config) {
-    if (config.auth.ssh_private_key && values.spec.type === "ssh") {
-      if (!config.auth.ssh_private_key.endsWith("\n")) {
-        config.auth.ssh_private_key += "\n";
-      }
-      config.auth.ssh_private_key = btoa(config.auth.ssh_private_key);
+  if (config.ssh_config?.auth?.ssh_private_key && values.spec.type === "ssh") {
+    if (!config.ssh_config.auth.ssh_private_key.endsWith("\n")) {
+      config.ssh_config.auth.ssh_private_key += "\n";
     }
+    config.ssh_config.auth.ssh_private_key = btoa(
+      config.ssh_config.auth.ssh_private_key,
+    );
   }
 
   // Transform kubeconfig for Kubernetes type clusters
-  if ("kubeconfig" in config) {
-    if (config.kubeconfig && values.spec.type === "kubernetes") {
-      config.kubeconfig = btoa(config.kubeconfig);
-    }
+  if (
+    config.kubernetes_config?.kubeconfig &&
+    values.spec.type === "kubernetes"
+  ) {
+    config.kubernetes_config.kubeconfig = btoa(
+      config.kubernetes_config.kubeconfig,
+    );
+  }
 
-    // Transform router replicas to number
-    if (config.router?.replicas) {
-      config.router.replicas = Number(config.router.replicas);
-    }
+  // Transform router replicas to number
+  if (config.kubernetes_config?.router?.replicas) {
+    config.kubernetes_config.router.replicas = Number(
+      config.kubernetes_config.router.replicas,
+    );
   }
 
   return transformedValues;
@@ -66,10 +71,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         image_registry: "",
         type: "ssh",
         config: {
-          provider: {},
-          auth: {
-            ssh_user: "",
-            ssh_private_key: "",
+          ssh_config: {
+            provider: {},
+            auth: {
+              ssh_user: "",
+              ssh_private_key: "",
+            },
           },
         },
         version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
@@ -118,11 +125,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   useEffect(() => {
     // Register validation for SSH provider
     if (isSSH) {
-      form.register("spec.config.provider", {
+      form.register("spec.config.ssh_config.provider", {
         validate: validateNodeIPs,
       });
 
-      form.trigger("spec.config.provider");
+      form.trigger("spec.config.ssh_config.provider");
     }
   }, [isSSH, form.register, form.trigger]);
 
@@ -243,26 +250,30 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               form.setValue("spec.type", value);
               if (value === "ssh") {
                 form.setValue("spec.config", {
-                  provider: {
-                    head_ip: "",
-                    worker_ips: [],
-                  },
-                  auth: {
-                    ssh_user: "",
-                    ssh_private_key: "",
+                  ssh_config: {
+                    provider: {
+                      head_ip: "",
+                      worker_ips: [],
+                    },
+                    auth: {
+                      ssh_user: "",
+                      ssh_private_key: "",
+                    },
                   },
                   model_caches: [],
                 });
               } else if (value === "kubernetes") {
                 form.setValue("spec.config", {
-                  kubeconfig: "",
-                  router: {
-                    version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
-                    access_mode: "LoadBalancer",
-                    replicas: 2,
-                    resources: {
-                      cpu: "1",
-                      memory: "1Gi",
+                  kubernetes_config: {
+                    kubeconfig: "",
+                    router: {
+                      version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
+                      access_mode: "LoadBalancer",
+                      replicas: 2,
+                      resources: {
+                        cpu: "1",
+                        memory: "1Gi",
+                      },
                     },
                   },
                   model_caches: [],
@@ -277,7 +288,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     providerFields: (
       <FormCardGrid title={t("clusters.sections.provider")}>
         {type === "ssh" && (
-          <Field {...form} name="spec.config.provider" className="col-span-4">
+          <Field
+            {...form}
+            name="spec.config.ssh_config.provider"
+            className="col-span-4"
+          >
             <NodeIPsField disabled={isEdit} />
           </Field>
         )}
@@ -285,7 +300,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         {isKubernetes && (
           <Field
             {...form}
-            name="spec.config.kubeconfig"
+            name="spec.config.kubernetes_config.kubeconfig"
             label={t("clusters.fields.kubeconfig")}
             className="col-span-4"
           >
@@ -298,7 +313,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       <FormCardGrid title={t("clusters.sections.router")}>
         <Field
           {...form}
-          name="spec.config.router.access_mode"
+          name="spec.config.kubernetes_config.router.access_mode"
           label={t("clusters.fields.accessMode")}
         >
           <Select
@@ -317,7 +332,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="spec.config.router.replicas"
+          name="spec.config.kubernetes_config.router.replicas"
           label={t("clusters.fields.replicas")}
         >
           <Input type="number" disabled={isEdit} />
@@ -325,7 +340,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="spec.config.router.resources.cpu"
+          name="spec.config.kubernetes_config.router.resources.cpu"
           label={t("clusters.fields.cpu")}
         >
           <Input disabled={isEdit} />
@@ -333,7 +348,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
         <Field
           {...form}
-          name="spec.config.router.resources.memory"
+          name="spec.config.kubernetes_config.router.resources.memory"
           label={t("clusters.fields.memory")}
         >
           <Input disabled={isEdit} />
@@ -606,7 +621,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       <FormCardGrid title={t("clusters.sections.nodeAuthentication")}>
         <Field
           {...form}
-          name="spec.config.auth.ssh_user"
+          name="spec.config.ssh_config.auth.ssh_user"
           label={t("clusters.fields.sshUser")}
         >
           <Input
@@ -616,7 +631,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         </Field>
         <Field
           {...form}
-          name="spec.config.auth.ssh_private_key"
+          name="spec.config.ssh_config.auth.ssh_private_key"
           label={t("clusters.fields.sshPrivateKey")}
         >
           <Textarea disabled={isEdit} />

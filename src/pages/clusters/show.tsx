@@ -87,17 +87,19 @@ export const ClustersShow = () => {
                   </ShowButton>
                 </ShowPage.Row>
               </div>
-              {"provider" in record.spec.config && (
+              {record.spec.config.ssh_config && (
                 <div>
                   <ShowPage.Row title={t("clusters.fields.headIp")}>
-                    {record.spec.config.provider.head_ip ?? ""}
+                    {record.spec.config.ssh_config.provider.head_ip ?? ""}
                   </ShowPage.Row>
                   <ShowPage.Row title={t("clusters.fields.workerIps")}>
-                    {(record.spec.config.provider.worker_ips || [])?.join(",")}
+                    {(
+                      record.spec.config.ssh_config.provider.worker_ips || []
+                    )?.join(",")}
                   </ShowPage.Row>
                 </div>
               )}
-              {"kubeconfig" in record.spec.config && (
+              {record.spec.config.kubernetes_config && (
                 <Card>
                   <CardHeader>
                     <CardTitle>{t("clusters.sections.router")}</CardTitle>
@@ -105,28 +107,31 @@ export const ClustersShow = () => {
                   <CardContent>
                     <div className="grid grid-cols-4 gap-8">
                       <ShowPage.Row title={t("clusters.fields.accessMode")}>
-                        {record.spec.config.router?.access_mode ===
-                        "LoadBalancer"
+                        {record.spec.config.kubernetes_config.router
+                          ?.access_mode === "LoadBalancer"
                           ? t("status.accessModes.LoadBalancer")
-                          : record.spec.config.router?.access_mode ===
-                              "NodePort"
+                          : record.spec.config.kubernetes_config.router
+                                ?.access_mode === "NodePort"
                             ? t("status.accessModes.NodePort")
-                            : record.spec.config.router?.access_mode ===
-                                "Ingress"
+                            : record.spec.config.kubernetes_config.router
+                                  ?.access_mode === "Ingress"
                               ? t("status.accessModes.Ingress")
                               : "-"}
                       </ShowPage.Row>
 
                       <ShowPage.Row title={t("clusters.fields.replicas")}>
-                        {record.spec.config.router?.replicas ?? ""}
+                        {record.spec.config.kubernetes_config.router
+                          ?.replicas ?? ""}
                       </ShowPage.Row>
 
                       <ShowPage.Row title={t("clusters.fields.cpu")}>
-                        {record.spec.config.router?.resources?.cpu ?? ""}
+                        {record.spec.config.kubernetes_config.router?.resources
+                          ?.cpu ?? ""}
                       </ShowPage.Row>
 
                       <ShowPage.Row title={t("clusters.fields.memory")}>
-                        {record.spec.config.router?.resources?.memory ?? ""}
+                        {record.spec.config.kubernetes_config.router?.resources
+                          ?.memory ?? ""}
                       </ShowPage.Row>
                     </div>
                   </CardContent>

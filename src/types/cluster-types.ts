@@ -132,16 +132,10 @@ export type Auth = {
   ssh_private_key?: string;
 };
 
-// Common configuration for all cluster types
-export type CommonClusterConfig = {
-  accelerator_type?: string | null;
-  model_caches?: ModelCache[];
-};
-
 export type RaySSHProvisionClusterConfig = {
   provider: Provider;
   auth: Auth;
-} & CommonClusterConfig;
+};
 
 export enum KubernetesAccessMode {
   LoadBalancer = "LoadBalancer",
@@ -159,7 +153,15 @@ export type RouterSpec = {
 export type KubernetesClusterConfig = {
   kubeconfig?: string;
   router?: RouterSpec;
-} & CommonClusterConfig;
+};
+
+// ClusterConfig is the unified configuration for all cluster types
+export type ClusterConfig = {
+  ssh_config?: RaySSHProvisionClusterConfig;
+  kubernetes_config?: KubernetesClusterConfig;
+  accelerator_type?: string | null;
+  model_caches?: ModelCache[];
+};
 
 export type ModelCache = {
   name?: string;
@@ -201,7 +203,7 @@ export type ClusterSpec = {
    * supported: 'ssh' | 'kubernetes'
    */
   type: string;
-  config: RaySSHProvisionClusterConfig | KubernetesClusterConfig;
+  config: ClusterConfig;
   image_registry: string;
   /**
    * The cluster image version.
