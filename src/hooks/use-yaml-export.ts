@@ -1,8 +1,11 @@
 import { useWorkspace } from "@/components/theme/hooks";
 import { useTranslation } from "@/lib/i18n";
+import {
+  generateYamlContentFromEntities,
+  transformEntityToYaml,
+} from "@/lib/yaml-utils";
 import type { Metadata } from "@/types";
 import { useDataProvider, useResource } from "@refinedev/core";
-import * as yaml from "js-yaml";
 import { useCallback, useMemo, useState } from "react";
 
 // Available resource types for export
@@ -220,59 +223,6 @@ export const useYamlExport = () => {
     [dataProvider, currentWorkspace, resourceTypes, exportableResources],
   );
 
-  // Transform entity to YAML format
-  const transformEntityToYaml = useCallback(
-    (entity: ResourceEntity, options: ExportOptions) => {
-      const yamlEntity: Record<string, unknown> = {
-        apiVersion: entity.api_version,
-        kind: entity.kind,
-        metadata: { ...entity.metadata },
-      };
-
-      if (entity.spec) {
-        yamlEntity.spec = entity.spec;
-      }
-
-      if (entity.status && !options.removeStatus) {
-        yamlEntity.status = entity.status;
-      }
-
-      // Remove timestamps if requested
-      if (
-        options.removeTimestamps &&
-        yamlEntity.metadata &&
-        typeof yamlEntity.metadata === "object"
-      ) {
-        const metadata = yamlEntity.metadata as Record<string, unknown>;
-        delete metadata.creation_timestamp;
-        delete metadata.update_timestamp;
-        delete metadata.deletion_timestamp;
-      }
-
-      // Remove IDs if requested (but keep name)
-      if (
-        options.removeIds &&
-        yamlEntity.metadata &&
-        typeof yamlEntity.metadata === "object"
-      ) {
-        // Keep name but remove other auto-generated fields
-        const metadata = yamlEntity.metadata as Record<string, unknown>;
-        const { name, workspace, display_name, labels } = metadata as {
-          name?: unknown;
-          workspace?: unknown;
-          display_name?: unknown;
-          labels?: unknown;
-          [key: string]: unknown;
-        };
-
-        yamlEntity.metadata = { name, workspace, display_name, labels };
-      }
-
-      return yamlEntity;
-    },
-    [],
-  );
-
   // Generate YAML content
   const generateYamlContent = useCallback(async () => {
     setIsExporting(true);
@@ -314,32 +264,12 @@ export const useYamlExport = () => {
       }
 
       // Generate YAML content
-      let yamlContent = "";
-      for (let index = 0; index < selectedEntitiesData.length; index++) {
-        const entity = selectedEntitiesData[index];
-        if (index > 0) yamlContent += "\n---\n";
-        yamlContent += yaml.dump(entity, {
-          indent: 2,
-          lineWidth: -1,
-          noRefs: true,
-          sortKeys: false,
-          // Use replacer function to filter out null/undefined values
-          replacer: (key: string, value: unknown) => {
-            // Skip null and undefined values
-            if (value === null || value === undefined) {
-              return undefined; // This will omit the key from output
-            }
-            return value;
-          },
-        });
-      }
-
-      return yamlContent;
+      return generateYamlContentFromEntities(selectedEntitiesData);
     } finally {
       setIsExporting(false);
       setExportProgress((prev) => ({ ...prev, currentResource: undefined }));
     }
-  }, [resourceTypes, exportOptions, transformEntityToYaml]);
+  }, [resourceTypes, exportOptions]);
 
   // Statistics
   const statistics = useMemo(() => {

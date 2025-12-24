@@ -3,7 +3,7 @@ import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisu
 import MetadataCard from "@/components/business/MetadataCard";
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
-import { ShowButton, ShowPage } from "@/components/theme";
+import { ShowPage } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";

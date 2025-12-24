@@ -1,7 +1,7 @@
 import Timestamp from "@/components/business/Timestamp";
 import { ShowButton } from "@/components/theme/buttons";
 import { useResource, useTranslation } from "@refinedev/core";
-import { Edit, Trash2 } from "lucide-react";
+import { Download, Edit, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Table } from "..";
 
@@ -9,6 +9,10 @@ type MetadataColumnOptions = {
   resource?: string;
   // biome-ignore lint/suspicious/noExplicitAny: row can be any type
   extraActions?: (row: any) => ReactNode;
+  // Control which default actions to show - can be boolean or function
+  showEditAction?: boolean | ((row: any) => boolean);
+  showDeleteAction?: boolean | ((row: any) => boolean);
+  showExportAction?: boolean | ((row: any) => boolean);
 };
 
 export const useMetadataColumns = (options?: MetadataColumnOptions) => {
@@ -92,23 +96,57 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
       <Table.Column
         accessorKey={"id"}
         id={"actions"}
-        cell={({ row: { original } }) => (
-          <Table.Actions>
-            {options?.extraActions?.(original)}
-            <Table.EditAction
-              title={translate("buttons.edit")}
-              row={original}
-              resource={resource}
-              icon={<Edit size={16} />}
-            />
-            <Table.DeleteAction
-              title={translate("buttons.delete")}
-              row={original}
-              resource={resource}
-              icon={<Trash2 size={16} />}
-            />
-          </Table.Actions>
-        )}
+        cell={({ row: { original } }) => {
+          const extraActionsResult = options?.extraActions?.(original);
+          // if extraActions returns null, hide all actions
+          if (extraActionsResult === null) {
+            return null;
+          }
+
+          const showExport =
+            typeof options?.showExportAction === "function"
+              ? options.showExportAction(original)
+              : (options?.showExportAction ?? true);
+
+          const showEdit =
+            typeof options?.showEditAction === "function"
+              ? options.showEditAction(original)
+              : (options?.showEditAction ?? true);
+
+          const showDelete =
+            typeof options?.showDeleteAction === "function"
+              ? options.showDeleteAction(original)
+              : (options?.showDeleteAction ?? true);
+
+          return (
+            <Table.Actions>
+              {extraActionsResult}
+              {showExport && (
+                <Table.ExportYamlAction
+                  row={original}
+                  resource={resource}
+                  icon={<Download size={16} />}
+                />
+              )}
+              {showEdit && (
+                <Table.EditAction
+                  title={translate("buttons.edit")}
+                  row={original}
+                  resource={resource}
+                  icon={<Edit size={16} />}
+                />
+              )}
+              {showDelete && (
+                <Table.DeleteAction
+                  title={translate("buttons.delete")}
+                  row={original}
+                  resource={resource}
+                  icon={<Trash2 size={16} />}
+                />
+              )}
+            </Table.Actions>
+          );
+        }}
       />
     ),
   };

@@ -4,7 +4,10 @@ import { useUserColumns } from "@/components/theme/table/columns/user-columns";
 import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const UsersList = () => {
-  const metadataColumns = useMetadataColumns();
+  const metadataColumns = useMetadataColumns({
+    resource: "users",
+    showExportAction: false, // 所有记录都不显示导出按钮
+  });
   const userColumns = useUserColumns();
 
   return (
@@ -18,10 +21,8 @@ export const UsersList = () => {
       >
         {metadataColumns.name}
         {userColumns.email}
-
         {metadataColumns.creation_timestamp}
         {metadataColumns.update_timestamp}
-
         {metadataColumns.action}
       </Table>
     </ListPage>

@@ -190,7 +190,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   return (
     <ShowPage
       record={record}
-      extraActions={() => <EndpointPauseAction endpoint={record} />}
+      extraActions={(record) => (
+        <EndpointPauseAction endpoint={record as Endpoint} />
+      )}
     >
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
