@@ -8,6 +8,19 @@ import { useTranslation } from "@/lib/i18n";
 import type { ModelRegistry } from "@/types";
 import { useForm } from "@refinedev/react-hook-form";
 
+export const transformValues = (values: ModelRegistry, isEdit = false) => {
+  const transformedValues = { ...values };
+
+  // In edit mode, remove empty sensitive fields to avoid overwriting backend config
+  if (isEdit && transformedValues.spec) {
+    if (!transformedValues.spec.credentials) {
+      delete transformedValues.spec.credentials;
+    }
+  }
+
+  return transformedValues;
+};
+
 export const useModelRegistryForm = ({
   action,
 }: {
@@ -37,6 +50,13 @@ export const useModelRegistryForm = ({
   const currentType: ModelRegistry["spec"]["type"] = form.watch("spec.type");
 
   const isEdit = action === "edit";
+
+  const originalOnFinish = form.refineCore.onFinish;
+  form.refineCore.onFinish = async (values) => {
+    const transformedValues = transformValues(values as ModelRegistry, isEdit);
+
+    return originalOnFinish(transformedValues);
+  };
 
   return {
     form,
@@ -99,7 +119,11 @@ export const useModelRegistryForm = ({
           {...form}
           name="spec.credentials"
           label={t("model_registries.fields.credentials")}
-          description={t("model_registries.descriptions.credentials")}
+          description={
+            isEdit
+              ? t("common.messages.leaveEmptyToKeepValue")
+              : t("model_registries.descriptions.credentials")
+          }
           className="col-span-4"
         >
           <Input

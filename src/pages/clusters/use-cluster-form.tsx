@@ -19,7 +19,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-export const transformValues = (values: Cluster) => {
+export const transformValues = (values: Cluster, isEdit = false) => {
   const transformedValues = { ...values };
 
   const config = transformedValues.spec?.config;
@@ -49,6 +49,16 @@ export const transformValues = (values: Cluster) => {
     config.kubernetes_config.router.replicas = Number(
       config.kubernetes_config.router.replicas,
     );
+  }
+
+  // In edit mode, remove empty sensitive fields to avoid overwriting backend config
+  if (isEdit) {
+    if (config.ssh_config?.auth && !config.ssh_config.auth.ssh_private_key) {
+      delete config.ssh_config.auth.ssh_private_key;
+    }
+    if (config.kubernetes_config && !config.kubernetes_config.kubeconfig) {
+      delete config.kubernetes_config.kubeconfig;
+    }
   }
 
   return transformedValues;
@@ -84,9 +94,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     },
   });
 
+  const isEdit = action === "edit";
+
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
-    const transformedValues = transformValues(values as Cluster);
+    const transformedValues = transformValues(values as Cluster, isEdit);
 
     return originalOnFinish(transformedValues);
   };
@@ -141,8 +153,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     resource: "image_registries",
     meta,
   });
-
-  const isEdit = action === "edit";
 
   const addModelCache = () => {
     append({
@@ -302,6 +312,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             {...form}
             name="spec.config.kubernetes_config.kubeconfig"
             label={t("clusters.fields.kubeconfig")}
+            description={
+              isEdit ? t("common.messages.leaveEmptyToKeepValue") : undefined
+            }
             className="col-span-4"
           >
             <Textarea disabled={isEdit} />
@@ -633,6 +646,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="spec.config.ssh_config.auth.ssh_private_key"
           label={t("clusters.fields.sshPrivateKey")}
+          description={
+            isEdit ? t("common.messages.leaveEmptyToKeepValue") : undefined
+          }
         >
           <Textarea disabled={isEdit} />
         </Field>

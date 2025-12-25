@@ -2,7 +2,8 @@
 	"nativeName": "English",
 	"common": {
 		"messages": {
-			"grafanaNotConfigured": "Grafana monitoring is not configured."
+			"grafanaNotConfigured": "Grafana monitoring is not configured.",
+			"leaveEmptyToKeepValue": "Leave empty to keep existing value"
 		}
 	},
 	"appearance": {
