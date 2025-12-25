@@ -422,7 +422,7 @@
 			"registryName": "Model Registry Name",
 			"selectType": "Select Model Registry Type",
 			"huggingFaceUrl": "e.g https://huggingface.co",
-			"fileSystemUrl": "e.g file://path/to/registry",
+			"fileSystemUrl": "e.g nfs://path/to/registry",
 			"credentials": "Credentials"
 		},
 		"descriptions": {
@@ -431,6 +431,10 @@
 		"types": {
 			"huggingFace": "Hugging Face",
 			"fileSystem": "File System"
+		},
+		"validation": {
+			"urlRequired": "URL is required",
+			"mustUseNfsProtocol": "File system registry must use nfs:// protocol"
 		}
 	},
 	"model_catalogs": {

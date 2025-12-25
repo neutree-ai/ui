@@ -5,6 +5,7 @@ import { useWorkspace } from "@/components/theme/hooks";
 import { Input } from "@/components/ui/input";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
 import { useTranslation } from "@/lib/i18n";
+import { isNfsProtocol } from "@/lib/validate";
 import type { ModelRegistry } from "@/types";
 import { useForm } from "@refinedev/react-hook-form";
 
@@ -104,8 +105,24 @@ export const useModelRegistryForm = ({
         </Field>
         <Field
           {...form}
-          name="spec.url"
           label={t("model_registries.fields.url")}
+          {...form.register("spec.url", {
+            required: {
+              value: true,
+              message: t("model_registries.validation.urlRequired"),
+            },
+            validate: (value: string) => {
+              // Only validate protocol for file system type
+              if (currentType === PRIVATE_MODEL_REGISTRY_TYPE) {
+                if (!value) return true; // Let required rule handle empty
+                return (
+                  isNfsProtocol(value) ||
+                  t("model_registries.validation.mustUseNfsProtocol")
+                );
+              }
+              return true; // No validation for hugging-face type
+            },
+          })}
         >
           <Input
             placeholder={

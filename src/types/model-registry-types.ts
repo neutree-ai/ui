@@ -11,7 +11,7 @@ export type ModelRegistry = {
 
 export type ModelRegistrySpec = {
   type: string;
-  url: string; // 'file://path/to/model' | 'https://huggingface.co' | 'nfs://path/to/model';
+  url: string; // 'nfs://path/to/model' | 'https://huggingface.co'
   credentials: string;
 };
 

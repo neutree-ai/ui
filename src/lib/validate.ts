@@ -9,3 +9,7 @@ export const isValidPath = (path: string): boolean => {
   const pathRegex = /^\/[a-zA-Z0-9._/-]*$/;
   return pathRegex.test(path) && path.length > 0;
 };
+
+export const isNfsProtocol = (url: string): boolean => {
+  return url.trim().startsWith("nfs://");
+};
