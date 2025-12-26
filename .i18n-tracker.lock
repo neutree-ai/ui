@@ -22,7 +22,7 @@
   "src/types/image-registry-types.ts": "85e1892665c762fa611664c7fbbc95a3",
   "src/types/index.ts": "e55dc3333edd7112638326c0ebece751",
   "src/types/model-catalog-types.ts": "b0646abe60ab23292368da14f1dc5974",
-  "src/types/model-registry-types.ts": "154c7871915c524a85bbd23139b32717",
+  "src/types/model-registry-types.ts": "08e3c1cd87301ae6d3f81f81885c3f0f",
   "src/types/model-types.ts": "4823f328eb42890f3561a6860bec0ce7",
   "src/types/role-types.ts": "6e3a4c89247b0a7b4f6551de45229d42",
   "src/types/user-types.ts": "1d7af567118749bc8421586ae968e921",

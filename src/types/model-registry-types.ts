@@ -12,7 +12,7 @@ export type ModelRegistry = {
 export type ModelRegistrySpec = {
   type: string;
   url: string; // 'nfs://path/to/model' | 'https://huggingface.co'
-  credentials: string;
+  credentials?: string;
 };
 
 export type ModelRegistryStatus = BaseStatus<ModelRegistryPhase>;
