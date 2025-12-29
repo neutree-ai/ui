@@ -189,7 +189,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         cluster: "",
         model: {
           name: "",
-          version: "latest",
+          version: "",
           registry: "",
           file: "",
           task: "",
