@@ -1,14 +1,16 @@
 import ChatPlayground from "@/components/business/ChatPlayground";
+import DeploymentConfigCard from "@/components/business/DeploymentConfigCard";
 import EmbeddingPlayground from "@/components/business/EmbeddingPlayground";
 import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointModel from "@/components/business/EndpointModel";
 import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
 import EndpointStatus from "@/components/business/EndpointStatus";
+import EngineVariablesCard from "@/components/business/EngineVariablesCard";
 import GrafanaPanels from "@/components/business/GrafanaPanels";
-import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
 import MetadataCard from "@/components/business/MetadataCard";
 import ModelTask from "@/components/business/ModelTask";
 import RerankPlayground from "@/components/business/RerankPlayground";
+import ResourcesCard from "@/components/business/ResourcesCard";
 import { ShowButton, ShowPage } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
 import { Button } from "@/components/ui/button";
@@ -40,7 +42,6 @@ import {
   useShow,
 } from "@refinedev/core";
 import { Suspense, lazy, useCallback, useRef } from "react";
-import React from "react";
 import { useTranslation } from "react-i18next";
 
 // Lazy load EndpointLogTabs
@@ -145,34 +146,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     engineType: record?.spec.engine.engine,
   });
 
-  // Calculate resource display logic
-  const resourceDisplay = React.useMemo(() => {
-    if (!record?.spec.resources) {
-      return {
-        hasGpu: false,
-        hasNpu: false,
-        gpuValue: "-",
-        npuValue: "-",
-        hasAccelerator: false,
-      };
-    }
-
-    const accelerator = record.spec.resources.accelerator;
-    const gpuField = record.spec.resources.gpu;
-
-    // Check for GPU resources
-    const hasGpu = Boolean(gpuField && gpuField > 0);
-    const gpuValue = gpuField || "-";
-
-    // Check for NPU resources (NPU count would be in a separate field if supported)
-    const hasNpu = false;
-    const npuValue = "-";
-
-    const hasAccelerator = Boolean(accelerator?.type && accelerator?.product);
-
-    return { hasGpu, hasNpu, gpuValue, npuValue, hasAccelerator };
-  }, [record?.spec.resources]);
-
   const url = record?.status?.service_url ?? "";
 
   if (isLoading) {
@@ -259,89 +232,27 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   </ShowPage.Row>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>{t("endpoints.fields.resources")}</CardTitle>
-            </CardHeader>
-            <CardContent>
               <div className="grid grid-cols-4 gap-8">
-                {resourceDisplay.hasGpu && (
-                  <ShowPage.Row title={t("endpoints.fields.gpu")}>
-                    {formatToDecimal(resourceDisplay.gpuValue) ?? "-"}
-                  </ShowPage.Row>
-                )}
-
-                {resourceDisplay.hasNpu && (
-                  <ShowPage.Row title={t("endpoints.fields.npu")}>
-                    {formatToDecimal(resourceDisplay.npuValue) ?? "-"}
-                  </ShowPage.Row>
-                )}
-
-                <ShowPage.Row title={t("endpoints.fields.cpu")}>
-                  {formatToDecimal(record.spec.resources?.cpu) ?? "-"}
-                </ShowPage.Row>
-                <ShowPage.Row title={t("endpoints.fields.memory")}>
-                  {formatToDecimal(record.spec.resources?.memory) ?? "-"}
-                </ShowPage.Row>
-              </div>
-
-              {resourceDisplay.hasAccelerator &&
-                record.spec.resources?.accelerator && (
-                  <div className="mt-4">
-                    <ShowPage.Row title={t("endpoints.fields.acceleratorType")}>
-                      {t(
-                        `clusters.acceleratorTypes.${record.spec.resources.accelerator.type}`,
-                        {
-                          defaultValue: record.spec.resources.accelerator.type,
-                        },
-                      )}
-                    </ShowPage.Row>
-                    <ShowPage.Row
-                      title={t("endpoints.fields.acceleratorProduct")}
-                    >
-                      {record.spec.resources.accelerator.product}
-                    </ShowPage.Row>
-                  </div>
-                )}
-            </CardContent>
-          </Card>
-          <Card className="mt-4">
-            <CardContent>
-              <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={t("endpoints.fields.replica")}>
-                  {record.spec.replicas?.num ?? 1}
-                </ShowPage.Row>
-                <ShowPage.Row title={t("endpoints.fields.scheduler")}>
-                  {t(
-                    `models.scheduler.${
-                      record.spec.deployment_options?.scheduler.type ===
-                      "consistent_hash"
-                        ? "consistentHashing"
-                        : record.spec.deployment_options?.scheduler.type ===
-                            "roundrobin"
-                          ? "roundRobin"
-                          : "unavailable"
-                    }`,
-                  )}
+                <ShowPage.Row title={t("endpoints.fields.modelFile")}>
+                  {record.spec.model.file}
                 </ShowPage.Row>
               </div>
             </CardContent>
           </Card>
-          {engineVersionSchema && record.spec.variables?.engine_args && (
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>{t("endpoints.fields.variables")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <JSONSchemaValueVisualizer
-                  schema={engineVersionSchema}
-                  value={record.spec.variables.engine_args}
-                />
-              </CardContent>
-            </Card>
-          )}
+          <ResourcesCard
+            resources={record.spec.resources}
+            showGpuConditionally={true}
+            titleTranslationKey="endpoints.fields.resources"
+          />
+          <DeploymentConfigCard
+            replicas={record.spec.replicas}
+            deploymentOptions={record.spec.deployment_options}
+          />
+          <EngineVariablesCard
+            schema={engineVersionSchema}
+            variables={record.spec.variables}
+            useNestedPath={true}
+          />
           {record.spec.env && Object.keys(record.spec.env).length > 0 && (
             <Card className="mt-4">
               <CardHeader>

@@ -1,11 +1,14 @@
+import DeploymentConfigCard from "@/components/business/DeploymentConfigCard";
+import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointModel from "@/components/business/EndpointModel";
-import JSONSchemaValueVisualizer from "@/components/business/JsonSchemaValueVisualizer";
+import EngineVariablesCard from "@/components/business/EngineVariablesCard";
 import MetadataCard from "@/components/business/MetadataCard";
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
-import { ShowButton, ShowPage } from "@/components/theme";
+import ResourcesCard from "@/components/business/ResourcesCard";
+import { ShowPage } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import type { Engine, ModelCatalog } from "@/types";
 import { useOne, useShow } from "@refinedev/core";
@@ -54,7 +57,7 @@ export const ModelCatalogsShow = () => {
           <CardContent>
             <div className="grid grid-cols-4 gap-8">
               <ShowPage.Row title={t("model_catalogs.fields.engine")}>
-                {record.spec.engine.engine}:{record.spec.engine.version}
+                <EndpointEngine spec={record.spec} metadata={record.metadata} />
               </ShowPage.Row>
               <div className="col-span-2">
                 <ShowPage.Row title={t("model_catalogs.fields.model")}>
@@ -73,74 +76,20 @@ export const ModelCatalogsShow = () => {
           </CardContent>
         </Card>
 
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>{t("model_catalogs.fields.resources")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-8">
-              <ShowPage.Row title={t("model_catalogs.fields.gpu")}>
-                {Object.values(record.spec.resources?.accelerator || {})[0] ??
-                  record.spec.resources?.gpu ??
-                  "-"}
-              </ShowPage.Row>
-              <ShowPage.Row title={t("model_catalogs.fields.cpu")}>
-                {record.spec.resources?.cpu ?? "-"}
-              </ShowPage.Row>
-              <ShowPage.Row title={t("model_catalogs.fields.memory")}>
-                {record.spec.resources?.memory ?? "-"}
-              </ShowPage.Row>
-            </div>
+        <ResourcesCard
+          resources={record.spec.resources}
+          titleTranslationKey="model_catalogs.fields.resources"
+        />
 
-            {record.spec.resources?.accelerator && (
-              <ShowPage.Row
-                title={Object.keys(record.spec.resources?.accelerator)[0]}
-              >
-                {Object.values(record.spec.resources.accelerator)[0] ?? "-"}
-              </ShowPage.Row>
-            )}
-          </CardContent>
-        </Card>
+        <DeploymentConfigCard
+          replicas={record.spec.replicas}
+          deploymentOptions={record.spec.deployment_options}
+        />
 
-        <Card className="mt-4">
-          <CardContent>
-            <div className="grid grid-cols-4 gap-8">
-              <ShowPage.Row title={t("model_catalogs.fields.replica")}>
-                {record.spec.replicas?.num ?? 1}
-              </ShowPage.Row>
-              <ShowPage.Row title={t("model_catalogs.fields.scheduler")}>
-                {typeof record.spec.deployment_options === "object" &&
-                record.spec.deployment_options &&
-                "scheduler" in record.spec.deployment_options &&
-                typeof record.spec.deployment_options.scheduler === "object" &&
-                record.spec.deployment_options.scheduler &&
-                "type" in record.spec.deployment_options.scheduler
-                  ? record.spec.deployment_options.scheduler.type ===
-                    "consistent_hash"
-                    ? t("models.scheduler.consistentHashing")
-                    : record.spec.deployment_options.scheduler.type ===
-                        "roundrobin"
-                      ? t("models.scheduler.roundRobin")
-                      : String(record.spec.deployment_options.scheduler.type)
-                  : t("models.scheduler.unavailable")}
-              </ShowPage.Row>
-            </div>
-          </CardContent>
-        </Card>
-
-        {engineVersionSchema && record.spec.variables && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>{t("model_catalogs.fields.variables")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <JSONSchemaValueVisualizer
-                schema={engineVersionSchema}
-                value={record.spec.variables}
-              />
-            </CardContent>
-          </Card>
-        )}
+        <EngineVariablesCard
+          schema={engineVersionSchema}
+          variables={record.spec.variables}
+        />
       </div>
     </ShowPage>
   );

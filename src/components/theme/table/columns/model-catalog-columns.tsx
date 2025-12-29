@@ -1,3 +1,5 @@
+import EndpointEngine from "@/components/business/EndpointEngine";
+import EndpointModel from "@/components/business/EndpointModel";
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
 import type { BaseStatus } from "@/types";
@@ -14,6 +16,10 @@ export const useModelCatalogColumns = () => {
         accessorKey="spec.model.name"
         id="model"
         enableHiding
+        cell={({ row }) => {
+          const { model } = row.original.spec;
+          return <EndpointModel model={model} />;
+        }}
       />
     ),
     task: (
@@ -34,6 +40,10 @@ export const useModelCatalogColumns = () => {
         accessorKey="spec.engine.engine"
         id="engine"
         enableHiding
+        cell={({ row }) => {
+          const { spec, metadata } = row.original;
+          return <EndpointEngine spec={spec} metadata={metadata} />;
+        }}
       />
     ),
     status: (

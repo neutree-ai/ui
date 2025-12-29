@@ -1,6 +1,6 @@
-import type { Json } from "./api-gen";
 import type { BaseStatus, Metadata } from "./basic-types";
 import type {
+  DeploymentOptions,
   EndpointEngineSpec,
   ModelSpec,
   ReplicaSpec,
@@ -17,10 +17,10 @@ export enum ModelCatalogPhase {
 export type ModelCatalogSpec = {
   model: ModelSpec;
   engine: EndpointEngineSpec;
-  resources: ResourceSpec;
-  replicas: ReplicaSpec;
-  deployment_options: Json | null;
-  variables: Json | null;
+  resources: ResourceSpec | null;
+  replicas: ReplicaSpec | null;
+  deployment_options: DeploymentOptions | null;
+  variables: Record<string, any> | null;
 };
 
 export type ModelCatalogStatus = BaseStatus<ModelCatalogPhase>;

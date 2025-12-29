@@ -388,14 +388,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         currentFormData.spec.engine as Record<string, unknown>,
         selectedCatalog.spec.engine as Record<string, unknown>,
       );
-      const mergedResources = deepMerge(
-        currentFormData.spec.resources as Record<string, unknown>,
-        selectedCatalog.spec.resources as Record<string, unknown>,
-      );
-      const mergedReplicas = deepMerge(
-        currentFormData.spec.replicas as Record<string, unknown>,
-        selectedCatalog.spec.replicas as Record<string, unknown>,
-      );
+      const mergedResources = selectedCatalog.spec.resources
+        ? deepMerge(
+            currentFormData.spec.resources as Record<string, unknown>,
+            selectedCatalog.spec.resources as Record<string, unknown>,
+          )
+        : currentFormData.spec.resources;
+      const mergedReplicas = selectedCatalog.spec.replicas
+        ? deepMerge(
+            currentFormData.spec.replicas as Record<string, unknown>,
+            selectedCatalog.spec.replicas as Record<string, unknown>,
+          )
+        : currentFormData.spec.replicas;
 
       form.setValue(
         "spec.model",

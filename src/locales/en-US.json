@@ -1,6 +1,17 @@
 {
 	"nativeName": "English",
 	"common": {
+		"fields": {
+			"resources": "Resources",
+			"gpu": "GPU",
+			"cpu": "CPU",
+			"memory": "Memory",
+			"acceleratorType": "Accelerator Type",
+			"acceleratorProduct": "Accelerator Product",
+			"replica": "Replica",
+			"scheduler": "Scheduler",
+			"variables": "Variables"
+		},
 		"messages": {
 			"grafanaNotConfigured": "Grafana monitoring is not configured.",
 			"leaveEmptyToKeepValue": "Leave empty to keep existing value"
@@ -449,12 +460,8 @@
 			"registry": "Registry",
 			"modelFile": "Model File",
 			"resources": "Resources",
-			"gpu": "GPU",
-			"cpu": "CPU",
-			"memory": "Memory",
-			"replica": "Replica",
-			"scheduler": "Scheduler",
-			"variables": "Variables"
+			"acceleratorType": "Accelerator Type",
+			"acceleratorProduct": "Accelerator Product"
 		}
 	},
 	"image_registries": {
@@ -503,13 +510,8 @@
 			"model": "Model",
 			"task": "Task",
 			"resources": "Resources",
-			"gpu": "GPU",
 			"npu": "NPU",
 			"cpu": "CPU",
-			"memory": "Memory",
-			"replica": "Replica",
-			"scheduler": "Scheduler",
-			"variables": "Variables",
 			"name": "Name",
 			"workspace": "Workspace",
 			"modelRegistry": "Model Registry",

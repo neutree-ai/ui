@@ -1,7 +1,15 @@
-import type { Endpoint } from "@/types";
+import type { EndpointEngineSpec, Metadata } from "@/types";
 import { ShowButton } from "../theme";
 
-export default function EndpointEngine({ spec, metadata }: Endpoint) {
+interface EndpointEngineProps {
+  spec: { engine: EndpointEngineSpec };
+  metadata: Metadata;
+}
+
+export default function EndpointEngine({
+  spec,
+  metadata,
+}: EndpointEngineProps) {
   const { engine } = spec;
   return (
     <ShowButton
