@@ -187,7 +187,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       form.setValue(`spec.config.model_caches.${index}`, {
         name,
         pvc: {
-          accessModes: ["ReadWriteOnce"],
+          accessModes: ["ReadWriteMany"],
           resources: {
             requests: {
               storage: "10Gi",
