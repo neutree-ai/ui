@@ -614,18 +614,20 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                 {t("clusters.messages.noModelCaches")}
               </div>
             )}
-            <div className="flex gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addModelCache}
-                className="flex ml-auto gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                {t("clusters.actions.addModelCache")}
-              </Button>
-            </div>
+            {fields.length < 1 && (
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addModelCache}
+                  className="flex ml-auto gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("clusters.actions.addModelCache")}
+                </Button>
+              </div>
+            )}
           </div>
         </FormCardGrid>
       </div>
