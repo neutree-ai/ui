@@ -340,7 +340,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               // not supported yet
               // { label: t("clusters.options.ingress"), value: "Ingress" },
             ]}
-            disabled={isEdit}
           />
         </Field>
 
@@ -349,7 +348,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           name="spec.config.kubernetes_config.router.replicas"
           label={t("clusters.fields.replicas")}
         >
-          <Input type="number" disabled={isEdit} />
+          <Input type="number" />
         </Field>
 
         <Field
@@ -357,7 +356,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           name="spec.config.kubernetes_config.router.resources.cpu"
           label={t("clusters.fields.cpu")}
         >
-          <Input disabled={isEdit} />
+          <Input />
         </Field>
 
         <Field
@@ -365,7 +364,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           name="spec.config.kubernetes_config.router.resources.memory"
           label={t("clusters.fields.memory")}
         >
-          <Input disabled={isEdit} />
+          <Input />
         </Field>
       </FormCardGrid>
     ) : null,

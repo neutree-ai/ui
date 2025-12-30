@@ -80,7 +80,7 @@
   "src/pages/clusters/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/clusters/list.tsx": "3017e58da5c72139a1d244c63616e8ba",
   "src/pages/clusters/show.tsx": "b66e2e57968ca6eeb230f8b822f8270e",
-  "src/pages/clusters/use-cluster-form.tsx": "f11717124341f899d8e4ffa5215eb3d2",
+  "src/pages/clusters/use-cluster-form.tsx": "23d85162ffdb95a56222d7be9b5a3572",
   "src/pages/api-keys/index.ts": "80f170840d928e44b4713f3978ebb7a3",
   "src/pages/api-keys/list.tsx": "a97ecaa79ade44d10aef29a1d9b0164e",
   "src/pages/api-keys/show.tsx": "a96b45986bec365127d778c32fb2e2d0",
