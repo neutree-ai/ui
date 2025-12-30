@@ -6,7 +6,6 @@ import { defaultSorters } from "@/components/theme/table/sorter";
 export const UsersList = () => {
   const metadataColumns = useMetadataColumns({
     resource: "users",
-    showExportAction: false, // 所有记录都不显示导出按钮
   });
   const userColumns = useUserColumns();
 
@@ -23,7 +22,7 @@ export const UsersList = () => {
         {userColumns.email}
         {metadataColumns.creation_timestamp}
         {metadataColumns.update_timestamp}
-        {metadataColumns.action}
+        {userColumns.action}
       </Table>
     </ListPage>
   );

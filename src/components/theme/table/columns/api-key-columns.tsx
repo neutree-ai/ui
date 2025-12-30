@@ -1,8 +1,8 @@
 import { useTranslation } from "@/lib/i18n";
-import { Edit, Trash2 } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { Table } from "..";
 
-export const useUserColumns = () => {
+export const useApiKeyColumns = () => {
   const { t } = useTranslation();
 
   return {
@@ -20,16 +20,15 @@ export const useUserColumns = () => {
         id={"actions"}
         cell={({ row: { original } }) => (
           <Table.Actions>
-            <Table.EditAction
-              title={t("buttons.edit")}
+            <Table.ExportYamlAction
               row={original}
-              resource="users"
-              icon={<Edit size={16} />}
+              resource="api_keys"
+              icon={<Download size={16} />}
             />
             <Table.DeleteAction
               title={t("buttons.delete")}
               row={original}
-              resource="users"
+              resource="api_keys"
               icon={<Trash2 size={16} />}
             />
           </Table.Actions>

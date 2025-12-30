@@ -1,14 +1,13 @@
 import { ListPage, Table } from "@/components/theme";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
+import { useWorkspacesColumns } from "@/components/theme/table/columns/workspaces-columns";
 import { defaultSorters } from "@/components/theme/table/sorter";
 
 export const WorkspacesList = () => {
   const metadataColumns = useMetadataColumns({
     resource: "workspaces",
-    showEditAction: false,
-    showDeleteAction: true,
-    showExportAction: true,
   });
+  const workspacesColumns = useWorkspacesColumns();
 
   return (
     <ListPage>
@@ -22,7 +21,7 @@ export const WorkspacesList = () => {
         {metadataColumns.name}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {workspacesColumns.action}
       </Table>
     </ListPage>
   );

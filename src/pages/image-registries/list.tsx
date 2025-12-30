@@ -21,7 +21,7 @@ export const ImageRegistriesList = () => {
         {imageRegistryColumns.status}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {imageRegistryColumns.action}
       </Table>
     </ListPage>
   );

@@ -2,7 +2,7 @@ import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
 import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
-import { Trash2 } from "lucide-react";
+import { Download, Edit, Trash2 } from "lucide-react";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
 
@@ -61,6 +61,17 @@ export const useClusterColumns = () => {
         id={"actions"}
         cell={({ row: { original } }) => (
           <Table.Actions>
+            <Table.ExportYamlAction
+              row={original}
+              resource="clusters"
+              icon={<Download size={16} />}
+            />
+            <Table.EditAction
+              title={t("buttons.edit")}
+              row={original}
+              resource="clusters"
+              icon={<Edit size={16} />}
+            />
             <Table.DeleteAction
               title={t("buttons.delete")}
               row={original}

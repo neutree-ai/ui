@@ -2,6 +2,7 @@ import EngineStatus from "@/components/business/EngineStatus";
 import EngineVersions from "@/components/business/EngineVersions";
 import type { BaseStatus, EngineVersion } from "@/types";
 import { useTranslate } from "@refinedev/core";
+import { Download } from "lucide-react";
 import { Table } from "..";
 
 export const useEngineColumns = () => {
@@ -31,6 +32,21 @@ export const useEngineColumns = () => {
         cell={({ getValue }) => {
           return <EngineStatus {...(getValue() as unknown as BaseStatus)} />;
         }}
+      />
+    ),
+    action: (
+      <Table.Column
+        accessorKey={"id"}
+        id={"actions"}
+        cell={({ row: { original } }) => (
+          <Table.Actions>
+            <Table.ExportYamlAction
+              row={original}
+              resource="engines"
+              icon={<Download size={16} />}
+            />
+          </Table.Actions>
+        )}
       />
     ),
   };

@@ -21,7 +21,7 @@ export const ClustersList = () => {
         {clusterColumns.status}
         {clusterColumns.type}
         {clusterColumns.image_registry}
-        {metadataColumns.action}
+        {clusterColumns.action}
       </Table>
     </ListPage>
   );

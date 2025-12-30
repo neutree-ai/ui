@@ -2,6 +2,7 @@ import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
 import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
+import { Download, Trash2 } from "lucide-react";
 import { Table } from "..";
 
 export const useModelCatalogColumns = () => {
@@ -46,6 +47,27 @@ export const useModelCatalogColumns = () => {
             <ModelCatalogStatus {...(getValue() as unknown as BaseStatus)} />
           );
         }}
+      />
+    ),
+    action: (
+      <Table.Column
+        accessorKey={"id"}
+        id={"actions"}
+        cell={({ row: { original } }) => (
+          <Table.Actions>
+            <Table.ExportYamlAction
+              row={original}
+              resource="model_catalogs"
+              icon={<Download size={16} />}
+            />
+            <Table.DeleteAction
+              title="Delete"
+              row={original}
+              resource="model_catalogs"
+              icon={<Trash2 size={16} />}
+            />
+          </Table.Actions>
+        )}
       />
     ),
   };

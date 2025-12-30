@@ -7,7 +7,6 @@ import { defaultSorters } from "@/components/theme/table/sorter";
 export const ModelCatalogsList = () => {
   const metadataColumns = useMetadataColumns({
     resource: "model_catalogs",
-    showEditAction: false,
   });
   const modelCatalogColumns = useModelCatalogColumns();
 
@@ -31,7 +30,7 @@ export const ModelCatalogsList = () => {
         {modelCatalogColumns.status}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {modelCatalogColumns.action}
       </Table>
     </ListPage>
   );

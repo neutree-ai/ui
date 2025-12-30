@@ -6,19 +6,6 @@ import { defaultSorters } from "@/components/theme/table/sorter";
 export const RoleAssignmentsList = () => {
   const metadataColumns = useMetadataColumns({
     resource: "role_assignments",
-    showEditAction: (original) => {
-      // admin-global-role-assignment不显示编辑按钮
-      const isAdminGlobalAssignment =
-        original.metadata.name === "admin-global-role-assignment";
-      return !isAdminGlobalAssignment;
-    },
-    showDeleteAction: (original) => {
-      // admin-global-role-assignment不显示删除按钮
-      const isAdminGlobalAssignment =
-        original.metadata.name === "admin-global-role-assignment";
-      return !isAdminGlobalAssignment;
-    },
-    showExportAction: true, // 所有记录都显示导出按钮
   });
   const roleAssignmentColumns = useRoleAssignmentColumns();
 
@@ -37,7 +24,7 @@ export const RoleAssignmentsList = () => {
         {roleAssignmentColumns.user}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {roleAssignmentColumns.action}
       </Table>
     </ListPage>
   );

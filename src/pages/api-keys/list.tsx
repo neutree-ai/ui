@@ -1,4 +1,5 @@
 import { Combobox, ListPage, Table } from "@/components/theme";
+import { useApiKeyColumns } from "@/components/theme/table/columns/api-key-columns";
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { defaultSorters } from "@/components/theme/table/sorter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -187,10 +188,8 @@ export const ApiKeysList = () => {
   const [open, setOpen] = useState(false);
   const metadataColumns = useMetadataColumns({
     resource: "api_keys",
-    showEditAction: false,
-    showExportAction: true,
-    showDeleteAction: true,
   });
+  const apiKeyColumns = useApiKeyColumns();
 
   return (
     <ListPage
@@ -221,9 +220,9 @@ export const ApiKeysList = () => {
       >
         {metadataColumns.name}
         {metadataColumns.workspace}
-
+        {apiKeyColumns.email}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {apiKeyColumns.action}
       </Table>
     </ListPage>
   );

@@ -1,5 +1,5 @@
 import { useTranslate } from "@refinedev/core";
-import { Edit, Lock, Trash2 } from "lucide-react";
+import { Download, Edit, Lock, Trash2 } from "lucide-react";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
 
@@ -39,6 +39,42 @@ export const useRoleColumns = () => {
         cell={({ getValue }) => {
           const value = getValue() as unknown as string[];
           return t("table.column.permissionsCount", { count: value.length });
+        }}
+      />
+    ),
+    action: (
+      <Table.Column
+        accessorKey={"id"}
+        id={"actions"}
+        cell={({ row: { original } }) => {
+          // 预设角色隐藏编辑/删除，但允许导出
+          const isPreset = Boolean(original.spec?.preset_key);
+
+          return (
+            <Table.Actions>
+              <Table.ExportYamlAction
+                row={original}
+                resource="roles"
+                icon={<Download size={16} />}
+              />
+              {!isPreset && (
+                <>
+                  <Table.EditAction
+                    title="Edit"
+                    row={original}
+                    resource="roles"
+                    icon={<Edit size={16} />}
+                  />
+                  <Table.DeleteAction
+                    title="Delete"
+                    row={original}
+                    resource="roles"
+                    icon={<Trash2 size={16} />}
+                  />
+                </>
+              )}
+            </Table.Actions>
+          );
         }}
       />
     ),

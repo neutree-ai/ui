@@ -24,7 +24,7 @@ export const ModelRegistriesList = () => {
 
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {modelRegistryColumns.action}
       </Table>
     </ListPage>
   );

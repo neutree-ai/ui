@@ -1,4 +1,3 @@
-import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
 import { ModelTaskFilter } from "@/components/business/ModelTaskFilter";
 import { ListPage, Table } from "@/components/theme";
 import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
@@ -8,9 +7,7 @@ import { useTranslation } from "react-i18next";
 
 export const EndpointsList = () => {
   const { t } = useTranslation();
-  const metadataColumns = useMetadataColumns({
-    extraActions: (row) => <EndpointPauseAction endpoint={row} />,
-  });
+  const metadataColumns = useMetadataColumns();
   const endpointColumns = useEndpointColumns();
 
   return (
@@ -34,7 +31,7 @@ export const EndpointsList = () => {
         {endpointColumns.cluster}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        {endpointColumns.action}
       </Table>
     </ListPage>
   );

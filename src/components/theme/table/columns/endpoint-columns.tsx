@@ -1,9 +1,11 @@
 import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointModel from "@/components/business/EndpointModel";
+import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
 import EndpointStatus from "@/components/business/EndpointStatus";
 import ModelTask from "@/components/business/ModelTask";
 import type { BaseStatus, Endpoint } from "@/types";
 import { useTranslate } from "@refinedev/core";
+import { Download, Edit, Trash2 } from "lucide-react";
 import { Table } from "..";
 import { ShowButton } from "../../buttons";
 
@@ -80,6 +82,34 @@ export const useEndpointColumns = () => {
           const { model } = row.original.spec;
           return <ModelTask task={model.task} />;
         }}
+      />
+    ),
+    action: (
+      <Table.Column
+        accessorKey={"id"}
+        id={"actions"}
+        cell={({ row: { original } }) => (
+          <Table.Actions>
+            <EndpointPauseAction endpoint={original as Endpoint} />
+            <Table.ExportYamlAction
+              row={original}
+              resource="endpoints"
+              icon={<Download size={16} />}
+            />
+            <Table.EditAction
+              title={t("buttons.edit")}
+              row={original}
+              resource="endpoints"
+              icon={<Edit size={16} />}
+            />
+            <Table.DeleteAction
+              title={t("buttons.delete")}
+              row={original}
+              resource="endpoints"
+              icon={<Trash2 size={16} />}
+            />
+          </Table.Actions>
+        )}
       />
     ),
   };
