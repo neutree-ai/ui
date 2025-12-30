@@ -10,17 +10,19 @@ const useExportYaml = (
   onExport?: (entity: any, resource: string) => void,
 ) => {
   const { translate } = useTranslation();
+
   const handleExport = () => {
     if (onExport) {
       onExport(entity, resource);
     } else {
-      // Emit custom event to trigger global dialog
-      const event = new CustomEvent("export-yaml", {
+      // Emit event for list page to handle
+      const event = new CustomEvent("list-export-yaml", {
         detail: { entity, resource },
       });
       window.dispatchEvent(event);
     }
   };
+
   return {
     handleExport,
     translate,
@@ -54,14 +56,16 @@ export interface ExportYamlTableActionProps {
   row: any;
   resource: string;
   icon?: React.ReactNode;
+  onExport?: (entity: any, resource: string) => void;
 }
 
 export const ExportYamlTableAction = ({
   row,
   resource,
   icon,
+  onExport,
 }: ExportYamlTableActionProps) => {
-  const { handleExport, translate } = useExportYaml(row, resource);
+  const { handleExport, translate } = useExportYaml(row, resource, onExport);
 
   return (
     <RowAction

@@ -59,11 +59,6 @@ export const ShowPage: FC<ShowProps> & {
 
   const { list } = useNavigation();
 
-  const breadcrumb =
-    typeof breadcrumbFromProps === "undefined"
-      ? globalBreadcrumb
-      : breadcrumbFromProps;
-
   // YAML export dialog state
   const [showYamlViewer, setShowYamlViewer] = useState(false);
   const [yamlContent, setYamlContent] = useState("");
@@ -110,6 +105,11 @@ export const ShowPage: FC<ShowProps> & {
     setYamlContent("");
     setViewerTitle("");
   };
+
+  const breadcrumb =
+    typeof breadcrumbFromProps === "undefined"
+      ? globalBreadcrumb
+      : breadcrumbFromProps;
 
   return (
     <DeleteProvider>
