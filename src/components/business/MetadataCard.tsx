@@ -8,6 +8,26 @@ type MetadataCardProps = {
   metadata: Metadata;
 };
 
+type KeyValueTagsProps = {
+  data: Record<string, string>;
+};
+
+function KeyValueTags({ data }: KeyValueTagsProps) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {Object.entries(data).map(([key, value]) => (
+        <span
+          key={key}
+          className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-md"
+        >
+          <span className="font-medium">{key}:</span>
+          <span className="ml-1">{value}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function MetadataCard({ metadata }: MetadataCardProps) {
   const { translate } = useTranslation();
 
@@ -48,21 +68,16 @@ export default function MetadataCard({ metadata }: MetadataCardProps) {
         {metadata.labels && Object.keys(metadata.labels).length > 0 && (
           <ShowPage.Row
             title={translate("table.column.labels")}
-            children={
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(metadata.labels).map(([key, value]) => (
-                  <span
-                    key={key}
-                    className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-md"
-                  >
-                    <span className="font-medium">{key}:</span>
-                    <span className="ml-1">{value}</span>
-                  </span>
-                ))}
-              </div>
-            }
+            children={<KeyValueTags data={metadata.labels} />}
           />
         )}
+        {metadata.annotations &&
+          Object.keys(metadata.annotations).length > 0 && (
+            <ShowPage.Row
+              title={translate("table.column.annotations")}
+              children={<KeyValueTags data={metadata.annotations} />}
+            />
+          )}
       </CardContent>
     </Card>
   );

@@ -277,7 +277,8 @@
 			"email": "Email",
 			"permissions": "Permissions",
 			"permissionsCount": "{{count}} permissions",
-			"labels": "Labels"
+			"labels": "Labels",
+			"annotations": "Annotations"
 		}
 	},
 	"documentTitle": {
