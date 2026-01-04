@@ -277,7 +277,7 @@ export const dataProvider = (
       if (meta?.forceDelete) {
         updatedMetadata.annotations = {
           ...current.data.metadata.annotations,
-          "neutree.io/force-delete": "true",
+          "neutree.ai/force-delete": "true",
         };
       }
 

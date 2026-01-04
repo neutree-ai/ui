@@ -10,7 +10,7 @@ type EndpointPauseActionProps = RowActionProps & {
   resource?: string;
 };
 
-const LAST_REPLICA_LABEL = "neutree.ui/last_replicas";
+const LAST_REPLICA_LABEL = "neutree.ai/last_replicas";
 
 const parseReplicaCount = (value: unknown): number | undefined => {
   const parsed = Number(value);
