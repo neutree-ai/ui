@@ -56,7 +56,7 @@ export const EndpointPauseAction = ({
     } else {
       const previousReplicas =
         replicaCount > 0 ? replicaCount : (storedReplicaCount ?? 1);
-      nextLabels[LAST_REPLICA_LABEL] = previousReplicas;
+      nextLabels[LAST_REPLICA_LABEL] = String(previousReplicas);
     }
 
     const metadataLabels =
