@@ -2,7 +2,7 @@ import type { buttonVariants } from "@/components/ui/button";
 import type { AlertDialogProps } from "@radix-ui/react-alert-dialog";
 import type { DeleteButtonValues } from "@refinedev/core/dist/hooks/button/delete-button";
 import type { VariantProps } from "class-variance-authority";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export type ConfirmDialogProps = AlertDialogProps & {
   title?: string;
@@ -16,6 +16,7 @@ export type ConfirmDialogProps = AlertDialogProps & {
   loading?: boolean;
   onConfirm: DeleteButtonValues["onConfirm"];
   children?: ReactElement<SVGSVGElement>;
+  content?: ReactNode;
   okButtonVariant?: VariantProps<typeof buttonVariants>["variant"];
   cancelButtonVariant?: VariantProps<typeof buttonVariants>["variant"];
   okButtonSize?: VariantProps<typeof buttonVariants>["size"];

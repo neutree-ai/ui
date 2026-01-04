@@ -214,7 +214,12 @@
 	"dialogs": {
 		"delete": {
 			"title": "Are you sure?",
-			"description": "This action cannot be undone."
+			"description": "This action cannot be undone.",
+			"currentError": "Current Error",
+			"forceDelete": {
+				"label": "Force Delete",
+				"description": "Use when normal deletion fails. Deletes the record but may not clean up associated external resources."
+			}
 		}
 	},
 	"warnWhenUnsavedChanges": "Are you sure you want to leave? You have unsaved changes.",

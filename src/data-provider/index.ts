@@ -268,11 +268,21 @@ export const dataProvider = (
         ? postgrestClient.schema(meta.schema)
         : postgrestClient;
 
+      const updatedMetadata = {
+        ...current.data.metadata,
+        deletion_timestamp: new Date().toISOString(),
+      };
+
+      // Add force delete annotation if requested
+      if (meta?.forceDelete) {
+        updatedMetadata.annotations = {
+          ...current.data.metadata.annotations,
+          "neutree.io/force-delete": "true",
+        };
+      }
+
       const query = client.from(resource).update({
-        metadata: {
-          ...current.data.metadata,
-          deletion_timestamp: new Date().toISOString(),
-        },
+        metadata: updatedMetadata,
       });
 
       if (meta?.idColumnName) {

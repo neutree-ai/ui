@@ -15,7 +15,9 @@ import { useContext } from "react";
 
 type DeleteHelperReturnType = CanReturnType & {
   isLoading: boolean;
-  mutate: (e?: MutateOptions<unknown, unknown, unknown, unknown>) => any; // TODO: UseDeleteReturnType fix
+  mutate: (
+    e?: MutateOptions<unknown, unknown, unknown, unknown> & { meta?: any },
+  ) => any; // TODO: UseDeleteReturnType fix
 };
 
 export const useDeleteHelper = (
@@ -67,20 +69,26 @@ export const useDeleteHelper = (
   const { setWarnWhen } = useWarnAboutChange();
 
   const onDeleteMutate = (
-    options?: MutateOptions<unknown, unknown, unknown, unknown>,
+    options?: MutateOptions<unknown, unknown, unknown, unknown> & {
+      meta?: any;
+    },
   ): any => {
     if (accessControlEnabled && hideIfUnauthorized && !data?.can) {
       return;
     }
     if ((recordItemId ?? id) && identifier) {
       setWarnWhen(false);
+      const mergedMeta = {
+        ...pickNotDeprecated(meta),
+        ...options?.meta,
+      };
       return mutate(
         {
           id: recordItemId ?? id ?? "",
           resource: identifier,
           mutationMode,
-          meta: pickNotDeprecated(meta),
-          metaData: pickNotDeprecated(meta),
+          meta: mergedMeta,
+          metaData: mergedMeta,
         },
         options,
       );

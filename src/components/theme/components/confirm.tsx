@@ -33,6 +33,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   open,
   onOpenChange,
   defaultOpen,
+  content,
 }) => {
   const CancelIcon = useMemo(() => {
     if (isValidElement(cancelIcon)) {
@@ -65,6 +66,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {content && <div className="py-2">{content}</div>}
         <AlertDialogFooter>
           <AlertDialogCancel
             variant={cancelButtonVariant}
