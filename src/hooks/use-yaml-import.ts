@@ -101,6 +101,18 @@ export const useYamlImport = () => {
       // Use workspace from YAML if provided, otherwise use current workspace
       const workspaceToUse = resource.metadata.workspace || currentWorkspace;
 
+      // Ensure spec has default values
+      const spec = {
+        ...resource.spec,
+        // Set default values for optional fields that might be missing in YAML
+        variables: resource.spec?.variables || { engine_args: {} },
+        env: resource.spec?.env || {},
+        deployment_options: resource.spec?.deployment_options || {
+          scheduler: { type: "consistent_hash" },
+        },
+        replicas: resource.spec?.replicas || { num: 1 },
+      };
+
       // Transform the Kubernetes-style resource to match our API expectations
       const baseResource = {
         api_version: resource.apiVersion,
@@ -110,7 +122,7 @@ export const useYamlImport = () => {
           workspace: workspaceToUse,
           labels: resource.metadata.labels || {},
         },
-        spec: resource.spec,
+        spec,
       };
 
       return baseResource;
