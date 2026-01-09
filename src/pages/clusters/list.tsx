@@ -21,6 +21,8 @@ export const ClustersList = () => {
         {clusterColumns.status}
         {clusterColumns.type}
         {clusterColumns.image_registry}
+        {metadataColumns.update_timestamp}
+        {metadataColumns.creation_timestamp}
         {metadataColumns.action}
       </Table>
     </ListPage>
