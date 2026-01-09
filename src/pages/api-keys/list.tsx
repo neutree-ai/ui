@@ -218,7 +218,7 @@ export const ApiKeysList = () => {
       >
         {metadataColumns.name}
         {metadataColumns.workspace}
-
+        {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
         {apiKeyColumns.action}
       </Table>
