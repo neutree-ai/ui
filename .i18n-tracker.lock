@@ -207,7 +207,7 @@
   "src/components/business/ChatSidebar.tsx": "a76cfa3fecd72e857612088352456d88",
   "src/components/business/ClusterType.tsx": "4d77aa74df9037a64f2fae5f64930ff7",
   "src/components/business/EndpointEngine.tsx": "cf2ce5ab086b2635205fe0bcf844621e",
-  "src/components/business/EndpointLogTabs.tsx": "98f06a24619d85a180fcbc9c9965d6ed",
+  "src/components/business/EndpointLogTabs.tsx": "32115bc8cbfc6807adcda50176aed3f9",
   "src/components/business/EndpointModel.tsx": "1c2825767a197b91238a6d23f8593847",
   "src/components/business/EngineVersions.tsx": "edb83d68f7a9a99b22f45d21dbd0529a",
   "src/components/business/FormCardGrid.tsx": "9b1c61e5139d5afe2fad4858930c7a8c",

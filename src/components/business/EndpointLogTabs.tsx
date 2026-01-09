@@ -1,4 +1,11 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEndpointLogSources } from "@/hooks/use-endpoint-log-sources";
 import { useStreamingLogs } from "@/hooks/use-streaming-logs";
@@ -30,13 +37,36 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     return deployments.find((d) => d.name === "Backend") || deployments[0];
   }, [deployments]);
 
-  // Get logs from first replica of backend deployment
-  const availableLogs = useMemo(() => {
-    if (!backendDeployment || !backendDeployment.replicas.length) {
-      return [];
+  const replicas = useMemo(
+    () => backendDeployment?.replicas ?? [],
+    [backendDeployment],
+  );
+
+  const [activeReplicaId, setActiveReplicaId] = useState<string | null>(
+    () => replicas[0]?.replica_id ?? null,
+  );
+
+  // Ensure active replica is valid when replicas change
+  useMemo(() => {
+    if (!replicas.length) {
+      if (activeReplicaId !== null) setActiveReplicaId(null);
+      return;
     }
-    return backendDeployment.replicas[0].logs;
-  }, [backendDeployment]);
+    if (!replicas.some((replica) => replica.replica_id === activeReplicaId)) {
+      setActiveReplicaId(replicas[0]?.replica_id ?? null);
+    }
+  }, [replicas, activeReplicaId]);
+
+  const activeReplica = useMemo(() => {
+    if (!activeReplicaId) return replicas[0];
+    return replicas.find((replica) => replica.replica_id === activeReplicaId);
+  }, [replicas, activeReplicaId]);
+
+  // Get logs from selected replica of backend deployment
+  const availableLogs = useMemo(() => {
+    if (!activeReplica) return [];
+    return activeReplica.logs;
+  }, [activeReplica]);
 
   // Determine available log types and set initial active tab
   const logTypeMap = useMemo(() => {
@@ -131,13 +161,40 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   return (
     <div className="h-full flex flex-col">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-        <TabsList className={`grid w-full ${getGridClass()}`}>
-          {availableTabKeys.map((logType) => (
-            <TabsTrigger key={logType} value={logType}>
-              {getTabLabel(logType)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="flex items-center gap-4 pb-2">
+          <TabsList className={`grid flex-1 ${getGridClass()}`}>
+            {availableTabKeys.map((logType) => (
+              <TabsTrigger key={logType} value={logType}>
+                {getTabLabel(logType)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {replicas.length > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {t("common.fields.replica")} ({replicas.length})
+              </span>
+              <Select
+                value={activeReplicaId ?? replicas[0]?.replica_id}
+                onValueChange={(value) => setActiveReplicaId(value)}
+              >
+                <SelectTrigger className="w-[260px]">
+                  <SelectValue placeholder={t("common.fields.replica")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {replicas.map((replica) => (
+                    <SelectItem
+                      key={replica.replica_id}
+                      value={replica.replica_id}
+                    >
+                      {replica.replica_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
 
         {availableTabKeys.map((logType) => (
           <TabsContent
