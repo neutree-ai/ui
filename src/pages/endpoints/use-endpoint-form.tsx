@@ -730,55 +730,51 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               name="spec.model.name"
               label={t("endpoints.fields.modelName")}
             >
-              {isEdit ? (
-                <Input disabled />
-              ) : (
-                <div className="space-y-2">
-                  <AsyncCombobox
-                    placeholder={t("endpoints.placeholders.selectModel")}
-                    loading={
-                      modelsData.isFetching ? (
-                        <CommandLoading className="px-2 py-1.5 text-muted-foreground">
-                          {t("endpoints.messages.fetching")}
-                        </CommandLoading>
-                      ) : null
-                    }
-                    options={(modelsData.data?.data || []).map(
-                      (e: GeneralModel) => {
-                        return {
-                          label: e.name,
-                          value: e.name,
-                        };
-                      },
-                    )}
-                    shouldFilter={false}
-                    onSearchChange={setModelSearch}
-                    triggerClassName="w-full"
-                    // Only disable if no registry is selected
-                    disabled={!currentRegistry}
-                    // Show current model name
-                    value={currentModelName}
-                    // Handle model selection
-                    onChange={(value: string) => {
-                      form.setValue("spec.model.name", value);
-                    }}
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <AsyncCombobox
+                  placeholder={t("endpoints.placeholders.selectModel")}
+                  loading={
+                    modelsData.isFetching ? (
+                      <CommandLoading className="px-2 py-1.5 text-muted-foreground">
+                        {t("endpoints.messages.fetching")}
+                      </CommandLoading>
+                    ) : null
+                  }
+                  options={(modelsData.data?.data || []).map(
+                    (e: GeneralModel) => {
+                      return {
+                        label: e.name,
+                        value: e.name,
+                      };
+                    },
+                  )}
+                  shouldFilter={false}
+                  onSearchChange={setModelSearch}
+                  triggerClassName="w-full"
+                  // Only disable if no registry is selected
+                  disabled={!currentRegistry}
+                  // Show current model name
+                  value={currentModelName}
+                  // Handle model selection
+                  onChange={(value: string) => {
+                    form.setValue("spec.model.name", value);
+                  }}
+                />
+              </div>
             </Field>
             <Field
               {...form}
               name="spec.model.version"
               label={t("endpoints.fields.modelVersion")}
             >
-              <Input disabled={isEdit} />
+              <Input />
             </Field>
             <Field
               {...form}
               name="spec.model.file"
               label={t("endpoints.fields.modelFile")}
             >
-              <Input disabled={isEdit} />
+              <Input />
             </Field>
           </FormCardGrid>
 
