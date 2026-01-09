@@ -89,7 +89,7 @@ export function DeleteActionModal(props: DeleteContextType) {
       content={
         <div className="space-y-4">
           {errorMessage && (
-            <div className="rounded-md bg-destructive/10 p-3">
+            <div className="rounded-md bg-destructive/10 p-3 max-h-40 overflow-y-auto">
               <div className="text-sm font-medium text-destructive mb-1">
                 {t("dialogs.delete.currentError")}
               </div>
