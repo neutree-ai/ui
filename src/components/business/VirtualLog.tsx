@@ -31,7 +31,7 @@ const filterByTimestamp = (
   startTime?: string,
   endTime?: string,
 ): boolean => {
-  const timestampMatch = line.match(/^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}/);
+  const timestampMatch = line.match(/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}/);
   if (!timestampMatch) {
     return true; // Include lines without recognizable timestamps
   }

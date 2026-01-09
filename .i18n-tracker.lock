@@ -228,7 +228,7 @@
   "src/components/business/Timestamp.tsx": "5a49ec8adc3defa2cf099b464f03baee",
   "src/components/business/UserCell.tsx": "03ebacaec851bdc237e365efdbfed552",
   "src/components/business/UserDropdown.tsx": "03eb7aaafb0b143654d1189666269709",
-  "src/components/business/VirtualLog.tsx": "ecf0883f688d93d508af2e05d3ce71ef",
+  "src/components/business/VirtualLog.tsx": "fdefba34dbf4352588ee7b3f85643c68",
   "src/components/business/WorkspaceField.tsx": "6c447aa9f287916e6c3d23a6ee64ccd2",
   "src/components/business/YamlExportButton.tsx": "fef2b5c630ba49c01d9467e82978c7b1",
   "src/components/business/YamlExportDialog.tsx": "5ed363d62a0fed6a7e8808a003069c41",
