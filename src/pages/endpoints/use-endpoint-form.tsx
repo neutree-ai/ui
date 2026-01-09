@@ -628,9 +628,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               }
             }}
             placeholder={t("endpoints.placeholders.selectAccelerator")}
-            disabled={
-              isEdit || !currentCluster || acceleratorOptions.length === 0
-            }
+            disabled={!currentCluster || acceleratorOptions.length === 0}
             emptyMessage={t("endpoints.messages.noAcceleratorsAvailable")}
           />
         </Field>
