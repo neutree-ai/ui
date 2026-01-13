@@ -1105,5 +1105,11 @@
 			"perpetual": "Perpetual",
 			"subscription": "Subscription"
 		}
+	},
+	"url": {
+		"title": "URL"
+	},
+	"file": {
+		"title": "File"
 	}
 }

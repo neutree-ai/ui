@@ -147,7 +147,7 @@ export const useYamlImport = () => {
   );
 
   const importFromYaml = useCallback(
-    async (yamlContent: string): Promise<ImportProgress> => {
+    async (yamlContent: string): Promise<void> => {
       setIsImporting(true);
 
       const newProgress: ImportProgress = {
@@ -279,8 +279,6 @@ export const useYamlImport = () => {
       } finally {
         setIsImporting(false);
       }
-
-      return newProgress;
     },
     [
       parseYamlContent,
@@ -294,14 +292,13 @@ export const useYamlImport = () => {
   );
 
   const importFromFile = useCallback(
-    async (file: File): Promise<ImportProgress> => {
+    async (file: File): Promise<void> => {
       try {
         const content = await file.text();
-        return await importFromYaml(content);
+        await importFromYaml(content);
       } catch (error) {
         console.error(t("components.yamlImport.errors.readingFile"), error);
-        setIsImporting(false);
-        return {
+        setProgress({
           total: 0,
           completed: 0,
           results: [
@@ -315,14 +312,15 @@ export const useYamlImport = () => {
                   : t("components.yamlImport.errors.failedToReadFile"),
             },
           ],
-        };
+        });
+        setIsImporting(false);
       }
     },
     [importFromYaml, t],
   );
 
   const importFromUrl = useCallback(
-    async (url: string): Promise<ImportProgress> => {
+    async (url: string): Promise<void> => {
       try {
         setIsImporting(true);
 
@@ -352,14 +350,13 @@ export const useYamlImport = () => {
         }
 
         const content = await response.text();
-        return await importFromYaml(content);
+        await importFromYaml(content);
       } catch (error) {
         console.error(
           t("components.yamlImport.errors.fetchingYamlFromUrl"),
           error,
         );
-        setIsImporting(false);
-        return {
+        setProgress({
           total: 0,
           completed: 0,
           results: [
@@ -373,7 +370,8 @@ export const useYamlImport = () => {
                   : t("components.yamlImport.errors.failedToFetchFromUrl"),
             },
           ],
-        };
+        });
+        setIsImporting(false);
       }
     },
     [importFromYaml, t],

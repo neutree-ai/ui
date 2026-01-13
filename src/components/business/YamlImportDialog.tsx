@@ -62,7 +62,7 @@ export const YamlImportDialog = ({
 
     setShowResults(false);
     resetProgress();
-    const result = await importFromYaml(yamlContent);
+    await importFromYaml(yamlContent);
     setShowResults(true);
   };
 
@@ -71,7 +71,7 @@ export const YamlImportDialog = ({
 
     setShowResults(false);
     resetProgress();
-    const result = await importFromUrl(yamlUrl);
+    await importFromUrl(yamlUrl);
     setShowResults(true);
   };
 
