@@ -216,7 +216,7 @@
   "src/components/business/ImageRegistryStatus.tsx": "c8ec0b8d312e45dd85674d35e9763b1a",
   "src/components/business/LogViewer.tsx": "f27cfd32cb9d6be795b5dc75b90b8cfa",
   "src/components/business/Logo.tsx": "7f263b63a8484c0cf7ba506911e70f75",
-  "src/components/business/MetadataCard.tsx": "5a4112c535f97ad74014fc195a84a705",
+  "src/components/business/MetadataCard.tsx": "e19641fa466f0f78d0af1c59546b4569",
   "src/components/business/ModelCatalogStatus.tsx": "ed48d82e7734578dd33bce181b222250",
   "src/components/business/ModelRegistryStatus.tsx": "e42d0e075872bf678b823ddd1d5e7c78",
   "src/components/business/ModelRegistryType.tsx": "03472a6c75e8acb68d85dfbd29fc4bae",
