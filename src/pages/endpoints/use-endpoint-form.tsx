@@ -685,7 +685,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     );
                     return selectedAccelerator?.available || 0;
                   })()}
-                  step={0.1}
+                  step={(() => {
+                    // Determine GPU allocation granularity based on cluster type
+                    const clusterType = selectedCluster?.spec?.type;
+                    return clusterType === "ssh" ? 0.1 : 1;
+                  })()}
                   value={[form.watch("spec.resources.gpu") || 0]}
                   onValueChange={(value) => {
                     form.setValue("spec.resources.gpu", value[0]);
