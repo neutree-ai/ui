@@ -31,8 +31,11 @@ const loadHashes = () => {
 const saveHashes = (map) =>
   fs.writeFileSync(HASH_FILE, `${JSON.stringify(map, null, 2)}\n`);
 
-const md5Of = (filePath) =>
-  crypto.createHash("md5").update(fs.readFileSync(filePath)).digest("hex");
+// Normalize line endings to LF before hashing to ensure consistent hashes across OS
+const md5Of = (filePath) => {
+  const content = fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n");
+  return crypto.createHash("md5").update(content, "utf8").digest("hex");
+};
 
 /* ---------- sub-command: update ---------- */
 if (
