@@ -1062,6 +1062,7 @@
 		"loading": "Loading license information...",
 		"noLicense": "Enterprise license not activated yet",
 		"unlimited": "Unlimited",
+		"permanent": "Permanent",
 		"fields": {
 			"status": "Status",
 			"edition": "Edition",

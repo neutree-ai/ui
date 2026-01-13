@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useLicense } from "@/hooks/use-license";
 import { cn } from "@/lib/utils";
+import { MAX_UNLIMITED } from "@/types/license";
 import * as clipboard from "clipboard-polyfill";
 import { Check, Copy } from "lucide-react";
 import type React from "react";
@@ -142,8 +143,9 @@ export const LicenseShow: React.FC = () => {
                       {t("license.fields.period")}
                     </Label>
                     <div className="text-base">
-                      {formatPeriod(license.status.info.period)}{" "}
-                      {t("license.fields.days")}
+                      {license.status.info.period === MAX_UNLIMITED
+                        ? t("license.permanent")
+                        : `${formatPeriod(license.status.info.period)} ${t("license.fields.days")}`}
                     </div>
                   </div>
 
@@ -152,7 +154,7 @@ export const LicenseShow: React.FC = () => {
                       {t("license.fields.maxGpus")}
                     </Label>
                     <div className="text-base">
-                      {license.status.info.max_gpus === -1
+                      {license.status.info.max_gpus === MAX_UNLIMITED
                         ? t("license.unlimited")
                         : license.status.info.max_gpus}
                     </div>
@@ -198,7 +200,7 @@ export const LicenseShow: React.FC = () => {
                           </Label>
                           <div className="text-base">
                             {license.status.usage.GPU.used ?? 0} /{" "}
-                            {license.status.usage.GPU.limit === -1
+                            {license.status.usage.GPU.limit === MAX_UNLIMITED
                               ? t("license.unlimited")
                               : license.status.usage.GPU.limit}
                           </div>
@@ -211,7 +213,10 @@ export const LicenseShow: React.FC = () => {
                           </Label>
                           <div className="text-base">
                             {license.status.usage.Workspace.used} /{" "}
-                            {license.status.usage.Workspace.limit}
+                            {license.status.usage.Workspace.limit ===
+                            MAX_UNLIMITED
+                              ? t("license.unlimited")
+                              : license.status.usage.Workspace.limit}
                           </div>
                         </div>
                       )}
