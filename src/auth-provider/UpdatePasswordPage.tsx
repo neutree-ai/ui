@@ -99,6 +99,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                   "pages.updatePassword.fields.passwordPlaceholder",
                 )}
                 required
+                minLength={6}
                 className="h-10"
               />
             </div>

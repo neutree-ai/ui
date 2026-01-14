@@ -58,8 +58,13 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
         <div className="col-span-2" />
         <Field
           {...form}
-          name="password"
           label={translate("user_profiles.fields.password")}
+          {...form.register("password", {
+            minLength: {
+              value: 6,
+              message: translate("user_profiles.validation.passwordMinLength"),
+            },
+          })}
         >
           <Input type="password" />
         </Field>

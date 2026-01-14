@@ -634,7 +634,8 @@
 		},
 		"validation": {
 			"confirmPasswordRequired": "Confirm password is required",
-			"confirmPasswordNotMatch": "Passwords do not match"
+			"confirmPasswordNotMatch": "Passwords do not match",
+			"passwordMinLength": "Password must be at least 6 characters"
 		}
 	},
 	"roles": {

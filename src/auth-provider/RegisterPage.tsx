@@ -158,6 +158,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                     "••••••••",
                   )}
                   required
+                  minLength={6}
                   className="h-10"
                 />
               </div>
