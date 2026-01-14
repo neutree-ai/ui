@@ -330,6 +330,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     };
   }, [maxAvailable, cpuUsage, memoryUsage]);
 
+  // Calculate GPU allocation step based on cluster type
+  const gpuStep = useMemo(() => {
+    const clusterType = selectedCluster?.spec?.type;
+    return clusterType === "ssh" ? 0.1 : 1;
+  }, [selectedCluster?.spec?.type]);
+
   const isEdit = action === "edit";
 
   const effectiveModelSearch = modelSearch || currentModelName || "";
@@ -685,11 +691,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     );
                     return selectedAccelerator?.available || 0;
                   })()}
-                  step={(() => {
-                    // Determine GPU allocation granularity based on cluster type
-                    const clusterType = selectedCluster?.spec?.type;
-                    return clusterType === "ssh" ? 0.1 : 1;
-                  })()}
+                  step={gpuStep}
                   value={[form.watch("spec.resources.gpu") || 0]}
                   onValueChange={(value) => {
                     form.setValue("spec.resources.gpu", value[0]);
