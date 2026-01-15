@@ -227,6 +227,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     resolver: (values) => {
       const errors: Record<string, unknown> = {};
 
+      values.spec?.resources &&
+        ["cpu", "memory", "gpu"].forEach((field) => {
+          if (typeof values.spec.resources[field] === "string") {
+            values.spec.resources[field] =
+              values.spec.resources[field] === ""
+                ? null
+                : Number(values.spec.resources[field]);
+          }
+        });
+
       if (action === "create" && currentRegistry && currentModelName) {
         const modelExists =
           modelsData.data?.data.some(
