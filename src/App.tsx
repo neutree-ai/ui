@@ -286,6 +286,7 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
             meta: {
               ...r.meta,
               title: t(`${r.name}.title`),
+              label: t(`${r.name}.title`),
             },
           }))}
           i18nProvider={i18nProvider}
