@@ -39,13 +39,24 @@ interface VariablesInputProps {
   onChange?: (value: Record<string, any>) => void;
   title?: string;
   schema?: Schema;
+  field?: {
+    value?: Record<string, any>;
+    onChange?: (value: Record<string, any>) => void;
+  };
 }
 
 export const VariablesInput = React.forwardRef<
   HTMLTableElement,
   VariablesInputProps
->(({ value = {}, onChange = () => {}, schema = {} }, ref) => {
+>(({ value, onChange, schema = {}, field }, ref) => {
   const { t } = useTranslation();
+
+  // Handle both direct props and field props
+  // Ensure we always have a valid object, even if the field value is null
+  const actualValue =
+    field?.value !== undefined ? field.value || {} : value || {};
+  const actualOnChange = field?.onChange || onChange;
+
   const {
     editingRows,
     schemaKeyOptions,
@@ -56,7 +67,11 @@ export const VariablesInput = React.forwardRef<
     handleRemoveEditingRow,
     handleRemoveVariable,
     handleUpdateValue,
-  } = useVariablesInput({ value, onChange, schema });
+  } = useVariablesInput({
+    value: actualValue,
+    onChange: actualOnChange,
+    schema,
+  });
 
   // Track which editing row is focused
   const [focusedRowId, setFocusedRowId] = useState<string | null>(null);
@@ -225,7 +240,7 @@ export const VariablesInput = React.forwardRef<
           </TableHeader>
           <TableBody>
             {/* Existing variables - directly editable */}
-            {Object.entries(value).map(([key, val]) => (
+            {Object.entries(actualValue).map(([key, val]) => (
               <TableRow key={key}>
                 <TableCell className="font-medium">
                   {key}
