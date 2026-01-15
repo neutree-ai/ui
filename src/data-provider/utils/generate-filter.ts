@@ -71,6 +71,10 @@ export const generateFilter = (filter: CrudFilter, query: any) => {
               value = `%${value}`;
             }
 
+            if (item.operator === "null") {
+              value = "null";
+            }
+
             return `${item.field}.${mapOperator(item.operator)}.${value}`;
           }
           return;

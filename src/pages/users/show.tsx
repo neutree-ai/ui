@@ -46,7 +46,7 @@ export const UsersShow = () => {
             refineCoreProps={{
               resource: "role_assignments",
               filters: {
-                initial: [
+                permanent: [
                   {
                     field: "spec->user_id",
                     operator: "eq",
@@ -75,16 +75,26 @@ export const UsersShow = () => {
             refineCoreProps={{
               resource: "role_assignments",
               filters: {
-                initial: [
+                permanent: [
                   {
                     field: "spec->user_id",
                     operator: "eq",
                     value: JSON.stringify(record.id),
                   },
                   {
-                    field: "spec->global",
-                    operator: "eq",
-                    value: false,
+                    operator: "or",
+                    value: [
+                      {
+                        field: "spec->>global",
+                        operator: "eq",
+                        value: false,
+                      },
+                      {
+                        field: "spec->>global",
+                        operator: "null",
+                        value: true,
+                      },
+                    ],
                   },
                 ],
               },

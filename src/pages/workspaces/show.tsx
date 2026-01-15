@@ -39,7 +39,7 @@ export const WorkspacesShow = () => {
             refineCoreProps={{
               resource: "role_assignments",
               filters: {
-                initial: [
+                permanent: [
                   {
                     field: "spec->workspace",
                     operator: "eq",

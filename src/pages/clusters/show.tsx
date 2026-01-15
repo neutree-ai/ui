@@ -410,7 +410,7 @@ export const ClustersShow = () => {
                 refineCoreProps={{
                   resource: "endpoints",
                   filters: {
-                    initial: [
+                    permanent: [
                       {
                         field: "spec->cluster",
                         operator: "eq",
