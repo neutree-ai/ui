@@ -83,7 +83,7 @@
   "src/pages/clusters/use-cluster-form.tsx": "23d85162ffdb95a56222d7be9b5a3572",
   "src/pages/api-keys/index.ts": "80f170840d928e44b4713f3978ebb7a3",
   "src/pages/api-keys/list.tsx": "215eb6cb392ce7470977a05bf0c75005",
-  "src/pages/api-keys/show.tsx": "a96b45986bec365127d778c32fb2e2d0",
+  "src/pages/api-keys/show.tsx": "ef2338f4cfe764b98a9956ddacb473d6",
   "src/lib/api.ts": "8e55b35867a624ee4c6249b8f9e1ab57",
   "src/lib/i18n.ts": "f460548514822fe8498bafded1843e25",
   "src/lib/utils.ts": "618d00bf4537ce84f9ba62c5b215fb30",

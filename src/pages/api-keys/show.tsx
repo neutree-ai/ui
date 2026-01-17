@@ -19,7 +19,6 @@ type ApiUsageRecord = {
   api_key_id: string;
   api_key_name: string;
   endpoint_name: string;
-  workspace: string;
   usage: number;
 };
 
@@ -89,7 +88,6 @@ export const ApiKeysShow = () => {
                 <TableRow>
                   <TableHead>{t("api_keys.fields.date")}</TableHead>
                   <TableHead>{t("api_keys.fields.endpoint")}</TableHead>
-                  <TableHead>{t("api_keys.fields.workspace")}</TableHead>
                   <TableHead className="text-right">
                     {t("api_keys.fields.usage")}
                   </TableHead>
@@ -104,21 +102,11 @@ export const ApiKeysShow = () => {
                         recordItemId={row.endpoint_name}
                         variant="link"
                         meta={{
-                          workspace: row.workspace,
+                          workspacece: record.metadata.workspace,
                         }}
                         resource="endpoints"
                       >
                         {row.endpoint_name}
-                      </ShowButton>
-                    </TableCell>
-                    <TableCell>
-                      <ShowButton
-                        recordItemId={row.workspace}
-                        variant="link"
-                        meta={{}}
-                        resource="workspaces"
-                      >
-                        {row.workspace}
                       </ShowButton>
                     </TableCell>
                     <TableCell className="text-right font-medium">
