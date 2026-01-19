@@ -88,6 +88,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               ssh_private_key: "",
             },
           },
+          model_caches: [],
         },
         version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
       },
