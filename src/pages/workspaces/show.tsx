@@ -12,7 +12,7 @@ export const WorkspacesShow = () => {
     query: { data, isLoading },
   } = useShow<Workspace>();
   const record = data?.data;
-  const metadataColumns = useMetadataColumns();
+  const metadataColumns = useMetadataColumns({ resource: "role_assignments" });
   const roleAssignmentColumns = useRoleAssignmentColumns();
 
   const { translate } = useTranslation();

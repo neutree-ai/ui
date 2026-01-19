@@ -30,7 +30,7 @@
   "src/pages/workspaces/create.tsx": "83999fc0df77b621f0bca8250e072201",
   "src/pages/workspaces/index.ts": "5298df1c83eeefad2d1fe081530b1315",
   "src/pages/workspaces/list.tsx": "051910b25e25f73aaea0f464922cd47e",
-  "src/pages/workspaces/show.tsx": "f101f28d8cbcfa6f69117c8b41e65aa9",
+  "src/pages/workspaces/show.tsx": "4c240810a906bb188b4d089bc0860ead",
   "src/pages/workspaces/use-workspace-form.tsx": "60c7b4aadb4fd09a1399d6d279c47e05",
   "src/pages/users/create.tsx": "daf40d80f8997f147f752a16b6b377b3",
   "src/pages/users/edit.tsx": "65cf5d75b1d3d6a38df6d202972a6fc9",
