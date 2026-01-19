@@ -333,6 +333,8 @@
 			"headIp": "Head IP",
 			"workerIps": "Worker IPs",
 			"name": "Name",
+			"nodeName": "Node",
+			"usedSlashTotal": "used / total",
 			"workspace": "Workspace",
 			"kubeconfig": "Kubeconfig",
 			"acceleratorType": "Accelerator Type",
@@ -373,7 +375,8 @@
 			"router": "Router",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
-			"resources": "Resources"
+			"resources": "Resources",
+			"nodes": "Nodes"
 		},
 		"placeholders": {
 			"clusterName": "Cluster Name",
@@ -391,7 +394,7 @@
 			"nodes": "nodes"
 		},
 		"options": {
-			"multipleStaticNodes": "Multiple Static Nodes",
+			"multipleStaticNodes": "Static Nodes",
 			"kubernetes": "Kubernetes",
 			"loadBalancer": "LoadBalancer",
 			"nodePort": "NodePort",

@@ -62,22 +62,34 @@ export type ResourceInfo = {
 };
 
 /**
- * ClusterResources represents the complete resource information of a cluster,
- * organized by dimensions (Allocatable and Available).
- * This follows Kubernetes Node Status pattern for consistency and clarity.
+ * ResourceStatus represents a node's or cluster's resource status,
+ * containing both allocatable and available resources.
  */
-export type ClusterResources = {
+export type ResourceStatus = {
   /**
-   * Allocatable represents the total resources that can be allocated in the cluster.
-   * This corresponds to the sum of all node's allocatable resources.
+   * Allocatable represents the total resources that can be allocated.
    */
   allocatable: ResourceInfo | null;
 
   /**
-   * Available represents the currently available (unallocated) resources in the cluster.
+   * Available represents the currently available (unallocated) resources.
    * Available = Allocatable - Allocated
    */
   available: ResourceInfo | null;
+};
+
+/**
+ * ClusterResources represents the complete resource information of a cluster,
+ * organized by dimensions (Allocatable and Available).
+ * This follows Kubernetes Node Status pattern for consistency and clarity.
+ */
+export type ClusterResources = ResourceStatus & {
+  /**
+   * NodeResources contains per-node resource information.
+   * Key: node identifier (IP address for SSH clusters, node name for Kubernetes clusters).
+   * Value: ResourceStatus for that node.
+   */
+  node_resources: Record<string, ResourceStatus> | null;
 };
 
 export type RayClusterConfig = {

@@ -16,6 +16,10 @@ import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import useEndpointResources from "@/hooks/use-endpoint-resources";
+import {
+  findBestNodeForAccelerator,
+  parseClusterResources,
+} from "@/lib/cluster-resources";
 import type {
   Cluster,
   Endpoint,
@@ -31,26 +35,11 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-// Types for cluster resources
-type ClusterResourceSummary = {
-  cpu: { available: number; total: number };
-  memory: { available: number; total: number }; // in GiB
-};
-
-type AcceleratorOption = {
-  label: string; // Display label: "NVIDIA GPU - Tesla-V100"
-  value: string; // Unique value: "nvidia_gpu:Tesla-V100"
-  type: string; // Accelerator type: "nvidia_gpu"
-  product: string; // Product name: "Tesla-V100"
-  available: number;
-  total: number;
-};
-
 // Deep merge function for form data with smart overriding
-const deepMerge = (
+function deepMerge(
   target: Record<string, unknown>,
   source: Record<string, unknown>,
-): Record<string, unknown> => {
+): Record<string, unknown> {
   if (source === null || source === undefined) return target;
   if (target === null || target === undefined) return source;
 
@@ -85,88 +74,7 @@ const deepMerge = (
   }
 
   return result;
-};
-
-// Helper function to parse cluster resources from cluster.status.resource_info
-const parseClusterResources = (
-  cluster: Cluster | undefined,
-  t: (key: string, options?: { defaultValue?: string }) => string,
-): {
-  summary: ClusterResourceSummary | null;
-  acceleratorOptions: AcceleratorOption[];
-} => {
-  if (!cluster?.status?.resource_info) {
-    return { summary: null, acceleratorOptions: [] };
-  }
-
-  const resourceInfo = cluster.status.resource_info;
-  const allocatable = resourceInfo.allocatable;
-  const available = resourceInfo.available;
-
-  if (!allocatable || !available) {
-    return { summary: null, acceleratorOptions: [] };
-  }
-
-  const summary: ClusterResourceSummary = {
-    cpu: {
-      available: available.cpu || 0,
-      total: allocatable.cpu || 0,
-    },
-    memory: {
-      available: available.memory || 0,
-      total: allocatable.memory || 0,
-    },
-  };
-
-  // Build accelerator options from accelerator_groups
-  const acceleratorOptions: AcceleratorOption[] = [];
-
-  if (allocatable.accelerator_groups) {
-    for (const [type, allocatableGroup] of Object.entries(
-      allocatable.accelerator_groups,
-    )) {
-      const availableGroup = available.accelerator_groups?.[type];
-      const availableQuantity = availableGroup?.quantity || 0;
-      const totalQuantity = allocatableGroup.quantity || 0;
-
-      // Get translated type name
-      const translatedType = t(`clusters.acceleratorTypes.${type}`, {
-        defaultValue: type,
-      });
-
-      if (allocatableGroup.product_groups) {
-        // Create an option for each product
-        for (const [product, productTotal] of Object.entries(
-          allocatableGroup.product_groups,
-        )) {
-          const productAvailable =
-            availableGroup?.product_groups?.[product] || 0;
-
-          acceleratorOptions.push({
-            label: `${translatedType} - ${product}`,
-            value: `${type}:${product}`,
-            type,
-            product,
-            available: productAvailable,
-            total: productTotal,
-          });
-        }
-      } else {
-        // No product breakdown, create a generic option
-        acceleratorOptions.push({
-          label: translatedType,
-          value: `${type}:generic`,
-          type,
-          product: "",
-          available: availableQuantity,
-          total: totalQuantity,
-        });
-      }
-    }
-  }
-
-  return { summary, acceleratorOptions };
-};
+}
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -307,23 +215,74 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   // Parse cluster resources from cluster.status.resource_info
   const { summary: clusterResources, acceleratorOptions } = useMemo(() => {
-    return parseClusterResources(selectedCluster, t);
+    return parseClusterResources(selectedCluster, (type) =>
+      t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
+    );
   }, [selectedCluster, t]);
 
+  // Watch selected accelerator to calculate single-node max
+  const selectedAccelerator = form.watch("spec.resources.accelerator");
+
+  // Find best node for selected accelerator (single-node max for TP deployment)
+  const singleNodeMax = useMemo(() => {
+    if (!selectedAccelerator?.type || !selectedCluster?.status?.resource_info) {
+      return null;
+    }
+    return findBestNodeForAccelerator(
+      selectedCluster.status.resource_info.node_resources,
+      selectedAccelerator.type,
+      selectedAccelerator.product || "",
+    );
+  }, [selectedAccelerator, selectedCluster]);
+
+  // Max available resources - use single-node max when accelerator is selected
   const maxAvailable = useMemo(() => {
+    // When accelerator is selected, use single-node max (for TP deployment)
+    if (singleNodeMax) {
+      return {
+        cpu: {
+          available:
+            singleNodeMax.cpu.available + Number(currentUsage.cpu || 0),
+          total: singleNodeMax.cpu.total,
+        },
+        memory: {
+          available:
+            singleNodeMax.memory.available + Number(currentUsage.memory || 0),
+          total: singleNodeMax.memory.total,
+        },
+        gpu: {
+          available:
+            singleNodeMax.gpu.available + Number(currentUsage.gpu || 0),
+          total: singleNodeMax.gpu.total,
+        },
+      };
+    }
+
+    // Fallback to cluster-level resources when no accelerator selected
     if (!clusterResources) {
-      return { cpu: 0, memory: 0 };
+      return {
+        cpu: { available: 0, total: 0 },
+        memory: { available: 0, total: 0 },
+        gpu: { available: 0, total: 0 },
+      };
     }
 
     return {
-      cpu:
-        Number(clusterResources.cpu?.available || 0) +
-        Number(currentUsage.cpu || 0),
-      memory:
-        Number(clusterResources.memory?.available || 0) +
-        Number(currentUsage.memory || 0),
+      cpu: {
+        available:
+          Number(clusterResources.cpu?.available || 0) +
+          Number(currentUsage.cpu || 0),
+        total: clusterResources.cpu.total,
+      },
+      memory: {
+        available:
+          Number(clusterResources.memory?.available || 0) +
+          Number(currentUsage.memory || 0),
+        total: clusterResources.memory.total,
+      },
+      gpu: { available: 0, total: 0 },
     };
-  }, [clusterResources, currentUsage]);
+  }, [singleNodeMax, clusterResources, currentUsage]);
 
   // Watch form values outside the useMemo to avoid dependency issues
   const cpuUsage = form.watch("spec.resources.cpu");
@@ -333,8 +292,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const currentCpu = cpuUsage || 0;
     const currentMemory = memoryUsage || 0;
     return {
-      cpu: maxAvailable.cpu - currentCpu,
-      memory: maxAvailable.memory - currentMemory,
+      cpu: maxAvailable.cpu.available - currentCpu,
+      memory: maxAvailable.memory.available - currentMemory,
     };
   }, [maxAvailable, cpuUsage, memoryUsage]);
 
@@ -556,15 +515,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             value={form.watch("spec.resources.cpu")}
             onChange={(value) => form.setValue("spec.resources.cpu", value)}
             min={0}
-            max={maxAvailable.cpu}
+            max={maxAvailable.cpu.available}
             step={0.1}
             unit="cores"
             disabled={!currentCluster}
             remainingInfo={
-              clusterResources
+              maxAvailable.cpu.total > 0
                 ? {
                     remaining: dynamicAvailability.cpu,
-                    total: clusterResources.cpu.total,
+                    total: maxAvailable.cpu.total,
                     label: t("endpoints.fields.remaining"),
                   }
                 : undefined
@@ -582,15 +541,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             value={form.watch("spec.resources.memory")}
             onChange={(value) => form.setValue("spec.resources.memory", value)}
             min={0}
-            max={maxAvailable.memory}
+            max={maxAvailable.memory.available}
             step={0.5}
             unit="GiB"
             disabled={!currentCluster}
             remainingInfo={
-              clusterResources
+              maxAvailable.memory.total > 0
                 ? {
                     remaining: dynamicAvailability.memory,
-                    total: clusterResources.memory.total,
+                    total: maxAvailable.memory.total,
                     label: t("endpoints.fields.remaining"),
                   }
                 : undefined
@@ -646,11 +605,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               className="col-span-4"
             >
               {(() => {
-                const accelerator = form.watch("spec.resources.accelerator");
-                const selectedValue = `${accelerator?.type}:${accelerator?.product}`;
-                const selectedAccelerator = acceleratorOptions.find(
-                  (opt) => opt.value === selectedValue,
-                );
                 const currentGpu = form.watch("spec.resources.gpu") || 0;
 
                 return (
@@ -660,15 +614,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       form.setValue("spec.resources.gpu", value)
                     }
                     min={0}
-                    max={selectedAccelerator?.available || 0}
+                    max={maxAvailable.gpu.available}
                     step={gpuStep}
                     disabled={!currentCluster}
                     remainingInfo={
-                      selectedAccelerator
+                      maxAvailable.gpu.total > 0
                         ? {
-                            remaining:
-                              selectedAccelerator.available - currentGpu,
-                            total: selectedAccelerator.total,
+                            remaining: maxAvailable.gpu.available - currentGpu,
+                            total: maxAvailable.gpu.total,
                             label: t("endpoints.fields.remaining"),
                           }
                         : undefined

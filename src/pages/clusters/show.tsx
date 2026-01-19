@@ -8,6 +8,14 @@ import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-co
 import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Table as UITable,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
@@ -282,6 +290,196 @@ export const ClustersShow = () => {
               </CardContent>
             </Card>
           )}
+          {record.status?.resource_info?.node_resources &&
+            Object.keys(record.status.resource_info.node_resources).length >
+              0 &&
+            (() => {
+              const acceleratorTypes = Object.keys(
+                record.status?.resource_info?.allocatable?.accelerator_groups ||
+                  {},
+              );
+              return (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>{t("clusters.sections.nodes")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <UITable>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("clusters.fields.nodeName")}</TableHead>
+                          <TableHead className="min-w-[140px]">
+                            {t("clusters.fields.cpu")}
+                          </TableHead>
+                          <TableHead className="min-w-[140px]">
+                            {t("clusters.fields.memory")}
+                          </TableHead>
+                          {acceleratorTypes.map((accType) => (
+                            <TableHead key={accType} className="min-w-[140px]">
+                              {t(`clusters.acceleratorTypes.${accType}`, {
+                                defaultValue: accType,
+                              })}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(
+                          record.status?.resource_info?.node_resources || {},
+                        ).map(([nodeName, nodeStatus]) => {
+                          const cpuAllocatable =
+                            nodeStatus.allocatable?.cpu || 0;
+                          const cpuAvailable = nodeStatus.available?.cpu || 0;
+                          const cpuUsed = cpuAllocatable - cpuAvailable;
+                          const cpuPercent =
+                            cpuAllocatable > 0
+                              ? Math.round((cpuUsed / cpuAllocatable) * 100)
+                              : 0;
+
+                          const memoryAllocatable =
+                            nodeStatus.allocatable?.memory || 0;
+                          const memoryAvailable =
+                            nodeStatus.available?.memory || 0;
+                          const memoryUsed =
+                            memoryAllocatable - memoryAvailable;
+                          const memoryPercent =
+                            memoryAllocatable > 0
+                              ? Math.round(
+                                  (memoryUsed / memoryAllocatable) * 100,
+                                )
+                              : 0;
+
+                          return (
+                            <TableRow key={nodeName}>
+                              <TableCell className="font-medium">
+                                {nodeName}
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span>
+                                      {formatToDecimal(cpuUsed)} /{" "}
+                                      {formatToDecimal(cpuAllocatable)}
+                                    </span>
+                                    <span className="tabular-nums">
+                                      {cpuPercent}%
+                                    </span>
+                                  </div>
+                                  <Progress
+                                    value={cpuPercent}
+                                    className="h-2"
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span>
+                                      {formatToDecimal(memoryUsed)} /{" "}
+                                      {formatToDecimal(memoryAllocatable)} GiB
+                                    </span>
+                                    <span className="tabular-nums">
+                                      {memoryPercent}%
+                                    </span>
+                                  </div>
+                                  <Progress
+                                    value={memoryPercent}
+                                    className="h-2"
+                                  />
+                                </div>
+                              </TableCell>
+                              {acceleratorTypes.map((accType) => {
+                                const accGroup =
+                                  nodeStatus.allocatable?.accelerator_groups?.[
+                                    accType
+                                  ];
+                                const accAllocatable = accGroup?.quantity || 0;
+                                const accAvailable =
+                                  nodeStatus.available?.accelerator_groups?.[
+                                    accType
+                                  ]?.quantity || 0;
+                                const accUsed = accAllocatable - accAvailable;
+                                const accPercent =
+                                  accAllocatable > 0
+                                    ? Math.round(
+                                        (accUsed / accAllocatable) * 100,
+                                      )
+                                    : 0;
+                                const productGroups = accGroup?.product_groups;
+
+                                return (
+                                  <TableCell
+                                    key={accType}
+                                    className="align-top"
+                                  >
+                                    {accAllocatable === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        -
+                                      </span>
+                                    ) : (
+                                      <div>
+                                        <div className="space-y-1">
+                                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                            <span>
+                                              {formatToDecimal(accUsed)} /{" "}
+                                              {formatToDecimal(accAllocatable)}
+                                            </span>
+                                            <span className="tabular-nums">
+                                              {accPercent}%
+                                            </span>
+                                          </div>
+                                          <Progress
+                                            value={accPercent}
+                                            className="h-2"
+                                          />
+                                        </div>
+                                        {productGroups &&
+                                          Object.keys(productGroups).length >
+                                            0 && (
+                                            <div className="mt-2 ml-4 space-y-1">
+                                              {Object.entries(
+                                                productGroups,
+                                              ).map(([product, total]) => {
+                                                const productAvailable =
+                                                  nodeStatus.available
+                                                    ?.accelerator_groups?.[
+                                                    accType
+                                                  ]?.product_groups?.[
+                                                    product
+                                                  ] || 0;
+                                                const productUsed =
+                                                  total - productAvailable;
+                                                return (
+                                                  <div
+                                                    key={product}
+                                                    className="text-xs text-muted-foreground flex items-center justify-between"
+                                                  >
+                                                    <span>{product}</span>
+                                                    <span>
+                                                      {formatToDecimal(
+                                                        productUsed,
+                                                      )}{" "}
+                                                      / {formatToDecimal(total)}
+                                                    </span>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          )}
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                );
+                              })}
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </UITable>
+                  </CardContent>
+                </Card>
+              );
+            })()}
           {Number(record.spec.config.model_caches?.length) > 0 ? (
             <Card className="mt-4">
               <CardHeader>
