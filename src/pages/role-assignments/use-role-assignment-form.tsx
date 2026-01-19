@@ -110,19 +110,20 @@ export const useRoleAssignmentForm = ({
               const value =
                 typeof _value === "boolean" ? _value : _value === "true";
               form.setValue("spec.global", value);
-              form.setValue("spec.workspace", value ? null : "");
+              if (value) {
+                form.setValue("spec.workspace", null);
+              }
             }}
           />
         </Field>
-        {!global && (
-          <Field
-            {...form}
-            name="spec.workspace"
-            label={t("role_assignments.fields.workspace")}
-          >
-            <WorkspaceField />
-          </Field>
-        )}
+        <Field
+          {...form}
+          name="spec.workspace"
+          label={t("role_assignments.fields.workspace")}
+          className={global ? "hidden" : ""}
+        >
+          <WorkspaceField />
+        </Field>
       </FormCardGrid>
     ),
   };

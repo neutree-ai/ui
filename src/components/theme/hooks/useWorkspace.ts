@@ -15,7 +15,7 @@ export const useWorkspace = () => {
     }
   }, [params?.workspace, setValue, value]);
 
-  const { data } = useList({
+  const { data, isLoading } = useList({
     resource: "workspaces",
   });
 
@@ -32,5 +32,6 @@ export const useWorkspace = () => {
   return {
     current,
     data: data?.data || [],
+    isLoading,
   };
 };

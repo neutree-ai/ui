@@ -10,7 +10,7 @@ type WorkspaceFieldProps = Partial<{
 
 const WorkspaceField = React.forwardRef<HTMLDivElement, WorkspaceFieldProps>(
   (props, ref) => {
-    const { data } = useWorkspace();
+    const { data, isLoading } = useWorkspace();
 
     return (
       <Combobox
@@ -20,6 +20,7 @@ const WorkspaceField = React.forwardRef<HTMLDivElement, WorkspaceFieldProps>(
           label: workspace.metadata.name,
           value: workspace.metadata.name,
         }))}
+        loading={isLoading}
         placeholder="Select a workspace"
         allowUnselect={false}
       />

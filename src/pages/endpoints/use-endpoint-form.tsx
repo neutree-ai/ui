@@ -1,5 +1,6 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
 import { formatTaskName } from "@/components/business/ModelTask";
+import SliderWithInput from "@/components/business/SliderWithInput";
 import VariablesInput from "@/components/business/VariablesInput";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import type { Schema } from "@/components/business/use-variables-input";
@@ -14,9 +15,7 @@ import {
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import useEndpointResources from "@/hooks/use-endpoint-resources";
-import { formatToDecimal } from "@/lib/unit";
 import type {
   Cluster,
   Endpoint,
@@ -553,30 +552,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("endpoints.fields.cpu")}
           className="col-span-2"
         >
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>
-                {formatToDecimal(form.watch("spec.resources.cpu"))} cores
-              </span>
-              {clusterResources && (
-                <span>
-                  {t("endpoints.fields.remaining")}:{" "}
-                  {formatToDecimal(dynamicAvailability.cpu)} /{" "}
-                  {formatToDecimal(clusterResources.cpu.total)}
-                </span>
-              )}
-            </div>
-            <Slider
-              min={0}
-              max={maxAvailable.cpu}
-              step={0.1}
-              value={[form.watch("spec.resources.cpu")]}
-              onValueChange={(value) =>
-                form.setValue("spec.resources.cpu", value[0])
-              }
-              disabled={!currentCluster}
-            />
-          </div>
+          <SliderWithInput
+            value={form.watch("spec.resources.cpu")}
+            onChange={(value) => form.setValue("spec.resources.cpu", value)}
+            min={0}
+            max={maxAvailable.cpu}
+            step={0.1}
+            unit="cores"
+            disabled={!currentCluster}
+            remainingInfo={
+              clusterResources
+                ? {
+                    remaining: dynamicAvailability.cpu,
+                    total: clusterResources.cpu.total,
+                    label: t("endpoints.fields.remaining"),
+                  }
+                : undefined
+            }
+          />
         </Field>
 
         <Field
@@ -585,29 +578,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("endpoints.fields.memoryGb")}
           className="col-span-2"
         >
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>
-                {formatToDecimal(form.watch("spec.resources.memory"))} GiB
-              </span>
-              {clusterResources && (
-                <span>
-                  Remaining: {formatToDecimal(dynamicAvailability.memory)} /{" "}
-                  {formatToDecimal(clusterResources.memory.total)} GiB
-                </span>
-              )}
-            </div>
-            <Slider
-              min={0}
-              max={maxAvailable.memory}
-              step={0.5}
-              value={[form.watch("spec.resources.memory")]}
-              onValueChange={(value) => {
-                form.setValue("spec.resources.memory", value[0]);
-              }}
-              disabled={!currentCluster}
-            />
-          </div>
+          <SliderWithInput
+            value={form.watch("spec.resources.memory")}
+            onChange={(value) => form.setValue("spec.resources.memory", value)}
+            min={0}
+            max={maxAvailable.memory}
+            step={0.5}
+            unit="GiB"
+            disabled={!currentCluster}
+            remainingInfo={
+              clusterResources
+                ? {
+                    remaining: dynamicAvailability.memory,
+                    total: clusterResources.memory.total,
+                    label: t("endpoints.fields.remaining"),
+                  }
+                : undefined
+            }
+          />
         </Field>
 
         {/* Accelerator Selector */}
@@ -657,57 +645,37 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               label={t("endpoints.fields.gpuCount")}
               className="col-span-4"
             >
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>
-                    {formatToDecimal(form.watch("spec.resources.gpu") || 0)}
-                  </span>
-                  {(() => {
-                    const accelerator = form.watch(
-                      "spec.resources.accelerator",
-                    );
-                    if (!accelerator?.type || !accelerator?.product)
-                      return null;
-                    const selectedValue = `${accelerator.type}:${accelerator.product}`;
-                    const selectedAccelerator = acceleratorOptions.find(
-                      (opt) => opt.value === selectedValue,
-                    );
-                    if (selectedAccelerator) {
-                      const currentGpu = form.watch("spec.resources.gpu") || 0;
-                      const remaining =
-                        selectedAccelerator.available - currentGpu;
-                      return (
-                        <span>
-                          {t("endpoints.fields.remaining")}:{" "}
-                          {formatToDecimal(remaining)} /{" "}
-                          {formatToDecimal(selectedAccelerator.total)}
-                        </span>
-                      );
+              {(() => {
+                const accelerator = form.watch("spec.resources.accelerator");
+                const selectedValue = `${accelerator?.type}:${accelerator?.product}`;
+                const selectedAccelerator = acceleratorOptions.find(
+                  (opt) => opt.value === selectedValue,
+                );
+                const currentGpu = form.watch("spec.resources.gpu") || 0;
+
+                return (
+                  <SliderWithInput
+                    value={currentGpu}
+                    onChange={(value) =>
+                      form.setValue("spec.resources.gpu", value)
                     }
-                    return null;
-                  })()}
-                </div>
-                <Slider
-                  min={0}
-                  max={(() => {
-                    const accelerator = form.watch(
-                      "spec.resources.accelerator",
-                    );
-                    if (!accelerator?.type || !accelerator?.product) return 0;
-                    const selectedValue = `${accelerator.type}:${accelerator.product}`;
-                    const selectedAccelerator = acceleratorOptions.find(
-                      (opt) => opt.value === selectedValue,
-                    );
-                    return selectedAccelerator?.available || 0;
-                  })()}
-                  step={gpuStep}
-                  value={[form.watch("spec.resources.gpu") || 0]}
-                  onValueChange={(value) => {
-                    form.setValue("spec.resources.gpu", value[0]);
-                  }}
-                  disabled={!currentCluster}
-                />
-              </div>
+                    min={0}
+                    max={selectedAccelerator?.available || 0}
+                    step={gpuStep}
+                    disabled={!currentCluster}
+                    remainingInfo={
+                      selectedAccelerator
+                        ? {
+                            remaining:
+                              selectedAccelerator.available - currentGpu,
+                            total: selectedAccelerator.total,
+                            label: t("endpoints.fields.remaining"),
+                          }
+                        : undefined
+                    }
+                  />
+                );
+              })()}
             </Field>
           )}
 
