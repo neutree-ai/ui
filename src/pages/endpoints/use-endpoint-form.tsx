@@ -199,9 +199,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           version: "",
         },
         resources: {
-          cpu: 0,
-          memory: 0,
-          gpu: null,
+          cpu: "0",
+          memory: "0",
+          gpu: "0",
           accelerator: null,
         },
         replicas: {
@@ -226,6 +226,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     warnWhenUnsavedChanges: true,
     resolver: (values) => {
       const errors: Record<string, unknown> = {};
+
+      // Transform resource fields to strings for API compatibility
+      values.spec?.resources &&
+        ["cpu", "memory", "gpu"].forEach((field) => {
+          const value = values.spec.resources[field];
+          if (value != null) {
+            values.spec.resources[field] = String(value);
+          }
+        });
 
       if (action === "create" && currentRegistry && currentModelName) {
         const modelExists =
