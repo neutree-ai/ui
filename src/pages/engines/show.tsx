@@ -15,9 +15,12 @@ import type { Engine } from "@/types";
 import { useShow } from "@refinedev/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 
 export const EnginesShow = () => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const versionFromQuery = searchParams.get("version");
   const {
     query: { data, isLoading },
   } = useShow<Engine>({});
@@ -29,9 +32,13 @@ export const EnginesShow = () => {
 
   useEffect(() => {
     if (record) {
-      setVersion(record.spec.versions[0]?.version);
+      // Use version from URL query param if valid, otherwise fall back to first version
+      const validVersion = record.spec.versions.find(
+        (v) => v.version === versionFromQuery,
+      );
+      setVersion(validVersion?.version || record.spec.versions[0]?.version);
     }
-  }, [record]);
+  }, [record, versionFromQuery]);
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;

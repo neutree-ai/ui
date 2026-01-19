@@ -16,6 +16,9 @@ export default function EndpointEngine({
       recordItemId={engine.engine}
       meta={{
         workspace: metadata.workspace,
+        query: {
+          version: engine.version,
+        },
       }}
       variant="link"
       resource="engines"
