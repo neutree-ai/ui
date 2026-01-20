@@ -21,6 +21,13 @@ const formatPeriod = (seconds: number) => {
   return days;
 };
 
+const calculateRemainingDays = (signDate: number, period: number) => {
+  const expirationTimestamp = signDate + period;
+  const nowTimestamp = Math.floor(Date.now() / 1000);
+  const remainingSeconds = expirationTimestamp - nowTimestamp;
+  return Math.ceil(remainingSeconds / (60 * 60 * 24));
+};
+
 const getPhaseColor = (phase: string) => {
   switch (phase.toLowerCase()) {
     case "active":
@@ -146,6 +153,23 @@ export const LicenseShow: React.FC = () => {
                       {license.status.info.period === MAX_UNLIMITED
                         ? t("license.permanent")
                         : `${formatPeriod(license.status.info.period)} ${t("license.fields.days")}`}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-sm text-muted-foreground">
+                      {t("license.fields.expirationDate")}
+                    </Label>
+                    <div className="text-base">
+                      {license.status.info.period === MAX_UNLIMITED
+                        ? t("license.permanent")
+                        : `${formatDate(
+                            license.status.info.sign_date +
+                              license.status.info.period,
+                          )} (${calculateRemainingDays(
+                            license.status.info.sign_date,
+                            license.status.info.period,
+                          )} ${t("license.fields.days")})`}
                     </div>
                   </div>
 
