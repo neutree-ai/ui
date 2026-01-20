@@ -25,7 +25,7 @@ const calculateRemainingDays = (signDate: number, period: number) => {
   const expirationTimestamp = signDate + period;
   const nowTimestamp = Math.floor(Date.now() / 1000);
   const remainingSeconds = expirationTimestamp - nowTimestamp;
-  return Math.ceil(remainingSeconds / (60 * 60 * 24));
+  return Math.max(0, Math.ceil(remainingSeconds / (60 * 60 * 24)));
 };
 
 const getPhaseColor = (phase: string) => {
