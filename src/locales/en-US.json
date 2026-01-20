@@ -810,7 +810,8 @@
 			"options": {
 				"removeStatus": "Remove status fields",
 				"removeIds": "Remove auto-generated IDs",
-				"removeTimestamps": "Remove timestamps"
+				"removeTimestamps": "Remove timestamps",
+				"includeCredentials": "Include credentials"
 			},
 			"errors": {
 				"generateFailed": "Failed to generate YAML",

@@ -19,6 +19,13 @@ export const EXPORTABLE_RESOURCES = [
   "workspaces",
 ] as const;
 
+// Resources that support credentials API for sensitive field export
+export const CREDENTIAL_RESOURCES = [
+  "clusters",
+  "image_registries",
+  "model_registries",
+] as const;
+
 export type ExportableResource = (typeof EXPORTABLE_RESOURCES)[number];
 
 export interface ResourceEntity {
@@ -43,6 +50,7 @@ export interface ExportOptions {
   removeStatus: boolean;
   removeIds: boolean;
   removeTimestamps: boolean;
+  includeCredentials: boolean;
 }
 
 export interface ExportProgress {
@@ -110,6 +118,7 @@ export const useYamlExport = () => {
     removeStatus: true,
     removeIds: true,
     removeTimestamps: true,
+    includeCredentials: true,
   });
 
   const [isExporting, setIsExporting] = useState(false);
@@ -160,25 +169,42 @@ export const useYamlExport = () => {
     [],
   );
 
-  // Load entities for a resource type
-  const loadEntities = useCallback(
-    async (type: ExportableResource) => {
-      if (resourceTypes[type].loaded) return;
+  // Fetch entities for a resource type from API
+  const fetchResourceEntities = useCallback(
+    async (type: ExportableResource): Promise<ResourceEntity[]> => {
+      const resourceConfig = exportableResources.find((r) => r.type === type);
+      const resourceMeta = resourceConfig?.meta || {};
 
-      // Set loading state for this resource
-      setLoadingResources((prev) => new Set(prev).add(type));
+      const useCredentialsApi =
+        exportOptions.includeCredentials &&
+        CREDENTIAL_RESOURCES.includes(
+          type as (typeof CREDENTIAL_RESOURCES)[number],
+        );
 
-      try {
-        // Get the resource configuration from refine
-        const resourceConfig = exportableResources.find((r) => r.type === type);
-        const resourceMeta = resourceConfig?.meta || {};
+      let data: Record<string, unknown>[];
 
-        // Build meta object from resource configuration
+      if (useCredentialsApi) {
+        const params = new URLSearchParams();
+        if (resourceMeta.workspaced && currentWorkspace) {
+          params.append(
+            "metadata->workspace",
+            `eq.${JSON.stringify(currentWorkspace)}`,
+          );
+        }
+        const queryString = params.toString();
+        const url = `/credentials/${type}${queryString ? `?${queryString}` : ""}`;
+
+        // biome-ignore lint/style/noNonNullAssertion: we defined custom method in data provider
+        const result = await dataProvider().custom!({
+          url,
+          method: "get",
+        });
+        data = Array.isArray(result.data) ? result.data : [];
+      } else {
         const meta: Record<string, unknown> = {
           ...resourceMeta,
         };
 
-        // Add workspace context if the resource is workspaced
         if (resourceMeta.workspaced && currentWorkspace) {
           meta.workspace = currentWorkspace;
         }
@@ -188,15 +214,38 @@ export const useYamlExport = () => {
           pagination: { mode: "off" as const },
           meta,
         });
+        data = result.data;
+      }
 
-        const entities = result.data.map((item: Record<string, unknown>) => ({
-          id: item.id || (item.metadata as Metadata)?.name,
-          metadata: item.metadata as Metadata,
-          kind: item.kind as string,
-          api_version: item.api_version as string,
-          spec: item.spec as Record<string, unknown> | undefined,
-          status: item.status as Record<string, unknown> | undefined,
-        }));
+      return data.map((item: Record<string, unknown>) => ({
+        id:
+          (item.id as string | number) ||
+          (item.metadata as Metadata)?.name ||
+          "",
+        metadata: item.metadata as Metadata,
+        kind: item.kind as string,
+        api_version: item.api_version as string,
+        spec: item.spec as Record<string, unknown> | undefined,
+        status: item.status as Record<string, unknown> | undefined,
+      }));
+    },
+    [
+      dataProvider,
+      currentWorkspace,
+      exportableResources,
+      exportOptions.includeCredentials,
+    ],
+  );
+
+  // Load entities for a resource type
+  const loadEntities = useCallback(
+    async (type: ExportableResource) => {
+      if (resourceTypes[type].loaded) return;
+
+      setLoadingResources((prev) => new Set(prev).add(type));
+
+      try {
+        const entities = await fetchResourceEntities(type);
 
         setResourceTypes((prev) => ({
           ...prev,
@@ -209,7 +258,6 @@ export const useYamlExport = () => {
       } catch (error) {
         console.error(`Failed to load entities for ${type}:`, error);
       } finally {
-        // Remove loading state for this resource
         setLoadingResources((prev) => {
           const updated = new Set(prev);
           updated.delete(type);
@@ -217,7 +265,7 @@ export const useYamlExport = () => {
         });
       }
     },
-    [dataProvider, currentWorkspace, resourceTypes, exportableResources],
+    [resourceTypes, fetchResourceEntities],
   );
 
   // Transform entity to YAML format
@@ -375,55 +423,15 @@ export const useYamlExport = () => {
 
     const resourcePromises = EXPORTABLE_RESOURCES.map(async (type) => {
       if (!newResourceTypes[type].loaded) {
-        // Set loading state for this resource
         setLoadingResources((prev) => new Set(prev).add(type));
 
         try {
-          const resourceConfig = exportableResources.find(
-            (r) => r.type === type,
-          );
-          const resourceMeta = resourceConfig?.meta || {};
-
-          const meta: Record<string, unknown> = {
-            ...resourceMeta,
-          };
-
-          if (resourceMeta.workspaced && currentWorkspace) {
-            meta.workspace = currentWorkspace;
-          }
-
-          const result = await dataProvider().getList({
-            resource: type,
-            pagination: { mode: "off" as const },
-            meta,
-          });
-
-          const entities = result.data.map((item: Record<string, unknown>) => ({
-            id:
-              (item.id as string | number) ||
-              (item.metadata as Metadata)?.name ||
-              "",
-            metadata: item.metadata as Metadata,
-            kind: item.kind as string,
-            api_version: item.api_version as string,
-            spec: item.spec as Record<string, unknown> | undefined,
-            status: item.status as Record<string, unknown> | undefined,
-          }));
-
-          return {
-            type,
-            entities,
-            success: true,
-          };
+          const entities = await fetchResourceEntities(type);
+          return { type, entities, success: true };
         } catch (error) {
           console.error(`Failed to load entities for ${type}:`, error);
-          return {
-            type,
-            entities: [],
-            success: false,
-          };
+          return { type, entities: [] as ResourceEntity[], success: false };
         } finally {
-          // Remove loading state for this resource
           setLoadingResources((prev) => {
             const updated = new Set(prev);
             updated.delete(type);
@@ -432,7 +440,6 @@ export const useYamlExport = () => {
         }
       }
 
-      // Return existing data if already loaded
       return {
         type,
         entities: newResourceTypes[type].entities,
@@ -452,7 +459,6 @@ export const useYamlExport = () => {
           };
         }
 
-        // Select the resource type and all its entities
         newResourceTypes[type] = {
           ...newResourceTypes[type],
           selected: true,
@@ -466,7 +472,7 @@ export const useYamlExport = () => {
     } finally {
       setIsSelectingAll(false);
     }
-  }, [resourceTypes, exportableResources, dataProvider, currentWorkspace]);
+  }, [resourceTypes, fetchResourceEntities]);
 
   // Check if all resources are selected
   const areAllResourcesSelected = useMemo(() => {

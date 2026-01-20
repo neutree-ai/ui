@@ -290,6 +290,26 @@ export const YamlExportDialog = ({
                               )}
                             </Label>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="include-credentials"
+                              checked={exportOptions.includeCredentials}
+                              onCheckedChange={(checked) =>
+                                setExportOptions((prev) => ({
+                                  ...prev,
+                                  includeCredentials: !!checked,
+                                }))
+                              }
+                            />
+                            <Label
+                              htmlFor="include-credentials"
+                              className="text-sm"
+                            >
+                              {t(
+                                "components.yamlExport.options.includeCredentials",
+                              )}
+                            </Label>
+                          </div>
                         </div>
                       </DropdownMenuContent>
                     </DropdownMenu>
