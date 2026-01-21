@@ -22,11 +22,11 @@ export const normalizeTimestampString = (timestamp: string): string => {
   let timestampStr = timestamp;
 
   // Replace space with 'T' if needed (e.g., "2026-01-09 01:21:03" -> "2026-01-09T01:21:03")
-  timestampStr = timestampStr.replace(' ', 'T');
+  timestampStr = timestampStr.replace(" ", "T");
 
   // Add 'Z' suffix if no timezone identifier present
-  if (!timestampStr.endsWith('Z') && !timestampStr.match(/[+-]\d{2}:\d{2}$/)) {
-    timestampStr += 'Z';
+  if (!timestampStr.endsWith("Z") && !timestampStr.match(/[+-]\d{2}:\d{2}$/)) {
+    timestampStr += "Z";
   }
 
   return timestampStr;
