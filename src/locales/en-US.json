@@ -366,6 +366,12 @@
 			"sshEmptyWorkerNodeIPs": "No worker nodes added",
 			"noModelCaches": "No model caches"
 		},
+		"monitor": {
+			"rayMetrics": "Ray Metrics",
+			"routerMetrics": "Router Metrics",
+			"nodeMetrics": "Node Metrics",
+			"gpuMetrics": "GPU Metrics"
+		},
 		"actions": {
 			"addModelCache": "Add Model Cache"
 		},

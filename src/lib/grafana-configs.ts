@@ -121,6 +121,54 @@ const K8S_ROUTER_PANELS: PanelConfig[] = [
   { id: 17 },
 ];
 
+// Node Exporter dashboard panels (for Kubernetes cluster node monitoring)
+const NODE_EXPORTER_PANELS: PanelConfig[] = [
+  // Overview stats
+  { id: 30 }, // CPU Utilization (Avg)
+  { id: 31 }, // Total CPU Cores
+  { id: 32 }, // Memory Utilization (Avg)
+  { id: 33 }, // Total Memory
+  // CPU
+  { id: 2 }, // CPU Utilisation
+  { id: 3 }, // CPU Saturation (Load1 per CPU)
+  // Memory
+  { id: 4 }, // Memory Utilisation
+  { id: 5 }, // Memory Saturation (Major Page Faults)
+  // GPU (from node-exporter dashboard)
+  { id: 17 }, // GPU Utilization
+  { id: 18 }, // GPU Memory Utilization
+  // Network
+  { id: 6 }, // Network Utilisation (Bytes Receive/Transmit)
+  { id: 7 }, // Network Saturation (Drops Receive/Transmit)
+  // Disk IO
+  { id: 8 }, // Disk IO Utilisation
+  { id: 9 }, // Disk IO Saturation
+  // Disk Space
+  { id: 10 }, // Disk Space Utilisation
+];
+
+// GPU (DCGM Exporter) dashboard panels
+const GPU_DCGM_PANELS: PanelConfig[] = [
+  // Overview stats
+  { id: 20 }, // GPU Utilization
+  { id: 21 }, // GPU Memory Utilization
+  { id: 25 }, // GPU Memory Total
+  { id: 22 }, // GPU Requests Commitment
+  { id: 24 }, // Total GPUs
+  { id: 23 }, // GPU Nodes
+  // Detailed charts
+  { id: 6 }, // GPU Utilization (timeseries)
+  { id: 18 }, // GPU Memory Used
+  { id: 12 }, // GPU Temperature
+  { id: 19 }, // GPU Memory Used Percentage
+  { id: 4 }, // Tensor Core Utilization
+  { id: 2 }, // GPU SM Clocks
+  // Gauges and stats
+  { id: 14 }, // GPU Average Temperature
+  { id: 16 }, // GPU Power Total
+  { id: 10 }, // GPU Power Usage
+];
+
 /**
  * One-stop function to get complete Grafana props for main dashboard
  */
@@ -143,47 +191,57 @@ export const getDashboardGrafanaProps = (
 });
 
 /**
- * One-stop function to get complete Grafana props for cluster monitoring
- * @param grafanaUrl - The Grafana base URL
- * @param clusterName - The cluster name
- * @param clusterType - The cluster type ('ssh' | 'kubernetes')
+ * Get Grafana props for SSH cluster Ray dashboard monitoring
+ */
+export const getClusterRayGrafanaProps = (
+  grafanaUrl: string,
+  clusterName: string,
+): GrafanaPanelsProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "rayDefaultDashboard",
+    variables: {
+      ...getCommonVariables(),
+      SessionName: "$__all",
+      Instance: "$__all",
+      Cluster: clusterName,
+    },
+  },
+  panels: CLUSTER_PANELS,
+  ...getCommonPanelProps(),
+});
+
+/**
+ * Get Grafana props for Kubernetes cluster Router monitoring
+ */
+export const getClusterRouterGrafanaProps = (
+  grafanaUrl: string,
+  clusterName: string,
+): GrafanaPanelsProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "router",
+    variables: {
+      ...getCommonVariables(),
+      Cluster: clusterName,
+    },
+  },
+  panels: K8S_ROUTER_PANELS,
+  ...getCommonPanelProps(),
+});
+
+/**
+ * @deprecated Use getClusterRayGrafanaProps or getClusterRouterGrafanaProps instead
  */
 export const getClusterGrafanaProps = (
   grafanaUrl: string,
   clusterName: string,
   clusterType: string,
 ): GrafanaPanelsProps => {
-  // For kubernetes clusters, use the router dashboard
   if (clusterType === "kubernetes") {
-    return {
-      dashboardConfig: {
-        ...getBaseDashboardConfig(grafanaUrl),
-        dashboardId: "router",
-        variables: {
-          ...getCommonVariables(),
-          Cluster: clusterName,
-        },
-      },
-      panels: K8S_ROUTER_PANELS,
-      ...getCommonPanelProps(),
-    };
+    return getClusterRouterGrafanaProps(grafanaUrl, clusterName);
   }
-
-  // For ssh clusters (default), use the ray default dashboard
-  return {
-    dashboardConfig: {
-      ...getBaseDashboardConfig(grafanaUrl),
-      dashboardId: "rayDefaultDashboard",
-      variables: {
-        ...getCommonVariables(),
-        SessionName: "$__all",
-        Instance: "$__all",
-        Cluster: clusterName,
-      },
-    },
-    panels: CLUSTER_PANELS,
-    ...getCommonPanelProps(),
-  };
+  return getClusterRayGrafanaProps(grafanaUrl, clusterName);
 };
 
 /**
@@ -228,5 +286,45 @@ export const getVllmGrafanaProps = (
     },
   },
   panels: VLLM_PANELS,
+  ...getCommonPanelProps(),
+});
+
+/**
+ * One-stop function to get complete Grafana props for Node Exporter monitoring
+ * Used for Kubernetes cluster node metrics (CPU, Memory, Network, Disk)
+ */
+export const getNodeExporterGrafanaProps = (
+  grafanaUrl: string,
+  clusterName: string,
+): GrafanaPanelsProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "node-exporter",
+    variables: {
+      ...getCommonVariables(),
+      Cluster: clusterName,
+    },
+  },
+  panels: NODE_EXPORTER_PANELS,
+  ...getCommonPanelProps(),
+});
+
+/**
+ * One-stop function to get complete Grafana props for GPU (DCGM) monitoring
+ * Used for NVIDIA GPU metrics via DCGM Exporter
+ */
+export const getGpuDcgmGrafanaProps = (
+  grafanaUrl: string,
+  clusterName: string,
+): GrafanaPanelsProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "nvidia-dcgm-dashboard",
+    variables: {
+      ...getCommonVariables(),
+      Cluster: clusterName,
+    },
+  },
+  panels: GPU_DCGM_PANELS,
   ...getCommonPanelProps(),
 });

@@ -1,12 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { useMonitorPanels } from "./use-monitor-panels";
+import {
+  useClusterMonitorPanels,
+  useEndpointMonitorPanels,
+} from "./use-monitor-panels";
 
-describe("useMonitorPanels", () => {
-  it("should return empty panels when no conditions are met", () => {
-    const { result } = renderHook(() =>
-      useMonitorPanels({ clusterType: "k8s", engineType: "other" }),
-    );
+describe("useEndpointMonitorPanels", () => {
+  it("should return empty panels when no cluster type or engine type", () => {
+    const { result } = renderHook(() => useEndpointMonitorPanels({}));
 
     expect(result.current.panels).toEqual([]);
     expect(result.current.selectedPanel).toBeNull();
@@ -14,9 +15,9 @@ describe("useMonitorPanels", () => {
     expect(result.current.showSelector).toBe(false);
   });
 
-  it("should return endpoint panel when cluster is ssh", () => {
+  it("should return endpoint panel for ssh cluster", () => {
     const { result } = renderHook(() =>
-      useMonitorPanels({ clusterType: "ssh", engineType: "other" }),
+      useEndpointMonitorPanels({ clusterType: "ssh" }),
     );
 
     expect(result.current.panels).toEqual(["endpoint"]);
@@ -25,9 +26,9 @@ describe("useMonitorPanels", () => {
     expect(result.current.showSelector).toBe(false);
   });
 
-  it("should return vllm panel when engine is vllm", () => {
+  it("should return vllm panel for vllm engine", () => {
     const { result } = renderHook(() =>
-      useMonitorPanels({ clusterType: "k8s", engineType: "vllm" }),
+      useEndpointMonitorPanels({ engineType: "vllm" }),
     );
 
     expect(result.current.panels).toEqual(["vllm"]);
@@ -36,20 +37,20 @@ describe("useMonitorPanels", () => {
     expect(result.current.showSelector).toBe(false);
   });
 
-  it("should return both panels when cluster is ssh and engine is vllm", () => {
+  it("should return both panels for ssh cluster with vllm engine", () => {
     const { result } = renderHook(() =>
-      useMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
+      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
     );
 
     expect(result.current.panels).toEqual(["endpoint", "vllm"]);
-    expect(result.current.selectedPanel).toBe("endpoint"); // Defaults to first
+    expect(result.current.selectedPanel).toBe("endpoint");
     expect(result.current.showMonitorTab).toBe(true);
     expect(result.current.showSelector).toBe(true);
   });
 
-  it("should allow switching panels", () => {
+  it("should allow user to select panel", () => {
     const { result } = renderHook(() =>
-      useMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
+      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
     );
 
     expect(result.current.selectedPanel).toBe("endpoint");
@@ -61,25 +62,101 @@ describe("useMonitorPanels", () => {
     expect(result.current.selectedPanel).toBe("vllm");
   });
 
-  it("should reset selected panel if it becomes invalid", () => {
+  it("should fallback to first panel if selected panel is invalid", () => {
     const { result, rerender } = renderHook(
       ({ clusterType, engineType }) =>
-        useMonitorPanels({ clusterType, engineType }),
-      {
-        initialProps: { clusterType: "ssh", engineType: "vllm" },
-      },
+        useEndpointMonitorPanels({ clusterType, engineType }),
+      { initialProps: { clusterType: "ssh", engineType: "vllm" } },
     );
 
-    // Select vllm
     act(() => {
       result.current.setSelectedPanel("vllm");
     });
     expect(result.current.selectedPanel).toBe("vllm");
 
-    // Change props so vllm is no longer available (e.g. engine changes)
-    rerender({ clusterType: "ssh", engineType: "other" });
+    // Remove vllm engine, vllm panel should no longer be available
+    rerender({ clusterType: "ssh", engineType: undefined });
 
-    expect(result.current.panels).toEqual(["endpoint"]);
+    // Should fallback to first available panel
     expect(result.current.selectedPanel).toBe("endpoint");
+  });
+});
+
+describe("useClusterMonitorPanels", () => {
+  it("should return empty panels when no cluster type", () => {
+    const { result } = renderHook(() => useClusterMonitorPanels({}));
+
+    expect(result.current.panels).toEqual([]);
+    expect(result.current.selectedPanel).toBeNull();
+    expect(result.current.showMonitorTab).toBe(false);
+    expect(result.current.showSelector).toBe(false);
+  });
+
+  it("should return ray panel for ssh cluster", () => {
+    const { result } = renderHook(() =>
+      useClusterMonitorPanels({ clusterType: "ssh" }),
+    );
+
+    expect(result.current.panels).toEqual(["ray"]);
+    expect(result.current.selectedPanel).toBe("ray");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(false);
+  });
+
+  it("should return router, node, gpu panels for kubernetes cluster", () => {
+    const { result } = renderHook(() =>
+      useClusterMonitorPanels({ clusterType: "kubernetes" }),
+    );
+
+    expect(result.current.panels).toEqual(["router", "node", "gpu"]);
+    expect(result.current.selectedPanel).toBe("router");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(true);
+  });
+
+  it("should allow user to select panel for kubernetes cluster", () => {
+    const { result } = renderHook(() =>
+      useClusterMonitorPanels({ clusterType: "kubernetes" }),
+    );
+
+    expect(result.current.selectedPanel).toBe("router");
+
+    act(() => {
+      result.current.setSelectedPanel("node");
+    });
+    expect(result.current.selectedPanel).toBe("node");
+
+    act(() => {
+      result.current.setSelectedPanel("gpu");
+    });
+    expect(result.current.selectedPanel).toBe("gpu");
+  });
+
+  it("should fallback to first panel when cluster type changes", () => {
+    const { result, rerender } = renderHook(
+      ({ clusterType }) => useClusterMonitorPanels({ clusterType }),
+      { initialProps: { clusterType: "kubernetes" } },
+    );
+
+    act(() => {
+      result.current.setSelectedPanel("gpu");
+    });
+    expect(result.current.selectedPanel).toBe("gpu");
+
+    // Change to ssh cluster
+    rerender({ clusterType: "ssh" });
+
+    // Should fallback to ray (first available panel for ssh)
+    expect(result.current.selectedPanel).toBe("ray");
+  });
+
+  it("should return empty panels for unknown cluster type", () => {
+    const { result } = renderHook(() =>
+      useClusterMonitorPanels({ clusterType: "unknown" }),
+    );
+
+    expect(result.current.panels).toEqual([]);
+    expect(result.current.selectedPanel).toBeNull();
+    expect(result.current.showMonitorTab).toBe(false);
   });
 });

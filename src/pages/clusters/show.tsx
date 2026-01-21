@@ -9,6 +9,13 @@ import { useMetadataColumns } from "@/components/theme/table/columns/metadata-co
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   TableBody,
   TableCell,
   TableHead,
@@ -17,9 +24,18 @@ import {
   Table as UITable,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  type ClusterMonitorPanelType,
+  useClusterMonitorPanels,
+} from "@/hooks/use-monitor-panels";
 import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
-import { getClusterGrafanaProps } from "@/lib/grafana-configs";
+import {
+  getClusterRayGrafanaProps,
+  getClusterRouterGrafanaProps,
+  getGpuDcgmGrafanaProps,
+  getNodeExporterGrafanaProps,
+} from "@/lib/grafana-configs";
 import { useTranslation as useI18nTranslation } from "@/lib/i18n";
 import { formatToDecimal } from "@/lib/unit";
 import type { Cluster, ModelCache } from "@/types";
@@ -255,6 +271,16 @@ export const ClustersShow = () => {
   const metadataColumns = useMetadataColumns({ resource: "endpoints" });
   const endpointColumns = useEndpointColumns();
 
+  const {
+    panels: monitorPanels,
+    selectedPanel,
+    setSelectedPanel,
+    showMonitorTab,
+    showSelector,
+  } = useClusterMonitorPanels({
+    clusterType: record?.spec.type,
+  });
+
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
   }
@@ -276,7 +302,11 @@ export const ClustersShow = () => {
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
           <TabsTrigger value="basic">{t("common.tabs.basic")}</TabsTrigger>
-          <TabsTrigger value="monitor">{t("common.tabs.monitor")}</TabsTrigger>
+          {showMonitorTab && (
+            <TabsTrigger value="monitor">
+              {t("common.tabs.monitor")}
+            </TabsTrigger>
+          )}
           {record.spec.type === "ssh" && (
             <TabsTrigger value="ray">
               {t("common.tabs.rayDashboard")}
@@ -587,26 +617,94 @@ export const ClustersShow = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent
-          value="monitor"
-          className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
-        >
-          {grafanaUrl ? (
-            <GrafanaPanels
-              {...getClusterGrafanaProps(
-                grafanaUrl,
-                record.metadata.name,
-                record.spec.type,
-              )}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">
-                {t("common.messages.grafanaNotConfigured")}
-              </p>
-            </div>
-          )}
-        </TabsContent>
+        {showMonitorTab && (
+          <TabsContent
+            value="monitor"
+            className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
+          >
+            {grafanaUrl ? (
+              <div className="space-y-4">
+                {showSelector && (
+                  <Card className="p-4">
+                    <div className="flex items-center justify-start">
+                      <Select
+                        value={selectedPanel || undefined}
+                        onValueChange={(value: ClusterMonitorPanelType) =>
+                          setSelectedPanel(value)
+                        }
+                      >
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {monitorPanels.includes("ray") && (
+                            <SelectItem value="ray">
+                              {t("clusters.monitor.rayMetrics")}
+                            </SelectItem>
+                          )}
+                          {monitorPanels.includes("router") && (
+                            <SelectItem value="router">
+                              {t("clusters.monitor.routerMetrics")}
+                            </SelectItem>
+                          )}
+                          {monitorPanels.includes("node") && (
+                            <SelectItem value="node">
+                              {t("clusters.monitor.nodeMetrics")}
+                            </SelectItem>
+                          )}
+                          {monitorPanels.includes("gpu") && (
+                            <SelectItem value="gpu">
+                              {t("clusters.monitor.gpuMetrics")}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </Card>
+                )}
+
+                {selectedPanel === "ray" && (
+                  <GrafanaPanels
+                    {...getClusterRayGrafanaProps(
+                      grafanaUrl,
+                      record.metadata.name,
+                    )}
+                  />
+                )}
+                {selectedPanel === "router" && (
+                  <GrafanaPanels
+                    {...getClusterRouterGrafanaProps(
+                      grafanaUrl,
+                      record.metadata.name,
+                    )}
+                  />
+                )}
+                {selectedPanel === "node" && (
+                  <GrafanaPanels
+                    {...getNodeExporterGrafanaProps(
+                      grafanaUrl,
+                      record.metadata.name,
+                    )}
+                  />
+                )}
+                {selectedPanel === "gpu" && (
+                  <GrafanaPanels
+                    {...getGpuDcgmGrafanaProps(
+                      grafanaUrl,
+                      record.metadata.name,
+                    )}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">
+                  {t("common.messages.grafanaNotConfigured")}
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        )}
         {record.spec.type === "ssh" && (
           <TabsContent
             value="ray"
