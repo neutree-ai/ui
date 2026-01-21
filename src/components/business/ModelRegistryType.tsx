@@ -21,7 +21,9 @@ const ModelRegistryType = ({ type }: Pick<ModelRegistry["spec"], "type">) => {
       <div>
         {type === PRIVATE_MODEL_REGISTRY_TYPE
           ? t("model_registries.types.fileSystem")
-          : type}
+          : type === "hugging-face"
+            ? t("model_registries.types.huggingFace")
+            : type}
       </div>
     </div>
   );

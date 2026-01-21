@@ -587,13 +587,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           />
         </Field>
 
-        {/* GPU Count Slider */}
+        {/* Accelerator Count Slider */}
         {form.watch("spec.resources.accelerator")?.type &&
           form.watch("spec.resources.accelerator")?.product && (
             <Field
               {...form}
               name="spec.resources.gpu"
-              label={t("endpoints.fields.gpuCount")}
+              label={t("endpoints.fields.acceleratorCount")}
               className="col-span-4"
             >
               {(() => {

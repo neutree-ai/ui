@@ -454,7 +454,7 @@
 			"modelRegistry": "Model Registry",
 			"modelCatalog": "Model Catalog (Template)",
 			"memoryGb": "Memory (GB)",
-			"gpuCount": "GPU Count",
+			"acceleratorCount": "Accelerator Count",
 			"npuCount": "NPU Count",
 			"modelName": "Model Name",
 			"modelVersion": "Model Version",
