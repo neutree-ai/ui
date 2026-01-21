@@ -2,7 +2,10 @@ import type { BaseStatus, Metadata } from "./basic-types";
 
 export enum EndpointPhase {
   PENDING = "Pending",
+  DEPLOYING = "Deploying",
   RUNNING = "Running",
+  PAUSED = "Paused",
+  DELETING = "Deleting",
   FAILED = "Failed",
   DELETED = "Deleted",
 }

@@ -884,7 +884,10 @@
 			},
 			"endpoint": {
 				"Pending": "Pending",
+				"Deploying": "Deploying",
 				"Running": "Running",
+				"Paused": "Paused",
+				"Deleting": "Deleting",
 				"Failed": "Failed",
 				"Deleted": "Deleted"
 			},
