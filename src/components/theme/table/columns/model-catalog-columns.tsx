@@ -12,7 +12,7 @@ export const useModelCatalogColumns = () => {
   return {
     model: (
       <Table.Column
-        header={t("table.column.model")}
+        header={t("common.fields.model")}
         accessorKey="spec.model.name"
         id="model"
         enableHiding
@@ -24,7 +24,7 @@ export const useModelCatalogColumns = () => {
     ),
     task: (
       <Table.Column
-        header={t("table.column.task")}
+        header={t("common.fields.task")}
         accessorKey="spec.model.task"
         id="task"
         enableHiding
@@ -36,7 +36,7 @@ export const useModelCatalogColumns = () => {
     ),
     engine: (
       <Table.Column
-        header={t("table.column.engine")}
+        header={t("common.fields.engine")}
         accessorKey="spec.engine.engine"
         id="engine"
         enableHiding
@@ -48,7 +48,7 @@ export const useModelCatalogColumns = () => {
     ),
     status: (
       <Table.Column
-        header={t("table.column.status")}
+        header={t("common.fields.status")}
         accessorKey="status"
         id="status"
         enableHiding

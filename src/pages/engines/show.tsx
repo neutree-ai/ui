@@ -57,7 +57,7 @@ export const EnginesShow = () => {
       <MetadataCard metadata={record.metadata} />
       <Card className="mt-4">
         <CardContent>
-          <ShowPage.Row title={t("engines.fields.status")}>
+          <ShowPage.Row title={t("common.fields.status")}>
             <EngineStatus {...record.status} />
           </ShowPage.Row>
           <ShowPage.Row title={t("engines.fields.supportedTasks")}>
@@ -76,7 +76,7 @@ export const EnginesShow = () => {
       </Card>
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>{t("engines.fields.versions")}</CardTitle>
+          <CardTitle>{t("common.fields.versions")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Select

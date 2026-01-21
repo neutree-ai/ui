@@ -47,7 +47,7 @@ export const ModelCatalogsShow = () => {
 
         <Card className="mt-4">
           <CardContent>
-            <ShowPage.Row title={t("model_catalogs.fields.status")}>
+            <ShowPage.Row title={t("common.fields.status")}>
               <ModelCatalogStatus {...record.status} />
             </ShowPage.Row>
           </CardContent>
@@ -56,15 +56,15 @@ export const ModelCatalogsShow = () => {
         <Card className="mt-4">
           <CardContent>
             <div className="grid grid-cols-4 gap-8">
-              <ShowPage.Row title={t("model_catalogs.fields.engine")}>
+              <ShowPage.Row title={t("common.fields.engine")}>
                 <EndpointEngine spec={record.spec} metadata={record.metadata} />
               </ShowPage.Row>
               <div className="col-span-2">
-                <ShowPage.Row title={t("model_catalogs.fields.model")}>
+                <ShowPage.Row title={t("common.fields.model")}>
                   <EndpointModel model={record.spec.model} />
                 </ShowPage.Row>
               </div>
-              <ShowPage.Row title={t("model_catalogs.fields.task")}>
+              <ShowPage.Row title={t("common.fields.task")}>
                 <ModelTask task={record.spec.model.task} />
               </ShowPage.Row>
             </div>
@@ -78,7 +78,7 @@ export const ModelCatalogsShow = () => {
 
         <ResourcesCard
           resources={record.spec.resources}
-          titleTranslationKey="model_catalogs.fields.resources"
+          titleTranslationKey="common.fields.resources"
         />
 
         <DeploymentConfigCard

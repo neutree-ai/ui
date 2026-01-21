@@ -498,7 +498,7 @@ export const YamlExportDialog = ({
                   {t("components.yamlExport.backToSelection")}
                 </Button>
                 <Button onClick={() => setIsOpen(false)}>
-                  {t("components.yamlExport.close")}
+                  {t("buttons.close")}
                 </Button>
               </div>
             </div>

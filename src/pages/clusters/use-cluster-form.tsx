@@ -213,8 +213,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={t("clusters.sections.basicInformation")}>
-        <Field {...form} name="metadata.name" label={t("clusters.fields.name")}>
+      <FormCardGrid title={t("common.sections.basicInformation")}>
+        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
           <Input
             placeholder={t("clusters.placeholders.clusterName")}
             disabled={isEdit}
@@ -223,7 +223,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <Field
           {...form}
           name="metadata.workspace"
-          label={t("clusters.fields.workspace")}
+          label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
         </Field>
@@ -234,7 +234,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <Field
           {...form}
           name="spec.image_registry"
-          label={t("clusters.fields.imageRegistry")}
+          label={t("common.fields.imageRegistry")}
         >
           <Combobox
             placeholder={t("clusters.placeholders.selectImageRegistry")}
@@ -249,7 +249,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     ),
     typeFields: (
       <FormCardGrid title={t("clusters.sections.clusterType")}>
-        <Field {...form} name="spec.type" label={t("clusters.fields.type")}>
+        <Field {...form} name="spec.type" label={t("common.fields.type")}>
           <Select
             options={[
               {
@@ -355,7 +355,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <Field
           {...form}
           name="spec.config.kubernetes_config.router.resources.cpu"
-          label={t("clusters.fields.cpu")}
+          label={t("common.fields.cpu")}
         >
           <Input />
         </Field>
@@ -363,7 +363,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <Field
           {...form}
           name="spec.config.kubernetes_config.router.resources.memory"
-          label={t("clusters.fields.memory")}
+          label={t("common.fields.memory")}
         >
           <Input />
         </Field>
@@ -400,7 +400,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <Field
-                        label={t("clusters.fields.modelCache.name")}
+                        label={t("common.fields.name")}
                         {...form.register(
                           `spec.config.model_caches.${index}.name`,
                         )}

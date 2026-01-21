@@ -25,11 +25,11 @@ export const useWorkspaceForm = ({ action }: { action: "create" | "edit" }) => {
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={translate("workspaces.fields.basicInformation")}>
+      <FormCardGrid title={translate("common.sections.basicInformation")}>
         <Field
           {...form}
           name="metadata.name"
-          label={translate("workspaces.fields.name")}
+          label={translate("common.fields.name")}
         >
           <Input
             placeholder={translate("workspaces.placeholders.workspaceName")}

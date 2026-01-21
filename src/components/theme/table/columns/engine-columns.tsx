@@ -9,7 +9,7 @@ export const useEngineColumns = () => {
   return {
     versions: (
       <Table.Column
-        header={t("table.column.versions")}
+        header={t("common.fields.versions")}
         accessorKey="spec.versions"
         id="version"
         enableHiding
@@ -24,7 +24,7 @@ export const useEngineColumns = () => {
     ),
     status: (
       <Table.Column
-        header={t("table.column.status")}
+        header={t("common.fields.status")}
         accessorKey="status"
         id="status"
         enableHiding

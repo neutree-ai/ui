@@ -255,12 +255,10 @@ export function FunctionDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              {t("components.playground.chat.cancel")}
+              {t("buttons.cancel")}
             </Button>
             <Button type="submit" disabled={!!parameterError}>
-              {editFunction
-                ? t("components.playground.chat.save")
-                : t("components.playground.chat.add")}
+              {editFunction ? t("buttons.save") : t("buttons.add")}
             </Button>
           </DialogFooter>
         </form>

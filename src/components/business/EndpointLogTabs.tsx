@@ -142,7 +142,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   const getTabLabel = (logType: string) => {
     const labels: Record<string, string> = {
       application: t("endpoints.logs.application"),
-      logs: t("endpoints.logs.logs"),
+      logs: t("common.tabs.logs"),
       stderr: t("endpoints.logs.stderr"),
       stdout: t("endpoints.logs.stdout"),
     };

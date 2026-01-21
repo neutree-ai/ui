@@ -58,13 +58,11 @@ export const ClustersShow = () => {
     <ShowPage record={record}>
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
-          <TabsTrigger value="basic">{t("clusters.tabs.basic")}</TabsTrigger>
-          <TabsTrigger value="monitor">
-            {t("clusters.tabs.monitor")}
-          </TabsTrigger>
+          <TabsTrigger value="basic">{t("common.tabs.basic")}</TabsTrigger>
+          <TabsTrigger value="monitor">{t("common.tabs.monitor")}</TabsTrigger>
           {record.spec.type === "ssh" && (
             <TabsTrigger value="ray">
-              {t("clusters.tabs.rayDashboard")}
+              {t("common.tabs.rayDashboard")}
             </TabsTrigger>
           )}
         </TabsList>
@@ -75,14 +73,14 @@ export const ClustersShow = () => {
           <MetadataCard metadata={record.metadata} />
           <Card className="mt-4">
             <CardContent>
-              <ShowPage.Row title={t("clusters.fields.status")}>
+              <ShowPage.Row title={t("common.fields.status")}>
                 <ClusterStatus {...record.status} />
               </ShowPage.Row>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={t("clusters.fields.type")}>
+                <ShowPage.Row title={t("common.fields.type")}>
                   <ClusterType type={record.spec.type} />
                 </ShowPage.Row>
-                <ShowPage.Row title={t("clusters.fields.imageRegistry")}>
+                <ShowPage.Row title={t("common.fields.imageRegistry")}>
                   <ShowButton
                     recordItemId={record.spec.image_registry}
                     meta={{
@@ -132,12 +130,12 @@ export const ClustersShow = () => {
                           ?.replicas ?? ""}
                       </ShowPage.Row>
 
-                      <ShowPage.Row title={t("clusters.fields.cpu")}>
+                      <ShowPage.Row title={t("common.fields.cpu")}>
                         {record.spec.config.kubernetes_config.router?.resources
                           ?.cpu ?? ""}
                       </ShowPage.Row>
 
-                      <ShowPage.Row title={t("clusters.fields.memory")}>
+                      <ShowPage.Row title={t("common.fields.memory")}>
                         {record.spec.config.kubernetes_config.router?.resources
                           ?.memory ?? ""}
                       </ShowPage.Row>
@@ -150,7 +148,7 @@ export const ClustersShow = () => {
           {record.status?.resource_info && (
             <Card className="mt-4">
               <CardHeader>
-                <CardTitle>{t("clusters.sections.resources")}</CardTitle>
+                <CardTitle>{t("common.fields.resources")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -159,7 +157,7 @@ export const ClustersShow = () => {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">
-                          {t("clusters.fields.cpu")}
+                          {t("common.fields.cpu")}
                         </span>
                         <span className="text-sm text-muted-foreground">
                           {formatToDecimal(
@@ -197,7 +195,7 @@ export const ClustersShow = () => {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">
-                          {t("clusters.fields.memory")}
+                          {t("common.fields.memory")}
                         </span>
                         <span className="text-sm text-muted-foreground">
                           {formatToDecimal(
@@ -309,10 +307,10 @@ export const ClustersShow = () => {
                         <TableRow>
                           <TableHead>{t("clusters.fields.nodeName")}</TableHead>
                           <TableHead className="min-w-[140px]">
-                            {t("clusters.fields.cpu")}
+                            {t("common.fields.cpu")}
                           </TableHead>
                           <TableHead className="min-w-[140px]">
-                            {t("clusters.fields.memory")}
+                            {t("common.fields.memory")}
                           </TableHead>
                           {acceleratorTypes.map((accType) => (
                             <TableHead key={accType} className="min-w-[140px]">
@@ -510,9 +508,7 @@ export const ClustersShow = () => {
                           <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               {cache.name && (
-                                <ShowPage.Row
-                                  title={t("clusters.fields.modelCache.name")}
-                                >
+                                <ShowPage.Row title={t("common.fields.name")}>
                                   {cache.name}
                                 </ShowPage.Row>
                               )}
@@ -657,7 +653,7 @@ export const ClustersShow = () => {
               <iframe
                 src={dashboardUrl}
                 className="w-full h-full"
-                title={t("clusters.messages.rayDashboardTitle")}
+                title={t("common.tabs.rayDashboard")}
               />
             )}
           </TabsContent>

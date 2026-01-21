@@ -126,7 +126,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
 
         <DialogFooter>
           <Button onClick={onClose} className="w-full">
-            {t("api_keys.buttons.close")}
+            {t("buttons.close")}
           </Button>
         </DialogFooter>
       </div>
@@ -141,7 +141,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
           render={({ field }) => {
             return (
               <FormItem>
-                <FormLabel>{t("api_keys.fields.workspace")}</FormLabel>
+                <FormLabel>{t("common.fields.workspace")}</FormLabel>
                 <FormControl>
                   <Combobox
                     placeholder={t("api_keys.placeholders.selectWorkspace")}
@@ -162,7 +162,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
           render={({ field }) => {
             return (
               <FormItem>
-                <FormLabel>{t("api_keys.fields.name")}</FormLabel>
+                <FormLabel>{t("common.fields.name")}</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -172,7 +172,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         />
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={onClose}>
-            {t("api_keys.buttons.cancel")}
+            {t("buttons.cancel")}
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {t("api_keys.buttons.create")}

@@ -9,7 +9,7 @@ export const useRoleAssignmentColumns = () => {
   return {
     workspace: (
       <Table.Column
-        header={t("table.column.workspace")}
+        header={t("common.fields.workspace")}
         accessorKey="spec.workspace"
         id="workspace"
         enableHiding
@@ -33,7 +33,7 @@ export const useRoleAssignmentColumns = () => {
     ),
     role: (
       <Table.Column
-        header={t("table.column.role")}
+        header={t("common.fields.role")}
         accessorKey="spec.role"
         id="role"
         enableHiding
@@ -54,7 +54,7 @@ export const useRoleAssignmentColumns = () => {
     ),
     user: (
       <Table.Column
-        header={t("table.column.user")}
+        header={t("common.fields.user")}
         accessorKey="spec.user_id"
         id="user"
         enableHiding

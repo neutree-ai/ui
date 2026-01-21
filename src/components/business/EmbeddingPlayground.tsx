@@ -239,7 +239,7 @@ export default function EmbeddingPlayground({
                   {t("components.playground.embedding.generate")}
                 </Button>
                 <Button variant="outline" onClick={clearAll}>
-                  {t("components.playground.embedding.clear")}
+                  {t("buttons.clear")}
                 </Button>
               </div>
             </div>

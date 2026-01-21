@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { auth } from "@/auth-provider";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,8 @@ import dayjs from "dayjs";
 import { CalendarIcon, Download, RefreshCw, Search, X } from "lucide-react";
 import { type FC, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { VirtualLog } from "./VirtualLog";
 import { toast } from "sonner";
+import { VirtualLog } from "./VirtualLog";
 
 export interface LogViewerProps {
   source: string; // Complete log content
@@ -244,7 +244,7 @@ export const LogViewer: FC<LogViewerProps> = ({
           className="gap-2"
         >
           <RefreshCw className="h-4 w-4" />
-          {t("components.logViewer.refresh")}
+          {t("buttons.refresh")}
         </Button>
 
         {downloadUrl && (

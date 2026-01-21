@@ -8,7 +8,7 @@ export const useRoleColumns = () => {
   return {
     name: (
       <Table.Column
-        header={t("table.column.name")}
+        header={t("common.fields.name")}
         accessorKey="metadata.name"
         id="name"
         enableHiding
@@ -32,13 +32,13 @@ export const useRoleColumns = () => {
     ),
     permissions: (
       <Table.Column
-        header={t("table.column.permissions")}
+        header={t("common.fields.permissions")}
         accessorKey="spec.permissions"
         id="permissions"
         enableHiding
         cell={({ getValue }) => {
           const value = getValue() as unknown as string[];
-          return t("table.column.permissionsCount", { count: value.length });
+          return t("common.fields.permissionsCount", { count: value.length });
         }}
       />
     ),

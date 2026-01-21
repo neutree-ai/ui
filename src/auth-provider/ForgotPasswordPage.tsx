@@ -78,14 +78,14 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">
-                {translate("pages.forgotPassword.fields.email", "Email")}
+                {translate("common.fields.email", "Email")}
               </Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder={translate(
-                  "pages.forgotPassword.fields.emailPlaceholder",
+                  "pages.auth.emailPlaceholder",
                   "you@example.com",
                 )}
                 required
@@ -98,10 +98,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
               disabled={isLoading}
             >
               {isLoading
-                ? translate(
-                    "pages.forgotPassword.buttons.loading",
-                    "Loading...",
-                  )
+                ? translate("pages.auth.loading", "Loading...")
                 : translate(
                     "pages.forgotPassword.buttons.submit",
                     "Send Reset Instructions",
@@ -117,7 +114,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
             href="/login"
             className="font-medium text-[hsl(var(--primary))] hover:underline"
           >
-            {translate("pages.forgotPassword.signin", "Sign in")}
+            {translate("pages.auth.signIn", "Sign in")}
           </a>
         </div>
       </CardFooter>

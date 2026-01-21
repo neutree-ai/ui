@@ -68,7 +68,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
             if (password !== confirmPassword) {
               toast.error(
                 translate(
-                  "pages.updatePassword.errors.confirmPasswordNotMatch",
+                  "pages.auth.errors.confirmPasswordNotMatch",
                   "Passwords do not match",
                 ),
               );
@@ -95,9 +95,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                 id="password"
                 name="password"
                 type="password"
-                placeholder={translate(
-                  "pages.updatePassword.fields.passwordPlaceholder",
-                )}
+                placeholder={translate("pages.auth.passwordPlaceholder")}
                 required
                 minLength={6}
                 className="h-10"
@@ -114,9 +112,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder={translate(
-                  "pages.updatePassword.fields.passwordPlaceholder",
-                )}
+                placeholder={translate("pages.auth.passwordPlaceholder")}
                 required
                 className="h-10"
               />
@@ -127,10 +123,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
               disabled={isLoading}
             >
               {isLoading
-                ? translate(
-                    "pages.updatePassword.buttons.loading",
-                    "Loading...",
-                  )
+                ? translate("pages.auth.loading", "Loading...")
                 : translate("pages.updatePassword.buttons.submit", "Update")}
             </Button>
           </div>

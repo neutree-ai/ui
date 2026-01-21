@@ -92,7 +92,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             <div className="relative my-4">
               <Separator className="my-4">
                 <span className="text-[hsl(var(--muted-foreground))] px-2">
-                  {translate("pages.register.divider", "or")}
+                  {translate("pages.auth.divider", "or")}
                 </span>
               </Separator>
             </div>
@@ -131,14 +131,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  {translate("pages.register.fields.email", "Email")}
+                  {translate("common.fields.email", "Email")}
                 </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   placeholder={translate(
-                    "pages.register.fields.emailPlaceholder",
+                    "pages.auth.emailPlaceholder",
                     "you@example.com",
                   )}
                   required
@@ -147,14 +147,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">
-                  {translate("pages.register.fields.password")}
+                  {translate("common.fields.password")}
                 </Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   placeholder={translate(
-                    "pages.register.fields.passwordPlaceholder",
+                    "pages.auth.passwordPlaceholder",
                     "••••••••",
                   )}
                   required
@@ -168,7 +168,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 disabled={isLoading}
               >
                 {isLoading
-                  ? translate("pages.register.buttons.loading", "Loading...")
+                  ? translate("pages.auth.loading", "Loading...")
                   : translate("pages.register.buttons.submit", "Sign up")}
               </Button>
             </div>
@@ -186,7 +186,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               to="/login"
               className="font-medium text-[hsl(var(--primary))] hover:underline"
             >
-              {translate("pages.register.signin", "Sign in")}
+              {translate("pages.auth.signIn", "Sign in")}
             </ActiveLink>
           </div>
         )}

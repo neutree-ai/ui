@@ -99,7 +99,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="relative my-4">
               <Separator className="my-4">
                 <span className="text-[hsl(var(--muted-foreground))] px-2">
-                  {translate("pages.login.divider", "or")}
+                  {translate("pages.auth.divider", "or")}
                 </span>
               </Separator>
             </div>
@@ -139,14 +139,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  {translate("pages.login.fields.email", "Email")}
+                  {translate("common.fields.email", "Email")}
                 </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   placeholder={translate(
-                    "pages.login.fields.emailPlaceholder",
+                    "pages.auth.emailPlaceholder",
                     "you@example.com",
                   )}
                   required
@@ -156,14 +156,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">
-                  {translate("pages.login.fields.password")}
+                  {translate("common.fields.password")}
                 </Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   placeholder={translate(
-                    "pages.login.fields.passwordPlaceholder",
+                    "pages.auth.passwordPlaceholder",
                     "••••••••",
                   )}
                   required
@@ -201,8 +201,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 disabled={isLoading}
               >
                 {isLoading
-                  ? translate("pages.login.buttons.loading", "Loading...")
-                  : translate("pages.login.signin", "Sign in")}
+                  ? translate("pages.auth.loading", "Loading...")
+                  : translate("pages.auth.signIn", "Sign in")}
               </Button>
             </div>
           </form>

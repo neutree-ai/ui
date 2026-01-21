@@ -96,7 +96,7 @@ const RayDashboardTab = ({
       className="w-full h-full"
       onLoad={handleIframeLoad}
       ref={iframeRef}
-      title={t("endpoints.tabs.rayDashboard")}
+      title={t("common.tabs.rayDashboard")}
     />
   );
 };
@@ -167,18 +167,18 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     >
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
-          <TabsTrigger value="basic">{t("endpoints.tabs.basic")}</TabsTrigger>
+          <TabsTrigger value="basic">{t("common.tabs.basic")}</TabsTrigger>
           {shouldShowRayDashboard && (
             <TabsTrigger value="ray">
-              {t("endpoints.tabs.rayDashboard")}
+              {t("common.tabs.rayDashboard")}
             </TabsTrigger>
           )}
           {showMonitorTab && (
             <TabsTrigger value="monitor">
-              {t("endpoints.tabs.monitor")}
+              {t("common.tabs.monitor")}
             </TabsTrigger>
           )}
-          <TabsTrigger value="logs">{t("endpoints.tabs.logs")}</TabsTrigger>
+          <TabsTrigger value="logs">{t("common.tabs.logs")}</TabsTrigger>
           <TabsTrigger value="playground">
             {t("endpoints.tabs.playground")}
           </TabsTrigger>
@@ -191,7 +191,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <Card className="mt-4">
             <CardContent>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={t("endpoints.fields.status")}>
+                <ShowPage.Row title={t("common.fields.status")}>
                   <EndpointStatus {...record.status} />
                 </ShowPage.Row>
                 <ShowPage.Row
@@ -206,7 +206,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 />
               </div>
               <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={t("endpoints.fields.cluster")}>
+                <ShowPage.Row title={t("common.fields.cluster")}>
                   <ShowButton
                     recordItemId={record.spec.cluster}
                     meta={{
@@ -218,16 +218,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     {record.spec.cluster}
                   </ShowButton>
                 </ShowPage.Row>
-                <ShowPage.Row title={t("endpoints.fields.engine")}>
+                <ShowPage.Row title={t("common.fields.engine")}>
                   <EndpointEngine {...record} />
                 </ShowPage.Row>
                 <div>
-                  <ShowPage.Row title={t("endpoints.fields.model")}>
+                  <ShowPage.Row title={t("common.fields.model")}>
                     <EndpointModel model={record.spec.model} />
                   </ShowPage.Row>
                 </div>
                 <div>
-                  <ShowPage.Row title={t("endpoints.fields.task")}>
+                  <ShowPage.Row title={t("common.fields.task")}>
                     <ModelTask task={record.spec.model.task} />
                   </ShowPage.Row>
                 </div>
@@ -242,7 +242,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <ResourcesCard
             resources={record.spec.resources}
             showGpuConditionally={true}
-            titleTranslationKey="endpoints.fields.resources"
+            titleTranslationKey="common.fields.resources"
           />
           <DeploymentConfigCard
             replicas={record.spec.replicas}

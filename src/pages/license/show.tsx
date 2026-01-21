@@ -91,7 +91,7 @@ export const LicenseShow: React.FC = () => {
                 {/* Status */}
                 <div className="flex items-center gap-2">
                   <Label className="text-base font-semibold min-w-[120px]">
-                    {t("license.fields.status")}:
+                    {t("common.fields.status")}:
                   </Label>
                   <span
                     className={cn(
@@ -233,7 +233,7 @@ export const LicenseShow: React.FC = () => {
                       {license.status.usage.Workspace && (
                         <div className="space-y-1">
                           <Label className="text-sm text-muted-foreground">
-                            {t("license.usage.workspace")}
+                            {t("common.fields.workspace")}
                           </Label>
                           <div className="text-base">
                             {license.status.usage.Workspace.used} /{" "}

@@ -123,7 +123,7 @@ const ResourceNode = ({
         <h3 className="font-medium">{formatResourceName(resource)}</h3>
 
         <Badge variant="outline" className="ml-2">
-          {sortedActions.length} {t("roles.fields.permissions")}
+          {sortedActions.length} {t("common.fields.permissions")}
         </Badge>
       </div>
 

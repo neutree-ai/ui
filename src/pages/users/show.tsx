@@ -32,7 +32,7 @@ export const UsersShow = () => {
       <Card className="mt-4">
         <CardContent className="pt-6">
           <ShowPage.Row
-            title={t("user_profiles.fields.email")}
+            title={t("common.fields.email")}
             children={record.spec.email}
           />
         </CardContent>

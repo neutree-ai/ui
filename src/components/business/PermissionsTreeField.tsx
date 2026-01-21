@@ -238,7 +238,7 @@ const ResourceNode = ({
 
           <Badge variant="outline" className="ml-2">
             {selectedActions.length}/{sortedActions.length}{" "}
-            {t("roles.fields.permissions")}
+            {t("common.fields.permissions")}
           </Badge>
         </div>
       </div>

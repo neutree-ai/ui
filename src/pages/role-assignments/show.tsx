@@ -35,7 +35,7 @@ export const RoleAssignmentsShow = () => {
       <Card className="mt-4">
         <CardContent>
           <div className="grid grid-cols-4 gap-8">
-            <ShowPage.Row title={t("role_assignments.fields.workspace")}>
+            <ShowPage.Row title={t("common.fields.workspace")}>
               {record.spec.global ? (
                 "*"
               ) : record.spec.workspace ? (
@@ -49,7 +49,7 @@ export const RoleAssignmentsShow = () => {
                 </ShowButton>
               ) : null}
             </ShowPage.Row>
-            <ShowPage.Row title={t("role_assignments.fields.role")}>
+            <ShowPage.Row title={t("common.fields.role")}>
               <ShowButton
                 recordItemId={record.spec.role}
                 meta={{}}
@@ -59,7 +59,7 @@ export const RoleAssignmentsShow = () => {
                 {record.spec.role}
               </ShowButton>
             </ShowPage.Row>
-            <ShowPage.Row title={t("role_assignments.fields.user")}>
+            <ShowPage.Row title={t("common.fields.user")}>
               <UserCell id={record.spec.user_id} />
             </ShowPage.Row>
           </div>

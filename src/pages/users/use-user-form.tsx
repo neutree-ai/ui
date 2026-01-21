@@ -36,20 +36,12 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     registerFields: isEdit ? null : (
       <FormCardGrid>
-        <Field
-          {...form}
-          name="name"
-          label={translate("user_profiles.fields.name")}
-        >
+        <Field {...form} name="name" label={translate("common.fields.name")}>
           <Input
             placeholder={translate("user_profiles.placeholders.userName")}
           />
         </Field>
-        <Field
-          {...form}
-          name="email"
-          label={translate("user_profiles.fields.email")}
-        >
+        <Field {...form} name="email" label={translate("common.fields.email")}>
           <Input
             placeholder={translate("user_profiles.placeholders.userEmail")}
             type="email"
@@ -58,7 +50,7 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
         <div className="col-span-2" />
         <Field
           {...form}
-          label={translate("user_profiles.fields.password")}
+          label={translate("common.fields.password")}
           {...form.register("password", {
             minLength: {
               value: 6,
@@ -74,14 +66,12 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           {...form.register("confirmPassword", {
             required: {
               value: true,
-              message: translate(
-                "user_profiles.validation.confirmPasswordRequired",
-              ),
+              message: translate("pages.auth.errors.confirmPasswordRequired"),
             },
             validate: (value: string) => {
               return (
                 value === form.getValues("password") ||
-                translate("user_profiles.validation.confirmPasswordNotMatch")
+                translate("pages.auth.errors.confirmPasswordNotMatch")
               );
             },
           })}
@@ -91,11 +81,11 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     metadataFields: (
-      <FormCardGrid title={translate("user_profiles.fields.basicInformation")}>
+      <FormCardGrid title={translate("common.sections.basicInformation")}>
         <Field
           {...form}
           name="metadata.name"
-          label={translate("user_profiles.fields.name")}
+          label={translate("common.fields.name")}
         >
           <Input
             placeholder={translate("user_profiles.placeholders.userName")}
@@ -109,7 +99,7 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
         <Field
           {...form}
           name="spec.email"
-          label={translate("user_profiles.fields.email")}
+          label={translate("common.fields.email")}
         >
           <Input type="email" />
         </Field>

@@ -27,7 +27,7 @@ export const ImageRegistriesShow = () => {
       <MetadataCard metadata={record.metadata} />
       <Card className="mt-4">
         <CardContent>
-          <ShowPage.Row title={t("image_registries.fields.status")}>
+          <ShowPage.Row title={t("common.fields.status")}>
             <ImageRegistryStatus {...record.status} />
           </ShowPage.Row>
           <div className="grid grid-cols-4 gap-8">

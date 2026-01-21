@@ -257,7 +257,7 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
                     : t("components.playground.rerank.rerank")}
                 </Button>
                 <Button type="button" variant="outline" onClick={clearAll}>
-                  {t("components.playground.rerank.clear")}
+                  {t("buttons.clear")}
                 </Button>
               </div>
             </div>

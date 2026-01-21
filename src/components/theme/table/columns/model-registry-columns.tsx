@@ -9,7 +9,7 @@ export const useModelRegistryColumns = () => {
   return {
     type: (
       <Table.Column
-        header={t("table.column.type")}
+        header={t("common.fields.type")}
         accessorKey="spec.type"
         id="type"
         enableHiding
@@ -21,7 +21,7 @@ export const useModelRegistryColumns = () => {
     ),
     status: (
       <Table.Column
-        header={t("table.column.status")}
+        header={t("common.fields.status")}
         accessorKey="status"
         id="status"
         enableHiding

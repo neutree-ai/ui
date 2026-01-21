@@ -10,7 +10,7 @@ export const useClusterColumns = () => {
   return {
     type: (
       <Table.Column
-        header={t("table.column.type")}
+        header={t("common.fields.type")}
         accessorKey="spec.type"
         id="type"
         enableHiding
@@ -22,7 +22,7 @@ export const useClusterColumns = () => {
     ),
     image_registry: (
       <Table.Column
-        header={t("table.column.imageRegistry")}
+        header={t("common.fields.imageRegistry")}
         accessorKey="spec.image_registry"
         id="registry"
         enableHiding
@@ -45,7 +45,7 @@ export const useClusterColumns = () => {
     ),
     status: (
       <Table.Column
-        header={t("table.column.status")}
+        header={t("common.fields.status")}
         accessorKey="status"
         id="status"
         enableHiding

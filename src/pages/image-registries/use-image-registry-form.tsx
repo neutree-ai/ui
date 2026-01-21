@@ -70,12 +70,8 @@ export const useImageRegistryForm = ({
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={t("image_registries.fields.basicInformation")}>
-        <Field
-          {...form}
-          name="metadata.name"
-          label={t("image_registries.fields.name")}
-        >
+      <FormCardGrid title={t("common.sections.basicInformation")}>
+        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
           <Input
             placeholder={t("image_registries.placeholders.registryName")}
             disabled={isEdit}
@@ -84,7 +80,7 @@ export const useImageRegistryForm = ({
         <Field
           {...form}
           name="metadata.workspace"
-          label={t("image_registries.fields.workspace")}
+          label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
         </Field>
@@ -92,7 +88,7 @@ export const useImageRegistryForm = ({
     ),
     specFields: (
       <>
-        <FormCardGrid title={t("image_registries.fields.imageRegistry")}>
+        <FormCardGrid title={t("common.fields.imageRegistry")}>
           <Field
             {...form}
             name="spec.url"

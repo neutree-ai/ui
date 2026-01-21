@@ -12,7 +12,7 @@ export const useEndpointColumns = () => {
   return {
     model: (
       <Table.Column
-        header={t("table.column.model")}
+        header={t("common.fields.model")}
         accessorKey="status"
         id="model"
         enableHiding
@@ -24,7 +24,7 @@ export const useEndpointColumns = () => {
     ),
     engine: (
       <Table.Column
-        header={t("table.column.engine")}
+        header={t("common.fields.engine")}
         accessorKey="spec.engine.engine"
         id="engine"
         enableHiding
@@ -35,7 +35,7 @@ export const useEndpointColumns = () => {
     ),
     status: (
       <Table.Column
-        header={t("table.column.status")}
+        header={t("common.fields.status")}
         accessorKey="status"
         id="status"
         enableHiding
@@ -46,7 +46,7 @@ export const useEndpointColumns = () => {
     ),
     cluster: (
       <Table.Column
-        header={t("table.column.cluster")}
+        header={t("common.fields.cluster")}
         accessorKey="spec.cluster"
         id="cluster"
         enableHiding
@@ -72,7 +72,7 @@ export const useEndpointColumns = () => {
     ),
     task: (
       <Table.Column
-        header={t("table.column.task")}
+        header={t("common.fields.task")}
         accessorKey="spec.model.task"
         id="task"
         enableHiding

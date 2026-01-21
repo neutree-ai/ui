@@ -50,12 +50,8 @@ export const useRoleAssignmentForm = ({
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={t("role_assignments.fields.basicInformation")}>
-        <Field
-          {...form}
-          name="metadata.name"
-          label={t("role_assignments.fields.name")}
-        >
+      <FormCardGrid title={t("common.sections.basicInformation")}>
+        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
           <Input
             placeholder={t("role_assignments.placeholders.policyName")}
             disabled={isEdit}
@@ -65,11 +61,7 @@ export const useRoleAssignmentForm = ({
     ),
     specFields: (
       <FormCardGrid title={t("role_assignments.fields.policy")}>
-        <Field
-          {...form}
-          name="spec.user_id"
-          label={t("role_assignments.fields.user")}
-        >
+        <Field {...form} name="spec.user_id" label={t("common.fields.user")}>
           <Combobox
             placeholder={t("role_assignments.placeholders.selectUser")}
             disabled={users.query.isLoading}
@@ -79,11 +71,7 @@ export const useRoleAssignmentForm = ({
             }))}
           />
         </Field>
-        <Field
-          {...form}
-          name="spec.role"
-          label={t("role_assignments.fields.role")}
-        >
+        <Field {...form} name="spec.role" label={t("common.fields.role")}>
           <Combobox
             placeholder={t("role_assignments.placeholders.selectRole")}
             disabled={roles.query.isLoading}
@@ -119,7 +107,7 @@ export const useRoleAssignmentForm = ({
         <Field
           {...form}
           name="spec.workspace"
-          label={t("role_assignments.fields.workspace")}
+          label={t("common.fields.workspace")}
           className={global ? "hidden" : ""}
         >
           <WorkspaceField />

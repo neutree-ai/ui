@@ -10,11 +10,40 @@
 			"acceleratorProduct": "Accelerator Product",
 			"replica": "Replica",
 			"scheduler": "Scheduler",
-			"variables": "Variables"
+			"variables": "Variables",
+			"name": "Name",
+			"workspace": "Workspace",
+			"createdAt": "Created at",
+			"updatedAt": "Updated at",
+			"type": "Type",
+			"imageRegistry": "Image Registry",
+			"status": "Status",
+			"model": "Model",
+			"engine": "Engine",
+			"cluster": "Cluster",
+			"task": "Task",
+			"versions": "Versions",
+			"role": "Role",
+			"user": "User",
+			"email": "Email",
+			"password": "Password",
+			"permissions": "Permissions",
+			"permissionsCount": "{{count}} permissions",
+			"labels": "Labels",
+			"annotations": "Annotations"
+		},
+		"sections": {
+			"basicInformation": "Basic Information"
 		},
 		"messages": {
 			"grafanaNotConfigured": "Grafana monitoring is not configured.",
 			"leaveEmptyToKeepValue": "Leave empty to keep existing value"
+		},
+		"tabs": {
+			"basic": "Basic",
+			"monitor": "Monitor",
+			"logs": "Logs",
+			"rayDashboard": "Ray Dashboard"
 		}
 	},
 	"appearance": {
@@ -36,83 +65,52 @@
 		}
 	},
 	"pages": {
-		"login": {
-			"title": "Sign in to your account",
-			"signin": "Sign in",
-			"signup": "Sign up",
+		"auth": {
+			"loading": "Loading...",
+			"signIn": "Sign in",
 			"divider": "or",
-			"fields": {
-				"email": "Email",
-				"password": "Password",
-				"emailPlaceholder": "you@example.com",
-				"passwordPlaceholder": "••••••••"
-			},
+			"emailPlaceholder": "you@example.com",
+			"passwordPlaceholder": "••••••••",
 			"errors": {
 				"validEmail": "Invalid email address",
 				"requiredEmail": "Email is required",
-				"requiredPassword": "Password is required"
-			},
+				"requiredPassword": "Password is required",
+				"confirmPasswordNotMatch": "Passwords do not match",
+				"confirmPasswordRequired": "Confirm password is required"
+			}
+		},
+		"login": {
+			"title": "Sign in to your account",
+			"signup": "Sign up",
 			"buttons": {
 				"submit": "Login",
 				"forgotPassword": "Forgot password?",
 				"noAccount": "Don't have an account?",
-				"rememberMe": "Remember me",
-				"loading": "Loading..."
+				"rememberMe": "Remember me"
 			}
 		},
 		"forgotPassword": {
 			"title": "Forgot your password?",
-			"signin": "Sign in",
-			"fields": {
-				"email": "Email",
-				"emailPlaceholder": "you@example.com"
-			},
-			"errors": {
-				"validEmail": "Invalid email address",
-				"requiredEmail": "Email is required"
-			},
 			"buttons": {
 				"submit": "Send reset instructions",
-				"backLogin": "Back to login",
-				"loading": "Loading..."
+				"backLogin": "Back to login"
 			}
 		},
 		"register": {
 			"title": "Sign up for your account",
-			"signin": "Sign in",
-			"divider": "or",
-			"fields": {
-				"email": "Email",
-				"password": "Password",
-				"emailPlaceholder": "you@example.com",
-				"passwordPlaceholder": "••••••••"
-			},
-			"errors": {
-				"validEmail": "Invalid email address",
-				"requiredEmail": "Email is required",
-				"requiredPassword": "Password is required"
-			},
 			"buttons": {
 				"submit": "Sign up",
-				"haveAccount": "Have an account?",
-				"loading": "Loading..."
+				"haveAccount": "Have an account?"
 			}
 		},
 		"updatePassword": {
 			"title": "Set New Password",
 			"fields": {
 				"password": "New Password",
-				"confirmPassword": "Confirm New Password",
-				"passwordPlaceholder": "••••••••"
-			},
-			"errors": {
-				"confirmPasswordNotMatch": "Passwords do not match",
-				"requiredPassword": "Password required",
-				"requiredConfirmPassword": "Confirm password is required"
+				"confirmPassword": "Confirm New Password"
 			},
 			"buttons": {
-				"submit": "Update",
-				"loading": "Loading..."
+				"submit": "Update"
 			}
 		},
 		"error": {
@@ -191,6 +189,7 @@
 		"delete": "Delete",
 		"edit": "Edit",
 		"cancel": "Cancel",
+		"close": "Close",
 		"confirm": "Are you sure?",
 		"filter": "Filter",
 		"clear": "Clear",
@@ -258,27 +257,6 @@
 			"goToPreviousPage": "Go to previous page",
 			"goToNextPage": "Go to next page",
 			"goToLastPage": "Go to last page"
-		},
-		"column": {
-			"name": "Name",
-			"workspace": "Workspace",
-			"creation_timestamp": "Created at",
-			"update_timestamp": "Updated at",
-			"type": "Type",
-			"imageRegistry": "Image Registry",
-			"status": "Status",
-			"model": "Model",
-			"engine": "Engine",
-			"cluster": "Cluster",
-			"task": "Task",
-			"versions": "Versions",
-			"role": "Role",
-			"user": "User",
-			"email": "Email",
-			"permissions": "Permissions",
-			"permissionsCount": "{{count}} permissions",
-			"labels": "Labels",
-			"annotations": "Annotations"
 		}
 	},
 	"documentTitle": {
@@ -303,10 +281,6 @@
 	},
 	"workspaces": {
 		"title": "Workspaces",
-		"fields": {
-			"name": "Name",
-			"basicInformation": "Basic Information"
-		},
 		"placeholders": {
 			"workspaceName": "Workspace Name",
 			"selectWorkspace": "Select a workspace"
@@ -319,28 +293,14 @@
 		"title": "Clusters",
 		"create": "Create Cluster",
 		"edit": "Edit Cluster",
-		"tabs": {
-			"basic": "Basic",
-			"monitor": "Monitor",
-			"rayDashboard": "Ray Dashboard",
-			"logs": "Logs"
-		},
 		"fields": {
-			"status": "Status",
-			"type": "Type",
-			"imageRegistry": "Image Registry",
 			"accessMode": "Access Mode",
 			"headIp": "Head IP",
 			"workerIps": "Worker IPs",
-			"name": "Name",
 			"nodeName": "Node",
 			"usedSlashTotal": "used / total",
-			"workspace": "Workspace",
 			"kubeconfig": "Kubeconfig",
-			"acceleratorType": "Accelerator Type",
 			"acceleratorCount": "Accelerator Count",
-			"cpu": "CPU",
-			"memory": "Memory",
 			"replicas": "Replicas",
 			"sshHeadNodeIP": "Head Node IP",
 			"sshWorkerNodeIPs": "Worker Node IPs",
@@ -353,7 +313,6 @@
 					"nfs": "NFS",
 					"pvc": "PVC"
 				},
-				"name": "Name",
 				"cacheType": "Cache Type",
 				"modelRegistry": "Model Registry",
 				"cachePath": "Cache Path",
@@ -367,7 +326,6 @@
 			"amd_gpu": "AMD GPU"
 		},
 		"sections": {
-			"basicInformation": "Basic Information",
 			"clusterType": "Cluster Type",
 			"provider": "Provider",
 			"headNode": "Head Node",
@@ -375,7 +333,6 @@
 			"router": "Router",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
-			"resources": "Resources",
 			"nodes": "Nodes"
 		},
 		"placeholders": {
@@ -406,7 +363,6 @@
 		},
 		"messages": {
 			"notFound": "404 not found",
-			"rayDashboardTitle": "Ray Dashboard",
 			"sshEmptyWorkerNodeIPs": "No worker nodes added",
 			"noModelCaches": "No model caches"
 		},
@@ -429,12 +385,7 @@
 	"model_registries": {
 		"title": "Model Registries",
 		"fields": {
-			"basicInformation": "Basic Information",
 			"modelRegistry": "Model Registry",
-			"name": "Name",
-			"workspace": "Workspace",
-			"status": "Status",
-			"type": "Type",
 			"url": "URL",
 			"credentials": "Credentials"
 		},
@@ -460,26 +411,15 @@
 	"model_catalogs": {
 		"title": "Model Catalogs",
 		"fields": {
-			"status": "Status",
 			"lastTransition": "Last Transition",
 			"errorMessage": "Error Message",
-			"engine": "Engine",
-			"model": "Model",
-			"task": "Task",
 			"registry": "Registry",
-			"modelFile": "Model File",
-			"resources": "Resources",
-			"acceleratorType": "Accelerator Type",
-			"acceleratorProduct": "Accelerator Product"
+			"modelFile": "Model File"
 		}
 	},
 	"image_registries": {
 		"title": "Image Registries",
 		"fields": {
-			"basicInformation": "Basic Information",
-			"name": "Name",
-			"workspace": "Workspace",
-			"imageRegistry": "Image Registry",
 			"url": "URL",
 			"repository": "Repository",
 			"certificateAuthority": "Certificate Authority",
@@ -487,7 +427,6 @@
 			"username": "Username",
 			"password": "Password",
 			"base64Auth": "Base64 Auth",
-			"status": "Status",
 			"repo": "Repo"
 		},
 		"placeholders": {
@@ -502,9 +441,7 @@
 	"engines": {
 		"title": "Engines",
 		"fields": {
-			"status": "Status",
 			"supportedTasks": "Supported Tasks",
-			"versions": "Versions",
 			"engineVersion": "Engine Version",
 			"valuesSchema": "Values Schema"
 		}
@@ -512,17 +449,8 @@
 	"endpoints": {
 		"title": "Endpoints",
 		"fields": {
-			"status": "Status",
 			"serviceUrl": "Service URL",
-			"cluster": "Cluster",
-			"engine": "Engine",
-			"model": "Model",
-			"task": "Task",
-			"resources": "Resources",
 			"npu": "NPU",
-			"cpu": "CPU",
-			"name": "Name",
-			"workspace": "Workspace",
 			"modelRegistry": "Model Registry",
 			"modelCatalog": "Model Catalog (Template)",
 			"memoryGb": "Memory (GB)",
@@ -538,12 +466,9 @@
 			"engineVariables": "Engine Variables",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
-			"acceleratorType": "Accelerator Type",
-			"acceleratorProduct": "Accelerator Product",
 			"accelerator": "Accelerator"
 		},
 		"sections": {
-			"basicInformation": "Basic Information",
 			"templateSelection": "Template Selection",
 			"configuration": "Configuration",
 			"resourceSettings": "Resource Settings",
@@ -590,10 +515,6 @@
 			"noAcceleratorsAvailable": "No accelerators available in this cluster"
 		},
 		"tabs": {
-			"basic": "Basic",
-			"rayDashboard": "Ray Dashboard",
-			"monitor": "Monitor",
-			"logs": "Logs",
 			"playground": "Playground"
 		},
 		"monitor": {
@@ -603,7 +524,6 @@
 			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization"
 		},
 		"logs": {
-			"logs": "Logs",
 			"application": "Application",
 			"stderr": "Stderr",
 			"stdout": "Stdout",
@@ -621,11 +541,7 @@
 		"create": "Create User",
 		"edit": "Edit User",
 		"fields": {
-			"name": "Name",
-			"email": "Email",
-			"password": "Password",
-			"confirmPassword": "Confirm Password",
-			"basicInformation": "Basic Information"
+			"confirmPassword": "Confirm Password"
 		},
 		"placeholders": {
 			"userName": "User Name",
@@ -636,18 +552,11 @@
 			"joinedWorkspaces": "Joined Workspaces"
 		},
 		"validation": {
-			"confirmPasswordRequired": "Confirm password is required",
-			"confirmPasswordNotMatch": "Passwords do not match",
 			"passwordMinLength": "Password must be at least 6 characters"
 		}
 	},
 	"roles": {
 		"title": "Roles",
-		"fields": {
-			"name": "Name",
-			"permissions": "Permissions",
-			"basicInformation": "Basic Information"
-		},
 		"placeholders": {
 			"roleName": "Role Name"
 		}
@@ -655,12 +564,7 @@
 	"role_assignments": {
 		"title": "Workspace Policies",
 		"fields": {
-			"basicInformation": "Basic Information",
 			"policy": "Policy",
-			"name": "Name",
-			"workspace": "Workspace",
-			"role": "Role",
-			"user": "User",
 			"policyScope": "Policy Scope"
 		},
 		"placeholders": {
@@ -680,8 +584,6 @@
 		"title": "API key",
 		"create": "Create API Key",
 		"fields": {
-			"name": "Name",
-			"workspace": "Workspace",
 			"secretKey": "Secret Key",
 			"date": "Date",
 			"endpoint": "Endpoint",
@@ -699,8 +601,6 @@
 		"buttons": {
 			"copy": "Copy",
 			"copied": "Copied",
-			"close": "Close",
-			"cancel": "Cancel",
 			"create": "Create"
 		},
 		"usage": {
@@ -730,9 +630,6 @@
 				"headings": {
 					"suggestions": "Suggestions"
 				}
-			},
-			"dialog": {
-				"close": "Close"
 			},
 			"sidebar": {
 				"title": "Sidebar",
@@ -768,7 +665,6 @@
 			"successfullyCreated": "Successfully created",
 			"skippedExisting": "Skipped (already exists)",
 			"importMore": "Import More",
-			"close": "Close",
 			"errors": {
 				"processingYamlContent": "Error processing YAML content",
 				"invalidResourceStructure": "Invalid resource structure",
@@ -802,7 +698,6 @@
 			"yamlContentPlaceholder": "Generated YAML content will appear here...",
 			"backToSelection": "Back to Selection",
 			"reset": "Reset",
-			"close": "Close",
 			"copySuccess": "Copied to clipboard",
 			"copySuccessDescription": "YAML content has been copied to your clipboard",
 			"downloadSuccess": "File downloaded",
@@ -865,9 +760,6 @@
 				"chooseExample": "Choose Example",
 				"weatherFunction": "Weather Function",
 				"stockPriceFunction": "Stock Price Function",
-				"add": "Add",
-				"save": "Save",
-				"cancel": "Cancel",
 				"delete": "Delete",
 				"noFunctions": "No functions defined. Click 'Create Function' to add one.",
 				"invalidJsonSchema": "Invalid JSON schema",
@@ -884,7 +776,6 @@
 			"embedding": {
 				"title": "Embedding",
 				"generate": "Generate",
-				"clear": "Clear",
 				"selectModel": "Select a model",
 				"selectModelFirst": "Please select a model first",
 				"batchInputMode": "Batch Input Mode",
@@ -899,7 +790,6 @@
 				"title": "Reranking",
 				"processing": "Processing...",
 				"rerank": "Rerank",
-				"clear": "Clear",
 				"model": "Model",
 				"query": "Query",
 				"selectModel": "Select a reranker model",
@@ -955,7 +845,6 @@
 			"reverse": "Reverse",
 			"startTime": "Start",
 			"endTime": "End",
-			"refresh": "Refresh",
 			"download": "Download",
 			"fontSize": "Font Size",
 			"noLogs": "No logs available",
@@ -1069,7 +958,6 @@
 		"unlimited": "Unlimited",
 		"permanent": "Permanent",
 		"fields": {
-			"status": "Status",
 			"edition": "Edition",
 			"vendor": "Vendor",
 			"licenseType": "License Type",
@@ -1081,8 +969,7 @@
 			"serial": "Serial Number"
 		},
 		"usage": {
-			"title": "Resource Usage",
-			"workspace": "Workspace"
+			"title": "Resource Usage"
 		},
 		"update": {
 			"title": "Update License",

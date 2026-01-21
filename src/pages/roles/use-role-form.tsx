@@ -30,11 +30,11 @@ export const useRoleForm = ({ action }: { action: "create" | "edit" }) => {
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={translate("roles.fields.basicInformation")}>
+      <FormCardGrid title={translate("common.sections.basicInformation")}>
         <Field
           {...form}
           name="metadata.name"
-          label={translate("roles.fields.name")}
+          label={translate("common.fields.name")}
         >
           <Input
             placeholder={translate("roles.placeholders.roleName")}
@@ -44,7 +44,7 @@ export const useRoleForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     specFields: (
-      <FormCardGrid title={translate("roles.fields.permissions")}>
+      <FormCardGrid title={translate("common.fields.permissions")}>
         <Field {...form} name="spec.permissions" className="col-span-4">
           <PermissionsTreeField />
         </Field>

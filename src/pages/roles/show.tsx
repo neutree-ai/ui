@@ -29,7 +29,7 @@ export const RolesShow = () => {
         <MetadataCard metadata={record.metadata} />
         <Card className="mt-4">
           <CardHeader>
-            <CardTitle>{translate("roles.fields.permissions")}</CardTitle>
+            <CardTitle>{translate("common.fields.permissions")}</CardTitle>
           </CardHeader>
           <CardContent>
             <PermissionsTree permissions={record.spec.permissions} />

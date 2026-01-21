@@ -418,12 +418,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={t("endpoints.sections.basicInformation")}>
-        <Field
-          {...form}
-          name="metadata.name"
-          label={t("endpoints.fields.name")}
-        >
+      <FormCardGrid title={t("common.sections.basicInformation")}>
+        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
           <Input
             placeholder={t("endpoints.placeholders.endpointName")}
             disabled={isEdit}
@@ -432,7 +428,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         <Field
           {...form}
           name="metadata.workspace"
-          label={t("endpoints.fields.workspace")}
+          label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
         </Field>
@@ -447,11 +443,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             : t("endpoints.sections.templateSelection")
         }
       >
-        <Field
-          {...form}
-          name="spec.cluster"
-          label={t("endpoints.fields.cluster")}
-        >
+        <Field {...form} name="spec.cluster" label={t("common.fields.cluster")}>
           <Combobox
             disabled={clusters.query.isLoading}
             placeholder={t("endpoints.placeholders.selectCluster")}
@@ -508,7 +500,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         <Field
           {...form}
           name="spec.resources.cpu"
-          label={t("endpoints.fields.cpu")}
+          label={t("common.fields.cpu")}
           className="col-span-2"
         >
           <SliderWithInput
@@ -716,7 +708,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             <Field
               {...form}
               name="spec.engine.engine"
-              label={t("endpoints.fields.engine")}
+              label={t("common.fields.engine")}
             >
               <Combobox
                 placeholder={t("endpoints.placeholders.selectEngine")}

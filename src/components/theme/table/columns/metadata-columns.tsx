@@ -20,7 +20,7 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
   return {
     name: (
       <Table.Column
-        header={translate("table.column.name")}
+        header={translate("common.fields.name")}
         accessorKey="metadata.name"
         id="metadata->name"
         enableSorting
@@ -43,7 +43,7 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
     ),
     workspace: (
       <Table.Column
-        header={translate("table.column.workspace")}
+        header={translate("common.fields.workspace")}
         accessorKey="metadata.workspace"
         id="workspace"
         enableHiding
@@ -64,7 +64,7 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
     ),
     creation_timestamp: (
       <Table.Column
-        header={translate("table.column.creation_timestamp")}
+        header={translate("common.fields.createdAt")}
         accessorKey="metadata.creation_timestamp"
         id="metadata->creation_timestamp"
         enableSorting
@@ -77,7 +77,7 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
     ),
     update_timestamp: (
       <Table.Column
-        header={translate("table.column.update_timestamp")}
+        header={translate("common.fields.updatedAt")}
         accessorKey="metadata.update_timestamp"
         id="metadata->update_timestamp"
         enableSorting

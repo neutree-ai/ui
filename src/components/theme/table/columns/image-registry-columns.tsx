@@ -8,7 +8,7 @@ export const useImageRegistryColumns = () => {
   return {
     status: (
       <Table.Column
-        header={t("table.column.status")}
+        header={t("common.fields.status")}
         accessorKey="status"
         id="status"
         enableHiding

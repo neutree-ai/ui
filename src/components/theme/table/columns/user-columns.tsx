@@ -7,7 +7,7 @@ export const useUserColumns = () => {
   return {
     email: (
       <Table.Column
-        header={t("table.column.email")}
+        header={t("common.fields.email")}
         accessorKey="spec.email"
         id="email"
         enableHiding

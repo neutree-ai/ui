@@ -62,12 +62,8 @@ export const useModelRegistryForm = ({
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={t("model_registries.fields.basicInformation")}>
-        <Field
-          {...form}
-          name="metadata.name"
-          label={t("model_registries.fields.name")}
-        >
+      <FormCardGrid title={t("common.sections.basicInformation")}>
+        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
           <Input
             placeholder={t("model_registries.placeholders.registryName")}
             disabled={isEdit}
@@ -76,7 +72,7 @@ export const useModelRegistryForm = ({
         <Field
           {...form}
           name="metadata.workspace"
-          label={t("model_registries.fields.workspace")}
+          label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
         </Field>
@@ -84,11 +80,7 @@ export const useModelRegistryForm = ({
     ),
     specFields: (
       <FormCardGrid title={t("model_registries.fields.modelRegistry")}>
-        <Field
-          {...form}
-          name="spec.type"
-          label={t("model_registries.fields.type")}
-        >
+        <Field {...form} name="spec.type" label={t("common.fields.type")}>
           <Select
             placeholder={t("model_registries.placeholders.selectType")}
             options={[

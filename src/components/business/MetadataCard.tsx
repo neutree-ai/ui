@@ -70,12 +70,12 @@ export default function MetadataCard({ metadata }: MetadataCardProps) {
       <CardContent>
         <div className="grid grid-cols-4 gap-8">
           <ShowPage.Row
-            title={translate("table.column.name")}
+            title={translate("common.fields.name")}
             children={<span className="break-all">{metadata.name}</span>}
           />
           {metadata.workspace && (
             <ShowPage.Row
-              title={translate("table.column.workspace")}
+              title={translate("common.fields.workspace")}
               children={
                 <ShowButton
                   recordItemId={metadata.workspace}
@@ -91,24 +91,24 @@ export default function MetadataCard({ metadata }: MetadataCardProps) {
         </div>
         <div className="grid grid-cols-4 gap-8">
           <ShowPage.Row
-            title={translate("table.column.creation_timestamp")}
+            title={translate("common.fields.createdAt")}
             children={<Timestamp timestamp={metadata.creation_timestamp} />}
           />
           <ShowPage.Row
-            title={translate("table.column.update_timestamp")}
+            title={translate("common.fields.updatedAt")}
             children={<Timestamp timestamp={metadata.update_timestamp} />}
           />
         </div>
         {metadata.labels && Object.keys(metadata.labels).length > 0 && (
           <ShowPage.Row
-            title={translate("table.column.labels")}
+            title={translate("common.fields.labels")}
             children={<KeyValueTags data={metadata.labels} />}
           />
         )}
         {metadata.annotations &&
           Object.keys(metadata.annotations).length > 0 && (
             <ShowPage.Row
-              title={translate("table.column.annotations")}
+              title={translate("common.fields.annotations")}
               children={<KeyValueTags data={metadata.annotations} />}
             />
           )}

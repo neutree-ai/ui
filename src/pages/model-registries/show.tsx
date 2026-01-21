@@ -29,11 +29,11 @@ export const ModelRegistriesShow = () => {
       <MetadataCard metadata={record.metadata} />
       <Card className="mt-4">
         <CardContent>
-          <ShowPage.Row title={t("model_registries.fields.status")}>
+          <ShowPage.Row title={t("common.fields.status")}>
             <ModelRegistryStatus {...record.status} />
           </ShowPage.Row>
           <div className="grid grid-cols-4 gap-8">
-            <ShowPage.Row title={t("model_registries.fields.type")}>
+            <ShowPage.Row title={t("common.fields.type")}>
               <ModelRegistryType type={record.spec.type} />
             </ShowPage.Row>
             <ShowPage.Row title={t("model_registries.fields.url")}>

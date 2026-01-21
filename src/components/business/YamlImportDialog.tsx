@@ -330,7 +330,7 @@ export const YamlImportDialog = ({
                     setIsOpen(false);
                   }}
                 >
-                  {t("components.yamlImport.close")}
+                  {t("buttons.close")}
                 </Button>
               </div>
             </div>
