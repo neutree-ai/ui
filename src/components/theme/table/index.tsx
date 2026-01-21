@@ -296,7 +296,7 @@ export function Table<
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    {t("table.noResults")}.
+                    {t("table.noResults")}
                   </TableCell>
                 </TableRow>
               )}

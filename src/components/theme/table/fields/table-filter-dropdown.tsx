@@ -96,7 +96,7 @@ export function TableFilterDropdown({
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
-            <CommandEmpty>{t("table.noResultsFound")}.</CommandEmpty>
+            <CommandEmpty>{t("table.noResultsFound")}</CommandEmpty>
             <CommandGroup>
               {options?.map((option) => {
                 const isSelected = selectedValues.has(option.value);
