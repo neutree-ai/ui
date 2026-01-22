@@ -3,7 +3,7 @@ import type { Metadata } from "./basic-types";
 /**
  * License phases as defined in the backend
  */
-export type LicensePhase = "Pending" | "Active" | "Expired";
+export type LicensePhase = "Pending" | "Active" | "Expired" | "Invalid";
 
 /**
  * Resource types that can be tracked in license usage

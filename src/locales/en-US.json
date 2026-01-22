@@ -955,7 +955,8 @@
 		"delete": "Delete",
 		"push": "Push",
 		"pull": "Pull",
-		"system_admin": "System Admin"
+		"system_admin": "System Admin",
+		"read-credentials": "Read Credentials"
 	},
 	"systems": {
 		"title": "Systems"
@@ -998,7 +999,8 @@
 		"phase": {
 			"active": "Active",
 			"expired": "Expired",
-			"pending": "Pending"
+			"pending": "Pending",
+			"invalid": "Invalid"
 		},
 		"edition": {
 			"enterprise": "Enterprise"
