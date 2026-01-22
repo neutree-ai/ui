@@ -36,8 +36,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 // Helper function to validate current usage against available resources
-const validateCurrentUsage = (currentUsage: number, available: number) => {
-  return Number(currentUsage || 0) <= available ? Number(currentUsage || 0) : 0;
+const validateCurrentUsage = (currentUsage: number, total: number) => {
+  return Number(currentUsage || 0) <= total ? Number(currentUsage || 0) : 0;
 };
 
 // Deep merge function for form data with smart overriding
@@ -247,15 +247,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       // Validate currentUsage against single node capacity
       const validCurrentCpu = validateCurrentUsage(
         currentUsage.cpu,
-        singleNodeMax.cpu.available,
+        singleNodeMax.cpu.total,
       );
       const validCurrentMemory = validateCurrentUsage(
         currentUsage.memory,
-        singleNodeMax.memory.available,
-      );
-      const validCurrentGpu = validateCurrentUsage(
-        currentUsage.gpu,
-        singleNodeMax.gpu.available,
+        singleNodeMax.memory.total,
       );
 
       return {
@@ -268,7 +264,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           total: singleNodeMax.memory.total,
         },
         gpu: {
-          available: singleNodeMax.gpu.available + validCurrentGpu,
+          available:
+            singleNodeMax.gpu.available + Number(currentUsage.gpu || 0),
           total: singleNodeMax.gpu.total,
         },
       };
@@ -323,23 +320,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     };
   }, [maxAvailable, cpuUsage, memoryUsage]);
 
-  // Monitor and correct resource values if they exceed available resources
+  // Monitor and correct resource values if they exceed total cluster resources
   useEffect(() => {
-    if (!clusterResources || maxAvailable.cpu.available <= 0) return;
+    if (!clusterResources || maxAvailable.cpu.total <= 0) return;
 
     const currentCpu = form.watch("spec.resources.cpu") || 0;
     const currentMemory = form.watch("spec.resources.memory") || 0;
 
-    if (currentCpu > maxAvailable.cpu.available) {
+    if (currentCpu > maxAvailable.cpu.total) {
       form.setValue("spec.resources.cpu", 0);
     }
-    if (currentMemory > maxAvailable.memory.available) {
-      form.setValue("spec.resources.memory", maxAvailable.memory.available);
+    if (currentMemory > maxAvailable.memory.total) {
+      form.setValue("spec.resources.memory", maxAvailable.memory.total);
     }
   }, [
     clusterResources,
-    maxAvailable.cpu.available,
-    maxAvailable.memory.available,
+    maxAvailable.cpu.total,
+    maxAvailable.memory.total,
     form,
   ]);
 
