@@ -320,26 +320,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     };
   }, [maxAvailable, cpuUsage, memoryUsage]);
 
-  // Monitor and correct resource values if they exceed total cluster resources
-  useEffect(() => {
-    if (!clusterResources || maxAvailable.cpu.total <= 0) return;
-
-    const currentCpu = form.watch("spec.resources.cpu") || 0;
-    const currentMemory = form.watch("spec.resources.memory") || 0;
-
-    if (currentCpu > maxAvailable.cpu.total) {
-      form.setValue("spec.resources.cpu", 0);
-    }
-    if (currentMemory > maxAvailable.memory.total) {
-      form.setValue("spec.resources.memory", maxAvailable.memory.total);
-    }
-  }, [
-    clusterResources,
-    maxAvailable.cpu.total,
-    maxAvailable.memory.total,
-    form,
-  ]);
-
   // Calculate GPU allocation step based on cluster type
   const gpuStep = useMemo(() => {
     const clusterType = selectedCluster?.spec?.type;
