@@ -75,7 +75,7 @@ describe("useEndpointMonitorPanels", () => {
     expect(result.current.selectedPanel).toBe("vllm");
 
     // Remove vllm engine, vllm panel should no longer be available
-    rerender({ clusterType: "ssh", engineType: undefined });
+    rerender({ clusterType: "ssh", engineType: undefined as any });
 
     // Should fallback to first available panel
     expect(result.current.selectedPanel).toBe("endpoint");
