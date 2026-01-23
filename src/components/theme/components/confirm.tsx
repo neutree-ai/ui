@@ -66,7 +66,9 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        {content && <div className="py-2">{content}</div>}
+        {content && (
+          <div className="py-2 max-h-60 overflow-auto">{content}</div>
+        )}
         <AlertDialogFooter>
           <AlertDialogCancel
             variant={cancelButtonVariant}
