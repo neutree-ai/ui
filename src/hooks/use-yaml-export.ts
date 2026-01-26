@@ -1,4 +1,4 @@
-import { useWorkspace } from "@/components/theme/hooks";
+import { ALL_WORKSPACES, useWorkspace } from "@/components/theme/hooks";
 import { useTranslation } from "@/lib/i18n";
 import type { Metadata } from "@/types";
 import { useDataProvider, useResource } from "@refinedev/core";
@@ -185,7 +185,11 @@ export const useYamlExport = () => {
 
       if (useCredentialsApi) {
         const params = new URLSearchParams();
-        if (resourceMeta.workspaced && currentWorkspace) {
+        if (
+          resourceMeta.workspaced &&
+          currentWorkspace &&
+          currentWorkspace !== ALL_WORKSPACES
+        ) {
           params.append(
             "metadata->workspace",
             `eq.${JSON.stringify(currentWorkspace)}`,
@@ -205,7 +209,11 @@ export const useYamlExport = () => {
           ...resourceMeta,
         };
 
-        if (resourceMeta.workspaced && currentWorkspace) {
+        if (
+          resourceMeta.workspaced &&
+          currentWorkspace &&
+          currentWorkspace !== ALL_WORKSPACES
+        ) {
           meta.workspace = currentWorkspace;
         }
 
