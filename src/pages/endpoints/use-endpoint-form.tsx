@@ -148,6 +148,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           }
         });
 
+      // Transform replicas.num to number (HTML input returns string)
+      if (values.spec?.replicas?.num != null) {
+        values.spec.replicas.num = Number(values.spec.replicas.num);
+      }
+
       if (action === "create" && currentRegistry && currentModelName) {
         const modelExists =
           modelsData.data?.data.some(
