@@ -872,6 +872,7 @@
 			"cluster": {
 				"Pending": "Pending",
 				"Running": "Running",
+				"Paused": "Paused",
 				"Failed": "Failed",
 				"Deleted": "Deleted",
 				"Initializing": "Initializing"
