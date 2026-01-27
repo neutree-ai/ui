@@ -276,6 +276,26 @@ export const useYamlExport = () => {
     [resourceTypes, fetchResourceEntities],
   );
 
+  // Reset credential resources when includeCredentials changes
+  // User needs to re-select resources, but this is acceptable since it's a rare operation
+  const resetCredentialResources = useCallback(() => {
+    setResourceTypes((prev) => {
+      const updated = { ...prev };
+      for (const type of CREDENTIAL_RESOURCES) {
+        if (updated[type].loaded) {
+          updated[type] = {
+            ...updated[type],
+            selected: false,
+            loaded: false,
+            entities: [],
+            selectedEntities: new Set(),
+          };
+        }
+      }
+      return updated;
+    });
+  }, []);
+
   // Transform entity to YAML format
   const transformEntityToYaml = useCallback(
     (entity: ResourceEntity, options: ExportOptions) => {
@@ -504,5 +524,6 @@ export const useYamlExport = () => {
     generateYamlContent,
     resetSelections,
     selectAllResources,
+    resetCredentialResources,
   };
 };

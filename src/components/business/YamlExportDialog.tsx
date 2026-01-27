@@ -74,6 +74,7 @@ export const YamlExportDialog = ({
     generateYamlContent,
     resetSelections,
     selectAllResources,
+    resetCredentialResources,
   } = useYamlExport();
 
   useEffect(() => {
@@ -294,12 +295,13 @@ export const YamlExportDialog = ({
                             <Checkbox
                               id="include-credentials"
                               checked={exportOptions.includeCredentials}
-                              onCheckedChange={(checked) =>
+                              onCheckedChange={(checked) => {
                                 setExportOptions((prev) => ({
                                   ...prev,
                                   includeCredentials: !!checked,
-                                }))
-                              }
+                                }));
+                                resetCredentialResources();
+                              }}
                             />
                             <Label
                               htmlFor="include-credentials"
