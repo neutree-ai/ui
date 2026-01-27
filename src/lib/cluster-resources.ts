@@ -119,27 +119,32 @@ export function parseClusterResources(
 }
 
 /**
- * Find the best node for a given accelerator type:product combination.
+ * Find the best node for a given accelerator type:product combination,
+ * or the best node for CPU-only inference when no accelerator is specified.
  *
  * Algorithm:
+ * When acceleratorType is provided:
  * 1. Find all nodes that have the specified accelerator product
  * 2. From those nodes, find the ones with the maximum GPU count (available)
  * 3. Among nodes with max GPU, use (cpu + memory) as a tiebreaker score
  * 4. Return the resources of the best node (both available and total/allocatable)
+ *
+ * When acceleratorType is not provided (CPU-only inference):
+ * 1. Consider all nodes as candidates (gpu is reported as 0)
+ * 2. Select the node with the highest (cpu + memory) available score
  *
  * This is needed because TP (Tensor Parallelism) requires single-node deployment,
  * so the max values should be based on a single node's capacity.
  */
 export function findBestNodeForAccelerator(
   nodeResources: Record<string, ResourceStatus> | null | undefined,
-  acceleratorType: string,
-  acceleratorProduct: string,
+  acceleratorType?: string,
+  acceleratorProduct?: string,
 ): SingleNodeMax | null {
   if (!nodeResources) {
     return null;
   }
 
-  // Step 1: Find nodes with the specified accelerator
   const candidateNodes: Array<{
     nodeName: string;
     gpu: { available: number; total: number };
@@ -147,10 +152,29 @@ export function findBestNodeForAccelerator(
     memory: { available: number; total: number };
   }> = [];
 
+  const hasAccelerator = !!acceleratorType;
+
   for (const [nodeName, status] of Object.entries(nodeResources)) {
     const available = status.available;
     const allocatable = status.allocatable;
     if (!available) continue;
+
+    if (!hasAccelerator) {
+      // CPU-only: all nodes are candidates, gpu = 0
+      candidateNodes.push({
+        nodeName,
+        gpu: { available: 0, total: 0 },
+        cpu: {
+          available: available.cpu || 0,
+          total: allocatable?.cpu || 0,
+        },
+        memory: {
+          available: available.memory || 0,
+          total: allocatable?.memory || 0,
+        },
+      });
+      continue;
+    }
 
     // Check if this node has the specified accelerator type and product
     const accGroupAvailable = available.accelerator_groups?.[acceleratorType];
@@ -158,19 +182,18 @@ export function findBestNodeForAccelerator(
 
     let gpuAvailable = 0;
     let gpuTotal = 0;
+    const product = acceleratorProduct || "";
 
-    if (acceleratorProduct === "" || acceleratorProduct === "generic") {
+    if (product === "" || product === "generic") {
       // Generic accelerator (no product breakdown)
       gpuAvailable = accGroupAvailable.quantity || 0;
       gpuTotal =
         allocatable?.accelerator_groups?.[acceleratorType]?.quantity || 0;
-    } else if (
-      accGroupAvailable.product_groups?.[acceleratorProduct] !== undefined
-    ) {
-      gpuAvailable = accGroupAvailable.product_groups[acceleratorProduct];
+    } else if (accGroupAvailable.product_groups?.[product] !== undefined) {
+      gpuAvailable = accGroupAvailable.product_groups[product];
       gpuTotal =
         allocatable?.accelerator_groups?.[acceleratorType]?.product_groups?.[
-          acceleratorProduct
+          product
         ] || 0;
     } else {
       // This node doesn't have the specified product
@@ -193,6 +216,22 @@ export function findBestNodeForAccelerator(
 
   if (candidateNodes.length === 0) {
     return null;
+  }
+
+  if (!hasAccelerator) {
+    // CPU-only: select by (cpu + memory) score directly
+    const bestNode = candidateNodes.reduce((best, current) => {
+      const bestScore = best.cpu.available + best.memory.available;
+      const currentScore = current.cpu.available + current.memory.available;
+      return currentScore > bestScore ? current : best;
+    });
+
+    return {
+      nodeName: bestNode.nodeName,
+      cpu: bestNode.cpu,
+      memory: bestNode.memory,
+      gpu: bestNode.gpu,
+    };
   }
 
   // Step 2: Find the maximum GPU count among candidates

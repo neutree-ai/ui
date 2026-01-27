@@ -410,6 +410,62 @@ describe("findBestNodeForAccelerator", () => {
     expect(result?.memory).toEqual({ available: 23.09, total: 60.27 });
   });
 
+  it("should find best node by cpu + memory when no accelerator specified (CPU-only)", () => {
+    const nodeResources: Record<string, ResourceStatus> = {
+      "node-1": {
+        allocatable: { cpu: 10, memory: 20, accelerator_groups: null },
+        available: { cpu: 8, memory: 16, accelerator_groups: null },
+      },
+      "node-2": {
+        allocatable: { cpu: 20, memory: 40, accelerator_groups: null },
+        available: { cpu: 16, memory: 32, accelerator_groups: null },
+      },
+    };
+
+    const result = findBestNodeForAccelerator(nodeResources);
+    expect(result).toEqual({
+      nodeName: "node-2",
+      cpu: { available: 16, total: 20 },
+      memory: { available: 32, total: 40 },
+      gpu: { available: 0, total: 0 },
+    });
+  });
+
+  it("should consider all nodes including GPU nodes when no accelerator specified", () => {
+    const nodeResources: Record<string, ResourceStatus> = {
+      "cpu-node": {
+        allocatable: { cpu: 8, memory: 16, accelerator_groups: null },
+        available: { cpu: 6, memory: 12, accelerator_groups: null },
+      },
+      "gpu-node": {
+        allocatable: {
+          cpu: 32,
+          memory: 64,
+          accelerator_groups: {
+            nvidia_gpu: { quantity: 4, product_groups: { "Tesla-T4": 4 } },
+          },
+        },
+        available: {
+          cpu: 24,
+          memory: 48,
+          accelerator_groups: {
+            nvidia_gpu: { quantity: 2, product_groups: { "Tesla-T4": 2 } },
+          },
+        },
+      },
+    };
+
+    // CPU-only mode: gpu-node has more cpu+memory, so it should be selected
+    // but gpu should be reported as 0
+    const result = findBestNodeForAccelerator(nodeResources);
+    expect(result).toEqual({
+      nodeName: "gpu-node",
+      cpu: { available: 24, total: 32 },
+      memory: { available: 48, total: 64 },
+      gpu: { available: 0, total: 0 },
+    });
+  });
+
   it("should skip nodes with no available resources", () => {
     const nodeResources: Record<string, ResourceStatus> = {
       "node-1": {

@@ -8,14 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
 import { cn } from "@/lib/utils";
 import { isValidIPAddress, isValidPath } from "@/lib/validate";
 import type { Cluster, ImageRegistry } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 

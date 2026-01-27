@@ -32,7 +32,7 @@ import type {
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 // Helper function to validate current usage against available resources
@@ -229,14 +229,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const selectedAccelerator = form.watch("spec.resources.accelerator");
 
   // Find best node for selected accelerator (single-node max for TP deployment)
+  // Also handles CPU-only inference when no accelerator is selected
   const singleNodeMax = useMemo(() => {
-    if (!selectedAccelerator?.type || !selectedCluster?.status?.resource_info) {
+    if (!selectedCluster?.status?.resource_info) {
       return null;
     }
     return findBestNodeForAccelerator(
       selectedCluster.status.resource_info.node_resources,
-      selectedAccelerator.type,
-      selectedAccelerator.product || "",
+      selectedAccelerator?.type || undefined,
+      selectedAccelerator?.product || undefined,
     );
   }, [selectedAccelerator, selectedCluster]);
 
