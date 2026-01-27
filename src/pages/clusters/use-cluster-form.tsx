@@ -115,12 +115,17 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     name: "spec.config.model_caches",
   });
 
+  // Fix for https://github.com/refinedev/refine/issues/5894
+  // Use watch to get current values instead of relying on fields directly
+  const modelCaches: { name: string }[] =
+    form.watch("spec.config.model_caches") || [];
+
   const validateNodeIPs = (value: {
     head_ip: string;
     worker_ips: string[];
   }) => {
     const { head_ip, worker_ips } = value;
-    return isValidIPAddress(head_ip) && !worker_ips.includes(head_ip);
+    return isValidIPAddress(head_ip) && !(worker_ips || []).includes(head_ip);
   };
 
   // Kubernetes storage quantity validation
@@ -373,11 +378,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       <div>
         <FormCardGrid title={t("clusters.sections.modelCaches")}>
           <div className="col-span-full space-y-4">
-            {fields.map((field, index) => {
+            {modelCaches.map((_, index) => {
               const cacheType = getCacheType(index);
 
               return (
-                <Card key={field.id} className="relative">
+                <Card key={fields[index]?.id} className="relative">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-medium">
@@ -618,12 +623,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               );
             })}
 
-            {fields.length === 0 && (
+            {modelCaches.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 {t("clusters.messages.noModelCaches")}
               </div>
             )}
-            {fields.length < 1 && !isModelCacheDisabled && (
+            {modelCaches.length < 1 && !isModelCacheDisabled && (
               <div className="flex gap-2 pt-2">
                 <Button
                   type="button"
