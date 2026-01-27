@@ -20,13 +20,13 @@ export const useEndpointMonitorPanels = ({
 }: UseEndpointMonitorPanelsProps) => {
   const panels = useMemo(() => {
     const list: EndpointMonitorPanelType[] = [];
-    // Rule 1: If cluster is ssh, always have ray related endpoint panel
-    if (clusterType === "ssh") {
-      list.push("endpoint");
-    }
-    // Rule 2: If engine is vllm, always have vllm related panels
+    // Rule 1: If engine is vllm, always have vllm related panels (default for SSH)
     if (engineType === "vllm") {
       list.push("vllm");
+    }
+    // Rule 2: If cluster is ssh, always have ray related endpoint panel
+    if (clusterType === "ssh") {
+      list.push("endpoint");
     }
     return list;
   }, [clusterType, engineType]);
@@ -67,10 +67,10 @@ export const useClusterMonitorPanels = ({
       // SSH clusters use Ray dashboard metrics
       list.push("ray");
     } else if (clusterType === "kubernetes") {
-      // Kubernetes clusters have router, node exporter, and GPU monitoring
+      // Kubernetes clusters have GPU, router, and node exporter monitoring
+      list.push("gpu");
       list.push("router");
       list.push("node");
-      list.push("gpu");
     }
 
     return list;

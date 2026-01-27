@@ -5,5 +5,7 @@ export default function EndpointModel({
 }: {
   model: EndpointSpec["model"];
 }) {
-  return <div>{`${model.name}:${model.version}`}</div>;
+  return (
+    <div>{model.version ? `${model.name}:${model.version}` : model.name}</div>
+  );
 }

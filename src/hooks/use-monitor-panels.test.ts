@@ -42,8 +42,8 @@ describe("useEndpointMonitorPanels", () => {
       useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
     );
 
-    expect(result.current.panels).toEqual(["endpoint", "vllm"]);
-    expect(result.current.selectedPanel).toBe("endpoint");
+    expect(result.current.panels).toEqual(["vllm", "endpoint"]);
+    expect(result.current.selectedPanel).toBe("vllm");
     expect(result.current.showMonitorTab).toBe(true);
     expect(result.current.showSelector).toBe(true);
   });
@@ -53,13 +53,13 @@ describe("useEndpointMonitorPanels", () => {
       useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
     );
 
-    expect(result.current.selectedPanel).toBe("endpoint");
+    expect(result.current.selectedPanel).toBe("vllm");
 
     act(() => {
-      result.current.setSelectedPanel("vllm");
+      result.current.setSelectedPanel("endpoint");
     });
 
-    expect(result.current.selectedPanel).toBe("vllm");
+    expect(result.current.selectedPanel).toBe("endpoint");
   });
 
   it("should fallback to first panel if selected panel is invalid", () => {
@@ -108,8 +108,8 @@ describe("useClusterMonitorPanels", () => {
       useClusterMonitorPanels({ clusterType: "kubernetes" }),
     );
 
-    expect(result.current.panels).toEqual(["router", "node", "gpu"]);
-    expect(result.current.selectedPanel).toBe("router");
+    expect(result.current.panels).toEqual(["gpu", "router", "node"]);
+    expect(result.current.selectedPanel).toBe("gpu");
     expect(result.current.showMonitorTab).toBe(true);
     expect(result.current.showSelector).toBe(true);
   });
@@ -119,7 +119,7 @@ describe("useClusterMonitorPanels", () => {
       useClusterMonitorPanels({ clusterType: "kubernetes" }),
     );
 
-    expect(result.current.selectedPanel).toBe("router");
+    expect(result.current.selectedPanel).toBe("gpu");
 
     act(() => {
       result.current.setSelectedPanel("node");

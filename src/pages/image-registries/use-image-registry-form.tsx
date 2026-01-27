@@ -20,9 +20,6 @@ export const transformValues = (values: ImageRegistry, isEdit = false) => {
     if (!authconfig.password) {
       delete authconfig.password;
     }
-    if (!authconfig.auth) {
-      delete authconfig.auth;
-    }
   }
 
   return transformedValues;
@@ -50,7 +47,6 @@ export const useImageRegistryForm = ({
         authconfig: {
           username: "",
           password: "",
-          auth: "",
         },
       },
     },
@@ -122,21 +118,6 @@ export const useImageRegistryForm = ({
             description={
               isEdit ? t("common.messages.leaveEmptyToKeepValue") : undefined
             }
-          >
-            <Input type="password" />
-          </Field>
-          <div className="col-span-2" />
-
-          <Field
-            {...form}
-            name="spec.authconfig.auth"
-            label={t("image_registries.fields.base64Auth")}
-            description={
-              isEdit
-                ? t("common.messages.leaveEmptyToKeepValue")
-                : t("image_registries.descriptions.base64Auth")
-            }
-            className="col-span-4"
           >
             <Input type="password" />
           </Field>

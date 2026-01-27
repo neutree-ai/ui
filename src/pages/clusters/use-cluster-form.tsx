@@ -196,7 +196,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           accessModes: ["ReadWriteMany"],
           resources: {
             requests: {
-              storage: "10Gi",
+              storage: "500Gi",
             },
           },
         },
