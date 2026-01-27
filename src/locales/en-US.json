@@ -617,11 +617,11 @@
 	"infrastructure": {
 		"title": "Infrastructure"
 	},
-	"workspace_access": {
-		"title": "Workspace & Access"
+	"model_service": {
+		"title": "Model Service"
 	},
-	"developer": {
-		"title": "Developer"
+	"access_control": {
+		"title": "Access Control"
 	},
 	"components": {
 		"ui": {
@@ -915,8 +915,8 @@
 		},
 		"last_transition": "Last Transition Time: "
 	},
-	"tools": {
-		"title": "Tools"
+	"settings": {
+		"title": "Settings"
 	},
 	"vram_calculator": {
 		"title": "VRAM Calculator"
@@ -962,7 +962,7 @@
 		"title": "Systems"
 	},
 	"license": {
-		"title": "License Information",
+		"title": "License",
 		"loading": "Loading license information...",
 		"noLicense": "Enterprise license not activated yet",
 		"unlimited": "Unlimited",

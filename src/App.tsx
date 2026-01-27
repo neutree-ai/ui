@@ -118,30 +118,6 @@ const resources: ResourceProps[] = [
     },
   },
   {
-    name: "model_registries",
-    list: "/:workspace/model-registries",
-    create: "/:workspace/model-registries/create",
-    edit: "/:workspace/model-registries/edit/:id",
-    show: "/:workspace/model-registries/show/:id",
-    meta: {
-      icon: <Database />,
-      workspaced: true,
-      idColumnName: "metadata->name",
-      parent: "infrastructure",
-    },
-  },
-  {
-    name: "model_catalogs",
-    list: "/:workspace/model-catalogs",
-    show: "/:workspace/model-catalogs/show/:id",
-    meta: {
-      icon: <BookOpen />,
-      workspaced: true,
-      idColumnName: "metadata->name",
-      parent: "infrastructure",
-    },
-  },
-  {
     name: "image_registries",
     list: "/:workspace/image-registries",
     create: "/:workspace/image-registries/create",
@@ -155,6 +131,33 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "model_service",
+  },
+  {
+    name: "model_registries",
+    list: "/:workspace/model-registries",
+    create: "/:workspace/model-registries/create",
+    edit: "/:workspace/model-registries/edit/:id",
+    show: "/:workspace/model-registries/show/:id",
+    meta: {
+      icon: <Database />,
+      workspaced: true,
+      idColumnName: "metadata->name",
+      parent: "model_service",
+    },
+  },
+  {
+    name: "model_catalogs",
+    list: "/:workspace/model-catalogs",
+    show: "/:workspace/model-catalogs/show/:id",
+    meta: {
+      icon: <BookOpen />,
+      workspaced: true,
+      idColumnName: "metadata->name",
+      parent: "model_service",
+    },
+  },
+  {
     name: "engines",
     list: "/:workspace/engines",
     show: "/:workspace/engines/show/:id",
@@ -162,7 +165,7 @@ const resources: ResourceProps[] = [
       icon: <Cpu />,
       workspaced: true,
       idColumnName: "metadata->name",
-      parent: "infrastructure",
+      parent: "model_service",
     },
   },
   {
@@ -175,11 +178,11 @@ const resources: ResourceProps[] = [
       icon: <Server />,
       workspaced: true,
       idColumnName: "metadata->name",
-      parent: "infrastructure",
+      parent: "model_service",
     },
   },
   {
-    name: "workspace_access",
+    name: "access_control",
   },
   {
     name: "user_profiles",
@@ -190,7 +193,7 @@ const resources: ResourceProps[] = [
     meta: {
       icon: <User />,
       idColumnName: "metadata->name",
-      parent: "workspace_access",
+      parent: "access_control",
     },
   },
   {
@@ -202,7 +205,7 @@ const resources: ResourceProps[] = [
     meta: {
       icon: <UserCheck />,
       idColumnName: "metadata->name",
-      parent: "workspace_access",
+      parent: "access_control",
     },
   },
   {
@@ -214,7 +217,7 @@ const resources: ResourceProps[] = [
     meta: {
       icon: <FileText />,
       idColumnName: "metadata->name",
-      parent: "workspace_access",
+      parent: "access_control",
     },
   },
   {
@@ -226,11 +229,8 @@ const resources: ResourceProps[] = [
     meta: {
       icon: <LayoutTemplate />,
       idColumnName: "metadata->name",
-      parent: "workspace_access",
+      parent: "access_control",
     },
-  },
-  {
-    name: "developer",
   },
   {
     name: "api_keys",
@@ -240,18 +240,18 @@ const resources: ResourceProps[] = [
       icon: <Key />,
       workspaced: true,
       idColumnName: "metadata->name",
-      parent: "developer",
+      parent: "access_control",
     },
   },
   {
-    name: "tools",
+    name: "settings",
   },
   // {
   //   name: "vram_calculator",
   //   list: "/vram-calculator",
   //   meta: {
   //     icon: <Calculator />,
-  //     parent: "tools",
+  //     parent: "settings",
   //   },
   // },
   {
@@ -259,8 +259,16 @@ const resources: ResourceProps[] = [
     list: "/oem-configs",
     meta: {
       icon: <Settings />,
-      parent: "tools",
+      parent: "settings",
       idColumnName: "metadata->name",
+    },
+  },
+  {
+    name: "license",
+    list: "/license",
+    meta: {
+      icon: <FileText />,
+      parent: "settings",
     },
   },
 ];

@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "0514834b12edf5b77d30c8b0db43313a",
-  "src/App.tsx": "3badeb04aa5a684e4f37fd56993d1ae4",
+  "src/App.tsx": "47c6e952be17e8ffe59f8628dc823498",
   "src/Root.tsx": "3536ed5c6ea3a62c0070ca8c5865bb57",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
   "src/types/api-gen.ts": "3dc0fd3bee6e4ab06690dcf9d494cd81",
@@ -227,7 +227,7 @@
   "src/components/business/PermissionsTreeField.tsx": "8ed64b5939e879259ff71c5737c1b466",
   "src/components/business/Timestamp.tsx": "dfe8682fb2f86e073f8e4c2e6903fbda",
   "src/components/business/UserCell.tsx": "03ebacaec851bdc237e365efdbfed552",
-  "src/components/business/UserDropdown.tsx": "03eb7aaafb0b143654d1189666269709",
+  "src/components/business/UserDropdown.tsx": "be32b99dc672bbbc066b9d6506e3ee02",
   "src/components/business/VirtualLog.tsx": "fdefba34dbf4352588ee7b3f85643c68",
   "src/components/business/WorkspaceField.tsx": "1b11b45180f72721b2deff6d288f6ce5",
   "src/components/business/YamlExportButton.tsx": "fef2b5c630ba49c01d9467e82978c7b1",
