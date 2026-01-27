@@ -1,8 +1,8 @@
-import GrafanaPanels from "@/components/business/GrafanaPanels";
+import GrafanaDashboard from "@/components/business/GrafanaDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSystemApi } from "@/hooks/use-system-api";
-import { getDashboardGrafanaProps } from "@/lib/grafana-configs";
+import { getOverviewDashboardProps } from "@/lib/grafana-dashboard-configs";
 import { useTranslation } from "@/lib/i18n";
 import { useList } from "@refinedev/core";
 import { HardDrive, Server } from "lucide-react";
@@ -71,7 +71,10 @@ export default function Dashboard() {
         </Card>
       </div>
       {grafanaUrl ? (
-        <GrafanaPanels {...getDashboardGrafanaProps(grafanaUrl)} />
+        <GrafanaDashboard
+          {...getOverviewDashboardProps(grafanaUrl)}
+          className="flex-1"
+        />
       ) : (
         <div className="flex items-center justify-center h-48">
           <p className="text-muted-foreground">

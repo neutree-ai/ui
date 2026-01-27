@@ -1,6 +1,6 @@
 import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
-import GrafanaPanels from "@/components/business/GrafanaPanels";
+import GrafanaDashboard from "@/components/business/GrafanaDashboard";
 import MetadataCard from "@/components/business/MetadataCard";
 import { ShowButton, ShowPage, Table } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
@@ -31,11 +31,11 @@ import {
 import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
 import {
-  getClusterRayGrafanaProps,
-  getClusterRouterGrafanaProps,
-  getGpuDcgmGrafanaProps,
-  getNodeExporterGrafanaProps,
-} from "@/lib/grafana-configs";
+  getClusterRayDashboardProps,
+  getClusterRouterDashboardProps,
+  getGpuDcgmDashboardProps,
+  getNodeExporterDashboardProps,
+} from "@/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/lib/i18n";
 import { formatToDecimal } from "@/lib/unit";
 import type { Cluster, ModelCache } from "@/types";
@@ -620,10 +620,10 @@ export const ClustersShow = () => {
         {showMonitorTab && (
           <TabsContent
             value="monitor"
-            className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
+            className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
           >
             {grafanaUrl ? (
-              <div className="space-y-4">
+              <div className="flex flex-col gap-4 h-full">
                 {showSelector && (
                   <Card className="p-4">
                     <div className="flex items-center justify-start">
@@ -664,35 +664,43 @@ export const ClustersShow = () => {
                 )}
 
                 {selectedPanel === "ray" && (
-                  <GrafanaPanels
-                    {...getClusterRayGrafanaProps(
+                  <GrafanaDashboard
+                    {...getClusterRayDashboardProps(
                       grafanaUrl,
                       record.metadata.name,
                     )}
+                    className="flex-1"
+                    hideVariables
                   />
                 )}
                 {selectedPanel === "router" && (
-                  <GrafanaPanels
-                    {...getClusterRouterGrafanaProps(
+                  <GrafanaDashboard
+                    {...getClusterRouterDashboardProps(
                       grafanaUrl,
                       record.metadata.name,
                     )}
+                    className="flex-1"
+                    hideVariables
                   />
                 )}
                 {selectedPanel === "node" && (
-                  <GrafanaPanels
-                    {...getNodeExporterGrafanaProps(
+                  <GrafanaDashboard
+                    {...getNodeExporterDashboardProps(
                       grafanaUrl,
                       record.metadata.name,
                     )}
+                    className="flex-1"
+                    hideVariables
                   />
                 )}
                 {selectedPanel === "gpu" && (
-                  <GrafanaPanels
-                    {...getGpuDcgmGrafanaProps(
+                  <GrafanaDashboard
+                    {...getGpuDcgmDashboardProps(
                       grafanaUrl,
                       record.metadata.name,
                     )}
+                    className="flex-1"
+                    hideVariables
                   />
                 )}
               </div>
