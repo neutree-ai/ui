@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { formatToDecimal } from "@/lib/unit";
-import { type ElementRef, forwardRef } from "react";
+import { type ElementRef, forwardRef, useEffect, useState } from "react";
 
 interface SliderWithInputProps {
   value: number;
@@ -36,20 +36,35 @@ export const SliderWithInput = forwardRef<
     },
     ref,
   ) => {
+    // Local state for input display value, allowing empty string while typing
+    const [inputValue, setInputValue] = useState<string>(String(value));
+
+    // Sync local state when external value changes (e.g., from slider or parent)
+    useEffect(() => {
+      setInputValue(String(value));
+    }, [value]);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const inputValue = e.target.value;
+      const newValue = e.target.value;
+      setInputValue(newValue);
 
-      // Allow empty input for better UX when typing
-      if (inputValue === "") {
-        onChange(min);
-        return;
-      }
-
-      const numValue = Number(inputValue);
-      if (!Number.isNaN(numValue)) {
-        // Clamp value within bounds
+      // If it's a valid number, commit immediately for real-time slider response
+      const numValue = Number(newValue);
+      if (newValue !== "" && !Number.isNaN(numValue)) {
         const clampedValue = Math.min(Math.max(min, numValue), max);
         onChange(clampedValue);
+      }
+    };
+
+    const handleBlur = () => {
+      // On blur, normalize display and handle empty/invalid input
+      const numValue = Number(inputValue);
+      if (inputValue === "" || Number.isNaN(numValue)) {
+        setInputValue(String(min));
+        onChange(min);
+      } else {
+        // Sync display with actual clamped value
+        setInputValue(String(value));
       }
     };
 
@@ -62,8 +77,9 @@ export const SliderWithInput = forwardRef<
               min={min}
               max={max}
               step={step}
-              value={value}
+              value={inputValue}
               onChange={handleInputChange}
+              onBlur={handleBlur}
               disabled={disabled}
               className="w-20 h-7 text-sm"
             />
