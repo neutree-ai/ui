@@ -267,6 +267,7 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
 export enum ClusterPhase {
   PENDING = "Pending",
   RUNNING = "Running",
+  PAUSED = "Paused",
   FAILED = "Failed",
   DELETED = "Deleted",
 }

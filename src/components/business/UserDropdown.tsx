@@ -11,11 +11,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useLicense } from "@/hooks/use-license";
 import { useSystemApi } from "@/hooks/use-system-api";
 import { AVAILABLE_LOCALES, LOCALE_LABELS, useTranslation } from "@/lib/i18n";
 import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
-import { Check, ChevronDown, FileText, Globe, KeyRound } from "lucide-react";
+import { Check, ChevronDown, Globe, KeyRound } from "lucide-react";
 import LogoutButton from "./LogoutButton";
 
 export const UserDropdown = () => {
@@ -38,8 +37,6 @@ export const UserDropdown = () => {
     code,
     label: LOCALE_LABELS[code],
   }));
-
-  const { licenseNotAvailable } = useLicense();
 
   return (
     <DropdownMenu>
@@ -107,16 +104,6 @@ export const UserDropdown = () => {
             {t("buttons.updatePassword")}
           </Link>
         </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-        {!licenseNotAvailable && (
-          <DropdownMenuItem>
-            <Link href="/license" className="flex flex-row gap-2 w-full">
-              <FileText size={16} className="mr-2" />
-              {t("buttons.license")}
-            </Link>
-          </DropdownMenuItem>
-        )}
 
         <DropdownMenuSeparator />
         <DropdownMenuItem>

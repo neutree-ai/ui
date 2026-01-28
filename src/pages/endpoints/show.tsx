@@ -6,7 +6,7 @@ import EndpointModel from "@/components/business/EndpointModel";
 import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
 import EndpointStatus from "@/components/business/EndpointStatus";
 import EngineVariablesCard from "@/components/business/EngineVariablesCard";
-import GrafanaPanels from "@/components/business/GrafanaPanels";
+import GrafanaDashboard from "@/components/business/GrafanaDashboard";
 import MetadataCard from "@/components/business/MetadataCard";
 import ModelTask from "@/components/business/ModelTask";
 import RerankPlayground from "@/components/business/RerankPlayground";
@@ -30,9 +30,9 @@ import {
 import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
 import {
-  getEndpointGrafanaProps,
-  getVllmGrafanaProps,
-} from "@/lib/grafana-configs";
+  getEndpointDashboardProps,
+  getVllmDashboardProps,
+} from "@/lib/grafana-dashboard-configs";
 import { formatToDecimal } from "@/lib/unit";
 import type { Endpoint, Engine } from "@/types";
 import {
@@ -282,10 +282,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         )}
         <TabsContent
           value="monitor"
-          className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
+          className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
         >
           {grafanaUrl ? (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4 h-full">
               {showSelector && (
                 <Card className="p-4">
                   <div className="flex items-center justify-start">
@@ -321,20 +321,24 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               )}
 
               {selectedPanel === "vllm" ? (
-                <GrafanaPanels
-                  {...getVllmGrafanaProps(
+                <GrafanaDashboard
+                  {...getVllmDashboardProps(
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
                   )}
+                  className="flex-1"
+                  hideVariables
                 />
               ) : selectedPanel === "endpoint" ? (
-                <GrafanaPanels
-                  {...getEndpointGrafanaProps(
+                <GrafanaDashboard
+                  {...getEndpointDashboardProps(
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
                   )}
+                  className="flex-1"
+                  hideVariables
                 />
               ) : null}
             </div>
