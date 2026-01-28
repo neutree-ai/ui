@@ -175,9 +175,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const formValues = form.getValues();
+  // Only consider current usage in edit mode (for resources already allocated to this endpoint)
+  // In create mode, the endpoint doesn't exist yet, so current usage should always be 0
   const currentUsage = useEndpointResources(
-    formValues.spec?.resources,
-    formValues.metadata,
+    action === "edit" ? formValues.spec?.resources : undefined,
+    action === "edit" ? formValues.metadata : undefined,
   );
 
   const workspace = form.watch("metadata.workspace");
@@ -313,6 +315,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       gpu: { available: 0, total: 0 },
     };
   }, [singleNodeMax, clusterResources, currentUsage]);
+
   // Watch form values outside the useMemo to avoid dependency issues
   const cpuUsage = form.watch("spec.resources.cpu");
   const memoryUsage = form.watch("spec.resources.memory");
