@@ -507,7 +507,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             }))}
             onChange={(value) => {
               form.setValue("spec.model.registry", value as string);
-              // Reset model search and catalog selection when registry changes
+              // Reset model name and search when registry changes
+              form.setValue("spec.model.name", "");
               setModelSearch("");
             }}
           />
