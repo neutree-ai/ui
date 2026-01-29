@@ -193,7 +193,7 @@
   "src/hooks/use-chat-state.ts": "de6e4e335f337482ed0d2a2455883ace",
   "src/hooks/use-endpoint-log-urls.ts": "3fdec34a05b7f1be28a37dc3f9e52268",
   "src/hooks/use-endpoint-resources.ts": "317792312a52e0d145765e7dd4dd8785",
-  "src/hooks/use-oem-config.ts": "e7ab4ec1ae1de8d31ea22d48ed592b94",
+  "src/hooks/use-oem-config.ts": "8e6127cb2238f5f28b563387e930a7fb",
   "src/hooks/use-yaml-export.ts": "b4f4139882b267b71d5a78588e5f18de",
   "src/data/models.ts": "5c70c920d6548677b0a7e1dac8730224",
   "src/pages/oem-config/index.ts": "44f5bbbc9a866d61e84aa33947148249",
@@ -278,5 +278,5 @@
   "src/components/business/SliderWithInput.tsx": "93b2971985e8710a4f996c1e3a363474",
   "src/lib/cluster-resources.ts": "4bcdf858f07a045d459f19e4e511ba3a",
   "src/lib/grafana-dashboard-configs.ts": "ef0459ffb5772cf353b91f4cdf5e5efb",
-  "src/components/business/GrafanaDashboard.tsx": "4326ad861e6a69ac5d5add1921f0be65"
+  "src/components/business/GrafanaDashboard.tsx": "b6bd84eff4bebe9b19f43dd05081ad5e"
 }

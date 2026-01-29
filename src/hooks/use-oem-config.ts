@@ -19,7 +19,10 @@ export const useOemConfig = () => {
     isLoading,
     error,
     refetch,
-    brandName: oemConfig?.spec?.brand_name || "Neutree",
+    brandName:
+      oemConfig?.spec?.brand_name ??
+      import.meta.env.VITE_BRAND_NAME ??
+      "Neutree",
     logoBase64: oemConfig?.spec?.logo_base64,
     logoCollapsedBase64: oemConfig?.spec?.logo_collapsed_base64,
   };

@@ -1,5 +1,9 @@
 import { useTheme } from "next-themes";
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
+
+const DEFAULT_GRAFANA_CSS = `
+  body { background-color: pink; }
+`;
 
 export interface GrafanaDashboardConfig {
   baseUrl: string;
@@ -18,6 +22,8 @@ export interface GrafanaDashboardProps {
   hideVariables?: boolean;
   hideTimePicker?: boolean;
   className?: string;
+  /** Custom CSS to inject into the iframe (only works for same-origin) */
+  customCSS?: string;
 }
 
 export default function GrafanaDashboard({
@@ -28,8 +34,35 @@ export default function GrafanaDashboard({
   hideVariables = false,
   hideTimePicker = false,
   className,
+  customCSS,
 }: GrafanaDashboardProps) {
   const { resolvedTheme } = useTheme();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const handleIframeLoad = useCallback(() => {
+    console.log("[GrafanaDashboard] iframe loaded");
+    if (!iframeRef.current) {
+      console.log("[GrafanaDashboard] iframeRef is null");
+      return;
+    }
+
+    const cssToInject = customCSS
+      ? `${DEFAULT_GRAFANA_CSS}\n${customCSS}`
+      : DEFAULT_GRAFANA_CSS;
+
+    try {
+      const iframeDoc = iframeRef.current.contentDocument;
+      console.log("[GrafanaDashboard] contentDocument:", iframeDoc);
+      if (iframeDoc) {
+        const style = iframeDoc.createElement("style");
+        style.textContent = cssToInject;
+        iframeDoc.head.appendChild(style);
+        console.log("[GrafanaDashboard] CSS injected successfully");
+      }
+    } catch (e) {
+      console.log("[GrafanaDashboard] CSS injection failed (cross-origin):", e);
+    }
+  }, [customCSS]);
 
   const dashboardUrl = useMemo(() => {
     const url = new URL(
@@ -82,10 +115,12 @@ export default function GrafanaDashboard({
 
   return (
     <iframe
+      ref={iframeRef}
       src={dashboardUrl}
       className={`w-full border-0 ${className || ""}`}
       style={{ minHeight: "600px" }}
       title={`Grafana Dashboard ${dashboardConfig.dashboardId}`}
+      onLoad={handleIframeLoad}
     />
   );
 }
