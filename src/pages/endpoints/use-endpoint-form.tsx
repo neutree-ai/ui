@@ -35,9 +35,12 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-// Helper function to validate current usage against available resources
-const validateCurrentUsage = (currentUsage: number, total: number) => {
-  return Number(currentUsage || 0) <= total ? Number(currentUsage || 0) : 0;
+// Helper function to validate current usage against total capacity.
+// Current usage is the endpoint's existing allocation, so it must not exceed total capacity.
+const validateCurrentUsage = (currentUsage: number, totalCapacity: number) => {
+  return Number(currentUsage || 0) <= totalCapacity
+    ? Number(currentUsage || 0)
+    : 0;
 };
 
 // Deep merge function for form data with smart overriding
@@ -254,6 +257,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         currentUsage.memory,
         singleNodeMax.memory.total,
       );
+      const validCurrentGpu = validateCurrentUsage(
+        currentUsage.gpu,
+        singleNodeMax.gpu.total,
+      );
 
       return {
         cpu: {
@@ -265,8 +272,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           total: singleNodeMax.memory.total,
         },
         gpu: {
-          available:
-            singleNodeMax.gpu.available + Number(currentUsage.gpu || 0),
+          available: singleNodeMax.gpu.available + validCurrentGpu,
           total: singleNodeMax.gpu.total,
         },
       };
@@ -281,7 +287,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       };
     }
 
-    // Validate currentUsage against cluster capacity
+    // Validate currentUsage against cluster total capacity (NOT remaining available)
     const clusterCpuAvailable = Number(clusterResources.cpu?.available || 0);
     const clusterMemoryAvailable = Number(
       clusterResources.memory?.available || 0,
@@ -289,11 +295,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
     const validCurrentCpu = validateCurrentUsage(
       currentUsage.cpu,
-      clusterCpuAvailable,
+      clusterResources.cpu.total,
     );
     const validCurrentMemory = validateCurrentUsage(
       currentUsage.memory,
-      clusterMemoryAvailable,
+      clusterResources.memory.total,
     );
 
     return {
