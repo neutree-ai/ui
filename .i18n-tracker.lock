@@ -179,7 +179,7 @@
   "src/components/theme/hooks/useGetEditUrl.tsx": "24943365179699d4c970aa837451e3c2",
   "src/components/theme/hooks/useGetShowUrl.tsx": "38bc15ccebdd51a7a57dc7df68150f42",
   "src/components/theme/hooks/useOnBack.tsx": "f4087afd8d8f690aa96455f42f35fa5f",
-  "src/components/theme/hooks/useWorkspace.ts": "31c9b1d04f57535c331dd3c564fe1263",
+  "src/components/theme/hooks/useWorkspace.ts": "07ac723968c4c0cfa011de7ca7f1e561",
   "src/components/theme/curds/create.tsx": "7c3e878ea49b5c494daba178607f9ffe",
   "src/components/theme/curds/edit.tsx": "d968c54dd657ab32781900fff4632c79",
   "src/lib/grafana-configs.ts": "f064365b8b25bb458fe95bb6230b4763",

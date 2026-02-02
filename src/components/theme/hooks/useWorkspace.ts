@@ -1,4 +1,4 @@
-import { useList, useParsed } from "@refinedev/core";
+import { useList, useParsed, useResourceParams } from "@refinedev/core";
 import { useEffect } from "react";
 import { useLocalStorage } from "react-use";
 
@@ -7,13 +7,16 @@ export const ALL_WORKSPACES = "_all_";
 
 export const useWorkspace = () => {
   const { params } = useParsed();
+  const { action } = useResourceParams();
   const [value, setValue] = useLocalStorage<string>(WORKSPACE_STORAGE_KEY);
 
+  // Only sync URL workspace to localStorage when on list page
+  // This prevents edit/show/create pages from changing the global workspace filter
   useEffect(() => {
-    if (params?.workspace && params?.workspace !== value) {
+    if (action === "list" && params?.workspace && params?.workspace !== value) {
       setValue(params?.workspace);
     }
-  }, [params?.workspace, setValue, value]);
+  }, [action, params?.workspace, setValue, value]);
 
   const { data, isLoading } = useList({
     resource: "workspaces",
