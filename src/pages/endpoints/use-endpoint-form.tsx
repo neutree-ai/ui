@@ -154,6 +154,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       // Transform replicas.num to number (HTML input returns string)
       if (values.spec?.replicas?.num != null) {
         values.spec.replicas.num = Number(values.spec.replicas.num);
+        if (values.spec.replicas.num < 1) {
+          errors["spec.replicas.num"] = {
+            type: "manual",
+            message: t("endpoints.messages.replicasMustBeAtLeastOne"),
+          };
+        }
       }
 
       if (action === "create" && currentRegistry && currentModelName) {
@@ -812,7 +818,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               name="spec.replicas.num"
               label={t("endpoints.fields.replicas")}
             >
-              <Input type="number" />
+              <Input type="number" min={1} />
             </Field>
 
             <Field

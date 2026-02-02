@@ -523,7 +523,8 @@
 			"pauseFailed": "Failed to pause endpoint",
 			"resumeSuccess": "Endpoint resumed successfully",
 			"resumeFailed": "Failed to resume endpoint",
-			"noAcceleratorsAvailable": "No accelerators available in this cluster"
+			"noAcceleratorsAvailable": "No accelerators available in this cluster",
+			"replicasMustBeAtLeastOne": "Replicas must be at least 1"
 		},
 		"tabs": {
 			"playground": "Playground"
