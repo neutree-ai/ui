@@ -200,6 +200,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const meta = useMemo(
     () => ({
       workspace,
+      workspaced: true,
     }),
     [workspace],
   );
