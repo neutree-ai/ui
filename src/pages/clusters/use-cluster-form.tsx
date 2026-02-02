@@ -14,7 +14,6 @@ import type { Cluster, ImageRegistry } from "@/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -119,14 +118,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const modelCaches: { name: string }[] =
     form.watch("spec.config.model_caches") || [];
 
-  const validateNodeIPs = (value: {
-    head_ip: string;
-    worker_ips: string[];
-  }) => {
-    const { head_ip, worker_ips } = value;
-    return isValidIPAddress(head_ip) && !(worker_ips || []).includes(head_ip);
-  };
-
   // Kubernetes storage quantity validation
   const validateStorageQuantity = (value: string) => {
     if (!value) return true;
@@ -139,17 +130,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       "Invalid storage format (e.g., 10Gi, 100Mi)"
     );
   };
-
-  useEffect(() => {
-    // Register validation for SSH provider
-    if (isSSH) {
-      form.register("spec.config.ssh_config.provider", {
-        validate: validateNodeIPs,
-      });
-
-      form.trigger("spec.config.ssh_config.provider");
-    }
-  }, [isSSH, form.register, form.trigger]);
 
   const meta = {
     workspace,
@@ -304,13 +284,13 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     providerFields: (
       <FormCardGrid title={t("clusters.sections.provider")}>
         {type === "ssh" && (
-          <Field
-            {...form}
-            name="spec.config.ssh_config.provider"
-            className="col-span-4"
-          >
-            <NodeIPsField disabled={isEdit} />
-          </Field>
+          <div className="col-span-4">
+            <NodeIPsField
+              control={form.control}
+              name="spec.config.ssh_config.provider"
+              disabled={isEdit}
+            />
+          </div>
         )}
 
         {isKubernetes && (
