@@ -300,6 +300,7 @@ export const useYamlExport = () => {
   const transformEntityToYaml = useCallback(
     (entity: ResourceEntity, options: ExportOptions) => {
       const yamlEntity: Record<string, unknown> = {
+        ...(options.removeIds ? {} : { id: entity.id }),
         apiVersion: entity.api_version,
         kind: entity.kind,
         metadata: { ...entity.metadata },
@@ -333,15 +334,23 @@ export const useYamlExport = () => {
       ) {
         // Keep name but remove other auto-generated fields
         const metadata = yamlEntity.metadata as Record<string, unknown>;
-        const { name, workspace, display_name, labels } = metadata as {
-          name?: unknown;
-          workspace?: unknown;
-          display_name?: unknown;
-          labels?: unknown;
-          [key: string]: unknown;
-        };
+        const { name, workspace, display_name, labels, annotations } =
+          metadata as {
+            name?: unknown;
+            workspace?: unknown;
+            display_name?: unknown;
+            labels?: unknown;
+            annotations?: unknown;
+            [key: string]: unknown;
+          };
 
-        yamlEntity.metadata = { name, workspace, display_name, labels };
+        yamlEntity.metadata = {
+          name,
+          workspace,
+          display_name,
+          labels,
+          annotations,
+        };
       }
 
       return yamlEntity;
