@@ -12,6 +12,7 @@ dist
 dist-ssr
 \*.local
 *.tsbuildinfo
+tmp
 
 # Locale files (except English, which is the default)
 src/locales/*

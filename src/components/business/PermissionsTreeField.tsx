@@ -1,7 +1,11 @@
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getResourcePlural } from "@/lib/plural";
 import { cn } from "@/lib/utils";
-import { ALL_PERMISSIONS } from "@/types";
 import {
   BookOpen,
   Box,
@@ -15,6 +19,7 @@ import {
   FileText,
   HardDrive,
   Layers,
+  Lock,
   Package,
   Pencil,
   Plus,
@@ -25,8 +30,9 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { usePermissionDependencies } from "./use-permission-dependencies";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,
@@ -52,37 +58,6 @@ const resourceIcons: Record<string, React.ReactNode> = {
   user_profile: <Users className="h-5 w-5" />,
 };
 
-type PermissionsTreeData = Record<
-  string,
-  { actions: string[]; selectedActions: string[] }
->;
-
-const parsePermissionsToTree = (permissions: string[]) => {
-  const tree: PermissionsTreeData = {};
-
-  for (const permission of ALL_PERMISSIONS) {
-    const [resource, action] = permission.split(":");
-
-    if (!tree[resource]) {
-      tree[resource] = {
-        actions: [],
-        selectedActions: [],
-      };
-    }
-
-    tree[resource].actions.push(action);
-  }
-
-  for (const permission of permissions) {
-    const [resource, action] = permission.split(":");
-    if (tree[resource] && !tree[resource].selectedActions.includes(action)) {
-      tree[resource].selectedActions.push(action);
-    }
-  }
-
-  return tree;
-};
-
 type PermissionsTreeFieldProps = {
   value?: string[];
   onChange?: (value: string[]) => void;
@@ -94,64 +69,16 @@ const PermissionsTreeField = React.forwardRef<
   HTMLDivElement,
   PermissionsTreeFieldProps
 >(({ value = [], onChange, disabled = false, className }, ref) => {
-  const permissionTree = useMemo(() => {
-    return parsePermissionsToTree(value);
-  }, [value]);
-
-  const sortedResources = useMemo(
-    () => Object.keys(permissionTree).sort(),
-    [permissionTree],
-  );
-
-  const updatePermissions = (newTree: PermissionsTreeData) => {
-    const newPermissions: string[] = [];
-
-    for (const [resource, data] of Object.entries(newTree)) {
-      for (const action of data.selectedActions) {
-        newPermissions.push(`${resource}:${action}`);
-      }
-    }
-
-    onChange?.(newPermissions);
-  };
-
-  const togglePermission = (resource: string, action: string) => {
-    if (disabled) {
-      return;
-    }
-
-    const newTree = { ...permissionTree };
-    const isSelected = newTree[resource].selectedActions.includes(action);
-
-    if (isSelected) {
-      newTree[resource].selectedActions = newTree[
-        resource
-      ].selectedActions.filter((a) => a !== action);
-    } else {
-      newTree[resource].selectedActions.push(action);
-    }
-
-    updatePermissions(newTree);
-  };
-
-  const toggleAllResourcePermissions = (
-    resource: string,
-    selectAll: boolean,
-  ) => {
-    if (disabled) {
-      return;
-    }
-
-    const newTree = { ...permissionTree };
-
-    if (selectAll) {
-      newTree[resource].selectedActions = [...newTree[resource].actions];
-    } else {
-      newTree[resource].selectedActions = [];
-    }
-
-    updatePermissions(newTree);
-  };
+  const {
+    permissionTree,
+    sortedResources,
+    togglePermission,
+    toggleAllResourcePermissions,
+    getActionDependents,
+  } = usePermissionDependencies({
+    value,
+    onChange,
+  });
 
   return (
     <div className={cn("w-full max-w-3xl mx-auto", className)} ref={ref}>
@@ -163,6 +90,7 @@ const PermissionsTreeField = React.forwardRef<
             resourceData={permissionTree[resource]}
             togglePermission={togglePermission}
             toggleAllResourcePermissions={toggleAllResourcePermissions}
+            getActionDependents={getActionDependents}
             disabled={disabled}
           />
         ))}
@@ -176,12 +104,14 @@ const ResourceNode = ({
   resourceData,
   togglePermission,
   toggleAllResourcePermissions,
+  getActionDependents,
   disabled,
 }: {
   resource: string;
   resourceData: { actions: string[]; selectedActions: string[] };
   togglePermission: (resource: string, action: string) => void;
   toggleAllResourcePermissions: (resource: string, selectAll: boolean) => void;
+  getActionDependents: (resource: string, action: string) => string[];
   disabled?: boolean;
 }) => {
   const { t } = useTranslation();
@@ -246,16 +176,20 @@ const ResourceNode = ({
       {isOpen && (
         <div className="p-1 bg-background">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-            {sortedActions.map((action) => (
-              <ActionNode
-                key={`${resource}:${action}`}
-                action={action}
-                resource={resource}
-                isSelected={selectedActions.includes(action)}
-                onToggle={() => togglePermission(resource, action)}
-                disabled={disabled}
-              />
-            ))}
+            {sortedActions.map((action) => {
+              const dependents = getActionDependents(resource, action);
+              return (
+                <ActionNode
+                  key={`${resource}:${action}`}
+                  action={action}
+                  resource={resource}
+                  isSelected={selectedActions.includes(action)}
+                  dependents={dependents}
+                  onToggle={() => togglePermission(resource, action)}
+                  disabled={disabled}
+                />
+              );
+            })}
           </div>
         </div>
       )}
@@ -267,12 +201,14 @@ const ActionNode = ({
   action,
   resource,
   isSelected,
+  dependents,
   onToggle,
   disabled,
 }: {
   action: string;
   resource: string;
   isSelected: boolean;
+  dependents: string[];
   onToggle: () => void;
   disabled?: boolean;
 }) => {
@@ -285,12 +221,15 @@ const ActionNode = ({
     ? t(`permissions.${resource}_${action}`)
     : `${t(`${plural}.title`)}:${t(`permissions.${action}`)}`;
 
-  return (
+  const locked = dependents.length > 0;
+  const isDisabled = disabled || locked;
+
+  const node = (
     <div
       className={`flex items-center p-2 rounded border cursor-pointer
         ${isSelected ? "bg-accent border-primary" : "bg-card border-border"}
-        ${disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-accent"}`}
-      onClick={disabled ? undefined : onToggle}
+        ${isDisabled ? "opacity-60 cursor-not-allowed" : "hover:bg-accent"}`}
+      onClick={isDisabled ? undefined : onToggle}
     >
       <div className="mr-2 flex items-center justify-center w-5 h-5">
         {isSelected ? (
@@ -303,8 +242,34 @@ const ActionNode = ({
       <div className="mr-2">{actionIcon}</div>
 
       <div className="text-xs ml-1 font-mono">{fullPermission}</div>
+
+      {locked && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
     </div>
   );
+
+  if (locked) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{node}</TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="bg-popover text-popover-foreground border shadow-sm"
+        >
+          {t("permissions.requiredBy", {
+            actions: dependents
+              .map((perm) => {
+                const [res, act] = perm.split(":");
+                const p = getResourcePlural(res);
+                return `${t(`${p}.title`)}:${t(`permissions.${act}`)}`;
+              })
+              .join(", "),
+          })}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return node;
 };
 
 PermissionsTreeField.displayName = "PermissionsTreeField";

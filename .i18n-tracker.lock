@@ -224,7 +224,7 @@
   "src/components/business/ModelTaskFilter.tsx": "a1d6c2d1aa18480b86f0bc58bfcb3930",
   "src/components/business/NodeIPsField.tsx": "5cd34e380e15bc5b9d8c5dff46134b91",
   "src/components/business/PermissionsTree.tsx": "5494d3c72b1403624bb648c25f0114f8",
-  "src/components/business/PermissionsTreeField.tsx": "8ed64b5939e879259ff71c5737c1b466",
+  "src/components/business/PermissionsTreeField.tsx": "e7dcdee1f95ddfb12290d8e9851d3586",
   "src/components/business/Timestamp.tsx": "dfe8682fb2f86e073f8e4c2e6903fbda",
   "src/components/business/UserCell.tsx": "03ebacaec851bdc237e365efdbfed552",
   "src/components/business/UserDropdown.tsx": "be32b99dc672bbbc066b9d6506e3ee02",
@@ -264,7 +264,7 @@
   "src/pages/license/index.ts": "715344215e07c363bc72a7e0d003012e",
   "src/pages/license/show.tsx": "9af070751ec846a64e4434d0b5962687",
   "src/hooks/use-license.ts": "111bbcd3657ab858849c3f60bf914e35",
-  "vitest.config.ts": "d5305068f61f78241684b1bf880ee204",
+  "vitest.config.ts": "cd9c39240c32000da7433678092e91ae",
   "src/components/business/EndpointPauseAction.tsx": "b4b6297b9bf9c11ecc76f7f985d1a4b7",
   "src/lib/column-visibility-storage.ts": "1cebde1281db69529273f6b8e564d086",
   "src/hooks/use-column-visibility.ts": "5c79260bb52315e0380e612ff9294c64",
@@ -278,5 +278,6 @@
   "src/components/business/SliderWithInput.tsx": "93b2971985e8710a4f996c1e3a363474",
   "src/lib/cluster-resources.ts": "4bcdf858f07a045d459f19e4e511ba3a",
   "src/lib/grafana-dashboard-configs.ts": "ef0459ffb5772cf353b91f4cdf5e5efb",
-  "src/components/business/GrafanaDashboard.tsx": "b6bd84eff4bebe9b19f43dd05081ad5e"
+  "src/components/business/GrafanaDashboard.tsx": "b6bd84eff4bebe9b19f43dd05081ad5e",
+  "src/components/business/use-permission-dependencies.ts": "f045c7a1767f4c49d651300794f4a152"
 }

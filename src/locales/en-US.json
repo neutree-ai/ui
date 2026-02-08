@@ -967,7 +967,8 @@
 		"push": "Push",
 		"pull": "Pull",
 		"system_admin": "System Admin",
-		"read-credentials": "Read Credentials"
+		"read-credentials": "Read Credentials",
+		"requiredBy": "Required by: {{actions}}"
 	},
 	"systems": {
 		"title": "Systems"
