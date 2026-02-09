@@ -475,7 +475,8 @@ describe("usePermissionDependencies", () => {
         }),
       );
 
-      // model:create should NOT trigger workspace:read (rule is endpoint-specific)
+      // workspace:create triggers generic create→read (workspace:read),
+      // but should NOT trigger any endpoint-specific deps
       act(() => {
         result.current.togglePermission("workspace", "create");
       });
@@ -483,7 +484,33 @@ describe("usePermissionDependencies", () => {
       const called = onChange.mock.calls[0][0] as string[];
       expect(called).toContain("workspace:read"); // same-resource dep
       expect(called).toContain("workspace:create");
-      expect(called).toHaveLength(2); // no extra deps
+      // should NOT add any endpoint permissions (rule is endpoint-specific)
+      expect(called.filter((p) => p.startsWith("endpoint:"))).toHaveLength(0);
+      expect(called).toHaveLength(2);
+    });
+
+    it("should resolve cross-resource deps on select all", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          rules: crossRules,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.toggleAllResourcePermissions("endpoint", true);
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("endpoint:read");
+      expect(called).toContain("endpoint:create");
+      expect(called).toContain("endpoint:update");
+      expect(called).toContain("endpoint:delete");
+      // cross-resource dep: endpoint:create → workspace:read
+      expect(called).toContain("workspace:read");
     });
   });
 

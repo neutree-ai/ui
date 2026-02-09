@@ -145,7 +145,11 @@ const ResourceNode = ({
 
         <div
           className="flex items-center flex-1 cursor-pointer"
-          onClick={() => toggleAllResourcePermissions(resource, !allSelected)}
+          onClick={
+            disabled
+              ? undefined
+              : () => toggleAllResourcePermissions(resource, !allSelected)
+          }
         >
           <span className="mr-2 flex items-center justify-center w-5 h-5">
             {allSelected ? (
@@ -222,7 +226,7 @@ const ActionNode = ({
     : `${t(`${plural}.title`)}:${t(`permissions.${action}`)}`;
 
   const locked = dependents.length > 0;
-  const isDisabled = disabled || locked;
+  const isDisabled = disabled || (locked && isSelected);
 
   const node = (
     <div

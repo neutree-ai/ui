@@ -182,10 +182,15 @@ export function usePermissionDependencies(options: {
       if (!resourceData) return;
 
       if (selectAll) {
-        const permsToAdd = resourceData.actions.map((a) => `${resource}:${a}`);
         const newPerms = new Set(value);
-        for (const p of permsToAdd) {
-          newPerms.add(p);
+        for (const action of resourceData.actions) {
+          newPerms.add(`${resource}:${action}`);
+          // Also add cross-resource deps for each action
+          for (const dep of getDepsForAction(resource, action, rules)) {
+            if (allPermissionsSet.has(dep)) {
+              newPerms.add(dep);
+            }
+          }
         }
         onChange?.([...newPerms]);
       } else {
@@ -210,7 +215,7 @@ export function usePermissionDependencies(options: {
         onChange?.([...valueWithoutResource, ...lockedPerms]);
       }
     },
-    [permissionTree, value, rules, onChange],
+    [permissionTree, value, allPermissionsSet, rules, onChange],
   );
 
   const getActionDependents = useCallback(
