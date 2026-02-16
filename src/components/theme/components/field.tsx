@@ -36,6 +36,7 @@ export const Field = forwardRef<HTMLDivElement, FieldProps>(
         render={({ field }: { field: any }) => {
           return (
             <FormItem
+              data-testid={`field-${props.name}`}
               className={cn(
                 props.className,
                 props.isCheckbox

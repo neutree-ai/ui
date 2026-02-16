@@ -212,7 +212,7 @@ export function Table<
 
   return (
     <DeleteProvider>
-      <div className="space-y-4">
+      <div className="space-y-4" data-testid="table">
         <DataTableToolbar
           table={table}
           filters={
@@ -262,9 +262,9 @@ export function Table<
                 ))}
               </TableHeader>
             )}
-            <TableBody>
+            <TableBody data-testid="table-body">
               {table.refineCore.tableQuery.isLoading ? (
-                <TableRow>
+                <TableRow data-testid="table-loading">
                   <TableCell
                     colSpan={columns.length}
                     className="h-24 text-center text-nowrap"
@@ -291,7 +291,7 @@ export function Table<
                   </TableRow>
                 ))
               ) : (
-                <TableRow>
+                <TableRow data-testid="table-empty">
                   <TableCell
                     colSpan={columns.length}
                     className="h-24 text-center"

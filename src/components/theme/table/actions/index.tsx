@@ -56,7 +56,7 @@ export function RowActions({ children }: RowActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" data-testid="row-actions-trigger">
           <DotsHorizontalIcon className="h-4 w-4" />
           <span className="sr-only">{t("accessibility.openMenu")}</span>
         </Button>

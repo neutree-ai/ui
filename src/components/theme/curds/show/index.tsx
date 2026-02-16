@@ -97,7 +97,12 @@ export const ShowPage: FC<ShowProps> & {
         }
         isBack
       />
-      <div className="relative pt-4 !mt-0 grow overflow-auto">{children}</div>
+      <div
+        data-testid="show-page"
+        className="relative pt-4 !mt-0 grow overflow-auto"
+      >
+        {children}
+      </div>
     </DeleteProvider>
   );
 };

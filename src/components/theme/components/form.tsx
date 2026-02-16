@@ -99,7 +99,7 @@ export const Form = <
 
   return (
     <FormUI {...props}>
-      <form {...formProps} onSubmit={onSubmit}>
+      <form {...formProps} onSubmit={onSubmit} data-testid="form">
         <div>
           {title && (
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -116,12 +116,17 @@ export const Form = <
                 onClick={onBack}
                 disabled={props.refineCore.formLoading}
                 variant="outline"
+                data-testid="form-cancel"
               >
                 {t("buttons.cancel")}
               </Button>
             )}
 
-            <SaveButton type="submit" loading={props.refineCore.formLoading} />
+            <SaveButton
+              type="submit"
+              loading={props.refineCore.formLoading}
+              data-testid="form-submit"
+            />
           </div>
         </div>
       </form>

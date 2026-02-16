@@ -48,7 +48,9 @@ export const CreatePage: React.FC<CreateProps> = ({
         breadcrumb={isValidElement(breadcrumb) ? breadcrumb : <Breadcrumbs />}
         extra={extra ?? <ListButton resource={resourceFromProps} />}
       />
-      <div className="pt-4 !mt-0">{children as ReactNode}</div>
+      <div data-testid="create-page" className="pt-4 !mt-0">
+        {children as ReactNode}
+      </div>
     </>
   );
 };

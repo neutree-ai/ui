@@ -64,7 +64,9 @@ export const EditPage: FC<EditProps> = ({
           )
         }
       />
-      <div className="pt-4">{children}</div>
+      <div data-testid="edit-page" className="pt-4">
+        {children}
+      </div>
     </>
   );
 };

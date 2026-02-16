@@ -52,7 +52,12 @@ export const ListPage: FC<ListProps> = ({
           )
         }
       />
-      <div className={cn("pt-2 sm:pt-4 !mt-0", className)}>{children}</div>
+      <div
+        data-testid="list-page"
+        className={cn("pt-2 sm:pt-4 !mt-0", className)}
+      >
+        {children}
+      </div>
     </>
   );
 };
