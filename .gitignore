@@ -32,6 +32,7 @@ _.sln
 \*.sw?
 
 # Playwright
+e2e/.env
 e2e/auth/storage-state.json
 e2e/test-results/
 e2e/playwright-report/
