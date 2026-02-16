@@ -6,6 +6,7 @@ type ResourceFixtures = {
   yamlImport: YamlImportHelper;
   roles: ResourcePage;
   workspacePolicies: ResourcePage;
+  engines: ResourcePage;
 };
 
 export const test = base.extend<ResourceFixtures>({
@@ -26,6 +27,11 @@ export const test = base.extend<ResourceFixtures>({
   },
   workspacePolicies: async ({ page }, use) => {
     await use(new ResourcePage(page, { routeName: "role-assignments" }));
+  },
+  engines: async ({ page }, use) => {
+    await use(
+      new ResourcePage(page, { routeName: "engines", workspaced: true }),
+    );
   },
 });
 
