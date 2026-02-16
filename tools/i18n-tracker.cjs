@@ -54,8 +54,8 @@ if (
     process.exit(1);
   }
 
-  if (rel.includes(".d.ts") || rel.includes('.test.ts')) {
-    console.log(`Skipping .d.ts or test file: ${rel}`);
+  if (rel.includes(".d.ts") || rel.includes('.test.ts') || rel.startsWith('e2e/')) {
+    console.log(`Skipping .d.ts, test, or e2e file: ${rel}`);
     process.exit(0);
   }
   // Check if file matches our regex pattern
@@ -161,7 +161,7 @@ function walk(dir) {
     const cur = stack.pop();
     for (const item of fs.readdirSync(cur)) {
       const p = path.join(cur, item);
-      if (item === "node_modules" || item.startsWith(".")) continue;
+      if (item === "node_modules" || item === "e2e" || item.startsWith(".")) continue;
       const stat = fs.statSync(p);
       if (stat.isDirectory()) stack.push(p);
       else if (
@@ -185,7 +185,7 @@ function gitFiles(depth) {
       .split("\n")
       .filter(
         (f) =>
-          f.trim() && FILE_REGEX.test(f.trim()) && !f.trim().includes(".d.ts") && !f.trim().includes('.test.ts'),
+          f.trim() && FILE_REGEX.test(f.trim()) && !f.trim().includes(".d.ts") && !f.trim().includes('.test.ts') && !f.trim().startsWith('e2e/'),
       );
   } catch (e) {
     console.error(`Git command failed: ${e.message}`);
