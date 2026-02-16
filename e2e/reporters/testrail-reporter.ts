@@ -43,12 +43,13 @@ function formatElapsed(ms: number): string {
   return `${seconds}s`;
 }
 
-function extractCaseId(test: TestCase): number | null {
+function extractCaseIds(test: TestCase): number[] {
+  const ids: number[] = [];
   for (const tag of test.tags) {
     const match = tag.match(/@C(\d+)/);
-    if (match) return Number.parseInt(match[1], 10);
+    if (match) ids.push(Number.parseInt(match[1], 10));
   }
-  return null;
+  return ids;
 }
 
 class TestRailReporter implements Reporter {
@@ -68,8 +69,8 @@ class TestRailReporter implements Reporter {
   onTestEnd(test: TestCase, result: TestResult): void {
     if (!this.runId) return;
 
-    const caseId = extractCaseId(test);
-    if (!caseId) return;
+    const caseIds = extractCaseIds(test);
+    if (caseIds.length === 0) return;
 
     const statusId = STATUS_MAP[result.status] ?? TestRailStatus.Failed;
     const isFailed = statusId === TestRailStatus.Failed;
@@ -88,19 +89,21 @@ class TestRailReporter implements Reporter {
       }
     }
 
-    const entry: CollectedResult = {
-      case_id: caseId,
-      status_id: statusId,
-      elapsed: formatElapsed(result.duration),
-      attachments,
-    };
+    for (const caseId of caseIds) {
+      const entry: CollectedResult = {
+        case_id: caseId,
+        status_id: statusId,
+        elapsed: formatElapsed(result.duration),
+        attachments,
+      };
 
-    if (isFailed) {
-      entry.comment = result.error?.message || "Test failed";
+      if (isFailed) {
+        entry.comment = result.error?.message || "Test failed";
+      }
+
+      // Overwrite on retry — only last result matters
+      this.results.set(caseId, entry);
     }
-
-    // Overwrite on retry — only last result matters
-    this.results.set(caseId, entry);
   }
 
   async onEnd(_result: FullResult): Promise<void> {

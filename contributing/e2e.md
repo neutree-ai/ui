@@ -150,7 +150,8 @@ See [Test Organization](#test-organization) above.
 | `field(name)` | Locator for `[data-testid="field-{name}"]` |
 | `fillInput(name, value)` | Clear and type into a text input |
 | `fillTextarea(name, value)` | Clear and type into a textarea |
-| `selectOption(name, optionText)` | Open a select and pick an option |
+| `selectOption(name, optionText)` | Open a Radix Select and pick an option |
+| `selectComboboxOption(name, optionText)` | Open a cmdk Combobox and pick an option (popover-safe) |
 | `toggleCheckbox(name)` | Toggle a checkbox |
 | `submit()` | Click the submit button |
 | `cancel()` | Click the cancel button |
@@ -187,3 +188,25 @@ When adding new testable UI elements, prefer `data-testid` over CSS class select
 - **Delete cleanup optimization**: `deleteRow()` waits up to 30s for the row to disappear by default. For cleanup-only scenarios (not testing delete), use `deleteRow(name, { noWait: true })` to skip waiting — this saves 10-20s per call. Only tests that verify delete behavior should wait for row removal.
 - **Cancel navigation**: The cancel button uses `history.back()`. Always navigate to the list page before clicking Create, so that cancel returns to a valid page.
 - **API error logging**: The `page` fixture in `base.ts` logs all 4xx/5xx responses to stdout.
+
+## Pitfalls
+
+### `selectOption` vs `selectComboboxOption`
+
+Use **`selectOption`** for Radix `<Select>` fields — options render inside a simple dropdown.
+
+Use **`selectComboboxOption`** for cmdk `<Combobox>` fields — the component uses a Radix Popover + cmdk Command internally. Radix Popover keeps closed popover content mounted in the DOM (with `data-state="closed"`). If two comboboxes on the same form share option names (e.g., user "admin" and role "admin"), `selectOption` will hit a strict mode violation because `getByRole("option")` matches options from both popovers. `selectComboboxOption` scopes the click to `[data-state="open"][role="dialog"]` to target only the active popover.
+
+### Radix Select disabled check
+
+Radix Select renders both a `<button role="combobox">` trigger and a hidden `<select>` element. Using `getByRole("combobox")` may match both and cause a strict mode violation. To check if a Select is disabled, use the CSS selector instead:
+
+```ts
+await expect(
+  scopeField.locator('button[role="combobox"]'),
+).toBeDisabled();
+```
+
+### Test data naming
+
+Avoid keywords like "create", "edit", "delete" in test data names (e.g., `test-wp-create-...`). These can collide with UI button text in selectors like `getByRole("link", { name: /create/i })`. Use neutral prefixes: `test-wp-new-`, `test-wp-del-`, etc.

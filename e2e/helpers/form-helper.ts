@@ -28,13 +28,25 @@ export class FormHelper {
     await textarea.fill(value);
   }
 
-  /** Select an option from a combobox/select field */
+  /** Select an option from a Radix Select field */
   async selectOption(name: string, optionText: string): Promise<void> {
     const fieldLocator = this.field(name);
     // Click the trigger button to open the dropdown
     await fieldLocator.locator("button").click();
     // Select the option from the dropdown popover
     await this.page
+      .getByRole("option", { name: optionText, exact: true })
+      .click();
+  }
+
+  /** Select an option from a cmdk Combobox field.
+   *  Scopes to the open popover dialog to avoid strict mode violations
+   *  when multiple combobox popovers have same-named options in the DOM. */
+  async selectComboboxOption(name: string, optionText: string): Promise<void> {
+    const fieldLocator = this.field(name);
+    await fieldLocator.locator("button").click();
+    await this.page
+      .locator('[data-state="open"][role="dialog"]')
       .getByRole("option", { name: optionText, exact: true })
       .click();
   }
