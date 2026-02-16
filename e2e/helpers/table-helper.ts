@@ -131,8 +131,9 @@ export class TableHelper {
     await this.page.keyboard.press("Escape");
   }
 
-  /** Open row actions, click Delete, and confirm the dialog */
-  async deleteRow(text: string): Promise<void> {
+  /** Open row actions, click Delete, and confirm the dialog.
+   *  Use `noWait: true` to skip waiting for the row to disappear (cleanup-only). */
+  async deleteRow(text: string, options?: { noWait?: boolean }): Promise<void> {
     await this.clickRowAction(text, () =>
       this.page.getByRole("menuitem", { name: /delete/i }).click(),
     );
@@ -141,8 +142,10 @@ export class TableHelper {
     await dialog.waitFor({ state: "visible" });
     // Click the confirm button
     await dialog.getByRole("button", { name: /delete/i }).click();
-    // Wait for the dialog to close and the delete to complete
+    // Wait for the dialog to close
     await dialog.waitFor({ state: "hidden" });
-    await this.expectNoRowWithText(text, { timeout: DELETE_TIMEOUT });
+    if (!options?.noWait) {
+      await this.expectNoRowWithText(text, { timeout: DELETE_TIMEOUT });
+    }
   }
 }

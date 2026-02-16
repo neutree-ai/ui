@@ -58,22 +58,33 @@ test.describe("roles list", () => {
 
 ### Test data isolation
 
-Each test that creates data must clean up after itself:
+Each test that creates data must clean up after itself. Use `{ noWait: true }` for cleanup to avoid waiting for the delete to complete:
+
+```ts
+test("admin user can create a role with permissions", {
+  tag: "@C2611697",
+}, async ({ roles }) => {
+  const uniqueName = `test-role-${Date.now()}`;
+
+  await createRole(roles, uniqueName, ["Workspaces:Read"]);
+  await roles.goToList();
+  await roles.table.expectRowWithText(uniqueName);
+
+  // Cleanup — noWait since we don't need to verify deletion
+  await roles.table.deleteRow(uniqueName, { noWait: true });
+});
+```
+
+For tests that actually verify delete behavior, omit `noWait` to wait for row removal:
 
 ```ts
 test("can delete role from list", {
   tag: "@C2611721",
 }, async ({ roles }) => {
   const uniqueName = `test-role-${Date.now()}`;
-
-  // Setup
-  await roles.goToCreate();
-  await roles.form.fillInput("metadata.name", uniqueName);
-  await roles.form.field("spec.permissions").getByText("Workspaces:Read").click();
-  await roles.form.submit();
+  await createRole(roles, uniqueName, ["Workspaces:Read"]);
   await roles.goToList();
 
-  // Test
   await roles.table.deleteRow(uniqueName);
   await roles.table.expectNoRowWithText(uniqueName);
 });
@@ -126,7 +137,7 @@ See [Test Organization](#test-organization) above.
 | `expectNoRowWithText(text, options?)` | Assert no row with the text exists |
 | `clickRowLink(text)` | Click the first link in a row |
 | `editRow(text)` | Row actions → Edit |
-| `deleteRow(text)` | Row actions → Delete → confirm → wait for row removal |
+| `deleteRow(text, options?)` | Row actions → Delete → confirm → wait for row removal. Pass `{ noWait: true }` to skip waiting (for cleanup-only scenarios) |
 | `hasRowActions(text)` | Whether the row has an actions button (returns boolean) |
 | `headerCell(text)` | Locator for a column header (string or RegExp) |
 | `sort(columnText)` | Click sort trigger, verify sorting is active |
@@ -173,6 +184,6 @@ When adding new testable UI elements, prefer `data-testid` over CSS class select
 
 ## Notes
 
-- **Delete timeout**: `deleteRow()` and `showPageDelete()` use a 30s timeout internally. Test code should never specify delete timeouts.
+- **Delete cleanup optimization**: `deleteRow()` waits up to 30s for the row to disappear by default. For cleanup-only scenarios (not testing delete), use `deleteRow(name, { noWait: true })` to skip waiting — this saves 10-20s per call. Only tests that verify delete behavior should wait for row removal.
 - **Cancel navigation**: The cancel button uses `history.back()`. Always navigate to the list page before clicking Create, so that cancel returns to a valid page.
 - **API error logging**: The `page` fixture in `base.ts` logs all 4xx/5xx responses to stdout.

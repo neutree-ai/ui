@@ -131,7 +131,10 @@ const ResourceNode = ({
 
   return (
     <div className="border border-border rounded-md overflow-hidden">
-      <div className="flex items-center p-2 bg-secondary text-secondary-foreground">
+      <div
+        className="flex items-center p-2 bg-secondary text-secondary-foreground"
+        data-testid="permission-group-header"
+      >
         <div
           className="cursor-pointer flex items-center"
           onClick={() => setIsOpen(!isOpen)}
@@ -145,6 +148,7 @@ const ResourceNode = ({
 
         <div
           className="flex items-center flex-1 cursor-pointer"
+          data-testid="permission-group-toggle"
           onClick={
             disabled
               ? undefined
