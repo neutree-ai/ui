@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { FormHelper } from "./form-helper";
-import { TableHelper } from "./table-helper";
+import { DELETE_TIMEOUT, TableHelper } from "./table-helper";
 
 export interface ResourcePageOptions {
   /** The route segment for this resource, e.g. "roles", "image-registries" */
@@ -72,5 +72,27 @@ export class ResourcePage {
     await this.page
       .locator('[data-testid="form"]')
       .waitFor({ state: "visible" });
+  }
+
+  /** Click Edit from the show page action menu */
+  async showPageEdit(): Promise<void> {
+    await this.page.locator('[data-testid="show-actions-trigger"]').click();
+    await this.page.getByRole("link", { name: /edit/i }).click();
+    await this.page
+      .locator('[data-testid="form"]')
+      .waitFor({ state: "visible" });
+  }
+
+  /** Click Delete from the show page action menu, confirm, then navigate to list and wait for the row to disappear */
+  async showPageDelete(name: string): Promise<void> {
+    await this.page.locator('[data-testid="show-actions-trigger"]').click();
+    await this.page.getByRole("menuitem", { name: /delete/i }).click();
+    const dialog = this.page.getByRole("alertdialog");
+    await dialog.waitFor({ state: "visible" });
+    await dialog.getByRole("button", { name: /delete/i }).click();
+    await dialog.waitFor({ state: "hidden" });
+
+    await this.goToList();
+    await this.table.expectNoRowWithText(name, { timeout: DELETE_TIMEOUT });
   }
 }

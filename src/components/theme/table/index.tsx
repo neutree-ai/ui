@@ -182,6 +182,7 @@ export function Table<
     refineCoreProps: {
       queryOptions: {
         refetchInterval: 3_000,
+        refetchIntervalInBackground: true,
       },
       ...props.refineCoreProps,
     },

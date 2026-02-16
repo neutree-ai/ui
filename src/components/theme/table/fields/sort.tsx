@@ -9,6 +9,8 @@ export const SortAction = <TData extends BaseRecord = BaseRecord>({
   return (
     <div
       className="cursor-pointer"
+      data-testid="sort-trigger"
+      data-sort-direction={column?.getIsSorted() || "none"}
       onClick={() => {
         column?.toggleSorting(column?.getIsSorted() === "asc");
       }}

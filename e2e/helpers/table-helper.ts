@@ -1,5 +1,8 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
+/** Timeout for waiting for a resource to disappear after deletion (finalizer delay) */
+export const DELETE_TIMEOUT = 30_000;
+
 export class TableHelper {
   readonly page: Page;
   readonly root: Locator;
@@ -50,9 +53,12 @@ export class TableHelper {
   }
 
   /** Assert no row with the given text exists */
-  async expectNoRowWithText(text: string): Promise<void> {
+  async expectNoRowWithText(
+    text: string,
+    options?: { timeout?: number },
+  ): Promise<void> {
     await this.waitForLoaded();
-    await expect(this.rowWithText(text)).toBeHidden();
+    await expect(this.rowWithText(text)).toBeHidden(options);
   }
 
   /** Click the link in a row (typically the name column) */
@@ -92,6 +98,39 @@ export class TableHelper {
     );
   }
 
+  /** Check whether a row has the actions trigger button */
+  async hasRowActions(text: string): Promise<boolean> {
+    await this.waitForLoaded();
+    const trigger = this.rowWithText(text).locator(
+      '[data-testid="row-actions-trigger"]',
+    );
+    return (await trigger.count()) > 0;
+  }
+
+  /** Get a column header cell by its visible text */
+  headerCell(text: string | RegExp): Locator {
+    return this.root.locator("thead th", { hasText: text });
+  }
+
+  /** Click the sort trigger in a column header and verify it becomes active */
+  async sort(columnText: string | RegExp): Promise<void> {
+    await this.waitForLoaded();
+    const trigger = this.headerCell(columnText).locator(
+      '[data-testid="sort-trigger"]',
+    );
+    await trigger.click();
+    await this.waitForLoaded();
+    await expect(trigger).not.toHaveAttribute("data-sort-direction", "none");
+  }
+
+  /** Toggle a column's visibility via the Columns dropdown */
+  async toggleColumn(columnName: string | RegExp): Promise<void> {
+    const columnsButton = this.page.getByRole("button", { name: /columns/i });
+    await columnsButton.click();
+    await this.page.getByRole("menuitemcheckbox", { name: columnName }).click();
+    await this.page.keyboard.press("Escape");
+  }
+
   /** Open row actions, click Delete, and confirm the dialog */
   async deleteRow(text: string): Promise<void> {
     await this.clickRowAction(text, () =>
@@ -102,8 +141,8 @@ export class TableHelper {
     await dialog.waitFor({ state: "visible" });
     // Click the confirm button
     await dialog.getByRole("button", { name: /delete/i }).click();
-    // Wait for the dialog to close and the soft-delete to complete
+    // Wait for the dialog to close and the delete to complete
     await dialog.waitFor({ state: "hidden" });
-    await expect(this.rowWithText(text)).toBeHidden({ timeout: 20_000 });
+    await this.expectNoRowWithText(text, { timeout: DELETE_TIMEOUT });
   }
 }

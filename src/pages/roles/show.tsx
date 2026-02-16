@@ -27,7 +27,7 @@ export const RolesShow = () => {
     <ShowPage record={record} canDelete={!isPreset} canEdit={!isPreset}>
       <div className="h-full overflow-auto">
         <MetadataCard metadata={record.metadata} />
-        <Card className="mt-4">
+        <Card className="mt-4" data-testid="permissions-card">
           <CardHeader>
             <CardTitle>{translate("common.fields.permissions")}</CardTitle>
           </CardHeader>

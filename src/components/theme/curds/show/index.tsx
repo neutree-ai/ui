@@ -62,7 +62,11 @@ export const ShowPage: FC<ShowProps> & {
               ) : !canDelete && !canEdit ? null : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      data-testid="show-actions-trigger"
+                    >
                       <DotsHorizontalIcon className="h-4 w-4" />
                       <span className="sr-only">Open menu</span>
                     </Button>
