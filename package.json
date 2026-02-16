@@ -70,6 +70,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
+		"@playwright/test": "^1.58.2",
 		"@refinedev/ui-types": "^1.23.1",
 		"@testing-library/dom": "^10.4.1",
 		"@testing-library/react": "^16.3.0",
@@ -98,7 +99,9 @@
 		"format": "biome format --write .",
 		"check": "biome check --write .",
 		"preview": "vite preview",
-		"test": "vitest run"
+		"test": "vitest run",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui"
 	},
 	"browserslist": {
 		"production": [">0.2%", "not dead", "not op_mini all"],

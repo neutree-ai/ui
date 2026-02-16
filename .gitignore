@@ -30,3 +30,14 @@ _.ntvs_
 _.njsproj
 _.sln
 \*.sw?
+
+# Playwright
+e2e/auth/storage-state.json
+e2e/test-results/
+e2e/playwright-report/
+playwright-report/
+test-results/
+
+# local agents
+.agents/
+.claude/
