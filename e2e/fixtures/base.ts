@@ -10,6 +10,7 @@ type ResourceFixtures = {
   workspaces: ResourcePage;
   workspacePolicies: ResourcePage;
   engines: ResourcePage;
+  modelCatalogs: ResourcePage;
   userProfiles: ResourcePage;
   apiHelper: ApiHelper;
   createTestUser: (permissions: string[]) => Promise<TestUserContext>;
@@ -40,6 +41,11 @@ export const test = base.extend<ResourceFixtures>({
   engines: async ({ page }, use) => {
     await use(
       new ResourcePage(page, { routeName: "engines", workspaced: true }),
+    );
+  },
+  modelCatalogs: async ({ page }, use) => {
+    await use(
+      new ResourcePage(page, { routeName: "model-catalogs", workspaced: true }),
     );
   },
   userProfiles: async ({ page }, use) => {

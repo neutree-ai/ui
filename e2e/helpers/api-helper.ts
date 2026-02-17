@@ -172,6 +172,64 @@ export class ApiHelper {
     await this.softDelete("role_assignments", name, options);
   }
 
+  // ── Model Catalog CRUD ──
+
+  /** POST /api/v1/model_catalogs */
+  async createModelCatalog(
+    name: string,
+    options?: {
+      workspace?: string;
+      task?: string;
+      modelName?: string;
+      modelVersion?: string;
+      modelFile?: string;
+      engine?: string;
+      engineVersion?: string;
+      cpu?: number;
+      memory?: number;
+      gpu?: number;
+      replicas?: number;
+      schedulerType?: string;
+    },
+  ): Promise<void> {
+    await this.api("POST", "/model_catalogs", {
+      api_version: "v1",
+      kind: "ModelCatalog",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec: {
+        model: {
+          registry: "huggingface",
+          name: options?.modelName ?? "test-model",
+          version: options?.modelVersion ?? "1.0",
+          task: options?.task ?? "text-generation",
+          file: options?.modelFile ?? "model.safetensors",
+        },
+        engine: {
+          engine: options?.engine ?? "vllm",
+          version: options?.engineVersion ?? "v0.8.5",
+        },
+        resources: {
+          cpu: options?.cpu ?? 1,
+          memory: options?.memory ?? 1,
+          gpu: options?.gpu ?? 0,
+        },
+        replicas: { num: options?.replicas ?? 1 },
+        deployment_options: {
+          scheduler: { type: options?.schedulerType ?? "roundrobin" },
+        },
+        variables: {},
+      },
+    });
+  }
+
+  /** Soft-delete a model_catalog by name */
+  async deleteModelCatalog(
+    name: string,
+    options?: { retries?: number },
+  ): Promise<void> {
+    await this.softDelete("model_catalogs", name, options);
+  }
+
   // ── Test data factory ──
 
   /**
