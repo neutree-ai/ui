@@ -1,4 +1,5 @@
 import { expect, test } from "../fixtures/base";
+import { MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { ResourcePage } from "../helpers/resource-page";
 
 /** Known engines that exist in the test environment */
@@ -301,7 +302,7 @@ test.describe("engines multi-user permissions", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["engine:read"]);
       const enginesPage = new ResourcePage(testUser.page, {
@@ -327,7 +328,7 @@ test.describe("engines multi-user permissions", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       // Give an unrelated permission so the user can log in
       const testUser = await createTestUser(["role:read"]);

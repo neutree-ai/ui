@@ -230,6 +230,31 @@ export class ApiHelper {
     await this.softDelete("model_catalogs", name, options);
   }
 
+  // ── API Key CRUD ──
+
+  /** Create an API key via RPC call */
+  async createApiKey(
+    name: string,
+    options?: { workspace?: string },
+  ): Promise<{ sk_value: string }> {
+    const result = await this.api<{
+      status?: { sk_value?: string };
+    }>("POST", "/rpc/create_api_key", {
+      p_workspace: options?.workspace ?? "default",
+      p_name: name,
+      p_quota: 0,
+    });
+    return { sk_value: result?.status?.sk_value ?? "" };
+  }
+
+  /** Soft-delete an API key by name */
+  async deleteApiKey(
+    name: string,
+    options?: { retries?: number },
+  ): Promise<void> {
+    await this.softDelete("api_keys", name, options);
+  }
+
   // ── Test data factory ──
 
   /**

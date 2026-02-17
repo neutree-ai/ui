@@ -50,6 +50,58 @@ export class YamlImportHelper {
     }
   }
 
+  /** Open the Import YAML dialog, set a file via the file input, submit, and wait for results */
+  async importFromFile(yamlContent: string): Promise<void> {
+    // Open the dialog
+    await this.page.getByRole("button", { name: /import yaml/i }).click();
+    const dialog = this.page.getByRole("dialog");
+    await dialog.waitFor({ state: "visible" });
+
+    // Set the file via the file input
+    const buffer = Buffer.from(yamlContent, "utf-8");
+    await dialog.locator("#file-upload").setInputFiles({
+      name: "import.yaml",
+      mimeType: "application/x-yaml",
+      buffer,
+    });
+
+    // Click the import button
+    await dialog
+      .getByRole("button", { name: /import/i })
+      .last()
+      .click();
+
+    // Wait for results to appear (success/error badges)
+    await expect(dialog.getByText(/success|error/i).first()).toBeVisible();
+  }
+
+  /** Click "Import More" to reset the dialog for another import */
+  async importMore(): Promise<void> {
+    const dialog = this.page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /import more/i }).click();
+    // Wait for the input form to reappear
+    await expect(dialog.locator("#yaml-text")).toBeVisible();
+  }
+
+  /** Fill YAML and submit when the dialog is already open (e.g. after importMore) */
+  async submitYaml(yamlContent: string): Promise<void> {
+    const dialog = this.page.getByRole("dialog");
+
+    // Fill the YAML textarea
+    await dialog.locator("#yaml-text").fill(yamlContent);
+
+    // Click the import button
+    await dialog
+      .getByRole("button", { name: /import/i })
+      .last()
+      .click();
+
+    // Wait for results to appear (success/error badges)
+    await expect(
+      dialog.getByText(/success|skipped|error/i).first(),
+    ).toBeVisible();
+  }
+
   /** Close the import dialog */
   async close(): Promise<void> {
     const dialog = this.page.getByRole("dialog");

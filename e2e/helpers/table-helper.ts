@@ -1,7 +1,7 @@
 import { type Locator, type Page, expect } from "@playwright/test";
+import { DELETE_TIMEOUT } from "./constants";
 
-/** Timeout for waiting for a resource to disappear after deletion (finalizer delay) */
-export const DELETE_TIMEOUT = 30_000;
+export { DELETE_TIMEOUT };
 
 export class TableHelper {
   readonly page: Page;

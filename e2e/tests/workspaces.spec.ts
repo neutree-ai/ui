@@ -1,4 +1,5 @@
 import { expect, test } from "../fixtures/base";
+import { MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { ResourcePage } from "../helpers/resource-page";
 
 /** Default workspace that always exists in the test environment */
@@ -98,7 +99,7 @@ test.describe("workspaces list", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["workspace:read"]);
       const wsPage = new ResourcePage(testUser.page, {
@@ -121,7 +122,7 @@ test.describe("workspaces list", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["role:read"]);
       const wsPage = new ResourcePage(testUser.page, {

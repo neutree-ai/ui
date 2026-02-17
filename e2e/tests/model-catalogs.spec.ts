@@ -1,5 +1,6 @@
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
+import { MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { ResourcePage } from "../helpers/resource-page";
 import { YamlImportHelper } from "../helpers/yaml-import";
 
@@ -515,7 +516,7 @@ test.describe("model catalogs", () => {
         },
       },
       async ({ createTestUser }, testInfo) => {
-        testInfo.setTimeout(60_000);
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const testUser = await createTestUser(["model_catalog:read"]);
         const mcPage = new ResourcePage(testUser.page, {
@@ -540,7 +541,7 @@ test.describe("model catalogs", () => {
         },
       },
       async ({ createTestUser }, testInfo) => {
-        testInfo.setTimeout(60_000);
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const testUser = await createTestUser(["role:read"]);
         const mcPage = new ResourcePage(testUser.page, {
@@ -671,7 +672,7 @@ test.describe("model catalogs create", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser([
         "model_catalog:create",
@@ -708,7 +709,7 @@ test.describe("model catalogs create", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["model_catalog:read"]);
 
@@ -795,7 +796,7 @@ test.describe("model catalogs delete permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const mcName = `test-mc-del-${Date.now()}`;
       await apiHelper.createModelCatalog(mcName);
@@ -825,7 +826,7 @@ test.describe("model catalogs delete permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const mcName = `test-mc-del-${Date.now()}`;
       await apiHelper.createModelCatalog(mcName);

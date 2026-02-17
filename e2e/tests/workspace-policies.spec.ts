@@ -1,4 +1,5 @@
 import { expect, test } from "../fixtures/base";
+import { MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { ResourcePage } from "../helpers/resource-page";
 
 /** Admin user profile name (matches E2E login user) */
@@ -570,7 +571,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["role_assignment:read"]);
       const wpPage = new ResourcePage(testUser.page, {
@@ -596,7 +597,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       // Give an unrelated permission so the user can log in
       const testUser = await createTestUser(["role:read"]);
@@ -624,7 +625,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser([
         "role_assignment:read",
@@ -664,7 +665,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser([
         "role_assignment:read",
@@ -701,7 +702,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const ts = Date.now();
       const policyName = `test-mu-wpedit-${ts}`;
@@ -745,7 +746,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const ts = Date.now();
       const policyName = `test-mu-wpnoed-${ts}`;
@@ -795,7 +796,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const ts = Date.now();
       const policyName = `test-mu-wpdel-${ts}`;
@@ -833,7 +834,7 @@ test.describe("workspace policies multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const ts = Date.now();
       const policyName = `test-mu-wpnodl-${ts}`;

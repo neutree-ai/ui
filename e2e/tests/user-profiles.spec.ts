@@ -1,4 +1,8 @@
 import { expect, test } from "../fixtures/base";
+import {
+  MULTI_USER_EXTENDED_TIMEOUT,
+  MULTI_USER_TIMEOUT,
+} from "../helpers/constants";
 import type { ResourcePage } from "../helpers/resource-page";
 import { DELETE_TIMEOUT } from "../helpers/table-helper";
 import { loginAs, logout } from "../helpers/test-user-context";
@@ -715,7 +719,7 @@ test.describe("user profiles delete", () => {
       },
     },
     async ({ userProfiles: users, apiHelper }, testInfo) => {
-      testInfo.setTimeout(90_000);
+      testInfo.setTimeout(MULTI_USER_EXTENDED_TIMEOUT);
 
       const testData = await apiHelper.createTestUserData(["workspace:read"]);
 
@@ -763,7 +767,7 @@ test.describe("user profiles login", () => {
       },
     },
     async ({ apiHelper, browser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const ts = Date.now();
       const name = `test-login-${ts}`;
@@ -797,7 +801,7 @@ test.describe("user profiles login", () => {
       },
     },
     async ({ apiHelper, browser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const ts = Date.now();
       const name = `test-uname-${ts}`;
@@ -839,7 +843,7 @@ test.describe("user profiles password change", () => {
       },
     },
     async ({ apiHelper, browser }, testInfo) => {
-      testInfo.setTimeout(90_000);
+      testInfo.setTimeout(MULTI_USER_EXTENDED_TIMEOUT);
 
       const ts = Date.now();
       const name = `test-chpwd-${ts}`;
@@ -894,7 +898,7 @@ test.describe("user profiles password change", () => {
       },
     },
     async ({ apiHelper, browser }, testInfo) => {
-      testInfo.setTimeout(90_000);
+      testInfo.setTimeout(MULTI_USER_EXTENDED_TIMEOUT);
 
       const ts = Date.now();
       const name = `test-oldpwd-${ts}`;

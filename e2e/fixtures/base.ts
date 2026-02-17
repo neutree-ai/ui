@@ -2,16 +2,19 @@ import { test as base } from "@playwright/test";
 import { ApiHelper, isApiErrorMuted } from "../helpers/api-helper";
 import { ResourcePage } from "../helpers/resource-page";
 import { TestUserContext } from "../helpers/test-user-context";
+import { YamlExportHelper } from "../helpers/yaml-export";
 import { YamlImportHelper } from "../helpers/yaml-import";
 
 type ResourceFixtures = {
   yamlImport: YamlImportHelper;
+  yamlExport: YamlExportHelper;
   roles: ResourcePage;
   workspaces: ResourcePage;
   workspacePolicies: ResourcePage;
   engines: ResourcePage;
   modelCatalogs: ResourcePage;
   userProfiles: ResourcePage;
+  apiKeys: ResourcePage;
   apiHelper: ApiHelper;
   createTestUser: (permissions: string[]) => Promise<TestUserContext>;
 };
@@ -28,6 +31,9 @@ export const test = base.extend<ResourceFixtures>({
   },
   yamlImport: async ({ page }, use) => {
     await use(new YamlImportHelper(page));
+  },
+  yamlExport: async ({ page }, use) => {
+    await use(new YamlExportHelper(page));
   },
   roles: async ({ page }, use) => {
     await use(new ResourcePage(page, { routeName: "roles" }));
@@ -50,6 +56,11 @@ export const test = base.extend<ResourceFixtures>({
   },
   userProfiles: async ({ page }, use) => {
     await use(new ResourcePage(page, { routeName: "user-profiles" }));
+  },
+  apiKeys: async ({ page }, use) => {
+    await use(
+      new ResourcePage(page, { routeName: "api-keys", workspaced: true }),
+    );
   },
   apiHelper: async ({ page }, use) => {
     await use(new ApiHelper(page));

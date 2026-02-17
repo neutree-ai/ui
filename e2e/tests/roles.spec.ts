@@ -1,5 +1,9 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "../fixtures/base";
+import {
+  MULTI_USER_EXTENDED_TIMEOUT,
+  MULTI_USER_TIMEOUT,
+} from "../helpers/constants";
 import { ResourcePage } from "../helpers/resource-page";
 
 /** Create a role via the create form and submit */
@@ -966,7 +970,7 @@ test.describe("roles delete", () => {
       annotation: { type: "slow", description: "creates and deletes 2 roles" },
     },
     async ({ roles }, testInfo) => {
-      testInfo.setTimeout(90_000);
+      testInfo.setTimeout(MULTI_USER_EXTENDED_TIMEOUT);
 
       const name1 = `test-del1-${Date.now()}`;
       const name2 = `test-del2-${Date.now()}`;
@@ -1002,7 +1006,7 @@ test.describe("roles multi-user permissions", () => {
       },
     },
     async ({ createTestUser }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["role:read"]);
       const rolesPage = new ResourcePage(testUser.page, {
@@ -1027,7 +1031,7 @@ test.describe("roles multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["role:read", "role:create"]);
       const rolesPage = new ResourcePage(testUser.page, {
@@ -1067,7 +1071,7 @@ test.describe("roles multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const roleName = `test-mu-upd-${Date.now()}`;
       await apiHelper.createRole(roleName, ["workspace:read"]);
@@ -1104,7 +1108,7 @@ test.describe("roles multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const roleName = `test-mu-noedit-${Date.now()}`;
       await apiHelper.createRole(roleName, ["workspace:read"]);
@@ -1145,7 +1149,7 @@ test.describe("roles multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const roleName = `test-mu-del-${Date.now()}`;
       await apiHelper.createRole(roleName, ["workspace:read"]);
@@ -1176,7 +1180,7 @@ test.describe("roles multi-user permissions", () => {
       },
     },
     async ({ createTestUser, apiHelper }, testInfo) => {
-      testInfo.setTimeout(60_000);
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const roleName = `test-mu-nodel-${Date.now()}`;
       await apiHelper.createRole(roleName, ["workspace:read"]);
@@ -1234,7 +1238,7 @@ test.describe("roles delete constraints", () => {
       },
     },
     async ({ roles, apiHelper }, testInfo) => {
-      testInfo.setTimeout(90_000);
+      testInfo.setTimeout(MULTI_USER_EXTENDED_TIMEOUT);
 
       const ts = Date.now();
       const roleName = `test-inuse-${ts}`;
