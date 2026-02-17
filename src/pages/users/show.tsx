@@ -37,7 +37,7 @@ export const UsersShow = () => {
           />
         </CardContent>
       </Card>
-      <Card className="mt-4">
+      <Card className="mt-4" data-testid="global-roles-card">
         <CardHeader>
           <CardTitle>{t("user_profiles.sections.globalRoles")}</CardTitle>
         </CardHeader>

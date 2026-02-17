@@ -36,7 +36,7 @@
   "src/pages/users/edit.tsx": "65cf5d75b1d3d6a38df6d202972a6fc9",
   "src/pages/users/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/users/list.tsx": "6e29a383c066bb2009dfeff67034e0fc",
-  "src/pages/users/show.tsx": "02a95215aeffbd0d1e3d6ff923f0072c",
+  "src/pages/users/show.tsx": "15ab9b42f48916570218fb8d734d5f96",
   "src/pages/users/use-user-form.tsx": "bc34a1282a55653e9dea2eb898269560",
   "src/pages/roles/create.tsx": "d2369b3baf16b39b94c3c9dc09facdd3",
   "src/pages/roles/edit.tsx": "68ef87401f5cdc949b2b103b1caf15f7",
@@ -280,5 +280,5 @@
   "src/lib/grafana-dashboard-configs.ts": "ef0459ffb5772cf353b91f4cdf5e5efb",
   "src/components/business/GrafanaDashboard.tsx": "b6bd84eff4bebe9b19f43dd05081ad5e",
   "src/components/business/use-permission-dependencies.ts": "b313416def4ea00bfef8e0e87c703f7e",
-  "playwright.config.ts": "75465a80b632efc6e983f1d11758cbf1"
+  "playwright.config.ts": "f574a9fe3e92a6166d012be804a788a4"
 }
