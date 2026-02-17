@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { basename, extname } from "node:path";
 import type {
   FullResult,
   Reporter,
@@ -14,7 +15,7 @@ interface TestRailResult {
 }
 
 interface CollectedResult extends TestRailResult {
-  attachments: { name: string; path: string }[];
+  attachments: { name: string; path: string; uploadName: string }[];
 }
 
 enum TestRailStatus {
@@ -32,6 +33,34 @@ const STATUS_MAP: Record<string, TestRailStatus> = {
   skipped: TestRailStatus.Blocked,
   interrupted: TestRailStatus.Failed,
 };
+
+function shouldUploadAttachment(a: {
+  name?: string;
+  path?: string;
+  contentType?: string;
+}): boolean {
+  if (!a.path) return false;
+
+  const contentType = a.contentType || "";
+  if (contentType.startsWith("image/")) return true;
+  if (contentType === "application/zip") return true;
+
+  const name = (a.name || "").toLowerCase();
+  if (name === "trace" || name === "screenshot" || name === "video")
+    return true;
+
+  const ext = extname(a.path).toLowerCase();
+  return [
+    ".zip",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+    ".mp4",
+    ".webm",
+  ].includes(ext);
+}
 
 function formatElapsed(ms: number): string {
   const totalSeconds = Math.max(1, Math.round(ms / 1000));
@@ -75,16 +104,17 @@ class TestRailReporter implements Reporter {
     const statusId = STATUS_MAP[result.status] ?? TestRailStatus.Failed;
     const isFailed = statusId === TestRailStatus.Failed;
 
-    const attachments: { name: string; path: string }[] = [];
+    const attachments: { name: string; path: string; uploadName: string }[] =
+      [];
     if (isFailed) {
       for (const a of result.attachments) {
-        if (
-          a.path &&
-          (a.contentType.startsWith("image/") ||
-            a.name === "trace" ||
-            a.contentType === "application/zip")
-        ) {
-          attachments.push({ name: a.name || "attachment", path: a.path });
+        if (shouldUploadAttachment(a)) {
+          const path = a.path;
+          if (!path) continue;
+          const fallbackName = a.name || "attachment";
+          const fileNameFromPath = basename(path);
+          const uploadName = fileNameFromPath || fallbackName;
+          attachments.push({ name: fallbackName, path, uploadName });
         }
       }
     }
@@ -183,7 +213,7 @@ class TestRailReporter implements Reporter {
           const fileData = readFileSync(a.path);
           const blob = new Blob([fileData]);
           const form = new FormData();
-          form.append("attachment", blob, a.name);
+          form.append("attachment", blob, a.uploadName);
 
           const response = await fetch(
             apiUrl(`add_attachment_to_result/${resultId}`),
