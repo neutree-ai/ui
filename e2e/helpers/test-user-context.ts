@@ -1,5 +1,5 @@
 import type { Browser, BrowserContext, Page } from "@playwright/test";
-import type { ApiHelper } from "./api-helper";
+import type { ApiHelper, TestUserData } from "./api-helper";
 
 export interface TestUserOptions {
   /** Permissions to assign, e.g. ["role:read", "role:create"] */
@@ -48,52 +48,26 @@ export async function loginAs(
 
 /**
  * Wraps the full lifecycle: create user → assign permissions → login → cleanup.
+ * Delegates data creation/cleanup to `ApiHelper.createTestUserData()`.
  */
 export class TestUserContext {
-  readonly name: string;
-  readonly email: string;
-  readonly password = "Test@123456";
   page!: Page;
-
-  private roleName: string;
-  private policyName: string;
+  private data!: TestUserData;
   private context!: BrowserContext;
-  private userId!: string;
 
   constructor(
     private api: ApiHelper,
     private browser: Browser,
-  ) {
-    const ts = Date.now();
-    this.name = `test-user-${ts}`;
-    this.email = `test-user-${ts}@e2e.local`;
-    this.roleName = `test-role-${ts}`;
-    this.policyName = `test-policy-${ts}`;
-  }
+  ) {}
 
   /** Create user + role + policy, login in a new browser context, return the page */
   async setup(options: TestUserOptions): Promise<Page> {
-    // 1. Create user via admin API
-    this.userId = await this.api.createUser(
-      this.name,
-      this.email,
-      this.password,
-    );
-    // 2. Create role with specified permissions
-    await this.api.createRole(this.roleName, options.permissions);
-    // 3. Create global policy linking user to role
-    await this.api.createPolicy(
-      this.policyName,
-      this.userId,
-      this.roleName,
-      true,
-    );
-    // 4. Login in new browser context
+    this.data = await this.api.createTestUserData(options.permissions);
     const { page, context } = await loginAs(
       this.browser,
       this.api,
-      this.email,
-      this.password,
+      this.data.email,
+      "Test@123456",
     );
     this.page = page;
     this.context = context;
@@ -103,9 +77,6 @@ export class TestUserContext {
   /** Close browser context and soft-delete all created resources */
   async cleanup(): Promise<void> {
     if (this.context) await this.context.close();
-    // Delete in reverse dependency order
-    await this.api.deletePolicy(this.policyName).catch(() => {});
-    await this.api.deleteRole(this.roleName).catch(() => {});
-    await this.api.deleteUser(this.name).catch(() => {});
+    await this.data.cleanup();
   }
 }

@@ -1,5 +1,5 @@
 import { test as base } from "@playwright/test";
-import { ApiHelper } from "../helpers/api-helper";
+import { ApiHelper, isApiErrorMuted } from "../helpers/api-helper";
 import { ResourcePage } from "../helpers/resource-page";
 import { TestUserContext } from "../helpers/test-user-context";
 import { YamlImportHelper } from "../helpers/yaml-import";
@@ -17,7 +17,7 @@ type ResourceFixtures = {
 export const test = base.extend<ResourceFixtures>({
   page: async ({ page }, use) => {
     page.on("response", async (res) => {
-      if (res.status() >= 400) {
+      if (res.status() >= 400 && !isApiErrorMuted()) {
         const body = await res.text().catch(() => "");
         console.log(`[API ${res.status()}] ${res.url()}\n${body}`);
       }

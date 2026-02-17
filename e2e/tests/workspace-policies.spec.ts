@@ -1,5 +1,5 @@
 import { expect, test } from "../fixtures/base";
-import type { ResourcePage } from "../helpers/resource-page";
+import { ResourcePage } from "../helpers/resource-page";
 
 /** Admin user profile name (matches E2E login user) */
 const ADMIN_USER = "admin";
@@ -552,6 +552,331 @@ test.describe("workspace policies delete", () => {
       await wp.goToList();
       const hasActions = await wp.table.hasRowActions(BUILTIN_POLICY);
       expect(hasActions).toBe(false);
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Multi-user permission tests
+// ────────────────────────────────────────────────────────────
+test.describe("workspace policies multi-user permissions", () => {
+  test(
+    "user with role_assignment:read can see policies list",
+    {
+      tag: "@C2611777",
+      annotation: {
+        type: "slow",
+        description: "creates test user with role_assignment:read permission",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const testUser = await createTestUser(["role_assignment:read"]);
+      const wpPage = new ResourcePage(testUser.page, {
+        routeName: "role-assignments",
+      });
+
+      await wpPage.goToList();
+
+      // User with role_assignment:read should see policy rows
+      const rowCount = await wpPage.table.rows().count();
+      expect(rowCount).toBeGreaterThan(0);
+    },
+  );
+
+  test(
+    "user without role_assignment:read sees empty policies list",
+    {
+      tag: "@C2611778",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user without role_assignment:read permission",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      // Give an unrelated permission so the user can log in
+      const testUser = await createTestUser(["role:read"]);
+      const wpPage = new ResourcePage(testUser.page, {
+        routeName: "role-assignments",
+      });
+
+      await testUser.page.goto("/#/role-assignments");
+      await wpPage.table.waitForLoaded();
+
+      await expect(
+        testUser.page.locator('[data-testid="table-empty"]'),
+      ).toBeVisible();
+    },
+  );
+
+  test(
+    "user with role_assignment:create can create a policy",
+    {
+      tag: "@C2611781",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user with role_assignment:read+create permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const testUser = await createTestUser([
+        "role_assignment:read",
+        "role_assignment:create",
+        "user_profile:read",
+        "role:read",
+      ]);
+      const wpPage = new ResourcePage(testUser.page, {
+        routeName: "role-assignments",
+      });
+
+      const policyName = `test-mu-wpnew-${Date.now()}`;
+
+      try {
+        await wpPage.goToCreate();
+        await wpPage.form.fillInput("metadata.name", policyName);
+        await wpPage.form.selectComboboxOption("spec.user_id", ADMIN_USER);
+        await wpPage.form.selectComboboxOption("spec.role", ADMIN_ROLE);
+        await wpPage.form.submit();
+
+        await wpPage.goToList();
+        await wpPage.table.expectRowWithText(policyName);
+      } finally {
+        await apiHelper.deletePolicy(policyName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user without role_assignment:create cannot create a policy",
+    {
+      tag: "@C2611782",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user without role_assignment:create permission",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const testUser = await createTestUser([
+        "role_assignment:read",
+        "user_profile:read",
+        "role:read",
+      ]);
+      const wpPage = new ResourcePage(testUser.page, {
+        routeName: "role-assignments",
+      });
+
+      const policyName = `test-mu-wpnocr-${Date.now()}`;
+
+      await wpPage.goToCreate();
+      await wpPage.form.fillInput("metadata.name", policyName);
+      await wpPage.form.selectComboboxOption("spec.user_id", ADMIN_USER);
+      await wpPage.form.selectComboboxOption("spec.role", ADMIN_ROLE);
+      await wpPage.form.submit();
+
+      // Backend should reject — error toast
+      await expect(
+        testUser.page.locator('[data-sonner-toast][data-type="error"]'),
+      ).toBeVisible();
+    },
+  );
+
+  test(
+    "user with role_assignment:update can edit a policy",
+    {
+      tag: "@C2611785",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user with role_assignment:read+update permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const ts = Date.now();
+      const policyName = `test-mu-wpedit-${ts}`;
+
+      // Create policy via admin API
+      const adminId = await apiHelper.getUserId("admin");
+      await apiHelper.createPolicy(policyName, adminId, ADMIN_ROLE, true);
+
+      try {
+        const testUser = await createTestUser([
+          "role_assignment:read",
+          "role_assignment:update",
+          "user_profile:read",
+          "role:read",
+        ]);
+        const wpPage = new ResourcePage(testUser.page, {
+          routeName: "role-assignments",
+        });
+
+        await wpPage.goToList();
+        await wpPage.table.editRow(policyName);
+
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+        await wpPage.form.submit();
+      } finally {
+        await apiHelper.deletePolicy(policyName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user without role_assignment:update cannot edit a policy",
+    {
+      tag: "@C2611786",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user without role_assignment:update permission",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const ts = Date.now();
+      const policyName = `test-mu-wpnoed-${ts}`;
+
+      // Create policy via admin API
+      const adminId = await apiHelper.getUserId("admin");
+      await apiHelper.createPolicy(policyName, adminId, ADMIN_ROLE, true);
+
+      try {
+        const testUser = await createTestUser([
+          "role_assignment:read",
+          "user_profile:read",
+          "role:read",
+        ]);
+        const wpPage = new ResourcePage(testUser.page, {
+          routeName: "role-assignments",
+        });
+
+        await wpPage.goToList();
+        await wpPage.table.editRow(policyName);
+
+        // Wait for form data to load
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        // Submit edit — backend should reject
+        await wpPage.form.submit();
+
+        await expect(
+          testUser.page.locator('[data-sonner-toast][data-type="error"]'),
+        ).toBeVisible();
+      } finally {
+        await apiHelper.deletePolicy(policyName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user with role_assignment:delete can delete a policy",
+    {
+      tag: "@C2611791",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user with role_assignment:read+delete permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const ts = Date.now();
+      const policyName = `test-mu-wpdel-${ts}`;
+
+      // Create policy via admin API
+      const adminId = await apiHelper.getUserId("admin");
+      await apiHelper.createPolicy(policyName, adminId, ADMIN_ROLE, true);
+
+      try {
+        const testUser = await createTestUser([
+          "role_assignment:read",
+          "role_assignment:delete",
+        ]);
+        const wpPage = new ResourcePage(testUser.page, {
+          routeName: "role-assignments",
+        });
+
+        await wpPage.goToList();
+        await wpPage.table.deleteRow(policyName);
+        await wpPage.table.expectNoRowWithText(policyName);
+      } finally {
+        await apiHelper.deletePolicy(policyName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user without role_assignment:delete cannot delete a policy",
+    {
+      tag: "@C2611792",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user without role_assignment:delete permission",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const ts = Date.now();
+      const policyName = `test-mu-wpnodl-${ts}`;
+
+      // Create policy via admin API
+      const adminId = await apiHelper.getUserId("admin");
+      await apiHelper.createPolicy(policyName, adminId, ADMIN_ROLE, true);
+
+      try {
+        const testUser = await createTestUser(["role_assignment:read"]);
+        const wpPage = new ResourcePage(testUser.page, {
+          routeName: "role-assignments",
+        });
+
+        await wpPage.goToList();
+        await wpPage.table.expectRowWithText(policyName);
+
+        // Open the row action menu and click delete
+        await wpPage.table
+          .rowWithText(policyName)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await testUser.page
+          .locator('[role="menu"]')
+          .waitFor({ state: "visible" });
+        await testUser.page.getByRole("menuitem", { name: /delete/i }).click();
+
+        // Confirm the delete dialog
+        const dialog = testUser.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+
+        // Backend should reject — error toast
+        await expect(
+          testUser.page.locator('[data-sonner-toast][data-type="error"]'),
+        ).toBeVisible();
+
+        // Policy should still exist
+        await dialog.waitFor({ state: "hidden" });
+        await wpPage.table.expectRowWithText(policyName);
+      } finally {
+        await apiHelper.deletePolicy(policyName).catch(() => {});
+      }
     },
   );
 });

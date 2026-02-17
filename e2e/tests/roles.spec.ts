@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "../fixtures/base";
-import type { ResourcePage } from "../helpers/resource-page";
+import { ResourcePage } from "../helpers/resource-page";
 
 /** Create a role via the create form and submit */
 async function createRole(
@@ -984,6 +984,296 @@ test.describe("roles delete", () => {
       // Delete both
       await roles.table.deleteRow(name1);
       await roles.table.deleteRow(name2);
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Multi-user permission tests
+// ────────────────────────────────────────────────────────────
+test.describe("roles multi-user permissions", () => {
+  test(
+    "user with role:read can see roles list",
+    {
+      tag: "@C2611684",
+      annotation: {
+        type: "slow",
+        description: "creates test user with role:read permission",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const testUser = await createTestUser(["role:read"]);
+      const rolesPage = new ResourcePage(testUser.page, {
+        routeName: "roles",
+      });
+
+      await rolesPage.goToList();
+
+      // Verify the table loads with data rows
+      const rowCount = await rolesPage.table.rows().count();
+      expect(rowCount).toBeGreaterThan(0);
+    },
+  );
+
+  test(
+    "user with role:create can create a role",
+    {
+      tag: "@C2611698",
+      annotation: {
+        type: "slow",
+        description: "creates test user with role:read+create permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const testUser = await createTestUser(["role:read", "role:create"]);
+      const rolesPage = new ResourcePage(testUser.page, {
+        routeName: "roles",
+      });
+
+      const roleName = `test-mu-new-${Date.now()}`;
+
+      try {
+        await rolesPage.goToList();
+
+        // Create button should be visible
+        await expect(
+          testUser.page.getByRole("link", { name: /create/i }),
+        ).toBeVisible();
+
+        // Create a role
+        await rolesPage.goToCreate();
+        await rolesPage.form.fillInput("metadata.name", roleName);
+        await rolesPage.form.submit();
+
+        await rolesPage.goToList();
+        await rolesPage.table.expectRowWithText(roleName);
+      } finally {
+        await apiHelper.deleteRole(roleName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user with role:update can edit a role",
+    {
+      tag: "@C2611710",
+      annotation: {
+        type: "slow",
+        description: "creates test user with role:read+update permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const roleName = `test-mu-upd-${Date.now()}`;
+      await apiHelper.createRole(roleName, ["workspace:read"]);
+
+      try {
+        const testUser = await createTestUser(["role:read", "role:update"]);
+        const rolesPage = new ResourcePage(testUser.page, {
+          routeName: "roles",
+        });
+
+        await rolesPage.goToList();
+        await rolesPage.table.editRow(roleName);
+
+        await expect(
+          testUser.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+        await rolesPage.form.submit();
+      } finally {
+        await apiHelper.deleteRole(roleName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user without role:update cannot edit a role",
+    {
+      tag: "@C2611711",
+      annotation: {
+        type: "slow",
+        description: "creates test user with only role:read permission",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const roleName = `test-mu-noedit-${Date.now()}`;
+      await apiHelper.createRole(roleName, ["workspace:read"]);
+
+      try {
+        const testUser = await createTestUser(["role:read"]);
+        const rolesPage = new ResourcePage(testUser.page, {
+          routeName: "roles",
+        });
+
+        await rolesPage.goToList();
+        await rolesPage.table.editRow(roleName);
+
+        // Wait for form data to load
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        // Submit edit — backend should reject
+        await rolesPage.form.submit();
+
+        await expect(
+          testUser.page.locator('[data-sonner-toast][data-type="error"]'),
+        ).toBeVisible();
+      } finally {
+        await apiHelper.deleteRole(roleName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user with role:delete can delete a role",
+    {
+      tag: "@C2611724",
+      annotation: {
+        type: "slow",
+        description: "creates test user with role:read+delete permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const roleName = `test-mu-del-${Date.now()}`;
+      await apiHelper.createRole(roleName, ["workspace:read"]);
+
+      try {
+        const testUser = await createTestUser(["role:read", "role:delete"]);
+        const rolesPage = new ResourcePage(testUser.page, {
+          routeName: "roles",
+        });
+
+        await rolesPage.goToList();
+        await rolesPage.table.deleteRow(roleName);
+        await rolesPage.table.expectNoRowWithText(roleName);
+      } finally {
+        // If delete succeeded, this is a no-op; if it failed, clean up
+        await apiHelper.deleteRole(roleName).catch(() => {});
+      }
+    },
+  );
+
+  test(
+    "user without role:delete cannot delete a role",
+    {
+      tag: "@C2611725",
+      annotation: {
+        type: "slow",
+        description: "creates test user with only role:read permission",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const roleName = `test-mu-nodel-${Date.now()}`;
+      await apiHelper.createRole(roleName, ["workspace:read"]);
+
+      try {
+        const testUser = await createTestUser(["role:read"]);
+        const rolesPage = new ResourcePage(testUser.page, {
+          routeName: "roles",
+        });
+
+        await rolesPage.goToList();
+        await rolesPage.table.expectRowWithText(roleName);
+
+        // Open the row action menu and click delete
+        await rolesPage.table
+          .rowWithText(roleName)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await testUser.page
+          .locator('[role="menu"]')
+          .waitFor({ state: "visible" });
+        await testUser.page.getByRole("menuitem", { name: /delete/i }).click();
+
+        // Confirm the delete dialog
+        const dialog = testUser.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+
+        // Backend should reject — error toast
+        await expect(
+          testUser.page.locator('[data-sonner-toast][data-type="error"]'),
+        ).toBeVisible();
+
+        // Role should still exist
+        await dialog.waitFor({ state: "hidden" });
+        await rolesPage.table.expectRowWithText(roleName);
+      } finally {
+        await apiHelper.deleteRole(roleName).catch(() => {});
+      }
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Role deletion constraints
+// ────────────────────────────────────────────────────────────
+test.describe("roles delete constraints", () => {
+  test(
+    "role in use by workspace policy cannot be deleted",
+    {
+      tag: "@C2611726",
+      annotation: {
+        type: "slow",
+        description: "creates role + policy, attempts to delete role",
+      },
+    },
+    async ({ roles, apiHelper }, testInfo) => {
+      testInfo.setTimeout(90_000);
+
+      const ts = Date.now();
+      const roleName = `test-inuse-${ts}`;
+      const policyName = `test-pol-${ts}`;
+
+      // Create role and a policy that uses it
+      await apiHelper.createRole(roleName, ["workspace:read"]);
+      const adminId = await apiHelper.getUserId("admin");
+      await apiHelper.createPolicy(policyName, adminId, roleName, true);
+
+      try {
+        await roles.goToList();
+        await roles.table.expectRowWithText(roleName);
+
+        // Attempt to delete
+        await roles.table
+          .rowWithText(roleName)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await roles.page.locator('[role="menu"]').waitFor({ state: "visible" });
+        await roles.page.getByRole("menuitem", { name: /delete/i }).click();
+
+        const dialog = roles.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+
+        // Should show error — role is in use by a policy
+        await expect(
+          roles.page.locator('[data-sonner-toast][data-type="error"]'),
+        ).toBeVisible();
+
+        await dialog.waitFor({ state: "hidden" });
+        await roles.table.expectRowWithText(roleName);
+      } finally {
+        // Cleanup in reverse dependency order — retry role deletion
+        // until backend GC hard-deletes the policy
+        await apiHelper.deletePolicy(policyName).catch(() => {});
+        await apiHelper.deleteRole(roleName, { retries: 10 }).catch(() => {});
+      }
     },
   );
 });

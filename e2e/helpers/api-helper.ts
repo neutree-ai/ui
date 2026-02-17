@@ -1,5 +1,24 @@
 import type { Page } from "@playwright/test";
 
+/** Module-level flag — when true the page response listener should skip logging */
+let _muteApiErrors = false;
+
+/** Whether API error logging is currently muted (used by the page fixture) */
+export function isApiErrorMuted(): boolean {
+  return _muteApiErrors;
+}
+
+/** Data returned by `createTestUserData` */
+export interface TestUserData {
+  userName: string;
+  email: string;
+  userId: string;
+  roleName: string;
+  policyName: string;
+  /** Delete policy → role (retry) → user (retry) in correct dependency order */
+  cleanup: () => Promise<void>;
+}
+
 /**
  * Makes API calls using the admin page's auth session via page.evaluate.
  * All requests run in the browser context to inherit the Supabase auth token.
@@ -91,8 +110,11 @@ export class ApiHelper {
   }
 
   /** Soft-delete a user_profile by name */
-  async deleteUser(name: string): Promise<void> {
-    await this.softDelete("user_profiles", name);
+  async deleteUser(
+    name: string,
+    options?: { retries?: number },
+  ): Promise<void> {
+    await this.softDelete("user_profiles", name, options);
   }
 
   /** GET user_profile id by name */
@@ -118,8 +140,11 @@ export class ApiHelper {
   }
 
   /** Soft-delete a role by name */
-  async deleteRole(name: string): Promise<void> {
-    await this.softDelete("roles", name);
+  async deleteRole(
+    name: string,
+    options?: { retries?: number },
+  ): Promise<void> {
+    await this.softDelete("roles", name, options);
   }
 
   // ── Policy (RoleAssignment) CRUD ──
@@ -140,28 +165,93 @@ export class ApiHelper {
   }
 
   /** Soft-delete a role_assignment by name */
-  async deletePolicy(name: string): Promise<void> {
-    await this.softDelete("role_assignments", name);
+  async deletePolicy(
+    name: string,
+    options?: { retries?: number },
+  ): Promise<void> {
+    await this.softDelete("role_assignments", name, options);
+  }
+
+  // ── Test data factory ──
+
+  /**
+   * Create a user + role + policy via API in one call.
+   * Returns the created resource names/IDs and a `cleanup()` function
+   * that deletes everything in the correct order with retry.
+   */
+  async createTestUserData(permissions: string[]): Promise<TestUserData> {
+    const ts = Date.now();
+    const userName = `test-data-${ts}`;
+    const email = `test-data-${ts}@e2e.local`;
+    const roleName = `test-role-${ts}`;
+    const policyName = `test-policy-${ts}`;
+
+    const userId = await this.createUser(userName, email, "Test@123456");
+    await this.createRole(roleName, permissions);
+    await this.createPolicy(policyName, userId, roleName, true);
+
+    return {
+      userName,
+      email,
+      userId,
+      roleName,
+      policyName,
+      cleanup: async () => {
+        await this.deletePolicy(policyName).catch(() => {});
+        await this.deleteRole(roleName, { retries: 10 }).catch(() => {});
+        await this.deleteUser(userName, { retries: 10 }).catch(() => {});
+      },
+    };
   }
 
   // ── Generic soft-delete ──
 
-  /** PATCH /{resource}?metadata->>name=eq.{name} with deletion_timestamp */
-  async softDelete(resource: string, name: string): Promise<void> {
-    // First get the current record to preserve existing metadata
-    const records = await this.api<{ metadata: Record<string, unknown> }[]>(
-      "GET",
-      `/${resource}?select=metadata&metadata->>name=eq.${name}`,
-    );
-    if (!records?.length) return; // Already gone
+  /**
+   * PATCH /{resource}?metadata->>name=eq.{name} with deletion_timestamp.
+   *
+   * When `retries` > 0, the call is retried on failure — useful when a
+   * dependent resource was just soft-deleted and the backend GC hasn't
+   * hard-deleted it yet (the reference constraint blocks deletion).
+   */
+  async softDelete(
+    resource: string,
+    name: string,
+    options?: { retries?: number; retryDelayMs?: number },
+  ): Promise<void> {
+    const retries = options?.retries ?? 0;
+    const delay = options?.retryDelayMs ?? 3_000;
 
-    const metadata = {
-      ...records[0].metadata,
-      deletion_timestamp: new Date().toISOString(),
-    };
+    // Mute the page response listener during retries to avoid noisy 400 logs
+    if (retries > 0) _muteApiErrors = true;
+    try {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const records = await this.api<
+            { metadata: Record<string, unknown> }[]
+          >("GET", `/${resource}?select=metadata&metadata->>name=eq.${name}`);
+          if (!records?.length) return; // Already gone
 
-    await this.api("PATCH", `/${resource}?metadata->>name=eq.${name}`, {
-      metadata,
-    });
+          const metadata = {
+            ...records[0].metadata,
+            deletion_timestamp: new Date().toISOString(),
+          };
+
+          await this.api("PATCH", `/${resource}?metadata->>name=eq.${name}`, {
+            metadata,
+          });
+          return;
+        } catch (e) {
+          if (attempt === retries) {
+            console.warn(
+              `[cleanup] Failed to delete ${resource} "${name}" after ${retries + 1} attempts: ${e instanceof Error ? e.message : e}`,
+            );
+            throw e;
+          }
+          await new Promise((r) => setTimeout(r, delay));
+        }
+      }
+    } finally {
+      _muteApiErrors = false;
+    }
   }
 }

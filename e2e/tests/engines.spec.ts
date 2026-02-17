@@ -1,4 +1,5 @@
 import { expect, test } from "../fixtures/base";
+import { ResourcePage } from "../helpers/resource-page";
 
 /** Known engines that exist in the test environment */
 const ENGINE_LLAMA = "llama-cpp";
@@ -282,6 +283,66 @@ test.describe("engines detail", () => {
       await expect(
         engines.page.locator('[data-testid="show-actions-trigger"]'),
       ).toBeHidden();
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Multi-user permission tests
+// ────────────────────────────────────────────────────────────
+test.describe("engines multi-user permissions", () => {
+  test(
+    "user with engine:read can see engines list",
+    {
+      tag: "@C2613205",
+      annotation: {
+        type: "slow",
+        description: "creates test user with engine:read permission",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      const testUser = await createTestUser(["engine:read"]);
+      const enginesPage = new ResourcePage(testUser.page, {
+        routeName: "engines",
+        workspaced: true,
+      });
+
+      await enginesPage.goToList();
+
+      // User with engine:read should see engine rows
+      const rowCount = await enginesPage.table.rows().count();
+      expect(rowCount).toBeGreaterThan(0);
+    },
+  );
+
+  test(
+    "user without engine:read sees empty engines list",
+    {
+      tag: "@C2613207",
+      annotation: {
+        type: "slow",
+        description: "creates test user without engine:read permission",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(60_000);
+
+      // Give an unrelated permission so the user can log in
+      const testUser = await createTestUser(["role:read"]);
+      const enginesPage = new ResourcePage(testUser.page, {
+        routeName: "engines",
+        workspaced: true,
+      });
+
+      await testUser.page.goto("/#/default/engines");
+      await enginesPage.table.waitForLoaded();
+
+      // User without engine:read should see empty table
+      await expect(
+        testUser.page.locator('[data-testid="table-empty"]'),
+      ).toBeVisible();
     },
   );
 });

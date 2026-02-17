@@ -426,40 +426,25 @@ test.describe("user profiles detail", () => {
       tag: "@C2611609",
     },
     async ({ userProfiles: users, apiHelper }) => {
-      const ts = Date.now();
-      const userName = `test-mgrole-${ts}`;
-      const email = `test-mgrole-${ts}@e2e.local`;
-      const roleName = `test-role-${ts}`;
-      const policyName = `test-pol-${ts}`;
+      const testData = await apiHelper.createTestUserData(["workspace:read"]);
 
-      // Create user, role, and policy via API for speed
-      const userId = await apiHelper.createUser(userName, email, "Test@123456");
-      await apiHelper.createRole(roleName, ["workspace:read"]);
-      await apiHelper.createPolicy(policyName, userId, roleName, true);
+      // Also create a second policy linking to the built-in admin role
+      const policyName2 = `test-pol2-${Date.now()}`;
+      await apiHelper.createPolicy(policyName2, testData.userId, "admin", true);
 
       try {
-        // Also create a second policy linking to the built-in admin role
-        const policyName2 = `test-pol2-${ts}`;
-        await apiHelper.createPolicy(policyName2, userId, "admin", true);
-
         await users.goToList();
-        await users.table.clickRowLink(userName);
+        await users.table.clickRowLink(testData.userName);
 
         const showPage = users.page.locator('[data-testid="show-page"]');
         await expect(showPage).toBeVisible();
 
         // Both roles should appear in the Global Roles table
-        // The section after "Global Roles" heading
-        await expect(showPage.getByText(roleName)).toBeVisible();
+        await expect(showPage.getByText(testData.roleName)).toBeVisible();
         await expect(showPage.getByText("admin")).toBeVisible();
-
-        // Cleanup extra policy
-        await apiHelper.deletePolicy(policyName2).catch(() => {});
       } finally {
-        // Cleanup
-        await apiHelper.deletePolicy(policyName).catch(() => {});
-        await apiHelper.deleteRole(roleName).catch(() => {});
-        await apiHelper.deleteUser(userName).catch(() => {});
+        await apiHelper.deletePolicy(policyName2).catch(() => {});
+        await testData.cleanup();
       }
     },
   );
@@ -732,24 +717,15 @@ test.describe("user profiles delete", () => {
     async ({ userProfiles: users, apiHelper }, testInfo) => {
       testInfo.setTimeout(90_000);
 
-      const ts = Date.now();
-      const userName = `test-delpol-${ts}`;
-      const email = `test-delpol-${ts}@e2e.local`;
-      const roleName = `test-role-${ts}`;
-      const policyName = `test-pol-${ts}`;
-
-      // Setup: create user, role, policy
-      const userId = await apiHelper.createUser(userName, email, "Test@123456");
-      await apiHelper.createRole(roleName, ["workspace:read"]);
-      await apiHelper.createPolicy(policyName, userId, roleName, true);
+      const testData = await apiHelper.createTestUserData(["workspace:read"]);
 
       try {
         await users.goToList();
-        await users.table.expectRowWithText(userName);
+        await users.table.expectRowWithText(testData.userName);
 
         // Attempt to delete user with associated policy
         await users.table
-          .rowWithText(userName)
+          .rowWithText(testData.userName)
           .locator('[data-testid="row-actions-trigger"]')
           .click();
         await users.page.locator('[role="menu"]').waitFor({ state: "visible" });
@@ -765,12 +741,9 @@ test.describe("user profiles delete", () => {
         ).toBeVisible();
 
         await dialog.waitFor({ state: "hidden" });
-        await users.table.expectRowWithText(userName);
+        await users.table.expectRowWithText(testData.userName);
       } finally {
-        // Cleanup in reverse dependency order
-        await apiHelper.deletePolicy(policyName).catch(() => {});
-        await apiHelper.deleteRole(roleName).catch(() => {});
-        await apiHelper.deleteUser(userName).catch(() => {});
+        await testData.cleanup();
       }
     },
   );
