@@ -287,6 +287,53 @@ export class ApiHelper {
     };
   }
 
+  // ── OEM Config ──
+
+  /**
+   * Upsert the singleton OEM config (metadata.name = "default").
+   * GET to check existence → POST (create) or PATCH (edit).
+   */
+  async upsertOemConfig(spec: {
+    brand_name?: string;
+    logo_base64?: string;
+    logo_collapsed_base64?: string;
+  }): Promise<void> {
+    const existing = await this.api<{ metadata: Record<string, unknown> }[]>(
+      "GET",
+      "/oem_configs?metadata->>name=eq.default",
+    );
+
+    if (existing?.length) {
+      await this.api("PATCH", "/oem_configs?metadata->>name=eq.default", {
+        spec,
+      });
+    } else {
+      await this.api("POST", "/oem_configs", {
+        api_version: "v1",
+        kind: "OemConfig",
+        metadata: { name: "default" },
+        spec,
+      });
+    }
+  }
+
+  /** Reset OEM config to defaults by clearing all spec fields to null. */
+  async resetOemConfig(): Promise<void> {
+    const existing = await this.api<{ metadata: Record<string, unknown> }[]>(
+      "GET",
+      "/oem_configs?metadata->>name=eq.default",
+    );
+    if (!existing?.length) return; // Nothing to reset
+
+    await this.api("PATCH", "/oem_configs?metadata->>name=eq.default", {
+      spec: {
+        brand_name: null,
+        logo_base64: null,
+        logo_collapsed_base64: null,
+      },
+    });
+  }
+
   // ── Generic soft-delete ──
 
   /**
