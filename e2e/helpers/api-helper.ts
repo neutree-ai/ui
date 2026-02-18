@@ -255,6 +255,43 @@ export class ApiHelper {
     await this.softDelete("api_keys", name, options);
   }
 
+  // ── Image Registry CRUD ──
+
+  /** POST /api/v1/image_registries */
+  async createImageRegistry(
+    name: string,
+    options?: {
+      workspace?: string;
+      url?: string;
+      repository?: string;
+      username?: string;
+      password?: string;
+    },
+  ): Promise<void> {
+    const authconfig: Record<string, string> = {};
+    if (options?.username) authconfig.username = options.username;
+    if (options?.password) authconfig.password = options.password;
+
+    await this.api("POST", "/image_registries", {
+      api_version: "v1",
+      kind: "ImageRegistry",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec: {
+        url: options?.url ?? "https://index.docker.io/v1",
+        repository: options?.repository ?? "library/nginx",
+        authconfig,
+      },
+    });
+  }
+
+  /** Soft-delete an image_registry by name */
+  async deleteImageRegistry(
+    name: string,
+    options?: { retries?: number },
+  ): Promise<void> {
+    await this.softDelete("image_registries", name, options);
+  }
+
   // ── Test data factory ──
 
   /**

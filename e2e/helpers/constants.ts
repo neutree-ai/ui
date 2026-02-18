@@ -12,3 +12,6 @@ export const DELETE_TIMEOUT = 30_000;
 
 /** Timeout for bulk/heavy operations (select-all resource fetch, YAML generation) */
 export const BULK_TIMEOUT = 30_000;
+
+/** Timeout for waiting for a resource to reach a connected/ready status (reconciler delay) */
+export const CONNECTION_TIMEOUT = 90_000;
