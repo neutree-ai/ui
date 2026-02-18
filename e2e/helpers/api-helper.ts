@@ -255,6 +255,40 @@ export class ApiHelper {
     await this.softDelete("api_keys", name, options);
   }
 
+  // ── Model Registry CRUD ──
+
+  /** POST /api/v1/model_registries */
+  async createModelRegistry(
+    name: string,
+    options?: {
+      workspace?: string;
+      type?: string;
+      url?: string;
+      credentials?: string;
+    },
+  ): Promise<void> {
+    const spec: Record<string, unknown> = {
+      type: options?.type ?? "hugging-face",
+      url: options?.url ?? "https://huggingface.co",
+    };
+    if (options?.credentials) spec.credentials = options.credentials;
+
+    await this.api("POST", "/model_registries", {
+      api_version: "v1",
+      kind: "ModelRegistry",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec,
+    });
+  }
+
+  /** Soft-delete a model_registry by name */
+  async deleteModelRegistry(
+    name: string,
+    options?: { retries?: number },
+  ): Promise<void> {
+    await this.softDelete("model_registries", name, options);
+  }
+
   // ── Image Registry CRUD ──
 
   /** POST /api/v1/image_registries */

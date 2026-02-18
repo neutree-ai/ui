@@ -14,6 +14,7 @@ type ResourceFixtures = {
   engines: ResourcePage;
   modelCatalogs: ResourcePage;
   imageRegistries: ResourcePage;
+  modelRegistries: ResourcePage;
   userProfiles: ResourcePage;
   apiKeys: ResourcePage;
   apiHelper: ApiHelper;
@@ -59,6 +60,14 @@ export const test = base.extend<ResourceFixtures>({
     await use(
       new ResourcePage(page, {
         routeName: "image-registries",
+        workspaced: true,
+      }),
+    );
+  },
+  modelRegistries: async ({ page }, use) => {
+    await use(
+      new ResourcePage(page, {
+        routeName: "model-registries",
         workspaced: true,
       }),
     );

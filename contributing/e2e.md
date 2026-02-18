@@ -250,9 +250,18 @@ When adding new testable UI elements, prefer `data-testid` over CSS class select
 
 ## Locator Strategy
 
-- **Structural elements** → `data-testid` (pages, forms, triggers)
-- **Semantic elements** → `getByRole()` (links, menu items, dialogs)
-- **Text matching** → `getByText("admin", { exact: true })` to avoid partial match ambiguity
+Prefer semantic locators over positional or CSS-based ones. Priority (highest → lowest):
+
+1. **`getByRole()`** — buttons, links, menu items, dialogs, options, etc. Most resilient to UI changes.
+2. **`getByText()` / `getByLabel()`** — visible text or label associations. Use `{ exact: true }` to avoid partial match ambiguity.
+3. **`data-testid`** — structural wrappers that have no accessible role (pages, forms, triggers, table bodies).
+4. **CSS selectors** — only when the above are insufficient (e.g., `button[role="combobox"]` for Radix Select disabled check).
+
+**Avoid:**
+- **Positional indexing** like `.nth(2)`, `.locator("td").nth(3)` — breaks when column order changes. Instead, assert on text content within the row or use a semantic locator.
+- **CSS class selectors** — classes are implementation details and change frequently. Use `data-testid` instead.
+
+**When no suitable locator exists**, add a `data-testid` attribute to the source component rather than falling back to fragile selectors. A targeted `data-testid` is better than a positional or CSS-class workaround.
 
 ## Notes
 
