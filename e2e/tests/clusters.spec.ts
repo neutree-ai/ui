@@ -7,6 +7,7 @@ const clNames = {
   ssh: "", // SSH type for list/detail/edit
   k8s: "", // K8s type for list/detail/edit
   sort: "", // Second SSH cluster for sort ordering
+  sshWithCache: "", // SSH cluster with model cache for detail tests
 };
 
 test.describe("clusters", () => {
@@ -37,6 +38,69 @@ test.describe("clusters", () => {
       imageRegistry: irName.value,
     });
 
+    // Create SSH cluster with model cache for detail tests (raw API call)
+    clNames.sshWithCache = `test-cl-cache-${ts}`;
+    const rawKey = "fake-ssh-key-for-cache-test";
+    const base64Key = btoa(`${rawKey}\n`);
+    await page.evaluate(
+      async ({ name, workspace, imageRegistry, base64Key }) => {
+        let token = "";
+        for (const key of Object.keys(localStorage)) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            const val = JSON.parse(raw);
+            if (val?.access_token) {
+              token = val.access_token;
+              break;
+            }
+          } catch {}
+        }
+        const res = await fetch("/api/v1/clusters", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            api_version: "v1",
+            kind: "Cluster",
+            metadata: { name, workspace },
+            spec: {
+              type: "ssh",
+              image_registry: imageRegistry,
+              config: {
+                ssh_config: {
+                  provider: {
+                    head_ip: "10.0.0.100",
+                    worker_ips: ["10.0.0.101", "10.0.0.102"],
+                  },
+                  auth: { ssh_user: "root", ssh_private_key: base64Key },
+                },
+                model_caches: [
+                  {
+                    name: "test-cache",
+                    host_path: { path: "/data/models" },
+                  },
+                ],
+              },
+            },
+          }),
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Create cluster with cache failed: ${text}`);
+        }
+      },
+      {
+        name: clNames.sshWithCache,
+        workspace: "default",
+        imageRegistry: irName.value,
+        base64Key,
+      },
+    );
+
     await context.close();
   });
 
@@ -48,9 +112,11 @@ test.describe("clusters", () => {
 
     // Delete clusters in parallel, then image registry (dependency order)
     await Promise.all(
-      Object.values(clNames).map((name) =>
-        api.deleteCluster(name, { force: true }).catch(() => {}),
-      ),
+      Object.values(clNames)
+        .filter((n) => n)
+        .map((name) =>
+          api.deleteCluster(name, { force: true }).catch(() => {}),
+        ),
     );
     await api
       .deleteImageRegistry(irName.value, { force: true })
@@ -226,6 +292,71 @@ test.describe("clusters", () => {
         await expect(wsShowPage).toBeVisible();
         await expect(
           wsShowPage.getByText("default", { exact: true }),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "SSH show page displays head IP and worker IPs",
+      { tag: "@C2613071" },
+      async ({ clusters }) => {
+        await clusters.goToShow(clNames.sshWithCache);
+
+        const showPage = clusters.page.locator('[data-testid="show-page"]');
+        await expect(showPage).toBeVisible();
+
+        // SSH-specific fields
+        await expect(
+          showPage.locator("dt", { hasText: /head ip/i }),
+        ).toBeVisible();
+        await expect(
+          showPage.locator("dt", { hasText: /worker ips/i }),
+        ).toBeVisible();
+
+        // Verify head IP value
+        await expect(showPage.getByText("10.0.0.100")).toBeVisible();
+        // Verify worker IPs
+        await expect(showPage.getByText(/10\.0\.0\.101/)).toBeVisible();
+      },
+    );
+
+    test(
+      "show page displays model cache info",
+      { tag: "@C2613069" },
+      async ({ clusters }) => {
+        await clusters.goToShow(clNames.sshWithCache);
+
+        const showPage = clusters.page.locator('[data-testid="show-page"]');
+        await expect(showPage).toBeVisible();
+
+        // Model Cache card should be visible
+        await expect(
+          showPage.getByText("test-cache", { exact: true }),
+        ).toBeVisible();
+
+        // Cache type badge should show "Host Path"
+        await expect(showPage.getByText(/host path/i)).toBeVisible();
+
+        // Cache path should be visible
+        await expect(showPage.getByText("/data/models")).toBeVisible();
+      },
+    );
+
+    test(
+      "show page displays endpoints table",
+      { tag: "@C2613070" },
+      async ({ clusters }) => {
+        await clusters.goToShow(clNames.ssh);
+
+        const showPage = clusters.page.locator('[data-testid="show-page"]');
+        await expect(showPage).toBeVisible();
+
+        // Endpoints section title should be visible (scoped to show page content)
+        await expect(showPage.getByText("Endpoints")).toBeVisible();
+
+        // Columns button in the endpoints table should be visible
+        await expect(
+          showPage.getByRole("button", { name: /columns/i }),
         ).toBeVisible();
       },
     );
@@ -812,6 +943,669 @@ test.describe("clusters", () => {
         // Navigate to list and verify no row was created
         await clusters.goToList();
         await clusters.table.expectNoRowWithText(name);
+      },
+    );
+
+    // ── Group 1: Create Form Validation ──
+
+    test(
+      "create: empty name → submit fails",
+      { tag: "@C2612670" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Select image registry so that's not the failure reason
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+
+        // Fill head IP to pass provider validation
+        await clusters.page
+          .getByPlaceholder("e.g 192.168.1.1")
+          .fill("192.168.1.1");
+
+        // Leave name empty → submit and wait for any API response
+        const responsePromise = clusters.page.waitForResponse((r) =>
+          r.url().includes("/clusters"),
+        );
+        await clusters.form.submit();
+        const response = await responsePromise;
+
+        // Server should reject empty name
+        expect(response.ok()).toBe(false);
+
+        // Form stays visible
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "create: no image registry → submit fails",
+      { tag: "@C2612674" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Fill name but don't select image registry
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-cl-noimr-${Date.now()}`,
+        );
+
+        // Fill head IP to pass provider validation
+        await clusters.page
+          .getByPlaceholder("e.g 192.168.1.1")
+          .fill("192.168.1.1");
+
+        // Submit and wait for any API response
+        const responsePromise = clusters.page.waitForResponse((r) =>
+          r.url().includes("/clusters"),
+        );
+        await clusters.form.submit();
+        const response = await responsePromise;
+
+        // Server should reject missing image registry
+        expect(response.ok()).toBe(false);
+
+        // Form stays visible
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "create: image registry search and select",
+      { tag: "@C2612676" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Open the image registry combobox
+        const irField = clusters.form.field("spec.image_registry");
+        await irField.locator("button").click();
+
+        // Type partial name to search
+        const dialog = clusters.page.locator(
+          '[data-state="open"][role="dialog"]',
+        );
+        const searchInput = dialog.getByRole("combobox");
+        await searchInput.fill(irName.value.slice(0, 10));
+
+        // Verify the option appears in filtered results and select it
+        await expect(
+          dialog.getByRole("option", { name: irName.value, exact: true }),
+        ).toBeVisible();
+        await dialog
+          .getByRole("option", { name: irName.value, exact: true })
+          .click();
+
+        // Verify the trigger now shows the selected value
+        await expect(irField.locator("button")).toHaveText(
+          new RegExp(irName.value),
+        );
+      },
+    );
+
+    test(
+      "create: image registry filtered by workspace",
+      { tag: "@C2612680" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Default workspace is "default" — open image registry combobox
+        const irField = clusters.form.field("spec.image_registry");
+        await irField.locator("button").click();
+
+        // The test image registry (created in default workspace) should appear
+        const dialog = clusters.page.locator(
+          '[data-state="open"][role="dialog"]',
+        );
+        await expect(
+          dialog.getByRole("option", { name: irName.value, exact: true }),
+        ).toBeVisible();
+
+        // Close the combobox
+        await clusters.page.keyboard.press("Escape");
+      },
+    );
+
+    test(
+      "SSH: no head IP → submit shows error",
+      { tag: "@C2612792" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Fill name and select image registry
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-cl-noip-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+
+        // Don't fill head IP — click submit
+        await clusters.form.submit();
+
+        // Client-side validation shows "IP address is required"
+        await expect(
+          clusters.page.getByText("IP address is required"),
+        ).toBeVisible();
+
+        // Form stays visible (submission blocked)
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    // ── Group 2: K8s Router Parameter Validation ──
+
+    test(
+      "K8s: router config always has defaults when type selected",
+      { tag: "@C2612766" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        // Router fields should exist with default values
+        await expect(
+          clusters.form.field(
+            "spec.config.kubernetes_config.router.access_mode",
+          ),
+        ).toBeVisible();
+        await expect(
+          clusters.form.field("spec.config.kubernetes_config.router.replicas"),
+        ).toBeVisible();
+        await expect(
+          clusters.form.field(
+            "spec.config.kubernetes_config.router.resources.cpu",
+          ),
+        ).toBeVisible();
+        await expect(
+          clusters.form.field(
+            "spec.config.kubernetes_config.router.resources.memory",
+          ),
+        ).toBeVisible();
+
+        // Verify defaults
+        const replicasInput = clusters.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+        await expect(replicasInput).toHaveValue("2");
+
+        const cpuInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.cpu")
+          .locator("input");
+        await expect(cpuInput).toHaveValue("1");
+
+        const memoryInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.memory")
+          .locator("input");
+        await expect(memoryInput).toHaveValue("1Gi");
+      },
+    );
+
+    test(
+      "K8s: access mode default always set",
+      { tag: "@C2612767" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        // Access mode Select always has a default value
+        const accessModeButton = clusters.form
+          .field("spec.config.kubernetes_config.router.access_mode")
+          .locator('button[role="combobox"]');
+        await expect(accessModeButton).toHaveText(/LoadBalancer/);
+
+        // Open and verify options
+        await accessModeButton.click();
+        await expect(
+          clusters.page.getByRole("option", { name: "LoadBalancer" }),
+        ).toBeVisible();
+        await expect(
+          clusters.page.getByRole("option", { name: "NodePort" }),
+        ).toBeVisible();
+        await clusters.page.keyboard.press("Escape");
+      },
+    );
+
+    test(
+      "K8s: empty replicas → submit fails",
+      { tag: "@C2612768" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Fill required fields
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-k8s-rep-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Clear replicas
+        const replicasInput = clusters.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+        await replicasInput.clear();
+
+        // Submit and expect error
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: replicas < 1 → submit fails",
+      { tag: "@C2612769" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-k8s-repl0-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Set replicas to 0
+        const replicasInput = clusters.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("0");
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: replicas non-numeric → number field rejects",
+      { tag: "@C2612770" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        // type="number" input ignores non-numeric input — fill "abc" results in empty value
+        const replicasInput = clusters.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+
+        // Clear and try to type text — value should be empty or unchanged
+        await replicasInput.clear();
+        await replicasInput.pressSequentially("abc");
+
+        // Number input doesn't accept non-numeric characters
+        await expect(replicasInput).toHaveValue("");
+      },
+    );
+
+    test(
+      "K8s: empty CPU and memory → submit fails",
+      { tag: "@C2612771" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-k8s-res-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Clear both CPU and Memory
+        const cpuInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.cpu")
+          .locator("input");
+        await cpuInput.clear();
+
+        const memoryInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.memory")
+          .locator("input");
+        await memoryInput.clear();
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: empty CPU → submit fails",
+      { tag: "@C2612772" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-k8s-cpu-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Clear CPU only
+        const cpuInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.cpu")
+          .locator("input");
+        await cpuInput.clear();
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: empty memory → submit fails",
+      { tag: "@C2612773" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-k8s-mem-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Clear Memory only
+        const memoryInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.memory")
+          .locator("input");
+        await memoryInput.clear();
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: invalid memory format → submit fails",
+      { tag: "@C2612774" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-k8s-memfmt-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Set invalid memory format
+        const memoryInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.memory")
+          .locator("input");
+        await memoryInput.clear();
+        await memoryInput.fill("abc");
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: invalid CPU format → submit fails",
+      { tag: "@C2612775" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-k8s-cpufmt-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Set invalid CPU format
+        const cpuInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.cpu")
+          .locator("input");
+        await cpuInput.clear();
+        await cpuInput.fill("abc");
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    // ── Group 3: Cache Name Validation ──
+
+    test(
+      "cache: empty name → submit fails",
+      { tag: "@C2612809" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-cl-cn-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+
+        // Fill head IP to pass provider validation
+        await clusters.page
+          .getByPlaceholder("e.g 192.168.1.1")
+          .fill("192.168.1.1");
+
+        // Add a model cache — leave name empty
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        // Fill cache path to pass path validation
+        const cachePathInput = clusters.form
+          .field("spec.config.model_caches.0.host_path.path")
+          .locator("input");
+        await cachePathInput.fill("/data/cache");
+
+        // Submit — server should reject empty cache name
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "cache: invalid RFC 1123 name → submit fails",
+      { tag: "@C2612810" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-cl-cn2-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+
+        await clusters.page
+          .getByPlaceholder("e.g 192.168.1.1")
+          .fill("192.168.1.1");
+
+        // Add a model cache with invalid name (uppercase, special chars)
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        const cacheNameInput = clusters.form
+          .field("spec.config.model_caches.0.name")
+          .locator("input");
+        await cacheNameInput.fill("Invalid_Name!");
+
+        const cachePathInput = clusters.form
+          .field("spec.config.model_caches.0.host_path.path")
+          .locator("input");
+        await cachePathInput.fill("/data/cache");
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "cache: reserved name 'default' → submit fails",
+      { tag: "@C2612811" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await clusters.form.fillInput(
+          "metadata.name",
+          `test-cl-cn3-${Date.now()}`,
+        );
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+
+        await clusters.page
+          .getByPlaceholder("e.g 192.168.1.1")
+          .fill("192.168.1.1");
+
+        // Add a model cache with reserved name "default"
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        const cacheNameInput = clusters.form
+          .field("spec.config.model_caches.0.name")
+          .locator("input");
+        await cacheNameInput.fill("default");
+
+        const cachePathInput = clusters.form
+          .field("spec.config.model_caches.0.host_path.path")
+          .locator("input");
+        await cachePathInput.fill("/data/cache");
+
+        const responsePromise = clusters.page.waitForResponse(
+          (r) => r.url().includes("/clusters") && !r.ok(),
+        );
+        await clusters.form.submit();
+        await responsePromise;
+
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
       },
     );
   });

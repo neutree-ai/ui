@@ -253,6 +253,7 @@ export const VariablesInput = React.forwardRef<
                 <TableCell>{renderValueInput(key, val)}</TableCell>
                 <TableCell>
                   <Button
+                    data-testid="remove-variable"
                     type="button"
                     variant="ghost"
                     size="icon"
@@ -361,6 +362,7 @@ export const VariablesInput = React.forwardRef<
                   <TableCell>{renderEditingValueInput(row)}</TableCell>
                   <TableCell>
                     <Button
+                      data-testid="remove-variable"
                       type="button"
                       variant="ghost"
                       size="icon"

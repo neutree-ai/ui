@@ -73,6 +73,7 @@ export const SliderWithInput = forwardRef<
         <div className="flex justify-between text-sm text-muted-foreground items-center">
           <div className="flex items-center gap-2">
             <Input
+              data-testid="slider-input"
               type="number"
               min={min}
               max={max}
