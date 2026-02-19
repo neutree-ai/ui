@@ -194,6 +194,21 @@ test.describe("endpoints", () => {
       },
     );
 
+    test(
+      "list shows endpoints in current workspace",
+      { tag: "@C2613302" },
+      async ({ endpoints }) => {
+        await endpoints.goToList();
+
+        // Verify that endpoints in the default workspace are shown
+        await endpoints.table.expectRowWithText(epNames.base);
+
+        // Workspace column should show "default" for the endpoint
+        const row = endpoints.table.rowWithText(epNames.base);
+        await expect(row.getByRole("link", { name: "default" })).toBeVisible();
+      },
+    );
+
     test.skip(
       "actions include Pause",
       { tag: "@miss" },
@@ -632,6 +647,21 @@ test.describe("endpoints", () => {
     );
 
     test(
+      "create: workspace auto-selects current user workspace",
+      { tag: "@C2613303" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        // Workspace field should be visible and auto-selected
+        const wsField = endpoints.form.field("metadata.workspace");
+        await expect(wsField).toBeVisible();
+
+        const wsButton = wsField.locator('button[role="combobox"]');
+        await expect(wsButton).toHaveText(/default/);
+      },
+    );
+
+    test(
       "create: cancel navigates back to list",
       { tag: "@C2613244" },
       async ({ endpoints }) => {
@@ -823,6 +853,29 @@ test.describe("endpoints", () => {
         if (response.ok()) {
           await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
         }
+      },
+    );
+
+    test(
+      "create: empty required fields → submit shows error",
+      { tag: "@C2613306" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        // Submit without filling any required fields (name, cluster, etc.)
+        const responsePromise = endpoints.page.waitForResponse(
+          (r) =>
+            r.url().includes("/endpoints") &&
+            r.request().method() === "POST" &&
+            !r.ok(),
+        );
+        await endpoints.form.submit();
+        await responsePromise;
+
+        // Form should stay visible (not redirected to list)
+        await expect(
+          endpoints.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
       },
     );
   });

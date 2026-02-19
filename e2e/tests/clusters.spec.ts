@@ -1,5 +1,7 @@
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
+import { MULTI_USER_TIMEOUT } from "../helpers/constants";
+import { ResourcePage } from "../helpers/resource-page";
 
 // ── Shared test data created once in beforeAll ──
 const irName = { value: "" }; // Image registry dependency
@@ -926,6 +928,58 @@ test.describe("clusters", () => {
       },
     );
 
+    test(
+      "K8s: PVC default AccessMode = ReadWriteMany",
+      { tag: "@C2623078" },
+      async ({ clusters, apiHelper }) => {
+        await clusters.goToCreate();
+
+        const name = `test-cl-pvc-am-${Date.now()}`;
+        await clusters.form.fillInput("metadata.name", name);
+        await clusters.form.selectComboboxOption(
+          "spec.image_registry",
+          irName.value,
+        );
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+        await clusters.form.fillTextarea(
+          "spec.config.kubernetes_config.kubeconfig",
+          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+        );
+
+        // Add a model cache and switch to PVC type
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        const cacheNameInput = clusters.form
+          .field("spec.config.model_caches.0.name")
+          .locator("input");
+        await cacheNameInput.fill("test-pvc-cache");
+
+        const cacheTypeCombobox = clusters.page
+          .locator('[data-testid="cache-type-select"]')
+          .locator('button[role="combobox"]');
+        await cacheTypeCombobox.click();
+        await clusters.page.getByRole("option", { name: /^PVC$/i }).click();
+
+        // Intercept the POST request to verify accessModes in payload
+        const requestPromise = clusters.page.waitForRequest(
+          (r) => r.url().includes("/clusters") && r.method() === "POST",
+        );
+        await clusters.form.submit();
+        const request = await requestPromise;
+        const body = JSON.parse(request.postData() || "{}");
+
+        // Verify PVC accessModes defaults to ReadWriteMany
+        const modelCaches = body.spec?.config?.model_caches;
+        expect(modelCaches).toBeDefined();
+        expect(modelCaches[0]?.pvc?.accessModes).toEqual(["ReadWriteMany"]);
+
+        // Cleanup in case the cluster was actually created
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+
     test.skip(
       "cancel does not create resource",
       { tag: "@miss" },
@@ -1802,6 +1856,140 @@ test.describe("clusters", () => {
   });
 
   // ────────────────────────────────────────────────────────────
+  // Edit permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("edit permissions", () => {
+    test(
+      "admin can edit cluster",
+      { tag: "@C2613087" },
+      async ({ clusters, apiHelper }) => {
+        const name = `test-cl-adm-upd-${Date.now()}`;
+        await apiHelper.createCluster(name, {
+          type: "kubernetes",
+          imageRegistry: irName.value,
+        });
+
+        await clusters.goToEdit(name);
+        await expect(
+          clusters.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        // Change replicas to verify edit works
+        const replicasInput = clusters.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("3");
+
+        await clusters.form.submit();
+
+        // Should redirect to list
+        await clusters.table.waitForLoaded();
+        await clusters.table.expectRowWithText(name);
+
+        // Cleanup
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin with global cluster:update can edit",
+      {
+        tag: ["@C2613088", "@C2613089"],
+        annotation: {
+          type: "slow",
+          description: "creates test user with cluster:read+update permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-cl-glb-upd-${Date.now()}`;
+        await apiHelper.createCluster(name, {
+          type: "kubernetes",
+          imageRegistry: irName.value,
+        });
+
+        const testUser = await createTestUser([
+          "cluster:read",
+          "cluster:update",
+        ]);
+        const clPage = new ResourcePage(testUser.page, {
+          routeName: "clusters",
+          workspaced: true,
+        });
+
+        await clPage.goToEdit(name);
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        const replicasInput = clPage.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("3");
+
+        await clPage.form.submit();
+
+        // Should redirect to list
+        await clPage.table.waitForLoaded();
+        await clPage.table.expectRowWithText(name);
+
+        // Cleanup
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin without cluster:update cannot edit",
+      {
+        tag: "@C2613090",
+        annotation: {
+          type: "slow",
+          description: "creates test user with cluster:read only",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-cl-no-upd-${Date.now()}`;
+        await apiHelper.createCluster(name, {
+          type: "kubernetes",
+          imageRegistry: irName.value,
+        });
+
+        const testUser = await createTestUser(["cluster:read"]);
+        const clPage = new ResourcePage(testUser.page, {
+          routeName: "clusters",
+          workspaced: true,
+        });
+
+        await clPage.goToEdit(name);
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        const replicasInput = clPage.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("3");
+
+        await clPage.form.submit();
+
+        // Should show error (permission denied)
+        await expect(
+          testUser.page.getByText(/error|denied|forbidden|fail/i).first(),
+        ).toBeVisible({ timeout: 10_000 });
+
+        // Cleanup
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
   // Delete tests
   // ────────────────────────────────────────────────────────────
   test.describe("delete", () => {
@@ -1880,6 +2068,111 @@ test.describe("clusters", () => {
 
         // Row should still be there
         await clusters.table.expectRowWithText(name);
+
+        // Cleanup
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Delete permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("delete permissions", () => {
+    test(
+      "admin can delete cluster",
+      { tag: "@C2613093" },
+      async ({ clusters, apiHelper }) => {
+        const name = `test-cl-adm-rm-${Date.now()}`;
+        await apiHelper.createCluster(name, {
+          imageRegistry: irName.value,
+        });
+
+        await clusters.goToList();
+        await clusters.table.deleteRow(name, { noWait: true });
+
+        // Cleanup via API in case backend GC is slow
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin with global cluster:delete can delete",
+      {
+        tag: ["@C2613094", "@C2613095"],
+        annotation: {
+          type: "slow",
+          description: "creates test user with cluster:read+delete permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-cl-glb-rm-${Date.now()}`;
+        await apiHelper.createCluster(name, {
+          imageRegistry: irName.value,
+        });
+
+        const testUser = await createTestUser([
+          "cluster:read",
+          "cluster:delete",
+        ]);
+        const clPage = new ResourcePage(testUser.page, {
+          routeName: "clusters",
+          workspaced: true,
+        });
+
+        await clPage.goToList();
+        await clPage.table.deleteRow(name, { noWait: true });
+
+        // Cleanup via API in case backend GC is slow
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin without cluster:delete cannot delete",
+      {
+        tag: "@C2613096",
+        annotation: {
+          type: "slow",
+          description: "creates test user with cluster:read only",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-cl-no-rm-${Date.now()}`;
+        await apiHelper.createCluster(name, {
+          imageRegistry: irName.value,
+        });
+
+        const testUser = await createTestUser(["cluster:read"]);
+        const clPage = new ResourcePage(testUser.page, {
+          routeName: "clusters",
+          workspaced: true,
+        });
+
+        await clPage.goToList();
+        await clPage.table.expectRowWithText(name);
+
+        // Attempt delete
+        await clPage.table
+          .rowWithText(name)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await testUser.page
+          .locator('[role="menu"]')
+          .waitFor({ state: "visible" });
+        await testUser.page.getByRole("menuitem", { name: /delete/i }).click();
+
+        const dialog = testUser.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+        await dialog.waitFor({ state: "hidden" });
+
+        // Row should still exist (delete failed)
+        await clPage.table.expectRowWithText(name);
 
         // Cleanup
         await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
