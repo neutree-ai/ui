@@ -41,13 +41,17 @@ test.describe("clusters", () => {
   });
 
   test.afterAll(async ({ browser }) => {
+    test.setTimeout(60_000);
     const context = await browser.newContext();
     const page = await context.newPage();
     const api = new ApiHelper(page);
 
-    for (const name of Object.values(clNames)) {
-      await api.deleteCluster(name, { force: true }).catch(() => {});
-    }
+    // Delete clusters in parallel, then image registry (dependency order)
+    await Promise.all(
+      Object.values(clNames).map((name) =>
+        api.deleteCluster(name, { force: true }).catch(() => {}),
+      ),
+    );
     await api
       .deleteImageRegistry(irName.value, { force: true })
       .catch(() => {});
@@ -145,6 +149,23 @@ test.describe("clusters", () => {
 
         const k8sRow = clusters.table.rowWithText(clNames.k8s);
         await expect(k8sRow.getByText("Kubernetes")).toBeVisible();
+      },
+    );
+
+    test(
+      "clicking image registry navigates to detail page",
+      { tag: "@C2612648" },
+      async ({ clusters }) => {
+        await clusters.goToList();
+
+        const row = clusters.table.rowWithText(clNames.ssh);
+        await row.getByRole("link", { name: irName.value }).click();
+
+        const showPage = clusters.page.locator('[data-testid="show-page"]');
+        await expect(showPage).toBeVisible();
+        await expect(
+          showPage.getByText(irName.value, { exact: true }),
+        ).toBeVisible();
       },
     );
   });
@@ -277,6 +298,169 @@ test.describe("clusters", () => {
     );
 
     test(
+      "SSH: head IP required validation",
+      { tag: "@C2612794" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Head Node IP input uses placeholder "e.g 192.168.1.1"
+        const headIpInput = clusters.page.getByPlaceholder("e.g 192.168.1.1");
+
+        // Fill then clear and blur to trigger validation
+        await headIpInput.fill("1.1.1.1");
+        await headIpInput.clear();
+        await headIpInput.blur();
+
+        // Check validation error
+        await expect(
+          clusters.page.getByText("IP address is required"),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "SSH: worker IP input placeholder",
+      { tag: "@C2612795" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        await expect(
+          clusters.page.getByPlaceholder("Add New Worker Node IP"),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "SSH: add single worker IP",
+      { tag: "@C2612796" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        const workerInput = clusters.page.getByPlaceholder(
+          "Add New Worker Node IP",
+        );
+        await workerInput.fill("10.0.0.1");
+        await clusters.page
+          .getByRole("button", { name: "Add", exact: true })
+          .click();
+
+        // Verify IP shown in list
+        await expect(clusters.page.getByText("10.0.0.1")).toBeVisible();
+      },
+    );
+
+    test(
+      "SSH: add multiple worker IPs",
+      { tag: "@C2612797" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        const workerInput = clusters.page.getByPlaceholder(
+          "Add New Worker Node IP",
+        );
+
+        // Add first IP
+        await workerInput.fill("10.0.0.1");
+        await clusters.page
+          .getByRole("button", { name: "Add", exact: true })
+          .click();
+
+        // Add second IP
+        await workerInput.fill("10.0.0.2");
+        await clusters.page
+          .getByRole("button", { name: "Add", exact: true })
+          .click();
+
+        // Verify both IPs shown
+        await expect(clusters.page.getByText("10.0.0.1")).toBeVisible();
+        await expect(clusters.page.getByText("10.0.0.2")).toBeVisible();
+      },
+    );
+
+    test(
+      "SSH: add then remove worker IP",
+      { tag: "@C2612798" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        const workerInput = clusters.page.getByPlaceholder(
+          "Add New Worker Node IP",
+        );
+        await workerInput.fill("10.0.0.1");
+        await clusters.page
+          .getByRole("button", { name: "Add", exact: true })
+          .click();
+
+        // Verify IP is shown and badge updated (ensures React re-render is done)
+        await expect(clusters.page.getByText("10.0.0.1")).toBeVisible();
+        await expect(clusters.page.getByText("1 nodes")).toBeVisible();
+
+        // Click the trash button via evaluate to avoid React re-render detachment
+        await clusters.page.evaluate(() => {
+          const btn = document.querySelector(
+            '[data-testid="remove-worker-ip"]',
+          );
+          if (btn) (btn as HTMLButtonElement).click();
+        });
+
+        // Verify IP removed — empty state message should reappear
+        await expect(
+          clusters.page.getByText("No worker nodes added"),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "SSH: worker IPs count badge",
+      { tag: "@C2612799" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Initially 0 nodes
+        await expect(clusters.page.getByText("0 nodes")).toBeVisible();
+
+        const workerInput = clusters.page.getByPlaceholder(
+          "Add New Worker Node IP",
+        );
+
+        // Add first IP and wait for it to appear in list
+        await workerInput.fill("10.0.0.1");
+        await clusters.page
+          .getByRole("button", { name: "Add", exact: true })
+          .click();
+        await expect(clusters.page.getByText("10.0.0.1")).toBeVisible();
+        await expect(clusters.page.getByText("1 nodes")).toBeVisible();
+
+        // Wait for the bidirectional useEffect state sync (local ↔ form) to settle
+        // before adding the next IP — without this the sync can overwrite local state
+        await expect(workerInput).toHaveValue("");
+        // eslint-disable-next-line playwright/no-wait-for-timeout
+        await clusters.page.waitForTimeout(300);
+
+        // Add second IP and wait for it to appear in list
+        await workerInput.fill("10.0.0.2");
+        await clusters.page
+          .getByRole("button", { name: "Add", exact: true })
+          .click();
+        await expect(clusters.page.getByText("10.0.0.2")).toBeVisible();
+        await expect(clusters.page.getByText("2 nodes")).toBeVisible();
+
+        // Remove first IP — retry evaluate click until badge updates
+        await expect(async () => {
+          await clusters.page.evaluate(() => {
+            const btn = document.querySelector(
+              '[data-testid="remove-worker-ip"]',
+            );
+            if (btn) (btn as HTMLButtonElement).click();
+          });
+          await expect(clusters.page.getByText("1 nodes")).toBeVisible({
+            timeout: 2000,
+          });
+        }).toPass({ timeout: 10000 });
+      },
+    );
+
+    test(
       "SSH: auth fields visible",
       { tag: "@C2612801" },
       async ({ clusters }) => {
@@ -318,8 +502,7 @@ test.describe("clusters", () => {
         // The cache type select shows "Host Path" by default — click to open it
         // Navigate from "Cache Type" text to its sibling combobox
         const cacheTypeCombobox = clusters.page
-          .getByText("Cache Type")
-          .locator("..")
+          .locator('[data-testid="cache-type-select"]')
           .locator('button[role="combobox"]');
         await cacheTypeCombobox.click();
 
@@ -380,6 +563,93 @@ test.describe("clusters", () => {
     );
 
     test(
+      "K8s: default router replicas = 2",
+      { tag: "@C2623070" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        const replicasInput = clusters.form
+          .field("spec.config.kubernetes_config.router.replicas")
+          .locator("input");
+        await expect(replicasInput).toHaveValue("2");
+      },
+    );
+
+    test(
+      "K8s: default router CPU = 1",
+      { tag: "@C2623071" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        const cpuInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.cpu")
+          .locator("input");
+        await expect(cpuInput).toHaveValue("1");
+      },
+    );
+
+    test(
+      "K8s: default router memory = 1Gi",
+      { tag: "@C2623072" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        const memoryInput = clusters.form
+          .field("spec.config.kubernetes_config.router.resources.memory")
+          .locator("input");
+        await expect(memoryInput).toHaveValue("1Gi");
+      },
+    );
+
+    test(
+      "K8s: access mode default LoadBalancer, can change to NodePort",
+      { tag: "@C2623073" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        const accessModeButton = clusters.form
+          .field("spec.config.kubernetes_config.router.access_mode")
+          .locator('button[role="combobox"]');
+
+        // Default should show "LoadBalancer"
+        await expect(accessModeButton).toHaveText(/LoadBalancer/);
+
+        // Change to NodePort
+        await accessModeButton.click();
+        await clusters.page.getByRole("option", { name: "NodePort" }).click();
+
+        await expect(accessModeButton).toHaveText(/NodePort/);
+      },
+    );
+
+    test(
+      "K8s: no default model cache, add via button",
+      { tag: "@C2612777" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        // No cache items initially — empty state message shown
+        await expect(clusters.page.getByText("No model caches")).toBeVisible();
+
+        // Click "Add Model Cache" → cache form appears
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        // Cache card should appear (title starts with #1)
+        await expect(clusters.page.getByText("#1 -")).toBeVisible();
+
+        // Empty state message should be gone
+        await expect(clusters.page.getByText("No model caches")).toBeHidden();
+      },
+    );
+
+    test(
       "K8s: model cache has Host Path, NFS, PVC options",
       { tag: "@C2612778" },
       async ({ clusters }) => {
@@ -395,8 +665,7 @@ test.describe("clusters", () => {
 
         // The cache type select shows "Host Path" by default — click to open it
         const cacheTypeCombobox = clusters.page
-          .getByText("Cache Type")
-          .locator("..")
+          .locator('[data-testid="cache-type-select"]')
           .locator('button[role="combobox"]');
         await cacheTypeCombobox.click();
 
@@ -409,6 +678,120 @@ test.describe("clusters", () => {
         await expect(
           clusters.page.getByRole("option", { name: /pvc/i }),
         ).toBeVisible();
+      },
+    );
+
+    test(
+      "only 1 model cache allowed in UI",
+      { tag: "@C2623045" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Add a cache item
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        // Cache card appears
+        await expect(clusters.page.getByText("#1 -")).toBeVisible();
+
+        // "Add Model Cache" button should be hidden since limit is 1
+        await expect(
+          clusters.page.getByRole("button", { name: /add model cache/i }),
+        ).toBeHidden();
+      },
+    );
+
+    test(
+      "SSH: host path empty path blocks submit",
+      { tag: "@C2612812" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Add a model cache (default type is Host Path)
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        // Leave cache path empty and try to submit
+        await clusters.form.submit();
+
+        // Client-side validation prevents submission — form stays visible
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+
+        // Validation error should appear for cache path
+        await expect(
+          clusters.page.getByText(/cache path is required/i),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: NFS empty server/path blocks submit",
+      { tag: "@C2612813" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        // Add a cache item
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        // Switch cache type to NFS
+        const cacheTypeCombobox = clusters.page
+          .locator('[data-testid="cache-type-select"]')
+          .locator('button[role="combobox"]');
+        await cacheTypeCombobox.click();
+        await clusters.page.getByRole("option", { name: /^NFS$/i }).click();
+
+        // Leave NFS fields empty and try to submit
+        await clusters.form.submit();
+
+        // Form stays visible — validation prevents submission
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+
+        // Validation errors should appear
+        await expect(
+          clusters.page.getByText(/server address is required/i),
+        ).toBeVisible();
+        await expect(
+          clusters.page.getByText(/cache path is required/i),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "K8s: PVC empty storage class still submittable",
+      { tag: "@C2623046" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+        await clusters.form.selectOption("spec.type", "Kubernetes");
+
+        // Add a cache item
+        await clusters.page
+          .getByRole("button", { name: /add model cache/i })
+          .click();
+
+        // Switch cache type to PVC
+        const cacheTypeCombobox = clusters.page
+          .locator('[data-testid="cache-type-select"]')
+          .locator('button[role="combobox"]');
+        await cacheTypeCombobox.click();
+        await clusters.page.getByRole("option", { name: /^PVC$/i }).click();
+
+        // Storage field has a default value (500Gi), storageClassName is optional
+        // Verify storageClassName has no required indicator — no error when empty
+        await clusters.form.submit();
+
+        // No "storageClassName is required" error should appear
+        await expect(
+          clusters.page.getByText(/storage class.*required/i),
+        ).toBeHidden();
       },
     );
 
@@ -481,11 +864,9 @@ test.describe("clusters", () => {
         ).toBeEnabled();
 
         // Provider: Head IP input should be disabled
-        const headNodeCard = clusters.page
-          .getByText("Head Node IP")
-          .locator("xpath=ancestor::*[contains(@class,'border')]")
-          .first();
-        await expect(headNodeCard.locator("input")).toBeDisabled();
+        await expect(
+          clusters.page.getByPlaceholder("e.g 192.168.1.1"),
+        ).toBeDisabled();
 
         // Provider: Worker IP "Add" section should be hidden (disabled hides it)
         await expect(
@@ -590,6 +971,40 @@ test.describe("clusters", () => {
         await expect(memoryInput).toBeEnabled();
       },
     );
+
+    test(
+      "edit from list action menu",
+      { tag: "@C2613085" },
+      async ({ clusters }) => {
+        await clusters.goToList();
+        await clusters.table.editRow(clNames.ssh);
+
+        // Verify form is visible with disabled name
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+        const nameInput = clusters.form.field("metadata.name").locator("input");
+        await expect(nameInput).toBeDisabled();
+        await expect(nameInput).toHaveValue(clNames.ssh);
+      },
+    );
+
+    test(
+      "edit from detail action menu",
+      { tag: "@C2613086" },
+      async ({ clusters }) => {
+        await clusters.goToShow(clNames.ssh);
+        await clusters.showPageEdit();
+
+        // Verify form is visible with disabled name
+        await expect(
+          clusters.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+        const nameInput = clusters.form.field("metadata.name").locator("input");
+        await expect(nameInput).toBeDisabled();
+        await expect(nameInput).toHaveValue(clNames.ssh);
+      },
+    );
   });
 
   // ────────────────────────────────────────────────────────────
@@ -607,6 +1022,34 @@ test.describe("clusters", () => {
 
         await clusters.goToList();
         await clusters.table.deleteRow(name, { noWait: true });
+
+        // Cleanup via API in case backend GC is slow
+        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "delete from detail action menu",
+      { tag: "@C2613099" },
+      async ({ clusters, apiHelper }) => {
+        const name = `test-cl-del-detail-${Date.now()}`;
+        await apiHelper.createCluster(name, {
+          imageRegistry: irName.value,
+        });
+
+        await clusters.goToShow(name);
+
+        // Open show page actions, click delete
+        await clusters.page
+          .locator('[data-testid="show-actions-trigger"]')
+          .click();
+        await clusters.page.getByRole("menuitem", { name: /delete/i }).click();
+
+        // Confirm delete dialog
+        const dialog = clusters.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+        await dialog.waitFor({ state: "hidden" });
 
         // Cleanup via API in case backend GC is slow
         await apiHelper.deleteCluster(name, { force: true }).catch(() => {});

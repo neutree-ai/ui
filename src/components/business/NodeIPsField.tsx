@@ -263,6 +263,7 @@ function NodeIPsField<T extends FieldValues>({
                     className="h-8 w-8 p-0"
                     type="button"
                     disabled={disabled}
+                    data-testid="remove-worker-ip"
                   >
                     <Trash className="h-4 w-4 text-destructive" />
                   </Button>

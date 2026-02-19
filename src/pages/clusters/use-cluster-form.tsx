@@ -401,7 +401,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                         />
                       </Field>
 
-                      <div className="space-y-2">
+                      <div
+                        className="space-y-2"
+                        data-testid="cache-type-select"
+                      >
                         <Label className="text-sm font-medium">
                           {t("clusters.fields.modelCache.cacheType")}
                         </Label>

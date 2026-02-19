@@ -45,18 +45,23 @@ test.describe("endpoints", () => {
   });
 
   test.afterAll(async ({ browser }) => {
+    test.setTimeout(60_000);
     const context = await browser.newContext();
     const page = await context.newPage();
     const api = new ApiHelper(page);
 
-    // Delete endpoints first, then dependencies (with retries to wait for GC)
-    for (const name of Object.values(epNames)) {
-      await api.deleteEndpoint(name, { force: true }).catch(() => {});
-    }
-    await api.deleteCluster(clusterName.value, { force: true }).catch(() => {});
-    await api
-      .deleteModelRegistry(mrName.value, { force: true })
-      .catch(() => {});
+    // Delete endpoints in parallel first
+    await Promise.all(
+      Object.values(epNames).map((name) =>
+        api.deleteEndpoint(name, { force: true }).catch(() => {}),
+      ),
+    );
+    // Then dependencies in parallel (cluster + model registry)
+    await Promise.all([
+      api.deleteCluster(clusterName.value, { force: true }).catch(() => {}),
+      api.deleteModelRegistry(mrName.value, { force: true }).catch(() => {}),
+    ]);
+    // Finally image registry (depends on cluster)
     await api
       .deleteImageRegistry(irName.value, { force: true })
       .catch(() => {});
@@ -153,6 +158,38 @@ test.describe("endpoints", () => {
         const row = endpoints.table.rowWithText(epNames.base);
         await expect(
           row.getByRole("link", { name: clusterName.value }),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "engine column navigates to engine detail",
+      { tag: "@C2613255" },
+      async ({ endpoints }) => {
+        await endpoints.goToList();
+
+        const row = endpoints.table.rowWithText(epNames.base);
+        await row.getByRole("link", { name: "vllm" }).click();
+
+        const showPage = endpoints.page.locator('[data-testid="show-page"]');
+        await expect(showPage).toBeVisible();
+        await expect(showPage.getByText("vllm", { exact: true })).toBeVisible();
+      },
+    );
+
+    test(
+      "workspace column navigates to workspace detail",
+      { tag: "@C2613251" },
+      async ({ endpoints }) => {
+        await endpoints.goToList();
+
+        const row = endpoints.table.rowWithText(epNames.base);
+        await row.getByRole("link", { name: "default" }).click();
+
+        const showPage = endpoints.page.locator('[data-testid="show-page"]');
+        await expect(showPage).toBeVisible();
+        await expect(
+          showPage.getByText("default", { exact: true }),
         ).toBeVisible();
       },
     );
@@ -374,6 +411,209 @@ test.describe("endpoints", () => {
         await expect(endpoints.form.field("-model-catalog")).toBeVisible();
       },
     );
+
+    test(
+      "model version: default empty, can input",
+      { tag: "@C2613271" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        // Expand customize section
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        const versionInput = endpoints.form
+          .field("spec.model.version")
+          .locator("input");
+        await expect(versionInput).toHaveValue("");
+
+        // Fill a version
+        await versionInput.fill("v1.0");
+        await expect(versionInput).toHaveValue("v1.0");
+      },
+    );
+
+    test(
+      "model file field visible",
+      { tag: "@C2613272" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        await expect(endpoints.form.field("spec.model.file")).toBeVisible();
+      },
+    );
+
+    test(
+      "replicas default value is 1",
+      { tag: "@C2613300" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        const replicasInput = endpoints.form
+          .field("spec.replicas.num")
+          .locator("input");
+        await expect(replicasInput).toHaveValue("1");
+      },
+    );
+
+    test(
+      "scheduler type field visible",
+      { tag: "@C2613301" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        await expect(
+          endpoints.form.field("spec.deployment_options.scheduler.type"),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "replicas = 0 shows validation error",
+      { tag: "@C2613307" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        const replicasInput = endpoints.form
+          .field("spec.replicas.num")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("0");
+
+        // Try to submit
+        await endpoints.form.submit();
+
+        // Validation error should appear
+        await expect(
+          endpoints.page.getByText(/replicas must be at least 1/i),
+        ).toBeVisible();
+
+        // Form should stay visible (submission blocked)
+        await expect(
+          endpoints.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "replicas negative shows validation error",
+      { tag: "@C2613308" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        const replicasInput = endpoints.form
+          .field("spec.replicas.num")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("-1");
+
+        // Try to submit
+        await endpoints.form.submit();
+
+        // Validation error should appear
+        await expect(
+          endpoints.page.getByText(/replicas must be at least 1/i),
+        ).toBeVisible();
+
+        // Form should stay visible (submission blocked)
+        await expect(
+          endpoints.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "advanced options: engine variables section visible",
+      { tag: "@C2613242" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        // Engine variables field should be visible
+        await expect(
+          endpoints.form.field("spec.variables.engine_args"),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "engine selection list includes vllm",
+      { tag: "@C2613273" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        // Open engine combobox
+        const engineField = endpoints.form.field("spec.engine.engine");
+        await engineField.locator("button").click();
+
+        // Verify vllm is in the options
+        await expect(
+          endpoints.page
+            .locator('[data-state="open"][role="dialog"]')
+            .getByRole("option", { name: "vllm" }),
+        ).toBeVisible();
+      },
+    );
+
+    test(
+      "add engine variables",
+      { tag: "@C2613293" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        // Find the engine variables field and its Add Variable button
+        const engineVarsField = endpoints.form.field(
+          "spec.variables.engine_args",
+        );
+        await engineVarsField
+          .getByRole("button", { name: /add variable/i })
+          .click();
+
+        // Fill key and value in the new row (use .first() — component keeps an extra empty row)
+        const keyInput = engineVarsField.getByPlaceholder(/new key/i).first();
+        await keyInput.fill("test-key");
+        const valueInput = engineVarsField
+          .getByPlaceholder(/new value/i)
+          .first();
+        await valueInput.fill("test-value");
+
+        // Verify the row appeared with key and value inputs filled
+        await expect(keyInput).toHaveValue("test-key");
+        await expect(valueInput).toHaveValue("test-value");
+      },
+    );
   });
 
   // ────────────────────────────────────────────────────────────
@@ -449,6 +689,31 @@ test.describe("endpoints", () => {
           .field("spec.model.registry")
           .locator("button");
         await expect(registryButton).toBeEnabled();
+      },
+    );
+
+    test(
+      "edit: model registry visible in configuration details",
+      { tag: "@C2613288" },
+      async ({ endpoints }) => {
+        await endpoints.goToEdit(epNames.base);
+        await expect(
+          endpoints.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        // Expand "Configuration Details"
+        await endpoints.page
+          .getByRole("button", { name: /configuration details/i })
+          .click();
+
+        // Model name field should be visible and accessible in edit mode
+        await expect(endpoints.form.field("spec.model.name")).toBeVisible();
+
+        // Model name button should be enabled (registry is already set)
+        const modelNameButton = endpoints.form
+          .field("spec.model.name")
+          .locator("button");
+        await expect(modelNameButton).toBeEnabled();
       },
     );
   });
