@@ -284,7 +284,7 @@ export class ApiHelper {
   /** Soft-delete a model_registry by name */
   async deleteModelRegistry(
     name: string,
-    options?: { retries?: number },
+    options?: { retries?: number; force?: boolean },
   ): Promise<void> {
     await this.softDelete("model_registries", name, options);
   }
@@ -312,7 +312,7 @@ export class ApiHelper {
       metadata: { name, workspace: options?.workspace ?? "default" },
       spec: {
         url: options?.url ?? "https://index.docker.io/v1",
-        repository: options?.repository ?? "library/nginx",
+        repository: options?.repository ?? "",
         authconfig,
       },
     });
@@ -321,7 +321,7 @@ export class ApiHelper {
   /** Soft-delete an image_registry by name */
   async deleteImageRegistry(
     name: string,
-    options?: { retries?: number },
+    options?: { retries?: number; force?: boolean },
   ): Promise<void> {
     await this.softDelete("image_registries", name, options);
   }
@@ -405,6 +405,141 @@ export class ApiHelper {
     });
   }
 
+  // ── Cluster CRUD ──
+
+  /** POST /api/v1/clusters */
+  async createCluster(
+    name: string,
+    options?: {
+      workspace?: string;
+      type?: "ssh" | "kubernetes";
+      headIp?: string;
+      sshUser?: string;
+      sshPrivateKey?: string;
+      imageRegistry?: string;
+      kubeconfig?: string;
+    },
+  ): Promise<void> {
+    const type = options?.type ?? "ssh";
+    const workspace = options?.workspace ?? "default";
+
+    let config: Record<string, unknown>;
+    if (type === "ssh") {
+      const rawKey = options?.sshPrivateKey ?? "fake-ssh-key-for-e2e-testing";
+      const base64Key = btoa(rawKey.endsWith("\n") ? rawKey : `${rawKey}\n`);
+      config = {
+        ssh_config: {
+          provider: {
+            head_ip: options?.headIp ?? "192.168.1.100",
+            worker_ips: [],
+          },
+          auth: {
+            ssh_user: options?.sshUser ?? "root",
+            ssh_private_key: base64Key,
+          },
+        },
+        model_caches: [],
+      };
+    } else {
+      const rawKubeconfig =
+        options?.kubeconfig ?? "apiVersion: v1\nkind: Config\nclusters: []";
+      config = {
+        kubernetes_config: {
+          kubeconfig: btoa(rawKubeconfig),
+          router: {
+            access_mode: "LoadBalancer",
+            replicas: 2,
+            resources: { cpu: "1", memory: "1Gi" },
+          },
+        },
+        model_caches: [],
+      };
+    }
+
+    await this.api("POST", "/clusters", {
+      api_version: "v1",
+      kind: "Cluster",
+      metadata: { name, workspace },
+      spec: {
+        type,
+        image_registry: options?.imageRegistry ?? "",
+        config,
+      },
+    });
+  }
+
+  /** Soft-delete a cluster by name */
+  async deleteCluster(
+    name: string,
+    options?: { retries?: number; force?: boolean },
+  ): Promise<void> {
+    await this.softDelete("clusters", name, options);
+  }
+
+  // ── Endpoint CRUD ──
+
+  /** POST /api/v1/endpoints */
+  async createEndpoint(
+    name: string,
+    options?: {
+      workspace?: string;
+      cluster?: string;
+      modelRegistry?: string;
+      modelName?: string;
+      engine?: string;
+      engineVersion?: string;
+      modelTask?: string;
+      cpu?: number;
+      memory?: number;
+      gpu?: number;
+      replicas?: number;
+      schedulerType?: string;
+    },
+  ): Promise<void> {
+    await this.api("POST", "/endpoints", {
+      api_version: "v1",
+      kind: "Endpoint",
+      metadata: {
+        name,
+        workspace: options?.workspace ?? "default",
+      },
+      spec: {
+        cluster: options?.cluster ?? "",
+        model: {
+          registry: options?.modelRegistry ?? "huggingface",
+          name: options?.modelName ?? "test-model",
+          version: "",
+          task: options?.modelTask ?? "text-generation",
+          file: "",
+        },
+        engine: {
+          engine: options?.engine ?? "vllm",
+          version: options?.engineVersion ?? "v0.8.5",
+        },
+        resources: {
+          cpu: String(options?.cpu ?? 0),
+          memory: String(options?.memory ?? 0),
+          gpu: String(options?.gpu ?? 0),
+          accelerator: null,
+        },
+        replicas: { num: options?.replicas ?? 1 },
+        deployment_options: {
+          scheduler: { type: options?.schedulerType ?? "roundrobin" },
+        },
+        variables: { engine_args: {} },
+        env: {},
+      },
+    });
+  }
+
+  /** Soft-delete an endpoint by name */
+  async deleteEndpoint(
+    name: string,
+    options?: { retries?: number; force?: boolean },
+  ): Promise<void> {
+    await this.softDelete("endpoints", name, options);
+  }
+
   // ── Generic soft-delete ──
 
   /**
@@ -417,9 +552,9 @@ export class ApiHelper {
   async softDelete(
     resource: string,
     name: string,
-    options?: { retries?: number; retryDelayMs?: number },
+    options?: { retries?: number; retryDelayMs?: number; force?: boolean },
   ): Promise<void> {
-    const retries = options?.retries ?? 0;
+    const retries = options?.retries ?? (options?.force ? 10 : 0);
     const delay = options?.retryDelayMs ?? 3_000;
 
     // Mute the page response listener during retries to avoid noisy 400 logs
@@ -432,10 +567,17 @@ export class ApiHelper {
           >("GET", `/${resource}?select=metadata&metadata->>name=eq.${name}`);
           if (!records?.length) return; // Already gone
 
-          const metadata = {
+          const metadata: Record<string, unknown> = {
             ...records[0].metadata,
             deletion_timestamp: new Date().toISOString(),
           };
+          if (options?.force) {
+            metadata.annotations = {
+              ...((records[0].metadata as Record<string, unknown>)
+                .annotations as Record<string, string> | undefined),
+              "neutree.ai/force-delete": "true",
+            };
+          }
 
           await this.api("PATCH", `/${resource}?metadata->>name=eq.${name}`, {
             metadata,

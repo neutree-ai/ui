@@ -303,7 +303,7 @@ test.describe("image registries", () => {
 
         // Repo URL (format: {spec.url}/{spec.repository})
         await expect(
-          showPage.getByText("https://index.docker.io/v1/library/nginx"),
+          showPage.getByText("https://index.docker.io/v1"),
         ).toBeVisible();
       },
     );

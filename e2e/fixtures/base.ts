@@ -17,6 +17,8 @@ type ResourceFixtures = {
   modelRegistries: ResourcePage;
   userProfiles: ResourcePage;
   apiKeys: ResourcePage;
+  clusters: ResourcePage;
+  endpoints: ResourcePage;
   apiHelper: ApiHelper;
   createTestUser: (permissions: string[]) => Promise<TestUserContext>;
 };
@@ -78,6 +80,16 @@ export const test = base.extend<ResourceFixtures>({
   apiKeys: async ({ page }, use) => {
     await use(
       new ResourcePage(page, { routeName: "api-keys", workspaced: true }),
+    );
+  },
+  clusters: async ({ page }, use) => {
+    await use(
+      new ResourcePage(page, { routeName: "clusters", workspaced: true }),
+    );
+  },
+  endpoints: async ({ page }, use) => {
+    await use(
+      new ResourcePage(page, { routeName: "endpoints", workspaced: true }),
     );
   },
   apiHelper: async ({ page }, use) => {
