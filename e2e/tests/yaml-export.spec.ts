@@ -272,6 +272,143 @@ test.describe("yaml export", () => {
   });
 
   // ────────────────────────────────────────────────────────────
+  // Credentials exclusion tests
+  // ────────────────────────────────────────────────────────────
+  test.describe("credentials exclusion", () => {
+    const credData = {
+      imageRegistry: "",
+      modelRegistry: "",
+      sshCluster: "",
+      k8sCluster: "",
+    };
+
+    test.beforeAll(async ({ browser }) => {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      const api = new ApiHelper(page);
+
+      const ts = Date.now();
+      credData.imageRegistry = `test-exp-ir-${ts}`;
+      credData.modelRegistry = `test-exp-mr-${ts}`;
+      credData.sshCluster = `test-exp-ssh-${ts}`;
+      credData.k8sCluster = `test-exp-k8s-${ts}`;
+
+      // Create an image registry required by clusters
+      await api.createImageRegistry(credData.imageRegistry, {
+        username: "testuser",
+        password: "testpass",
+      });
+      await api.createModelRegistry(credData.modelRegistry, {
+        credentials: "test-api-token",
+      });
+      await api.createCluster(credData.sshCluster, {
+        type: "ssh",
+        imageRegistry: credData.imageRegistry,
+      });
+      await api.createCluster(credData.k8sCluster, {
+        type: "kubernetes",
+        imageRegistry: credData.imageRegistry,
+      });
+
+      await context.close();
+    });
+
+    test.afterAll(async ({ browser }) => {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      const api = new ApiHelper(page);
+
+      await api
+        .deleteCluster(credData.sshCluster, { force: true })
+        .catch(() => {});
+      await api
+        .deleteCluster(credData.k8sCluster, { force: true })
+        .catch(() => {});
+      await api
+        .deleteModelRegistry(credData.modelRegistry, { force: true })
+        .catch(() => {});
+      await api
+        .deleteImageRegistry(credData.imageRegistry, { force: true })
+        .catch(() => {});
+      await context.close();
+    });
+
+    test(
+      "image registry export without credentials excludes auth info",
+      { tag: "@C2611905" },
+      async ({ yamlExport, page }) => {
+        await page.goto("/#/dashboard");
+        await yamlExport.open();
+
+        // Toggle include-credentials OFF (default is ON)
+        await yamlExport.openOptions();
+        await yamlExport.toggleOption("include-credentials");
+        await yamlExport.closeOptions();
+
+        await yamlExport.toggleResource("Image Registries");
+        await yamlExport.generate();
+
+        const yaml = await yamlExport.getYamlContent();
+        expect(yaml).toContain("ImageRegistry");
+        expect(yaml).not.toContain("username");
+        expect(yaml).not.toContain("password");
+        expect(yaml).not.toContain("testuser");
+        expect(yaml).not.toContain("testpass");
+
+        await yamlExport.close();
+      },
+    );
+
+    test(
+      "model registry export without credentials excludes credential info",
+      { tag: "@C2611906" },
+      async ({ yamlExport, page }) => {
+        await page.goto("/#/dashboard");
+        await yamlExport.open();
+
+        // Toggle include-credentials OFF
+        await yamlExport.openOptions();
+        await yamlExport.toggleOption("include-credentials");
+        await yamlExport.closeOptions();
+
+        await yamlExport.toggleResource("Model Registries");
+        await yamlExport.generate();
+
+        const yaml = await yamlExport.getYamlContent();
+        expect(yaml).toContain("ModelRegistry");
+        expect(yaml).not.toContain("credentials");
+        expect(yaml).not.toContain("test-api-token");
+
+        await yamlExport.close();
+      },
+    );
+
+    test(
+      "cluster export without credentials excludes ssh key and kubeconfig",
+      { tag: "@C2611908" },
+      async ({ yamlExport, page }) => {
+        await page.goto("/#/dashboard");
+        await yamlExport.open();
+
+        // Toggle include-credentials OFF
+        await yamlExport.openOptions();
+        await yamlExport.toggleOption("include-credentials");
+        await yamlExport.closeOptions();
+
+        await yamlExport.toggleResource("Clusters");
+        await yamlExport.generate();
+
+        const yaml = await yamlExport.getYamlContent();
+        expect(yaml).toContain("Cluster");
+        expect(yaml).not.toContain("ssh_private_key");
+        expect(yaml).not.toContain("kubeconfig");
+
+        await yamlExport.close();
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
   // Output tests
   // ────────────────────────────────────────────────────────────
   test.describe("output", () => {

@@ -102,6 +102,23 @@ export class YamlImportHelper {
     ).toBeVisible();
   }
 
+  /** Open the Import YAML dialog, fill a URL, click Fetch, and wait for results */
+  async importFromUrl(url: string): Promise<void> {
+    // Open the dialog
+    await this.page.getByRole("button", { name: /import yaml/i }).click();
+    const dialog = this.page.getByRole("dialog");
+    await dialog.waitFor({ state: "visible" });
+
+    // Fill the URL input
+    await dialog.locator("#yaml-url").fill(url);
+
+    // Click the Fetch button
+    await dialog.getByRole("button", { name: /fetch/i }).click();
+
+    // Wait for results to appear (success/error badges)
+    await expect(dialog.getByText(/success|error/i).first()).toBeVisible();
+  }
+
   /** Close the import dialog */
   async close(): Promise<void> {
     const dialog = this.page.getByRole("dialog");

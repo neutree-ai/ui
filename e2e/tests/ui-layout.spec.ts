@@ -1,6 +1,43 @@
-import { expect, test } from "../fixtures/base";
-import { MULTI_USER_TIMEOUT } from "../helpers/constants";
+import { type Page, expect, test } from "../fixtures/base";
+import { DELETE_TIMEOUT, MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { loginAs, logout } from "../helpers/test-user-context";
+
+/** data-testid mapping for dashboard count cards */
+const DASHBOARD_CARD_TESTID: Record<string, string> = {
+  Clusters: "dashboard-cluster-count",
+  Endpoints: "dashboard-endpoint-count",
+};
+
+/** Read the count number from a dashboard card by data-testid */
+async function getDashboardCount(page: Page, title: string): Promise<number> {
+  const testId = DASHBOARD_CARD_TESTID[title];
+  const card = page.locator(`[data-testid="${testId}"]`);
+  await expect(card.getByText(/\d+/)).toBeVisible({ timeout: 10000 });
+  // The count is rendered directly as text content inside CardContent
+  const text = await card.getByText(/\d+/).textContent();
+  return Number(text);
+}
+
+/** Poll-reload dashboard until expected count appears, with timeout */
+async function waitForDashboardCount(
+  page: Page,
+  title: string,
+  expected: number,
+  timeout = DELETE_TIMEOUT,
+): Promise<void> {
+  const testId = DASHBOARD_CARD_TESTID[title];
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    await page.reload();
+    await expect(page.getByText("Dashboard").first()).toBeVisible();
+    const count = await getDashboardCount(page, title);
+    if (count === expected) return;
+    await page.waitForTimeout(2000);
+  }
+  // Final assertion to generate a proper error message
+  const card = page.locator(`[data-testid="${testId}"]`);
+  await expect(card.getByText(String(expected))).toBeVisible({ timeout: 5000 });
+}
 
 // ════════════════════════════════════════════════════════════
 // UI Layout & Overview Tests
@@ -374,11 +411,9 @@ test.describe("ui layout", () => {
         await page.goto("/#/dashboard");
         await expect(page.getByText("Dashboard").first()).toBeVisible();
 
-        // Find the Clusters card and verify it contains a number
-        const clustersCard = page
-          .locator("div")
-          .filter({ hasText: /^Clusters$/ })
-          .locator("..");
+        const clustersCard = page.locator(
+          '[data-testid="dashboard-cluster-count"]',
+        );
         await expect(clustersCard.getByText(/\d+/)).toBeVisible({
           timeout: 10000,
         });
@@ -392,12 +427,188 @@ test.describe("ui layout", () => {
         await page.goto("/#/dashboard");
         await expect(page.getByText("Dashboard").first()).toBeVisible();
 
-        // Find the Endpoints card and verify it contains a number
-        const endpointsCard = page
-          .locator("div")
-          .filter({ hasText: /^Endpoints$/ })
-          .locator("..");
+        const endpointsCard = page.locator(
+          '[data-testid="dashboard-endpoint-count"]',
+        );
         await expect(endpointsCard.getByText(/\d+/)).toBeVisible({
+          timeout: 10000,
+        });
+      },
+    );
+
+    test(
+      "cluster count changes on add and delete",
+      {
+        tag: "@C2611945",
+        annotation: {
+          type: "slow",
+          description: "creates and deletes cluster to verify count change",
+        },
+      },
+      async ({ page, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const ts = Date.now();
+        const irName = `test-dash-ir-${ts}`;
+        const clusterName = `test-dash-cl-${ts}`;
+
+        await page.goto("/#/dashboard");
+        await expect(page.getByText("Dashboard").first()).toBeVisible();
+
+        const initialCount = await getDashboardCount(page, "Clusters");
+
+        // Create resources
+        await apiHelper.createImageRegistry(irName);
+        await apiHelper.createCluster(clusterName, {
+          imageRegistry: irName,
+        });
+
+        try {
+          // Wait for count to increase (creation may take a moment to reflect)
+          await waitForDashboardCount(page, "Clusters", initialCount + 1);
+
+          // Delete cluster and wait for GC
+          await apiHelper.deleteCluster(clusterName, { force: true });
+          await waitForDashboardCount(page, "Clusters", initialCount);
+        } finally {
+          await apiHelper
+            .deleteCluster(clusterName, { force: true })
+            .catch(() => {});
+          await apiHelper
+            .deleteImageRegistry(irName, { force: true })
+            .catch(() => {});
+        }
+      },
+    );
+
+    test(
+      "endpoint count changes on add and delete",
+      {
+        tag: "@C2611946",
+        annotation: {
+          type: "slow",
+          description:
+            "creates full resource chain for endpoint count verification",
+        },
+      },
+      async ({ page, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const ts = Date.now();
+        const irName = `test-dash-ep-ir-${ts}`;
+        const clusterName = `test-dash-ep-cl-${ts}`;
+        const mrName = `test-dash-ep-mr-${ts}`;
+        const epName = `test-dash-ep-${ts}`;
+
+        await page.goto("/#/dashboard");
+        await expect(page.getByText("Dashboard").first()).toBeVisible();
+
+        const initialCount = await getDashboardCount(page, "Endpoints");
+
+        // Create full dependency chain
+        await apiHelper.createImageRegistry(irName);
+        await apiHelper.createCluster(clusterName, {
+          imageRegistry: irName,
+        });
+        await apiHelper.createModelRegistry(mrName);
+        await apiHelper.createEndpoint(epName, {
+          cluster: clusterName,
+          modelRegistry: mrName,
+        });
+
+        try {
+          // Wait for count to increase (creation may take a moment to reflect)
+          await waitForDashboardCount(page, "Endpoints", initialCount + 1);
+
+          // Delete endpoint and wait for GC
+          await apiHelper.deleteEndpoint(epName, { force: true });
+          await waitForDashboardCount(page, "Endpoints", initialCount);
+        } finally {
+          await apiHelper
+            .deleteEndpoint(epName, { force: true })
+            .catch(() => {});
+          await apiHelper
+            .deleteCluster(clusterName, { force: true })
+            .catch(() => {});
+          await apiHelper
+            .deleteModelRegistry(mrName, { force: true })
+            .catch(() => {});
+          await apiHelper
+            .deleteImageRegistry(irName, { force: true })
+            .catch(() => {});
+        }
+      },
+    );
+
+    test(
+      "cluster count shows only clusters visible to current user",
+      {
+        tag: "@C2611947",
+        annotation: {
+          type: "slow",
+          description: "creates test user without cluster:read permission",
+        },
+      },
+      async ({ page, createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        // Admin should see clusters (count >= 0)
+        await page.goto("/#/dashboard");
+        await expect(page.getByText("Dashboard").first()).toBeVisible();
+
+        // Create test user WITHOUT cluster:read permission
+        const testUser = await createTestUser([
+          "endpoint:read",
+          "workspace:read",
+        ]);
+
+        await testUser.page.goto("/#/dashboard");
+        await expect(
+          testUser.page.getByText("Dashboard").first(),
+        ).toBeVisible();
+
+        // User without cluster:read should see 0 clusters
+        const clustersCard = testUser.page.locator(
+          '[data-testid="dashboard-cluster-count"]',
+        );
+        await expect(clustersCard.getByText("0")).toBeVisible({
+          timeout: 10000,
+        });
+      },
+    );
+
+    test(
+      "endpoint count shows only endpoints visible to current user",
+      {
+        tag: "@C2611948",
+        annotation: {
+          type: "slow",
+          description: "creates test user without endpoint:read permission",
+        },
+      },
+      async ({ page, createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        // Admin should see endpoints (count >= 0)
+        await page.goto("/#/dashboard");
+        await expect(page.getByText("Dashboard").first()).toBeVisible();
+
+        // Create test user WITHOUT endpoint:read permission
+        const testUser = await createTestUser([
+          "cluster:read",
+          "workspace:read",
+        ]);
+
+        await testUser.page.goto("/#/dashboard");
+        await expect(
+          testUser.page.getByText("Dashboard").first(),
+        ).toBeVisible();
+
+        // User without endpoint:read should see 0 endpoints
+        const endpointsCard = testUser.page.locator(
+          '[data-testid="dashboard-endpoint-count"]',
+        );
+        await expect(endpointsCard.getByText("0")).toBeVisible({
           timeout: 10000,
         });
       },

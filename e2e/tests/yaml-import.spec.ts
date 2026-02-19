@@ -201,6 +201,33 @@ ${modelCatalogYaml(mcName)}`;
   );
 
   test(
+    "can import from URL",
+    {
+      tag: "@C2611881",
+    },
+    async ({ yamlImport, page }) => {
+      const roleName = `test-imp-url-${Date.now()}`;
+      createdResources.roles.push(roleName);
+
+      const yaml = roleYaml(roleName);
+
+      // Mock the URL fetch — the browser fetches URLs directly in use-yaml-import.ts
+      await page.route("https://example.com/test.yaml", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/x-yaml",
+          body: yaml,
+        }),
+      );
+
+      await page.goto("/#/dashboard");
+      await yamlImport.importFromUrl("https://example.com/test.yaml");
+      await yamlImport.expectResults({ success: 1, errors: 0 });
+      await yamlImport.close();
+    },
+  );
+
+  test(
     "import invalid data shows error",
     {
       tag: "@C2611886",

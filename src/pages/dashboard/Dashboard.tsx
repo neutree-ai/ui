@@ -39,7 +39,7 @@ export default function Dashboard() {
         {t("dashboard.title")}
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-        <Card>
+        <Card data-testid="dashboard-cluster-count">
           <CardHeader>
             <CardTitle className="flex items-center">
               <HardDrive className="w-4 h-4 mr-2" />
@@ -54,7 +54,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card data-testid="dashboard-endpoint-count">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Server className="w-4 h-4 mr-2" />
