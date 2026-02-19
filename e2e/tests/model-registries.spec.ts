@@ -1,6 +1,7 @@
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
-import { CONNECTION_TIMEOUT } from "../helpers/constants";
+import { CONNECTION_TIMEOUT, MULTI_USER_TIMEOUT } from "../helpers/constants";
+import { ResourcePage } from "../helpers/resource-page";
 
 // ── Shared test data created once in beforeAll ──
 const mrNames = {
@@ -782,6 +783,323 @@ test.describe("model registries", () => {
 
         // Cleanup
         modelRegistries.page.on("dialog", (dialog) => dialog.accept());
+        await apiHelper.deleteModelRegistry(name).catch(() => {});
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // List permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("list permissions", () => {
+    test(
+      "non-admin with global model_registry:read can see list",
+      {
+        tag: "@C2612553",
+        annotation: {
+          type: "slow",
+          description: "creates test user with model_registry:read permission",
+        },
+      },
+      async ({ createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const testUser = await createTestUser(["model_registry:read"]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        await mrPage.goToList();
+
+        // User with model_registry:read should see registry rows
+        const rowCount = await mrPage.table.rows().count();
+        expect(rowCount).toBeGreaterThan(0);
+      },
+    );
+
+    test(
+      "non-admin without model_registry:read sees empty list",
+      {
+        tag: "@C2613120",
+        annotation: {
+          type: "slow",
+          description:
+            "creates test user without model_registry:read permission",
+        },
+      },
+      async ({ createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        // Give an unrelated permission so the user can log in
+        const testUser = await createTestUser(["role:read"]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        await testUser.page.goto("/#/default/model-registries");
+        await mrPage.table.waitForLoaded();
+
+        // User without model_registry:read should see empty table
+        await expect(
+          testUser.page.locator('[data-testid="table-empty"]'),
+        ).toBeVisible();
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Create permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("create permissions", () => {
+    test(
+      "non-admin with global model_registry:create can create",
+      {
+        tag: ["@C2613122", "@C2613123"],
+        annotation: {
+          type: "slow",
+          description:
+            "creates test user with model_registry:read+create permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const testUser = await createTestUser([
+          "model_registry:read",
+          "model_registry:create",
+        ]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        const name = `test-mr-glb-new-${Date.now()}`;
+        await mrPage.goToCreate();
+        await mrPage.form.fillInput("metadata.name", name);
+        await mrPage.form.fillInput("spec.url", "https://huggingface.co");
+        await mrPage.form.submit();
+
+        // Should redirect to list
+        await mrPage.table.waitForLoaded();
+        await mrPage.table.expectRowWithText(name);
+
+        // Cleanup
+        await apiHelper.deleteModelRegistry(name).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin without model_registry:create cannot create",
+      {
+        tag: "@C2613124",
+        annotation: {
+          type: "slow",
+          description: "creates test user with model_registry:read only",
+        },
+      },
+      async ({ createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const testUser = await createTestUser(["model_registry:read"]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        const name = `test-mr-no-new-${Date.now()}`;
+        await mrPage.goToCreate();
+        await mrPage.form.fillInput("metadata.name", name);
+        await mrPage.form.fillInput("spec.url", "https://huggingface.co");
+
+        const responsePromise = testUser.page.waitForResponse(
+          (r) =>
+            r.url().includes("/model_registries") &&
+            r.request().method() === "POST" &&
+            !r.ok(),
+        );
+        await mrPage.form.submit();
+        await responsePromise;
+
+        // Form should stay visible (submission rejected by server)
+        await expect(
+          testUser.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Edit permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("edit permissions", () => {
+    test(
+      "non-admin with global model_registry:update can edit",
+      {
+        tag: ["@C2613126", "@C2613127"],
+        annotation: {
+          type: "slow",
+          description:
+            "creates test user with model_registry:read+update permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-mr-glb-upd-${Date.now()}`;
+        await apiHelper.createModelRegistry(name);
+
+        const testUser = await createTestUser([
+          "model_registry:read",
+          "model_registry:update",
+        ]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        await mrPage.goToEdit(name);
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        await mrPage.form.fillInput(
+          "spec.url",
+          "https://huggingface.co/models",
+        );
+        await mrPage.form.submit();
+
+        // Should redirect to list
+        await mrPage.table.waitForLoaded();
+        await mrPage.table.expectRowWithText(name);
+
+        // Cleanup
+        await apiHelper.deleteModelRegistry(name).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin without model_registry:update cannot edit",
+      {
+        tag: "@C2613128",
+        annotation: {
+          type: "slow",
+          description: "creates test user with model_registry:read only",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-mr-no-upd-${Date.now()}`;
+        await apiHelper.createModelRegistry(name);
+
+        const testUser = await createTestUser(["model_registry:read"]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        await mrPage.goToEdit(name);
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        await mrPage.form.fillInput(
+          "spec.url",
+          "https://huggingface.co/models",
+        );
+        await mrPage.form.submit();
+
+        // Should show error (permission denied)
+        await expect(
+          testUser.page.getByText(/error|denied|forbidden|fail/i).first(),
+        ).toBeVisible({ timeout: 10_000 });
+
+        // Cleanup
+        await apiHelper.deleteModelRegistry(name).catch(() => {});
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Delete permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("delete permissions", () => {
+    test(
+      "non-admin with global model_registry:delete can delete",
+      {
+        tag: ["@C2613130", "@C2613131"],
+        annotation: {
+          type: "slow",
+          description:
+            "creates test user with model_registry:read+delete permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-mr-glb-rm-${Date.now()}`;
+        await apiHelper.createModelRegistry(name);
+
+        const testUser = await createTestUser([
+          "model_registry:read",
+          "model_registry:delete",
+        ]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        await mrPage.goToList();
+        await mrPage.table.deleteRow(name);
+        await mrPage.table.expectNoRowWithText(name);
+      },
+    );
+
+    test(
+      "non-admin without model_registry:delete cannot delete",
+      {
+        tag: "@C2613132",
+        annotation: {
+          type: "slow",
+          description: "creates test user with model_registry:read only",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-mr-no-rm-${Date.now()}`;
+        await apiHelper.createModelRegistry(name);
+
+        const testUser = await createTestUser(["model_registry:read"]);
+        const mrPage = new ResourcePage(testUser.page, {
+          routeName: "model-registries",
+          workspaced: true,
+        });
+
+        await mrPage.goToList();
+        await mrPage.table.expectRowWithText(name);
+
+        // Attempt delete
+        await mrPage.table
+          .rowWithText(name)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await testUser.page
+          .locator('[role="menu"]')
+          .waitFor({ state: "visible" });
+        await testUser.page.getByRole("menuitem", { name: /delete/i }).click();
+
+        const dialog = testUser.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+        await dialog.waitFor({ state: "hidden" });
+
+        // Row should still exist (delete failed)
+        await mrPage.table.expectRowWithText(name);
+
+        // Cleanup
         await apiHelper.deleteModelRegistry(name).catch(() => {});
       },
     );

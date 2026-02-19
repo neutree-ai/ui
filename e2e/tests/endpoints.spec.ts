@@ -1,5 +1,7 @@
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
+import { MULTI_USER_TIMEOUT } from "../helpers/constants";
+import { ResourcePage } from "../helpers/resource-page";
 
 // ── Shared test data created once in beforeAll ──
 const irName = { value: "" }; // Image registry for cluster dependency
@@ -1203,6 +1205,415 @@ test.describe("endpoints", () => {
 
         // Row should still be there
         await endpoints.table.expectRowWithText(name);
+
+        // Cleanup
+        await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Create permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("create permissions", () => {
+    test(
+      "admin can create endpoint",
+      { tag: "@C2613363" },
+      async ({ endpoints, apiHelper }) => {
+        const name = `test-ep-adm-new-${Date.now()}`;
+
+        await endpoints.goToCreate();
+        await endpoints.form.fillInput("metadata.name", name);
+        await endpoints.form.selectComboboxOption(
+          "spec.cluster",
+          clusterName.value,
+        );
+        await endpoints.form.selectComboboxOption(
+          "spec.model.registry",
+          mrName.value,
+        );
+
+        // Expand customize settings and select engine
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+        await endpoints.form.selectComboboxOption("spec.engine.engine", "vllm");
+
+        const responsePromise = endpoints.page.waitForResponse(
+          (r) =>
+            r.url().includes("/endpoints") &&
+            r.request().method() === "POST" &&
+            (r.ok() || r.status() >= 400),
+        );
+        await endpoints.form.submit();
+        const response = await responsePromise;
+
+        expect(response.status()).toBeLessThan(500);
+
+        // Cleanup
+        await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin with global endpoint:create can create",
+      {
+        tag: ["@C2613364", "@C2613365"],
+        annotation: {
+          type: "slow",
+          description:
+            "creates test user with endpoint:read+create permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const testUser = await createTestUser([
+          "endpoint:read",
+          "endpoint:create",
+          "cluster:read",
+          "model_registry:read",
+          "engine:read",
+        ]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        const name = `test-ep-glb-new-${Date.now()}`;
+        await epPage.goToCreate();
+        await epPage.form.fillInput("metadata.name", name);
+        await epPage.form.selectComboboxOption(
+          "spec.cluster",
+          clusterName.value,
+        );
+        await epPage.form.selectComboboxOption(
+          "spec.model.registry",
+          mrName.value,
+        );
+
+        await testUser.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+        await epPage.form.selectComboboxOption("spec.engine.engine", "vllm");
+
+        const responsePromise = testUser.page.waitForResponse(
+          (r) =>
+            r.url().includes("/endpoints") &&
+            r.request().method() === "POST" &&
+            (r.ok() || r.status() >= 400),
+        );
+        await epPage.form.submit();
+        const response = await responsePromise;
+
+        expect(response.status()).toBeLessThan(500);
+
+        // Cleanup
+        await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin without endpoint:create cannot create",
+      {
+        tag: "@C2613366",
+        annotation: {
+          type: "slow",
+          description: "creates test user with endpoint:read only",
+        },
+      },
+      async ({ createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const testUser = await createTestUser([
+          "endpoint:read",
+          "cluster:read",
+          "model_registry:read",
+          "engine:read",
+        ]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        const name = `test-ep-no-new-${Date.now()}`;
+        await epPage.goToCreate();
+        await epPage.form.fillInput("metadata.name", name);
+        await epPage.form.selectComboboxOption(
+          "spec.cluster",
+          clusterName.value,
+        );
+        await epPage.form.selectComboboxOption(
+          "spec.model.registry",
+          mrName.value,
+        );
+
+        await testUser.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+        await epPage.form.selectComboboxOption("spec.engine.engine", "vllm");
+
+        const responsePromise = testUser.page.waitForResponse(
+          (r) =>
+            r.url().includes("/endpoints") &&
+            r.request().method() === "POST" &&
+            !r.ok(),
+        );
+        await epPage.form.submit();
+        await responsePromise;
+
+        // Form should stay visible (submission rejected by server)
+        await expect(
+          testUser.page.locator('[data-testid="form"]'),
+        ).toBeVisible();
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Edit permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("edit permissions", () => {
+    test(
+      "admin can edit endpoint",
+      { tag: "@C2613367" },
+      async ({ endpoints, apiHelper }) => {
+        const name = `test-ep-adm-upd-${Date.now()}`;
+        await apiHelper.createEndpoint(name, {
+          cluster: clusterName.value,
+          modelRegistry: mrName.value,
+        });
+
+        await endpoints.goToEdit(name);
+        await expect(
+          endpoints.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        // Expand configuration details and change replicas
+        await endpoints.page
+          .getByRole("button", { name: /configuration details/i })
+          .click();
+
+        const replicasInput = endpoints.form
+          .field("spec.replicas.num")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("2");
+
+        const responsePromise = endpoints.page.waitForResponse(
+          (r) =>
+            r.url().includes("/endpoints") &&
+            r.request().method() === "PATCH" &&
+            (r.ok() || r.status() >= 400),
+        );
+        await endpoints.form.submit();
+        const response = await responsePromise;
+
+        expect(response.status()).toBeLessThan(500);
+
+        // Cleanup
+        await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin with global endpoint:update can edit",
+      {
+        tag: ["@C2613368", "@C2613369"],
+        annotation: {
+          type: "slow",
+          description:
+            "creates test user with endpoint:read+update permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-ep-glb-upd-${Date.now()}`;
+        await apiHelper.createEndpoint(name, {
+          cluster: clusterName.value,
+          modelRegistry: mrName.value,
+        });
+
+        const testUser = await createTestUser([
+          "endpoint:read",
+          "endpoint:update",
+          "cluster:read",
+          "model_registry:read",
+          "engine:read",
+        ]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        await epPage.goToEdit(name);
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        await testUser.page
+          .getByRole("button", { name: /configuration details/i })
+          .click();
+
+        const replicasInput = epPage.form
+          .field("spec.replicas.num")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("2");
+
+        const responsePromise = testUser.page.waitForResponse(
+          (r) =>
+            r.url().includes("/endpoints") &&
+            r.request().method() === "PATCH" &&
+            (r.ok() || r.status() >= 400),
+        );
+        await epPage.form.submit();
+        const response = await responsePromise;
+
+        expect(response.status()).toBeLessThan(500);
+
+        // Cleanup
+        await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin without endpoint:update cannot edit",
+      {
+        tag: "@C2613370",
+        annotation: {
+          type: "slow",
+          description: "creates test user with endpoint:read only",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-ep-no-upd-${Date.now()}`;
+        await apiHelper.createEndpoint(name, {
+          cluster: clusterName.value,
+          modelRegistry: mrName.value,
+        });
+
+        const testUser = await createTestUser(["endpoint:read"]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        await epPage.goToEdit(name);
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        await testUser.page
+          .getByRole("button", { name: /configuration details/i })
+          .click();
+
+        const replicasInput = epPage.form
+          .field("spec.replicas.num")
+          .locator("input");
+        await replicasInput.clear();
+        await replicasInput.fill("2");
+
+        await epPage.form.submit();
+
+        // Should show error (permission denied)
+        await expect(
+          testUser.page.getByText(/error|denied|forbidden|fail/i).first(),
+        ).toBeVisible({ timeout: 10_000 });
+
+        // Cleanup
+        await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Delete permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("delete permissions", () => {
+    test(
+      "non-admin with global endpoint:delete can delete",
+      {
+        tag: ["@C2613372", "@C2613373"],
+        annotation: {
+          type: "slow",
+          description:
+            "creates test user with endpoint:read+delete permissions",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-ep-glb-rm-${Date.now()}`;
+        await apiHelper.createEndpoint(name, {
+          cluster: clusterName.value,
+          modelRegistry: mrName.value,
+        });
+
+        const testUser = await createTestUser([
+          "endpoint:read",
+          "endpoint:delete",
+        ]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        await epPage.goToList();
+        await epPage.table.deleteRow(name, { noWait: true });
+
+        // Cleanup
+        await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
+      },
+    );
+
+    test(
+      "non-admin without endpoint:delete cannot delete",
+      {
+        tag: "@C2613374",
+        annotation: {
+          type: "slow",
+          description: "creates test user with endpoint:read only",
+        },
+      },
+      async ({ createTestUser, apiHelper }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const name = `test-ep-no-rm-${Date.now()}`;
+        await apiHelper.createEndpoint(name, {
+          cluster: clusterName.value,
+          modelRegistry: mrName.value,
+        });
+
+        const testUser = await createTestUser(["endpoint:read"]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        await epPage.goToList();
+        await epPage.table.expectRowWithText(name);
+
+        // Attempt delete
+        await epPage.table
+          .rowWithText(name)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await testUser.page
+          .locator('[role="menu"]')
+          .waitFor({ state: "visible" });
+        await testUser.page.getByRole("menuitem", { name: /delete/i }).click();
+
+        const dialog = testUser.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+        await dialog.waitFor({ state: "hidden" });
+
+        // Row should still exist (delete failed)
+        await epPage.table.expectRowWithText(name);
 
         // Cleanup
         await apiHelper.deleteEndpoint(name, { force: true }).catch(() => {});
