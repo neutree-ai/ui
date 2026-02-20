@@ -2,6 +2,8 @@ import { auth } from "@/auth-provider";
 import { REST_URL, clientPostgrest } from "@/lib/api";
 import { useEffect, useRef, useState } from "react";
 
+const AUTO_REFRESH_INTERVAL = 10000;
+
 /**
  * Custom hook for streaming log content from an endpoint
  *
@@ -31,6 +33,8 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     // Skip if not enabled or no URL
@@ -39,9 +43,10 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
     }
 
     async function fetchLogs() {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
       setIsLoading(true);
       setError(null);
-      setLogs(""); // Clear previous logs
 
       // Create new abort controller for this request
       abortControllerRef.current = new AbortController();
@@ -101,16 +106,26 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
           setError("Unknown error occurred");
         }
       } finally {
+        isFetchingRef.current = false;
         setIsLoading(false);
       }
     }
 
     fetchLogs();
 
-    // Cleanup: abort the request when component unmounts or dependencies change
+    // Auto-refresh every 10 seconds
+    intervalRef.current = setInterval(() => {
+      fetchLogs();
+    }, AUTO_REFRESH_INTERVAL);
+
+    // Cleanup: abort the request and clear interval
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, [url, enabled, refetchTrigger]);

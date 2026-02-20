@@ -270,7 +270,7 @@
   "src/hooks/use-column-visibility.ts": "5c79260bb52315e0380e612ff9294c64",
   "src/components/business/use-variables-input.ts": "5476a9ad541e20633247cad46270d109",
   "src/hooks/use-endpoint-log-sources.ts": "5380c4d10afeb1ce234bd81a16280b1a",
-  "src/hooks/use-streaming-logs.ts": "5b2ec0b40b82351bee79c0a3d2dad1da",
+  "src/hooks/use-streaming-logs.ts": "4f7a3d65c7d94f56b35a1b9f16a4bdf6",
   "src/hooks/use-monitor-panels.ts": "be85f4423a776908946f62a20e128764",
   "src/components/business/DeploymentConfigCard.tsx": "84d0d02a6e2f9a42d9a42ffb967407f0",
   "src/components/business/EngineVariablesCard.tsx": "caadae7b1e40444a70008c7359d9a373",
