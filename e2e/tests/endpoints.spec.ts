@@ -7,6 +7,7 @@ import { ResourcePage } from "../helpers/resource-page";
 const irName = { value: "" }; // Image registry for cluster dependency
 const clusterName = { value: "" };
 const mrName = { value: "" };
+const mcName = { value: "" }; // Model catalog for template selection tests
 const epNames = {
   base: "", // primary endpoint for list/detail/edit
   sort: "", // second endpoint for sort ordering
@@ -25,6 +26,8 @@ test.describe("endpoints", () => {
     epNames.base = `test-ep-base-${ts}`;
     epNames.sort = `test-ep-sort-${ts}`;
 
+    mcName.value = `test-ep-mc-${ts}`;
+
     // Create dependency resources first
     await api.createImageRegistry(irName.value);
     await api.createCluster(clusterName.value, {
@@ -32,6 +35,10 @@ test.describe("endpoints", () => {
       imageRegistry: irName.value,
     });
     await api.createModelRegistry(mrName.value);
+    await api.createModelCatalog(mcName.value, {
+      modelVersion: "2.0",
+      modelFile: "catalog-model.safetensors",
+    });
 
     // Create endpoints
     await api.createEndpoint(epNames.base, {
@@ -58,10 +65,11 @@ test.describe("endpoints", () => {
         api.deleteEndpoint(name, { force: true }).catch(() => {}),
       ),
     );
-    // Then dependencies in parallel (cluster + model registry)
+    // Then dependencies in parallel (cluster + model registry + model catalog)
     await Promise.all([
       api.deleteCluster(clusterName.value, { force: true }).catch(() => {}),
       api.deleteModelRegistry(mrName.value, { force: true }).catch(() => {}),
+      api.deleteModelCatalog(mcName.value).catch(() => {}),
     ]);
     // Finally image registry (depends on cluster)
     await api
@@ -629,6 +637,46 @@ test.describe("endpoints", () => {
         // Verify the row appeared with key and value inputs filled
         await expect(keyInput).toHaveValue("test-key");
         await expect(valueInput).toHaveValue("test-value");
+      },
+    );
+
+    test(
+      "create: catalog selection populates fields when customize section already open",
+      { tag: "@C2626011" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        // 1. Expand customize section FIRST (mount FormField controllers)
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        // Verify fields have default (empty) values
+        const versionInput = endpoints.form
+          .field("spec.model.version")
+          .locator("input");
+        await expect(versionInput).toHaveValue("");
+
+        const fileInput = endpoints.form
+          .field("spec.model.file")
+          .locator("input");
+        await expect(fileInput).toHaveValue("");
+
+        // 2. Select model catalog AFTER expanding
+        await endpoints.form.selectComboboxOption(
+          "-model-catalog",
+          mcName.value,
+        );
+
+        // 3. Verify fields inside the already-open collapsible are populated
+        await expect(versionInput).toHaveValue("2.0");
+        await expect(fileInput).toHaveValue("catalog-model.safetensors");
+
+        // Engine combobox should show "vllm"
+        const engineButton = endpoints.form
+          .field("spec.engine.engine")
+          .locator("button");
+        await expect(engineButton).toContainText("vllm");
       },
     );
 

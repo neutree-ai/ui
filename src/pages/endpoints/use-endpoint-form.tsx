@@ -386,6 +386,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       : undefined;
   }, [engineSpec.engine, engineSpec.version, engineVersions]);
 
+  // Set each key of obj as a separate form.setValue call, recursing into
+  // nested plain objects. This ensures mounted FormField controllers get
+  // notified, because useController uses useWatch with exact:true and
+  // only reacts to setValue calls whose path exactly matches the field name.
+  const setLeafValues = (basePath: string, obj: Record<string, unknown>) => {
+    for (const [key, value] of Object.entries(obj)) {
+      const path = `${basePath}.${key}`;
+      form.setValue(path as any, value);
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        setLeafValues(path, value as Record<string, unknown>);
+      }
+    }
+  };
+
   // Handle model catalog selection with merge logic
   const handleModelCatalogSelect = (catalogId: string) => {
     setSelectedModelCatalog(catalogId);
@@ -419,32 +437,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           )
         : currentFormData.spec.replicas;
 
-      form.setValue(
-        "spec.model",
-        mergedModel as typeof currentFormData.spec.model,
-      );
-      form.setValue(
-        "spec.engine",
-        mergedEngine as typeof currentFormData.spec.engine,
-      );
-      form.setValue(
+      setLeafValues("spec.model", mergedModel);
+      setLeafValues("spec.engine", mergedEngine);
+      setLeafValues(
         "spec.resources",
-        mergedResources as typeof currentFormData.spec.resources,
+        mergedResources as Record<string, unknown>,
       );
-      form.setValue(
-        "spec.replicas",
-        mergedReplicas as typeof currentFormData.spec.replicas,
-      );
+      setLeafValues("spec.replicas", mergedReplicas as Record<string, unknown>);
 
       if (selectedCatalog.spec.deployment_options) {
         const mergedDeploymentOptions = deepMerge(
           currentFormData.spec.deployment_options as Record<string, unknown>,
           selectedCatalog.spec.deployment_options as Record<string, unknown>,
         );
-        form.setValue(
-          "spec.deployment_options",
-          mergedDeploymentOptions as typeof currentFormData.spec.deployment_options,
-        );
+        setLeafValues("spec.deployment_options", mergedDeploymentOptions);
       }
 
       if (selectedCatalog.spec.variables) {
@@ -452,10 +458,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           currentFormData.spec.variables as Record<string, unknown>,
           selectedCatalog.spec.variables as Record<string, unknown>,
         );
-        form.setValue(
-          "spec.variables",
-          mergedVariables as typeof currentFormData.spec.variables,
-        );
+        setLeafValues("spec.variables", mergedVariables);
       }
     }
   };
