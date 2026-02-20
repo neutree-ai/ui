@@ -1,10 +1,29 @@
 import { expect, test } from "../fixtures/base";
 import { MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { ResourcePage } from "../helpers/resource-page";
+import { YamlImportHelper } from "../helpers/yaml-import";
 
 /** Known engines that exist in the test environment */
 const ENGINE_LLAMA = "llama-cpp";
 const ENGINE_VLLM = "vllm";
+
+/** Build an Engine YAML document for import */
+function engineYaml(
+  name: string,
+  opts?: { workspace?: string; version?: string },
+): string {
+  return `apiVersion: v1
+kind: Engine
+metadata:
+  name: ${name}
+  workspace: ${opts?.workspace ?? "default"}
+spec:
+  versions:
+    - version: "${opts?.version ?? "v1.0"}"
+      values_schema: {}
+  supported_tasks:
+    - text-generation`;
+}
 
 test.describe("engines list", () => {
   test(
@@ -344,6 +363,195 @@ test.describe("engines multi-user permissions", () => {
       await expect(
         testUser.page.locator('[data-testid="table-empty"]'),
       ).toBeVisible();
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Create permissions (YAML import)
+// ────────────────────────────────────────────────────────────
+test.describe("engines create permissions", () => {
+  test(
+    "admin can create engine via YAML import",
+    {
+      tag: ["@C2613228", "@C2613229"],
+    },
+    async ({ engines, yamlImport, apiHelper }) => {
+      const name = `test-eng-adm-new-${Date.now()}`;
+
+      await engines.goToList();
+      await yamlImport.importYaml(engineYaml(name));
+      await yamlImport.expectResults({ success: 1 });
+      await yamlImport.close();
+
+      await engines.table.expectRowWithText(name);
+
+      // Cleanup
+      await apiHelper.deleteEngine(name).catch(() => {});
+    },
+  );
+
+  test(
+    "non-admin with global engine:create can create via YAML import",
+    {
+      tag: "@C2613230",
+      annotation: {
+        type: "slow",
+        description: "creates test user with engine:create+read permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const testUser = await createTestUser(["engine:create", "engine:read"]);
+
+      const name = `test-eng-glb-new-${Date.now()}`;
+      const yamlHelper = new YamlImportHelper(testUser.page);
+      const engPage = new ResourcePage(testUser.page, {
+        routeName: "engines",
+        workspaced: true,
+      });
+
+      await engPage.goToList();
+      await yamlHelper.importYaml(engineYaml(name));
+      await yamlHelper.expectResults({ success: 1 });
+      await yamlHelper.close();
+
+      await engPage.table.expectRowWithText(name);
+
+      // Cleanup (admin deletes)
+      await apiHelper.deleteEngine(name).catch(() => {});
+    },
+  );
+
+  test.skip(
+    "workspace-scoped engine:create can create (enterprise)",
+    {
+      tag: "@C2613231",
+    },
+    async () => {
+      // Enterprise-only feature — skipped
+    },
+  );
+
+  test(
+    "non-admin without engine:create cannot create via YAML import",
+    {
+      tag: "@C2613232",
+      annotation: {
+        type: "slow",
+        description: "creates test user with engine:read only",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const testUser = await createTestUser(["engine:read"]);
+
+      const name = `test-eng-no-new-${Date.now()}`;
+      const yamlHelper = new YamlImportHelper(testUser.page);
+      const engPage = new ResourcePage(testUser.page, {
+        routeName: "engines",
+        workspaced: true,
+      });
+
+      await engPage.goToList();
+      await yamlHelper.importYaml(engineYaml(name));
+      await yamlHelper.expectResults({ errors: 1 });
+      await yamlHelper.close();
+
+      // Engine should NOT appear in the list
+      await engPage.table.expectNoRowWithText(name);
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Update permissions (YAML import skips existing resources)
+// ────────────────────────────────────────────────────────────
+test.describe("engines update permissions", () => {
+  test(
+    "admin importing existing engine shows skipped",
+    {
+      tag: "@C2613221",
+    },
+    async ({ engines, yamlImport, apiHelper }) => {
+      const name = `test-eng-adm-upd-${Date.now()}`;
+      await apiHelper.createEngine(name, { version: "v1.0" });
+
+      await engines.goToList();
+      await yamlImport.importYaml(engineYaml(name, { version: "v2.0" }));
+      await yamlImport.expectResults({ skipped: 1 });
+      await yamlImport.close();
+
+      // Cleanup
+      await apiHelper.deleteEngine(name).catch(() => {});
+    },
+  );
+
+  test(
+    "non-admin with engine:read importing existing engine shows skipped",
+    {
+      tag: "@C2613223",
+      annotation: {
+        type: "slow",
+        description: "creates test user with engine:read+update permissions",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const name = `test-eng-glb-upd-${Date.now()}`;
+      await apiHelper.createEngine(name, { version: "v1.0" });
+
+      const testUser = await createTestUser(["engine:read", "engine:update"]);
+      const yamlHelper = new YamlImportHelper(testUser.page);
+      const engPage = new ResourcePage(testUser.page, {
+        routeName: "engines",
+        workspaced: true,
+      });
+
+      await engPage.goToList();
+      await yamlHelper.importYaml(engineYaml(name, { version: "v2.0" }));
+      await yamlHelper.expectResults({ skipped: 1 });
+      await yamlHelper.close();
+
+      // Cleanup
+      await apiHelper.deleteEngine(name).catch(() => {});
+    },
+  );
+
+  test(
+    "non-admin without engine:read importing existing engine shows error",
+    {
+      tag: "@C2613225",
+      annotation: {
+        type: "slow",
+        description:
+          "creates test user with engine:create only (no read), getOne fails so import tries POST which conflicts",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const name = `test-eng-no-upd-${Date.now()}`;
+      await apiHelper.createEngine(name, { version: "v1.0" });
+
+      // Without engine:read, checkResourceExists fails → import tries POST → 409 conflict
+      const testUser = await createTestUser(["engine:create"]);
+      const yamlHelper = new YamlImportHelper(testUser.page);
+      const engPage = new ResourcePage(testUser.page, {
+        routeName: "engines",
+        workspaced: true,
+      });
+
+      await testUser.page.goto("/#/default/engines");
+      await yamlHelper.importYaml(engineYaml(name, { version: "v2.0" }));
+      await yamlHelper.expectResults({ errors: 1 });
+      await yamlHelper.close();
+
+      // Cleanup
+      await apiHelper.deleteEngine(name).catch(() => {});
     },
   );
 });

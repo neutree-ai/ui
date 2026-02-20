@@ -191,6 +191,32 @@ export class ApiHelper {
     await this.softDelete("workspaces", name, options);
   }
 
+  // ── Engine CRUD ──
+
+  /** POST /api/v1/engines */
+  async createEngine(
+    name: string,
+    options?: { workspace?: string; version?: string },
+  ): Promise<void> {
+    await this.api("POST", "/engines", {
+      api_version: "v1",
+      kind: "Engine",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec: {
+        versions: [{ version: options?.version ?? "v1.0", values_schema: {} }],
+        supported_tasks: ["text-generation"],
+      },
+    });
+  }
+
+  /** Soft-delete an engine by name */
+  async deleteEngine(
+    name: string,
+    options?: { retries?: number; force?: boolean },
+  ): Promise<void> {
+    await this.softDelete("engines", name, options);
+  }
+
   // ── Model Catalog CRUD ──
 
   /** POST /api/v1/model_catalogs */

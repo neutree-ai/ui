@@ -3,7 +3,7 @@ import {
   MULTI_USER_EXTENDED_TIMEOUT,
   MULTI_USER_TIMEOUT,
 } from "../helpers/constants";
-import type { ResourcePage } from "../helpers/resource-page";
+import { ResourcePage } from "../helpers/resource-page";
 import { DELETE_TIMEOUT } from "../helpers/table-helper";
 import { loginAs, logout } from "../helpers/test-user-context";
 
@@ -117,6 +117,64 @@ test.describe("user profiles list", () => {
 
       await users.table.toggleColumn(/email/i);
       await expect(users.table.headerCell(/email/i)).toBeVisible();
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// List permissions
+// ────────────────────────────────────────────────────────────
+test.describe("user profiles list permissions", () => {
+  test(
+    "user with user_profile:read can see all users",
+    {
+      tag: "@C2611615",
+      annotation: {
+        type: "slow",
+        description: "creates test user with user_profile:read permission",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const testUser = await createTestUser(["user_profile:read"]);
+      const usersPage = new ResourcePage(testUser.page, {
+        routeName: "user-profiles",
+      });
+
+      await usersPage.goToList();
+      await usersPage.table.waitForLoaded();
+
+      // User with user_profile:read should see all users (more than just themselves)
+      const rowCount = await usersPage.table.rows().count();
+      expect(rowCount).toBeGreaterThan(1);
+    },
+  );
+
+  test(
+    "user without user_profile:read can only see self",
+    {
+      tag: "@C2611603",
+      annotation: {
+        type: "slow",
+        description: "creates test user without user_profile:read",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      // Give an unrelated permission so the user can log in
+      const testUser = await createTestUser(["role:read"]);
+      const usersPage = new ResourcePage(testUser.page, {
+        routeName: "user-profiles",
+      });
+
+      await testUser.page.goto("/#/user-profiles");
+      await usersPage.table.waitForLoaded();
+
+      // User without user_profile:read should see exactly 1 row (themselves)
+      const rowCount = await usersPage.table.rows().count();
+      expect(rowCount).toBe(1);
     },
   );
 });

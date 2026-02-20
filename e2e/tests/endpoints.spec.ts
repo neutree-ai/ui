@@ -1620,4 +1620,74 @@ test.describe("endpoints", () => {
       },
     );
   });
+
+  // ────────────────────────────────────────────────────────────
+  // List permissions (multi-user)
+  // ────────────────────────────────────────────────────────────
+  test.describe("list permissions", () => {
+    test(
+      "admin can view endpoint list",
+      { tag: "@C2613378" },
+      async ({ endpoints }) => {
+        await endpoints.goToList();
+
+        const rowCount = await endpoints.table.rows().count();
+        expect(rowCount).toBeGreaterThan(0);
+      },
+    );
+
+    test(
+      "non-admin with global endpoint:read can view endpoint list",
+      {
+        tag: "@C2613379",
+        annotation: {
+          type: "slow",
+          description: "creates test user with endpoint:read permission",
+        },
+      },
+      async ({ createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        const testUser = await createTestUser(["endpoint:read"]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        await epPage.goToList();
+        await epPage.table.waitForLoaded();
+
+        const rowCount = await epPage.table.rows().count();
+        expect(rowCount).toBeGreaterThan(0);
+      },
+    );
+
+    test(
+      "non-admin without endpoint:read sees empty endpoint list",
+      {
+        tag: "@C2613381",
+        annotation: {
+          type: "slow",
+          description: "creates test user without endpoint:read",
+        },
+      },
+      async ({ createTestUser }, testInfo) => {
+        testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+        // Give an unrelated permission so the user can log in
+        const testUser = await createTestUser(["role:read"]);
+        const epPage = new ResourcePage(testUser.page, {
+          routeName: "endpoints",
+          workspaced: true,
+        });
+
+        await testUser.page.goto("/#/default/endpoints");
+        await epPage.table.waitForLoaded();
+
+        await expect(
+          testUser.page.locator('[data-testid="table-empty"]'),
+        ).toBeVisible();
+      },
+    );
+  });
 });
