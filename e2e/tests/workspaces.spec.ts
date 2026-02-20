@@ -139,6 +139,58 @@ test.describe("workspaces list", () => {
   );
 });
 
+test.describe("workspace create", () => {
+  test(
+    "open source license limits max 1 workspace — server rejects second",
+    {
+      tag: "@C2611828",
+    },
+    async ({ workspaces }) => {
+      await workspaces.goToCreate();
+
+      await workspaces.form.fillInput(
+        "metadata.name",
+        `test-ws-oslimit-${Date.now()}`,
+      );
+
+      const responsePromise = workspaces.page.waitForResponse(
+        (r) =>
+          r.url().includes("/workspaces") && r.request().method() === "POST",
+      );
+      await workspaces.form.submit();
+      const response = await responsePromise;
+
+      // Server enforces limit: "default" already exists → reject
+      expect(response.status()).toBeGreaterThanOrEqual(400);
+
+      // Form stays visible (not redirected to list)
+      await expect(
+        workspaces.page.locator('[data-testid="form"]'),
+      ).toBeVisible();
+    },
+  );
+
+  test(
+    "delete workspace from list action menu with confirmation",
+    {
+      tag: "@C2611831",
+    },
+    async ({ workspaces, apiHelper }) => {
+      const name = `test-ws-del-${Date.now()}`;
+      try {
+        await apiHelper.createWorkspace(name);
+      } catch {
+        // Open-source license limits to 1 workspace — skip when creation is blocked
+        test.skip(true, "workspace creation blocked by license limit");
+        return;
+      }
+
+      await workspaces.goToList();
+      await workspaces.table.deleteRow(name);
+    },
+  );
+});
+
 test.describe("workspaces detail", () => {
   test(
     "show page displays name, created at, updated at, and workspace policies section",

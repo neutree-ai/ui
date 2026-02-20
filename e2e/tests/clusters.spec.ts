@@ -1617,6 +1617,96 @@ test.describe("clusters", () => {
       },
     );
 
+    // ── Group 4: Workspace & Image Registry Dropdown ──
+
+    test(
+      "workspace defaults to empty when global filter is All workspaces",
+      { tag: "@C2612671" },
+      async ({ clusters }) => {
+        // Navigate with _all_ workspace filter (simulates "All workspaces")
+        await clusters.page.goto("/#/_all_/clusters/create");
+        await clusters.page
+          .locator('[data-testid="form"]')
+          .waitFor({ state: "visible" });
+
+        const wsButton = clusters.form
+          .field("metadata.workspace")
+          .locator('button[role="combobox"]');
+
+        // When _all_ is set, Combobox can't find matching option → no "default"
+        await expect(wsButton).not.toHaveText(/default/);
+      },
+    );
+
+    test(
+      "workspace auto-fills from global workspace filter",
+      { tag: "@C2612683" },
+      async ({ clusters }) => {
+        // goToCreate() navigates to /default/clusters/create
+        await clusters.goToCreate();
+
+        const wsButton = clusters.form
+          .field("metadata.workspace")
+          .locator('button[role="combobox"]');
+
+        await expect(wsButton).toHaveText(/default/);
+      },
+    );
+
+    test(
+      "workspace search with no results preserves default value",
+      { tag: "@C2612673" },
+      async ({ clusters }) => {
+        await clusters.goToCreate();
+
+        // Open workspace combobox
+        const wsField = clusters.form.field("metadata.workspace");
+        await wsField.locator("button").click();
+
+        // Type a non-existent workspace name in the search input
+        const dialog = clusters.page.locator(
+          '[data-state="open"][role="dialog"]',
+        );
+        const searchInput = dialog.getByRole("combobox");
+        await searchInput.fill("nonexistent-ws-xyz");
+
+        // No options should appear
+        await expect(dialog.getByRole("option")).toHaveCount(0);
+
+        // Close dropdown
+        await clusters.page.keyboard.press("Escape");
+
+        // Verify workspace button still shows "default"
+        const wsButton = wsField.locator('button[role="combobox"]');
+        await expect(wsButton).toHaveText(/default/);
+      },
+    );
+
+    test(
+      "image registry dropdown is empty for workspace with no registries",
+      { tag: "@C2612675" },
+      async ({ clusters }) => {
+        // Navigate to a non-existent workspace → no image registries
+        await clusters.page.goto("/#/no-ir-ws/clusters/create");
+        await clusters.page
+          .locator('[data-testid="form"]')
+          .waitFor({ state: "visible" });
+
+        // Open image registry combobox
+        const irField = clusters.form.field("spec.image_registry");
+        await irField.locator("button").click();
+
+        // Wait for popover dialog
+        const dialog = clusters.page.locator(
+          '[data-state="open"][role="dialog"]',
+        );
+        await dialog.waitFor({ state: "visible" });
+
+        // No options should appear
+        await expect(dialog.getByRole("option")).toHaveCount(0);
+      },
+    );
+
     test(
       "cache: reserved name 'default' → submit fails",
       { tag: "@C2612811" },
