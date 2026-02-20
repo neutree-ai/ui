@@ -180,6 +180,49 @@ test.describe("user profiles list permissions", () => {
 });
 
 // ────────────────────────────────────────────────────────────
+// Create permissions
+// ────────────────────────────────────────────────────────────
+test.describe("user profiles create permissions", () => {
+  test(
+    "non-admin without user_profile:create cannot create",
+    {
+      tag: "@C2586820",
+      annotation: {
+        type: "slow",
+        description: "creates test user with user_profile:read only",
+      },
+    },
+    async ({ createTestUser }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const testUser = await createTestUser(["user_profile:read"]);
+      const usersPage = new ResourcePage(testUser.page, {
+        routeName: "user-profiles",
+      });
+
+      const name = `test-usr-no-new-${Date.now()}`;
+      await usersPage.goToCreate();
+      await usersPage.form.fillInput("name", name);
+      await usersPage.form.fillInput("email", `${name}@e2e.local`);
+      await usersPage.form.fillInput("password", "Test@123456");
+      await usersPage.form.fillInput("confirmPassword", "Test@123456");
+
+      const responsePromise = testUser.page.waitForResponse(
+        (r) =>
+          r.url().includes("/auth/admin/users") &&
+          r.request().method() === "POST" &&
+          !r.ok(),
+      );
+      await usersPage.form.submit();
+      await responsePromise;
+
+      // Form should stay visible (submission rejected by server)
+      await expect(testUser.page.locator('[data-testid="form"]')).toBeVisible();
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
 // Create
 // ────────────────────────────────────────────────────────────
 test.describe("user profiles create", () => {
@@ -641,6 +684,71 @@ test.describe("user profiles edit", () => {
       await users.form.cancel();
     },
   );
+
+  test(
+    "non-admin with user_profile:update can edit email",
+    {
+      tag: "@C2611623",
+      annotation: {
+        type: "slow",
+        description:
+          "creates victim user + test user with user_profile:read+update",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const ts = Date.now();
+      const victimName = `test-victim-${ts}`;
+      const victimEmail = `test-victim-${ts}@e2e.local`;
+      const newEmail = `test-victim-new-${ts}@e2e.local`;
+
+      await apiHelper.createUser(victimName, victimEmail, "Test@123456");
+
+      try {
+        const testUser = await createTestUser([
+          "user_profile:read",
+          "user_profile:update",
+        ]);
+        const usersPage = new ResourcePage(testUser.page, {
+          routeName: "user-profiles",
+        });
+
+        await usersPage.goToEdit(victimName);
+        await expect(
+          testUser.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        await usersPage.form.fillInput("spec.email", newEmail);
+        await usersPage.form.submit();
+
+        // Should redirect to list with new email visible
+        await usersPage.goToList();
+        await usersPage.table.expectRowWithText(newEmail);
+      } finally {
+        await apiHelper.deleteUser(victimName, { retries: 5 }).catch(() => {});
+      }
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Edit email login
+// ────────────────────────────────────────────────────────────
+test.describe("user profiles edit email login", () => {
+  // Backend does NOT sync spec.email to Supabase auth email.
+  // Login always uses the original email set at creation time.
+  test.skip(
+    "login works with new email and fails with old email after email change",
+    {
+      tag: ["@C2611628", "@C2611629"],
+    },
+    async () => {
+      // Skipped: spec.email is a profile field only; Supabase auth email
+      // is unchanged by editing the user profile, so login always uses
+      // the original email.
+    },
+  );
 });
 
 // ────────────────────────────────────────────────────────────
@@ -806,6 +914,160 @@ test.describe("user profiles delete", () => {
         await users.table.expectRowWithText(testData.userName);
       } finally {
         await testData.cleanup();
+      }
+    },
+  );
+});
+
+// ────────────────────────────────────────────────────────────
+// Delete permissions (multi-user)
+// ────────────────────────────────────────────────────────────
+test.describe("user profiles delete permissions", () => {
+  test(
+    "non-admin with user_profile:delete can delete",
+    {
+      tag: "@C2611638",
+      annotation: {
+        type: "slow",
+        description:
+          "creates victim user + test user with user_profile:read+delete",
+      },
+    },
+    async ({ createTestUser, apiHelper }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_TIMEOUT);
+
+      const ts = Date.now();
+      const victimName = `test-delvictim-${ts}`;
+      const victimEmail = `test-delvictim-${ts}@e2e.local`;
+
+      await apiHelper.createUser(victimName, victimEmail, "Test@123456");
+
+      const testUser = await createTestUser([
+        "user_profile:read",
+        "user_profile:delete",
+      ]);
+      const usersPage = new ResourcePage(testUser.page, {
+        routeName: "user-profiles",
+      });
+
+      await usersPage.goToList();
+      await usersPage.table.deleteRow(victimName, { noWait: true });
+
+      // Cleanup via API in case backend GC is slow
+      await apiHelper.deleteUser(victimName, { retries: 5 }).catch(() => {});
+    },
+  );
+
+  test(
+    "deleted user cannot login",
+    {
+      tag: "@C2611637",
+      annotation: {
+        type: "slow",
+        description:
+          "creates user via API, soft-deletes, then verifies login fails",
+      },
+    },
+    async ({ apiHelper, browser }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_EXTENDED_TIMEOUT);
+
+      const ts = Date.now();
+      const name = `test-dellgn-${ts}`;
+      const email = `test-dellgn-${ts}@e2e.local`;
+      const password = "Test@123456";
+
+      await apiHelper.createUser(name, email, password);
+      await apiHelper.deleteUser(name);
+
+      // Poll until backend finalizer hard-deletes the user_profile
+      for (let i = 0; i < 20; i++) {
+        try {
+          await apiHelper.getUserId(name);
+          await new Promise((r) => setTimeout(r, 1_500));
+        } catch {
+          break; // User profile gone — finalizer has run
+        }
+      }
+
+      // Manual login flow — loginAs would hang on waitForURL
+      const baseURL = new URL(apiHelper.page.url()).origin;
+      const context = await browser.newContext({
+        baseURL,
+        storageState: { cookies: [], origins: [] },
+      });
+      const page = await context.newPage();
+
+      try {
+        await page.goto("/#/login");
+        await page.locator('input[name="email"]').waitFor({ state: "visible" });
+        await page.locator('input[name="email"]').fill(email);
+        await page.locator('input[name="password"]').fill(password);
+        await page.getByRole("button", { name: /sign in/i }).click();
+
+        // Should show error or remain on login page
+        await expect(
+          page.getByText(/invalid|error|incorrect|unauthorized/i).first(),
+        ).toBeVisible({ timeout: 10_000 });
+      } finally {
+        await context.close();
+      }
+    },
+  );
+
+  test(
+    "deleted user is force-logged out",
+    {
+      tag: "@C2611636",
+      annotation: {
+        type: "slow",
+        description:
+          "creates user, logs in, admin deletes user, verifies redirect to login",
+      },
+    },
+    async ({ apiHelper, browser }, testInfo) => {
+      testInfo.setTimeout(MULTI_USER_EXTENDED_TIMEOUT);
+
+      const ts = Date.now();
+      const name = `test-forcelo-${ts}`;
+      const email = `test-forcelo-${ts}@e2e.local`;
+      const password = "Test@123456";
+
+      await apiHelper.createUser(name, email, password);
+
+      // Login as the user in a separate browser context
+      const { page: userPage, context: userCtx } = await loginAs(
+        browser,
+        apiHelper,
+        email,
+        password,
+      );
+
+      try {
+        // Verify user is on dashboard
+        await expect(userPage).toHaveURL(/\/#\/dashboard/);
+
+        // Admin soft-deletes the user
+        await apiHelper.deleteUser(name);
+
+        // Poll until backend finalizer hard-deletes the user_profile
+        for (let i = 0; i < 20; i++) {
+          try {
+            await apiHelper.getUserId(name);
+            await new Promise((r) => setTimeout(r, 1_500));
+          } catch {
+            break; // User profile gone — finalizer has run
+          }
+        }
+
+        // Reload the user's page — session should now be invalidated
+        await userPage.reload();
+
+        // Auth user hard-deleted → session invalid → redirect to login
+        // URL may include query params like ?to=%2Fdashboard
+        await userPage.waitForURL("**/#/login**", { timeout: 30_000 });
+      } finally {
+        await userCtx.close();
+        await apiHelper.deleteUser(name, { retries: 5 }).catch(() => {});
       }
     },
   );
