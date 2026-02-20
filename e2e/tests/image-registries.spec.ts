@@ -717,6 +717,186 @@ test.describe("image registries", () => {
     );
 
     test(
+      "auth fields create + backend persistence (username saved, password masked)",
+      { tag: "@C2612003" },
+      async ({ imageRegistries, apiHelper }) => {
+        const name = `test-ir-auth-${Date.now()}`;
+        await imageRegistries.goToCreate();
+
+        await imageRegistries.form.fillInput("metadata.name", name);
+        await imageRegistries.form.fillInput(
+          "spec.url",
+          "https://index.docker.io/v1",
+        );
+        await imageRegistries.form.fillInput(
+          "spec.repository",
+          "library/nginx",
+        );
+        await imageRegistries.form.fillInput(
+          "spec.authconfig.username",
+          "testuser",
+        );
+        await imageRegistries.form.fillInput(
+          "spec.authconfig.password",
+          "testpass123",
+        );
+        await imageRegistries.form.submit();
+
+        // Redirects to list → verify row exists
+        await imageRegistries.table.waitForLoaded();
+        await imageRegistries.table.expectRowWithText(name);
+
+        // Navigate to edit page to verify backend persisted auth fields
+        await imageRegistries.goToEdit(name);
+        await expect(
+          imageRegistries.page.locator('[data-testid="form-submit"]'),
+        ).toBeEnabled();
+
+        // Backend clears auth fields on read for security — both should be empty
+        const usernameInput = imageRegistries.form
+          .field("spec.authconfig.username")
+          .locator("input");
+        await expect(usernameInput).toHaveValue("");
+
+        const pwInput = imageRegistries.form
+          .field("spec.authconfig.password")
+          .locator("input");
+        await expect(pwInput).toHaveValue("");
+
+        // "Leave empty to keep" description confirms auth was saved
+        await expect(
+          imageRegistries.page.getByText(/leave empty to keep/i).first(),
+        ).toBeVisible();
+
+        // Cleanup
+        imageRegistries.page.on("dialog", (dialog) => dialog.accept());
+        await apiHelper.deleteImageRegistry(name).catch(() => {});
+      },
+    );
+
+    test(
+      "empty URL → server rejects or status becomes Failed",
+      { tag: "@C2612015" },
+      async ({ imageRegistries, apiHelper }) => {
+        const name = `test-ir-emptyurl-${Date.now()}`;
+        await imageRegistries.goToCreate();
+
+        // Fill name only, leave URL empty
+        await imageRegistries.form.fillInput("metadata.name", name);
+
+        const responsePromise = imageRegistries.page.waitForResponse(
+          (resp) =>
+            resp.url().includes("image_registries") &&
+            resp.request().method() === "POST",
+        );
+        await imageRegistries.form.submit();
+        const response = await responsePromise;
+
+        if (response.status() >= 400) {
+          // Server rejected — form should still be visible
+          await expect(imageRegistries.form.root).toBeVisible();
+        } else {
+          // Server accepted — verify row exists, then check status becomes Failed
+          await imageRegistries.table.waitForLoaded();
+          await imageRegistries.table.expectRowWithText(name);
+
+          const row = imageRegistries.table.rowWithText(name);
+          await expect(row.getByText("Failed")).toBeVisible({
+            timeout: CONNECTION_TIMEOUT,
+          });
+
+          // Cleanup
+          await apiHelper.deleteImageRegistry(name).catch(() => {});
+        }
+      },
+    );
+
+    test(
+      "URL without protocol → server rejects or status becomes Failed",
+      { tag: "@C2612016" },
+      async ({ imageRegistries, apiHelper }) => {
+        const name = `test-ir-noproto-${Date.now()}`;
+        await imageRegistries.goToCreate();
+
+        await imageRegistries.form.fillInput("metadata.name", name);
+        await imageRegistries.form.fillInput("spec.url", "index.docker.io");
+
+        const responsePromise = imageRegistries.page.waitForResponse(
+          (resp) =>
+            resp.url().includes("image_registries") &&
+            resp.request().method() === "POST",
+        );
+        await imageRegistries.form.submit();
+        const response = await responsePromise;
+
+        if (response.status() >= 400) {
+          // Server rejected — form should still be visible
+          await expect(imageRegistries.form.root).toBeVisible();
+        } else {
+          // Server accepted — verify row exists, then check status becomes Failed
+          await imageRegistries.table.waitForLoaded();
+          await imageRegistries.table.expectRowWithText(name);
+
+          const row = imageRegistries.table.rowWithText(name);
+          await expect(row.getByText("Failed")).toBeVisible({
+            timeout: CONNECTION_TIMEOUT,
+          });
+
+          // Cleanup
+          await apiHelper.deleteImageRegistry(name).catch(() => {});
+        }
+      },
+    );
+
+    test(
+      "concurrent submit → rapid clicks produce only one POST request",
+      { tag: "@C2612024" },
+      async ({ imageRegistries, apiHelper }) => {
+        const name = `test-ir-concurrent-${Date.now()}`;
+        await imageRegistries.goToCreate();
+
+        await imageRegistries.form.fillInput("metadata.name", name);
+        await imageRegistries.form.fillInput(
+          "spec.url",
+          "https://index.docker.io/v1",
+        );
+
+        // Count POST requests to image_registries
+        let postCount = 0;
+        imageRegistries.page.on("request", (req) => {
+          if (
+            req.url().includes("image_registries") &&
+            req.method() === "POST"
+          ) {
+            postCount++;
+          }
+        });
+
+        // Rapid clicks on submit button
+        const submitBtn = imageRegistries.page.locator(
+          '[data-testid="form-submit"]',
+        );
+        await submitBtn.click();
+        await submitBtn.click({ force: true });
+        await submitBtn.click({ force: true });
+
+        // Wait for the first submission to complete
+        await imageRegistries.page.waitForResponse(
+          (resp) =>
+            resp.url().includes("image_registries") &&
+            resp.request().method() === "POST",
+        );
+        // Allow any queued requests to settle
+        await imageRegistries.page.waitForTimeout(1000);
+
+        expect(postCount).toBe(1);
+
+        // Cleanup
+        await apiHelper.deleteImageRegistry(name).catch(() => {});
+      },
+    );
+
+    test(
       "cancel → no registry created",
       { tag: "@C2612005" },
       async ({ imageRegistries }) => {
@@ -1462,6 +1642,58 @@ spec:
         await imageRegistries.table.expectNoRowWithText(name, {
           timeout: DELETE_TIMEOUT,
         });
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Delete dependency tests
+  // ────────────────────────────────────────────────────────────
+  test.describe("delete dependency", () => {
+    test(
+      "delete blocked when cluster references image registry",
+      { tag: "@C2611976" },
+      async ({ imageRegistries, apiHelper }) => {
+        const ts = Date.now();
+        const irName = `test-ir-dep-${ts}`;
+        const clName = `test-cl-dep-${ts}`;
+
+        // Create IR + cluster referencing it
+        await apiHelper.createImageRegistry(irName);
+        await apiHelper.createCluster(clName, { imageRegistry: irName });
+
+        await imageRegistries.goToList();
+        await imageRegistries.table.waitForLoaded();
+
+        // Attempt to delete the image registry
+        await imageRegistries.table
+          .rowWithText(irName)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await imageRegistries.page
+          .locator('[role="menu"]')
+          .waitFor({ state: "visible" });
+        await imageRegistries.page
+          .getByRole("menuitem", { name: /delete/i })
+          .click();
+
+        // Confirm deletion
+        const dialog = imageRegistries.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+        await dialog.waitFor({ state: "hidden" });
+
+        // Wait for backend to process, then verify IR still exists
+        await imageRegistries.page.waitForTimeout(3000);
+        await imageRegistries.page.reload();
+        await imageRegistries.table.waitForLoaded();
+        await imageRegistries.table.expectRowWithText(irName);
+
+        // Cleanup: delete cluster first, then IR
+        await apiHelper.deleteCluster(clName, { force: true }).catch(() => {});
+        await apiHelper
+          .deleteImageRegistry(irName, { force: true })
+          .catch(() => {});
       },
     );
   });

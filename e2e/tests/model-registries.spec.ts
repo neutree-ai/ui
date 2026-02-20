@@ -1023,6 +1023,72 @@ test.describe("model registries", () => {
   });
 
   // ────────────────────────────────────────────────────────────
+  // Delete dependency tests
+  // ────────────────────────────────────────────────────────────
+  test.describe("delete dependency", () => {
+    test(
+      "delete blocked when endpoint references model registry",
+      { tag: "@C2612544" },
+      async ({ modelRegistries, apiHelper }, testInfo) => {
+        testInfo.setTimeout(90_000);
+
+        const ts = Date.now();
+        const irName = `test-ir-mrdep-${ts}`;
+        const clName = `test-cl-mrdep-${ts}`;
+        const mrName = `test-mr-dep-${ts}`;
+        const epName = `test-ep-mrdep-${ts}`;
+
+        // Create full dependency chain: IR → Cluster, MR, Endpoint (references cluster + MR)
+        await apiHelper.createImageRegistry(irName);
+        await apiHelper.createCluster(clName, { imageRegistry: irName });
+        await apiHelper.createModelRegistry(mrName);
+        await apiHelper.createEndpoint(epName, {
+          cluster: clName,
+          modelRegistry: mrName,
+        });
+
+        await modelRegistries.goToList();
+        await modelRegistries.table.waitForLoaded();
+
+        // Attempt to delete the model registry
+        await modelRegistries.table
+          .rowWithText(mrName)
+          .locator('[data-testid="row-actions-trigger"]')
+          .click();
+        await modelRegistries.page
+          .locator('[role="menu"]')
+          .waitFor({ state: "visible" });
+        await modelRegistries.page
+          .getByRole("menuitem", { name: /delete/i })
+          .click();
+
+        // Confirm deletion
+        const dialog = modelRegistries.page.getByRole("alertdialog");
+        await dialog.waitFor({ state: "visible" });
+        await dialog.getByRole("button", { name: /delete/i }).click();
+        await dialog.waitFor({ state: "hidden" });
+
+        // Wait for backend to process, then verify MR row still exists
+        // (soft-delete accepted but hard-delete blocked by endpoint dependency)
+        await modelRegistries.page.waitForTimeout(3000);
+        await modelRegistries.page.reload();
+        await modelRegistries.table.waitForLoaded();
+        await modelRegistries.table.expectRowWithText(mrName);
+
+        // Cleanup in dependency order
+        await apiHelper.deleteEndpoint(epName, { force: true }).catch(() => {});
+        await apiHelper.deleteCluster(clName, { force: true }).catch(() => {});
+        await apiHelper
+          .deleteModelRegistry(mrName, { force: true })
+          .catch(() => {});
+        await apiHelper
+          .deleteImageRegistry(irName, { force: true })
+          .catch(() => {});
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────
   // Delete permissions (multi-user)
   // ────────────────────────────────────────────────────────────
   test.describe("delete permissions", () => {
