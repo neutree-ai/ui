@@ -12,6 +12,8 @@ export const RoleAssignmentsList = () => {
       <Table
         enableSorting
         enableFilters
+        enableBatchDelete
+        searchField="metadata->>name"
         refineCoreProps={{
           sorters: defaultSorters,
         }}

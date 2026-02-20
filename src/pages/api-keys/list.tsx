@@ -212,6 +212,8 @@ export const ApiKeysList = () => {
       <Table
         enableSorting
         enableFilters
+        enableBatchDelete
+        searchField="metadata->>name"
         refineCoreProps={{
           sorters: defaultSorters,
         }}

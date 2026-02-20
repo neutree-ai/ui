@@ -12,6 +12,8 @@ export const EnginesList = () => {
       <Table
         enableSorting
         enableFilters
+        enableBatchDelete
+        searchField="metadata->>name"
         refineCoreProps={{
           sorters: defaultSorters,
         }}

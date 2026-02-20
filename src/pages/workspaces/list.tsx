@@ -12,6 +12,8 @@ export const WorkspacesList = () => {
       <Table
         enableSorting
         enableFilters
+        enableBatchDelete
+        searchField="metadata->>name"
         refineCoreProps={{
           sorters: defaultSorters,
         }}

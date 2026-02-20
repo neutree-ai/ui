@@ -13,6 +13,8 @@ export const ModelCatalogsList = () => {
       <Table
         enableSorting
         enableFilters
+        enableBatchDelete
+        searchField="metadata->>name"
         refineCoreProps={{
           sorters: defaultSorters,
         }}

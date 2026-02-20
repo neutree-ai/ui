@@ -211,6 +211,10 @@
 		"openMenu": "Open menu"
 	},
 	"dialogs": {
+		"batchDelete": {
+			"title": "Delete {{count}} items?",
+			"description": "This action cannot be undone."
+		},
 		"delete": {
 			"title": "Are you sure?",
 			"description": "This action cannot be undone.",
@@ -248,7 +252,11 @@
 		"clearFilters": "Clear filters",
 		"filter": "{{column}} Filter",
 		"selectAll": "Select all",
+		"selectRow": "Select row",
 		"bulkActions": "Bulk Actions",
+		"batchDelete": "Delete",
+		"selectedCount": "{{count}} selected",
+		"searchPlaceholder": "Search by name...",
 		"pagination": {
 			"totalItems": "Total: {{total}} items",
 			"rowsPerPage": "Rows per page",

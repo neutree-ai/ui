@@ -32,6 +32,50 @@ export const dataProvider = (
     };
   };
 
+  const _softDelete = async ({
+    resource,
+    id,
+    meta,
+  }: { resource: string; id: any; meta?: any }) => {
+    const current = await _getOne({ resource, id, meta });
+
+    const client = meta?.schema
+      ? postgrestClient.schema(meta.schema)
+      : postgrestClient;
+
+    const updatedMetadata = {
+      ...current.data.metadata,
+      deletion_timestamp: new Date().toISOString(),
+    };
+
+    if (meta?.forceDelete) {
+      updatedMetadata.annotations = {
+        ...current.data.metadata.annotations,
+        "neutree.ai/force-delete": "true",
+      };
+    }
+
+    const query = client.from(resource).update({
+      metadata: updatedMetadata,
+    });
+
+    if (meta?.idColumnName) {
+      query.eq(meta.idColumnName as string, JSON.stringify(id));
+      if (meta.workspaced) {
+        query.eq("metadata->workspace", JSON.stringify(meta.workspace));
+      }
+    } else {
+      query.match({ id });
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      return handleError(error);
+    }
+
+    return (data || [])[0] as any;
+  };
+
   return {
     getList: async ({ resource, pagination, filters, sorters, meta }) => {
       const { current = 1, pageSize = 10, mode = "server" } = pagination ?? {};
@@ -258,82 +302,15 @@ export const dataProvider = (
     getOne: _getOne,
 
     deleteOne: async ({ resource, id, meta }) => {
-      const current = await _getOne({
-        resource,
-        id,
-        meta,
-      });
-
-      const client = meta?.schema
-        ? postgrestClient.schema(meta.schema)
-        : postgrestClient;
-
-      const updatedMetadata = {
-        ...current.data.metadata,
-        deletion_timestamp: new Date().toISOString(),
-      };
-
-      // Add force delete annotation if requested
-      if (meta?.forceDelete) {
-        updatedMetadata.annotations = {
-          ...current.data.metadata.annotations,
-          "neutree.ai/force-delete": "true",
-        };
-      }
-
-      const query = client.from(resource).update({
-        metadata: updatedMetadata,
-      });
-
-      if (meta?.idColumnName) {
-        query.eq(meta.idColumnName as string, JSON.stringify(id));
-        if (meta.workspaced) {
-          query.eq("metadata->workspace", JSON.stringify(meta.workspace));
-        }
-      } else {
-        query.match({ id });
-      }
-
-      const { data, error } = await query;
-      if (error) {
-        return handleError(error);
-      }
-
-      return {
-        data: (data || [])[0] as any,
-      };
+      const result = await _softDelete({ resource, id, meta });
+      return { data: result };
     },
 
     deleteMany: async ({ resource, ids, meta }) => {
       const response = await Promise.all(
-        ids.map(async (id) => {
-          const client = meta?.schema
-            ? postgrestClient.schema(meta.schema)
-            : postgrestClient;
-
-          const query = client.from(resource).delete();
-
-          if (meta?.idColumnName) {
-            query.eq(meta.idColumnName as string, JSON.stringify(id));
-            if (meta.workspaced) {
-              query.eq("metadata->workspace", JSON.stringify(meta.workspace));
-            }
-          } else {
-            query.match({ id });
-          }
-
-          const { data, error } = await query;
-          if (error) {
-            return handleError(error);
-          }
-
-          return (data || [])[0] as any;
-        }),
+        ids.map((id) => _softDelete({ resource, id, meta })),
       );
-
-      return {
-        data: response,
-      };
+      return { data: response };
     },
 
     getApiUrl: () => {

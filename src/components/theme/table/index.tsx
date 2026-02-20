@@ -1,5 +1,7 @@
+import { BatchDeleteBar } from "@/components/business/BatchDeleteBar";
 import Loader from "@/components/theme/components/loader";
 import { DeleteProvider } from "@/components/theme/providers";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   TableBody,
   TableCell,
@@ -34,14 +36,7 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import type React from "react";
-import {
-  type FC,
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type FC, type ReactElement, useCallback, useMemo } from "react";
 import { RowAction, RowActions } from "./actions";
 import { DeleteAction } from "./actions/delete";
 import { EditAction } from "./actions/edit";
@@ -98,6 +93,8 @@ export type TableProps<
 > = Partial<UseTableProps<TData, TError, TData>> & {
   children?: ReactElement<ColumnProps<TData, TError>>[];
   showHeader?: boolean;
+  enableBatchDelete?: boolean;
+  searchField?: string;
   filters?:
     | ReactElement
     | ((props: {
@@ -116,6 +113,8 @@ export function Table<
 >({
   children,
   showHeader = true,
+  enableBatchDelete = false,
+  searchField,
   columns = [],
   filters,
   ...props
@@ -161,14 +160,46 @@ export function Table<
   );
 
   columns = useMemo<ColumnDef<TData>[]>(() => {
-    if (Array.isArray(children)) {
-      return (children as ReactElement[])
-        .map((value: ReactElement) => value.props)
-        .map(mapColumn);
+    const cols: ColumnDef<TData>[] = [];
+
+    if (enableBatchDelete) {
+      cols.push({
+        id: "_select",
+        header: ({ table: tbl }) => (
+          <Checkbox
+            checked={
+              tbl.getIsSomeRowsSelected()
+                ? "indeterminate"
+                : tbl.getIsAllPageRowsSelected()
+            }
+            onCheckedChange={(value) => tbl.toggleAllPageRowsSelected(!!value)}
+            aria-label={t("table.selectAll")}
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label={t("table.selectRow")}
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      } as ColumnDef<TData>);
     }
 
-    return [];
-  }, [children, mapColumn]);
+    if (Array.isArray(children)) {
+      cols.push(
+        ...(children as ReactElement[])
+          .map((value: ReactElement) => value.props)
+          .map(mapColumn),
+      );
+    }
+
+    return cols;
+  }, [children, mapColumn, enableBatchDelete, t]);
 
   // Extract valid column IDs for cleanup
   const validColumnIds = useMemo(
@@ -179,6 +210,7 @@ export function Table<
   const table = useTable({
     columns,
     ...props,
+    enableRowSelection: enableBatchDelete,
     refineCoreProps: {
       queryOptions: {
         refetchInterval: 3_000,
@@ -216,6 +248,8 @@ export function Table<
       <div className="space-y-4" data-testid="table">
         <DataTableToolbar
           table={table}
+          refineTable={table}
+          searchField={searchField}
           filters={
             typeof filters === "function"
               ? filters({
@@ -223,6 +257,14 @@ export function Table<
                   setFilters: table.refineCore.setFilters,
                 })
               : filters
+          }
+          actions={
+            enableBatchDelete ? (
+              <BatchDeleteBar
+                selectedRows={table.getSelectedRowModel().rows}
+                onDeleted={() => table.resetRowSelection()}
+              />
+            ) : undefined
           }
         />
         <div className="rounded-md border border-border">
