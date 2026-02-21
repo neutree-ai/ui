@@ -84,6 +84,39 @@ function deepMerge(
   return result;
 }
 
+const defaultSpec = {
+  cluster: "",
+  model: {
+    name: "",
+    version: "",
+    registry: "",
+    file: "",
+    task: "",
+  },
+  engine: {
+    engine: "",
+    version: "",
+  },
+  resources: {
+    cpu: "0",
+    memory: "0",
+    gpu: "0",
+    accelerator: null,
+  },
+  replicas: {
+    num: 1,
+  },
+  deployment_options: {
+    scheduler: {
+      type: "consistent_hash",
+    },
+  },
+  variables: {
+    engine_args: {},
+  },
+  env: {},
+} as const;
+
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
@@ -100,38 +133,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         name: "",
         workspace: currentWorkspace,
       },
-      spec: {
-        cluster: "",
-        model: {
-          name: "",
-          version: "",
-          registry: "",
-          file: "",
-          task: "",
-        },
-        engine: {
-          engine: "",
-          version: "",
-        },
-        resources: {
-          cpu: "0",
-          memory: "0",
-          gpu: "0",
-          accelerator: null,
-        },
-        replicas: {
-          num: 1,
-        },
-        deployment_options: {
-          scheduler: {
-            type: "consistent_hash",
-          },
-        },
-        variables: {
-          engine_args: {},
-        },
-        env: {},
-      },
+      spec: defaultSpec,
     },
     refineCoreProps: {
       autoSave: {
@@ -413,29 +415,30 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     );
 
     if (selectedCatalog) {
-      const currentFormData = form.getValues();
-
-      // Merge model catalog template data with current form data
+      // Reset catalog-managed fields to defaults first, then apply the new
+      // template on top.  This prevents stale values from a previously
+      // selected catalog from leaking into the new one (e.g. extra
+      // engine_args keys or a model.file the new catalog doesn't set).
       const mergedModel = deepMerge(
-        currentFormData.spec.model as Record<string, unknown>,
+        defaultSpec.model as Record<string, unknown>,
         selectedCatalog.spec.model as Record<string, unknown>,
       );
       const mergedEngine = deepMerge(
-        currentFormData.spec.engine as Record<string, unknown>,
+        defaultSpec.engine as Record<string, unknown>,
         selectedCatalog.spec.engine as Record<string, unknown>,
       );
       const mergedResources = selectedCatalog.spec.resources
         ? deepMerge(
-            currentFormData.spec.resources as Record<string, unknown>,
+            defaultSpec.resources as Record<string, unknown>,
             selectedCatalog.spec.resources as Record<string, unknown>,
           )
-        : currentFormData.spec.resources;
+        : defaultSpec.resources;
       const mergedReplicas = selectedCatalog.spec.replicas
         ? deepMerge(
-            currentFormData.spec.replicas as Record<string, unknown>,
+            defaultSpec.replicas as Record<string, unknown>,
             selectedCatalog.spec.replicas as Record<string, unknown>,
           )
-        : currentFormData.spec.replicas;
+        : defaultSpec.replicas;
 
       setLeafValues("spec.model", mergedModel);
       setLeafValues("spec.engine", mergedEngine);
@@ -445,21 +448,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       );
       setLeafValues("spec.replicas", mergedReplicas as Record<string, unknown>);
 
-      if (selectedCatalog.spec.deployment_options) {
-        const mergedDeploymentOptions = deepMerge(
-          currentFormData.spec.deployment_options as Record<string, unknown>,
-          selectedCatalog.spec.deployment_options as Record<string, unknown>,
-        );
-        setLeafValues("spec.deployment_options", mergedDeploymentOptions);
-      }
+      const mergedDeploymentOptions = deepMerge(
+        defaultSpec.deployment_options as Record<string, unknown>,
+        (selectedCatalog.spec.deployment_options ?? {}) as Record<
+          string,
+          unknown
+        >,
+      );
+      setLeafValues("spec.deployment_options", mergedDeploymentOptions);
 
-      if (selectedCatalog.spec.variables) {
-        const mergedVariables = deepMerge(
-          currentFormData.spec.variables as Record<string, unknown>,
-          selectedCatalog.spec.variables as Record<string, unknown>,
-        );
-        setLeafValues("spec.variables", mergedVariables);
-      }
+      const mergedVariables = deepMerge(
+        defaultSpec.variables as Record<string, unknown>,
+        (selectedCatalog.spec.variables ?? {}) as Record<string, unknown>,
+      );
+      setLeafValues("spec.variables", mergedVariables);
     }
   };
 

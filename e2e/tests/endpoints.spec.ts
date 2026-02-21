@@ -7,7 +7,7 @@ import { ResourcePage } from "../helpers/resource-page";
 const irName = { value: "" }; // Image registry for cluster dependency
 const clusterName = { value: "" };
 const mrName = { value: "" };
-const mcName = { value: "" }; // Model catalog for template selection tests
+const mcNames = { a: "", b: "" }; // Model catalogs for template selection tests
 const epNames = {
   base: "", // primary endpoint for list/detail/edit
   sort: "", // second endpoint for sort ordering
@@ -26,7 +26,8 @@ test.describe("endpoints", () => {
     epNames.base = `test-ep-base-${ts}`;
     epNames.sort = `test-ep-sort-${ts}`;
 
-    mcName.value = `test-ep-mc-${ts}`;
+    mcNames.a = `test-ep-mc-a-${ts}`;
+    mcNames.b = `test-ep-mc-b-${ts}`;
 
     // Create dependency resources first
     await api.createImageRegistry(irName.value);
@@ -35,9 +36,13 @@ test.describe("endpoints", () => {
       imageRegistry: irName.value,
     });
     await api.createModelRegistry(mrName.value);
-    await api.createModelCatalog(mcName.value, {
+    await api.createModelCatalog(mcNames.a, {
       modelVersion: "2.0",
-      modelFile: "catalog-model.safetensors",
+      modelFile: "catalog-a.safetensors",
+    });
+    await api.createModelCatalog(mcNames.b, {
+      modelVersion: "3.0",
+      modelFile: "catalog-b.safetensors",
     });
 
     // Create endpoints
@@ -69,7 +74,8 @@ test.describe("endpoints", () => {
     await Promise.all([
       api.deleteCluster(clusterName.value, { force: true }).catch(() => {}),
       api.deleteModelRegistry(mrName.value, { force: true }).catch(() => {}),
-      api.deleteModelCatalog(mcName.value).catch(() => {}),
+      api.deleteModelCatalog(mcNames.a).catch(() => {}),
+      api.deleteModelCatalog(mcNames.b).catch(() => {}),
     ]);
     // Finally image registry (depends on cluster)
     await api
@@ -663,20 +669,49 @@ test.describe("endpoints", () => {
         await expect(fileInput).toHaveValue("");
 
         // 2. Select model catalog AFTER expanding
-        await endpoints.form.selectComboboxOption(
-          "-model-catalog",
-          mcName.value,
-        );
+        await endpoints.form.selectComboboxOption("-model-catalog", mcNames.a);
 
         // 3. Verify fields inside the already-open collapsible are populated
         await expect(versionInput).toHaveValue("2.0");
-        await expect(fileInput).toHaveValue("catalog-model.safetensors");
+        await expect(fileInput).toHaveValue("catalog-a.safetensors");
 
         // Engine combobox should show "vllm"
         const engineButton = endpoints.form
           .field("spec.engine.engine")
           .locator("button");
         await expect(engineButton).toContainText("vllm");
+      },
+    );
+
+    test(
+      "create: switching catalog replaces previous template values",
+      { tag: "@C2626012" },
+      async ({ endpoints }) => {
+        await endpoints.goToCreate();
+
+        // Expand customize section
+        await endpoints.page
+          .getByRole("button", { name: /customize settings/i })
+          .click();
+
+        const versionInput = endpoints.form
+          .field("spec.model.version")
+          .locator("input");
+        const fileInput = endpoints.form
+          .field("spec.model.file")
+          .locator("input");
+
+        // 1. Select catalog A
+        await endpoints.form.selectComboboxOption("-model-catalog", mcNames.a);
+        await expect(versionInput).toHaveValue("2.0");
+        await expect(fileInput).toHaveValue("catalog-a.safetensors");
+
+        // 2. Switch to catalog B
+        await endpoints.form.selectComboboxOption("-model-catalog", mcNames.b);
+
+        // 3. Verify catalog B's values replace catalog A's — no stale data
+        await expect(versionInput).toHaveValue("3.0");
+        await expect(fileInput).toHaveValue("catalog-b.safetensors");
       },
     );
 
