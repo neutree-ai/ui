@@ -1,3 +1,4 @@
+import { config } from "../config";
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
 import { CONNECTION_TIMEOUT, MULTI_USER_TIMEOUT } from "../helpers/constants";
@@ -25,13 +26,13 @@ test.describe("model registries", () => {
 
     await api.createModelRegistry(mrNames.base);
     await api.createModelRegistry(mrNames.sort, {
-      url: "https://huggingface.co/models",
+      url: `${config.modelRegistry.url}/models`,
     });
     await api.createModelRegistry(mrNames.fail, {
       url: "https://fake-hf-registry.invalid",
     });
     await api.createModelRegistry(mrNames.conn, {
-      url: "https://huggingface.co",
+      url: config.modelRegistry.url,
     });
 
     await context.close();
@@ -267,7 +268,7 @@ test.describe("model registries", () => {
 
         // URL
         await expect(
-          showPage.getByText("https://huggingface.co"),
+          showPage.getByText(config.modelRegistry.url),
         ).toBeVisible();
       },
     );
@@ -307,7 +308,7 @@ test.describe("model registries", () => {
         await modelRegistries.form.fillInput("metadata.name", "INVALID_NAME");
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co",
+          config.modelRegistry.url,
         );
 
         // Server-side validation rejects invalid name format
@@ -334,7 +335,7 @@ test.describe("model registries", () => {
         // Leave name empty, fill other required fields
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co",
+          config.modelRegistry.url,
         );
 
         const responsePromise = modelRegistries.page.waitForResponse(
@@ -429,7 +430,7 @@ test.describe("model registries", () => {
         await modelRegistries.form.fillInput("metadata.name", name);
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co",
+          config.modelRegistry.url,
         );
         await modelRegistries.form.submit();
 
@@ -443,7 +444,7 @@ test.describe("model registries", () => {
         await expect(showPage).toBeVisible();
         await expect(showPage.getByText(name, { exact: true })).toBeVisible();
         await expect(
-          showPage.getByText("https://huggingface.co"),
+          showPage.getByText(config.modelRegistry.url),
         ).toBeVisible();
         await expect(showPage.getByText("Hugging Face")).toBeVisible();
 
@@ -465,7 +466,7 @@ test.describe("model registries", () => {
         await modelRegistries.form.fillInput("metadata.name", name);
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co",
+          config.modelRegistry.url,
         );
 
         // Accept browser dialog if warnWhenUnsavedChanges fires
@@ -488,7 +489,7 @@ test.describe("model registries", () => {
         await modelRegistries.form.fillInput("metadata.name", name);
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co",
+          config.modelRegistry.url,
         );
         await modelRegistries.form.submit();
 
@@ -558,7 +559,7 @@ test.describe("model registries", () => {
 
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co/models",
+          `${config.modelRegistry.url}/models`,
         );
         await modelRegistries.form.submit();
 
@@ -571,7 +572,7 @@ test.describe("model registries", () => {
         );
         await expect(showPage).toBeVisible();
         await expect(
-          showPage.getByText("https://huggingface.co/models"),
+          showPage.getByText(`${config.modelRegistry.url}/models`),
         ).toBeVisible();
 
         // Cleanup
@@ -664,7 +665,7 @@ test.describe("model registries", () => {
         await modelRegistries.form.fillInput("metadata.name", name);
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co",
+          config.modelRegistry.url,
         );
         await modelRegistries.form.submit();
 
@@ -732,7 +733,7 @@ test.describe("model registries", () => {
         ).toBeEnabled();
         await modelRegistries.form.fillInput(
           "spec.url",
-          "https://huggingface.co",
+          config.modelRegistry.url,
         );
         await modelRegistries.form.submit();
 
@@ -878,7 +879,7 @@ test.describe("model registries", () => {
         const name = `test-mr-glb-new-${Date.now()}`;
         await mrPage.goToCreate();
         await mrPage.form.fillInput("metadata.name", name);
-        await mrPage.form.fillInput("spec.url", "https://huggingface.co");
+        await mrPage.form.fillInput("spec.url", config.modelRegistry.url);
         await mrPage.form.submit();
 
         // Should redirect to list
@@ -911,7 +912,7 @@ test.describe("model registries", () => {
         const name = `test-mr-no-new-${Date.now()}`;
         await mrPage.goToCreate();
         await mrPage.form.fillInput("metadata.name", name);
-        await mrPage.form.fillInput("spec.url", "https://huggingface.co");
+        await mrPage.form.fillInput("spec.url", config.modelRegistry.url);
 
         const responsePromise = testUser.page.waitForResponse(
           (r) =>
@@ -966,7 +967,7 @@ test.describe("model registries", () => {
 
         await mrPage.form.fillInput(
           "spec.url",
-          "https://huggingface.co/models",
+          `${config.modelRegistry.url}/models`,
         );
         await mrPage.form.submit();
 
@@ -1007,7 +1008,7 @@ test.describe("model registries", () => {
 
         await mrPage.form.fillInput(
           "spec.url",
-          "https://huggingface.co/models",
+          `${config.modelRegistry.url}/models`,
         );
         await mrPage.form.submit();
 

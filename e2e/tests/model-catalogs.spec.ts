@@ -1,3 +1,4 @@
+import { config } from "../config";
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
 import { MULTI_USER_TIMEOUT } from "../helpers/constants";
@@ -24,12 +25,12 @@ function modelCatalogYaml(
 ): string {
   const o = {
     workspace: "default",
-    task: "text-generation",
-    modelName: "test-model",
-    modelVersion: "1.0",
-    modelFile: "model.safetensors",
-    engine: "vllm",
-    engineVersion: "v0.8.5",
+    task: config.model.task,
+    modelName: config.model.name,
+    modelVersion: config.model.version,
+    modelFile: config.model.file,
+    engine: config.engine.name,
+    engineVersion: config.engine.version,
     cpu: 2,
     memory: 4,
     gpu: 1,
@@ -257,7 +258,9 @@ test.describe("model catalogs", () => {
         await modelCatalogs.goToList();
 
         const row = modelCatalogs.table.rowWithText(mcNames.tg);
-        const engineLink = row.getByRole("link", { name: "vllm:v0.8.5" });
+        const engineLink = row.getByRole("link", {
+          name: `${config.engine.name}:${config.engine.version}`,
+        });
         await expect(engineLink).toBeVisible();
       },
     );
@@ -419,7 +422,9 @@ test.describe("model catalogs", () => {
         const engineDt = showPage.locator("dt", { hasText: /^engine$/i });
         await expect(engineDt).toBeVisible();
         await expect(
-          showPage.getByRole("link", { name: "vllm:v0.8.5" }),
+          showPage.getByRole("link", {
+            name: `${config.engine.name}:${config.engine.version}`,
+          }),
         ).toBeVisible();
 
         // Model
@@ -627,7 +632,9 @@ test.describe("model catalogs create", () => {
 
       // Engine
       await expect(
-        showPage.getByRole("link", { name: "vllm:v0.8.5" }),
+        showPage.getByRole("link", {
+          name: `${config.engine.name}:${config.engine.version}`,
+        }),
       ).toBeVisible();
 
       // Resources

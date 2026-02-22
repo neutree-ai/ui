@@ -1,3 +1,4 @@
+import { config } from "../config";
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
 import { MULTI_USER_TIMEOUT } from "../helpers/constants";
@@ -42,7 +43,7 @@ test.describe("clusters", () => {
 
     // Create SSH cluster with model cache for detail tests (raw API call)
     clNames.sshWithCache = `test-cl-cache-${ts}`;
-    const rawKey = "fake-ssh-key-for-cache-test";
+    const rawKey = config.sshCluster.sshPrivateKey;
     const base64Key = btoa(`${rawKey}\n`);
     await page.evaluate(
       async ({ name, workspace, imageRegistry, base64Key }) => {

@@ -39,6 +39,11 @@ e2e/playwright-report/
 playwright-report/
 test-results/
 
+# E2E profiles (except default and examples)
+e2e/profiles/*
+!e2e/profiles/default.yaml
+!e2e/profiles/*.example
+
 # local agents
 .agents/
 .claude/

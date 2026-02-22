@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { config } from "../config";
 
 /** Module-level flag — when true the page response listener should skip logging */
 let _muteApiErrors = false;
@@ -244,14 +245,14 @@ export class ApiHelper {
       spec: {
         model: {
           registry: "huggingface",
-          name: options?.modelName ?? "test-model",
-          version: options?.modelVersion ?? "1.0",
-          task: options?.task ?? "text-generation",
-          file: options?.modelFile ?? "model.safetensors",
+          name: options?.modelName ?? config.model.name,
+          version: options?.modelVersion ?? config.model.version,
+          task: options?.task ?? config.model.task,
+          file: options?.modelFile ?? config.model.file,
         },
         engine: {
-          engine: options?.engine ?? "vllm",
-          version: options?.engineVersion ?? "v0.8.5",
+          engine: options?.engine ?? config.engine.name,
+          version: options?.engineVersion ?? config.engine.version,
         },
         resources: {
           cpu: options?.cpu ?? 1,
@@ -313,8 +314,8 @@ export class ApiHelper {
     },
   ): Promise<void> {
     const spec: Record<string, unknown> = {
-      type: options?.type ?? "hugging-face",
-      url: options?.url ?? "https://huggingface.co",
+      type: options?.type ?? config.modelRegistry.type,
+      url: options?.url ?? config.modelRegistry.url,
     };
     if (options?.credentials) spec.credentials = options.credentials;
 
@@ -356,7 +357,7 @@ export class ApiHelper {
       kind: "ImageRegistry",
       metadata: { name, workspace: options?.workspace ?? "default" },
       spec: {
-        url: options?.url ?? "https://index.docker.io/v1",
+        url: options?.url ?? config.imageRegistry.url,
         repository: options?.repository ?? "",
         authconfig,
       },
@@ -468,31 +469,30 @@ export class ApiHelper {
     const type = options?.type ?? "ssh";
     const workspace = options?.workspace ?? "default";
 
-    let config: Record<string, unknown>;
+    let clusterConfig: Record<string, unknown>;
     if (type === "ssh") {
-      const rawKey = options?.sshPrivateKey ?? "fake-ssh-key-for-e2e-testing";
+      const rawKey = options?.sshPrivateKey ?? config.sshCluster.sshPrivateKey;
       const base64Key = btoa(rawKey.endsWith("\n") ? rawKey : `${rawKey}\n`);
-      config = {
+      clusterConfig = {
         ssh_config: {
           provider: {
-            head_ip: options?.headIp ?? "192.168.1.100",
+            head_ip: options?.headIp ?? config.sshCluster.headIp,
             worker_ips: [],
           },
           auth: {
-            ssh_user: options?.sshUser ?? "root",
+            ssh_user: options?.sshUser ?? config.sshCluster.sshUser,
             ssh_private_key: base64Key,
           },
         },
         model_caches: [],
       };
     } else {
-      const rawKubeconfig =
-        options?.kubeconfig ?? "apiVersion: v1\nkind: Config\nclusters: []";
-      config = {
+      const rawKubeconfig = options?.kubeconfig ?? config.k8sCluster.kubeconfig;
+      clusterConfig = {
         kubernetes_config: {
           kubeconfig: btoa(rawKubeconfig),
           router: {
-            access_mode: "LoadBalancer",
+            access_mode: config.k8sCluster.routerAccessMode,
             replicas: 2,
             resources: { cpu: "1", memory: "1Gi" },
           },
@@ -508,7 +508,7 @@ export class ApiHelper {
       spec: {
         type,
         image_registry: options?.imageRegistry ?? "",
-        config,
+        config: clusterConfig,
       },
     });
   }
@@ -552,14 +552,14 @@ export class ApiHelper {
         cluster: options?.cluster ?? "",
         model: {
           registry: options?.modelRegistry ?? "huggingface",
-          name: options?.modelName ?? "test-model",
+          name: options?.modelName ?? config.model.name,
           version: "",
-          task: options?.modelTask ?? "text-generation",
+          task: options?.modelTask ?? config.model.task,
           file: "",
         },
         engine: {
-          engine: options?.engine ?? "vllm",
-          version: options?.engineVersion ?? "v0.8.5",
+          engine: options?.engine ?? config.engine.name,
+          version: options?.engineVersion ?? config.engine.version,
         },
         resources: {
           cpu: String(options?.cpu ?? 0),

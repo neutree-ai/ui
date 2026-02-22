@@ -1,0 +1,36 @@
+imageRegistry:
+  url: "https://index.docker.io/v1"
+  repository: ""
+  username: ""
+  password: ""
+
+modelRegistry:
+  type: "hugging-face"
+  url: "https://huggingface.co"
+  credentials: ""
+
+sshCluster:
+  headIp: "192.168.1.100"
+  workerIps: []
+  sshUser: "root"
+  sshPrivateKey: "fake-ssh-key-for-e2e-testing"
+
+k8sCluster:
+  kubeconfig: "apiVersion: v1\nkind: Config\nclusters: []"
+  routerAccessMode: "LoadBalancer"
+
+engine:
+  name: "vllm"
+  version: "v0.8.5"
+
+model:
+  name: "test-model"
+  version: "1.0"
+  file: "model.safetensors"
+  task: "text-generation"
+
+modelCache:
+  hostPath: "/data/models"
+  nfsServer: ""
+  nfsPath: ""
+  pvcStorageClass: ""

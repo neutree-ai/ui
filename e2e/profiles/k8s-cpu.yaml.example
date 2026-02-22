@@ -1,0 +1,19 @@
+imageRegistry:
+  url: "https://index.docker.io/v1"
+  repository: "neutree"
+
+modelRegistry:
+  type: "hugging-face"
+  url: "https://huggingface.co"
+
+k8sCluster:
+  kubeconfigFile: "./kubeconfigs/dev.yaml"   # reference to external file
+  routerAccessMode: "NodePort"
+
+engine:
+  name: "vllm"
+  version: "v0.8.5"
+
+model:
+  name: "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+  task: "text-generation"
