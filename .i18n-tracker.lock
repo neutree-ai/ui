@@ -64,7 +64,7 @@
   "src/pages/image-registries/index.ts": "bb60ca534ab6db504627ceae7bca30ac",
   "src/pages/image-registries/list.tsx": "e71e4ad8f269656d300c2e5e978b8ecd",
   "src/pages/image-registries/show.tsx": "51f390ae5532de1a4281485c3cc8aa56",
-  "src/pages/image-registries/use-image-registry-form.tsx": "604b373f08ce56a1b18652281fd00030",
+  "src/pages/image-registries/use-image-registry-form.tsx": "3fba1fa98c7fb47380dc3a2824116b26",
   "src/pages/engines/index.ts": "379fc05216cb708cdb47dc5b4b0e0d40",
   "src/pages/engines/list.tsx": "b5df005862a6660664c75392b9d90d63",
   "src/pages/engines/show.tsx": "adf57b1c8e48df92bf90a5275c4857d2",

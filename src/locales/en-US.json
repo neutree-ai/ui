@@ -454,6 +454,9 @@
 		"descriptions": {
 			"certificateAuthority": "CA certificate for a self-signed registry",
 			"base64Auth": "Base64 encoded username:password"
+		},
+		"validation": {
+			"nameRequired": "Name is required"
 		}
 	},
 	"engines": {

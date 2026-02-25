@@ -372,21 +372,18 @@ test.describe("image registries", () => {
       async ({ imageRegistries }) => {
         await imageRegistries.goToCreate();
 
-        // Leave name empty, fill other required fields
+        // Leave name empty, fill other fields
         await imageRegistries.form.fillInput(
           "spec.url",
           "https://index.docker.io/v1",
         );
 
-        const responsePromise = imageRegistries.page.waitForResponse(
-          (resp) =>
-            resp.url().includes("image_registries") &&
-            resp.request().method() === "POST",
-        );
         await imageRegistries.form.submit();
-        const response = await responsePromise;
-        expect(response.status()).toBeGreaterThanOrEqual(400);
 
+        // Client-side validation shows error message
+        await expect(
+          imageRegistries.page.getByText(/name is required/i),
+        ).toBeVisible();
         await expect(imageRegistries.form.root).toBeVisible();
       },
     );

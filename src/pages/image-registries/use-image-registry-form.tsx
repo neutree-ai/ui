@@ -67,7 +67,17 @@ export const useImageRegistryForm = ({
     form,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
-        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
+        <Field
+          {...form}
+          name="metadata.name"
+          label={t("common.fields.name")}
+          {...form.register("metadata.name", {
+            required: {
+              value: true,
+              message: t("image_registries.validation.nameRequired"),
+            },
+          })}
+        >
           <Input
             placeholder={t("image_registries.placeholders.registryName")}
             disabled={isEdit}
