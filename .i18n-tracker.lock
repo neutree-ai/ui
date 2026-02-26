@@ -275,7 +275,7 @@
   "src/components/business/DeploymentConfigCard.tsx": "84d0d02a6e2f9a42d9a42ffb967407f0",
   "src/components/business/EngineVariablesCard.tsx": "caadae7b1e40444a70008c7359d9a373",
   "src/components/business/ResourcesCard.tsx": "743cd53fb64871054bf9fbcbd8e17739",
-  "src/components/business/SliderWithInput.tsx": "fd733656c23a0dc3093d0a7434146317",
+  "src/components/business/SliderWithInput.tsx": "8b1e4306e27e32c155876d2d2bca421b",
   "src/lib/cluster-resources.ts": "4bcdf858f07a045d459f19e4e511ba3a",
   "src/lib/grafana-dashboard-configs.ts": "ef0459ffb5772cf353b91f4cdf5e5efb",
   "src/components/business/GrafanaDashboard.tsx": "b6bd84eff4bebe9b19f43dd05081ad5e",
