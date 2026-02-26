@@ -36,13 +36,20 @@ export const SliderWithInput = forwardRef<
     },
     ref,
   ) => {
+    // Clamp value to [min, max] so that programmatic updates (e.g. catalog
+    // templates requesting more GPUs than available) never produce negative
+    // remaining or out-of-range slider positions.
+    const effectiveValue = Math.max(min, Math.min(value, max));
+
     // Local state for input display value, allowing empty string while typing
-    const [inputValue, setInputValue] = useState<string>(String(value));
+    const [inputValue, setInputValue] = useState<string>(
+      String(effectiveValue),
+    );
 
     // Sync local state when external value changes (e.g., from slider or parent)
     useEffect(() => {
-      setInputValue(String(value));
-    }, [value]);
+      setInputValue(String(effectiveValue));
+    }, [effectiveValue]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
@@ -64,7 +71,7 @@ export const SliderWithInput = forwardRef<
         onChange(min);
       } else {
         // Sync display with actual clamped value
-        setInputValue(String(value));
+        setInputValue(String(effectiveValue));
       }
     };
 
@@ -89,7 +96,7 @@ export const SliderWithInput = forwardRef<
           {remainingInfo && (
             <span>
               {remainingInfo.label || "Remaining"}:{" "}
-              {formatToDecimal(remainingInfo.remaining)} /{" "}
+              {formatToDecimal(Math.max(0, remainingInfo.remaining))} /{" "}
               {formatToDecimal(remainingInfo.total)}
               {unit ? ` ${unit}` : ""}
             </span>
@@ -100,7 +107,7 @@ export const SliderWithInput = forwardRef<
           min={min}
           max={max}
           step={step}
-          value={[value]}
+          value={[effectiveValue]}
           onValueChange={(v) => onChange(v[0])}
           disabled={disabled}
         />
