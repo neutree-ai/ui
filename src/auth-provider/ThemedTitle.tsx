@@ -1,4 +1,3 @@
-import { NeutreeLogoShape } from "@/components/business/Logo";
 import { useOemConfig } from "@/hooks/use-oem-config";
 import type React from "react";
 
@@ -15,15 +14,10 @@ export const ThemedTitle: React.FC<ThemedTitleProps> = ({
 }) => {
   const { brandName, logoBase64, isLoading } = useOemConfig();
   const displayText = isLoading ? "..." : text || brandName;
-
-  const hasOemLogo = !!logoBase64;
-  const displayIcon =
-    icon ??
-    (hasOemLogo ? (
-      <img alt="logo" src={logoBase64} className="w-[64px] h-[64px]" />
-    ) : (
-      <NeutreeLogoShape className="w-[64px] h-[64px]" />
-    ));
+  const logoSrc = logoBase64 || "/logo.svg";
+  const displayIcon = icon ?? (
+    <img alt="logo" src={logoSrc} className="w-[64px] h-[64px]" />
+  );
 
   return (
     <div className="flex flex-col items-center gap-2">
