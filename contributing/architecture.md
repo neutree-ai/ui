@@ -1,0 +1,76 @@
+# Architecture
+
+## Layer Model
+
+```
+L0  components/ui/     shadcn/ui primitives (Button, Dialog, Select…)
+L1  foundation/        Shared infrastructure — not owned by any resource
+L2  domains/<name>/    Resource-specific logic, one directory per resource
+L3  pages/<name>/      Route-level views, one directory per resource
+```
+
+**Design goal**: every feature request maps to a clear, minimal set of files to touch. Cross-cutting concerns live in L1; resource-specific logic stays in its L2 domain; page composition stays in L3.
+
+## Dependency Rules
+
+Higher layers import lower layers. Never the reverse.
+
+```
+L3 ──→ L2 ──→ L1 ──→ L0
+              L1 ←──→ L1  (internal free)
+```
+
+Enforced by `dependency-cruiser` — run `yarn dep-check`. CI will catch violations.
+
+## Directory Layout
+
+### L1 `foundation/`
+
+```
+foundation/
+├── components/    Layout, form containers, table, shared UI
+├── hooks/         Workspace, delete, column-visibility…
+├── lib/           Utils, API client, i18n, constants
+├── providers/     Auth, data, theme, notification
+└── types/         Metadata, BaseStatus, shared serving types
+```
+
+### L2 `domains/<resource>/`
+
+```
+domains/cluster/
+├── types.ts           Resource types (always at domain root)
+├── components/        ClusterStatus, ClusterType, NodeIPsField
+├── hooks/             use-cluster-monitor-panels
+└── lib/               cluster-resources, get-ray-dashboard-proxy
+```
+
+Rules:
+- `.tsx` → `components/`, `use-*.ts` → `hooks/`, utilities → `lib/`, `types.ts` stays at root
+- Domains with only types (api-key, user, workspace) skip subdirectories
+- Multi-domain shared types go to `foundation/types/` (e.g. `serving-types.ts`)
+
+### L3 `pages/<resource>/`
+
+Each resource directory contains: `list.tsx`, `create.tsx`, `edit.tsx`, `show.tsx`, `columns.tsx`, `use-<resource>-form.ts`.
+
+Pages compose L2 domain components into views. Column definitions live here (not in L2) because they are view-level composition.
+
+## Common Tasks: Where to Put Code
+
+| Task | Layer | Location |
+|------|-------|----------|
+| New shadcn/ui primitive | L0 | `components/ui/` |
+| Shared form/table component | L1 | `foundation/components/` |
+| Shared hook (e.g. workspace) | L1 | `foundation/hooks/` |
+| Resource type definition | L2 | `domains/<name>/types.ts` |
+| Resource-specific component | L2 | `domains/<name>/components/` |
+| Resource-specific hook | L2 | `domains/<name>/hooks/` |
+| CRUD page / form / columns | L3 | `pages/<name>/` |
+| Type used by 2+ domains | L1 | `foundation/types/` |
+
+## Conventions
+
+- **No barrel re-exports** — import from source file directly
+- **Import paths** — within same subdirectory: relative; cross-subdirectory or cross-layer: `@/` alias
+- **Resource types** follow `Metadata + Spec + Status` pattern; `metadata->name` is the primary key

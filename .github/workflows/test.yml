@@ -20,5 +20,11 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Check layer boundaries
+        run: yarn dep-check
+
+      - name: Check unused exports & dependencies
+        run: yarn knip
+
       - name: Run tests
         run: yarn test
