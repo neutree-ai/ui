@@ -4,7 +4,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { NeutreeBreadcrumbs } from "@/foundation/components/NeutreeBreadcrumbs";
+import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { DeleteAction, EditAction } from "@/foundation/components/Table";
 import { DeleteProvider } from "@/foundation/providers";
@@ -90,7 +90,7 @@ export const ShowPage: FC<ShowProps> & {
             breadcrumb
           ) : (
             <div className="flex w-full justify-between items-center min-h-9">
-              <NeutreeBreadcrumbs record={record} />
+              <AppBreadcrumbs record={record} />
               {extra ? (
                 extra
               ) : !canDelete && !canEdit ? null : (

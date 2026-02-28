@@ -1,8 +1,8 @@
 import { Input } from "@/components/ui/input";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { NeutreeField } from "@/foundation/components/NeutreeField";
-import { NeutreeSelect } from "@/foundation/components/NeutreeSelect";
+import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useWorkspace } from "@/foundation/hooks";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/foundation/lib/constant";
@@ -64,7 +64,7 @@ export const useModelRegistryForm = ({
     form,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           name="metadata.name"
           label={t("common.fields.name")}
@@ -73,24 +73,24 @@ export const useModelRegistryForm = ({
             placeholder={t("model_registries.placeholders.registryName")}
             disabled={isEdit}
           />
-        </NeutreeField>
-        <NeutreeField
+        </FormFieldGroup>
+        <FormFieldGroup
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
-        </NeutreeField>
+        </FormFieldGroup>
       </FormCardGrid>
     ),
     specFields: (
       <FormCardGrid title={t("model_registries.fields.modelRegistry")}>
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           name="spec.type"
           label={t("common.fields.type")}
         >
-          <NeutreeSelect
+          <FormSelect
             placeholder={t("model_registries.placeholders.selectType")}
             options={[
               {
@@ -103,8 +103,8 @@ export const useModelRegistryForm = ({
               },
             ]}
           />
-        </NeutreeField>
-        <NeutreeField
+        </FormFieldGroup>
+        <FormFieldGroup
           {...form}
           label={t("model_registries.fields.url")}
           {...form.register("spec.url", {
@@ -132,8 +132,8 @@ export const useModelRegistryForm = ({
                 : t("model_registries.placeholders.fileSystemUrl")
             }
           />
-        </NeutreeField>
-        <NeutreeField
+        </FormFieldGroup>
+        <FormFieldGroup
           {...form}
           name="spec.credentials"
           label={t("model_registries.fields.credentials")}
@@ -148,7 +148,7 @@ export const useModelRegistryForm = ({
             placeholder={t("model_registries.placeholders.credentials")}
             type="password"
           />
-        </NeutreeField>
+        </FormFieldGroup>
       </FormCardGrid>
     ),
   };

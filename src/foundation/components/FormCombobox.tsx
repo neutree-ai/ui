@@ -49,7 +49,7 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> &
     disabled?: boolean;
   };
 
-export const NeutreeCombobox = forwardRef<
+export const FormCombobox = forwardRef<
   ElementRef<typeof Command>,
   ComboboxProps
 >(({ ...props }, ref) => {
@@ -131,4 +131,4 @@ export const NeutreeCombobox = forwardRef<
   );
 });
 
-NeutreeCombobox.displayName = "NeutreeCombobox";
+FormCombobox.displayName = "FormCombobox";

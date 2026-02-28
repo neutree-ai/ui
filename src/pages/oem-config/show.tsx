@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useOemConfig } from "@/foundation/hooks/use-oem-config";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { useOemConfigForm } from "@/pages/oem-config/use-oem-config-form";
@@ -23,14 +23,14 @@ export function OemConfigShow() {
         <p className="text-muted-foreground">{t("oem_configs.description")}</p>
       </div>
 
-      <NeutreeForm {...form} hideCancel>
+      <ResourceForm {...form} hideCancel>
         <Card>
           <CardHeader>
             <CardTitle>{t("oem_configs.fields.brandSettings")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">{formFields}</CardContent>
         </Card>
-      </NeutreeForm>
+      </ResourceForm>
     </div>
   );
 }

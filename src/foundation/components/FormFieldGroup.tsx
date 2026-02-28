@@ -27,7 +27,7 @@ type FieldProps<
     field: ControllerRenderProps<TFieldValues, TName>;
   }>;
 };
-export const NeutreeField = forwardRef<HTMLDivElement, FieldProps>(
+export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
   (props: FieldProps, _) => {
     return (
       <FormField

@@ -21,7 +21,7 @@ type BreadcrumbProps = RefineBreadcrumbProps & {
   record?: Record<string, any>;
 };
 
-export const NeutreeBreadcrumbs: FC<BreadcrumbProps> = ({
+export const AppBreadcrumbs: FC<BreadcrumbProps> = ({
   showHome = false,
   meta,
   record,

@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/domains/user/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { NeutreeField } from "@/foundation/components/NeutreeField";
+import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useTranslation } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 
@@ -36,7 +36,7 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     registerFields: isEdit ? null : (
       <FormCardGrid>
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           name="name"
           label={translate("common.fields.name")}
@@ -44,8 +44,8 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           <Input
             placeholder={translate("user_profiles.placeholders.userName")}
           />
-        </NeutreeField>
-        <NeutreeField
+        </FormFieldGroup>
+        <FormFieldGroup
           {...form}
           name="email"
           label={translate("common.fields.email")}
@@ -54,9 +54,9 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={translate("user_profiles.placeholders.userEmail")}
             type="email"
           />
-        </NeutreeField>
+        </FormFieldGroup>
         <div className="col-span-2" />
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           label={translate("common.fields.password")}
           {...form.register("password", {
@@ -67,8 +67,8 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           })}
         >
           <Input type="password" />
-        </NeutreeField>
-        <NeutreeField
+        </FormFieldGroup>
+        <FormFieldGroup
           {...form}
           label={translate("user_profiles.fields.confirmPassword")}
           {...form.register("confirmPassword", {
@@ -85,12 +85,12 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           })}
         >
           <Input type="password" />
-        </NeutreeField>
+        </FormFieldGroup>
       </FormCardGrid>
     ),
     metadataFields: (
       <FormCardGrid title={translate("common.sections.basicInformation")}>
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           name="metadata.name"
           label={translate("common.fields.name")}
@@ -99,18 +99,18 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={translate("user_profiles.placeholders.userName")}
             disabled={isEdit}
           />
-        </NeutreeField>
+        </FormFieldGroup>
       </FormCardGrid>
     ),
     specFields: (
       <FormCardGrid>
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           name="spec.email"
           label={translate("common.fields.email")}
         >
           <Input type="email" />
-        </NeutreeField>
+        </FormFieldGroup>
       </FormCardGrid>
     ),
   };

@@ -50,7 +50,7 @@ type FormProps<
     title?: string;
   };
 
-export const NeutreeForm = <
+export const ResourceForm = <
   TQueryFnData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
   TVariables extends FieldValues = FieldValues,

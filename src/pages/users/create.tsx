@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { useUserForm } from "./use-user-form";
 
@@ -8,8 +8,8 @@ export const UsersCreate = () => {
     action: "create",
   });
   return (
-    <NeutreeForm {...form} title={t("user_profiles.create")}>
+    <ResourceForm {...form} title={t("user_profiles.create")}>
       {registerFields}
-    </NeutreeForm>
+    </ResourceForm>
   );
 };

@@ -2,8 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { NeutreeField } from "@/foundation/components/NeutreeField";
-import { NeutreeSelect } from "@/foundation/components/NeutreeSelect";
+import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useWorkspace } from "@/foundation/hooks";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -68,7 +68,7 @@ export const useImageRegistryForm = ({
     form,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           label={t("common.fields.name")}
           {...form.register("metadata.name", {
@@ -82,36 +82,36 @@ export const useImageRegistryForm = ({
             placeholder={t("image_registries.placeholders.registryName")}
             disabled={isEdit}
           />
-        </NeutreeField>
-        <NeutreeField
+        </FormFieldGroup>
+        <FormFieldGroup
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
-        </NeutreeField>
+        </FormFieldGroup>
       </FormCardGrid>
     ),
     specFields: (
       <>
         <FormCardGrid title={t("common.fields.imageRegistry")}>
-          <NeutreeField
+          <FormFieldGroup
             {...form}
             name="spec.url"
             label={t("image_registries.fields.url")}
           >
             <Input placeholder={t("image_registries.placeholders.dockerUrl")} />
-          </NeutreeField>
-          <NeutreeField
+          </FormFieldGroup>
+          <FormFieldGroup
             {...form}
             name="spec.repository"
             label={t("image_registries.fields.repository")}
           >
             <Input />
-          </NeutreeField>
+          </FormFieldGroup>
         </FormCardGrid>
         <FormCardGrid title={t("image_registries.fields.authentication")}>
-          <NeutreeField
+          <FormFieldGroup
             {...form}
             name="spec.authconfig.username"
             label={t("image_registries.fields.username")}
@@ -120,8 +120,8 @@ export const useImageRegistryForm = ({
             }
           >
             <Input />
-          </NeutreeField>
-          <NeutreeField
+          </FormFieldGroup>
+          <FormFieldGroup
             {...form}
             name="spec.authconfig.password"
             label={t("image_registries.fields.password")}
@@ -130,7 +130,7 @@ export const useImageRegistryForm = ({
             }
           >
             <Input type="password" />
-          </NeutreeField>
+          </FormFieldGroup>
         </FormCardGrid>
       </>
     ),

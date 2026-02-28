@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import type { Workspace } from "@/domains/workspace/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { NeutreeField } from "@/foundation/components/NeutreeField";
+import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useTranslation } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 
@@ -26,7 +26,7 @@ export const useWorkspaceForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     metadataFields: (
       <FormCardGrid title={translate("common.sections.basicInformation")}>
-        <NeutreeField
+        <FormFieldGroup
           {...form}
           name="metadata.name"
           label={translate("common.fields.name")}
@@ -35,7 +35,7 @@ export const useWorkspaceForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={translate("workspaces.placeholders.workspaceName")}
             disabled={isEdit}
           />
-        </NeutreeField>
+        </FormFieldGroup>
       </FormCardGrid>
     ),
   };

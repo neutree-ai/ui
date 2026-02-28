@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useRoleForm } from "./use-role-form";
 
 export const RolesCreate = () => {
@@ -7,9 +7,9 @@ export const RolesCreate = () => {
   });
 
   return (
-    <NeutreeForm {...form}>
+    <ResourceForm {...form}>
       {metadataFields}
       {specFields}
-    </NeutreeForm>
+    </ResourceForm>
   );
 };

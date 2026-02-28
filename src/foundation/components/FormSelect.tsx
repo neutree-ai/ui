@@ -20,7 +20,7 @@ type SelectProps = SelectCoreProps & {
   options?: BaseOption[];
 };
 
-export const NeutreeSelect = forwardRef<
+export const FormSelect = forwardRef<
   React.ElementRef<typeof SelectContentType>,
   SelectProps
 >(({ ...props }, ref) => {
@@ -53,4 +53,4 @@ export const NeutreeSelect = forwardRef<
   );
 });
 
-NeutreeSelect.displayName = "NeutreeSelect";
+FormSelect.displayName = "FormSelect";

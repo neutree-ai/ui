@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useModelRegistryForm } from "./use-model-registry-form";
 
 export const ModelRegistriesCreate = () => {
@@ -7,9 +7,9 @@ export const ModelRegistriesCreate = () => {
   });
 
   return (
-    <NeutreeForm {...form}>
+    <ResourceForm {...form}>
       {metadataFields}
       {specFields}
-    </NeutreeForm>
+    </ResourceForm>
   );
 };

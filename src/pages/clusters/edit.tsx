@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { useClusterForm } from "./use-cluster-form";
 
@@ -15,7 +15,7 @@ export const ClustersEdit = () => {
     authFields,
   } = useClusterForm({ action: "edit" });
   return (
-    <NeutreeForm {...form} title={t("clusters.edit")}>
+    <ResourceForm {...form} title={t("clusters.edit")}>
       {metadataFields}
       {imageRegistryFields}
       {typeFields}
@@ -23,6 +23,6 @@ export const ClustersEdit = () => {
       {routerFields}
       {modelCacheFields}
       {authFields}
-    </NeutreeForm>
+    </ResourceForm>
   );
 };

@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useEndpointForm } from "./use-endpoint-form";
 
 export const EndpointsEdit = () => {
@@ -13,11 +13,11 @@ export const EndpointsEdit = () => {
   });
 
   return (
-    <NeutreeForm {...form}>
+    <ResourceForm {...form}>
       {metadataFields}
       {templateFields}
       {resourceFields}
       {customizeFields}
-    </NeutreeForm>
+    </ResourceForm>
   );
 };
