@@ -1,8 +1,8 @@
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
 import ModelRegistryStatus from "@/components/business/ModelRegistryStatus";
 import ModelRegistryType from "@/components/business/ModelRegistryType";
-import { ShowPage } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";

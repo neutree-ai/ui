@@ -1,5 +1,5 @@
-import { DeleteConfirmDialog } from "@/components/theme/components/delete-confirm-dialog";
-import { useDeleteHelper, useOnBack } from "@/components/theme/hooks";
+import { DeleteConfirmDialog } from "@/components/business/DeleteConfirmDialog";
+import { useDeleteHelper, useOnBack } from "@/hooks";
 import type React from "react";
 import {
   type PropsWithChildren,

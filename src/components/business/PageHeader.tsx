@@ -1,6 +1,15 @@
-import type { PageHeaderProps } from "@/components/theme/types/pageHeader";
 import { cn } from "@/lib/utils";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
+
+type PageHeaderProps = {
+  title?: ReactNode;
+  subTitle?: ReactNode;
+  isBack?: boolean;
+  onBack?: (e?: React.MouseEvent<HTMLElement>) => void;
+  className?: string;
+  breadcrumb?: ReactNode;
+  extra?: ReactNode;
+};
 
 export const PageHeader: FC<PageHeaderProps> = ({ extra, ...props }) => {
   return (

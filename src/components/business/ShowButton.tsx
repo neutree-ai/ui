@@ -1,8 +1,11 @@
-import type { ShowButtonProps } from "@/components/theme/types";
+import type { ButtonProps } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useShowButton } from "@refinedev/core";
+import type { RefineShowButtonProps } from "@refinedev/ui-types";
 import type { FC } from "react";
+
+type ShowButtonProps = ButtonProps & RefineShowButtonProps;
 
 export const ShowButton: FC<
   ShowButtonProps & {

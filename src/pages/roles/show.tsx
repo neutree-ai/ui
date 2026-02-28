@@ -1,7 +1,7 @@
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
 import PermissionsTree from "@/components/business/PermissionsTree";
-import { ShowPage } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Role } from "@/types";
 import { useShow, useTranslation } from "@refinedev/core";

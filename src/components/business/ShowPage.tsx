@@ -1,11 +1,13 @@
-import { Breadcrumbs, PageHeader } from "@/components/theme/components";
-import type { ShowProps } from "@/components/theme/types";
+import { NeutreeBreadcrumbs } from "@/components/business/NeutreeBreadcrumbs";
+import { PageHeader } from "@/components/business/PageHeader";
+import { DeleteAction, EditAction } from "@/components/business/Table";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DeleteProvider } from "@/providers";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   useNavigation,
@@ -14,10 +16,43 @@ import {
   useTranslate,
 } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
-import { type FC, isValidElement } from "react";
-import { DeleteProvider } from "../../providers";
-import { DeleteAction, EditAction } from "../../table";
-import { Row } from "./row";
+import { type FC, type PropsWithChildren, isValidElement } from "react";
+
+const Row = ({
+  title,
+  children,
+}: Required<
+  PropsWithChildren<{
+    title: string;
+  }>
+>) => {
+  return (
+    <>
+      <dl className="flex flex-wrap">
+        <div className="flex-auto pt-4">
+          <dt className="scroll-m-20 text-xs font-semibold tracking-tight">
+            {title}
+          </dt>
+          <dd className="mt-1 text-base font-normal text-foreground leading-7">
+            {children}
+          </dd>
+        </div>
+      </dl>
+    </>
+  );
+};
+
+type ShowProps = {
+  title?: React.ReactNode;
+  resource?: string;
+  breadcrumb?: React.ReactNode;
+  canDelete?: boolean;
+  canEdit?: boolean;
+  extra?: React.ReactNode;
+  record?: Record<string, any>;
+  extraActions?: (record?: Record<string, any>) => React.ReactNode;
+  children?: React.ReactNode;
+};
 
 export const ShowPage: FC<ShowProps> & {
   Row: typeof Row;
@@ -55,7 +90,7 @@ export const ShowPage: FC<ShowProps> & {
             breadcrumb
           ) : (
             <div className="flex w-full justify-between items-center min-h-9">
-              <Breadcrumbs record={record} />
+              <NeutreeBreadcrumbs record={record} />
               {extra ? (
                 extra
               ) : !canDelete && !canEdit ? null : (

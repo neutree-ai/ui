@@ -1,4 +1,4 @@
-import { Link } from "@/components/theme/components/link";
+import { Link } from "@/components/business/Link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

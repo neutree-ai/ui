@@ -1,4 +1,5 @@
-import { ShowButton, ShowPage } from "@/components/theme";
+import { ShowButton } from "@/components/business/ShowButton";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Tooltip,

@@ -1,4 +1,4 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { useEndpointForm } from "./use-endpoint-form";
 
 export const EndpointsCreate = () => {
@@ -13,11 +13,11 @@ export const EndpointsCreate = () => {
   });
 
   return (
-    <Form {...form}>
+    <NeutreeForm {...form}>
       {metadataFields}
       {templateFields}
       {resourceFields}
       {customizeFields}
-    </Form>
+    </NeutreeForm>
   );
 };

@@ -7,12 +7,13 @@ import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
 import EndpointStatus from "@/components/business/EndpointStatus";
 import EngineVariablesCard from "@/components/business/EngineVariablesCard";
 import GrafanaDashboard from "@/components/business/GrafanaDashboard";
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
 import ModelTask from "@/components/business/ModelTask";
 import RerankPlayground from "@/components/business/RerankPlayground";
 import ResourcesCard from "@/components/business/ResourcesCard";
-import { ShowButton, ShowPage } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
+import { ShowButton } from "@/components/business/ShowButton";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {

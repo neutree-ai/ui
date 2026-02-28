@@ -1,13 +1,7 @@
 import { BatchDeleteBar } from "@/components/business/BatchDeleteBar";
+import { Link } from "@/components/business/Link";
+import { Loader } from "@/components/business/Loader";
 import { TableSearch } from "@/components/business/TableSearch";
-import { Link } from "@/components/theme/components/link";
-import Loader from "@/components/theme/components/loader";
-import {
-  useDeleteHelper,
-  useGetEditUrl,
-  useGetShowUrl,
-} from "@/components/theme/hooks";
-import { DeleteContext, DeleteProvider } from "@/components/theme/providers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -52,9 +46,11 @@ import {
   TableRow,
   Table as TableUi,
 } from "@/components/ui/table";
+import { useDeleteHelper, useGetEditUrl, useGetShowUrl } from "@/hooks";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { DeleteContext, DeleteProvider } from "@/providers";
 import {
   CaretDownIcon,
   CaretUpIcon,

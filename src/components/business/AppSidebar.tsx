@@ -15,14 +15,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useWorkspace } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { useMenu, useResourceParams } from "@refinedev/core";
 import type { TreeMenuItem } from "@refinedev/core/dist/hooks/menu/useMenu";
 import React from "react";
 import { useLocation } from "react-router";
-import { useWorkspace } from "../hooks";
-import type { LayoutProps } from "../types";
-import { Link } from "./link";
+import { Link } from "./Link";
 
 const GetIcon = (item: TreeMenuItem) => {
   const icon = item.meta?.icon;
@@ -120,7 +119,12 @@ function AppSidebarMenuItem({ item, state }: AppSidebarMenuItemProps) {
   );
 }
 
-type AppSidebarProps = Pick<LayoutProps, "logo">;
+type AppSidebarProps = {
+  logo?: {
+    collapsed?: React.ReactElement | React.ReactNode;
+    default: React.ReactElement | React.ReactNode;
+  };
+};
 
 export function AppSidebar({ logo }: AppSidebarProps) {
   const { menuItems } = useMenu({

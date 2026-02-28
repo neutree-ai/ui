@@ -1,9 +1,10 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
+import { NeutreeField } from "@/components/business/NeutreeField";
+import { NeutreeSelect } from "@/components/business/NeutreeSelect";
 import WorkspaceField from "@/components/business/WorkspaceField";
-import { Field, Select } from "@/components/theme";
-import { useWorkspace } from "@/components/theme/hooks";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useWorkspace } from "@/hooks";
 import { useTranslation } from "@/lib/i18n";
 import type { ImageRegistry } from "@/types";
 import { useForm } from "@refinedev/react-hook-form";
@@ -67,7 +68,7 @@ export const useImageRegistryForm = ({
     form,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
-        <Field
+        <NeutreeField
           {...form}
           label={t("common.fields.name")}
           {...form.register("metadata.name", {
@@ -81,36 +82,36 @@ export const useImageRegistryForm = ({
             placeholder={t("image_registries.placeholders.registryName")}
             disabled={isEdit}
           />
-        </Field>
-        <Field
+        </NeutreeField>
+        <NeutreeField
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     specFields: (
       <>
         <FormCardGrid title={t("common.fields.imageRegistry")}>
-          <Field
+          <NeutreeField
             {...form}
             name="spec.url"
             label={t("image_registries.fields.url")}
           >
             <Input placeholder={t("image_registries.placeholders.dockerUrl")} />
-          </Field>
-          <Field
+          </NeutreeField>
+          <NeutreeField
             {...form}
             name="spec.repository"
             label={t("image_registries.fields.repository")}
           >
             <Input />
-          </Field>
+          </NeutreeField>
         </FormCardGrid>
         <FormCardGrid title={t("image_registries.fields.authentication")}>
-          <Field
+          <NeutreeField
             {...form}
             name="spec.authconfig.username"
             label={t("image_registries.fields.username")}
@@ -119,8 +120,8 @@ export const useImageRegistryForm = ({
             }
           >
             <Input />
-          </Field>
-          <Field
+          </NeutreeField>
+          <NeutreeField
             {...form}
             name="spec.authconfig.password"
             label={t("image_registries.fields.password")}
@@ -129,7 +130,7 @@ export const useImageRegistryForm = ({
             }
           >
             <Input type="password" />
-          </Field>
+          </NeutreeField>
         </FormCardGrid>
       </>
     ),

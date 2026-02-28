@@ -1,8 +1,15 @@
-import type { CreateButtonProps } from "@/components/theme/types";
+import type { ButtonProps } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { useCreateButton } from "@refinedev/core";
+import type { RefineCreateButtonProps } from "@refinedev/ui-types";
 import { SquarePlusIcon } from "lucide-react";
 import type { FC } from "react";
+
+type CreateButtonProps = ButtonProps &
+  Pick<
+    RefineCreateButtonProps,
+    "resource" | "hideText" | "accessControl" | "meta" | "onClick"
+  >;
 
 export const CreateButton: FC<CreateButtonProps> = ({
   resource,

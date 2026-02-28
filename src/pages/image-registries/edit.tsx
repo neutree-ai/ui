@@ -1,4 +1,4 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { useImageRegistryForm } from "./use-image-registry-form";
 
 export const ImageRegistriesEdit = () => {
@@ -7,9 +7,9 @@ export const ImageRegistriesEdit = () => {
   });
 
   return (
-    <Form {...form}>
+    <NeutreeForm {...form}>
       {metadataFields}
       {specFields}
-    </Form>
+    </NeutreeForm>
   );
 };

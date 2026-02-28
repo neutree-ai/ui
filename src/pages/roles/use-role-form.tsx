@@ -1,6 +1,6 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
+import { NeutreeField } from "@/components/business/NeutreeField";
 import PermissionsTreeField from "@/components/business/PermissionsTreeField";
-import { Field } from "@/components/theme";
 import { Input } from "@/components/ui/input";
 import type { Role } from "@/types";
 import { useTranslation } from "@refinedev/core";
@@ -31,7 +31,7 @@ export const useRoleForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     metadataFields: (
       <FormCardGrid title={translate("common.sections.basicInformation")}>
-        <Field
+        <NeutreeField
           {...form}
           name="metadata.name"
           label={translate("common.fields.name")}
@@ -40,14 +40,14 @@ export const useRoleForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={translate("roles.placeholders.roleName")}
             disabled={isEdit}
           />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     specFields: (
       <FormCardGrid title={translate("common.fields.permissions")}>
-        <Field {...form} name="spec.permissions" className="col-span-4">
+        <NeutreeField {...form} name="spec.permissions" className="col-span-4">
           <PermissionsTreeField />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
   };

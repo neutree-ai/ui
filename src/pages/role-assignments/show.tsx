@@ -1,7 +1,8 @@
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
+import { ShowButton } from "@/components/business/ShowButton";
+import { ShowPage } from "@/components/business/ShowPage";
 import UserCell from "@/components/business/UserCell";
-import { ShowButton, ShowPage } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import type { RoleAssignment } from "@/types";

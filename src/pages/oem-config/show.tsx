@@ -1,4 +1,4 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOemConfig } from "@/hooks/use-oem-config";
 import { useTranslation } from "@/lib/i18n";
@@ -23,14 +23,14 @@ export function OemConfigShow() {
         <p className="text-muted-foreground">{t("oem_configs.description")}</p>
       </div>
 
-      <Form {...form} hideCancel>
+      <NeutreeForm {...form} hideCancel>
         <Card>
           <CardHeader>
             <CardTitle>{t("oem_configs.fields.brandSettings")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">{formFields}</CardContent>
         </Card>
-      </Form>
+      </NeutreeForm>
     </div>
   );
 }

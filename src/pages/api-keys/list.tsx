@@ -1,7 +1,9 @@
+import { ListPage } from "@/components/business/ListPage";
+import { NeutreeCombobox } from "@/components/business/NeutreeCombobox";
+import { Table } from "@/components/business/Table";
+import { defaultSorters } from "@/components/business/Table";
 import { useApiKeyColumns } from "@/components/business/api-key-columns";
 import { useMetadataColumns } from "@/components/business/metadata-columns";
-import { Combobox, ListPage, Table } from "@/components/theme";
-import { defaultSorters } from "@/components/theme/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,7 +145,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
               <FormItem>
                 <FormLabel>{t("common.fields.workspace")}</FormLabel>
                 <FormControl>
-                  <Combobox
+                  <NeutreeCombobox
                     placeholder={t("api_keys.placeholders.selectWorkspace")}
                     disabled={workspaces.query.isLoading}
                     options={(workspaces.query.data?.data || []).map((e) => ({

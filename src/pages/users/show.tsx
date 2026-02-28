@@ -1,8 +1,10 @@
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
+import { ShowButton } from "@/components/business/ShowButton";
+import { ShowPage } from "@/components/business/ShowPage";
+import { Table } from "@/components/business/Table";
 import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { useRoleAssignmentColumns } from "@/components/business/role-assignment-columns";
-import { ShowButton, ShowPage, Table } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import type { UserProfile } from "@/types";

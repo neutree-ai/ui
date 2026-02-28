@@ -1,13 +1,15 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
+import { NeutreeCombobox } from "@/components/business/NeutreeCombobox";
+import { NeutreeField } from "@/components/business/NeutreeField";
+import { NeutreeSelect } from "@/components/business/NeutreeSelect";
 import NodeIPsField from "@/components/business/NodeIPsField";
 import WorkspaceField from "@/components/business/WorkspaceField";
-import { Combobox, Field, Select } from "@/components/theme";
-import { useWorkspace } from "@/components/theme/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useWorkspace } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { isValidIPAddress, isValidPath } from "@/lib/validate";
 import type { Cluster, ImageRegistry } from "@/types";
@@ -198,29 +200,33 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
-        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
+        <NeutreeField
+          {...form}
+          name="metadata.name"
+          label={t("common.fields.name")}
+        >
           <Input
             placeholder={t("clusters.placeholders.clusterName")}
             disabled={isEdit}
           />
-        </Field>
-        <Field
+        </NeutreeField>
+        <NeutreeField
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     imageRegistryFields: (
       <FormCardGrid>
-        <Field
+        <NeutreeField
           {...form}
           name="spec.image_registry"
           label={t("common.fields.imageRegistry")}
         >
-          <Combobox
+          <NeutreeCombobox
             placeholder={t("clusters.placeholders.selectImageRegistry")}
             options={(imageRegistries.query.data?.data || []).map((item) => ({
               label: item.metadata.name,
@@ -228,13 +234,17 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             }))}
             disabled={imageRegistries.query.isLoading || isEdit}
           />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     typeFields: (
       <FormCardGrid title={t("clusters.sections.clusterType")}>
-        <Field {...form} name="spec.type" label={t("common.fields.type")}>
-          <Select
+        <NeutreeField
+          {...form}
+          name="spec.type"
+          label={t("common.fields.type")}
+        >
+          <NeutreeSelect
             options={[
               {
                 label: t("clusters.options.multipleStaticNodes"),
@@ -278,7 +288,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             }}
             disabled={isEdit}
           />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     providerFields: (
@@ -294,7 +304,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         )}
 
         {isKubernetes && (
-          <Field
+          <NeutreeField
             {...form}
             name="spec.config.kubernetes_config.kubeconfig"
             label={t("clusters.fields.kubeconfig")}
@@ -304,18 +314,18 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             className="col-span-4"
           >
             <Textarea disabled={isEdit} />
-          </Field>
+          </NeutreeField>
         )}
       </FormCardGrid>
     ),
     routerFields: isKubernetes ? (
       <FormCardGrid title={t("clusters.sections.router")}>
-        <Field
+        <NeutreeField
           {...form}
           name="spec.config.kubernetes_config.router.access_mode"
           label={t("clusters.fields.accessMode")}
         >
-          <Select
+          <NeutreeSelect
             options={[
               {
                 label: t("clusters.options.loadBalancer"),
@@ -326,31 +336,31 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               // { label: t("clusters.options.ingress"), value: "Ingress" },
             ]}
           />
-        </Field>
+        </NeutreeField>
 
-        <Field
+        <NeutreeField
           {...form}
           name="spec.config.kubernetes_config.router.replicas"
           label={t("clusters.fields.replicas")}
         >
           <Input type="number" />
-        </Field>
+        </NeutreeField>
 
-        <Field
+        <NeutreeField
           {...form}
           name="spec.config.kubernetes_config.router.resources.cpu"
           label={t("common.fields.cpu")}
         >
           <Input />
-        </Field>
+        </NeutreeField>
 
-        <Field
+        <NeutreeField
           {...form}
           name="spec.config.kubernetes_config.router.resources.memory"
           label={t("common.fields.memory")}
         >
           <Input />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ) : null,
     modelCacheFields: (
@@ -383,7 +393,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <Field
+                      <NeutreeField
                         label={t("common.fields.name")}
                         {...form.register(
                           `spec.config.model_caches.${index}.name`,
@@ -399,7 +409,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                           )}
                           disabled={isModelCacheDisabled}
                         />
-                      </Field>
+                      </NeutreeField>
 
                       <div
                         className="space-y-2"
@@ -408,7 +418,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                         <Label className="text-sm font-medium">
                           {t("clusters.fields.modelCache.cacheType")}
                         </Label>
-                        <Select
+                        <NeutreeSelect
                           options={
                             isKubernetes
                               ? [
@@ -447,7 +457,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                     <div className="grid grid-cols-2 gap-4">
                       {cacheType === "nfs" && (
                         <>
-                          <Field
+                          <NeutreeField
                             label={t("clusters.fields.modelCache.nfsServer")}
                             {...form.register(
                               `spec.config.model_caches.${index}.nfs.server`,
@@ -477,9 +487,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                               )}
                               disabled={isModelCacheDisabled}
                             />
-                          </Field>
+                          </NeutreeField>
 
-                          <Field
+                          <NeutreeField
                             label={t("clusters.fields.modelCache.cachePath")}
                             {...form.register(
                               `spec.config.model_caches.${index}.nfs.path`,
@@ -510,12 +520,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                               )}
                               disabled={isModelCacheDisabled}
                             />
-                          </Field>
+                          </NeutreeField>
                         </>
                       )}
 
                       {cacheType === "host_path" && (
-                        <Field
+                        <NeutreeField
                           label={t("clusters.fields.modelCache.cachePath")}
                           {...form.register(
                             `spec.config.model_caches.${index}.host_path.path`,
@@ -546,12 +556,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                             )}
                             disabled={isModelCacheDisabled}
                           />
-                        </Field>
+                        </NeutreeField>
                       )}
 
                       {cacheType === "pvc" && (
                         <>
-                          <Field
+                          <NeutreeField
                             label={t("clusters.fields.modelCache.storage")}
                             {...form.register(
                               `spec.config.model_caches.${index}.pvc.resources.requests.storage`,
@@ -575,9 +585,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                               )}
                               disabled={isModelCacheDisabled}
                             />
-                          </Field>
+                          </NeutreeField>
 
-                          <Field
+                          <NeutreeField
                             label={t(
                               "clusters.fields.modelCache.storageClassName",
                             )}
@@ -596,7 +606,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                               )}
                               disabled={isModelCacheDisabled}
                             />
-                          </Field>
+                          </NeutreeField>
                         </>
                       )}
                     </div>
@@ -630,7 +640,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     ),
     authFields: isKubernetes ? null : (
       <FormCardGrid title={t("clusters.sections.nodeAuthentication")}>
-        <Field
+        <NeutreeField
           {...form}
           name="spec.config.ssh_config.auth.ssh_user"
           label={t("clusters.fields.sshUser")}
@@ -639,8 +649,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={t("clusters.placeholders.sshUserExample")}
             disabled={isEdit}
           />
-        </Field>
-        <Field
+        </NeutreeField>
+        <NeutreeField
           {...form}
           name="spec.config.ssh_config.auth.ssh_private_key"
           label={t("clusters.fields.sshPrivateKey")}
@@ -649,7 +659,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           }
         >
           <Textarea disabled={isEdit} />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
   };

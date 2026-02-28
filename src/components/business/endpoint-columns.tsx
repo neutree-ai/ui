@@ -2,10 +2,10 @@ import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointModel from "@/components/business/EndpointModel";
 import EndpointStatus from "@/components/business/EndpointStatus";
 import ModelTask from "@/components/business/ModelTask";
+import { ShowButton } from "@/components/business/ShowButton";
+import { Table } from "@/components/business/Table";
 import type { BaseStatus, Endpoint } from "@/types";
 import { useTranslate } from "@refinedev/core";
-import { ShowButton } from "../theme/buttons";
-import { Table } from "../theme/table";
 
 export const useEndpointColumns = () => {
   const t = useTranslate();

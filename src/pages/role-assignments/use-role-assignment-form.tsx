@@ -1,6 +1,8 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
+import { NeutreeCombobox } from "@/components/business/NeutreeCombobox";
+import { NeutreeField } from "@/components/business/NeutreeField";
+import { NeutreeSelect } from "@/components/business/NeutreeSelect";
 import WorkspaceField from "@/components/business/WorkspaceField";
-import { Combobox, Field, Select } from "@/components/theme";
 import { Input } from "@/components/ui/input";
 import { useLicense } from "@/hooks/use-license";
 import { useTranslation } from "@/lib/i18n";
@@ -51,18 +53,26 @@ export const useRoleAssignmentForm = ({
     form,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
-        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
+        <NeutreeField
+          {...form}
+          name="metadata.name"
+          label={t("common.fields.name")}
+        >
           <Input
             placeholder={t("role_assignments.placeholders.policyName")}
             disabled={isEdit}
           />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     specFields: (
       <FormCardGrid title={t("role_assignments.fields.policy")}>
-        <Field {...form} name="spec.user_id" label={t("common.fields.user")}>
-          <Combobox
+        <NeutreeField
+          {...form}
+          name="spec.user_id"
+          label={t("common.fields.user")}
+        >
+          <NeutreeCombobox
             placeholder={t("role_assignments.placeholders.selectUser")}
             disabled={users.query.isLoading}
             options={(users.query.data?.data || []).map((e) => ({
@@ -70,9 +80,13 @@ export const useRoleAssignmentForm = ({
               value: e.id,
             }))}
           />
-        </Field>
-        <Field {...form} name="spec.role" label={t("common.fields.role")}>
-          <Combobox
+        </NeutreeField>
+        <NeutreeField
+          {...form}
+          name="spec.role"
+          label={t("common.fields.role")}
+        >
+          <NeutreeCombobox
             placeholder={t("role_assignments.placeholders.selectRole")}
             disabled={roles.query.isLoading}
             options={(roles.query.data?.data || []).map((e) => ({
@@ -80,15 +94,15 @@ export const useRoleAssignmentForm = ({
               value: e.metadata.name,
             }))}
           />
-        </Field>
+        </NeutreeField>
         <div className="col-span-2" />
-        <Field
+        <NeutreeField
           {...form}
           name="spec.global"
           label={t("role_assignments.fields.policyScope")}
           description={t("role_assignments.descriptions.policyScope")}
         >
-          <Select
+          <NeutreeSelect
             disabled={!supportMultiWorkspace}
             options={[
               { label: t("role_assignments.options.global"), value: true },
@@ -103,15 +117,15 @@ export const useRoleAssignmentForm = ({
               }
             }}
           />
-        </Field>
-        <Field
+        </NeutreeField>
+        <NeutreeField
           {...form}
           name="spec.workspace"
           label={t("common.fields.workspace")}
           className={global ? "hidden" : ""}
         >
           <WorkspaceField />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
   };

@@ -1,4 +1,4 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { useTranslation } from "@/lib/i18n";
 import { useUserForm } from "./use-user-form";
 
@@ -8,8 +8,8 @@ export const UsersCreate = () => {
     action: "create",
   });
   return (
-    <Form {...form} title={t("user_profiles.create")}>
+    <NeutreeForm {...form} title={t("user_profiles.create")}>
       {registerFields}
-    </Form>
+    </NeutreeForm>
   );
 };

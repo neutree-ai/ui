@@ -1,6 +1,6 @@
 import MetadataCard from "@/components/business/MetadataCard";
-import { ShowPage } from "@/components/theme";
-import { ShowButton } from "@/components/theme/buttons";
+import { ShowButton } from "@/components/business/ShowButton";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,

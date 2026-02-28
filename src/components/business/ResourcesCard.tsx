@@ -1,4 +1,4 @@
-import { ShowPage } from "@/components/theme";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatToDecimal } from "@/lib/unit";
 import type { ResourceSpec } from "@/types";

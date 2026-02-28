@@ -16,12 +16,12 @@ import {
 import type { RefineBreadcrumbProps } from "@refinedev/ui-types";
 import { HomeIcon } from "lucide-react";
 import { type FC, Fragment } from "react";
-import { Link } from "./link";
+import { Link } from "./Link";
 export type BreadcrumbProps = RefineBreadcrumbProps & {
   record?: Record<string, any>;
 };
 
-export const Breadcrumbs: FC<BreadcrumbProps> = ({
+export const NeutreeBreadcrumbs: FC<BreadcrumbProps> = ({
   showHome = false,
   meta,
   record,

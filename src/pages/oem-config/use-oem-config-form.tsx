@@ -1,4 +1,4 @@
-import { Field } from "@/components/theme";
+import { NeutreeField } from "@/components/business/NeutreeField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,13 +77,13 @@ export const useOemConfigForm = ({ action }: { action: "create" | "edit" }) => {
     handleFileClear,
     formFields: (
       <>
-        <Field
+        <NeutreeField
           {...form}
           name="spec.brand_name"
           label={t("oem_configs.fields.brandName")}
         >
           <Input placeholder={t("oem_configs.placeholders.brandName")} />
-        </Field>
+        </NeutreeField>
 
         {/* Main Logo */}
         <div className="space-y-2">

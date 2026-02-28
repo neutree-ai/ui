@@ -1,8 +1,8 @@
+import { ShowButton } from "@/components/business/ShowButton";
+import { Table } from "@/components/business/Table";
 import UserCell from "@/components/business/UserCell";
 import { useTranslate } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
-import { ShowButton } from "../theme/buttons";
-import { Table } from "../theme/table";
 
 export const useRoleAssignmentColumns = () => {
   const t = useTranslate();

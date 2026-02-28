@@ -1,8 +1,9 @@
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
+import { ShowPage } from "@/components/business/ShowPage";
+import { Table } from "@/components/business/Table";
 import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { useRoleAssignmentColumns } from "@/components/business/role-assignment-columns";
-import { ShowPage, Table } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Workspace } from "@/types";
 import { useShow, useTranslation } from "@refinedev/core";

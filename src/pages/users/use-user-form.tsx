@@ -1,5 +1,5 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
-import { Field } from "@/components/theme";
+import { NeutreeField } from "@/components/business/NeutreeField";
 import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/types";
 import { useTranslation } from "@refinedev/core";
@@ -36,19 +36,27 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     registerFields: isEdit ? null : (
       <FormCardGrid>
-        <Field {...form} name="name" label={translate("common.fields.name")}>
+        <NeutreeField
+          {...form}
+          name="name"
+          label={translate("common.fields.name")}
+        >
           <Input
             placeholder={translate("user_profiles.placeholders.userName")}
           />
-        </Field>
-        <Field {...form} name="email" label={translate("common.fields.email")}>
+        </NeutreeField>
+        <NeutreeField
+          {...form}
+          name="email"
+          label={translate("common.fields.email")}
+        >
           <Input
             placeholder={translate("user_profiles.placeholders.userEmail")}
             type="email"
           />
-        </Field>
+        </NeutreeField>
         <div className="col-span-2" />
-        <Field
+        <NeutreeField
           {...form}
           label={translate("common.fields.password")}
           {...form.register("password", {
@@ -59,8 +67,8 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           })}
         >
           <Input type="password" />
-        </Field>
-        <Field
+        </NeutreeField>
+        <NeutreeField
           {...form}
           label={translate("user_profiles.fields.confirmPassword")}
           {...form.register("confirmPassword", {
@@ -77,12 +85,12 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           })}
         >
           <Input type="password" />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     metadataFields: (
       <FormCardGrid title={translate("common.sections.basicInformation")}>
-        <Field
+        <NeutreeField
           {...form}
           name="metadata.name"
           label={translate("common.fields.name")}
@@ -91,18 +99,18 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={translate("user_profiles.placeholders.userName")}
             disabled={isEdit}
           />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     specFields: (
       <FormCardGrid>
-        <Field
+        <NeutreeField
           {...form}
           name="spec.email"
           label={translate("common.fields.email")}
         >
           <Input type="email" />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
   };

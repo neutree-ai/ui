@@ -2,10 +2,10 @@ import EndpointEngine from "@/components/business/EndpointEngine";
 import EndpointModel from "@/components/business/EndpointModel";
 import ModelCatalogStatus from "@/components/business/ModelCatalogStatus";
 import ModelTask from "@/components/business/ModelTask";
+import { Table } from "@/components/business/Table";
 import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
 import { Trash2 } from "lucide-react";
-import { Table } from "../theme/table";
 
 export const useModelCatalogColumns = () => {
   const t = useTranslate();

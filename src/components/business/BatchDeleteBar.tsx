@@ -1,4 +1,4 @@
-import { DeleteConfirmDialog } from "@/components/theme/components/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/business/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useDeleteMany, useResource, useTranslate } from "@refinedev/core";
 import type { Row } from "@tanstack/react-table";

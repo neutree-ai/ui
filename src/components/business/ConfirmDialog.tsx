@@ -1,4 +1,3 @@
-import type { ConfirmDialogProps } from "@/components/theme/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +9,38 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import type { buttonVariants } from "@/components/ui/button";
 import { LoadingIcon } from "@/components/ui/loading";
+import type { AlertDialogProps } from "@radix-ui/react-alert-dialog";
+import type { DeleteButtonValues } from "@refinedev/core/dist/hooks/button/delete-button";
+import type { VariantProps } from "class-variance-authority";
 import { CheckIcon, XIcon } from "lucide-react";
-import { type FC, isValidElement, useMemo } from "react";
+import {
+  type FC,
+  type ReactElement,
+  type ReactNode,
+  isValidElement,
+  useMemo,
+} from "react";
+
+type ConfirmDialogProps = AlertDialogProps & {
+  title?: string;
+  description?: string;
+  okIcon?: ReactElement<SVGSVGElement>;
+  okIconSide?: "left" | "right";
+  cancelIconSide?: "left" | "right";
+  cancelIcon?: ReactElement<SVGSVGElement>;
+  okText?: string;
+  cancelText?: string;
+  loading?: boolean;
+  onConfirm: DeleteButtonValues["onConfirm"];
+  children?: ReactElement<SVGSVGElement>;
+  content?: ReactNode;
+  okButtonVariant?: VariantProps<typeof buttonVariants>["variant"];
+  cancelButtonVariant?: VariantProps<typeof buttonVariants>["variant"];
+  okButtonSize?: VariantProps<typeof buttonVariants>["size"];
+  cancelButtonSize?: VariantProps<typeof buttonVariants>["size"];
+};
 
 export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   children,

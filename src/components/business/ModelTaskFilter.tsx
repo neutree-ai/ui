@@ -1,3 +1,4 @@
+import type { TableListFilterOption } from "@/components/business/Table";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +12,6 @@ import { useTranslation } from "@/lib/i18n";
 import type { CrudFilter, LogicalFilter } from "@refinedev/core";
 import { ChevronDown } from "lucide-react";
 import { useMemo } from "react";
-import type { TableListFilterOption } from "../theme";
 
 interface ModelTaskFilterProps {
   filters: CrudFilter[];

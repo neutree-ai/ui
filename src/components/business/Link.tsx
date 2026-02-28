@@ -1,9 +1,8 @@
-import type { LayoutResource } from "@/components/theme/types";
 import { Slot } from "@radix-ui/react-slot";
 import { useLink, useRouterContext, useRouterType } from "@refinedev/core";
 import { forwardRef } from "react";
 
-type LinkProps = LayoutResource["link"] & {
+type LinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   asChild?: boolean;
 };
 

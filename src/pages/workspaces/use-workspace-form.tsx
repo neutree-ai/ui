@@ -1,5 +1,5 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
-import { Field } from "@/components/theme";
+import { NeutreeField } from "@/components/business/NeutreeField";
 import { Input } from "@/components/ui/input";
 import type { Workspace } from "@/types";
 import { useTranslation } from "@refinedev/core";
@@ -26,7 +26,7 @@ export const useWorkspaceForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     metadataFields: (
       <FormCardGrid title={translate("common.sections.basicInformation")}>
-        <Field
+        <NeutreeField
           {...form}
           name="metadata.name"
           label={translate("common.fields.name")}
@@ -35,7 +35,7 @@ export const useWorkspaceForm = ({ action }: { action: "create" | "edit" }) => {
             placeholder={translate("workspaces.placeholders.workspaceName")}
             disabled={isEdit}
           />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
   };

@@ -1,4 +1,4 @@
-import type { SaveButtonProps } from "@/components/theme/types";
+import { SaveButton } from "@/components/business/SaveButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Form as FormUI } from "@/components/ui/form";
@@ -20,7 +20,6 @@ import {
   useRef,
 } from "react";
 import type { FieldValues } from "react-hook-form";
-import { SaveButton } from "../buttons";
 
 type NativeFormProps = Omit<
   DetailedHTMLProps<FormHTMLAttributes<HTMLFormElement>, HTMLFormElement>,
@@ -51,7 +50,7 @@ export type FormProps<
     title?: string;
   };
 
-export const Form = <
+export const NeutreeForm = <
   TQueryFnData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
   TVariables extends FieldValues = FieldValues,

@@ -1,4 +1,4 @@
-import { ALL_WORKSPACES } from "@/components/theme/hooks";
+import { ALL_WORKSPACES } from "@/hooks";
 import type { DataProvider, HttpError } from "@refinedev/core";
 import { type PostgrestClient, PostgrestError } from "@supabase/postgrest-js";
 import { generateFilter, handleError } from "./utils";

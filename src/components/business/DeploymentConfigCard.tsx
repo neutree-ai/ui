@@ -1,4 +1,4 @@
-import { ShowPage } from "@/components/theme";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DeploymentOptions, ReplicaSpec } from "@/types";
 import { useTranslation } from "react-i18next";

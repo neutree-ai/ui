@@ -1,8 +1,8 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { useWorkspaceForm } from "./use-workspace-form";
 
 export const WorkspacesCreate = () => {
   const { form, metadataFields } = useWorkspaceForm({ action: "create" });
 
-  return <Form {...form}>{metadataFields}</Form>;
+  return <NeutreeForm {...form}>{metadataFields}</NeutreeForm>;
 };

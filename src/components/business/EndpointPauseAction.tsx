@@ -1,8 +1,8 @@
+import { RowAction, type RowActionProps } from "@/components/business/Table";
 import type { Endpoint } from "@/types";
 import { useInvalidate, useTranslate, useUpdate } from "@refinedev/core";
 import { PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
-import { RowAction, type RowActionProps } from "../theme/table";
 
 type EndpointPauseActionProps = RowActionProps & {
   endpoint: Endpoint;

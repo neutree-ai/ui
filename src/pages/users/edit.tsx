@@ -1,4 +1,4 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { useTranslation } from "@/lib/i18n";
 import { useUserForm } from "./use-user-form";
 
@@ -8,9 +8,9 @@ export const UsersEdit = () => {
     action: "edit",
   });
   return (
-    <Form {...form} title={t("user_profiles.edit")}>
+    <NeutreeForm {...form} title={t("user_profiles.edit")}>
       {metadataFields}
       {specFields}
-    </Form>
+    </NeutreeForm>
   );
 };

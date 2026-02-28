@@ -1,4 +1,4 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { useRoleAssignmentForm } from "./use-role-assignment-form";
 
 export const RoleAssignmentsCreate = () => {
@@ -7,9 +7,9 @@ export const RoleAssignmentsCreate = () => {
   });
 
   return (
-    <Form {...form}>
+    <NeutreeForm {...form}>
       {metadataFields}
       {specFields}
-    </Form>
+    </NeutreeForm>
   );
 };

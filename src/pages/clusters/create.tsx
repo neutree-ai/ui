@@ -1,4 +1,4 @@
-import { Form } from "@/components/theme";
+import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { useTranslation } from "@/lib/i18n";
 import { useClusterForm } from "./use-cluster-form";
 
@@ -15,7 +15,7 @@ export const ClustersCreate = () => {
     authFields,
   } = useClusterForm({ action: "create" });
   return (
-    <Form {...form} title={t("clusters.create")}>
+    <NeutreeForm {...form} title={t("clusters.create")}>
       {metadataFields}
       {imageRegistryFields}
       {typeFields}
@@ -23,6 +23,6 @@ export const ClustersCreate = () => {
       {routerFields}
       {authFields}
       {modelCacheFields}
-    </Form>
+    </NeutreeForm>
   );
 };

@@ -1,11 +1,11 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
 import { formatTaskName } from "@/components/business/ModelTask";
+import { NeutreeCombobox } from "@/components/business/NeutreeCombobox";
+import { NeutreeField } from "@/components/business/NeutreeField";
 import { SliderWithInput } from "@/components/business/SliderWithInput";
 import { VariablesInput } from "@/components/business/VariablesInput";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import type { Schema } from "@/components/business/use-variables-input";
-import { Combobox, Field } from "@/components/theme";
-import { useWorkspace } from "@/components/theme/hooks";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -15,6 +15,7 @@ import {
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import { useWorkspace } from "@/hooks";
 import useEndpointResources from "@/hooks/use-endpoint-resources";
 import {
   findBestNodeForAccelerator,
@@ -469,19 +470,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
-        <Field {...form} name="metadata.name" label={t("common.fields.name")}>
+        <NeutreeField
+          {...form}
+          name="metadata.name"
+          label={t("common.fields.name")}
+        >
           <Input
             placeholder={t("endpoints.placeholders.endpointName")}
             disabled={isEdit}
           />
-        </Field>
-        <Field
+        </NeutreeField>
+        <NeutreeField
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
         >
           <WorkspaceField disabled={isEdit} />
-        </Field>
+        </NeutreeField>
       </FormCardGrid>
     ),
     // Template selection section for both create and edit modes
@@ -493,8 +498,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             : t("endpoints.sections.templateSelection")
         }
       >
-        <Field {...form} name="spec.cluster" label={t("common.fields.cluster")}>
-          <Combobox
+        <NeutreeField
+          {...form}
+          name="spec.cluster"
+          label={t("common.fields.cluster")}
+        >
+          <NeutreeCombobox
             disabled={clusters.query.isLoading}
             placeholder={t("endpoints.placeholders.selectCluster")}
             options={(clusters.query?.data?.data || []).map((e) => {
@@ -504,13 +513,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               };
             })}
           />
-        </Field>
-        <Field
+        </NeutreeField>
+        <NeutreeField
           {...form}
           name="spec.model.registry"
           label={t("endpoints.fields.modelRegistry")}
         >
-          <Combobox
+          <NeutreeCombobox
             placeholder={t("endpoints.placeholders.selectModelRegistry")}
             disabled={modelRegistries.query.isLoading}
             options={(modelRegistries.query.data?.data || []).map((e) => ({
@@ -524,14 +533,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               setModelSearch("");
             }}
           />
-        </Field>
+        </NeutreeField>
         {!isEdit && (
-          <Field
+          <NeutreeField
             {...form}
             name="-model-catalog"
             label={t("endpoints.fields.modelCatalog")}
           >
-            <Combobox
+            <NeutreeCombobox
               placeholder={t("endpoints.placeholders.selectModelCatalog")}
               disabled={modelCatalogs.query.isLoading}
               options={(modelCatalogs.query.data?.data || []).map((e) => ({
@@ -541,14 +550,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               value={selectedModelCatalog}
               onChange={(value) => handleModelCatalogSelect(value as string)}
             />
-          </Field>
+          </NeutreeField>
         )}
       </FormCardGrid>
     ),
     // Resource settings section - always visible
     resourceFields: (
       <FormCardGrid title={t("endpoints.sections.resourceSettings")}>
-        <Field
+        <NeutreeField
           {...form}
           name="spec.resources.cpu"
           label={t("common.fields.cpu")}
@@ -572,9 +581,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 : undefined
             }
           />
-        </Field>
+        </NeutreeField>
 
-        <Field
+        <NeutreeField
           {...form}
           name="spec.resources.memory"
           label={t("endpoints.fields.memoryGb")}
@@ -598,16 +607,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 : undefined
             }
           />
-        </Field>
+        </NeutreeField>
 
         {/* Accelerator Selector */}
-        <Field
+        <NeutreeField
           {...form}
           name="spec.resources.accelerator"
           label={t("endpoints.fields.accelerator")}
           className="col-span-4"
         >
-          <Combobox
+          <NeutreeCombobox
             options={acceleratorOptions.map((opt) => ({
               label: opt.label,
               value: opt.value,
@@ -636,12 +645,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             disabled={!currentCluster || acceleratorOptions.length === 0}
             emptyMessage={t("endpoints.messages.noAcceleratorsAvailable")}
           />
-        </Field>
+        </NeutreeField>
 
         {/* Accelerator Count Slider */}
         {form.watch("spec.resources.accelerator")?.type &&
           form.watch("spec.resources.accelerator")?.product && (
-            <Field
+            <NeutreeField
               {...form}
               name="spec.resources.gpu"
               label={t("endpoints.fields.acceleratorCount")}
@@ -672,7 +681,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   />
                 );
               })()}
-            </Field>
+            </NeutreeField>
           )}
 
         {/* Cluster status indicator */}
@@ -702,7 +711,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-4">
           <FormCardGrid title={t("endpoints.sections.modelSettings")}>
-            <Field
+            <NeutreeField
               {...form}
               name="spec.model.name"
               label={t("endpoints.fields.modelName")}
@@ -738,30 +747,30 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   }}
                 />
               </div>
-            </Field>
-            <Field
+            </NeutreeField>
+            <NeutreeField
               {...form}
               name="spec.model.version"
               label={t("endpoints.fields.modelVersion")}
             >
               <Input />
-            </Field>
-            <Field
+            </NeutreeField>
+            <NeutreeField
               {...form}
               name="spec.model.file"
               label={t("endpoints.fields.modelFile")}
             >
               <Input />
-            </Field>
+            </NeutreeField>
           </FormCardGrid>
 
           <FormCardGrid title={t("endpoints.sections.engineSettings")}>
-            <Field
+            <NeutreeField
               {...form}
               name="spec.engine.engine"
               label={t("common.fields.engine")}
             >
-              <Combobox
+              <NeutreeCombobox
                 placeholder={t("endpoints.placeholders.selectEngine")}
                 disabled={engines.query.isLoading}
                 options={engineNames.map((v) => ({
@@ -780,13 +789,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   form.trigger("spec.engine.engine");
                 }}
               />
-            </Field>
-            <Field
+            </NeutreeField>
+            <NeutreeField
               {...form}
               name="spec.engine.version"
               label={t("endpoints.fields.engineVersion")}
             >
-              <Combobox
+              <NeutreeCombobox
                 placeholder={t("endpoints.placeholders.selectVersion")}
                 disabled={!form.getValues().spec.engine.engine}
                 options={(
@@ -796,13 +805,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   value: v,
                 }))}
               />
-            </Field>
-            <Field
+            </NeutreeField>
+            <NeutreeField
               {...form}
               name="spec.model.task"
               label={t("endpoints.fields.taskType")}
             >
-              <Combobox
+              <NeutreeCombobox
                 placeholder={t("endpoints.placeholders.selectTaskType")}
                 disabled={!form.getValues().spec.engine.engine}
                 options={(
@@ -815,24 +824,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   value: v,
                 }))}
               />
-            </Field>
+            </NeutreeField>
           </FormCardGrid>
 
           <FormCardGrid title={t("endpoints.sections.replicaSettings")}>
-            <Field
+            <NeutreeField
               {...form}
               name="spec.replicas.num"
               label={t("endpoints.fields.replicas")}
             >
               <Input type="number" min={1} />
-            </Field>
+            </NeutreeField>
 
-            <Field
+            <NeutreeField
               {...form}
               name="spec.deployment_options.scheduler.type"
               label={t("endpoints.fields.schedulerType")}
             >
-              <Combobox
+              <NeutreeCombobox
                 placeholder={t("endpoints.placeholders.selectSchedulerType")}
                 options={[
                   {
@@ -845,11 +854,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   },
                 ]}
               />
-            </Field>
+            </NeutreeField>
           </FormCardGrid>
 
           <FormCardGrid title={t("endpoints.sections.advancedOptions")}>
-            <Field
+            <NeutreeField
               {...form}
               name="spec.variables.engine_args"
               label={t("endpoints.fields.engineVariables")}
@@ -858,15 +867,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <VariablesInput
                 schema={engineValueSchema?.properties as unknown as Schema}
               />
-            </Field>
-            <Field
+            </NeutreeField>
+            <NeutreeField
               {...form}
               name="spec.env"
               label={t("endpoints.fields.environment")}
               className="col-span-4"
             >
               <VariablesInput schema={{}} />
-            </Field>
+            </NeutreeField>
           </FormCardGrid>
         </CollapsibleContent>
       </Collapsible>

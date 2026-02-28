@@ -1,9 +1,25 @@
-import { AppSidebar } from "@/components/theme/components";
-import type { LayoutProps } from "@/components/theme/types";
+import { AppSidebar } from "@/components/business/AppSidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { BaseLayout } from "./base";
+import { BaseLayout } from "./BaseLayout";
+
+type LogoType = React.ReactElement | React.ReactNode;
+
+type LayoutProps = React.PropsWithChildren<{
+  defaultLayout: number[] | undefined;
+  defaultCollapsed?: boolean;
+  footer?: React.ReactNode;
+  logo?: {
+    collapsed?: LogoType;
+    default: LogoType;
+  };
+  navCollapsedSize: number;
+  navbar?: {
+    leftSide?: React.ReactNode;
+    rightSide?: React.ReactNode;
+  };
+}>;
 
 export const DefaultLayout = ({
   children,

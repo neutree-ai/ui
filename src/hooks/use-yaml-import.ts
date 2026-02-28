@@ -1,4 +1,4 @@
-import { useWorkspace } from "@/components/theme/hooks";
+import { useWorkspace } from "@/hooks";
 import { useTranslation } from "@/lib/i18n";
 import { getResourcePlural } from "@/lib/plural";
 import type { Metadata } from "@/types";

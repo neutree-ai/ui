@@ -1,7 +1,7 @@
 import ImageRegistryStatus from "@/components/business/ImageRegistryStatus";
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
-import { ShowPage } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import type { ImageRegistry } from "@/types";

@@ -1,5 +1,5 @@
+import { ShowButton } from "@/components/business/ShowButton";
 import type { EndpointEngineSpec, Metadata } from "@/types";
-import { ShowButton } from "../theme";
 
 interface EndpointEngineProps {
   spec: { engine: EndpointEngineSpec };

@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@/components/business/ConfirmDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -6,7 +7,6 @@ import {
   useId,
   useState,
 } from "react";
-import { ConfirmDialog } from "./confirm";
 
 interface DeleteConfirmDialogProps extends PropsWithChildren {
   open?: boolean;

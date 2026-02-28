@@ -1,9 +1,9 @@
+import { ShowButton } from "@/components/business/ShowButton";
+import { Table } from "@/components/business/Table";
 import Timestamp from "@/components/business/Timestamp";
-import { ShowButton } from "@/components/theme/buttons";
 import { useResource, useTranslation } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { Table } from "../theme/table";
 
 type MetadataColumnOptions = {
   resource?: string;

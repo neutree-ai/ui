@@ -1,4 +1,4 @@
-import { ALL_WORKSPACES, useWorkspace } from "@/components/theme/hooks";
+import { ALL_WORKSPACES, useWorkspace } from "@/hooks";
 import { useTranslation } from "@/lib/i18n";
 import type { Metadata } from "@/types";
 import { useDataProvider, useResource } from "@refinedev/core";

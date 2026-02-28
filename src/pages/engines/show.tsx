@@ -1,8 +1,8 @@
 import EngineStatus from "@/components/business/EngineStatus";
 import JSONSchemaVisualizer from "@/components/business/JsonSchemaVisualizer";
+import { Loader } from "@/components/business/Loader";
 import MetadataCard from "@/components/business/MetadataCard";
-import { ShowPage } from "@/components/theme";
-import Loader from "@/components/theme/components/loader";
+import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,

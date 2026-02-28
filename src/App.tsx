@@ -6,12 +6,10 @@ import {
 } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
-import {
-  BaseLayout,
-  DefaultLayout,
-  ModeToggle,
-  notificationProvider,
-} from "@/components/theme";
+import { BaseLayout } from "@/components/business/BaseLayout";
+import { DefaultLayout } from "@/components/business/DefaultLayout";
+import { ModeToggle } from "@/components/business/ModeToggle";
+import { notificationProvider } from "@/providers";
 import routerProvider, {
   CatchAllNavigate,
   NavigateToResource,

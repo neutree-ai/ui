@@ -1,5 +1,5 @@
+import { Table } from "@/components/business/Table";
 import { useTranslation } from "@/lib/i18n";
-import { Table } from "../theme/table";
 
 export const useUserColumns = () => {
   const { t } = useTranslation();

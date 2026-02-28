@@ -1,6 +1,6 @@
-import { CreateButton } from "@/components/theme/buttons";
-import { Breadcrumbs, PageHeader } from "@/components/theme/components";
-import type { ListProps } from "@/components/theme/types";
+import { CreateButton } from "@/components/business/CreateButton";
+import { NeutreeBreadcrumbs } from "@/components/business/NeutreeBreadcrumbs";
+import { PageHeader } from "@/components/business/PageHeader";
 import { cn } from "@/lib/utils";
 import {
   useRefineContext,
@@ -9,6 +9,17 @@ import {
   useUserFriendlyName,
 } from "@refinedev/core";
 import { type FC, isValidElement } from "react";
+
+type ListProps = {
+  title?: React.ReactNode;
+  resource?: string;
+  breadcrumb?: React.ReactNode;
+  createButtonProps?: Partial<React.ComponentProps<typeof CreateButton>>;
+  className?: string;
+  canCreate?: boolean;
+  extra?: React.ReactNode;
+  children?: React.ReactNode;
+};
 
 export const ListPage: FC<ListProps> = ({
   title,

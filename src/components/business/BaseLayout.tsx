@@ -1,23 +1,10 @@
-import { ThemeProvider } from "@/components/theme/providers";
-import type { LayoutProps } from "@/components/theme/types";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/providers";
 import type { PropsWithChildren } from "react";
 
 type Props = PropsWithChildren<
-  Pick<
-    LayoutProps,
-    | "attribute"
-    | "defaultTheme"
-    | "enableSystem"
-    | "disableTransitionOnChange"
-    | "enableColorScheme"
-    | "forcedTheme"
-    | "nonce"
-    | "storageKey"
-    | "themes"
-    | "value"
-  >
+  Partial<React.ComponentProps<typeof ThemeProvider>>
 >;
 
 export const BaseLayout = ({
