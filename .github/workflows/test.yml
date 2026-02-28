@@ -26,5 +26,8 @@ jobs:
       - name: Check unused exports & dependencies
         run: yarn knip
 
+      - name: Check i18n translations
+        run: node tools/i18n-tracker.cjs
+
       - name: Run tests
         run: yarn test

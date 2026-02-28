@@ -1,3 +1,4 @@
 yarn dep-check
 yarn knip
+node tools/i18n-tracker.cjs
 yarn lint-staged

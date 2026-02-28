@@ -227,10 +227,24 @@ for (const rel of targets) {
 if (pending.length) {
   const shown =
     limit && pending.length > limit ? pending.slice(0, limit) : pending;
-  console.log("Files requiring i18n processing:");
+  console.error(`\n❌ ${pending.length} file(s) changed since last i18n review:\n`);
   for (const f of shown) {
-    console.log("  -", f);
+    console.error(`  ${f}`);
   }
+  console.error(`
+What this means:
+  These files have been modified but not yet reviewed for i18n compliance.
+  Every user-facing string must use t() from react-i18next, with keys in src/locales/*.json.
+
+How to fix:
+  1. Review each file — ensure all user-facing text uses t("key")
+  2. Add missing keys to src/locales/en-US.json (and other locales)
+  3. Mark reviewed:  node tools/i18n-tracker.cjs update <file>
+     Or mark all:    node tools/i18n-tracker.cjs update-all
+
+See: contributing/i18n-guide.md
+`);
+  process.exit(1);
 } else {
-  console.log("All files are up to date. No i18n work needed.");
+  console.log("✅ All files are up to date. No i18n work needed.");
 }
