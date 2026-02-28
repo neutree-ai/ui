@@ -1,10 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import ImageRegistryStatus from "@/domains/image-registry/ImageRegistryStatus";
+import type { ImageRegistry } from "@/domains/image-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { ImageRegistry } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 
 export const ImageRegistriesShow = () => {

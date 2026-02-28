@@ -18,12 +18,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClusterStatus from "@/domains/cluster/ClusterStatus";
 import ClusterType from "@/domains/cluster/ClusterType";
+import { getRayDashboardProxy } from "@/domains/cluster/get-ray-dashboard-proxy";
 import type { Cluster, ModelCache } from "@/domains/cluster/types";
 import {
   type ClusterMonitorPanelType,
   useClusterMonitorPanels,
 } from "@/domains/cluster/use-cluster-monitor-panels";
-import { useEndpointColumns } from "@/domains/endpoint/columns";
+import EndpointEngine from "@/domains/endpoint/EndpointEngine";
+import EndpointModel from "@/domains/endpoint/EndpointModel";
+import EndpointStatus from "@/domains/endpoint/EndpointStatus";
+import type { Endpoint } from "@/domains/endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
@@ -32,7 +36,6 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { getRayDashboardProxy } from "@/foundation/lib/api";
 import {
   getClusterRayDashboardProps,
   getClusterRouterDashboardProps,
@@ -41,6 +44,7 @@ import {
 } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
 import { formatToDecimal } from "@/foundation/lib/unit";
+import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useShow, useTranslation } from "@refinedev/core";
 
 // Utility function to calculate resource usage
@@ -274,7 +278,6 @@ export const ClustersShow = () => {
   const { grafanaUrl } = useSystemApi();
 
   const metadataColumns = useMetadataColumns({ resource: "endpoints" });
-  const endpointColumns = useEndpointColumns();
 
   const {
     panels: monitorPanels,
@@ -613,9 +616,35 @@ export const ClustersShow = () => {
                 }}
               >
                 {metadataColumns.name}
-                {endpointColumns.status}
-                {endpointColumns.model}
-                {endpointColumns.engine}
+                <Table.Column
+                  header={t("common.fields.status")}
+                  accessorKey="status"
+                  id="status"
+                  enableHiding
+                  cell={({ getValue }) => (
+                    <EndpointStatus
+                      {...(getValue() as unknown as BaseStatus)}
+                    />
+                  )}
+                />
+                <Table.Column
+                  header={t("common.fields.model")}
+                  accessorKey="status"
+                  id="model"
+                  enableHiding
+                  cell={({ row }) => (
+                    <EndpointModel model={row.original.spec.model} />
+                  )}
+                />
+                <Table.Column
+                  header={t("common.fields.engine")}
+                  accessorKey="spec.engine.engine"
+                  id="engine"
+                  enableHiding
+                  cell={({ row }) => (
+                    <EndpointEngine {...(row.original as Endpoint)} />
+                  )}
+                />
                 {metadataColumns.update_timestamp}
                 {metadataColumns.creation_timestamp}
               </Table>

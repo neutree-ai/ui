@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ModelRegistryStatus from "@/domains/model-registry/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/ModelRegistryType";
+import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { ModelRegistry } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 
 export const ModelRegistriesShow = () => {

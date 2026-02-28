@@ -1,7 +1,6 @@
 import BaseStatus from "@/foundation/components/BaseStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { BaseStatus as BaseStatusType } from "@/foundation/types";
-
+import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
 export default function EngineStatus(status: BaseStatusType) {
   const { t } = useTranslation();
 

@@ -1,11 +1,11 @@
 import EndpointEngine from "@/domains/endpoint/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/EndpointModel";
 import ModelTask from "@/domains/endpoint/ModelTask";
+import ModelCatalogStatus from "@/domains/model-catalog/ModelCatalogStatus";
 import { Table } from "@/foundation/components/Table";
-import type { BaseStatus } from "@/foundation/types";
+import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useTranslate } from "@refinedev/core";
 import { Trash2 } from "lucide-react";
-import ModelCatalogStatus from "./ModelCatalogStatus";
 
 export const useModelCatalogColumns = () => {
   const t = useTranslate();

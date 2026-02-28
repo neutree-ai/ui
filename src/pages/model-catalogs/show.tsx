@@ -5,12 +5,13 @@ import EndpointModel from "@/domains/endpoint/EndpointModel";
 import ModelTask from "@/domains/endpoint/ModelTask";
 import ResourcesCard from "@/domains/endpoint/ResourcesCard";
 import EngineVariablesCard from "@/domains/engine/EngineVariablesCard";
+import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/ModelCatalogStatus";
+import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { Engine, ModelCatalog } from "@/foundation/types";
 import { useOne, useShow } from "@refinedev/core";
 
 export const ModelCatalogsShow = () => {

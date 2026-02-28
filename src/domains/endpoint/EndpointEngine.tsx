@@ -1,6 +1,6 @@
 import { ShowButton } from "@/foundation/components/ShowButton";
-import type { EndpointEngineSpec, Metadata } from "@/foundation/types";
-
+import type { Metadata } from "@/foundation/types/basic-types";
+import type { EndpointEngineSpec } from "@/foundation/types/serving-types";
 interface EndpointEngineProps {
   spec: { engine: EndpointEngineSpec };
   metadata: Metadata;

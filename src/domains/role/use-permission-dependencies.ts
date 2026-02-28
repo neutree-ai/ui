@@ -1,5 +1,5 @@
-import { ALL_PERMISSIONS } from "@/foundation/types";
 import { useCallback, useMemo } from "react";
+import { ALL_PERMISSIONS } from "./types";
 
 export type PermissionDependencyRule = {
   action: string; // "create" (all resources) or "endpoint:create" (specific)

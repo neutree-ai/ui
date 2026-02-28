@@ -1,7 +1,7 @@
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/foundation/lib/constant";
-import type { ModelRegistry } from "@/foundation/types";
 import { Folder } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { ModelRegistry } from "./types";
 
 const ModelRegistryType = ({ type }: Pick<ModelRegistry["spec"], "type">) => {
   const { t } = useTranslation();

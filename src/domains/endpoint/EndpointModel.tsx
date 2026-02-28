@@ -1,5 +1,4 @@
-import type { EndpointSpec } from "@/foundation/types";
-
+import type { EndpointSpec } from "./types";
 export default function EndpointModel({
   model,
 }: {

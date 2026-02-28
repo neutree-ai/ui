@@ -1,11 +1,11 @@
 import { EndpointPauseAction } from "@/domains/endpoint/EndpointPauseAction";
 import { ModelTaskFilter } from "@/domains/endpoint/ModelTaskFilter";
-import { useEndpointColumns } from "@/domains/endpoint/columns";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { useTranslation } from "react-i18next";
+import { useEndpointColumns } from "./columns";
 
 export const EndpointsList = () => {
   const { t } = useTranslation();

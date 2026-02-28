@@ -16,13 +16,12 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useApiKeyColumns } from "@/domains/api-key/columns";
+import type { ApiKey } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { NeutreeCombobox } from "@/foundation/components/NeutreeCombobox";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import type { ApiKey } from "@/foundation/types";
 import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import type { UseTableReturnType } from "@refinedev/react-table";
@@ -31,6 +30,7 @@ import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useApiKeyColumns } from "./columns";
 
 const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   const { t } = useTranslation();

@@ -1,8 +1,8 @@
-import { useUserColumns } from "@/domains/user/columns";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { useUserColumns } from "./columns";
 
 export const UsersList = () => {
   const metadataColumns = useMetadataColumns();

@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import type { Metadata } from "@/foundation/types";
+import type { Metadata } from "@/foundation/types/basic-types";
 import { useTranslation } from "@refinedev/core";
 import Timestamp from "./Timestamp";
 

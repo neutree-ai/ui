@@ -1,5 +1,3 @@
-import type { Role } from "@/foundation/types";
-
 import { Badge } from "@/components/ui/badge";
 import { getResourcePlural } from "@/foundation/lib/plural";
 import {
@@ -23,6 +21,7 @@ import {
 import type React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Role } from "./types";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,

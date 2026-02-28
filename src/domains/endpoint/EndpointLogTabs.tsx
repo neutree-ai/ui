@@ -7,10 +7,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Endpoint } from "@/foundation/types";
 import { type FC, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LogViewer } from "./LogViewer";
+import type { Endpoint } from "./types";
 import { useEndpointLogSources } from "./use-endpoint-log-sources";
 import { useStreamingLogs } from "./use-streaming-logs";
 

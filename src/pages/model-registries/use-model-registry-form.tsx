@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import type { ModelRegistry } from "@/domains/model-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { NeutreeField } from "@/foundation/components/NeutreeField";
 import { NeutreeSelect } from "@/foundation/components/NeutreeSelect";
@@ -7,7 +8,6 @@ import { useWorkspace } from "@/foundation/hooks";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { isNfsProtocol } from "@/foundation/lib/validate";
-import type { ModelRegistry } from "@/foundation/types";
 import { useForm } from "@refinedev/react-hook-form";
 
 export const transformValues = (values: ModelRegistry, isEdit = false) => {

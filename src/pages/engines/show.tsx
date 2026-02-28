@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/select";
 import EngineStatus from "@/domains/engine/EngineStatus";
 import JSONSchemaVisualizer from "@/domains/engine/JsonSchemaVisualizer";
+import type { Engine } from "@/domains/engine/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import type { Engine } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";

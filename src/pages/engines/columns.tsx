@@ -1,8 +1,9 @@
+import EngineStatus from "@/domains/engine/EngineStatus";
+import EngineVersions from "@/domains/engine/EngineVersions";
+import type { EngineVersion } from "@/domains/engine/types";
 import { Table } from "@/foundation/components/Table";
-import type { BaseStatus, EngineVersion } from "@/foundation/types";
+import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useTranslate } from "@refinedev/core";
-import EngineStatus from "./EngineStatus";
-import EngineVersions from "./EngineVersions";
 
 export const useEngineColumns = () => {
   const t = useTranslate();

@@ -1,9 +1,9 @@
 import { ModelTaskFilter } from "@/domains/endpoint/ModelTaskFilter";
-import { useModelCatalogColumns } from "@/domains/model-catalog/columns";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { useModelCatalogColumns } from "./columns";
 
 export const ModelCatalogsList = () => {
   const metadataColumns = useMetadataColumns();

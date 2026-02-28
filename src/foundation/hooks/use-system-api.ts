@@ -1,4 +1,4 @@
-import type { SystemInfo } from "@/foundation/types";
+import type { SystemInfo } from "@/foundation/types/system-types";
 import { useCustom } from "@refinedev/core";
 
 export const useSystemApi = () => {

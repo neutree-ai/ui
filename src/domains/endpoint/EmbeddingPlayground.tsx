@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { clientPostgrest } from "@/foundation/lib/api";
-import type { Endpoint } from "@/foundation/types";
 import { createOpenAI } from "@ai-sdk/openai";
 import { useCustom } from "@refinedev/core";
 import { embed } from "ai";
@@ -25,6 +24,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { Endpoint } from "./types";
 
 // Custom tooltip to show the text content when hovering on a point
 const CustomTooltip = ({ active, payload }: any) => {

@@ -1,8 +1,8 @@
+import UserCell from "@/domains/role-assignment/UserCell";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { Table } from "@/foundation/components/Table";
 import { useTranslate } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
-import UserCell from "./UserCell";
 
 export const useRoleAssignmentColumns = () => {
   const t = useTranslate();

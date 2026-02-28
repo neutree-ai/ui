@@ -1,11 +1,12 @@
+import EndpointEngine from "@/domains/endpoint/EndpointEngine";
+import EndpointModel from "@/domains/endpoint/EndpointModel";
+import EndpointStatus from "@/domains/endpoint/EndpointStatus";
+import ModelTask from "@/domains/endpoint/ModelTask";
+import type { Endpoint } from "@/domains/endpoint/types";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { Table } from "@/foundation/components/Table";
-import type { BaseStatus, Endpoint } from "@/foundation/types";
+import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useTranslate } from "@refinedev/core";
-import EndpointEngine from "./EndpointEngine";
-import EndpointModel from "./EndpointModel";
-import EndpointStatus from "./EndpointStatus";
-import ModelTask from "./ModelTask";
 
 export const useEndpointColumns = () => {
   const t = useTranslate();

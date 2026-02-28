@@ -1,8 +1,8 @@
-import { useModelRegistryColumns } from "@/domains/model-registry/columns";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { useModelRegistryColumns } from "./columns";
 
 export const ModelRegistriesList = () => {
   const metadataColumns = useMetadataColumns();

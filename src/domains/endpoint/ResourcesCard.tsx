@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { formatToDecimal } from "@/foundation/lib/unit";
-import type { ResourceSpec } from "@/foundation/types";
+import type { ResourceSpec } from "@/foundation/types/serving-types";
 import { useTranslation } from "react-i18next";
 
 interface ResourcesCardProps {

@@ -1,8 +1,8 @@
 import { Input } from "@/components/ui/input";
 import PermissionsTreeField from "@/domains/role/PermissionsTreeField";
+import type { Role } from "@/domains/role/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { NeutreeField } from "@/foundation/components/NeutreeField";
-import type { Role } from "@/foundation/types";
 import { useTranslation } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 

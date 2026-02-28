@@ -1,4 +1,7 @@
 import { Input } from "@/components/ui/input";
+import type { RoleAssignment } from "@/domains/role-assignment/types";
+import type { Role } from "@/domains/role/types";
+import type { UserProfile } from "@/domains/user/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { NeutreeCombobox } from "@/foundation/components/NeutreeCombobox";
 import { NeutreeField } from "@/foundation/components/NeutreeField";
@@ -6,7 +9,6 @@ import { NeutreeSelect } from "@/foundation/components/NeutreeSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { Role, RoleAssignment, UserProfile } from "@/foundation/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 

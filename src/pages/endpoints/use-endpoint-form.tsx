@@ -14,22 +14,18 @@ import {
 import type { Cluster } from "@/domains/cluster/types";
 import { formatTaskName } from "@/domains/endpoint/ModelTask";
 import { SliderWithInput } from "@/domains/endpoint/SliderWithInput";
+import type { Endpoint } from "@/domains/endpoint/types";
 import useEndpointResources from "@/domains/endpoint/use-endpoint-resources";
 import { VariablesInput } from "@/domains/engine/VariablesInput";
+import type { Engine, EngineVersion } from "@/domains/engine/types";
 import type { Schema } from "@/domains/engine/use-variables-input";
+import type { ModelCatalog } from "@/domains/model-catalog/types";
+import type { ModelRegistry } from "@/domains/model-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { NeutreeCombobox } from "@/foundation/components/NeutreeCombobox";
 import { NeutreeField } from "@/foundation/components/NeutreeField";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useWorkspace } from "@/foundation/hooks";
-import type {
-  Endpoint,
-  Engine,
-  EngineVersion,
-  GeneralModel,
-  ModelCatalog,
-  ModelRegistry,
-} from "@/foundation/types";
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -168,7 +164,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       if (action === "create" && currentRegistry && currentModelName) {
         const modelExists =
           modelsData.data?.data.some(
-            (model: GeneralModel) => model.name === currentModelName,
+            (model: { name: string }) => model.name === currentModelName,
           ) ?? false;
 
         if (!modelExists) {
@@ -727,7 +723,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     ) : null
                   }
                   options={(modelsData.data?.data || []).map(
-                    (e: GeneralModel) => {
+                    (e: { name: string }) => {
                       return {
                         label: e.name,
                         value: e.name,

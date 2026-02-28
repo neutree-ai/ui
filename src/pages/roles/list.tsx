@@ -1,8 +1,8 @@
-import { useRoleColumns } from "@/domains/role/columns";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { useRoleColumns } from "./columns";
 
 export const RolesList = () => {
   const metadataColumns = useMetadataColumns();

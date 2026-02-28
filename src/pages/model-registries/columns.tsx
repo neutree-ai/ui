@@ -1,8 +1,8 @@
+import ModelRegistryStatus from "@/domains/model-registry/ModelRegistryStatus";
+import ModelRegistryType from "@/domains/model-registry/ModelRegistryType";
 import { Table } from "@/foundation/components/Table";
-import type { BaseStatus } from "@/foundation/types";
+import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useTranslate } from "@refinedev/core";
-import ModelRegistryStatus from "./ModelRegistryStatus";
-import ModelRegistryType from "./ModelRegistryType";
 
 export const useModelRegistryColumns = () => {
   const t = useTranslate();

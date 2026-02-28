@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRoleAssignmentColumns } from "@/domains/role-assignment/columns";
+import type { UserProfile } from "@/domains/user/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -7,18 +7,17 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { UserProfile } from "@/foundation/types";
-import { useShow } from "@refinedev/core";
+import { useShow, useTranslate } from "@refinedev/core";
 
 export const UsersShow = () => {
   const { t } = useTranslation();
+  const translate = useTranslate();
   const {
     query: { data, isLoading },
   } = useShow<UserProfile>();
   const record = data?.data;
 
   const metadataColumns = useMetadataColumns();
-  const roleAssignmentColumns = useRoleAssignmentColumns();
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
@@ -63,7 +62,25 @@ export const UsersShow = () => {
               },
             }}
           >
-            {roleAssignmentColumns.role}
+            <Table.Column
+              header={translate("common.fields.role")}
+              accessorKey="spec.role"
+              id="role"
+              enableHiding
+              cell={({ row }) => {
+                const { role } = row.original.spec;
+                return (
+                  <ShowButton
+                    recordItemId={role}
+                    meta={{}}
+                    variant="link"
+                    resource="roles"
+                  >
+                    {role}
+                  </ShowButton>
+                );
+              }}
+            />
             {metadataColumns.creation_timestamp}
           </Table>
         </CardContent>
@@ -102,8 +119,45 @@ export const UsersShow = () => {
               },
             }}
           >
-            {roleAssignmentColumns.workspace}
-            {roleAssignmentColumns.role}
+            <Table.Column
+              header={translate("common.fields.workspace")}
+              accessorKey="spec.workspace"
+              id="workspace"
+              enableHiding
+              cell={({ row }) => {
+                const { global, workspace } = row.original.spec;
+                if (global) return "*";
+                return (
+                  <ShowButton
+                    recordItemId={workspace}
+                    meta={{}}
+                    variant="link"
+                    resource="workspaces"
+                  >
+                    {workspace}
+                  </ShowButton>
+                );
+              }}
+            />
+            <Table.Column
+              header={translate("common.fields.role")}
+              accessorKey="spec.role"
+              id="role"
+              enableHiding
+              cell={({ row }) => {
+                const { role } = row.original.spec;
+                return (
+                  <ShowButton
+                    recordItemId={role}
+                    meta={{}}
+                    variant="link"
+                    resource="roles"
+                  >
+                    {role}
+                  </ShowButton>
+                );
+              }}
+            />
             {metadataColumns.creation_timestamp}
           </Table>
         </CardContent>

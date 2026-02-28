@@ -1,5 +1,4 @@
-import type { Engine, EngineVersion } from "@/foundation/types";
-
+import type { Engine, EngineVersion } from "./types";
 export default function EngineVersions({
   versions,
 }: Pick<Engine["spec"], "versions">) {

@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getRayDashboardProxy } from "@/domains/cluster/get-ray-dashboard-proxy";
 import ChatPlayground from "@/domains/endpoint/ChatPlayground";
 import DeploymentConfigCard from "@/domains/endpoint/DeploymentConfigCard";
 import EmbeddingPlayground from "@/domains/endpoint/EmbeddingPlayground";
@@ -18,24 +19,24 @@ import EndpointStatus from "@/domains/endpoint/EndpointStatus";
 import ModelTask from "@/domains/endpoint/ModelTask";
 import RerankPlayground from "@/domains/endpoint/RerankPlayground";
 import ResourcesCard from "@/domains/endpoint/ResourcesCard";
+import type { Endpoint } from "@/domains/endpoint/types";
 import {
   type EndpointMonitorPanelType,
   useEndpointMonitorPanels,
 } from "@/domains/endpoint/use-endpoint-monitor-panels";
 import EngineVariablesCard from "@/domains/engine/EngineVariablesCard";
+import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { getRayDashboardProxy } from "@/foundation/lib/api";
 import {
   getEndpointDashboardProps,
   getVllmDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
 import { formatToDecimal } from "@/foundation/lib/unit";
-import type { Endpoint, Engine } from "@/foundation/types";
 import {
   type IResourceComponentsProps,
   useList,

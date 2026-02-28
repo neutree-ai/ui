@@ -4,7 +4,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/foundation/lib/utils";
-import type { BaseStatus as BaseStatusType } from "@/foundation/types";
+import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
 import * as clipboard from "clipboard-polyfill";
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";

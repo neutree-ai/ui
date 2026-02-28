@@ -1,9 +1,9 @@
 import { ShowButton } from "@/foundation/components/ShowButton";
-import type { UserProfile } from "@/foundation/types";
+import type { Metadata } from "@/foundation/types/basic-types";
 import { useList } from "@refinedev/core";
 
 const UserCell = ({ id }: { id: string }) => {
-  const { data } = useList<UserProfile>({
+  const { data } = useList<{ metadata: Metadata }>({
     resource: "user_profiles",
     filters: [
       {
