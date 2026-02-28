@@ -1,4 +1,3 @@
-import { auth } from "@/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { auth } from "@/providers/auth-provider";
 import dayjs from "dayjs";
 import { CalendarIcon, Download, RefreshCw, Search, X } from "lucide-react";
 import { type FC, useCallback, useState } from "react";

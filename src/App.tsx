@@ -15,7 +15,7 @@ import routerProvider, {
   NavigateToResource,
 } from "@refinedev/react-router";
 import { HashRouter, Outlet, Route, Routes } from "react-router-dom";
-import { dataProvider } from "./data-provider";
+import { dataProvider } from "./providers/data-provider";
 
 import "./global.css";
 import "./variables.css";
@@ -39,8 +39,6 @@ import {
 import { clientPostgrest } from "./lib/api";
 import { useTranslation } from "./lib/i18n";
 
-import { authProvider } from "./auth-provider";
-import { AuthPage } from "./auth-provider/AuthPage";
 import { UserDropdown } from "./components/business/UserDropdown";
 import WorkspaceSelect from "./components/business/WorkspaceSelect";
 import { YamlExportButton } from "./components/business/YamlExportButton";
@@ -90,6 +88,8 @@ import {
   WorkspacesList,
   WorkspacesShow,
 } from "./pages/workspaces";
+import { authProvider } from "./providers/auth-provider";
+import { AuthPage } from "./providers/auth-provider/AuthPage";
 
 const resources: ResourceProps[] = [
   {

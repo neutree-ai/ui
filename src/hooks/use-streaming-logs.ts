@@ -1,5 +1,5 @@
-import { auth } from "@/auth-provider";
 import { REST_URL, clientPostgrest } from "@/lib/api";
+import { auth } from "@/providers/auth-provider";
 import { useEffect, useRef, useState } from "react";
 
 const AUTO_REFRESH_INTERVAL = 10000;
