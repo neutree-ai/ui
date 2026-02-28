@@ -1,9 +1,9 @@
-import GrafanaDashboard from "@/components/business/GrafanaDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSystemApi } from "@/hooks/use-system-api";
-import { getOverviewDashboardProps } from "@/lib/grafana-dashboard-configs";
-import { useTranslation } from "@/lib/i18n";
+import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { getOverviewDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { useList } from "@refinedev/core";
 import { HardDrive, Server } from "lucide-react";
 

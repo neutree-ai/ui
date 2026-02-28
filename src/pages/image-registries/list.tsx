@@ -1,8 +1,8 @@
-import { ListPage } from "@/components/business/ListPage";
-import { Table } from "@/components/business/Table";
-import { defaultSorters } from "@/components/business/Table";
-import { useImageRegistryColumns } from "@/components/business/image-registry-columns";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
+import { useImageRegistryColumns } from "@/domains/image-registry/columns";
+import { ListPage } from "@/foundation/components/ListPage";
+import { Table } from "@/foundation/components/Table";
+import { defaultSorters } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 
 export const ImageRegistriesList = () => {
   const metadataColumns = useMetadataColumns();

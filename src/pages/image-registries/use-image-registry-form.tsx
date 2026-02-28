@@ -1,12 +1,12 @@
-import FormCardGrid from "@/components/business/FormCardGrid";
-import { NeutreeField } from "@/components/business/NeutreeField";
-import { NeutreeSelect } from "@/components/business/NeutreeSelect";
-import WorkspaceField from "@/components/business/WorkspaceField";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useWorkspace } from "@/hooks";
-import { useTranslation } from "@/lib/i18n";
-import type { ImageRegistry } from "@/types";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
+import { NeutreeField } from "@/foundation/components/NeutreeField";
+import { NeutreeSelect } from "@/foundation/components/NeutreeSelect";
+import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useWorkspace } from "@/foundation/hooks";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { ImageRegistry } from "@/foundation/types";
 import { useForm } from "@refinedev/react-hook-form";
 
 export const transformValues = (values: ImageRegistry, isEdit = false) => {

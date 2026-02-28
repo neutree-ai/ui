@@ -1,10 +1,10 @@
-import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
-import { ListPage } from "@/components/business/ListPage";
-import { ModelTaskFilter } from "@/components/business/ModelTaskFilter";
-import { Table } from "@/components/business/Table";
-import { defaultSorters } from "@/components/business/Table";
-import { useEndpointColumns } from "@/components/business/endpoint-columns";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
+import { EndpointPauseAction } from "@/domains/endpoint/EndpointPauseAction";
+import { ModelTaskFilter } from "@/domains/endpoint/ModelTaskFilter";
+import { useEndpointColumns } from "@/domains/endpoint/columns";
+import { ListPage } from "@/foundation/components/ListPage";
+import { Table } from "@/foundation/components/Table";
+import { defaultSorters } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { useTranslation } from "react-i18next";
 
 export const EndpointsList = () => {

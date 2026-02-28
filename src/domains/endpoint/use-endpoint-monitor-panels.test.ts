@@ -1,0 +1,80 @@
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { useEndpointMonitorPanels } from "./use-endpoint-monitor-panels";
+
+describe("useEndpointMonitorPanels", () => {
+  it("should return empty panels when no cluster type or engine type", () => {
+    const { result } = renderHook(() => useEndpointMonitorPanels({}));
+
+    expect(result.current.panels).toEqual([]);
+    expect(result.current.selectedPanel).toBeNull();
+    expect(result.current.showMonitorTab).toBe(false);
+    expect(result.current.showSelector).toBe(false);
+  });
+
+  it("should return endpoint panel for ssh cluster", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({ clusterType: "ssh" }),
+    );
+
+    expect(result.current.panels).toEqual(["endpoint"]);
+    expect(result.current.selectedPanel).toBe("endpoint");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(false);
+  });
+
+  it("should return vllm panel for vllm engine", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({ engineType: "vllm" }),
+    );
+
+    expect(result.current.panels).toEqual(["vllm"]);
+    expect(result.current.selectedPanel).toBe("vllm");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(false);
+  });
+
+  it("should return both panels for ssh cluster with vllm engine", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
+    );
+
+    expect(result.current.panels).toEqual(["vllm", "endpoint"]);
+    expect(result.current.selectedPanel).toBe("vllm");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(true);
+  });
+
+  it("should allow user to select panel", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
+    );
+
+    expect(result.current.selectedPanel).toBe("vllm");
+
+    act(() => {
+      result.current.setSelectedPanel("endpoint");
+    });
+
+    expect(result.current.selectedPanel).toBe("endpoint");
+  });
+
+  it("should fallback to first panel if selected panel is invalid", () => {
+    const { result, rerender } = renderHook(
+      ({ clusterType, engineType }) =>
+        useEndpointMonitorPanels({ clusterType, engineType }),
+      { initialProps: { clusterType: "ssh", engineType: "vllm" } },
+    );
+
+    act(() => {
+      result.current.setSelectedPanel("vllm");
+    });
+    expect(result.current.selectedPanel).toBe("vllm");
+
+    // Remove vllm engine, vllm panel should no longer be available
+    rerender({ clusterType: "ssh", engineType: undefined as any });
+
+    // Should fallback to first available panel
+    expect(result.current.selectedPanel).toBe("endpoint");
+  });
+});

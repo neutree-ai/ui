@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/foundation/lib/utils";
 import { type LucideProps, RefreshCwIcon } from "lucide-react";
 import React from "react";
 

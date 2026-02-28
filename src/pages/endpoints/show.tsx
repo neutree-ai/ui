@@ -1,19 +1,3 @@
-import ChatPlayground from "@/components/business/ChatPlayground";
-import DeploymentConfigCard from "@/components/business/DeploymentConfigCard";
-import EmbeddingPlayground from "@/components/business/EmbeddingPlayground";
-import EndpointEngine from "@/components/business/EndpointEngine";
-import EndpointModel from "@/components/business/EndpointModel";
-import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
-import EndpointStatus from "@/components/business/EndpointStatus";
-import EngineVariablesCard from "@/components/business/EngineVariablesCard";
-import GrafanaDashboard from "@/components/business/GrafanaDashboard";
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import ModelTask from "@/components/business/ModelTask";
-import RerankPlayground from "@/components/business/RerankPlayground";
-import ResourcesCard from "@/components/business/ResourcesCard";
-import { ShowButton } from "@/components/business/ShowButton";
-import { ShowPage } from "@/components/business/ShowPage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -24,18 +8,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ChatPlayground from "@/domains/endpoint/ChatPlayground";
+import DeploymentConfigCard from "@/domains/endpoint/DeploymentConfigCard";
+import EmbeddingPlayground from "@/domains/endpoint/EmbeddingPlayground";
+import EndpointEngine from "@/domains/endpoint/EndpointEngine";
+import EndpointModel from "@/domains/endpoint/EndpointModel";
+import { EndpointPauseAction } from "@/domains/endpoint/EndpointPauseAction";
+import EndpointStatus from "@/domains/endpoint/EndpointStatus";
+import ModelTask from "@/domains/endpoint/ModelTask";
+import RerankPlayground from "@/domains/endpoint/RerankPlayground";
+import ResourcesCard from "@/domains/endpoint/ResourcesCard";
 import {
   type EndpointMonitorPanelType,
   useEndpointMonitorPanels,
-} from "@/hooks/use-monitor-panels";
-import { useSystemApi } from "@/hooks/use-system-api";
-import { getRayDashboardProxy } from "@/lib/api";
+} from "@/domains/endpoint/use-endpoint-monitor-panels";
+import EngineVariablesCard from "@/domains/engine/EngineVariablesCard";
+import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { getRayDashboardProxy } from "@/foundation/lib/api";
 import {
   getEndpointDashboardProps,
   getVllmDashboardProps,
-} from "@/lib/grafana-dashboard-configs";
-import { formatToDecimal } from "@/lib/unit";
-import type { Endpoint, Engine } from "@/types";
+} from "@/foundation/lib/grafana-dashboard-configs";
+import { formatToDecimal } from "@/foundation/lib/unit";
+import type { Endpoint, Engine } from "@/foundation/types";
 import {
   type IResourceComponentsProps,
   useList,
@@ -47,7 +47,7 @@ import { useTranslation } from "react-i18next";
 
 // Lazy load EndpointLogTabs
 const EndpointLogTabs = lazy(() =>
-  import("@/components/business/EndpointLogTabs").then((module) => ({
+  import("@/domains/endpoint/EndpointLogTabs").then((module) => ({
     default: module.EndpointLogTabs,
   })),
 );

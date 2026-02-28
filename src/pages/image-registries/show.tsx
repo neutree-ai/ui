@@ -1,10 +1,10 @@
-import ImageRegistryStatus from "@/components/business/ImageRegistryStatus";
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "@/lib/i18n";
-import type { ImageRegistry } from "@/types";
+import ImageRegistryStatus from "@/domains/image-registry/ImageRegistryStatus";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { ImageRegistry } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 
 export const ImageRegistriesShow = () => {

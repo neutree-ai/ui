@@ -2,7 +2,7 @@ import {
   I18nextProvider,
   useTranslation as _useTranslation,
   i18n,
-} from "@/lib/i18n";
+} from "@/foundation/lib/i18n";
 
 import App from "./App";
 

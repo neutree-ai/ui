@@ -8,6 +8,6 @@
 	"project": ["src/**/*.{ts,tsx}"],
 	"ignoreIssues": {
 		"src/components/ui/**": ["exports", "types"],
-		"src/lib/api/api-gen.ts": ["exports", "types"]
+		"src/foundation/lib/api/api-gen.ts": ["exports", "types"]
 	}
 }

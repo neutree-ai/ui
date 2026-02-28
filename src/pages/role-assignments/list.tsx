@@ -1,8 +1,8 @@
-import { ListPage } from "@/components/business/ListPage";
-import { Table } from "@/components/business/Table";
-import { defaultSorters } from "@/components/business/Table";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
-import { useRoleAssignmentColumns } from "@/components/business/role-assignment-columns";
+import { useRoleAssignmentColumns } from "@/domains/role-assignment/columns";
+import { ListPage } from "@/foundation/components/ListPage";
+import { Table } from "@/foundation/components/Table";
+import { defaultSorters } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 
 export const RoleAssignmentsList = () => {
   const metadataColumns = useMetadataColumns();

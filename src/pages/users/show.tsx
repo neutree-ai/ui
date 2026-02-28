@@ -1,13 +1,13 @@
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import { ShowButton } from "@/components/business/ShowButton";
-import { ShowPage } from "@/components/business/ShowPage";
-import { Table } from "@/components/business/Table";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
-import { useRoleAssignmentColumns } from "@/components/business/role-assignment-columns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTranslation } from "@/lib/i18n";
-import type { UserProfile } from "@/types";
+import { useRoleAssignmentColumns } from "@/domains/role-assignment/columns";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import { Table } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { UserProfile } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 
 export const UsersShow = () => {

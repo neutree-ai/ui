@@ -1,8 +1,8 @@
-import { NeutreeField } from "@/components/business/NeutreeField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTranslation } from "@/lib/i18n";
+import { NeutreeField } from "@/foundation/components/NeutreeField";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { useForm } from "@refinedev/react-hook-form";
 import { Upload, X } from "lucide-react";
 import { useRef } from "react";

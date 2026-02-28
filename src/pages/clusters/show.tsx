@@ -1,13 +1,3 @@
-import ClusterStatus from "@/components/business/ClusterStatus";
-import ClusterType from "@/components/business/ClusterType";
-import GrafanaDashboard from "@/components/business/GrafanaDashboard";
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import { ShowButton } from "@/components/business/ShowButton";
-import { ShowPage } from "@/components/business/ShowPage";
-import { Table } from "@/components/business/Table";
-import { useEndpointColumns } from "@/components/business/endpoint-columns";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -26,21 +16,31 @@ import {
   Table as UITable,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ClusterStatus from "@/domains/cluster/ClusterStatus";
+import ClusterType from "@/domains/cluster/ClusterType";
+import type { Cluster, ModelCache } from "@/domains/cluster/types";
 import {
   type ClusterMonitorPanelType,
   useClusterMonitorPanels,
-} from "@/hooks/use-monitor-panels";
-import { useSystemApi } from "@/hooks/use-system-api";
-import { getRayDashboardProxy } from "@/lib/api";
+} from "@/domains/cluster/use-cluster-monitor-panels";
+import { useEndpointColumns } from "@/domains/endpoint/columns";
+import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import { Table } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { getRayDashboardProxy } from "@/foundation/lib/api";
 import {
   getClusterRayDashboardProps,
   getClusterRouterDashboardProps,
   getGpuDcgmDashboardProps,
   getNodeExporterDashboardProps,
-} from "@/lib/grafana-dashboard-configs";
-import { useTranslation as useI18nTranslation } from "@/lib/i18n";
-import { formatToDecimal } from "@/lib/unit";
-import type { Cluster, ModelCache } from "@/types";
+} from "@/foundation/lib/grafana-dashboard-configs";
+import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
+import { formatToDecimal } from "@/foundation/lib/unit";
 import { useShow, useTranslation } from "@refinedev/core";
 
 // Utility function to calculate resource usage
@@ -151,7 +151,10 @@ const getAccessModeLabel = (
 
 // Component for displaying node resources table
 interface NodeResourcesTableProps {
-  nodeResources: Record<string, import("@/types").ResourceStatus>;
+  nodeResources: Record<
+    string,
+    import("@/domains/cluster/types").ResourceStatus
+  >;
   acceleratorTypes: string[];
   t: (key: string, options?: { defaultValue?: string }) => string;
 }

@@ -1,8 +1,8 @@
-import { ListPage } from "@/components/business/ListPage";
-import { Table } from "@/components/business/Table";
-import { defaultSorters } from "@/components/business/Table";
-import { useClusterColumns } from "@/components/business/cluster-columns";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
+import { useClusterColumns } from "@/domains/cluster/columns";
+import { ListPage } from "@/foundation/components/ListPage";
+import { Table } from "@/foundation/components/Table";
+import { defaultSorters } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 
 export const ClustersList = () => {
   const metadataColumns = useMetadataColumns();

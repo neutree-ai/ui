@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/components/business/NeutreeForm";
+import { NeutreeForm } from "@/foundation/components/NeutreeForm";
 import { useImageRegistryForm } from "./use-image-registry-form";
 
 export const ImageRegistriesEdit = () => {

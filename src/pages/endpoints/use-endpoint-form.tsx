@@ -1,11 +1,3 @@
-import FormCardGrid from "@/components/business/FormCardGrid";
-import { formatTaskName } from "@/components/business/ModelTask";
-import { NeutreeCombobox } from "@/components/business/NeutreeCombobox";
-import { NeutreeField } from "@/components/business/NeutreeField";
-import { SliderWithInput } from "@/components/business/SliderWithInput";
-import { VariablesInput } from "@/components/business/VariablesInput";
-import WorkspaceField from "@/components/business/WorkspaceField";
-import type { Schema } from "@/components/business/use-variables-input";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -15,21 +7,29 @@ import {
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import { useWorkspace } from "@/hooks";
-import useEndpointResources from "@/hooks/use-endpoint-resources";
 import {
   findBestNodeForAccelerator,
   parseClusterResources,
-} from "@/lib/cluster-resources";
+} from "@/domains/cluster/cluster-resources";
+import type { Cluster } from "@/domains/cluster/types";
+import { formatTaskName } from "@/domains/endpoint/ModelTask";
+import { SliderWithInput } from "@/domains/endpoint/SliderWithInput";
+import useEndpointResources from "@/domains/endpoint/use-endpoint-resources";
+import { VariablesInput } from "@/domains/engine/VariablesInput";
+import type { Schema } from "@/domains/engine/use-variables-input";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
+import { NeutreeCombobox } from "@/foundation/components/NeutreeCombobox";
+import { NeutreeField } from "@/foundation/components/NeutreeField";
+import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useWorkspace } from "@/foundation/hooks";
 import type {
-  Cluster,
   Endpoint,
   Engine,
   EngineVersion,
   GeneralModel,
   ModelCatalog,
   ModelRegistry,
-} from "@/types";
+} from "@/foundation/types";
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";

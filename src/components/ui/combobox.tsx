@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn } from "@/foundation/lib/utils";
 import { type ElementRef, forwardRef, useState } from "react";
 
 type ComboboxProps = {

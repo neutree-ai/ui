@@ -1,13 +1,13 @@
-import FormCardGrid from "@/components/business/FormCardGrid";
-import { NeutreeField } from "@/components/business/NeutreeField";
-import { NeutreeSelect } from "@/components/business/NeutreeSelect";
-import WorkspaceField from "@/components/business/WorkspaceField";
 import { Input } from "@/components/ui/input";
-import { useWorkspace } from "@/hooks";
-import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/lib/constant";
-import { useTranslation } from "@/lib/i18n";
-import { isNfsProtocol } from "@/lib/validate";
-import type { ModelRegistry } from "@/types";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
+import { NeutreeField } from "@/foundation/components/NeutreeField";
+import { NeutreeSelect } from "@/foundation/components/NeutreeSelect";
+import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useWorkspace } from "@/foundation/hooks";
+import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/foundation/lib/constant";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { isNfsProtocol } from "@/foundation/lib/validate";
+import type { ModelRegistry } from "@/foundation/types";
 import { useForm } from "@refinedev/react-hook-form";
 
 export const transformValues = (values: ModelRegistry, isEdit = false) => {

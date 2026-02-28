@@ -1,8 +1,8 @@
-import FormCardGrid from "@/components/business/FormCardGrid";
-import { NeutreeField } from "@/components/business/NeutreeField";
-import PermissionsTreeField from "@/components/business/PermissionsTreeField";
 import { Input } from "@/components/ui/input";
-import type { Role } from "@/types";
+import PermissionsTreeField from "@/domains/role/PermissionsTreeField";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
+import { NeutreeField } from "@/foundation/components/NeutreeField";
+import type { Role } from "@/foundation/types";
 import { useTranslation } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 

@@ -1,5 +1,5 @@
-import { NeutreeForm } from "@/components/business/NeutreeForm";
-import { useTranslation } from "@/lib/i18n";
+import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { useClusterForm } from "./use-cluster-form";
 
 export const ClustersCreate = () => {

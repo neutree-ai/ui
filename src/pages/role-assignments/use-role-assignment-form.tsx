@@ -1,12 +1,12 @@
-import FormCardGrid from "@/components/business/FormCardGrid";
-import { NeutreeCombobox } from "@/components/business/NeutreeCombobox";
-import { NeutreeField } from "@/components/business/NeutreeField";
-import { NeutreeSelect } from "@/components/business/NeutreeSelect";
-import WorkspaceField from "@/components/business/WorkspaceField";
 import { Input } from "@/components/ui/input";
-import { useLicense } from "@/hooks/use-license";
-import { useTranslation } from "@/lib/i18n";
-import type { Role, RoleAssignment, UserProfile } from "@/types";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
+import { NeutreeCombobox } from "@/foundation/components/NeutreeCombobox";
+import { NeutreeField } from "@/foundation/components/NeutreeField";
+import { NeutreeSelect } from "@/foundation/components/NeutreeSelect";
+import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useLicense } from "@/foundation/hooks/use-license";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { Role, RoleAssignment, UserProfile } from "@/foundation/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 

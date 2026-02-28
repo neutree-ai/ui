@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/components/business/NeutreeForm";
+import { NeutreeForm } from "@/foundation/components/NeutreeForm";
 import { useRoleAssignmentForm } from "./use-role-assignment-form";
 
 export const RoleAssignmentsCreate = () => {

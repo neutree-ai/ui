@@ -1,0 +1,74 @@
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { Table } from "@/foundation/components/Table";
+import { useTranslate } from "@refinedev/core";
+import { Edit, Lock, Trash2 } from "lucide-react";
+
+export const useRoleColumns = () => {
+  const t = useTranslate();
+  return {
+    name: (
+      <Table.Column
+        header={t("common.fields.name")}
+        accessorKey="metadata.name"
+        id="name"
+        enableHiding
+        cell={({ row }) => {
+          const { name } = row.original.metadata;
+          const isPreset = Boolean(row.original.spec.preset_key);
+          return (
+            <div className="flex items-center">
+              {isPreset && <Lock size={16} className="mr-1" />}
+              <ShowButton
+                recordItemId={row.original.metadata.name}
+                meta={{}}
+                variant="link"
+              >
+                {name}
+              </ShowButton>
+            </div>
+          );
+        }}
+      />
+    ),
+    permissions: (
+      <Table.Column
+        header={t("common.fields.permissions")}
+        accessorKey="spec.permissions"
+        id="permissions"
+        enableHiding
+        cell={({ getValue }) => {
+          const value = getValue() as unknown as string[];
+          return t("common.fields.permissionsCount", { count: value.length });
+        }}
+      />
+    ),
+    action: (
+      <Table.Column
+        accessorKey={"id"}
+        id={"actions"}
+        cell={({ row: { original } }) => {
+          const isPreset = Boolean(original.spec.preset_key);
+          if (isPreset) {
+            return null;
+          }
+          return (
+            <Table.Actions>
+              <Table.EditAction
+                title={t("buttons.edit")}
+                row={original}
+                resource="roles"
+                icon={<Edit size={16} />}
+              />
+              <Table.DeleteAction
+                title={t("buttons.delete")}
+                row={original}
+                resource="roles"
+                icon={<Trash2 size={16} />}
+              />
+            </Table.Actions>
+          );
+        }}
+      />
+    ),
+  };
+};

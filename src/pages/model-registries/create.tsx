@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/components/business/NeutreeForm";
+import { NeutreeForm } from "@/foundation/components/NeutreeForm";
 import { useModelRegistryForm } from "./use-model-registry-form";
 
 export const ModelRegistriesCreate = () => {

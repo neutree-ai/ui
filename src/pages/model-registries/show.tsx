@@ -1,12 +1,12 @@
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import ModelRegistryStatus from "@/components/business/ModelRegistryStatus";
-import ModelRegistryType from "@/components/business/ModelRegistryType";
-import { ShowPage } from "@/components/business/ShowPage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "@/lib/i18n";
-import type { ModelRegistry } from "@/types";
+import ModelRegistryStatus from "@/domains/model-registry/ModelRegistryStatus";
+import ModelRegistryType from "@/domains/model-registry/ModelRegistryType";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { ModelRegistry } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 
 export const ModelRegistriesShow = () => {

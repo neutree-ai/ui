@@ -1,9 +1,3 @@
-import { ListPage } from "@/components/business/ListPage";
-import { NeutreeCombobox } from "@/components/business/NeutreeCombobox";
-import { Table } from "@/components/business/Table";
-import { defaultSorters } from "@/components/business/Table";
-import { useApiKeyColumns } from "@/components/business/api-key-columns";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +16,13 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import type { ApiKey } from "@/types";
+import { useApiKeyColumns } from "@/domains/api-key/columns";
+import { ListPage } from "@/foundation/components/ListPage";
+import { NeutreeCombobox } from "@/foundation/components/NeutreeCombobox";
+import { Table } from "@/foundation/components/Table";
+import { defaultSorters } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import type { ApiKey } from "@/foundation/types";
 import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import type { UseTableReturnType } from "@refinedev/react-table";

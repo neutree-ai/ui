@@ -1,4 +1,4 @@
-import { NeutreeForm } from "@/components/business/NeutreeForm";
+import { NeutreeForm } from "@/foundation/components/NeutreeForm";
 import { useWorkspaceForm } from "./use-workspace-form";
 
 export const WorkspacesCreate = () => {

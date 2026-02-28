@@ -1,7 +1,7 @@
-import FormCardGrid from "@/components/business/FormCardGrid";
-import { NeutreeField } from "@/components/business/NeutreeField";
 import { Input } from "@/components/ui/input";
-import type { UserProfile } from "@/types";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
+import { NeutreeField } from "@/foundation/components/NeutreeField";
+import type { UserProfile } from "@/foundation/types";
 import { useTranslation } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 

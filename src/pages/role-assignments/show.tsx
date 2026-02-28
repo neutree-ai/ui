@@ -1,11 +1,11 @@
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import { ShowButton } from "@/components/business/ShowButton";
-import { ShowPage } from "@/components/business/ShowPage";
-import UserCell from "@/components/business/UserCell";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "@/lib/i18n";
-import type { RoleAssignment } from "@/types";
+import UserCell from "@/domains/role-assignment/UserCell";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { RoleAssignment } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 
 export const RoleAssignmentsShow = () => {

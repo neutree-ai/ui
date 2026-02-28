@@ -1,9 +1,9 @@
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import PermissionsTree from "@/components/business/PermissionsTree";
-import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Role } from "@/types";
+import PermissionsTree from "@/domains/role/PermissionsTree";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import type { Role } from "@/foundation/types";
 import { useShow, useTranslation } from "@refinedev/core";
 
 export const RolesShow = () => {

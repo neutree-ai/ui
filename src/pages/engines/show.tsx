@@ -1,8 +1,3 @@
-import EngineStatus from "@/components/business/EngineStatus";
-import JSONSchemaVisualizer from "@/components/business/JsonSchemaVisualizer";
-import { Loader } from "@/components/business/Loader";
-import MetadataCard from "@/components/business/MetadataCard";
-import { ShowPage } from "@/components/business/ShowPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -11,7 +6,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Engine } from "@/types";
+import EngineStatus from "@/domains/engine/EngineStatus";
+import JSONSchemaVisualizer from "@/domains/engine/JsonSchemaVisualizer";
+import { Loader } from "@/foundation/components/Loader";
+import MetadataCard from "@/foundation/components/MetadataCard";
+import { ShowPage } from "@/foundation/components/ShowPage";
+import type { Engine } from "@/foundation/types";
 import { useShow } from "@refinedev/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";

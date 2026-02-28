@@ -1,7 +1,7 @@
-import { NeutreeForm } from "@/components/business/NeutreeForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useOemConfig } from "@/hooks/use-oem-config";
-import { useTranslation } from "@/lib/i18n";
+import { NeutreeForm } from "@/foundation/components/NeutreeForm";
+import { useOemConfig } from "@/foundation/hooks/use-oem-config";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { useOemConfigForm } from "@/pages/oem-config/use-oem-config-form";
 import { Loader2 } from "lucide-react";
 

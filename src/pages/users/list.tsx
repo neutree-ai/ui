@@ -1,8 +1,8 @@
-import { ListPage } from "@/components/business/ListPage";
-import { Table } from "@/components/business/Table";
-import { defaultSorters } from "@/components/business/Table";
-import { useMetadataColumns } from "@/components/business/metadata-columns";
-import { useUserColumns } from "@/components/business/user-columns";
+import { useUserColumns } from "@/domains/user/columns";
+import { ListPage } from "@/foundation/components/ListPage";
+import { Table } from "@/foundation/components/Table";
+import { defaultSorters } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 
 export const UsersList = () => {
   const metadataColumns = useMetadataColumns();

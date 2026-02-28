@@ -1,4 +1,4 @@
-import { useOemConfig } from "@/hooks/use-oem-config";
+import { useOemConfig } from "@/foundation/hooks/use-oem-config";
 import type React from "react";
 
 type ThemedTitleProps = {

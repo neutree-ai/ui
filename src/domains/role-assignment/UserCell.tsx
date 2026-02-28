@@ -1,0 +1,37 @@
+import { ShowButton } from "@/foundation/components/ShowButton";
+import type { UserProfile } from "@/foundation/types";
+import { useList } from "@refinedev/core";
+
+const UserCell = ({ id }: { id: string }) => {
+  const { data } = useList<UserProfile>({
+    resource: "user_profiles",
+    filters: [
+      {
+        field: "id",
+        operator: "eq",
+        value: id,
+      },
+    ],
+  });
+
+  if (!data?.data[0]?.metadata) {
+    return null;
+  }
+
+  const { name, workspace } = data.data[0].metadata;
+
+  return (
+    <ShowButton
+      recordItemId={name}
+      meta={{
+        workspace,
+      }}
+      resource="user_profiles"
+      variant="link"
+    >
+      {name}
+    </ShowButton>
+  );
+};
+
+export default UserCell;
