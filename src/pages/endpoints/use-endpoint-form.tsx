@@ -1,7 +1,7 @@
 import FormCardGrid from "@/components/business/FormCardGrid";
 import { formatTaskName } from "@/components/business/ModelTask";
-import SliderWithInput from "@/components/business/SliderWithInput";
-import VariablesInput from "@/components/business/VariablesInput";
+import { SliderWithInput } from "@/components/business/SliderWithInput";
+import { VariablesInput } from "@/components/business/VariablesInput";
 import WorkspaceField from "@/components/business/WorkspaceField";
 import type { Schema } from "@/components/business/use-variables-input";
 import { Combobox, Field } from "@/components/theme";

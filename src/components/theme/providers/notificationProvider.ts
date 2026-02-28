@@ -17,7 +17,3 @@ export const notificationProvider: NotificationProvider = {
   },
   close: (key) => toast.dismiss(key),
 };
-
-export const useNotificationProvider = (): NotificationProvider => {
-  return notificationProvider;
-};

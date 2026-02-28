@@ -94,13 +94,3 @@ export const useClusterMonitorPanels = ({
     showSelector: panels.length > 1,
   };
 };
-
-/**
- * @deprecated Use useEndpointMonitorPanels instead
- */
-export const useMonitorPanels = useEndpointMonitorPanels;
-
-/**
- * @deprecated Use EndpointMonitorPanelType instead
- */
-export type MonitorPanelType = EndpointMonitorPanelType;

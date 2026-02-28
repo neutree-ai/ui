@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  type MonitorPanelType,
-  useMonitorPanels,
+  type EndpointMonitorPanelType,
+  useEndpointMonitorPanels,
 } from "@/hooks/use-monitor-panels";
 import { useSystemApi } from "@/hooks/use-system-api";
 import { getRayDashboardProxy } from "@/lib/api";
@@ -141,7 +141,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     setSelectedPanel,
     showMonitorTab,
     showSelector,
-  } = useMonitorPanels({
+  } = useEndpointMonitorPanels({
     clusterType,
     engineType: record?.spec.engine.engine,
   });
@@ -291,7 +291,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <div className="flex items-center justify-start">
                     <Select
                       value={selectedPanel || undefined}
-                      onValueChange={(value: MonitorPanelType) =>
+                      onValueChange={(value: EndpointMonitorPanelType) =>
                         setSelectedPanel(value)
                       }
                     >

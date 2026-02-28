@@ -395,5 +395,3 @@ export const VariablesInput = React.forwardRef<
 });
 
 VariablesInput.displayName = "VariablesInput";
-
-export default VariablesInput;

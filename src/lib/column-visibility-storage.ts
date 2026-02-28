@@ -200,11 +200,3 @@ export function setColumnVisibility(
 ): void {
   defaultColumnVisibilityManager.set(resourceName, visibility, validColumnIds);
 }
-
-export function clearColumnVisibility(resourceName: string): void {
-  defaultColumnVisibilityManager.clear(resourceName);
-}
-
-export function clearAllColumnVisibility(): void {
-  defaultColumnVisibilityManager.clearAll();
-}

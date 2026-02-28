@@ -95,13 +95,3 @@ export type License = {
   /** Most recently observed status of the License */
   status: LicenseStatus | null;
 };
-
-/**
- * List of License objects
- */
-export type LicenseList = {
-  /** Kind of the list */
-  kind: "LicenseList";
-  /** List of licenses */
-  items: License[];
-};

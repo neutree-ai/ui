@@ -69,7 +69,6 @@ export const useImageRegistryForm = ({
       <FormCardGrid title={t("common.sections.basicInformation")}>
         <Field
           {...form}
-          name="metadata.name"
           label={t("common.fields.name")}
           {...form.register("metadata.name", {
             required: {

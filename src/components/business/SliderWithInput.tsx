@@ -117,5 +117,3 @@ export const SliderWithInput = forwardRef<
 );
 
 SliderWithInput.displayName = "SliderWithInput";
-
-export default SliderWithInput;

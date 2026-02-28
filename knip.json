@@ -1,0 +1,13 @@
+{
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"paths": {
+		"@/*": ["src/*"]
+	},
+	"ignoreDependencies": ["@tanstack/react-table", "@tanstack/react-query"],
+	"ignoreExportsUsedInFile": true,
+	"project": ["src/**/*.{ts,tsx}"],
+	"ignoreIssues": {
+		"src/components/ui/**": ["exports", "types"],
+		"src/types/api-gen.ts": ["exports", "types"]
+	}
+}

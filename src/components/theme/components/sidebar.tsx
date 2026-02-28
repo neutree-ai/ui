@@ -132,7 +132,7 @@ export function AppSidebar({ logo }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader>
-        {state === "collapsed" ? logo.collapsed : logo.default}
+        {state === "collapsed" ? logo?.collapsed : logo?.default}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>

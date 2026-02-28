@@ -1,4 +1,4 @@
-import type { ThemeProvider } from "@/components/theme/providers/theme-provider";
+import type { ThemeProvider } from "@/components/theme/providers/themeProvider";
 import type { LucideIcon } from "lucide-react";
 import {
   ComponentProps,
