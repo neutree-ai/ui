@@ -20,7 +20,7 @@ export const EXPORTABLE_RESOURCES = [
 ] as const;
 
 // Resources that support credentials API for sensitive field export
-export const CREDENTIAL_RESOURCES = [
+const CREDENTIAL_RESOURCES = [
   "clusters",
   "image_registries",
   "model_registries",
@@ -28,7 +28,7 @@ export const CREDENTIAL_RESOURCES = [
 
 export type ExportableResource = (typeof EXPORTABLE_RESOURCES)[number];
 
-export interface ResourceEntity {
+interface ResourceEntity {
   id: string | number;
   metadata: Metadata;
   kind: string;
@@ -37,7 +37,7 @@ export interface ResourceEntity {
   status?: Record<string, unknown>;
 }
 
-export interface ResourceType {
+interface ResourceType {
   type: ExportableResource;
   label: string;
   selected: boolean;
@@ -46,14 +46,14 @@ export interface ResourceType {
   loaded: boolean;
 }
 
-export interface ExportOptions {
+interface ExportOptions {
   removeStatus: boolean;
   removeIds: boolean;
   removeTimestamps: boolean;
   includeCredentials: boolean;
 }
 
-export interface ExportProgress {
+interface ExportProgress {
   total: number;
   completed: number;
   currentResource?: string;

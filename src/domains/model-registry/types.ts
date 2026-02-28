@@ -17,7 +17,7 @@ export type ModelRegistrySpec = {
 
 export type ModelRegistryStatus = BaseStatus<ModelRegistryPhase>;
 
-export enum ModelRegistryPhase {
+enum ModelRegistryPhase {
   PENDING = "Pending",
   CONNECTED = "Connected",
   FAILED = "Failed",

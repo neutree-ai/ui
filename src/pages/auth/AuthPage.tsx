@@ -6,7 +6,7 @@ import { LoginPage } from "./LoginPage";
 import { RegisterPage } from "./RegisterPage";
 import { UpdatePasswordPage } from "./UpdatePasswordPage";
 
-export type AuthProps = AuthPageProps & {
+type AuthProps = AuthPageProps & {
   renderContent?: (
     content: React.ReactNode,
     title: React.ReactNode,

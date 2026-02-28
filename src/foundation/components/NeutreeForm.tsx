@@ -26,7 +26,7 @@ type NativeFormProps = Omit<
   "onSubmit"
 >;
 
-export type FormProps<
+type FormProps<
   TQueryFnData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
   TVariables extends FieldValues = FieldValues,

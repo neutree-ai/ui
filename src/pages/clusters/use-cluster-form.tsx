@@ -20,7 +20,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-export const transformValues = (values: Cluster, isEdit = false) => {
+const transformValues = (values: Cluster, isEdit = false) => {
   const transformedValues = { ...values };
 
   const config = transformedValues.spec?.config;

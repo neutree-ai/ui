@@ -21,7 +21,7 @@ export type ImageRegistrySpec = {
 
 export type ImageRegistryStatus = BaseStatus<ImageRegistryPhase>;
 
-export enum ImageRegistryPhase {
+enum ImageRegistryPhase {
   PENDING = "Pending",
   CONNECTED = "Connected",
   FAILED = "Failed",

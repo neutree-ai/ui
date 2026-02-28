@@ -3,7 +3,7 @@ import type { Cluster, ResourceStatus } from "@/domains/cluster/types";
 /**
  * Cluster-level resource summary (for display purposes)
  */
-export type ClusterResourceSummary = {
+type ClusterResourceSummary = {
   cpu: { available: number; total: number };
   memory: { available: number; total: number };
 };
@@ -11,7 +11,7 @@ export type ClusterResourceSummary = {
 /**
  * Accelerator option for selection dropdown
  */
-export type AcceleratorOption = {
+type AcceleratorOption = {
   label: string; // Display label: "NVIDIA GPU - Tesla-V100"
   value: string; // Unique value: "nvidia_gpu:Tesla-V100"
   type: string; // Accelerator type: "nvidia_gpu"
@@ -25,7 +25,7 @@ export type AcceleratorOption = {
  * Since TP (Tensor Parallelism) requires single-node deployment,
  * the max values should be based on a single node, not cluster totals.
  */
-export type SingleNodeMax = {
+type SingleNodeMax = {
   nodeName: string;
   cpu: { available: number; total: number };
   memory: { available: number; total: number };
@@ -35,7 +35,7 @@ export type SingleNodeMax = {
 /**
  * Result of parsing cluster resources
  */
-export type ParsedClusterResources = {
+type ParsedClusterResources = {
   summary: ClusterResourceSummary | null;
   acceleratorOptions: AcceleratorOption[];
 };

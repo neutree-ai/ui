@@ -1,6 +1,6 @@
 import type { Metadata } from "@/foundation/types/basic-types";
 
-export type RolePreset = "admin" | "workspace_user";
+type RolePreset = "admin" | "workspace_user";
 
 export interface RoleSpec {
   preset_key: RolePreset | null;

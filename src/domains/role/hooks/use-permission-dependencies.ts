@@ -6,7 +6,7 @@ export type PermissionDependencyRule = {
   deps: string[]; // "read" (same resource) or "workspace:read" (specific)
 };
 
-export const ALL_RULES: PermissionDependencyRule[] = [
+const ALL_RULES: PermissionDependencyRule[] = [
   { action: "create", deps: ["read"] },
   { action: "update", deps: ["read"] },
   { action: "delete", deps: ["read"] },
@@ -14,7 +14,7 @@ export const ALL_RULES: PermissionDependencyRule[] = [
   { action: "model:pull", deps: ["model_registry:read"] },
 ];
 
-export type PermissionsTreeData = Record<
+type PermissionsTreeData = Record<
   string,
   { actions: string[]; selectedActions: string[] }
 >;

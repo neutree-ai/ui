@@ -1,12 +1,7 @@
 import { useMemo, useState } from "react";
 
 // Define schema types
-export type SchemaPropertyType =
-  | "string"
-  | "number"
-  | "boolean"
-  | "integer"
-  | "float";
+type SchemaPropertyType = "string" | "number" | "boolean" | "integer" | "float";
 
 export interface SchemaProperty {
   type: SchemaPropertyType;
@@ -24,7 +19,7 @@ export interface EditingRow {
   value: string;
 }
 
-export interface UseVariablesInputProps {
+interface UseVariablesInputProps {
   value?: Record<string, any>;
   onChange?: (value: Record<string, any>) => void;
   schema?: Schema;

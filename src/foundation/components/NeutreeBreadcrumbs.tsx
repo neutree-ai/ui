@@ -17,7 +17,7 @@ import type { RefineBreadcrumbProps } from "@refinedev/ui-types";
 import { HomeIcon } from "lucide-react";
 import { type FC, Fragment } from "react";
 import { Link } from "./Link";
-export type BreadcrumbProps = RefineBreadcrumbProps & {
+type BreadcrumbProps = RefineBreadcrumbProps & {
   record?: Record<string, any>;
 };
 

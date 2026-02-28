@@ -23,7 +23,7 @@ export type ApiKeyStatus = {
   last_sync_at: string | null;
 };
 
-export enum ApiKeyPhase {
+enum ApiKeyPhase {
   PENDING = "Pending",
   CREATED = "Created",
   DELETED = "Deleted",

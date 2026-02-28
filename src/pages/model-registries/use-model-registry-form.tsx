@@ -10,7 +10,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import { isNfsProtocol } from "@/foundation/lib/validate";
 import { useForm } from "@refinedev/react-hook-form";
 
-export const transformValues = (values: ModelRegistry, isEdit = false) => {
+const transformValues = (values: ModelRegistry, isEdit = false) => {
   const transformedValues = { ...values };
 
   // In edit mode, remove empty sensitive fields to avoid overwriting backend config

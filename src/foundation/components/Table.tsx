@@ -119,7 +119,7 @@ export type TableListFilterOption = BaseOption & {
   icon?: React.ComponentType<{ className?: string }>;
 };
 
-export type TableFilterProps<TData extends BaseRecord = BaseRecord> = {
+type TableFilterProps<TData extends BaseRecord = BaseRecord> = {
   column: Column<TData>;
   title?: string;
   numberOfMonths?: number;
@@ -127,7 +127,7 @@ export type TableFilterProps<TData extends BaseRecord = BaseRecord> = {
   options?: TableListFilterOption[];
 };
 
-export type ColumnProps<
+type ColumnProps<
   TData extends BaseRecord = BaseRecord,
   TValue = unknown,
   TError extends HttpError = HttpError,
@@ -151,7 +151,7 @@ type CustomColumnDef<
   TError extends HttpError = HttpError,
 > = ColumnDef<TData, TError> & Pick<ColumnProps<TData, TError>, "filter">;
 
-export type TableProps<
+type TableProps<
   TData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
 > = Partial<UseTableProps<TData, TError, TData>> & {

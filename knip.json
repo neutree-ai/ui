@@ -4,7 +4,7 @@
 		"@/*": ["src/*"]
 	},
 	"ignoreDependencies": ["@tanstack/react-table", "@tanstack/react-query"],
-	"ignoreExportsUsedInFile": true,
+	"ignoreExportsUsedInFile": false,
 	"project": ["src/**/*.{ts,tsx}"],
 	"ignoreIssues": {
 		"src/components/ui/**": ["exports", "types"],

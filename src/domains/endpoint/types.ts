@@ -15,7 +15,7 @@ export type {
   DeploymentOptions,
 } from "@/foundation/types/serving-types";
 
-export enum EndpointPhase {
+enum EndpointPhase {
   PENDING = "Pending",
   DEPLOYING = "Deploying",
   RUNNING = "Running",

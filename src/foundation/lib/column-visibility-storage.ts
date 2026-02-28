@@ -1,13 +1,13 @@
 export type ColumnVisibilityState = Record<string, boolean>;
 
-export interface ColumnVisibilityConfig {
+interface ColumnVisibilityConfig {
   version: number;
   configId: string;
   visibility: ColumnVisibilityState;
   lastUpdated: number;
 }
 
-export interface ColumnVisibilityPreferences {
+interface ColumnVisibilityPreferences {
   [resourceName: string]: ColumnVisibilityConfig;
 }
 
@@ -183,7 +183,7 @@ export class ColumnVisibilityManager {
   }
 }
 
-export const defaultColumnVisibilityManager = new ColumnVisibilityManager(
+const defaultColumnVisibilityManager = new ColumnVisibilityManager(
   new LocalStorageAdapter(),
 );
 

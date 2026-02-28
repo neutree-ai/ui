@@ -7,7 +7,7 @@ import { useForm } from "@refinedev/react-hook-form";
 import { Upload, X } from "lucide-react";
 import { useRef } from "react";
 
-export interface OemConfigFormData {
+interface OemConfigFormData {
   api_version: string;
   kind: string;
   metadata: {

@@ -160,4 +160,3 @@ L2 domains 从 flat 结构引入 `components/`、`hooks/`、`lib/` 子目录，�
 
 - **Domain types 精简**: 当 api-gen 更新到位后，domain types 应从 api-gen 派生（extend），只维护增值部分（Phase enum、Json 字段的深层结构化），消除逐字段重抄的冗余
 - Lint 规则强制层级边界（ESLint import boundaries 或 dependency-cruiser）
-- knip `ignoreExportsUsedInFile` 是否调整为 `false`

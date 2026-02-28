@@ -7,7 +7,7 @@ import type {
   ResourceSpec,
 } from "@/foundation/types/serving-types";
 
-export enum ModelCatalogPhase {
+enum ModelCatalogPhase {
   PENDING = "Pending",
   READY = "Ready",
   FAILED = "Failed",

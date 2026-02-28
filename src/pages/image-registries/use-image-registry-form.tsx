@@ -9,7 +9,7 @@ import { useWorkspace } from "@/foundation/hooks";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { useForm } from "@refinedev/react-hook-form";
 
-export const transformValues = (values: ImageRegistry, isEdit = false) => {
+const transformValues = (values: ImageRegistry, isEdit = false) => {
   const transformedValues = { ...values };
 
   // In edit mode, remove empty sensitive fields to avoid overwriting backend config

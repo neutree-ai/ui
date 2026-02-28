@@ -21,7 +21,7 @@ export type EngineVersion = {
 
 export type EngineStatus = BaseStatus<EnginePhase>;
 
-export enum EnginePhase {
+enum EnginePhase {
   PENDING = "Pending",
   CREATED = "Created",
   FAILED = "Failed",

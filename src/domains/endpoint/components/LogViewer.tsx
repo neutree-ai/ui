@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { VirtualLog } from "./VirtualLog";
 
-export interface LogViewerProps {
+interface LogViewerProps {
   source: string; // Complete log content
   downloadUrl?: string;
   height?: number | string;

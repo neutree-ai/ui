@@ -3,12 +3,12 @@ import type { Metadata } from "./basic-types";
 /**
  * License phases as defined in the backend
  */
-export type LicensePhase = "Pending" | "Active" | "Expired" | "Invalid";
+type LicensePhase = "Pending" | "Active" | "Expired" | "Invalid";
 
 /**
  * Resource types that can be tracked in license usage
  */
-export type ResourceType = "GPU" | "Workspace";
+type ResourceType = "GPU" | "Workspace";
 
 /**
  * Maximum value representing unlimited resources
@@ -18,7 +18,7 @@ export const MAX_UNLIMITED = -1;
 /**
  * Information about a specific license
  */
-export type LicenseInfo = {
+type LicenseInfo = {
   /** Edition of the license */
   edition: string;
   /** Vendor of the license */
@@ -40,7 +40,7 @@ export type LicenseInfo = {
 /**
  * Usage information for a specific resource type
  */
-export type UsedInfo = {
+type UsedInfo = {
   /** Total used count of the resource type */
   used: number;
   /** Limit count of the resource type. -1 means unlimited */
@@ -52,7 +52,7 @@ export type UsedInfo = {
 /**
  * Usage information for all tracked resource types
  */
-export type LicenseUsage = Partial<Record<ResourceType, UsedInfo>>;
+type LicenseUsage = Partial<Record<ResourceType, UsedInfo>>;
 
 /**
  * Status of the license

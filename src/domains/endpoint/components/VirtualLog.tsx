@@ -104,7 +104,7 @@ const value2react = (
   }
 };
 
-export interface VirtualLogProps {
+interface VirtualLogProps {
   log: string;
   search?: string;
   reverse?: boolean;

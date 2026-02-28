@@ -15,7 +15,7 @@ import type {
   UseControllerProps,
 } from "react-hook-form";
 
-export type FieldProps<
+type FieldProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > = UseControllerProps<TFieldValues, TName> & {

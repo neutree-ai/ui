@@ -16,12 +16,12 @@ type DeleteDataType = {
   onAfterHandle?: () => void;
 };
 
-export interface DeleteContextType {
+interface DeleteContextType {
   data: DeleteDataType;
   updateData: (data: DeleteDataType) => void;
 }
 
-export function DeleteActionModal(props: DeleteContextType) {
+function DeleteActionModal(props: DeleteContextType) {
   const back = useOnBack();
   const { can, isLoading, mutate } = useDeleteHelper(
     props.data?.resource,

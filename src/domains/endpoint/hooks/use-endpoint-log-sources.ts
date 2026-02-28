@@ -4,7 +4,7 @@ import { useCustom } from "@refinedev/core";
 /**
  * Interface for log source item
  */
-export interface LogSource {
+interface LogSource {
   type: string; // "logs", "application", "stderr", "stdout"
   url: string;
   download_url: string;
@@ -13,7 +13,7 @@ export interface LogSource {
 /**
  * Interface for replica with logs
  */
-export interface Replica {
+interface Replica {
   replica_id: string;
   logs: LogSource[];
 }
@@ -21,7 +21,7 @@ export interface Replica {
 /**
  * Interface for deployment with replicas
  */
-export interface Deployment {
+interface Deployment {
   name: string;
   replicas: Replica[];
 }
@@ -29,7 +29,7 @@ export interface Deployment {
 /**
  * Interface for log sources response
  */
-export interface LogSourcesResponse {
+interface LogSourcesResponse {
   deployments: Deployment[];
 }
 

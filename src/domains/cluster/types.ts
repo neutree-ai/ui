@@ -9,18 +9,18 @@ import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 /**
  * AcceleratorType represents the type of accelerator (e.g., "nvidia_gpu", "amd_gpu", "neuron")
  */
-export type AcceleratorType = string;
+type AcceleratorType = string;
 
 /**
  * AcceleratorProduct represents the product model name (e.g., "Tesla-V100", "Tesla-T4", "MI100")
  */
-export type AcceleratorProduct = string;
+type AcceleratorProduct = string;
 
 /**
  * AcceleratorGroup represents accelerator resources grouped by type.
  * It supports heterogeneous clusters where multiple accelerator types can coexist.
  */
-export type AcceleratorGroup = {
+type AcceleratorGroup = {
   /**
    * Quantity is the total number of accelerators of this type.
    * Unit: count (e.g., 8.0 means 8 accelerators)
@@ -83,7 +83,7 @@ export type ResourceStatus = {
  * organized by dimensions (Allocatable and Available).
  * This follows Kubernetes Node Status pattern for consistency and clarity.
  */
-export type ClusterResources = ResourceStatus & {
+type ClusterResources = ResourceStatus & {
   /**
    * NodeResources contains per-node resource information.
    * Key: node identifier (IP address for SSH clusters, node name for Kubernetes clusters).
@@ -92,7 +92,7 @@ export type ClusterResources = ResourceStatus & {
   node_resources: Record<string, ResourceStatus> | null;
 };
 
-export type Provider = {
+type Provider = {
   type: string;
   head_ip: string;
   worker_ips: string[];
@@ -102,30 +102,30 @@ export type Provider = {
   project_id?: string;
 };
 
-export type Auth = {
+type Auth = {
   ssh_user?: string;
   ssh_private_key?: string;
 };
 
-export type RaySSHProvisionClusterConfig = {
+type RaySSHProvisionClusterConfig = {
   provider: Provider;
   auth: Auth;
 };
 
-export enum KubernetesAccessMode {
+enum KubernetesAccessMode {
   LoadBalancer = "LoadBalancer",
   NodePort = "NodePort",
   Ingress = "Ingress",
 }
 
-export type RouterSpec = {
+type RouterSpec = {
   version?: string;
   access_mode?: KubernetesAccessMode;
   replicas?: number;
   resources?: Record<string, string>;
 };
 
-export type KubernetesClusterConfig = {
+type KubernetesClusterConfig = {
   kubeconfig?: string;
   router?: RouterSpec;
 };
@@ -186,11 +186,11 @@ export type ClusterSpec = {
   version?: string;
 };
 
-export const NodeProvisionStatus = {
+const NodeProvisionStatus = {
   PROVISIONING: "provisioning",
   PROVISIONED: "provisioned",
 } as const;
-export type NodeProvisionStatus =
+type NodeProvisionStatus =
   (typeof NodeProvisionStatus)[keyof typeof NodeProvisionStatus];
 
 export type ClusterStatus = BaseStatus<ClusterPhase> & {
@@ -227,7 +227,7 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
   accelerator_type?: string | null;
 };
 
-export enum ClusterPhase {
+enum ClusterPhase {
   PENDING = "Pending",
   RUNNING = "Running",
   PAUSED = "Paused",
