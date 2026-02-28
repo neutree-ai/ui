@@ -1,6 +1,6 @@
 import type { Cluster } from "@/types";
-import type { Database } from "@/types/api-gen";
 import { PostgrestClient } from "@supabase/postgrest-js";
+import type { Database } from "./api-gen";
 
 export const REST_URL = `${location.protocol}//${location.host}/api/v1`;
 

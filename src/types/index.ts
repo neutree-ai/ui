@@ -55,7 +55,6 @@ export {
   type ModelCatalogStatus,
   type ModelCatalog,
 } from "./model-catalog-types";
-export type { GeneralModel } from "./model-types";
 export {
   type ApiKey,
   type ApiKeySpec,

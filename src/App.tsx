@@ -45,6 +45,7 @@ import { YamlExportButton } from "./components/business/YamlExportButton";
 import { YamlImportButton } from "./components/business/YamlImportButton";
 import { ApiKeysList } from "./pages/api-keys";
 import { ApiKeysShow } from "./pages/api-keys/show";
+import { AuthPage } from "./pages/auth/AuthPage";
 import {
   ClustersCreate,
   ClustersEdit,
@@ -89,7 +90,6 @@ import {
   WorkspacesShow,
 } from "./pages/workspaces";
 import { authProvider } from "./providers/auth-provider";
-import { AuthPage } from "./providers/auth-provider/AuthPage";
 
 const resources: ResourceProps[] = [
   {
