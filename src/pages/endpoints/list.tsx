@@ -1,5 +1,5 @@
-import { EndpointPauseAction } from "@/domains/endpoint/EndpointPauseAction";
-import { ModelTaskFilter } from "@/domains/endpoint/ModelTaskFilter";
+import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
+import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";

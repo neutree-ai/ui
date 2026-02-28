@@ -1,5 +1,5 @@
-import EngineStatus from "@/domains/engine/EngineStatus";
-import EngineVersions from "@/domains/engine/EngineVersions";
+import EngineStatus from "@/domains/engine/components/EngineStatus";
+import EngineVersions from "@/domains/engine/components/EngineVersions";
 import type { EngineVersion } from "@/domains/engine/types";
 import { Table } from "@/foundation/components/Table";
 import type { BaseStatus } from "@/foundation/types/basic-types";

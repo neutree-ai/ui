@@ -1,5 +1,5 @@
+import type { Endpoint } from "@/domains/endpoint/types";
 import { useCustom } from "@refinedev/core";
-import type { Endpoint } from "./types";
 
 /**
  * Interface for log source item

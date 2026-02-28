@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import ImageRegistryStatus from "@/domains/image-registry/ImageRegistryStatus";
+import ImageRegistryStatus from "@/domains/image-registry/components/ImageRegistryStatus";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";

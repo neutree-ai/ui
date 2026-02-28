@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import ModelRegistryStatus from "@/domains/model-registry/ModelRegistryStatus";
-import ModelRegistryType from "@/domains/model-registry/ModelRegistryType";
+import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
+import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";

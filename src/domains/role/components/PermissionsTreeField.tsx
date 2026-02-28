@@ -4,6 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { usePermissionDependencies } from "@/domains/role/hooks/use-permission-dependencies";
 import { getResourcePlural } from "@/foundation/lib/plural";
 import { cn } from "@/foundation/lib/utils";
 import {
@@ -32,7 +33,6 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { usePermissionDependencies } from "./use-permission-dependencies";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import UserCell from "@/domains/role-assignment/UserCell";
+import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";

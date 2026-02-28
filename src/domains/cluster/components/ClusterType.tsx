@@ -1,5 +1,5 @@
+import type { ClusterSpec } from "@/domains/cluster/types";
 import { useTranslation } from "react-i18next";
-import type { ClusterSpec } from "./types";
 
 const clusterTypeMap: Record<string, string> = {
   ssh: "multipleStaticNodes",

@@ -1,7 +1,7 @@
-import EndpointEngine from "@/domains/endpoint/EndpointEngine";
-import EndpointModel from "@/domains/endpoint/EndpointModel";
-import EndpointStatus from "@/domains/endpoint/EndpointStatus";
-import ModelTask from "@/domains/endpoint/ModelTask";
+import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
+import EndpointModel from "@/domains/endpoint/components/EndpointModel";
+import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
+import ModelTask from "@/domains/endpoint/components/ModelTask";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { Table } from "@/foundation/components/Table";

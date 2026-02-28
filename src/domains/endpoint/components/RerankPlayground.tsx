@@ -6,12 +6,12 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import type { Endpoint } from "@/domains/endpoint/types";
 import { useCustom, useCustomMutation } from "@refinedev/core";
 import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import type { Endpoint } from "./types";
 
 const getRankChangeDisplay = (change: number) => {
   if (change > 0) {

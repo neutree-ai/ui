@@ -10,15 +10,15 @@ import { Input } from "@/components/ui/input";
 import {
   findBestNodeForAccelerator,
   parseClusterResources,
-} from "@/domains/cluster/cluster-resources";
+} from "@/domains/cluster/lib/cluster-resources";
 import type { Cluster } from "@/domains/cluster/types";
-import { formatTaskName } from "@/domains/endpoint/ModelTask";
-import { SliderWithInput } from "@/domains/endpoint/SliderWithInput";
+import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
+import { SliderWithInput } from "@/domains/endpoint/components/SliderWithInput";
+import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
 import type { Endpoint } from "@/domains/endpoint/types";
-import useEndpointResources from "@/domains/endpoint/use-endpoint-resources";
-import { VariablesInput } from "@/domains/engine/VariablesInput";
+import { VariablesInput } from "@/domains/engine/components/VariablesInput";
+import type { Schema } from "@/domains/engine/hooks/use-variables-input";
 import type { Engine, EngineVersion } from "@/domains/engine/types";
-import type { Schema } from "@/domains/engine/use-variables-input";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";

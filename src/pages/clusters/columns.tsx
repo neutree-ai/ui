@@ -1,5 +1,5 @@
-import ClusterStatus from "@/domains/cluster/ClusterStatus";
-import ClusterType from "@/domains/cluster/ClusterType";
+import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
+import ClusterType from "@/domains/cluster/components/ClusterType";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { Table } from "@/foundation/components/Table";
 import type { BaseStatus } from "@/foundation/types/basic-types";

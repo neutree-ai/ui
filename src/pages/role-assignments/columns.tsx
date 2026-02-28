@@ -1,4 +1,4 @@
-import UserCell from "@/domains/role-assignment/UserCell";
+import UserCell from "@/domains/role-assignment/components/UserCell";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { Table } from "@/foundation/components/Table";
 import { useTranslate } from "@refinedev/core";

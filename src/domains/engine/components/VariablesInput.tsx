@@ -24,15 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { useTranslation } from "react-i18next";
 import {
   type EditingRow,
   type Schema,
   useVariablesInput,
-} from "./use-variables-input";
+} from "@/domains/engine/hooks/use-variables-input";
+import { Plus, Trash } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 
 interface VariablesInputProps {
   value?: Record<string, any>;

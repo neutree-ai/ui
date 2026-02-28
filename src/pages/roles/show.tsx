@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import PermissionsTree from "@/domains/role/PermissionsTree";
+import PermissionsTree from "@/domains/role/components/PermissionsTree";
 import type { Role } from "@/domains/role/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";

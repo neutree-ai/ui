@@ -1,9 +1,9 @@
+import type { Cluster, ResourceStatus } from "@/domains/cluster/types";
 import { describe, expect, it } from "vitest";
 import {
   findBestNodeForAccelerator,
   parseClusterResources,
 } from "./cluster-resources";
-import type { Cluster, ResourceStatus } from "./types";
 
 const mockTranslate = (type: string) => {
   const translations: Record<string, string> = {

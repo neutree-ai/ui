@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import PermissionsTreeField from "@/domains/role/PermissionsTreeField";
+import PermissionsTreeField from "@/domains/role/components/PermissionsTreeField";
 import type { Role } from "@/domains/role/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { NeutreeField } from "@/foundation/components/NeutreeField";

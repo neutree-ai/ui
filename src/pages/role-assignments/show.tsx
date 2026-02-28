@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import UserCell from "@/domains/role-assignment/UserCell";
+import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";

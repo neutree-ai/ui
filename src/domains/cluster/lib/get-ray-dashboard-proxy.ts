@@ -1,5 +1,5 @@
+import type { Cluster } from "@/domains/cluster/types";
 import { REST_URL } from "@/foundation/lib/api";
-import type { Cluster } from "./types";
 
 export const getRayDashboardProxy = (cluster?: unknown) => {
   if (!(cluster as Cluster)?.status?.dashboard_url) {

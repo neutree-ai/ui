@@ -1,4 +1,4 @@
-import type { Cluster, ResourceStatus } from "./types";
+import type { Cluster, ResourceStatus } from "@/domains/cluster/types";
 
 /**
  * Cluster-level resource summary (for display purposes)

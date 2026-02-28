@@ -6,8 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import EngineStatus from "@/domains/engine/EngineStatus";
-import JSONSchemaVisualizer from "@/domains/engine/JsonSchemaVisualizer";
+import EngineStatus from "@/domains/engine/components/EngineStatus";
+import JSONSchemaVisualizer from "@/domains/engine/components/JsonSchemaVisualizer";
 import type { Engine } from "@/domains/engine/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";

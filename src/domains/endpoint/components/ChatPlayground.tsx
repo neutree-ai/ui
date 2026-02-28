@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useChatState } from "@/domains/endpoint/hooks/use-chat-state";
+import type { Endpoint } from "@/domains/endpoint/types";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { useEffect, useRef, useState } from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
@@ -13,8 +15,6 @@ import { ChatSidebar } from "./ChatSidebar";
 import { MaxLengthSelector } from "./maxlength-selector";
 import { TemperatureSelector } from "./temperature-selector";
 import { TopPSelector } from "./top-p-selector";
-import type { Endpoint } from "./types";
-import { useChatState } from "./use-chat-state";
 import "github-markdown-css/github-markdown-light.css";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { useCustom } from "@refinedev/core";

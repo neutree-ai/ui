@@ -8,23 +8,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getRayDashboardProxy } from "@/domains/cluster/get-ray-dashboard-proxy";
-import ChatPlayground from "@/domains/endpoint/ChatPlayground";
-import DeploymentConfigCard from "@/domains/endpoint/DeploymentConfigCard";
-import EmbeddingPlayground from "@/domains/endpoint/EmbeddingPlayground";
-import EndpointEngine from "@/domains/endpoint/EndpointEngine";
-import EndpointModel from "@/domains/endpoint/EndpointModel";
-import { EndpointPauseAction } from "@/domains/endpoint/EndpointPauseAction";
-import EndpointStatus from "@/domains/endpoint/EndpointStatus";
-import ModelTask from "@/domains/endpoint/ModelTask";
-import RerankPlayground from "@/domains/endpoint/RerankPlayground";
-import ResourcesCard from "@/domains/endpoint/ResourcesCard";
-import type { Endpoint } from "@/domains/endpoint/types";
+import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
+import ChatPlayground from "@/domains/endpoint/components/ChatPlayground";
+import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
+import EmbeddingPlayground from "@/domains/endpoint/components/EmbeddingPlayground";
+import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
+import EndpointModel from "@/domains/endpoint/components/EndpointModel";
+import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
+import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
+import ModelTask from "@/domains/endpoint/components/ModelTask";
+import RerankPlayground from "@/domains/endpoint/components/RerankPlayground";
+import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
 import {
   type EndpointMonitorPanelType,
   useEndpointMonitorPanels,
-} from "@/domains/endpoint/use-endpoint-monitor-panels";
-import EngineVariablesCard from "@/domains/engine/EngineVariablesCard";
+} from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
+import type { Endpoint } from "@/domains/endpoint/types";
+import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
 import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
@@ -48,7 +48,7 @@ import { useTranslation } from "react-i18next";
 
 // Lazy load EndpointLogTabs
 const EndpointLogTabs = lazy(() =>
-  import("@/domains/endpoint/EndpointLogTabs").then((module) => ({
+  import("@/domains/endpoint/components/EndpointLogTabs").then((module) => ({
     default: module.EndpointLogTabs,
   })),
 );

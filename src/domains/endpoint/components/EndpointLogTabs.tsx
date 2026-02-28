@@ -7,12 +7,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEndpointLogSources } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
+import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
+import type { Endpoint } from "@/domains/endpoint/types";
 import { type FC, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LogViewer } from "./LogViewer";
-import type { Endpoint } from "./types";
-import { useEndpointLogSources } from "./use-endpoint-log-sources";
-import { useStreamingLogs } from "./use-streaming-logs";
 
 interface EndpointLogTabsProps {
   endpoint: Endpoint;

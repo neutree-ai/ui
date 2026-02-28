@@ -1,5 +1,5 @@
-import ModelRegistryStatus from "@/domains/model-registry/ModelRegistryStatus";
-import ModelRegistryType from "@/domains/model-registry/ModelRegistryType";
+import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
+import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import { Table } from "@/foundation/components/Table";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useTranslate } from "@refinedev/core";

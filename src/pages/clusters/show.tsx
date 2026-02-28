@@ -16,17 +16,17 @@ import {
   Table as UITable,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ClusterStatus from "@/domains/cluster/ClusterStatus";
-import ClusterType from "@/domains/cluster/ClusterType";
-import { getRayDashboardProxy } from "@/domains/cluster/get-ray-dashboard-proxy";
-import type { Cluster, ModelCache } from "@/domains/cluster/types";
+import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
+import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
   type ClusterMonitorPanelType,
   useClusterMonitorPanels,
-} from "@/domains/cluster/use-cluster-monitor-panels";
-import EndpointEngine from "@/domains/endpoint/EndpointEngine";
-import EndpointModel from "@/domains/endpoint/EndpointModel";
-import EndpointStatus from "@/domains/endpoint/EndpointStatus";
+} from "@/domains/cluster/hooks/use-cluster-monitor-panels";
+import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
+import type { Cluster, ModelCache } from "@/domains/cluster/types";
+import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
+import EndpointModel from "@/domains/endpoint/components/EndpointModel";
+import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import type { Endpoint } from "@/domains/endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";

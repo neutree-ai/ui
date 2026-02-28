@@ -1,4 +1,4 @@
-import type { Engine, EngineVersion } from "./types";
+import type { Engine, EngineVersion } from "@/domains/engine/types";
 export default function EngineVersions({
   versions,
 }: Pick<Engine["spec"], "versions">) {
