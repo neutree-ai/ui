@@ -32,7 +32,8 @@
 				"useKeyWithClickEvents": "off"
 			},
 			"performance": {
-				"noDelete": "off"
+				"noDelete": "off",
+				"noReExportAll": "error"
 			},
 			"complexity": {
 				"noForEach": "off"

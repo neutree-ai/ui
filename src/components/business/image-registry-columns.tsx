@@ -1,7 +1,7 @@
 import ImageRegistryStatus from "@/components/business/ImageRegistryStatus";
 import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
-import { Table } from "..";
+import { Table } from "../theme/table";
 
 export const useImageRegistryColumns = () => {
   const t = useTranslate();

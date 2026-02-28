@@ -1,6 +1,6 @@
 import { useTranslation } from "@/lib/i18n";
 import { Trash2 } from "lucide-react";
-import { Table } from "..";
+import { Table } from "../theme/table";
 
 export const useWorkflowColumns = () => {
   const { t } = useTranslation();

@@ -2,10 +2,10 @@ import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
 import GrafanaDashboard from "@/components/business/GrafanaDashboard";
 import MetadataCard from "@/components/business/MetadataCard";
+import { useEndpointColumns } from "@/components/business/endpoint-columns";
+import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { ShowButton, ShowPage, Table } from "@/components/theme";
 import Loader from "@/components/theme/components/loader";
-import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {

@@ -2,8 +2,8 @@ import ClusterStatus from "@/components/business/ClusterStatus";
 import ClusterType from "@/components/business/ClusterType";
 import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
-import { Table } from "..";
-import { ShowButton } from "../../buttons";
+import { ShowButton } from "../theme/buttons";
+import { Table } from "../theme/table";
 
 export const useClusterColumns = () => {
   const t = useTranslate();

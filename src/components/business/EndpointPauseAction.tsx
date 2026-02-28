@@ -2,8 +2,7 @@ import type { Endpoint } from "@/types";
 import { useInvalidate, useTranslate, useUpdate } from "@refinedev/core";
 import { PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
-import type { RowActionProps } from "../theme/table/actions";
-import { RowAction } from "../theme/table/actions";
+import { RowAction, type RowActionProps } from "../theme/table";
 
 type EndpointPauseActionProps = RowActionProps & {
   endpoint: Endpoint;

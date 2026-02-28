@@ -1,7 +1,49 @@
 import { BatchDeleteBar } from "@/components/business/BatchDeleteBar";
+import { TableSearch } from "@/components/business/TableSearch";
+import { Link } from "@/components/theme/components/link";
 import Loader from "@/components/theme/components/loader";
-import { DeleteProvider } from "@/components/theme/providers";
+import {
+  useDeleteHelper,
+  useGetEditUrl,
+  useGetShowUrl,
+} from "@/components/theme/hooks";
+import { DeleteContext, DeleteProvider } from "@/components/theme/providers";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   TableBody,
   TableCell,
@@ -11,6 +53,20 @@ import {
   Table as TableUi,
 } from "@/components/ui/table";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import {
+  CaretDownIcon,
+  CaretUpIcon,
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DotsHorizontalIcon,
+  DotsVerticalIcon,
+  DoubleArrowLeftIcon,
+  DoubleArrowRightIcon,
+  MixerHorizontalIcon,
+} from "@radix-ui/react-icons";
 import type { PopoverContentProps } from "@radix-ui/react-popover";
 import {
   type BaseOption,
@@ -18,8 +74,10 @@ import {
   type CrudFilter,
   type HttpError,
   useResource,
+  type useTableProps,
   useTranslate,
 } from "@refinedev/core";
+import { useNavigation } from "@refinedev/core";
 import {
   type UseTableProps,
   type UseTableReturnType,
@@ -33,23 +91,29 @@ import {
   type ColumnDefTemplate,
   type Row,
   type TableOptionsResolved,
+  type Table as TanStackTable,
   flexRender,
 } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { FilterIcon, FilterX } from "lucide-react";
 import type React from "react";
-import { type FC, type ReactElement, useCallback, useMemo } from "react";
-import { RowAction, RowActions } from "./actions";
-import { DeleteAction } from "./actions/delete";
-import { EditAction } from "./actions/edit";
-import { ShowAction } from "./actions/show";
 import {
-  TableFilterDateRangePickerFilter,
-  TableFilterDropdown,
-  TableFilterSearchColumn,
-} from "./fields";
-import { CheckAll } from "./fields/checkall";
-import { Pagination } from "./fields/pagination";
-import { SortAction } from "./fields/sort";
-import { DataTableToolbar } from "./toolbar";
+  type FC,
+  type PropsWithChildren,
+  type ReactElement,
+  type ReactNode,
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import type { DateRange } from "react-day-picker";
+
+// ============================================================================
+// Types
+// ============================================================================
 
 export type TableListFilterOption = BaseOption & {
   icon?: React.ComponentType<{ className?: string }>;
@@ -105,6 +169,356 @@ export type TableProps<
         ) => void;
       }) => ReactElement);
 };
+
+export type RowActionProps = PropsWithChildren & {
+  to?: string;
+  title?: string;
+  asChild?: boolean;
+  className?: string;
+  disabled?: boolean;
+  icon?: ReactNode;
+  onClick?: (event: React.MouseEvent) => void;
+};
+
+// ============================================================================
+// Sort Action (internal)
+// ============================================================================
+
+const SortAction = <TData extends BaseRecord = BaseRecord>({
+  column,
+}: Pick<TableFilterProps<TData>, "column">) => {
+  return (
+    <div
+      className="cursor-pointer"
+      data-testid="sort-trigger"
+      data-sort-direction={column?.getIsSorted() || "none"}
+      onClick={() => {
+        column?.toggleSorting(column?.getIsSorted() === "asc");
+      }}
+    >
+      <div className="inline-flex flex-col">
+        <CaretUpIcon
+          className={cn(
+            "-mb-1.5 w-5 h-5 text-foreground",
+            column?.getIsSorted() === "asc" ? "opacity-100" : "opacity-30",
+          )}
+        />
+        <CaretDownIcon
+          className={cn(
+            "-mt-1.5 w-5 h-5 text-foreground",
+            column?.getIsSorted() === "desc" ? "opacity-100" : "opacity-30",
+          )}
+        />
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// Pagination (internal)
+// ============================================================================
+
+const Pagination = <TData extends BaseRecord = BaseRecord>({
+  table,
+}: { table: UseTableReturnType<TData> }) => {
+  const t = useTranslate();
+  const total = table.refineCore.tableQuery.data?.total ?? 0;
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-y-4 sm-gap-y-0 items-center justify-between">
+      <div className="flex-1 text-sm text-muted-foreground">
+        {t("table.pagination.totalItems", { total })}
+      </div>
+      <div className="flex relative flex-col-reverse gap-y-4 sm:gap-y-0 sm:flex-row items-center space-x-6 lg:space-x-8">
+        <div className="flex items-center space-x-2">
+          <p className="text-sm font-medium">
+            {t("table.pagination.rowsPerPage")}
+          </p>
+          <Select
+            value={`${table.getState().pagination.pageSize}`}
+            onValueChange={(value) => {
+              table.setPageSize(Number(value));
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue placeholder={table.getState().pagination.pageSize} />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 20, 30, 40, 50].map((pageSize) => (
+                <SelectItem key={pageSize} value={`${pageSize}`}>
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex w-fit items-center justify-center text-sm font-medium">
+          {t("table.pagination.page", {
+            current: table.getState().pagination.pageIndex + 1,
+            total: table.getPageCount(),
+          })}
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            className="hidden h-8 w-8 p-0 lg:flex"
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+          >
+            <span className="sr-only">
+              {t("table.pagination.goToFirstPage")}
+            </span>
+            <DoubleArrowLeftIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            <span className="sr-only">
+              {t("table.pagination.goToPreviousPage")}
+            </span>
+            <ChevronLeftIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            <span className="sr-only">
+              {t("table.pagination.goToNextPage")}
+            </span>
+            <ChevronRightIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            className="hidden h-8 w-8 p-0 lg:flex"
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+          >
+            <span className="sr-only">
+              {t("table.pagination.goToLastPage")}
+            </span>
+            <DoubleArrowRightIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// Row Actions
+// ============================================================================
+
+export const RowAction: FC<RowActionProps> = (props) => {
+  return (
+    <DropdownMenuItem
+      disabled={props.disabled}
+      asChild={!(!props.to || (!props.to && !props.children))}
+      onClick={props.onClick}
+    >
+      {props.asChild ? (
+        props.children
+      ) : props.to ? (
+        <Link href={props.to} title={props.title} className="hover:bg-accent">
+          {props.icon ? <span className="mr-2">{props.icon}</span> : null}
+          {props.title}
+        </Link>
+      ) : (
+        <>
+          {props.icon ? <span className="mr-2">{props.icon}</span> : null}
+          {props.title}
+        </>
+      )}
+    </DropdownMenuItem>
+  );
+};
+
+RowAction.displayName = "RowAction";
+
+function RowActions({ children }: { children?: ReactNode }) {
+  const { t } = useTranslation();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" data-testid="row-actions-trigger">
+          <DotsHorizontalIcon className="h-4 w-4" />
+          <span className="sr-only">{t("accessibility.openMenu")}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[160px]">
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ============================================================================
+// Delete / Edit / Show Actions
+// ============================================================================
+
+type DeleteActionProps = RowActionProps & {
+  row: any;
+  resource: string;
+  title: string;
+  onAfterHandle?: () => void;
+};
+
+export function DeleteAction({
+  row,
+  resource,
+  title,
+  disabled,
+  onAfterHandle,
+  ...props
+}: DeleteActionProps) {
+  const meta = row.metadata;
+  const { can, reason } = useDeleteHelper(resource, row.id, meta);
+  const deleteContext = useContext(DeleteContext);
+
+  return (
+    <RowAction
+      {...props}
+      disabled={!can || disabled}
+      title={!can ? reason : title}
+      onClick={() =>
+        deleteContext?.updateData({
+          row,
+          resource,
+          toogle: true,
+          onAfterHandle,
+        })
+      }
+    />
+  );
+}
+
+DeleteAction.displayName = "DeleteAction";
+
+type EditActionProps = RowActionProps & {
+  row: any;
+  resource: string;
+  title: string;
+};
+
+export function EditAction({
+  row,
+  resource,
+  title,
+  disabled,
+  ...props
+}: EditActionProps) {
+  const edit = useGetEditUrl(
+    resource,
+    row.metadata.id,
+    row.metadata.workspace || "",
+  );
+  const navigation = useNavigation();
+  const editUrl = navigation.editUrl(resource, row.metadata.name, row.metadata);
+
+  return (
+    <RowAction
+      {...props}
+      disabled={!edit.can || disabled}
+      title={!edit?.can ? edit?.reason : title}
+      to={editUrl}
+    />
+  );
+}
+
+EditAction.displayName = "EditAction";
+
+// ============================================================================
+// DataTableViewOptions (internal)
+// ============================================================================
+
+const DataTableViewOptions = <TData,>({
+  table,
+}: { table: TanStackTable<TData> }) => {
+  const t = useTranslate();
+  const columns = useMemo(() => {
+    return table
+      .getAllColumns()
+      .filter(
+        (column) =>
+          typeof column.accessorFn !== "undefined" && column.getCanHide(),
+      );
+  }, [table]);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto hidden h-8 lg:flex"
+        >
+          <MixerHorizontalIcon className="mr-2 h-4 w-4" />
+          {t("table.columns")}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[150px]">
+        <DropdownMenuLabel>{t("table.toggleColumns")}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {columns.map((column) => {
+          return (
+            <DropdownMenuCheckboxItem
+              key={column.id}
+              className="capitalize"
+              checked={column.getIsVisible()}
+              onCheckedChange={(value) => column.toggleVisibility(value)}
+            >
+              {column?.columnDef?.header?.toString() || t(column.id)}
+            </DropdownMenuCheckboxItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+DataTableViewOptions.displayName = "DataTableViewOptions";
+
+// ============================================================================
+// DataTableToolbar (internal)
+// ============================================================================
+
+function DataTableToolbar<TData>({
+  table,
+  refineTable,
+  filters,
+  searchField,
+  actions,
+}: {
+  table: TanStackTable<TData>;
+  refineTable?: UseTableReturnType<any, any>;
+  filters?: ReactNode;
+  searchField?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex flex-1 items-center space-x-2">
+        {searchField && refineTable && (
+          <TableSearch field={searchField} table={refineTable} />
+        )}
+        {filters}
+      </div>
+      <div className="flex items-center space-x-2">
+        {actions}
+        <DataTableViewOptions table={table} />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Table Component
+// ============================================================================
 
 export function Table<
   TQueryFnData extends BaseRecord = BaseRecord,
@@ -352,6 +766,10 @@ export function Table<
   );
 }
 
+// ============================================================================
+// Table sub-component assignments
+// ============================================================================
+
 const TableColumn = <
   TData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
@@ -362,16 +780,21 @@ const TableColumn = <
 };
 
 Table.Column = TableColumn;
-Table.CheckAll = CheckAll;
 Table.Actions = RowActions;
-Table.Action = RowAction;
 Table.EditAction = EditAction;
-Table.ShowAction = ShowAction;
 Table.DeleteAction = DeleteAction;
-Table.Filter = {
-  DateRangePicker: TableFilterDateRangePickerFilter,
-  Dropdown: TableFilterDropdown,
-  Search: TableFilterSearchColumn,
-};
 
 Table.displayName = "Table";
+
+// ============================================================================
+// Default Sorters
+// ============================================================================
+
+export const defaultSorters: useTableProps<any, any, any>["sorters"] = {
+  initial: [
+    {
+      field: "metadata->creation_timestamp",
+      order: "desc",
+    },
+  ],
+};

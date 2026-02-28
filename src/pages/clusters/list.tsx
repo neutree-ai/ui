@@ -1,7 +1,7 @@
+import { useClusterColumns } from "@/components/business/cluster-columns";
+import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { ListPage, Table } from "@/components/theme";
-import { useClusterColumns } from "@/components/theme/table/columns/cluster-columns";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { defaultSorters } from "@/components/theme/table/sorter";
+import { defaultSorters } from "@/components/theme/table";
 
 export const ClustersList = () => {
   const metadataColumns = useMetadataColumns();

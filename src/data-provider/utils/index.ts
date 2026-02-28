@@ -1,3 +1,3 @@
-export * from "./generate-filter";
-export * from "./map-operator";
-export * from "./handle-error";
+export { generateFilter } from "./generate-filter";
+export { mapOperator } from "./map-operator";
+export { handleError } from "./handle-error";

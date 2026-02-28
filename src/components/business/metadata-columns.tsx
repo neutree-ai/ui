@@ -3,7 +3,7 @@ import { ShowButton } from "@/components/theme/buttons";
 import { useResource, useTranslation } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { Table } from "..";
+import { Table } from "../theme/table";
 
 type MetadataColumnOptions = {
   resource?: string;

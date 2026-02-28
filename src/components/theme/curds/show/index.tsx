@@ -16,8 +16,7 @@ import {
 import { Edit, Trash2 } from "lucide-react";
 import { type FC, isValidElement } from "react";
 import { DeleteProvider } from "../../providers";
-import { DeleteAction } from "../../table/actions/delete";
-import { EditAction } from "../../table/actions/edit";
+import { DeleteAction, EditAction } from "../../table";
 import { Row } from "./row";
 
 export const ShowPage: FC<ShowProps> & {

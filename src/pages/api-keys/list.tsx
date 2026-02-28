@@ -1,7 +1,7 @@
+import { useApiKeyColumns } from "@/components/business/api-key-columns";
+import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { Combobox, ListPage, Table } from "@/components/theme";
-import { useApiKeyColumns } from "@/components/theme/table/columns/api-key-columns";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { defaultSorters } from "@/components/theme/table/sorter";
+import { defaultSorters } from "@/components/theme/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {

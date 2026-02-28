@@ -1,7 +1,7 @@
+import { useMetadataColumns } from "@/components/business/metadata-columns";
+import { useModelRegistryColumns } from "@/components/business/model-registry-columns";
 import { ListPage, Table } from "@/components/theme";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { useModelRegistryColumns } from "@/components/theme/table/columns/model-registry-columns";
-import { defaultSorters } from "@/components/theme/table/sorter";
+import { defaultSorters } from "@/components/theme/table";
 
 export const ModelRegistriesList = () => {
   const metadataColumns = useMetadataColumns();

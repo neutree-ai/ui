@@ -1,9 +1,9 @@
 import { EndpointPauseAction } from "@/components/business/EndpointPauseAction";
 import { ModelTaskFilter } from "@/components/business/ModelTaskFilter";
+import { useEndpointColumns } from "@/components/business/endpoint-columns";
+import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { ListPage, Table } from "@/components/theme";
-import { useEndpointColumns } from "@/components/theme/table/columns/endpoint-columns";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { defaultSorters } from "@/components/theme/table/sorter";
+import { defaultSorters } from "@/components/theme/table";
 import { useTranslation } from "react-i18next";
 
 export const EndpointsList = () => {

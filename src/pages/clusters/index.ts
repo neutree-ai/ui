@@ -1,4 +1,4 @@
-export * from "./list";
-export * from "./create";
-export * from "./edit";
-export * from "./show";
+export { ClustersList } from "./list";
+export { ClustersCreate } from "./create";
+export { ClustersEdit } from "./edit";
+export { ClustersShow } from "./show";

@@ -1,1 +1,1 @@
-export * from "./show";
+export { OemConfigShow } from "./show";

@@ -1,7 +1,7 @@
+import { useEngineColumns } from "@/components/business/engine-columns";
+import { useMetadataColumns } from "@/components/business/metadata-columns";
 import { ListPage, Table } from "@/components/theme";
-import { useEngineColumns } from "@/components/theme/table/columns/engine-columns";
-import { useMetadataColumns } from "@/components/theme/table/columns/metadata-columns";
-import { defaultSorters } from "@/components/theme/table/sorter";
+import { defaultSorters } from "@/components/theme/table";
 
 export const EnginesList = () => {
   const metadataColumns = useMetadataColumns();

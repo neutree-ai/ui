@@ -2,7 +2,7 @@ import EngineStatus from "@/components/business/EngineStatus";
 import EngineVersions from "@/components/business/EngineVersions";
 import type { BaseStatus, EngineVersion } from "@/types";
 import { useTranslate } from "@refinedev/core";
-import { Table } from "..";
+import { Table } from "../theme/table";
 
 export const useEngineColumns = () => {
   const t = useTranslate();

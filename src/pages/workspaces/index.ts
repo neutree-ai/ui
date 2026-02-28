@@ -1,3 +1,3 @@
-export * from "./list";
-export * from "./create";
-export * from "./show";
+export { WorkspacesList } from "./list";
+export { WorkspacesCreate } from "./create";
+export { WorkspacesShow } from "./show";

@@ -1,2 +1,2 @@
-export * from "./list";
-export * from "./show";
+export { ModelCatalogsList } from "./list";
+export { ModelCatalogsShow } from "./show";

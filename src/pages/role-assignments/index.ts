@@ -1,4 +1,4 @@
-export * from "./list";
-export * from "./create";
-export * from "./edit";
-export * from "./show";
+export { RoleAssignmentsList } from "./list";
+export { RoleAssignmentsCreate } from "./create";
+export { RoleAssignmentsEdit } from "./edit";
+export { RoleAssignmentsShow } from "./show";

@@ -1,10 +1,5 @@
-export * from "./clone";
-export * from "./create";
-export * from "./delete";
-export * from "./edit";
-export * from "./export";
-export * from "./import";
-export * from "./list";
-export * from "./refresh";
-export * from "./save";
-export * from "./show";
+export { CreateButton } from "./create";
+export { DeleteButton } from "./delete";
+export { ListButton } from "./list";
+export { SaveButton } from "./save";
+export { ShowButton } from "./show";

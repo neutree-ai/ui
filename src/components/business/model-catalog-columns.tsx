@@ -5,7 +5,7 @@ import ModelTask from "@/components/business/ModelTask";
 import type { BaseStatus } from "@/types";
 import { useTranslate } from "@refinedev/core";
 import { Trash2 } from "lucide-react";
-import { Table } from "..";
+import { Table } from "../theme/table";
 
 export const useModelCatalogColumns = () => {
   const t = useTranslate();
