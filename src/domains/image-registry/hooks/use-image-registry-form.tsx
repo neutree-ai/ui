@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { transformImageRegistryValues } from "@/domains/image-registry/lib/transform-image-registry-values";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -6,23 +7,6 @@ import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { useForm } from "@refinedev/react-hook-form";
-
-const transformValues = (values: ImageRegistry, isEdit = false) => {
-  const transformedValues = { ...values };
-
-  // In edit mode, remove empty sensitive fields to avoid overwriting backend config
-  if (isEdit && transformedValues.spec?.authconfig) {
-    const authconfig = transformedValues.spec.authconfig;
-    if (!authconfig.username) {
-      delete authconfig.username;
-    }
-    if (!authconfig.password) {
-      delete authconfig.password;
-    }
-  }
-
-  return transformedValues;
-};
 
 export const useImageRegistryForm = ({
   action,
@@ -57,7 +41,10 @@ export const useImageRegistryForm = ({
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
-    const transformedValues = transformValues(values as ImageRegistry, isEdit);
+    const transformedValues = transformImageRegistryValues(
+      values as ImageRegistry,
+      isEdit,
+    );
 
     return originalOnFinish(transformedValues);
   };

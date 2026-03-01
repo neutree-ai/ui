@@ -1,5 +1,5 @@
+import { useModelRegistryForm } from "@/domains/model-registry/hooks/use-model-registry-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { useModelRegistryForm } from "./use-model-registry-form";
 
 export const ModelRegistriesCreate = () => {
   const { form, metadataFields, specFields } = useModelRegistryForm({

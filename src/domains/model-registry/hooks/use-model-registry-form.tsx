@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { transformModelRegistryValues } from "@/domains/model-registry/lib/transform-model-registry-values";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -9,19 +10,6 @@ import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { isNfsProtocol } from "@/foundation/lib/validate";
 import { useForm } from "@refinedev/react-hook-form";
-
-const transformValues = (values: ModelRegistry, isEdit = false) => {
-  const transformedValues = { ...values };
-
-  // In edit mode, remove empty sensitive fields to avoid overwriting backend config
-  if (isEdit && transformedValues.spec) {
-    if (!transformedValues.spec.credentials) {
-      delete transformedValues.spec.credentials;
-    }
-  }
-
-  return transformedValues;
-};
 
 export const useModelRegistryForm = ({
   action,
@@ -55,7 +43,10 @@ export const useModelRegistryForm = ({
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
-    const transformedValues = transformValues(values as ModelRegistry, isEdit);
+    const transformedValues = transformModelRegistryValues(
+      values as ModelRegistry,
+      isEdit,
+    );
 
     return originalOnFinish(transformedValues);
   };

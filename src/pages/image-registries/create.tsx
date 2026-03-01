@@ -1,5 +1,5 @@
+import { useImageRegistryForm } from "@/domains/image-registry/hooks/use-image-registry-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { useImageRegistryForm } from "./use-image-registry-form";
 
 export const ImageRegistriesCreate = () => {
   const { form, metadataFields, specFields } = useImageRegistryForm({
