@@ -1,6 +1,7 @@
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import type { DataProvider, HttpError } from "@refinedev/core";
 import { type PostgrestClient, PostgrestError } from "@supabase/postgrest-js";
+import { cleanInternalFields } from "./utils/clean-internal-fields";
 import { generateFilter } from "./utils/generate-filter";
 import { handleError } from "./utils/handle-error";
 
@@ -359,11 +360,3 @@ export const dataProvider = (
     },
   };
 };
-
-function cleanInternalFields(variables: any) {
-  for (const key in variables) {
-    if (key.startsWith("-")) {
-      delete variables[key];
-    }
-  }
-}

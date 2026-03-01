@@ -10,7 +10,7 @@ import { BaseLayout } from "@/foundation/components/BaseLayout";
 import { DefaultLayout } from "@/foundation/components/DefaultLayout";
 import { ModeToggle } from "@/foundation/components/ModeToggle";
 import { dataProvider } from "@/foundation/providers/data-provider";
-import { notificationProvider } from "@/foundation/providers/notificationProvider";
+import { notificationProvider } from "@/foundation/providers/notification-provider";
 import routerProvider, {
   CatchAllNavigate,
   NavigateToResource,

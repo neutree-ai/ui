@@ -7,7 +7,7 @@ import {
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { DeleteAction, EditAction } from "@/foundation/components/Table";
-import { DeleteProvider } from "@/foundation/providers/deleteProvider";
+import { DeleteProvider } from "@/foundation/providers/delete-provider";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   useNavigation,

@@ -34,7 +34,7 @@ import { cn } from "@/foundation/lib/utils";
 import {
   DeleteContext,
   DeleteProvider,
-} from "@/foundation/providers/deleteProvider";
+} from "@/foundation/providers/delete-provider";
 import {
   CaretDownIcon,
   CaretUpIcon,

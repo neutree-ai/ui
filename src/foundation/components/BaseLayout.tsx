@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/foundation/providers/themeProvider";
+import { ThemeProvider } from "@/foundation/providers/theme-provider";
 import type { PropsWithChildren } from "react";
 
 type Props = PropsWithChildren<
