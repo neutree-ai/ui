@@ -36,11 +36,10 @@
   "src/pages/endpoints/show.tsx": "6315dac2e0c6a16fd2e31e09d07a36d3",
   "src/pages/endpoints/use-endpoint-form.tsx": "a583a279d0efdb2767684ac6b27f278d",
   "src/pages/dashboard/Dashboard.tsx": "982bc753b2a28b3490493d99b163df59",
-  "src/pages/clusters/create.tsx": "99ae7eeff08224357136dce716517270",
-  "src/pages/clusters/edit.tsx": "b58a312d5d3cdd5546f1e382d4a52aa7",
-  "src/pages/clusters/list.tsx": "b184b98bf0bc2781a9fafb7c058fb9b1",
+  "src/pages/clusters/create.tsx": "537d992e27d13600642ccda768d5accb",
+  "src/pages/clusters/edit.tsx": "8fb40a76f72c1862d838d53cc2b38696",
+  "src/pages/clusters/list.tsx": "adb04a3347e3e610d02f42b2c78297dc",
   "src/pages/clusters/show.tsx": "da837de0227add79f9a8c882bb0b89fc",
-  "src/pages/clusters/use-cluster-form.tsx": "63db6e12ed30a8dd55dc3724b25ef58f",
   "src/pages/api-keys/list.tsx": "395ed6a84d1d3601298ab1d7dc80fafa",
   "src/pages/api-keys/show.tsx": "e683c9d2050fd75dd25020121c2ee153",
   "src/components/ui/alert-dialog.tsx": "fd2a0854b18d61d21fe0e8effd7e4cd9",
@@ -80,7 +79,6 @@
   "vitest.config.ts": "6e026a005e7f4ed7aa7f567b9999c069",
   "playwright.config.ts": "f574a9fe3e92a6166d012be804a788a4",
   "src/pages/endpoints/columns.tsx": "169eef01edbbe43377b6f926a4c6880a",
-  "src/pages/clusters/columns.tsx": "8e327a6e64f4c0b44ec1ca7fe64bd538",
   "src/pages/auth/AuthPage.tsx": "f4392c25334e26bba455114d3fe440ed",
   "src/pages/auth/ForgotPasswordPage.tsx": "7e64828527d34f55037277fadc08d79f",
   "src/pages/auth/LoginPage.tsx": "4152306676e63c6291ff78e1abad0bc4",
@@ -242,5 +240,6 @@
   "src/domains/model-registry/lib/transform-model-registry-values.ts": "824753d89ae099896ae1bb2e2934aff0",
   "src/domains/model-registry/hooks/use-model-registry-form.tsx": "e8a9470b28bcabdd47e52bfe77996c48",
   "src/domains/image-registry/lib/transform-image-registry-values.ts": "29354ba58a40bf0f421bc03b6a774cee",
-  "src/domains/image-registry/hooks/use-image-registry-form.tsx": "81488170f914365f28b54064916fe8c5"
+  "src/domains/image-registry/hooks/use-image-registry-form.tsx": "81488170f914365f28b54064916fe8c5",
+  "src/domains/cluster/hooks/use-cluster-form.tsx": "18b09ae8e7613054373aaa22bf045635"
 }

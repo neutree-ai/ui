@@ -4,7 +4,6 @@ import { ModelCacheFields } from "@/domains/cluster/components/ModelCacheFields"
 import NodeIPsField from "@/domains/cluster/components/NodeIPsField";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import type { Cluster } from "@/domains/cluster/types";
-import type { ImageRegistry } from "@/domains/image-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -63,7 +62,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const meta = { workspace };
 
-  const imageRegistries = useSelect<ImageRegistry>({
+  const imageRegistries = useSelect({
     resource: "image_registries",
     meta,
   });

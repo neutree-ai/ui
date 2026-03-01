@@ -1,6 +1,6 @@
+import { useClusterForm } from "@/domains/cluster/hooks/use-cluster-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useClusterForm } from "./use-cluster-form";
 
 export const ClustersCreate = () => {
   const { t } = useTranslation();
