@@ -16,7 +16,6 @@ export const ShowButton: FC<
   resource: resourceNameFromProps,
   recordItemId,
   hideText = false,
-  accessControl,
   meta,
   children,
   onClick,
@@ -25,7 +24,6 @@ export const ShowButton: FC<
   const { to, label, title, hidden, disabled, LinkComponent } = useShowButton({
     resource: resourceNameFromProps,
     id: recordItemId,
-    accessControl,
     meta,
   });
 

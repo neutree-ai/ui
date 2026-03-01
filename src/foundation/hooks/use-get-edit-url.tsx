@@ -1,53 +1,13 @@
-import {
-  AccessControlContext,
-  type CanReturnType,
-  useCan,
-  useNavigation,
-  useResource,
-  useTranslate,
-} from "@refinedev/core";
-import { useContext } from "react";
-
-type GetEditUrlReturnType = CanReturnType & {
-  url: string;
-};
+import { useNavigation, useResource } from "@refinedev/core";
 
 export const useGetEditUrl = (
   resource: string,
   recordItemId: string,
   meta?: any,
-): GetEditUrlReturnType => {
-  const accessControlContext = useContext(AccessControlContext);
-  const accessControlEnabled =
-    accessControlContext.options.buttons.enableAccessControl;
-
-  const hideIfUnauthorized =
-    accessControlContext.options.buttons.hideIfUnauthorized;
-
+): { url: string } => {
   const { editUrl: generateEditUrl } = useNavigation();
 
-  const { id, resource: _resource } = useResource(resource);
-
-  const { data } = useCan({
-    resource: resource,
-    action: "edit",
-    params: { id: recordItemId, resource: _resource },
-    queryOptions: {
-      enabled: accessControlEnabled,
-    },
-  });
-
-  const translate = useTranslate();
-
-  const reason = () => {
-    if (data?.can) {
-      return "";
-    }
-    if (data?.reason) {
-      return data.reason;
-    }
-    return translate("notAccessTitle");
-  };
+  const { id } = useResource(resource);
 
   const editUrl =
     resource && (recordItemId ?? id)
@@ -55,8 +15,6 @@ export const useGetEditUrl = (
       : "";
 
   return {
-    can: !(accessControlEnabled && hideIfUnauthorized && !data?.can),
-    reason: reason(),
     url: editUrl,
   };
 };

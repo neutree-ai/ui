@@ -6,15 +6,11 @@ import { SquarePlusIcon } from "lucide-react";
 import type { FC } from "react";
 
 type CreateButtonProps = ButtonProps &
-  Pick<
-    RefineCreateButtonProps,
-    "resource" | "hideText" | "accessControl" | "meta" | "onClick"
-  >;
+  Pick<RefineCreateButtonProps, "resource" | "hideText" | "meta" | "onClick">;
 
 export const CreateButton: FC<CreateButtonProps> = ({
   resource,
   hideText = false,
-  accessControl,
   meta,
   onClick,
   children,
@@ -23,7 +19,6 @@ export const CreateButton: FC<CreateButtonProps> = ({
   const { hidden, disabled, label, title, LinkComponent, to } = useCreateButton(
     {
       resource,
-      accessControl,
       meta,
     },
   );

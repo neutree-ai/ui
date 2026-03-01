@@ -29,8 +29,6 @@ import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { TableSearch } from "@/foundation/components/TableSearch";
 import { useColumnVisibility } from "@/foundation/hooks/use-column-visibility";
-import { useDeleteHelper } from "@/foundation/hooks/use-delete-helper";
-import { useGetEditUrl } from "@/foundation/hooks/use-get-edit-url";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import {
@@ -351,14 +349,13 @@ export function DeleteAction({
   ...props
 }: DeleteActionProps) {
   const meta = row.metadata;
-  const { can, reason } = useDeleteHelper(resource, row.id, meta);
   const deleteContext = useContext(DeleteContext);
 
   return (
     <RowAction
       {...props}
-      disabled={!can || disabled}
-      title={!can ? reason : title}
+      disabled={disabled}
+      title={title}
       onClick={() =>
         deleteContext?.updateData({
           row,
@@ -386,21 +383,11 @@ export function EditAction({
   disabled,
   ...props
 }: EditActionProps) {
-  const edit = useGetEditUrl(
-    resource,
-    row.metadata.id,
-    row.metadata.workspace || "",
-  );
   const navigation = useNavigation();
   const editUrl = navigation.editUrl(resource, row.metadata.name, row.metadata);
 
   return (
-    <RowAction
-      {...props}
-      disabled={!edit.can || disabled}
-      title={!edit?.can ? edit?.reason : title}
-      to={editUrl}
-    />
+    <RowAction {...props} disabled={disabled} title={title} to={editUrl} />
   );
 }
 

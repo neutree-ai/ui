@@ -24,7 +24,7 @@ interface DeleteContextType {
 
 function DeleteActionModal(props: DeleteContextType) {
   const back = useOnBack();
-  const { can, isLoading, mutate } = useDeleteHelper(
+  const { isLoading, mutate } = useDeleteHelper(
     props.data?.resource,
     props.data?.row?.metadata.name,
     props.data?.row?.metadata,
@@ -32,39 +32,35 @@ function DeleteActionModal(props: DeleteContextType) {
 
   const onDelete = useCallback(
     (forceDelete: boolean) => {
-      if (can) {
-        return mutate({
-          meta: forceDelete ? { forceDelete: true } : undefined,
-          onSuccess() {
-            const isRedirectBack = props?.data?.redirectBack ?? false;
-            const onAfterHandle = props?.data?.onAfterHandle;
-            props?.updateData({
-              toogle: false,
-              row: undefined,
-              resource: "",
-              redirectBack: false,
-              onAfterHandle: undefined,
-            });
+      return mutate({
+        meta: forceDelete ? { forceDelete: true } : undefined,
+        onSuccess() {
+          const isRedirectBack = props?.data?.redirectBack ?? false;
+          const onAfterHandle = props?.data?.onAfterHandle;
+          props?.updateData({
+            toogle: false,
+            row: undefined,
+            resource: "",
+            redirectBack: false,
+            onAfterHandle: undefined,
+          });
 
-            if (isRedirectBack) {
-              back?.();
-            }
+          if (isRedirectBack) {
+            back?.();
+          }
 
-            if (onAfterHandle) {
-              onAfterHandle();
-            }
-          },
-        });
-      }
-
-      return undefined;
+          if (onAfterHandle) {
+            onAfterHandle();
+          }
+        },
+      });
     },
-    [can, props, back, mutate],
+    [props, back, mutate],
   );
 
   return (
     <DeleteConfirmDialog
-      open={can && props?.data?.toogle}
+      open={props?.data?.toogle}
       loading={isLoading}
       errorMessage={props.data?.row?.status?.error_message}
       onOpenChange={() => {

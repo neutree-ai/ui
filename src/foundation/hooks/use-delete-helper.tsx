@@ -1,19 +1,14 @@
 import {
-  AccessControlContext,
-  type CanReturnType,
   pickNotDeprecated,
-  useCan,
   useDelete,
   useMutationMode,
   useResource,
   useResourceParams,
-  useTranslate,
   useWarnAboutChange,
 } from "@refinedev/core";
 import type { MutateOptions } from "@tanstack/react-query";
-import { useContext } from "react";
 
-type DeleteHelperReturnType = CanReturnType & {
+type DeleteHelperReturnType = {
   isLoading: boolean;
   mutate: (
     e?: MutateOptions<unknown, unknown, unknown, unknown> & { meta?: any },
@@ -25,16 +20,6 @@ export const useDeleteHelper = (
   recordItemId: string,
   meta?: any,
 ): DeleteHelperReturnType => {
-  const accessControlContext = useContext(AccessControlContext);
-
-  const accessControlEnabled =
-    accessControlContext.options.buttons.enableAccessControl;
-
-  const hideIfUnauthorized =
-    accessControlContext.options.buttons.hideIfUnauthorized;
-
-  const translate = useTranslate();
-
   const id = useResourceParams();
 
   const { resource: _resource, identifier } = useResource(resource);
@@ -43,29 +28,6 @@ export const useDeleteHelper = (
 
   const { mutate, isLoading } = useDelete();
 
-  const { data } = useCan({
-    resource: _resource?.name,
-    action: "delete",
-    params: {
-      id: recordItemId ?? id,
-      resource: _resource,
-      meta: pickNotDeprecated(meta),
-    },
-    queryOptions: {
-      enabled: accessControlEnabled,
-    },
-  });
-
-  const reason = () => {
-    if (data?.can) {
-      return "";
-    }
-    if (data?.reason) {
-      return data.reason;
-    }
-    return translate("notAccessTitle");
-  };
-
   const { setWarnWhen } = useWarnAboutChange();
 
   const onDeleteMutate = (
@@ -73,9 +35,6 @@ export const useDeleteHelper = (
       meta?: any;
     },
   ): any => {
-    if (accessControlEnabled && hideIfUnauthorized && !data?.can) {
-      return;
-    }
     if ((recordItemId ?? id) && identifier) {
       setWarnWhen(false);
       const mergedMeta = {
@@ -98,8 +57,6 @@ export const useDeleteHelper = (
   };
 
   return {
-    can: !(accessControlEnabled && hideIfUnauthorized && !data?.can),
-    reason: reason(),
     mutate: onDeleteMutate,
     isLoading,
   };
