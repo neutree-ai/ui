@@ -45,8 +45,8 @@
   "src/pages/clusters/create.tsx": "99ae7eeff08224357136dce716517270",
   "src/pages/clusters/edit.tsx": "b58a312d5d3cdd5546f1e382d4a52aa7",
   "src/pages/clusters/list.tsx": "b184b98bf0bc2781a9fafb7c058fb9b1",
-  "src/pages/clusters/show.tsx": "5c520a0de409ef8ada19d4e7d17451aa",
-  "src/pages/clusters/use-cluster-form.tsx": "54e3d02a99a2018fe4b03e2fcfa104c6",
+  "src/pages/clusters/show.tsx": "25dcfbc9dc9befce9b7b0c03a31ae5b2",
+  "src/pages/clusters/use-cluster-form.tsx": "03c6c498be19be2d3fd280deedf8e9e8",
   "src/pages/api-keys/list.tsx": "36e4c31cd9af30d074ce8681605e967f",
   "src/pages/api-keys/show.tsx": "fc99e62438913fcf342338326f2e4cac",
   "src/components/ui/alert-dialog.tsx": "fd2a0854b18d61d21fe0e8effd7e4cd9",
@@ -120,7 +120,7 @@
   "src/foundation/lib/plural.ts": "5d10922518b7de7bf6db90ce2e078f5f",
   "src/foundation/lib/unit.ts": "22ffe4a8ff95c7f176c4cbb461044d07",
   "src/foundation/lib/utils.ts": "618d00bf4537ce84f9ba62c5b215fb30",
-  "src/foundation/lib/validate.ts": "b559ad2b7a793298c92e98915b53d493",
+  "src/foundation/lib/validate.ts": "5b121181f9539313e8400c5a7cf35ae2",
   "src/foundation/lib/api/api-gen.ts": "3dc0fd3bee6e4ab06690dcf9d494cd81",
   "src/foundation/lib/api/index.ts": "dd598b7ac20a55d8a1791983f31d47c0",
   "src/foundation/hooks/use-column-visibility.ts": "34df48e802e538f49e37e3e7af1722e5",
@@ -235,5 +235,8 @@
   "src/foundation/providers/delete-provider.tsx": "0b070f7c7578da327cd966e40843ba30",
   "src/foundation/providers/notification-provider.ts": "e5c362d105d384b20439efe3c0446035",
   "src/foundation/providers/theme-provider.tsx": "7ec4d0251e080afaf2d76f6ec7cf37fb",
-  "src/foundation/providers/data-provider/utils/clean-internal-fields.ts": "86fabe5db09d9fe17c44b007c81ede57"
+  "src/foundation/providers/data-provider/utils/clean-internal-fields.ts": "86fabe5db09d9fe17c44b007c81ede57",
+  "src/domains/cluster/lib/calc-resource-usage.ts": "26819eac9d3af7474a6389537bf20863",
+  "src/domains/cluster/lib/get-cache-type.ts": "2c082b5338dcd2fa18335dcbbc65bada",
+  "src/domains/cluster/lib/transform-cluster-values.ts": "6e42e94739be2253010b305e36854f10"
 }

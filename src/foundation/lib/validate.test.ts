@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isNfsProtocol, isValidIPAddress, isValidPath } from "./validate";
+import {
+  isNfsProtocol,
+  isValidIPAddress,
+  isValidPath,
+  isValidStorageQuantity,
+} from "./validate";
 
 describe("isValidIPAddress", () => {
   it.each(["0.0.0.0", "192.168.1.1", "255.255.255.255", "10.0.0.1"])(
@@ -52,4 +57,20 @@ describe("isNfsProtocol", () => {
     expect(isNfsProtocol("http://server")).toBe(false);
     expect(isNfsProtocol("")).toBe(false);
   });
+});
+
+describe("isValidStorageQuantity", () => {
+  it.each(["10Gi", "100Mi", "500", "1.5Ti", "0.5Gi", "1024Ki", "2E", "10Pi"])(
+    "accepts %s",
+    (v) => {
+      expect(isValidStorageQuantity(v)).toBe(true);
+    },
+  );
+
+  it.each(["", "abc", "10gi", "Gi", "10 Gi", "-5Gi", "10GiB"])(
+    "rejects %s",
+    (v) => {
+      expect(isValidStorageQuantity(v)).toBe(false);
+    },
+  );
 });

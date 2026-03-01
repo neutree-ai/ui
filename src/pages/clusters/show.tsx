@@ -22,8 +22,10 @@ import {
   type ClusterMonitorPanelType,
   useClusterMonitorPanels,
 } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
+import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
+import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import type { Cluster, ModelCache } from "@/domains/cluster/types";
+import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
@@ -46,13 +48,6 @@ import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useShow, useTranslation } from "@refinedev/core";
-
-// Utility function to calculate resource usage
-const calcResourceUsage = (allocatable: number, available?: number) => {
-  const used = allocatable - (available || 0);
-  const percent = allocatable > 0 ? Math.round((used / allocatable) * 100) : 0;
-  return { used, percent };
-};
 
 // Component for displaying resource usage with progress bar
 interface ResourceProgressBarProps {
@@ -298,12 +293,6 @@ export const ClustersShow = () => {
   }
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
-
-  const getCacheType = (cache: ModelCache): "nfs" | "host_path" | "pvc" => {
-    if (cache.nfs) return "nfs";
-    if (cache.pvc) return "pvc";
-    return "host_path";
-  };
 
   return (
     <ShowPage record={record}>

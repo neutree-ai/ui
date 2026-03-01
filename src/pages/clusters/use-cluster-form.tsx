@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import NodeIPsField from "@/domains/cluster/components/NodeIPsField";
+import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
+import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import type { Cluster } from "@/domains/cluster/types";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
@@ -13,57 +15,16 @@ import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { cn } from "@/foundation/lib/utils";
-import { isValidIPAddress, isValidPath } from "@/foundation/lib/validate";
+import {
+  isValidIPAddress,
+  isValidPath,
+  isValidStorageQuantity,
+} from "@/foundation/lib/validate";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-const transformValues = (values: Cluster, isEdit = false) => {
-  const transformedValues = { ...values };
-
-  const config = transformedValues.spec?.config;
-
-  // Transform SSH private key for SSH type clusters
-  if (config.ssh_config?.auth?.ssh_private_key && values.spec.type === "ssh") {
-    if (!config.ssh_config.auth.ssh_private_key.endsWith("\n")) {
-      config.ssh_config.auth.ssh_private_key += "\n";
-    }
-    config.ssh_config.auth.ssh_private_key = btoa(
-      config.ssh_config.auth.ssh_private_key,
-    );
-  }
-
-  // Transform kubeconfig for Kubernetes type clusters
-  if (
-    config.kubernetes_config?.kubeconfig &&
-    values.spec.type === "kubernetes"
-  ) {
-    config.kubernetes_config.kubeconfig = btoa(
-      config.kubernetes_config.kubeconfig,
-    );
-  }
-
-  // Transform router replicas to number
-  if (config.kubernetes_config?.router?.replicas) {
-    config.kubernetes_config.router.replicas = Number(
-      config.kubernetes_config.router.replicas,
-    );
-  }
-
-  // In edit mode, remove empty sensitive fields to avoid overwriting backend config
-  if (isEdit) {
-    if (config.ssh_config?.auth && !config.ssh_config.auth.ssh_private_key) {
-      delete config.ssh_config.auth.ssh_private_key;
-    }
-    if (config.kubernetes_config && !config.kubernetes_config.kubeconfig) {
-      delete config.kubernetes_config.kubeconfig;
-    }
-  }
-
-  return transformedValues;
-};
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -100,7 +61,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
-    const transformedValues = transformValues(values as Cluster, isEdit);
+    const transformedValues = transformClusterValues(values as Cluster, isEdit);
 
     return originalOnFinish(transformedValues);
   };
@@ -121,13 +82,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const modelCaches: { name: string }[] =
     form.watch("spec.config.model_caches") || [];
 
-  // Kubernetes storage quantity validation
   const validateStorageQuantity = (value: string) => {
     if (!value) return true;
-    const storageRegex = /^\d+(\.\d+)?(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$/;
-    if (storageRegex.test(value)) {
-      return true;
-    }
+    if (isValidStorageQuantity(value)) return true;
     return (
       t("clusters.validation.invalidStorageFormat") ||
       "Invalid storage format (e.g., 10Gi, 100Mi)"
@@ -150,11 +107,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     });
   };
 
-  const getCacheType = (index: number): "nfs" | "host_path" | "pvc" => {
+  const getCacheTypeAtIndex = (index: number): "nfs" | "host_path" | "pvc" => {
     const cache = form.watch(`spec.config.model_caches.${index}`);
-    if (cache?.nfs) return "nfs";
-    if (cache?.pvc) return "pvc";
-    return "host_path";
+    return getCacheType(cache || {});
   };
 
   const switchCacheType = (
@@ -369,7 +324,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <FormCardGrid title={t("clusters.sections.modelCaches")}>
           <div className="col-span-full space-y-4">
             {modelCaches.map((_, index) => {
-              const cacheType = getCacheType(index);
+              const cacheType = getCacheTypeAtIndex(index);
 
               return (
                 <Card key={fields[index]?.id} className="relative">

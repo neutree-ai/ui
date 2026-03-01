@@ -13,3 +13,11 @@ export const isValidPath = (path: string): boolean => {
 export const isNfsProtocol = (url: string): boolean => {
   return url.trim().startsWith("nfs://");
 };
+
+/**
+ * Validate a Kubernetes storage quantity string (e.g., "10Gi", "100Mi", "500").
+ */
+export const isValidStorageQuantity = (value: string): boolean => {
+  const storageRegex = /^\d+(\.\d+)?(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$/;
+  return storageRegex.test(value);
+};
