@@ -2,15 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { cn } from "@/foundation/lib/utils";
 import { MAX_UNLIMITED } from "@/foundation/types/license";
-import * as clipboard from "clipboard-polyfill";
 import { Check, Copy } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 
 const formatDate = (timestamp: number) => {
   return new Date(timestamp * 1000).toLocaleDateString();
@@ -44,20 +43,15 @@ const getPhaseColor = (phase: string) => {
 export const LicenseShow: React.FC = () => {
   const { t } = useTranslation();
   const [licenseCode, setLicenseCode] = useState("");
-  const [copied, setCopied] = useState(false);
+  const { copy, copied } = useCopyToClipboard();
 
   const { license, isLoading, isUpdating, error, updateLicense } = useLicense();
 
-  const copySerialNumber = async (serial: string) => {
-    try {
-      await clipboard.writeText(serial);
-      toast.success(t("license.success.serialCopied"));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error(t("license.errors.updateFailed"));
-    }
-  };
+  const copySerialNumber = (serial: string) =>
+    copy(serial, {
+      successMessage: t("license.success.serialCopied"),
+      errorMessage: t("license.errors.updateFailed"),
+    });
 
   const handleUpdateLicense = () => {
     updateLicense(licenseCode, {

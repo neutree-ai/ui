@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -7,20 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useApiKeyUsage } from "@/domains/api-key/hooks/use-api-key-usage";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import { useCustomMutation, useShow } from "@refinedev/core";
-import { useCallback, useEffect, useState } from "react";
+import { useShow } from "@refinedev/core";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
-type ApiUsageRecord = {
-  date: string;
-  api_key_id: string;
-  api_key_name: string;
-  endpoint_name: string;
-  usage: number;
-};
 
 export const ApiKeysShow = () => {
   const { t } = useTranslation();
@@ -28,41 +22,11 @@ export const ApiKeysShow = () => {
     query: { data, isLoading },
   } = useShow();
   const record = data?.data;
-
-  const [usageData, setUsageData] = useState<ApiUsageRecord[]>([]);
-
-  const { mutateAsync } = useCustomMutation();
-
-  const fetchUsageData = useCallback(async () => {
-    if (!record?.id) return;
-
-    try {
-      const res = await mutateAsync({
-        url: "/rpc/get_usage_by_dimension",
-        method: "post",
-        values: {
-          p_start_date: "2025-01-01",
-          p_end_date: new Date().toISOString(),
-          p_api_key_id: record?.id,
-        },
-      });
-      setUsageData(res.data as ApiUsageRecord[]);
-    } catch (error) {
-      console.error("Failed to fetch usage data:", error);
-    }
-  }, [record?.id, mutateAsync]);
-
-  useEffect(() => {
-    fetchUsageData();
-  }, [fetchUsageData]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchUsageData();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [fetchUsageData]);
+  const {
+    usageData,
+    isLoading: usageLoading,
+    error: usageError,
+  } = useApiKeyUsage(record?.id);
 
   if (isLoading) {
     return <div>{t("api_keys.messages.loading")}</div>;
@@ -83,6 +47,18 @@ export const ApiKeysShow = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {usageLoading && usageData.length === 0 && (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                {t("api_keys.messages.loading")}
+              </div>
+            )}
+            {usageError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{usageError.message}</AlertDescription>
+              </Alert>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -102,7 +78,7 @@ export const ApiKeysShow = () => {
                         recordItemId={row.endpoint_name}
                         variant="link"
                         meta={{
-                          workspacece: record.metadata.workspace,
+                          workspace: record.metadata.workspace,
                         }}
                         resource="endpoints"
                       >

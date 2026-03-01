@@ -3,12 +3,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { cn } from "@/foundation/lib/utils";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
-import * as clipboard from "clipboard-polyfill";
-import { Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import Timestamp from "./Timestamp";
 
 type BaseStatusProps = BaseStatusType & {
@@ -24,16 +23,15 @@ export default function BaseStatus({
   last_transition_time,
 }: BaseStatusProps) {
   const { t } = useTranslation();
+  const { copy, copied } = useCopyToClipboard();
 
   const copyErrorMessage = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!error_message) return;
-    try {
-      await clipboard.writeText(error_message);
-      toast.success(t("status.copyErrorSuccess"));
-    } catch (err) {
-      toast.error(t("status.copyErrorFailed"));
-    }
+    await copy(error_message, {
+      successMessage: t("status.copyErrorSuccess"),
+      errorMessage: t("status.copyErrorFailed"),
+    });
   };
 
   if (!phase) {
@@ -57,7 +55,11 @@ export default function BaseStatus({
               onClick={copyErrorMessage}
               className="p-1 rounded hover:bg-muted transition-colors cursor-pointer"
             >
-              <Copy className="h-3 w-3 text-muted-foreground" />
+              {copied ? (
+                <Check className="h-3 w-3 text-green-600" />
+              ) : (
+                <Copy className="h-3 w-3 text-muted-foreground" />
+              )}
             </div>
           )}
         </span>

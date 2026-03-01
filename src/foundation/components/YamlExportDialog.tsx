@@ -20,12 +20,13 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   type ExportableResource,
   useYamlExport,
 } from "@/foundation/hooks/use-yaml-export";
-import * as clipboard from "clipboard-polyfill";
 import {
+  Check,
   CheckCircle,
   ChevronDown,
   ChevronRight,
@@ -123,16 +124,14 @@ export const YamlExportDialog = ({
     }
   };
 
-  const handleCopyToClipboard = async () => {
-    try {
-      await clipboard.writeText(yamlContent);
-      toast.success(t("components.yamlExport.copySuccess"), {
-        description: t("components.yamlExport.copySuccessDescription"),
-      });
-    } catch (error) {
-      toast.error(t("components.yamlExport.errors.copyFailed"));
-    }
-  };
+  const { copy, copied: yamlCopied } = useCopyToClipboard();
+
+  const handleCopyToClipboard = () =>
+    copy(yamlContent, {
+      successMessage: t("components.yamlExport.copySuccess"),
+      successDescription: t("components.yamlExport.copySuccessDescription"),
+      errorMessage: t("components.yamlExport.errors.copyFailed"),
+    });
 
   const handleDownloadFile = () => {
     const blob = new Blob([yamlContent], { type: "application/yaml" });
@@ -466,8 +465,14 @@ export const YamlExportDialog = ({
                     onClick={handleCopyToClipboard}
                     className="flex items-center gap-2"
                   >
-                    <Copy className="h-4 w-4" />
-                    {t("components.yamlExport.copyToClipboard")}
+                    {yamlCopied ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    {yamlCopied
+                      ? t("components.yamlExport.copied")
+                      : t("components.yamlExport.copyToClipboard")}
                   </Button>
                   <Button
                     variant="outline"

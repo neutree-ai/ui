@@ -28,3 +28,11 @@ enum ApiKeyPhase {
   CREATED = "Created",
   DELETED = "Deleted",
 }
+
+export type ApiUsageRecord = {
+  date: string;
+  api_key_id: string;
+  api_key_name: string;
+  endpoint_name: string;
+  usage: number;
+};
