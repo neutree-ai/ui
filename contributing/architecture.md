@@ -41,20 +41,21 @@ foundation/
 domains/cluster/
 ├── types.ts           Resource types (always at domain root)
 ├── components/        ClusterStatus, ClusterType, NodeIPsField
-├── hooks/             use-cluster-monitor-panels
+├── hooks/             use-cluster-monitor-panels, use-<resource>-form
 └── lib/               cluster-resources, get-ray-dashboard-proxy
 ```
 
 Rules:
 - `.tsx` → `components/`, `use-*.ts` → `hooks/`, utilities → `lib/`, `types.ts` stays at root
-- Domains with only types (api-key, user, workspace) skip subdirectories
+- Form hooks (`use-<resource>-form`) live in L2 `hooks/` — they contain domain knowledge (validation rules, field structure, conditional logic)
+- Domains with only types skip subdirectories
 - Multi-domain shared types go to `foundation/types/` (e.g. `serving-types.ts`)
 
 ### L3 `pages/<resource>/`
 
-Each resource directory contains: `list.tsx`, `create.tsx`, `edit.tsx`, `show.tsx`, `columns.tsx`, `use-<resource>-form.ts`.
+Each resource directory contains: `list.tsx`, `create.tsx`, `edit.tsx`, `show.tsx`.
 
-Pages compose L2 domain components into views. Column definitions live here (not in L2) because they are view-level composition.
+Pages are thin composition layers — they call an L2 form hook and pass the result to `ResourceForm`. Column definitions are inlined in `list.tsx`.
 
 ## Common Tasks: Where to Put Code
 

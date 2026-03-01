@@ -24,15 +24,15 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-let mockSupportMultiWorkspace = true;
 vi.mock("@/foundation/hooks/use-license", () => ({
-  useLicense: () => ({ supportMultiWorkspace: mockSupportMultiWorkspace }),
+  useLicense: vi.fn(() => ({ supportMultiWorkspace: true })),
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
+import { useLicense } from "@/foundation/hooks/use-license";
 import { useRoleAssignmentForm } from "./use-role-assignment-form";
 
 function CreateForm() {
@@ -55,7 +55,6 @@ function selectScope(label: string) {
 describe("useRoleAssignmentForm", () => {
   describe("global/workspace toggle", () => {
     it("hides workspace field when global is selected", async () => {
-      mockSupportMultiWorkspace = true;
       render(<CreateForm />);
 
       selectScope("role_assignments.options.global");
@@ -68,7 +67,6 @@ describe("useRoleAssignmentForm", () => {
     });
 
     it("shows workspace field when workspace scope is selected", async () => {
-      mockSupportMultiWorkspace = true;
       render(<CreateForm />);
 
       selectScope("role_assignments.options.global");
@@ -82,7 +80,6 @@ describe("useRoleAssignmentForm", () => {
     });
 
     it("clears workspace value when switching to global", async () => {
-      mockSupportMultiWorkspace = true;
       render(<CreateForm />);
 
       selectScope("role_assignments.options.workspace");
@@ -96,7 +93,9 @@ describe("useRoleAssignmentForm", () => {
     });
 
     it("defaults to global when multi-workspace is not supported", () => {
-      mockSupportMultiWorkspace = false;
+      vi.mocked(useLicense).mockReturnValue({
+        supportMultiWorkspace: false,
+      });
       render(<CreateForm />);
 
       expect(screen.getByTestId("field-spec.workspace").className).toContain(
