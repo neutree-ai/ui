@@ -1,10 +1,10 @@
-import { useWorkspace } from "@/foundation/hooks";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { getResourcePlural } from "@/foundation/lib/plural";
 import type { Metadata } from "@/foundation/types/basic-types";
 import { useCreate, useDataProvider, useResource } from "@refinedev/core";
 import * as yaml from "js-yaml";
 import { useCallback, useState } from "react";
+import { useWorkspace } from "./use-workspace";
 
 interface YamlResource {
   apiVersion: string;

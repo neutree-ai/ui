@@ -1,5 +1,6 @@
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { useDeleteHelper, useOnBack } from "@/foundation/hooks";
+import { useDeleteHelper } from "@/foundation/hooks/use-delete-helper";
+import { useOnBack } from "@/foundation/hooks/use-on-back";
 import type React from "react";
 import {
   type PropsWithChildren,

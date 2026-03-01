@@ -25,7 +25,7 @@ import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
-import { useWorkspace } from "@/foundation/hooks";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";

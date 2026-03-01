@@ -1,7 +1,8 @@
-import { ALL_WORKSPACES } from "@/foundation/hooks";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import type { DataProvider, HttpError } from "@refinedev/core";
 import { type PostgrestClient, PostgrestError } from "@supabase/postgrest-js";
-import { generateFilter, handleError } from "./utils";
+import { generateFilter } from "./utils/generate-filter";
+import { handleError } from "./utils/handle-error";
 
 export const dataProvider = (
   postgrestClient: PostgrestClient<any, any, any>,

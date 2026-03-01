@@ -1,5 +1,5 @@
 import { Combobox } from "@/components/ui/combobox";
-import { useWorkspace } from "@/foundation/hooks";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import React from "react";
 
 type WorkspaceFieldProps = Partial<{

@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useWorkspace } from "@/foundation/hooks";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { cn } from "@/foundation/lib/utils";
 import { useMenu, useResourceParams } from "@refinedev/core";
 import type { TreeMenuItem } from "@refinedev/core/dist/hooks/menu/useMenu";

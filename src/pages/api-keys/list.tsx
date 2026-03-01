@@ -23,13 +23,16 @@ import type { UseTableReturnType } from "@refinedev/react-table";
 import * as clipboard from "clipboard-polyfill";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import type { FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useApiKeyColumns } from "./columns";
 
+type FormValues = { name: string; workspace: string };
+
 const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   const { t } = useTranslation();
-  const form = useForm({
+  const form = useForm<FormValues>({
     mode: "all",
     defaultValues: {
       name: "",
@@ -58,7 +61,7 @@ const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     }
   };
 
-  const onSubmit = async (formValue: { name: string; workspace: string }) => {
+  const onSubmit = async (formValue: FieldValues) => {
     const { data } = await mutateAsync({
       url: "/rpc/create_api_key",
       method: "post",

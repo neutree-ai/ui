@@ -1,9 +1,9 @@
-import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { Metadata } from "@/foundation/types/basic-types";
 import { useDataProvider, useResource } from "@refinedev/core";
 import * as yaml from "js-yaml";
 import { useCallback, useMemo, useState } from "react";
+import { ALL_WORKSPACES, useWorkspace } from "./use-workspace";
 
 // Available resource types for export
 export const EXPORTABLE_RESOURCES = [

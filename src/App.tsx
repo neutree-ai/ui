@@ -9,8 +9,8 @@ import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { BaseLayout } from "@/foundation/components/BaseLayout";
 import { DefaultLayout } from "@/foundation/components/DefaultLayout";
 import { ModeToggle } from "@/foundation/components/ModeToggle";
-import { notificationProvider } from "@/foundation/providers";
 import { dataProvider } from "@/foundation/providers/data-provider";
+import { notificationProvider } from "@/foundation/providers/notificationProvider";
 import routerProvider, {
   CatchAllNavigate,
   NavigateToResource,

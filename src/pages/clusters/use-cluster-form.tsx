@@ -11,7 +11,7 @@ import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
-import { useWorkspace } from "@/foundation/hooks";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { cn } from "@/foundation/lib/utils";
 import { isValidIPAddress, isValidPath } from "@/foundation/lib/validate";
 import { useSelect } from "@refinedev/core";

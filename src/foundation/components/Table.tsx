@@ -46,15 +46,16 @@ import { BatchDeleteBar } from "@/foundation/components/BatchDeleteBar";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { TableSearch } from "@/foundation/components/TableSearch";
-import {
-  useDeleteHelper,
-  useGetEditUrl,
-  useGetShowUrl,
-} from "@/foundation/hooks";
 import { useColumnVisibility } from "@/foundation/hooks/use-column-visibility";
+import { useDeleteHelper } from "@/foundation/hooks/use-delete-helper";
+import { useGetEditUrl } from "@/foundation/hooks/use-get-edit-url";
+import { useGetShowUrl } from "@/foundation/hooks/use-get-show-url";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import { DeleteContext, DeleteProvider } from "@/foundation/providers";
+import {
+  DeleteContext,
+  DeleteProvider,
+} from "@/foundation/providers/deleteProvider";
 import {
   CaretDownIcon,
   CaretUpIcon,
