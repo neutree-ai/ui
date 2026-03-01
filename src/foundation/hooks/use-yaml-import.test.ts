@@ -46,7 +46,11 @@ vi.mock("./use-workspace", () => ({
 
 // --- Helpers ---
 
-function makeResource(overrides?: Partial<YamlResource>): YamlResource {
+function makeResource(
+  overrides?: Partial<Omit<YamlResource, "metadata">> & {
+    metadata?: Partial<YamlResource["metadata"]>;
+  },
+): YamlResource {
   const defaults: YamlResource = {
     apiVersion: "v1",
     kind: "Cluster",
