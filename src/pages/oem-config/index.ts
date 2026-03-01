@@ -1,1 +1,0 @@
-export { OemConfigShow } from "./show";

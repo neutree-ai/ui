@@ -39,57 +39,186 @@ import {
   UserCheck,
 } from "lucide-react";
 
+import { Loader } from "@/foundation/components/Loader";
 import { UserDropdown } from "@/foundation/components/UserDropdown";
 import WorkspaceSelect from "@/foundation/components/WorkspaceSelect";
 import { YamlExportButton } from "@/foundation/components/YamlExportButton";
 import { YamlImportButton } from "@/foundation/components/YamlImportButton";
 import { authProvider } from "@/foundation/providers/auth-provider";
-import { ApiKeysList } from "./pages/api-keys";
-import { ApiKeysShow } from "./pages/api-keys/show";
-import { AuthPage } from "./pages/auth/AuthPage";
-import {
-  ClustersCreate,
-  ClustersEdit,
-  ClustersList,
-  ClustersShow,
-} from "./pages/clusters";
-import Dashboard from "./pages/dashboard/Dashboard";
-import {
-  EndpointsCreate,
-  EndpointsEdit,
-  EndpointsList,
-  EndpointsShow,
-} from "./pages/endpoints";
-import { EnginesList, EnginesShow } from "./pages/engines";
-import {
-  ImageRegistriesCreate,
-  ImageRegistriesEdit,
-  ImageRegistriesList,
-  ImageRegistriesShow,
-} from "./pages/image-registries";
-import { LicenseShow } from "./pages/license";
-import { ModelCatalogsList, ModelCatalogsShow } from "./pages/model-catalogs";
-import {
-  ModelRegistriesCreate,
-  ModelRegistriesEdit,
-  ModelRegistriesList,
-  ModelRegistriesShow,
-} from "./pages/model-registries";
-// import VRAMCalculator from "./pages/vram-calculator/VramCalculatorPage";
-import { OemConfigShow } from "./pages/oem-config";
-import {
-  RoleAssignmentsCreate,
-  RoleAssignmentsEdit,
-  RoleAssignmentsList,
-  RoleAssignmentsShow,
-} from "./pages/role-assignments";
-import { RolesCreate, RolesEdit, RolesList, RolesShow } from "./pages/roles";
-import { UsersCreate, UsersEdit, UsersList, UsersShow } from "./pages/users";
-import {
-  WorkspacesCreate,
-  WorkspacesList,
-  WorkspacesShow,
-} from "./pages/workspaces";
+import { Suspense, lazy } from "react";
+
+const AuthPage = lazy(() =>
+  import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),
+);
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+
+const ApiKeysList = lazy(() =>
+  import("./pages/api-keys/list").then((m) => ({ default: m.ApiKeysList })),
+);
+const ApiKeysShow = lazy(() =>
+  import("./pages/api-keys/show").then((m) => ({ default: m.ApiKeysShow })),
+);
+
+const ClustersList = lazy(() =>
+  import("./pages/clusters/list").then((m) => ({ default: m.ClustersList })),
+);
+const ClustersShow = lazy(() =>
+  import("./pages/clusters/show").then((m) => ({ default: m.ClustersShow })),
+);
+const ClustersEdit = lazy(() =>
+  import("./pages/clusters/edit").then((m) => ({ default: m.ClustersEdit })),
+);
+const ClustersCreate = lazy(() =>
+  import("./pages/clusters/create").then((m) => ({
+    default: m.ClustersCreate,
+  })),
+);
+
+const EndpointsList = lazy(() =>
+  import("./pages/endpoints/list").then((m) => ({ default: m.EndpointsList })),
+);
+const EndpointsShow = lazy(() =>
+  import("./pages/endpoints/show").then((m) => ({ default: m.EndpointsShow })),
+);
+const EndpointsEdit = lazy(() =>
+  import("./pages/endpoints/edit").then((m) => ({ default: m.EndpointsEdit })),
+);
+const EndpointsCreate = lazy(() =>
+  import("./pages/endpoints/create").then((m) => ({
+    default: m.EndpointsCreate,
+  })),
+);
+
+const EnginesList = lazy(() =>
+  import("./pages/engines/list").then((m) => ({ default: m.EnginesList })),
+);
+const EnginesShow = lazy(() =>
+  import("./pages/engines/show").then((m) => ({ default: m.EnginesShow })),
+);
+
+const ImageRegistriesList = lazy(() =>
+  import("./pages/image-registries/list").then((m) => ({
+    default: m.ImageRegistriesList,
+  })),
+);
+const ImageRegistriesShow = lazy(() =>
+  import("./pages/image-registries/show").then((m) => ({
+    default: m.ImageRegistriesShow,
+  })),
+);
+const ImageRegistriesEdit = lazy(() =>
+  import("./pages/image-registries/edit").then((m) => ({
+    default: m.ImageRegistriesEdit,
+  })),
+);
+const ImageRegistriesCreate = lazy(() =>
+  import("./pages/image-registries/create").then((m) => ({
+    default: m.ImageRegistriesCreate,
+  })),
+);
+
+const LicenseShow = lazy(() =>
+  import("./pages/license/show").then((m) => ({ default: m.LicenseShow })),
+);
+
+const ModelCatalogsList = lazy(() =>
+  import("./pages/model-catalogs/list").then((m) => ({
+    default: m.ModelCatalogsList,
+  })),
+);
+const ModelCatalogsShow = lazy(() =>
+  import("./pages/model-catalogs/show").then((m) => ({
+    default: m.ModelCatalogsShow,
+  })),
+);
+
+const ModelRegistriesList = lazy(() =>
+  import("./pages/model-registries/list").then((m) => ({
+    default: m.ModelRegistriesList,
+  })),
+);
+const ModelRegistriesShow = lazy(() =>
+  import("./pages/model-registries/show").then((m) => ({
+    default: m.ModelRegistriesShow,
+  })),
+);
+const ModelRegistriesEdit = lazy(() =>
+  import("./pages/model-registries/edit").then((m) => ({
+    default: m.ModelRegistriesEdit,
+  })),
+);
+const ModelRegistriesCreate = lazy(() =>
+  import("./pages/model-registries/create").then((m) => ({
+    default: m.ModelRegistriesCreate,
+  })),
+);
+
+const OemConfigShow = lazy(() =>
+  import("./pages/oem-config/show").then((m) => ({ default: m.OemConfigShow })),
+);
+
+const RoleAssignmentsList = lazy(() =>
+  import("./pages/role-assignments/list").then((m) => ({
+    default: m.RoleAssignmentsList,
+  })),
+);
+const RoleAssignmentsShow = lazy(() =>
+  import("./pages/role-assignments/show").then((m) => ({
+    default: m.RoleAssignmentsShow,
+  })),
+);
+const RoleAssignmentsEdit = lazy(() =>
+  import("./pages/role-assignments/edit").then((m) => ({
+    default: m.RoleAssignmentsEdit,
+  })),
+);
+const RoleAssignmentsCreate = lazy(() =>
+  import("./pages/role-assignments/create").then((m) => ({
+    default: m.RoleAssignmentsCreate,
+  })),
+);
+
+const RolesList = lazy(() =>
+  import("./pages/roles/list").then((m) => ({ default: m.RolesList })),
+);
+const RolesShow = lazy(() =>
+  import("./pages/roles/show").then((m) => ({ default: m.RolesShow })),
+);
+const RolesEdit = lazy(() =>
+  import("./pages/roles/edit").then((m) => ({ default: m.RolesEdit })),
+);
+const RolesCreate = lazy(() =>
+  import("./pages/roles/create").then((m) => ({ default: m.RolesCreate })),
+);
+
+const UsersList = lazy(() =>
+  import("./pages/users/list").then((m) => ({ default: m.UsersList })),
+);
+const UsersShow = lazy(() =>
+  import("./pages/users/show").then((m) => ({ default: m.UsersShow })),
+);
+const UsersEdit = lazy(() =>
+  import("./pages/users/edit").then((m) => ({ default: m.UsersEdit })),
+);
+const UsersCreate = lazy(() =>
+  import("./pages/users/create").then((m) => ({ default: m.UsersCreate })),
+);
+
+const WorkspacesList = lazy(() =>
+  import("./pages/workspaces/list").then((m) => ({
+    default: m.WorkspacesList,
+  })),
+);
+const WorkspacesShow = lazy(() =>
+  import("./pages/workspaces/show").then((m) => ({
+    default: m.WorkspacesShow,
+  })),
+);
+const WorkspacesCreate = lazy(() =>
+  import("./pages/workspaces/create").then((m) => ({
+    default: m.WorkspacesCreate,
+  })),
+);
 
 const resources: ResourceProps[] = [
   {
@@ -343,7 +472,15 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                         ),
                       }}
                     >
-                      <Outlet />
+                      <Suspense
+                        fallback={
+                          <div className="flex h-full items-center justify-center">
+                            <Loader className="w-16 text-muted-foreground" />
+                          </div>
+                        }
+                      >
+                        <Outlet />
+                      </Suspense>
                     </DefaultLayout>
                   </Authenticated>
                 }
@@ -429,7 +566,20 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
               {/* auth route */}
               <Route
                 element={
-                  <Authenticated key="auth-pages" fallback={<Outlet />}>
+                  <Authenticated
+                    key="auth-pages"
+                    fallback={
+                      <Suspense
+                        fallback={
+                          <div className="flex h-screen items-center justify-center">
+                            <Loader className="w-16 text-muted-foreground" />
+                          </div>
+                        }
+                      >
+                        <Outlet />
+                      </Suspense>
+                    }
+                  >
                     <NavigateToResource resource="dashboard" />
                   </Authenticated>
                 }

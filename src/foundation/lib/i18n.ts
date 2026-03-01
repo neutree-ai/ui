@@ -8,7 +8,7 @@ import {
 
 // Dynamically import all locale files from the locales directory
 const localeModules = import.meta.glob<{ default: Record<string, unknown> }>(
-  "../locales/*.json",
+  "../../locales/*.json",
   { eager: true },
 );
 
@@ -48,6 +48,9 @@ i18n
     debug: false,
     interpolation: {
       escapeValue: false,
+    },
+    react: {
+      useSuspense: false,
     },
   });
 
