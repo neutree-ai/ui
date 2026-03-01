@@ -36,7 +36,6 @@ import {
   getEndpointDashboardProps,
   getVllmDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
-import { formatToDecimal } from "@/foundation/lib/unit";
 import {
   type IResourceComponentsProps,
   useList,

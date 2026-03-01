@@ -1,11 +1,3 @@
-import {
-  CalendarIcon,
-  EnvelopeClosedIcon,
-  FaceIcon,
-  GearIcon,
-  PersonIcon,
-  RocketIcon,
-} from "@radix-ui/react-icons";
 import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
 
 import { Button } from "@/components/ui/button";
@@ -16,8 +8,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command";
 import { FormControl } from "@/components/ui/form";
 import {

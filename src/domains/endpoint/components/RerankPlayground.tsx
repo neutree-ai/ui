@@ -329,7 +329,7 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
                     <ScrollArea className="h-[600px] rounded-md border">
                       <div className="p-4 space-y-4">
                         {rankedDocuments.length > 0 ? (
-                          rankedDocuments.map((doc, index) => {
+                          rankedDocuments.map((doc, _index) => {
                             const changeDisplay = getRankChangeDisplay(
                               doc.rankChange,
                             );

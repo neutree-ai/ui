@@ -195,7 +195,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
 
   const onSubmit: SubmitHandler<FormValue> = async (
     { model, temperature, max_length, top_p },
-    e,
+    _e,
   ) => {
     setStatus("submitted");
 

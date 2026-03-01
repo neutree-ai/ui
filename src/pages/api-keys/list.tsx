@@ -19,7 +19,6 @@ import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import type { UseTableReturnType } from "@refinedev/react-table";
 import * as clipboard from "clipboard-polyfill";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";

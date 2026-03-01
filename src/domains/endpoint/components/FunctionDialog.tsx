@@ -78,7 +78,7 @@ export function FunctionDialog({
   onSave,
 }: FunctionDialogProps) {
   const { t } = useTranslation();
-  const [parameterFields, setParameterFields] = useState<string[]>([]);
+  const [_parameterFields, setParameterFields] = useState<string[]>([]);
   const [parameterError, setParameterError] = useState<string>("");
 
   const { control, handleSubmit, reset, watch, setValue } = useForm<FormData>({

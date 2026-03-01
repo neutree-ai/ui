@@ -1,16 +1,5 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -20,12 +9,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -33,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   TableBody,
   TableCell,
@@ -49,7 +31,6 @@ import { TableSearch } from "@/foundation/components/TableSearch";
 import { useColumnVisibility } from "@/foundation/hooks/use-column-visibility";
 import { useDeleteHelper } from "@/foundation/hooks/use-delete-helper";
 import { useGetEditUrl } from "@/foundation/hooks/use-get-edit-url";
-import { useGetShowUrl } from "@/foundation/hooks/use-get-show-url";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import {
@@ -59,11 +40,9 @@ import {
 import {
   CaretDownIcon,
   CaretUpIcon,
-  CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   DotsHorizontalIcon,
-  DotsVerticalIcon,
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
   MixerHorizontalIcon,
@@ -95,22 +74,16 @@ import {
   type Table as TanStackTable,
   flexRender,
 } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { FilterIcon, FilterX } from "lucide-react";
 import type React from "react";
 import {
   type FC,
   type PropsWithChildren,
   type ReactElement,
   type ReactNode,
-  forwardRef,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
 } from "react";
-import type { DateRange } from "react-day-picker";
 
 // ============================================================================
 // Types

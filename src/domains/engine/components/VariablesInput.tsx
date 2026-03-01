@@ -30,7 +30,7 @@ import {
   useVariablesInput,
 } from "@/domains/engine/hooks/use-variables-input";
 import { Plus, Trash } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 

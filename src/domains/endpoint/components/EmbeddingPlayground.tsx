@@ -58,10 +58,6 @@ const CustomScatterPoint = ({ cx, cy, payload }: any) => {
   );
 };
 
-type FormValue = {
-  model: string;
-};
-
 type EmbeddingPlaygroundProps = {
   endpoint: Endpoint;
 };
@@ -289,7 +285,7 @@ export default function EmbeddingPlayground({
                   </h3>
                   <ScrollArea className="h-[400px] rounded-md border">
                     <div className="p-4 space-y-4">
-                      {documents.map((doc, index) => (
+                      {documents.map((doc, _index) => (
                         <div
                           key={doc.id}
                           className="flex items-center space-x-2"

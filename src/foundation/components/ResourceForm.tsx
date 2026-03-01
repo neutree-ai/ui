@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Form as FormUI } from "@/components/ui/form";
 import { SaveButton } from "@/foundation/components/SaveButton";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -14,7 +13,6 @@ import {
 import type { UseFormReturnType } from "@refinedev/react-hook-form";
 import {
   type DetailedHTMLProps,
-  FC,
   type FormHTMLAttributes,
   type PropsWithChildren,
   useRef,

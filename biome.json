@@ -22,6 +22,8 @@
 			"recommended": true,
 			"correctness": {
 				"noChildrenProp": "off",
+				"noUnusedImports": "error",
+				"noUnusedVariables": "warn",
 				"useExhaustiveDependencies": "warn"
 			},
 			"suspicious": {

@@ -2,7 +2,6 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/foundation/components/AppSidebar";
 import { cn } from "@/foundation/lib/utils";
-import { BaseLayout } from "./BaseLayout";
 
 type LogoType = React.ReactElement | React.ReactNode;
 

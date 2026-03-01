@@ -184,7 +184,7 @@ export const VirtualLog: FC<VirtualLogProps> = ({
       const highlightResult = useMemo(() => {
         try {
           return lowlight.highlight(logLanguage, line);
-        } catch (error) {
+        } catch (_error) {
           // Fallback to plaintext if highlighting fails
           return {
             type: "root" as const,

@@ -1,14 +1,12 @@
-import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { CreateButton } from "@/foundation/components/CreateButton";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { cn } from "@/foundation/lib/utils";
 import {
-  useRefineContext,
   useResource,
   useTranslate,
   useUserFriendlyName,
 } from "@refinedev/core";
-import { type FC, isValidElement } from "react";
+import type { FC } from "react";
 
 type ListProps = {
   title?: React.ReactNode;
