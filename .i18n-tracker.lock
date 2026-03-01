@@ -45,8 +45,8 @@
   "src/pages/clusters/create.tsx": "99ae7eeff08224357136dce716517270",
   "src/pages/clusters/edit.tsx": "b58a312d5d3cdd5546f1e382d4a52aa7",
   "src/pages/clusters/list.tsx": "b184b98bf0bc2781a9fafb7c058fb9b1",
-  "src/pages/clusters/show.tsx": "25dcfbc9dc9befce9b7b0c03a31ae5b2",
-  "src/pages/clusters/use-cluster-form.tsx": "03c6c498be19be2d3fd280deedf8e9e8",
+  "src/pages/clusters/show.tsx": "da837de0227add79f9a8c882bb0b89fc",
+  "src/pages/clusters/use-cluster-form.tsx": "63db6e12ed30a8dd55dc3724b25ef58f",
   "src/pages/api-keys/list.tsx": "36e4c31cd9af30d074ce8681605e967f",
   "src/pages/api-keys/show.tsx": "fc99e62438913fcf342338326f2e4cac",
   "src/components/ui/alert-dialog.tsx": "fd2a0854b18d61d21fe0e8effd7e4cd9",
@@ -227,7 +227,7 @@
   "src/domains/cluster/hooks/use-cluster-monitor-panels.ts": "18f9cf1e6422f66493f6d182c18c746c",
   "src/domains/cluster/components/ClusterStatus.tsx": "d9b6abe7ae720eec86345f2febcb7b27",
   "src/domains/cluster/components/ClusterType.tsx": "439521dd989dcf3b6054bdea68e542e8",
-  "src/domains/cluster/components/NodeIPsField.tsx": "20e081b1522ccbe75ca4b571fb30100e",
+  "src/domains/cluster/components/NodeIPsField.tsx": "b138b5167961cd3f666e7562be4e7910",
   "src/domains/api-key/types.ts": "a6ce6560900fb7f7145103f3060534a1",
   "src/foundation/lib/yaml-transform.ts": "dc8dc9b4f12c8a4565cb2ad4b21e286f",
   "src/foundation/lib/grafana-dashboard-url.ts": "a457d0bef7f683a9185b163f79630278",
@@ -238,5 +238,12 @@
   "src/foundation/providers/data-provider/utils/clean-internal-fields.ts": "86fabe5db09d9fe17c44b007c81ede57",
   "src/domains/cluster/lib/calc-resource-usage.ts": "26819eac9d3af7474a6389537bf20863",
   "src/domains/cluster/lib/get-cache-type.ts": "2c082b5338dcd2fa18335dcbbc65bada",
-  "src/domains/cluster/lib/transform-cluster-values.ts": "6e42e94739be2253010b305e36854f10"
+  "src/domains/cluster/lib/transform-cluster-values.ts": "6e42e94739be2253010b305e36854f10",
+  "src/domains/cluster/lib/get-access-mode-label.ts": "89a508f6534b3952ed5e56ddc3347f7d",
+  "src/domains/cluster/lib/validate-node-ips.ts": "813b3badf54f49726292b4b50ef8871c",
+  "src/domains/cluster/hooks/use-model-cache-fields.ts": "d99638dfb023cb3a4077a195bd2d0f51",
+  "src/domains/cluster/hooks/use-node-ips.ts": "9fb9bb82d30f3d66070b719a95e41819",
+  "src/domains/cluster/components/ModelCacheFields.tsx": "ec9aff618e07c0f923aa37c9f87eb1c2",
+  "src/domains/cluster/components/NodeResourcesTable.tsx": "bb5383d570d658c81df60e17e9732bb7",
+  "src/domains/cluster/components/ResourceProgressBar.tsx": "7d668caa651a0706b87651e40e89376f"
 }

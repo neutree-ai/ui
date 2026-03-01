@@ -27,7 +27,7 @@ Test **logic**, not wiring. A good unit test covers code that can break in non-o
 
 - Type definitions, constants, re-exports
 - Thin wrappers that delegate to a library (e.g. `cn()` wrapping `clsx`)
-- Components that are mostly layout/composition — E2E covers those
+- Components that are **purely** layout/composition with no branching logic, state derivation, or conditional rendering
 - Anything where the test would just mirror the implementation
 
 > If a test only proves "the code does what the code does", it has no value.
