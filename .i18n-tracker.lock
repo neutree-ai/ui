@@ -108,7 +108,7 @@
   "src/foundation/types/license.ts": "e7cd2bf058d508b41b5521f5cee745a3",
   "src/foundation/types/serving-types.ts": "fd367e69c6398db0bc09885312c759d1",
   "src/foundation/types/system-types.ts": "95251bc1ec54424d96b599dedf23ffeb",
-  "src/foundation/providers/data-provider/index.ts": "3e2b9abee163b373e5f726e6e3c865ce",
+  "src/foundation/providers/data-provider/index.ts": "92198ea21c72c02b68dcde36153507f5",
   "src/foundation/providers/data-provider/utils/generate-filter.ts": "e49e4c6af03afcc2026b436e63814d9b",
   "src/foundation/providers/data-provider/utils/handle-error.ts": "bd404b9fbf8c81eae7941b4bca78623f",
   "src/foundation/providers/data-provider/utils/map-operator.ts": "4aafc8f97463e07318fabaf816f8d321",
