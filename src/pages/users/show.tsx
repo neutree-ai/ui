@@ -7,11 +7,10 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useShow, useTranslate } from "@refinedev/core";
+import { useShow } from "@refinedev/core";
 
 export const UsersShow = () => {
   const { t } = useTranslation();
-  const translate = useTranslate();
   const {
     query: { data, isLoading },
   } = useShow<UserProfile>();
@@ -63,7 +62,7 @@ export const UsersShow = () => {
             }}
           >
             <Table.Column
-              header={translate("common.fields.role")}
+              header={t("common.fields.role")}
               accessorKey="spec.role"
               id="role"
               enableHiding
@@ -120,7 +119,7 @@ export const UsersShow = () => {
             }}
           >
             <Table.Column
-              header={translate("common.fields.workspace")}
+              header={t("common.fields.workspace")}
               accessorKey="spec.workspace"
               id="workspace"
               enableHiding
@@ -140,7 +139,7 @@ export const UsersShow = () => {
               }}
             />
             <Table.Column
-              header={translate("common.fields.role")}
+              header={t("common.fields.role")}
               accessorKey="spec.role"
               id="role"
               enableHiding

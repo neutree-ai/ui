@@ -54,7 +54,11 @@ if (
     process.exit(1);
   }
 
-  if (rel.includes(".d.ts") || rel.includes('.test.') || rel.startsWith('e2e/')) {
+  if (
+    rel.includes(".d.ts") ||
+    rel.includes(".test.") ||
+    rel.startsWith("e2e/")
+  ) {
     console.log(`Skipping .d.ts, test, or e2e file: ${rel}`);
     process.exit(0);
   }
@@ -71,10 +75,7 @@ if (
 }
 
 /* ---------- sub-command: update-all ---------- */
-if (
-  process.argv[2] === "update-all" ||
-  process.argv[2] === "--update-all"
-) {
+if (process.argv[2] === "update-all" || process.argv[2] === "--update-all") {
   const hashes = loadHashes();
   let updated = 0;
 
@@ -161,13 +162,15 @@ function walk(dir) {
     const cur = stack.pop();
     for (const item of fs.readdirSync(cur)) {
       const p = path.join(cur, item);
-      if (item === "node_modules" || item === "e2e" || item.startsWith(".")) continue;
+      if (item === "node_modules" || item === "e2e" || item.startsWith("."))
+        continue;
       const stat = fs.statSync(p);
       if (stat.isDirectory()) stack.push(p);
       else if (
         stat.isFile() &&
         FILE_REGEX.test(item) &&
-        !item.includes(".d.ts") && !item.includes('.test.')
+        !item.includes(".d.ts") &&
+        !item.includes(".test.")
       ) {
         out.push(path.relative(ROOT, p));
       }
@@ -185,7 +188,11 @@ function gitFiles(depth) {
       .split("\n")
       .filter(
         (f) =>
-          f.trim() && FILE_REGEX.test(f.trim()) && !f.trim().includes(".d.ts") && !f.trim().includes('.test.') && !f.trim().startsWith('e2e/'),
+          f.trim() &&
+          FILE_REGEX.test(f.trim()) &&
+          !f.trim().includes(".d.ts") &&
+          !f.trim().includes(".test.") &&
+          !f.trim().startsWith("e2e/"),
       );
   } catch (e) {
     console.error(`Git command failed: ${e.message}`);
@@ -227,7 +234,9 @@ for (const rel of targets) {
 if (pending.length) {
   const shown =
     limit && pending.length > limit ? pending.slice(0, limit) : pending;
-  console.error(`\n❌ ${pending.length} file(s) changed since last i18n review:\n`);
+  console.error(
+    `\n❌ ${pending.length} file(s) changed since last i18n review:\n`,
+  );
   for (const f of shown) {
     console.error(`  ${f}`);
   }

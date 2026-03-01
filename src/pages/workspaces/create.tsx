@@ -1,5 +1,5 @@
+import { useWorkspaceForm } from "@/domains/workspace/hooks/use-workspace-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { useWorkspaceForm } from "./use-workspace-form";
 
 export const WorkspacesCreate = () => {
   const { form, metadataFields } = useWorkspaceForm({ action: "create" });

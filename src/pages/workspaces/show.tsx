@@ -7,7 +7,7 @@ import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { useShow, useTranslate, useTranslation } from "@refinedev/core";
+import { useShow, useTranslate } from "@refinedev/core";
 
 export const WorkspacesShow = () => {
   const {
@@ -17,14 +17,12 @@ export const WorkspacesShow = () => {
   const metadataColumns = useMetadataColumns({ resource: "role_assignments" });
   const t = useTranslate();
 
-  const { translate } = useTranslation();
-
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
   }
 
   if (!record) {
-    return <div>{translate("pages.error.notFound")}</div>;
+    return <div>{t("pages.error.notFound")}</div>;
   }
 
   const { metadata } = record;
@@ -34,7 +32,7 @@ export const WorkspacesShow = () => {
       <MetadataCard metadata={metadata} />
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>{translate("role_assignments.title")}</CardTitle>
+          <CardTitle>{t("role_assignments.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table
