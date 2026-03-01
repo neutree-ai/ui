@@ -95,7 +95,7 @@ describe("useRoleAssignmentForm", () => {
     it("defaults to global when multi-workspace is not supported", () => {
       vi.mocked(useLicense).mockReturnValue({
         supportMultiWorkspace: false,
-      });
+      } as ReturnType<typeof useLicense>);
       render(<CreateForm />);
 
       expect(screen.getByTestId("field-spec.workspace").className).toContain(
