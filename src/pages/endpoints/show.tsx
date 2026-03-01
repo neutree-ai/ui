@@ -9,15 +9,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import ChatPlayground from "@/domains/endpoint/components/ChatPlayground";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
-import EmbeddingPlayground from "@/domains/endpoint/components/EmbeddingPlayground";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
-import RerankPlayground from "@/domains/endpoint/components/RerankPlayground";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
 import {
   type EndpointMonitorPanelType,
@@ -45,11 +42,19 @@ import {
 import { Suspense, lazy, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-// Lazy load EndpointLogTabs
 const EndpointLogTabs = lazy(() =>
-  import("@/domains/endpoint/components/EndpointLogTabs").then((module) => ({
-    default: module.EndpointLogTabs,
+  import("@/domains/endpoint/components/EndpointLogTabs").then((m) => ({
+    default: m.EndpointLogTabs,
   })),
+);
+const ChatPlayground = lazy(
+  () => import("@/domains/endpoint/components/ChatPlayground"),
+);
+const EmbeddingPlayground = lazy(
+  () => import("@/domains/endpoint/components/EmbeddingPlayground"),
+);
+const RerankPlayground = lazy(
+  () => import("@/domains/endpoint/components/RerankPlayground"),
 );
 
 const RayDashboardTab = ({
@@ -363,13 +368,17 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           value="playground"
           className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
         >
-          {record.spec.model.task === "text-embedding" ? (
-            <EmbeddingPlayground endpoint={record} />
-          ) : record.spec.model.task === "text-rerank" ? (
-            <RerankPlayground endpoint={record} />
-          ) : (
-            <ChatPlayground endpoint={record} />
-          )}
+          <Suspense
+            fallback={<Loader className="w-16 text-muted-foreground" />}
+          >
+            {record.spec.model.task === "text-embedding" ? (
+              <EmbeddingPlayground endpoint={record} />
+            ) : record.spec.model.task === "text-rerank" ? (
+              <RerankPlayground endpoint={record} />
+            ) : (
+              <ChatPlayground endpoint={record} />
+            )}
+          </Suspense>
         </TabsContent>
       </Tabs>
     </ShowPage>

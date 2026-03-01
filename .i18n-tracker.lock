@@ -1,5 +1,5 @@
 {
-  "vite.config.ts": "5bd502bbb92b7cc08eb35fcaeb012617",
+  "vite.config.ts": "a2ebabd7035347e83eb48536602b2fe1",
   "src/App.tsx": "c7bb1a531e3c5dca8baa2f1a0baf3ca9",
   "src/Root.tsx": "0bf1b5abed7cbc71c06832cc2de84f12",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
@@ -39,7 +39,7 @@
   "src/pages/endpoints/create.tsx": "20f520ef8b5a8270d08776f9e329b21d",
   "src/pages/endpoints/edit.tsx": "899f93cfc613a0f48622a425f27c0efa",
   "src/pages/endpoints/list.tsx": "0007504ec6a8f10e47c4559369955c7f",
-  "src/pages/endpoints/show.tsx": "ab0793d3e70fcda6dfd095e5ea053fbd",
+  "src/pages/endpoints/show.tsx": "6315dac2e0c6a16fd2e31e09d07a36d3",
   "src/pages/endpoints/use-endpoint-form.tsx": "a583a279d0efdb2767684ac6b27f278d",
   "src/pages/dashboard/Dashboard.tsx": "982bc753b2a28b3490493d99b163df59",
   "src/pages/clusters/create.tsx": "99ae7eeff08224357136dce716517270",

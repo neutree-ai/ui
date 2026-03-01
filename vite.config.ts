@@ -13,6 +13,7 @@ export default defineConfig({
   ],
   build: {
     sourcemap: analyze,
+    chunkSizeWarningLimit: 1024,
   },
   resolve: {
     alias: {
