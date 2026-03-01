@@ -1,3 +1,7 @@
+import {
+  type GrafanaDashboardConfig,
+  buildGrafanaDashboardUrl,
+} from "@/foundation/lib/grafana-dashboard-url";
 import { useTheme } from "next-themes";
 import { useCallback, useMemo, useRef } from "react";
 
@@ -5,14 +9,7 @@ const DEFAULT_GRAFANA_CSS = `
   body { background-color: pink; }
 `;
 
-export interface GrafanaDashboardConfig {
-  baseUrl: string;
-  dashboardId: string;
-  orgId?: number;
-  theme?: "light" | "dark";
-  timezone?: string;
-  variables?: Record<string, string>;
-}
+export type { GrafanaDashboardConfig };
 
 export interface GrafanaDashboardProps {
   dashboardConfig: GrafanaDashboardConfig;
@@ -40,11 +37,7 @@ export default function GrafanaDashboard({
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleIframeLoad = useCallback(() => {
-    console.log("[GrafanaDashboard] iframe loaded");
-    if (!iframeRef.current) {
-      console.log("[GrafanaDashboard] iframeRef is null");
-      return;
-    }
+    if (!iframeRef.current) return;
 
     const cssToInject = customCSS
       ? `${DEFAULT_GRAFANA_CSS}\n${customCSS}`
@@ -52,66 +45,37 @@ export default function GrafanaDashboard({
 
     try {
       const iframeDoc = iframeRef.current.contentDocument;
-      console.log("[GrafanaDashboard] contentDocument:", iframeDoc);
       if (iframeDoc) {
         const style = iframeDoc.createElement("style");
         style.textContent = cssToInject;
         iframeDoc.head.appendChild(style);
-        console.log("[GrafanaDashboard] CSS injected successfully");
       }
-    } catch (e) {
-      console.log("[GrafanaDashboard] CSS injection failed (cross-origin):", e);
+    } catch (_) {
+      // Cross-origin iframe — CSS injection not possible
     }
   }, [customCSS]);
 
-  const dashboardUrl = useMemo(() => {
-    const url = new URL(
-      `/d/${dashboardConfig.dashboardId}`,
-      dashboardConfig.baseUrl,
-    );
-
-    url.searchParams.append("from", initialFrom);
-    url.searchParams.append("to", initialTo);
-
-    if (initialRefresh) {
-      url.searchParams.append("refresh", initialRefresh);
-    }
-
-    if (dashboardConfig.orgId) {
-      url.searchParams.append("orgId", dashboardConfig.orgId.toString());
-    }
-
-    const theme =
-      dashboardConfig.theme || (resolvedTheme === "dark" ? "dark" : "light");
-    url.searchParams.append("theme", theme);
-
-    if (dashboardConfig.timezone) {
-      url.searchParams.append("timezone", dashboardConfig.timezone);
-    }
-
-    if (dashboardConfig.variables) {
-      for (const [key, value] of Object.entries(dashboardConfig.variables)) {
-        url.searchParams.append(`var-${key}`, value);
-      }
-    }
-
-    let result = `${url.toString()}&kiosk`;
-    if (hideVariables) {
-      result += "&_dash.hideVariables=true";
-    }
-    if (hideTimePicker) {
-      result += "&_dash.hideTimePicker=true";
-    }
-    return result;
-  }, [
-    dashboardConfig,
-    initialFrom,
-    initialTo,
-    initialRefresh,
-    resolvedTheme,
-    hideVariables,
-    hideTimePicker,
-  ]);
+  const dashboardUrl = useMemo(
+    () =>
+      buildGrafanaDashboardUrl({
+        dashboardConfig,
+        resolvedTheme,
+        initialFrom,
+        initialTo,
+        initialRefresh,
+        hideVariables,
+        hideTimePicker,
+      }),
+    [
+      dashboardConfig,
+      resolvedTheme,
+      initialFrom,
+      initialTo,
+      initialRefresh,
+      hideVariables,
+      hideTimePicker,
+    ],
+  );
 
   return (
     <iframe

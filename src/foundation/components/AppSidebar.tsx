@@ -16,6 +16,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  buildMenuItemPaths,
+  isMenuItemActive,
+} from "@/foundation/lib/sidebar-active";
 import { cn } from "@/foundation/lib/utils";
 import { useMenu, useResourceParams } from "@refinedev/core";
 import type { TreeMenuItem } from "@refinedev/core/dist/hooks/menu/useMenu";
@@ -45,24 +49,15 @@ function AppSidebarMenuItem({ item, state }: AppSidebarMenuItemProps) {
   const { pathname } = useLocation();
   const currentPathname = String(pathname);
 
-  const paths = [
-    item.list?.toString(),
-    item.create?.toString(),
-    item.edit?.toString()?.replace(":id", resourceParams.id as string),
-    item.show?.toString()?.replace(":id", resourceParams.id as string),
-  ]
-    .map((s) => s?.replace(":workspace", currentWorkspace))
-    .filter(Boolean) as string[];
+  const paths = buildMenuItemPaths(
+    item,
+    currentWorkspace,
+    resourceParams.id as string,
+  );
 
   const route = item.route?.replace(":workspace", currentWorkspace);
 
-  const isActive =
-    paths.includes(currentPathname) ||
-    paths.some((path) => {
-      return (
-        path?.startsWith(currentPathname) || currentPathname.startsWith(path)
-      );
-    });
+  const isActive = isMenuItemActive(paths, currentPathname);
 
   return (
     <SidebarMenuItem className="px-1">

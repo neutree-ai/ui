@@ -1,15 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Form as FormUI } from "@/components/ui/form";
 import { SaveButton } from "@/foundation/components/SaveButton";
+import { useOnBack } from "@/foundation/hooks/use-on-back";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  type BaseRecord,
-  type HttpError,
-  useBack,
-  useNavigation,
-  useParsed,
-  useRouterType,
-} from "@refinedev/core";
+import type { BaseRecord, HttpError } from "@refinedev/core";
 import type { UseFormReturnType } from "@refinedev/react-hook-form";
 import {
   type DetailedHTMLProps,
@@ -72,18 +66,8 @@ export const ResourceForm = <
   TResponseError
 >) => {
   const watchable = useRef<boolean>(false);
-  const { resource: _resource, action } = useParsed();
-  const routerType = useRouterType();
-  const back = useBack();
-  const { goBack } = useNavigation();
+  const onBack = useOnBack();
   const { t } = useTranslation();
-
-  const onBack =
-    action !== "list" || typeof action !== "undefined"
-      ? routerType === "legacy"
-        ? goBack
-        : back
-      : undefined;
 
   if (isWatchable && !watchable.current) {
     watchable.current = true;

@@ -1,7 +1,5 @@
-import type {
-  GrafanaDashboardConfig,
-  GrafanaDashboardProps,
-} from "@/foundation/components/GrafanaDashboard";
+import type { GrafanaDashboardProps } from "@/foundation/components/GrafanaDashboard";
+import type { GrafanaDashboardConfig } from "@/foundation/lib/grafana-dashboard-url";
 
 const getBaseDashboardConfig = (
   grafanaUrl: string,
