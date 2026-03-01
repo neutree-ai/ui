@@ -1,13 +1,19 @@
+import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
+import EndpointModel from "@/domains/endpoint/components/EndpointModel";
+import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
+import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table } from "@/foundation/components/Table";
 import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { useModelCatalogColumns } from "./columns";
+import type { BaseStatus } from "@/foundation/types/basic-types";
+import { useTranslate } from "@refinedev/core";
+import { Trash2 } from "lucide-react";
 
 export const ModelCatalogsList = () => {
+  const t = useTranslate();
   const metadataColumns = useMetadataColumns();
-  const modelCatalogColumns = useModelCatalogColumns();
 
   return (
     <ListPage canCreate={false}>
@@ -25,13 +31,63 @@ export const ModelCatalogsList = () => {
       >
         {metadataColumns.name}
         {metadataColumns.workspace}
-        {modelCatalogColumns.model}
-        {modelCatalogColumns.task}
-        {modelCatalogColumns.engine}
-        {modelCatalogColumns.status}
+        <Table.Column
+          header={t("common.fields.model")}
+          accessorKey="spec.model.name"
+          id="model"
+          enableHiding
+          cell={({ row }) => {
+            const { model } = row.original.spec;
+            return <EndpointModel model={model} />;
+          }}
+        />
+        <Table.Column
+          header={t("common.fields.task")}
+          accessorKey="spec.model.task"
+          id="task"
+          enableHiding
+          cell={({ row }) => {
+            const { model } = row.original.spec;
+            return <ModelTask task={model.task} />;
+          }}
+        />
+        <Table.Column
+          header={t("common.fields.engine")}
+          accessorKey="spec.engine.engine"
+          id="engine"
+          enableHiding
+          cell={({ row }) => {
+            const { spec, metadata } = row.original;
+            return <EndpointEngine spec={spec} metadata={metadata} />;
+          }}
+        />
+        <Table.Column
+          header={t("common.fields.status")}
+          accessorKey="status"
+          id="status"
+          enableHiding
+          cell={({ getValue }) => {
+            return (
+              <ModelCatalogStatus {...(getValue() as unknown as BaseStatus)} />
+            );
+          }}
+        />
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
-        {modelCatalogColumns.action}
+        <Table.Column
+          accessorKey={"id"}
+          id={"actions"}
+          cell={({ row: { original } }) => (
+            <Table.Actions>
+              <Table.DeleteAction
+                title={t("buttons.delete")}
+                row={original}
+                resource="model_catalogs"
+                icon={<Trash2 size={16} />}
+              />
+            </Table.Actions>
+          )}
+        />
       </Table>
     </ListPage>
   );

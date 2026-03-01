@@ -20,6 +20,7 @@ export default defineConfig({
       provider: "v8",
       all: true,
       include: ["src/**"],
+      exclude: ["src/components/ui/**"],
     },
   },
 });
