@@ -3,7 +3,11 @@
 	"paths": {
 		"@/*": ["src/*"]
 	},
-	"ignoreDependencies": ["@tanstack/react-table", "@tanstack/react-query"],
+	"ignoreDependencies": [
+		"@tanstack/react-table",
+		"@tanstack/react-query",
+		"@vitest/coverage-v8"
+	],
 	"ignoreExportsUsedInFile": false,
 	"project": ["src/**/*.{ts,tsx}"],
 	"ignoreIssues": {

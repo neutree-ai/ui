@@ -1,136 +1,106 @@
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as storage from "../lib/column-visibility-storage";
+import { useColumnVisibility } from "./use-column-visibility";
 
 vi.mock("../lib/column-visibility-storage");
 
-describe("useColumnVisibility integration", () => {
+describe("useColumnVisibility", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("storage integration", () => {
-    it("should call getColumnVisibility with resource name", () => {
-      const mockGet = vi
-        .mocked(storage.getColumnVisibility)
-        .mockReturnValue({ col1: true });
-
-      mockGet("test_resource");
-
-      expect(mockGet).toHaveBeenCalledWith("test_resource");
-      expect(mockGet("test_resource")).toEqual({ col1: true });
+  it("loads saved visibility on mount", () => {
+    vi.mocked(storage.getColumnVisibility).mockReturnValue({
+      col1: true,
+      col2: false,
     });
 
-    it("should call setColumnVisibility with correct parameters", () => {
-      const mockSet = vi.mocked(storage.setColumnVisibility);
-      const visibility = { col1: true, col2: false };
-      const validIds = ["col1", "col2"];
+    const { result } = renderHook(() => useColumnVisibility("clusters"));
 
-      mockSet("test_resource", visibility, validIds);
-
-      expect(mockSet).toHaveBeenCalledWith(
-        "test_resource",
-        visibility,
-        validIds,
-      );
+    expect(storage.getColumnVisibility).toHaveBeenCalledWith("clusters");
+    expect(result.current.columnVisibility).toEqual({
+      col1: true,
+      col2: false,
     });
-
-    it("should handle updater function pattern", () => {
-      const prevState = { col1: true, col2: false };
-      const updater = (prev: typeof prevState) => ({ ...prev, col3: true });
-
-      const newState = updater(prevState);
-
-      expect(newState).toEqual({
-        col1: true,
-        col2: false,
-        col3: true,
-      });
-    });
-
-    it("should handle direct state pattern", () => {
-      const newState = { col1: false, col2: true };
-
-      expect(newState).toEqual({ col1: false, col2: true });
-    });
+    expect(result.current.isLoaded).toBe(true);
   });
 
-  describe("column ID validation", () => {
-    it("should filter invalid column IDs", () => {
-      const visibility: Record<string, boolean> = {
-        col1: true,
-        col2: false,
-        invalid: true,
-      };
-      const validIds = ["col1", "col2"];
+  it("defaults to empty object when no saved state", () => {
+    vi.mocked(storage.getColumnVisibility).mockReturnValue(undefined);
 
-      const cleaned = Object.keys(visibility)
-        .filter((key) => validIds.includes(key))
-        .reduce(
-          (acc, key) => {
-            acc[key] = visibility[key];
-            return acc;
-          },
-          {} as Record<string, boolean>,
-        );
+    const { result } = renderHook(() => useColumnVisibility("clusters"));
 
-      expect(cleaned).toEqual({ col1: true, col2: false });
-      expect(cleaned).not.toHaveProperty("invalid");
-    });
+    expect(result.current.columnVisibility).toEqual({});
+    expect(result.current.isLoaded).toBe(true);
   });
 
-  describe("state management patterns", () => {
-    it("should merge state with updater function", () => {
-      const currentState = { col1: true, col2: false };
-      const updater = (prev: typeof currentState) => ({
+  it("updates visibility with direct object", () => {
+    vi.mocked(storage.getColumnVisibility).mockReturnValue(undefined);
+
+    const { result } = renderHook(() => useColumnVisibility("clusters"));
+
+    act(() => {
+      result.current.setColumnVisibility({ col1: false });
+    });
+
+    expect(result.current.columnVisibility).toEqual({ col1: false });
+    expect(storage.setColumnVisibility).toHaveBeenCalledWith(
+      "clusters",
+      { col1: false },
+      undefined,
+    );
+  });
+
+  it("updates visibility with updater function", () => {
+    vi.mocked(storage.getColumnVisibility).mockReturnValue({ col1: true });
+
+    const { result } = renderHook(() => useColumnVisibility("clusters"));
+
+    act(() => {
+      result.current.setColumnVisibility((prev) => ({
         ...prev,
-        col2: true,
-        col3: false,
-      });
-
-      const nextState = updater(currentState);
-
-      expect(nextState).toEqual({
-        col1: true,
-        col2: true,
-        col3: false,
-      });
+        col2: false,
+      }));
     });
 
-    it("should replace state with direct object", () => {
-      const currentState = { col1: true, col2: false };
-      const newState = { col3: true };
-
-      expect(newState).toEqual({ col3: true });
-      expect(newState).not.toEqual(currentState);
-    });
-
-    it("should handle empty state", () => {
-      const emptyState = {};
-      const updater = (prev: typeof emptyState) => ({ col1: true });
-
-      const nextState = updater(emptyState);
-
-      expect(nextState).toEqual({ col1: true });
+    expect(result.current.columnVisibility).toEqual({
+      col1: true,
+      col2: false,
     });
   });
 
-  describe("resource name handling", () => {
-    it("should work with different resource names", () => {
-      const mockGet = vi.mocked(storage.getColumnVisibility);
+  it("passes validColumnIds to storage", () => {
+    vi.mocked(storage.getColumnVisibility).mockReturnValue(undefined);
 
-      mockGet.mockReturnValueOnce({ col1: true });
-      mockGet.mockReturnValueOnce({ col2: false });
+    const { result } = renderHook(() => useColumnVisibility("clusters"));
 
-      expect(mockGet("resource1")).toEqual({ col1: true });
-      expect(mockGet("resource2")).toEqual({ col2: false });
+    act(() => {
+      result.current.setColumnVisibility({ col1: true, extra: true }, ["col1"]);
     });
 
-    it("should handle empty resource name", () => {
-      const mockSet = vi.mocked(storage.setColumnVisibility);
+    expect(storage.setColumnVisibility).toHaveBeenCalledWith(
+      "clusters",
+      { col1: true, extra: true },
+      ["col1"],
+    );
+  });
 
-      mockSet("", { col1: true });
+  it("reloads when resourceName changes", () => {
+    vi.mocked(storage.getColumnVisibility)
+      .mockReturnValueOnce({ a: true })
+      .mockReturnValueOnce({ b: false });
 
-      expect(mockSet).toHaveBeenCalledWith("", { col1: true });
-    });
+    const { result, rerender } = renderHook(
+      ({ name }) => useColumnVisibility(name),
+      { initialProps: { name: "clusters" } },
+    );
+
+    expect(result.current.columnVisibility).toEqual({ a: true });
+
+    rerender({ name: "endpoints" });
+
+    expect(storage.getColumnVisibility).toHaveBeenCalledWith("endpoints");
+    expect(result.current.columnVisibility).toEqual({ b: false });
   });
 });

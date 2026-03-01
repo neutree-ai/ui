@@ -49,17 +49,17 @@ describe("LocalStorageAdapter", () => {
     expect(localStorage.getItem("test-key")).toBeNull();
   });
 
-  it("should handle errors gracefully", () => {
+  it("should not throw when localStorage throws", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("QuotaExceededError");
+    });
 
-    const quota = "x".repeat(10 * 1024 * 1024);
-    try {
-      adapter.setItem("large-item", quota);
-    } catch (e) {
-      // Expected to fail
-    }
+    expect(() => adapter.setItem("key", "value")).not.toThrow();
+    expect(consoleSpy).toHaveBeenCalled();
 
     consoleSpy.mockRestore();
+    vi.restoreAllMocks();
   });
 });
 

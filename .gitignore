@@ -14,6 +14,7 @@ stats.html
 \*.local
 *.tsbuildinfo
 tmp
+coverage
 
 # Locale files (except English, which is the default)
 src/locales/*

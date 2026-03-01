@@ -5,7 +5,7 @@ import type { PostgrestError } from "@supabase/postgrest-js";
 export const handleError = (error: PostgrestError | AuthError) => {
   let message = error.message;
 
-  if ("hint" in error) {
+  if ("hint" in error && error.hint) {
     message += `: ${error.hint}`;
   }
 
