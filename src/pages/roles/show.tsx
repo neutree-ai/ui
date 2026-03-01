@@ -4,10 +4,11 @@ import type { Role } from "@/domains/role/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import { useShow, useTranslation } from "@refinedev/core";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { useShow } from "@refinedev/core";
 
 export const RolesShow = () => {
-  const { translate } = useTranslation();
+  const { t } = useTranslation();
   const {
     query: { data, isLoading },
   } = useShow<Role>();
@@ -18,7 +19,7 @@ export const RolesShow = () => {
   }
 
   if (!record) {
-    return <div>{translate("pages.error.notFound")}</div>;
+    return <div>{t("pages.error.notFound")}</div>;
   }
 
   const isPreset = Boolean(record.spec.preset_key);
@@ -29,7 +30,7 @@ export const RolesShow = () => {
         <MetadataCard metadata={record.metadata} />
         <Card className="mt-4" data-testid="permissions-card">
           <CardHeader>
-            <CardTitle>{translate("common.fields.permissions")}</CardTitle>
+            <CardTitle>{t("common.fields.permissions")}</CardTitle>
           </CardHeader>
           <CardContent>
             <PermissionsTree permissions={record.spec.permissions} />

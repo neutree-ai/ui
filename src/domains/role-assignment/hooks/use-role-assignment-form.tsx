@@ -1,7 +1,5 @@
 import { Input } from "@/components/ui/input";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
-import type { Role } from "@/domains/role/types";
-import type { UserProfile } from "@/domains/user/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -9,6 +7,7 @@ import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { Metadata } from "@/foundation/types/basic-types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 
@@ -43,11 +42,11 @@ export const useRoleAssignmentForm = ({
 
   const global: RoleAssignment["spec"]["global"] = form.watch("spec.global");
 
-  const users = useSelect<UserProfile>({
+  const users = useSelect<{ id: number; metadata: Metadata }>({
     resource: "user_profiles",
   });
 
-  const roles = useSelect<Role>({
+  const roles = useSelect<{ id: number; metadata: Metadata }>({
     resource: "roles",
   });
 

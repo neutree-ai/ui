@@ -1,5 +1,5 @@
+import { useRoleAssignmentForm } from "@/domains/role-assignment/hooks/use-role-assignment-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { useRoleAssignmentForm } from "./use-role-assignment-form";
 
 export const RoleAssignmentsCreate = () => {
   const { form, metadataFields, specFields } = useRoleAssignmentForm({

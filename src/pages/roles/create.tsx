@@ -1,5 +1,5 @@
+import { useRoleForm } from "@/domains/role/hooks/use-role-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { useRoleForm } from "./use-role-form";
 
 export const RolesCreate = () => {
   const { form, metadataFields, specFields } = useRoleForm({
