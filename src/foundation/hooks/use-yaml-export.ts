@@ -1,7 +1,14 @@
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  serializeToYaml,
+  transformEntityForExport,
+} from "@/foundation/lib/yaml-transform";
+import type {
+  ExportOptions,
+  ResourceEntity,
+} from "@/foundation/lib/yaml-transform";
 import type { Metadata } from "@/foundation/types/basic-types";
 import { useDataProvider, useResource } from "@refinedev/core";
-import * as yaml from "js-yaml";
 import { useCallback, useMemo, useState } from "react";
 import { ALL_WORKSPACES, useWorkspace } from "./use-workspace";
 
@@ -28,15 +35,6 @@ const CREDENTIAL_RESOURCES = [
 
 export type ExportableResource = (typeof EXPORTABLE_RESOURCES)[number];
 
-interface ResourceEntity {
-  id: string | number;
-  metadata: Metadata;
-  kind: string;
-  api_version: string;
-  spec?: Record<string, unknown>;
-  status?: Record<string, unknown>;
-}
-
 interface ResourceType {
   type: ExportableResource;
   label: string;
@@ -44,13 +42,6 @@ interface ResourceType {
   entities: ResourceEntity[];
   selectedEntities: Set<string>;
   loaded: boolean;
-}
-
-interface ExportOptions {
-  removeStatus: boolean;
-  removeIds: boolean;
-  removeTimestamps: boolean;
-  includeCredentials: boolean;
 }
 
 interface ExportProgress {
@@ -296,68 +287,6 @@ export const useYamlExport = () => {
     });
   }, []);
 
-  // Transform entity to YAML format
-  const transformEntityToYaml = useCallback(
-    (entity: ResourceEntity, options: ExportOptions) => {
-      const yamlEntity: Record<string, unknown> = {
-        ...(options.removeIds ? {} : { id: entity.id }),
-        apiVersion: entity.api_version,
-        kind: entity.kind,
-        metadata: { ...entity.metadata },
-      };
-
-      if (entity.spec) {
-        yamlEntity.spec = entity.spec;
-      }
-
-      if (entity.status && !options.removeStatus) {
-        yamlEntity.status = entity.status;
-      }
-
-      // Remove timestamps if requested
-      if (
-        options.removeTimestamps &&
-        yamlEntity.metadata &&
-        typeof yamlEntity.metadata === "object"
-      ) {
-        const metadata = yamlEntity.metadata as Record<string, unknown>;
-        delete metadata.creation_timestamp;
-        delete metadata.update_timestamp;
-        delete metadata.deletion_timestamp;
-      }
-
-      // Remove IDs if requested (but keep name)
-      if (
-        options.removeIds &&
-        yamlEntity.metadata &&
-        typeof yamlEntity.metadata === "object"
-      ) {
-        // Keep name but remove other auto-generated fields
-        const metadata = yamlEntity.metadata as Record<string, unknown>;
-        const { name, workspace, display_name, labels, annotations } =
-          metadata as {
-            name?: unknown;
-            workspace?: unknown;
-            display_name?: unknown;
-            labels?: unknown;
-            annotations?: unknown;
-            [key: string]: unknown;
-          };
-
-        yamlEntity.metadata = {
-          name,
-          workspace,
-          display_name,
-          labels,
-          annotations,
-        };
-      }
-
-      return yamlEntity;
-    },
-    [],
-  );
-
   // Generate YAML content
   const generateYamlContent = useCallback(async () => {
     setIsExporting(true);
@@ -386,8 +315,9 @@ export const useYamlExport = () => {
             (e) => String(e.id) === entityId,
           );
           if (entity) {
-            const yamlEntity = transformEntityToYaml(entity, exportOptions);
-            selectedEntitiesData.push(yamlEntity);
+            selectedEntitiesData.push(
+              transformEntityForExport(entity, exportOptions),
+            );
           }
 
           processedEntities++;
@@ -398,33 +328,12 @@ export const useYamlExport = () => {
         }
       }
 
-      // Generate YAML content
-      let yamlContent = "";
-      for (let index = 0; index < selectedEntitiesData.length; index++) {
-        const entity = selectedEntitiesData[index];
-        if (index > 0) yamlContent += "\n---\n";
-        yamlContent += yaml.dump(entity, {
-          indent: 2,
-          lineWidth: -1,
-          noRefs: true,
-          sortKeys: false,
-          // Use replacer function to filter out null/undefined values
-          replacer: (key: string, value: unknown) => {
-            // Skip null and undefined values
-            if (value === null || value === undefined) {
-              return undefined; // This will omit the key from output
-            }
-            return value;
-          },
-        });
-      }
-
-      return yamlContent;
+      return serializeToYaml(selectedEntitiesData);
     } finally {
       setIsExporting(false);
       setExportProgress((prev) => ({ ...prev, currentResource: undefined }));
     }
-  }, [resourceTypes, exportOptions, transformEntityToYaml]);
+  }, [resourceTypes, exportOptions]);
 
   // Statistics
   const statistics = useMemo(() => {

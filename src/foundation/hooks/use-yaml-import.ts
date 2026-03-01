@@ -1,17 +1,13 @@
 import { useTranslation } from "@/foundation/lib/i18n";
-import { getResourcePlural } from "@/foundation/lib/plural";
-import type { Metadata } from "@/foundation/types/basic-types";
+import {
+  isValidYamlResource,
+  kindToResourceType,
+  parseYamlDocuments,
+  transformResourceForImport,
+} from "@/foundation/lib/yaml-transform";
 import { useCreate, useDataProvider, useResource } from "@refinedev/core";
-import * as yaml from "js-yaml";
 import { useCallback, useState } from "react";
 import { useWorkspace } from "./use-workspace";
-
-interface YamlResource {
-  apiVersion: string;
-  kind: string;
-  metadata: Metadata;
-  spec: Record<string, unknown>;
-}
 
 interface ImportResult {
   resourceName: string;
@@ -67,83 +63,12 @@ export const useYamlImport = () => {
           meta,
         });
         return !!result.data;
-      } catch (error) {
+      } catch {
         // If getOne throws an error, it likely means the resource doesn't exist
         return false;
       }
     },
     [dataProvider],
-  );
-
-  // Auto-generate resource type from kind using naming convention
-  const getResourceType = useCallback((kind: string): string => {
-    // Convert PascalCase kind to snake_case resource type
-    // e.g., ModelRegistry -> model_registry, Cluster -> cluster
-    const snakeCase = kind
-      .replace(/([A-Z])/g, "_$1")
-      .toLowerCase()
-      .substring(1); // Remove leading underscore
-
-    // Split into words and pluralize each word that needs pluralization
-    // For compound words like "model_registry", we only pluralize the last word
-    const parts = snakeCase.split("_");
-    if (parts.length > 0) {
-      const lastPart = parts[parts.length - 1];
-      const pluralizedLastPart = getResourcePlural(lastPart);
-      parts[parts.length - 1] = pluralizedLastPart;
-    }
-
-    return parts.join("_");
-  }, []);
-
-  const transformResourceForAPI = useCallback(
-    (resource: YamlResource, resourceType: string): Record<string, unknown> => {
-      // Use workspace from YAML if provided, otherwise use current workspace
-      const workspaceToUse = resource.metadata.workspace || currentWorkspace;
-
-      // Transform the Kubernetes-style resource to match our API expectations
-      const baseResource = {
-        api_version: resource.apiVersion,
-        kind: resource.kind,
-        metadata: {
-          ...resource.metadata,
-          workspace: workspaceToUse,
-          labels: resource.metadata.labels || {},
-        },
-        spec: resource.spec,
-      };
-
-      return baseResource;
-    },
-    [currentWorkspace],
-  );
-
-  const parseYamlContent = useCallback(
-    (content: string): YamlResource[] => {
-      const resources: YamlResource[] = [];
-
-      try {
-        // Use yaml.loadAll to handle multi-document YAML automatically
-        yaml.loadAll(content, (doc) => {
-          if (
-            doc &&
-            typeof doc === "object" &&
-            "apiVersion" in doc &&
-            "kind" in doc
-          ) {
-            resources.push(doc as YamlResource);
-          }
-        });
-      } catch (error) {
-        console.error(
-          t("components.yamlImport.errors.processingYamlContent"),
-          error,
-        );
-      }
-
-      return resources;
-    },
-    [t],
   );
 
   const importFromYaml = useCallback(
@@ -158,22 +83,17 @@ export const useYamlImport = () => {
 
       try {
         // Parse YAML content
-        const resources = parseYamlContent(yamlContent);
+        const resources = parseYamlDocuments(yamlContent);
 
         // Validate resources
         const validResources = resources.filter((resource) => {
-          if (
-            !resource.apiVersion ||
-            !resource.kind ||
-            !resource.metadata?.name
-          ) {
+          if (!isValidYamlResource(resource)) {
             console.warn(
               t("components.yamlImport.errors.invalidResourceStructure"),
               resource,
             );
             return false;
           }
-          // Since we now auto-generate resource types, all valid structures are supported
           return true;
         });
 
@@ -182,7 +102,7 @@ export const useYamlImport = () => {
 
         // Process each resource
         for (const resource of validResources) {
-          const resourceType = getResourceType(resource.kind);
+          const resourceType = kindToResourceType(resource.kind);
 
           newProgress.currentResource = resource.metadata.name;
           setProgress({ ...newProgress });
@@ -216,9 +136,9 @@ export const useYamlImport = () => {
               });
             } else {
               // Resource doesn't exist, create it
-              const transformedResource = transformResourceForAPI(
+              const transformedResource = transformResourceForImport(
                 resource,
-                resourceType,
+                currentWorkspace,
               );
 
               const createMeta: Record<string, unknown> = {
@@ -281,13 +201,11 @@ export const useYamlImport = () => {
       }
     },
     [
-      parseYamlContent,
-      getResourceType,
-      transformResourceForAPI,
       checkResourceExists,
       createResource,
       currentWorkspace,
       t,
+      resourcesConfigs,
     ],
   );
 
