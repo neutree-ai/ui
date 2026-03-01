@@ -13,7 +13,7 @@ export const useOnBack = (): BackFunction | undefined => {
   const { action } = useResource();
 
   const onBack =
-    action !== "list" || typeof action !== "undefined"
+    action !== "list" && typeof action !== "undefined"
       ? routerType === "legacy"
         ? goBack
         : back
