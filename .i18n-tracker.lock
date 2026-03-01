@@ -243,6 +243,6 @@
   "src/domains/api-key/components/CreateApiKeyForm.tsx": "21a8ea68d1d4b7552e5a95ac6a566c48",
   "src/domains/workspace/hooks/use-workspace-form.tsx": "74547a707ee26107480b3ec40820384b",
   "src/domains/user/hooks/use-user-form.tsx": "324a66384c19d18de4597bb39c2e4317",
-  "src/domains/role-assignment/hooks/use-role-assignment-form.tsx": "44233a191ab2fa465221cefc23a52f4d",
+  "src/domains/role-assignment/hooks/use-role-assignment-form.tsx": "4aaea75f534f73297089285a8f9cb51a",
   "src/domains/role/hooks/use-role-form.tsx": "f5c3e891b07db54a2827bb821d5ec25d"
 }

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import React from "react";
 import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
@@ -29,41 +30,7 @@ vi.mock("@/foundation/hooks/use-license", () => ({
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
-  default: () => <div data-testid="workspace-field-mock" />,
-}));
-
-vi.mock("@/foundation/components/FormCombobox", () => ({
-  FormCombobox: () => <div data-testid="combobox-mock" />,
-}));
-
-/**
- * Mock FormSelect as a native <select> so we can drive onChange via fireEvent.
- * The real FormSelect wraps Radix Select which is hard to interact with in jsdom.
- */
-vi.mock("@/foundation/components/FormSelect", () => ({
-  FormSelect: ({
-    options,
-    onChange,
-    value,
-    disabled,
-  }: {
-    options: { label: string; value: unknown }[];
-    onChange: (v: string) => void;
-    value?: string;
-    disabled?: boolean;
-  }) => (
-    <select
-      value={value}
-      disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {options.map((o) => (
-        <option key={String(o.value)} value={String(o.value)}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  ),
+  default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
 import { useRoleAssignmentForm } from "./use-role-assignment-form";
@@ -77,24 +44,26 @@ function CreateForm() {
   );
 }
 
+function selectScope(label: string) {
+  const field = screen.getByTestId("field-spec.global");
+  const trigger = field.querySelector('button[role="combobox"]');
+  if (!trigger) throw new Error("select trigger not found");
+  fireEvent.click(trigger);
+  fireEvent.click(screen.getByRole("option", { name: label }));
+}
+
 describe("useRoleAssignmentForm", () => {
   describe("global/workspace toggle", () => {
-    function getScopeSelect() {
-      // Our mock FormSelect renders a native <select> — the only one in the form.
-      const el = document.querySelector("select");
-      if (!el) throw new Error("scope <select> not found");
-      return el;
-    }
-
     it("hides workspace field when global is selected", async () => {
       mockSupportMultiWorkspace = true;
       render(<CreateForm />);
 
-      fireEvent.change(getScopeSelect(), { target: { value: "true" } });
+      selectScope("role_assignments.options.global");
 
       await waitFor(() => {
-        const workspaceField = screen.getByTestId("field-spec.workspace");
-        expect(workspaceField.className).toContain("hidden");
+        expect(screen.getByTestId("field-spec.workspace").className).toContain(
+          "hidden",
+        );
       });
     });
 
@@ -102,13 +71,13 @@ describe("useRoleAssignmentForm", () => {
       mockSupportMultiWorkspace = true;
       render(<CreateForm />);
 
-      // Start global, then switch to workspace
-      fireEvent.change(getScopeSelect(), { target: { value: "true" } });
-      fireEvent.change(getScopeSelect(), { target: { value: "false" } });
+      selectScope("role_assignments.options.global");
+      selectScope("role_assignments.options.workspace");
 
       await waitFor(() => {
-        const workspaceField = screen.getByTestId("field-spec.workspace");
-        expect(workspaceField.className).not.toContain("hidden");
+        expect(
+          screen.getByTestId("field-spec.workspace").className,
+        ).not.toContain("hidden");
       });
     });
 
@@ -116,13 +85,13 @@ describe("useRoleAssignmentForm", () => {
       mockSupportMultiWorkspace = true;
       render(<CreateForm />);
 
-      // Set workspace scope first, then switch to global
-      fireEvent.change(getScopeSelect(), { target: { value: "false" } });
-      fireEvent.change(getScopeSelect(), { target: { value: "true" } });
+      selectScope("role_assignments.options.workspace");
+      selectScope("role_assignments.options.global");
 
       await waitFor(() => {
-        const workspaceField = screen.getByTestId("field-spec.workspace");
-        expect(workspaceField.className).toContain("hidden");
+        expect(screen.getByTestId("field-spec.workspace").className).toContain(
+          "hidden",
+        );
       });
     });
 
@@ -130,8 +99,9 @@ describe("useRoleAssignmentForm", () => {
       mockSupportMultiWorkspace = false;
       render(<CreateForm />);
 
-      const workspaceField = screen.getByTestId("field-spec.workspace");
-      expect(workspaceField.className).toContain("hidden");
+      expect(screen.getByTestId("field-spec.workspace").className).toContain(
+        "hidden",
+      );
     });
   });
 });

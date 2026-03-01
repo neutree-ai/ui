@@ -61,7 +61,9 @@ describe("useUserForm (render)", () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        screen.getByText("user_profiles.validation.passwordMinLength");
+        expect(
+          screen.getByText("user_profiles.validation.passwordMinLength"),
+        ).toBeTruthy();
       });
     });
 
@@ -90,7 +92,9 @@ describe("useUserForm (render)", () => {
       fireEvent.blur(cpInput);
 
       await waitFor(() => {
-        screen.getByText("pages.auth.errors.confirmPasswordRequired");
+        expect(
+          screen.getByText("pages.auth.errors.confirmPasswordRequired"),
+        ).toBeTruthy();
       });
     });
 
@@ -106,7 +110,9 @@ describe("useUserForm (render)", () => {
       fireEvent.blur(cpInput);
 
       await waitFor(() => {
-        screen.getByText("pages.auth.errors.confirmPasswordNotMatch");
+        expect(
+          screen.getByText("pages.auth.errors.confirmPasswordNotMatch"),
+        ).toBeTruthy();
       });
     });
 
