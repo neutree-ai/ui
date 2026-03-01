@@ -32,6 +32,8 @@ Test **logic**, not wiring. A good unit test covers code that can break in non-o
 
 > If a test only proves "the code does what the code does", it has no value.
 
+**Do NOT confuse "no useState/useEffect" with "no logic".** Form state managed by libraries (react-hook-form `useFieldArray`, `watch`, `setValue`, `register` with validation rules) IS state management. If a component has form wiring, validation rules, derived state, or conditional behavior, extract a headless hook and test it — don't dismiss it as "just a template".
+
 Writing tests is a review process. Assert **correct behavior**, not current behavior. If the implementation has a bug, fix the implementation — don't write a test that accommodates it.
 
 Testing difficulty: **pure functions < hooks < components**. Focus coverage on functions and hooks. When a hook or component contains complex logic, extract it into a `lib/` pure function — easier to test, easier to reuse.

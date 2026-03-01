@@ -241,9 +241,9 @@
   "src/domains/cluster/lib/transform-cluster-values.ts": "6e42e94739be2253010b305e36854f10",
   "src/domains/cluster/lib/get-access-mode-label.ts": "89a508f6534b3952ed5e56ddc3347f7d",
   "src/domains/cluster/lib/validate-node-ips.ts": "813b3badf54f49726292b4b50ef8871c",
-  "src/domains/cluster/hooks/use-model-cache-fields.ts": "d99638dfb023cb3a4077a195bd2d0f51",
+  "src/domains/cluster/hooks/use-model-cache-fields.ts": "ef90c571502a7404c798e713282cd249",
   "src/domains/cluster/hooks/use-node-ips.ts": "9fb9bb82d30f3d66070b719a95e41819",
-  "src/domains/cluster/components/ModelCacheFields.tsx": "ec9aff618e07c0f923aa37c9f87eb1c2",
+  "src/domains/cluster/components/ModelCacheFields.tsx": "730104c05164ee516675b7e570e750b7",
   "src/domains/cluster/components/NodeResourcesTable.tsx": "bb5383d570d658c81df60e17e9732bb7",
   "src/domains/cluster/components/ResourceProgressBar.tsx": "7d668caa651a0706b87651e40e89376f"
 }
