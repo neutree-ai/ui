@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   computeMaxAvailable,
   deepMerge,
+  transformEndpointValues,
   validateCurrentUsage,
+  validateEndpointValues,
 } from "./endpoint-form-helpers";
 
 describe("validateCurrentUsage", () => {
@@ -132,5 +134,103 @@ describe("computeMaxAvailable", () => {
     expect(result.cpu).toEqual({ available: 10, total: 16 });
     expect(result.memory).toEqual({ available: 20, total: 32 });
     expect(result.gpu).toEqual({ available: 2, total: 4 });
+  });
+});
+
+describe("transformEndpointValues", () => {
+  it("converts resource fields to strings", () => {
+    const spec = { resources: { cpu: 4, memory: 8, gpu: 2 }, replicas: null };
+    transformEndpointValues(spec);
+    expect(spec.resources).toEqual({ cpu: "4", memory: "8", gpu: "2" });
+  });
+
+  it("converts replicas.num to number", () => {
+    const spec = { resources: null, replicas: { num: "3" as unknown } };
+    transformEndpointValues(spec);
+    expect(spec.replicas.num).toBe(3);
+  });
+
+  it("handles null resources gracefully", () => {
+    const spec = { resources: null, replicas: { num: 1 } };
+    expect(() => transformEndpointValues(spec)).not.toThrow();
+  });
+
+  it("handles null replicas gracefully", () => {
+    const spec = { resources: { cpu: 1 }, replicas: null };
+    expect(() => transformEndpointValues(spec)).not.toThrow();
+  });
+});
+
+describe("validateEndpointValues", () => {
+  const mockT = (key: string) => key;
+
+  it("returns error when replicas < 1", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 0 } },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+    expect(errors["spec.replicas.num"]).toBeDefined();
+  });
+
+  it("returns no error when replicas >= 1", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 2 } },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+    expect(errors["spec.replicas.num"]).toBeUndefined();
+  });
+
+  it("returns error when model not found in create mode", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 } },
+      {
+        action: "create",
+        currentRegistry: "my-registry",
+        currentModelName: "missing-model",
+        availableModelNames: ["model-a", "model-b"],
+      },
+      mockT,
+    );
+    expect(errors["-model-catalog"]).toBeDefined();
+  });
+
+  it("returns no error when model exists in create mode", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 } },
+      {
+        action: "create",
+        currentRegistry: "my-registry",
+        currentModelName: "model-a",
+        availableModelNames: ["model-a", "model-b"],
+      },
+      mockT,
+    );
+    expect(errors["-model-catalog"]).toBeUndefined();
+  });
+
+  it("skips model check in edit mode", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 } },
+      {
+        action: "edit",
+        currentRegistry: "my-registry",
+        currentModelName: "missing-model",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+    expect(errors["-model-catalog"]).toBeUndefined();
   });
 });

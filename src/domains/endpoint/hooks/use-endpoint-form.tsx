@@ -9,21 +9,19 @@ import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { SliderWithInput } from "@/domains/endpoint/components/SliderWithInput";
+import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
+import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
 import {
-  findBestNodeForAccelerator,
-  parseClusterResources,
-} from "@/domains/endpoint/lib/cluster-resources";
-import {
-  computeMaxAvailable,
   deepMerge,
   defaultEndpointSpec,
+  transformEndpointValues,
+  validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import type {
   Endpoint,
   EndpointClusterRef,
   EndpointEngineRef,
-  EndpointEngineVersionRef,
   EndpointModelCatalogRef,
   EndpointModelRegistryRef,
 } from "@/domains/endpoint/types";
@@ -65,46 +63,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     },
     warnWhenUnsavedChanges: true,
     resolver: (values) => {
-      const errors: Record<string, unknown> = {};
-
-      // Transform resource fields to strings for API compatibility
-      values.spec?.resources &&
-        ["cpu", "memory", "gpu"].forEach((field) => {
-          const value = values.spec.resources[field];
-          if (value != null) {
-            values.spec.resources[field] = String(value);
-          }
-        });
-
-      // Transform replicas.num to number (HTML input returns string)
-      if (values.spec?.replicas?.num != null) {
-        values.spec.replicas.num = Number(values.spec.replicas.num);
-        if (values.spec.replicas.num < 1) {
-          errors["spec.replicas.num"] = {
-            type: "manual",
-            message: t("endpoints.messages.replicasMustBeAtLeastOne"),
-          };
-        }
-      }
-
-      if (action === "create" && currentRegistry && currentModelName) {
-        const modelExists =
-          modelsData.data?.data.some(
-            (model: { name: string }) => model.name === currentModelName,
-          ) ?? false;
-
-        if (!modelExists) {
-          errors["-model-catalog"] = {
-            type: "manual",
-            message: t("endpoints.messages.modelNotFoundInRegistry"),
-          };
-        }
-      }
-
-      return {
-        values,
-        errors,
-      };
+      transformEndpointValues(values.spec);
+      const errors = validateEndpointValues(
+        values.spec,
+        {
+          action,
+          currentRegistry,
+          currentModelName,
+          availableModelNames: (modelsData.data?.data || []).map(
+            (m: { name: string }) => m.name,
+          ),
+        },
+        t,
+      );
+      return { values, errors };
     },
   });
 
@@ -150,63 +122,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
-  // Get the selected cluster object
-  const selectedCluster = useMemo(() => {
-    if (!currentCluster || !clusters.query.data?.data) {
-      return undefined;
-    }
-    return clusters.query.data?.data.find(
-      (opt) => opt.metadata.name === currentCluster,
-    ) as unknown as EndpointClusterRef | undefined;
-  }, [currentCluster, clusters.query.data?.data]);
-
-  // Parse cluster resources from cluster.status.resource_info
-  const { summary: clusterResources, acceleratorOptions } = useMemo(() => {
-    return parseClusterResources(
-      selectedCluster?.status?.resource_info,
-      (type) => t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
-    );
-  }, [selectedCluster, t]);
-
-  // Watch selected accelerator to calculate single-node max
   const selectedAccelerator = form.watch("spec.resources.accelerator");
-
-  // Find best node for selected accelerator (single-node max for TP deployment)
-  // Also handles CPU-only inference when no accelerator is selected
-  const singleNodeMax = useMemo(() => {
-    if (!selectedCluster?.status?.resource_info) {
-      return null;
-    }
-    return findBestNodeForAccelerator(
-      selectedCluster.status.resource_info.node_resources,
-      selectedAccelerator?.type || undefined,
-      selectedAccelerator?.product || undefined,
-    );
-  }, [selectedAccelerator, selectedCluster]);
-
-  const maxAvailable = useMemo(
-    () => computeMaxAvailable(singleNodeMax, clusterResources, currentUsage),
-    [singleNodeMax, clusterResources, currentUsage],
-  );
-
-  // Watch form values outside the useMemo to avoid dependency issues
   const cpuUsage = form.watch("spec.resources.cpu");
   const memoryUsage = form.watch("spec.resources.memory");
 
-  const dynamicAvailability = useMemo(() => {
-    const currentCpu = cpuUsage || 0;
-    const currentMemory = memoryUsage || 0;
-    return {
-      cpu: maxAvailable.cpu.available - currentCpu,
-      memory: maxAvailable.memory.available - currentMemory,
-    };
-  }, [maxAvailable, cpuUsage, memoryUsage]);
-
-  // Calculate GPU allocation step based on cluster type
-  const gpuStep = useMemo(() => {
-    const clusterType = selectedCluster?.spec?.type;
-    return clusterType === "ssh" ? 0.1 : 1;
-  }, [selectedCluster?.spec?.type]);
+  const {
+    clusterResources,
+    acceleratorOptions,
+    maxAvailable,
+    dynamicAvailability,
+    gpuStep,
+  } = useEndpointClusterResources({
+    currentCluster,
+    clustersData: clusters.query.data?.data,
+    selectedAccelerator,
+    cpuUsage,
+    memoryUsage,
+    currentUsage,
+    t,
+  });
 
   const isEdit = action === "edit";
 
@@ -220,31 +154,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     },
   });
 
-  const { engineNames, engineVersions, engineTasks } = useMemo(() => {
-    const engineNames: string[] = [];
-    const engineVersions: Record<string, EndpointEngineVersionRef[]> = {};
-    const engineTasks: Record<string, string[]> = {};
-
-    for (const engine of engines.query.data?.data || []) {
-      engineNames.push(engine.metadata.name);
-      engineVersions[engine.metadata.name] = engine.spec.versions;
-      engineTasks[engine.metadata.name] = engine.spec.supported_tasks;
-    }
-
-    return {
-      engineNames,
-      engineVersions,
-      engineTasks,
-    };
-  }, [engines.query.data?.data]);
-
-  const engineValueSchema = useMemo(() => {
-    return engineSpec.engine
-      ? engineVersions[engineSpec.engine]?.find(
-          (v) => v.version === engineSpec.version,
-        )?.values_schema
-      : undefined;
-  }, [engineSpec.engine, engineSpec.version, engineVersions]);
+  const { engineNames, engineVersions, engineTasks, engineValueSchema } =
+    useEndpointEngineOptions({
+      enginesData: engines.query.data?.data,
+      engineSpec,
+    });
 
   // Set each key of obj as a separate form.setValue call, recursing into
   // nested plain objects. This ensures mounted FormField controllers get

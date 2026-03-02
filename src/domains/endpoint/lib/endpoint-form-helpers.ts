@@ -160,6 +160,66 @@ export function computeMaxAvailable(
   };
 }
 
+/**
+ * Transform endpoint spec values in-place before submission.
+ * - Converts resource fields (cpu, memory, gpu) to strings for API compatibility
+ * - Converts replicas.num from string (HTML input) to number
+ */
+export function transformEndpointValues(spec: {
+  resources?: Record<string, unknown> | null;
+  replicas?: { num?: unknown } | null;
+}): void {
+  if (spec.resources) {
+    for (const field of ["cpu", "memory", "gpu"]) {
+      const value = (spec.resources as Record<string, unknown>)[field];
+      if (value != null) {
+        (spec.resources as Record<string, unknown>)[field] = String(value);
+      }
+    }
+  }
+  if (spec.replicas?.num != null) {
+    spec.replicas.num = Number(spec.replicas.num);
+  }
+}
+
+/**
+ * Validate endpoint spec values. Returns an errors map (empty = valid).
+ */
+export function validateEndpointValues(
+  spec: { replicas?: { num?: number } | null },
+  context: {
+    action: "create" | "edit";
+    currentRegistry: string;
+    currentModelName: string;
+    availableModelNames: string[];
+  },
+  t: (key: string) => string,
+): Record<string, { type: string; message: string }> {
+  const errors: Record<string, { type: string; message: string }> = {};
+
+  if (spec.replicas?.num != null && spec.replicas.num < 1) {
+    errors["spec.replicas.num"] = {
+      type: "manual",
+      message: t("endpoints.messages.replicasMustBeAtLeastOne"),
+    };
+  }
+
+  if (
+    context.action === "create" &&
+    context.currentRegistry &&
+    context.currentModelName
+  ) {
+    if (!context.availableModelNames.includes(context.currentModelName)) {
+      errors["-model-catalog"] = {
+        type: "manual",
+        message: t("endpoints.messages.modelNotFoundInRegistry"),
+      };
+    }
+  }
+
+  return errors;
+}
+
 /** Default endpoint spec used for form initialization and catalog merge resets. */
 export const defaultEndpointSpec = {
   cluster: "",
