@@ -6,6 +6,11 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type Document,
+  type RankedDocument,
+  processRerankResults,
+} from "@/domains/endpoint/lib/rerank-helpers";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { useCustom, useCustomMutation } from "@refinedev/core";
 import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from "lucide-react";
@@ -44,18 +49,6 @@ const getRankChangeDisplay = (change: number) => {
 type FormValue = {
   model: string;
   query: string;
-};
-
-type Document = {
-  id: number;
-  text: string;
-  originalIndex: number;
-};
-
-type RankedDocument = Document & {
-  score: number;
-  rankChange: number;
-  newRank: number;
 };
 
 type RerankPlaygroundProps = {
@@ -192,33 +185,7 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
         throw new Error("Invalid response format from rerank API");
       }
 
-      // Create a map of original documents for easy lookup
-      const docMap = new Map(validDocuments.map((doc, idx) => [idx, doc]));
-
-      // Process the reranked results
-      const ranked: RankedDocument[] = data.results.map(
-        (
-          result: { index: number; relevance_score: number },
-          newIndex: number,
-        ) => {
-          const originalDoc = docMap.get(result.index);
-          if (!originalDoc) {
-            throw new Error(`Invalid document index: ${result.index}`);
-          }
-
-          const oldIndex = originalDoc.originalIndex;
-          const rankChange = oldIndex - newIndex;
-
-          return {
-            ...originalDoc,
-            score: result.relevance_score,
-            newRank: newIndex + 1,
-            rankChange,
-          };
-        },
-      );
-
-      setRankedDocuments(ranked);
+      setRankedDocuments(processRerankResults(data.results, validDocuments));
 
       setActiveTab("results");
     } catch (error) {

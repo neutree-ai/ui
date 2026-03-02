@@ -12,17 +12,19 @@ import { useEffect, useRef, useState } from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 import { ChatSidebar } from "./ChatSidebar";
-import { MaxLengthSelector } from "./maxlength-selector";
-import { TemperatureSelector } from "./temperature-selector";
-import { TopPSelector } from "./top-p-selector";
+import { MaxLengthSelector } from "./MaxLengthSelector";
+import { TemperatureSelector } from "./TemperatureSelector";
+import { TopPSelector } from "./TopPSelector";
 import "github-markdown-css/github-markdown-light.css";
+import {
+  type ChatContentPart,
+  buildUserMessageContent,
+  filterMessagesForApi,
+} from "@/domains/endpoint/lib/chat-helpers";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { useCustom } from "@refinedev/core";
 import {
   type CoreMessage,
-  type ImagePart,
-  type TextPart,
-  type ToolCallPart,
   type ToolSet,
   jsonSchema,
   streamText,
@@ -30,26 +32,6 @@ import {
 } from "ai";
 import { Image, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
-// Custom error part type for handling errors in chat
-type ErrorPart = {
-  type: "error";
-  error: string;
-};
-
-// Custom reasoning part type for handling reasoning in chat
-type ReasoningPart = {
-  type: "reasoning";
-  reasoning: string;
-};
-
-// Extended content part type that includes error handling and reasoning
-type ChatContentPart =
-  | TextPart
-  | ToolCallPart
-  | ImagePart
-  | ErrorPart
-  | ReasoningPart;
 
 type FormValue = {
   model: string;
@@ -203,28 +185,12 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     const newAbortController = new AbortController();
     setAbortController(newAbortController);
 
-    // Build user message content with text and images
-    const userContent: Array<TextPart | ImagePart> = [];
-
-    // Add text content if present
-    if (input.trim()) {
-      userContent.push({ type: "text", text: input });
-    }
-
-    // Add images if present
-    for (const image of selectedImages) {
-      userContent.push({
-        type: "image",
-        image: image.dataUri,
-      });
-    }
-
     const userMsg = {
       role: "user" as const,
-      content:
-        userContent.length === 1 && userContent[0].type === "text"
-          ? userContent[0].text // Keep simple string format for text-only messages
-          : userContent,
+      content: buildUserMessageContent(
+        input,
+        selectedImages.map((img) => img.dataUri),
+      ),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -238,31 +204,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
       messagesToSend.push({ role: "system", content: systemMessage.trim() });
     }
 
-    // Filter out error parts from messages before sending to API
-    const filteredMessages = messages
-      .map((msg) => {
-        if (typeof msg.content === "string") {
-          return msg;
-        }
-
-        // Filter out error parts and reasoning parts from content array
-        const filteredContent = (msg.content as ChatContentPart[]).filter(
-          (part) => part.type !== "error" && part.type !== "reasoning",
-        );
-
-        // If no content left after filtering, skip this message
-        if (filteredContent.length === 0) {
-          return null;
-        }
-
-        return {
-          ...msg,
-          content: filteredContent,
-        };
-      })
-      .filter((msg) => msg !== null) as CoreMessage[];
-
-    messagesToSend.push(...filteredMessages, userMsg);
+    messagesToSend.push(...filterMessagesForApi(messages), userMsg);
 
     const assistantIndex = messages.length + 1;
     setStatus("streaming");

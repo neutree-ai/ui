@@ -4,7 +4,8 @@ import { useTheme } from "next-themes";
 import { type FC, useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
-import "./log-viewer.css";
+import { filterByTimestamp } from "../lib/log-helpers";
+import "./LogViewer.css";
 
 // Initialize lowlight
 const lowlight = createLowlight();
@@ -24,26 +25,6 @@ type HastNode = {
 
 // Unique key generator for React elements
 const uniqueKeySelector = () => Math.random().toString(16).slice(-8);
-
-// Helper function to filter logs by timestamp
-const filterByTimestamp = (
-  line: string,
-  startTime?: string,
-  endTime?: string,
-): boolean => {
-  const timestampMatch = line.match(/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}/);
-  if (!timestampMatch) {
-    return true; // Include lines without recognizable timestamps
-  }
-
-  const ts = Date.parse(timestampMatch[0]);
-  if (Number.isNaN(ts)) return true;
-
-  if (startTime && ts < Date.parse(startTime)) return false;
-  if (endTime && ts > Date.parse(endTime)) return false;
-
-  return true;
-};
 
 // Convert lowlight AST to React elements with search highlighting
 const value2react = (
