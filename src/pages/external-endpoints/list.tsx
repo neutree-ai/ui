@@ -1,8 +1,6 @@
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
-import {
-  ROUTE_TYPE_LABELS,
-  getExposedModels,
-} from "@/domains/external-endpoint/lib/external-endpoint-helpers";
+import { ROUTE_TYPE_LABELS } from "@/domains/external-endpoint/lib/constants";
+import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table, defaultSorters } from "@/foundation/components/Table";
