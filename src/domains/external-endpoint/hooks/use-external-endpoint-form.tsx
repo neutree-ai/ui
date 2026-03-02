@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ModelMappingEditor from "@/domains/external-endpoint/components/ModelMappingEditor";
+import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type {
   ExternalEndpoint,
   UpstreamSpec,
@@ -60,11 +61,7 @@ export const useExternalEndpointForm = ({
   form.refineCore.onFinish = async (values) => {
     const v = values as ExternalEndpoint;
     if (v.spec?.upstreams) {
-      for (const upstream of v.spec.upstreams) {
-        if (isEdit && upstream.auth && !upstream.auth.credential) {
-          delete (upstream.auth as Record<string, unknown>).credential;
-        }
-      }
+      v.spec.upstreams = cleanUpstreamsForSubmit(v.spec.upstreams, isEdit);
     }
     return originalOnFinish(v);
   };

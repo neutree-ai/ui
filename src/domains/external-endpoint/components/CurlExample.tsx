@@ -7,6 +7,7 @@ import {
   Select as SelectUI,
   SelectValue,
 } from "@/components/ui/select";
+import { buildCurlCommand } from "@/domains/external-endpoint/lib/build-curl-command";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -18,16 +19,6 @@ type CurlExampleProps = {
   serviceUrl: string;
   models: string[];
 };
-
-function buildCurlCommand(serviceUrl: string, modelName: string): string {
-  return `curl ${serviceUrl}/v1/chat/completions \\
-  -H "Authorization: Bearer <your-neutree-api-key>" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "${modelName}",
-    "messages": [{"role": "user", "content": "Hello"}]
-  }'`;
-}
 
 export default function CurlExample({ serviceUrl, models }: CurlExampleProps) {
   const { t } = useTranslation();

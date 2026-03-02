@@ -116,19 +116,23 @@ const defaultSelectResult = {
 };
 
 function setupMocks(catalogs = [catalogA, catalogB]) {
-  // biome-ignore lint/suspicious/noExplicitAny: mock implementation doesn't need full Refine types
-  vi.mocked(useSelect).mockImplementation(((opts: { resource: string }) => {
-    if (opts.resource === "model_catalogs") {
-      return { query: { data: { data: catalogs }, isLoading: false } };
-    }
-    return defaultSelectResult;
-  }) as any);
+  vi.mocked(useSelect).mockImplementation(
+    // biome-ignore lint/suspicious/noExplicitAny: mock implementation doesn't need full Refine types
+    ((opts: { resource: string }) => {
+      if (opts.resource === "model_catalogs") {
+        return { query: { data: { data: catalogs }, isLoading: false } };
+      }
+      return defaultSelectResult;
+    }) as any,
+  );
 
-  // biome-ignore lint/suspicious/noExplicitAny: mock return doesn't need full Refine types
-  vi.mocked(useCustom).mockReturnValue({
-    data: null,
-    isFetching: false,
-  } as any);
+  vi.mocked(useCustom).mockReturnValue(
+    // biome-ignore lint/suspicious/noExplicitAny: mock return doesn't need full Refine types
+    {
+      data: null,
+      isFetching: false,
+    } as any,
+  );
 }
 
 // --- Test components ---
@@ -218,17 +222,18 @@ describe("useEndpointForm", () => {
       selectCatalog("vllm-llama");
 
       await waitFor(() => {
+        expect(formInstance).not.toBeNull();
         const values = formInstance?.getValues();
-        expect(values.spec.model.name).toBe("llama-3");
-        expect(values.spec.model.version).toBe("1.0");
-        expect(values.spec.model.registry).toBe("hf");
-        expect(values.spec.model.file).toBe("model.bin");
-        expect(values.spec.engine.engine).toBe("vllm");
-        expect(values.spec.engine.version).toBe("0.6.0");
-        expect(values.spec.resources.cpu).toBe("4");
-        expect(values.spec.resources.memory).toBe("8");
-        expect(values.spec.replicas.num).toBe(2);
-        expect(values.spec.deployment_options.scheduler.type).toBe(
+        expect(values?.spec.model.name).toBe("llama-3");
+        expect(values?.spec.model.version).toBe("1.0");
+        expect(values?.spec.model.registry).toBe("hf");
+        expect(values?.spec.model.file).toBe("model.bin");
+        expect(values?.spec.engine.engine).toBe("vllm");
+        expect(values?.spec.engine.version).toBe("0.6.0");
+        expect(values?.spec.resources.cpu).toBe("4");
+        expect(values?.spec.resources.memory).toBe("8");
+        expect(values?.spec.replicas.num).toBe(2);
+        expect(values?.spec.deployment_options.scheduler.type).toBe(
           "roundrobin",
         );
       });
@@ -247,16 +252,17 @@ describe("useEndpointForm", () => {
       // Switch to catalog B (null resources, replicas, variables)
       selectCatalog("llama-cpp-basic");
       await waitFor(() => {
+        expect(formInstance).not.toBeNull();
         const values = formInstance?.getValues();
         // Resources should be reset to defaults
-        expect(values.spec.resources.cpu).toBe("0");
-        expect(values.spec.resources.memory).toBe("0");
-        expect(values.spec.resources.gpu).toBe("0");
+        expect(values?.spec.resources.cpu).toBe("0");
+        expect(values?.spec.resources.memory).toBe("0");
+        expect(values?.spec.resources.gpu).toBe("0");
         // Replicas should be reset to default
-        expect(values.spec.replicas.num).toBe(1);
+        expect(values?.spec.replicas.num).toBe(1);
         // Model and engine should reflect catalog B
-        expect(values.spec.model.name).toBe("tiny-model");
-        expect(values.spec.engine.engine).toBe("llama-cpp");
+        expect(values?.spec.model.name).toBe("tiny-model");
+        expect(values?.spec.engine.engine).toBe("llama-cpp");
       });
     });
   });
