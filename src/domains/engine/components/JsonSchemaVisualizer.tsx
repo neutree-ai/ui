@@ -1,41 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  Box,
-  CheckSquare,
-  ChevronDown,
-  ChevronRight,
-  File,
-  Hash,
-  List,
-  Type,
-  XSquare,
-} from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
-
-// Type-safe icons mapping
-const SchemaTypeIcon = ({ type }: { type: string }) => {
-  switch (type) {
-    case "object":
-      return <Box className="h-4 w-4" />;
-    case "array":
-      return <List className="h-4 w-4" />;
-    case "string":
-      return <Type className="h-4 w-4" />;
-    case "integer":
-    case "number":
-      return <Hash className="h-4 w-4" />;
-    case "boolean":
-      return (
-        <div className="flex">
-          <CheckSquare className="h-4 w-4" />
-          <XSquare className="h-4 w-4 ml-1" />
-        </div>
-      );
-    default:
-      return <File className="h-4 w-4" />;
-  }
-};
+import { getTypeColorClass } from "../lib/schema-type-color";
+import { SchemaTypeIcon } from "./SchemaTypeIcon";
 
 interface PropertyNodeProps {
   name: string;
@@ -61,25 +29,6 @@ const PropertyNode = ({
   };
 
   const rowStyle = "flex items-center py-1 hover:bg-accent/50 rounded";
-
-  // Get type-specific icon color classes
-  const getTypeColorClass = (type: string) => {
-    switch (type) {
-      case "object":
-        return "text-blue-500 dark:text-blue-400";
-      case "array":
-        return "text-purple-500 dark:text-purple-400";
-      case "string":
-        return "text-green-500 dark:text-green-400";
-      case "integer":
-      case "number":
-        return "text-amber-500 dark:text-amber-400";
-      case "boolean":
-        return ""; // Special case handled in the component
-      default:
-        return "text-muted-foreground";
-    }
-  };
 
   return (
     <div className="w-full">

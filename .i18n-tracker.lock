@@ -171,8 +171,8 @@
   "src/domains/engine/components/EngineStatus.tsx": "1ba8a5528231958fe6e8fda82f0873cf",
   "src/domains/engine/components/EngineVariablesCard.tsx": "110fc9a5e9e0cd1a899a4d019c4b2acc",
   "src/domains/engine/components/EngineVersions.tsx": "46eb6987394db5f7c5cf8fed3204e074",
-  "src/domains/engine/components/JsonSchemaValueVisualizer.tsx": "b0b286016ce48273cf5a327de38a0f97",
-  "src/domains/engine/components/JsonSchemaVisualizer.tsx": "ceda858ca87322f78fc713a93a0a0ac7",
+  "src/domains/engine/components/JsonSchemaValueVisualizer.tsx": "69fffc767795ca888e2b3a313734535f",
+  "src/domains/engine/components/JsonSchemaVisualizer.tsx": "6fae73d6b346017cdcb9978a01e14e2b",
   "src/domains/endpoint/types.ts": "f91a12a5dadb80eba826a38682f9fadb",
   "src/domains/endpoint/hooks/use-chat-state.ts": "094d9c572609338e647b6b020234e0d5",
   "src/domains/endpoint/hooks/use-endpoint-log-sources.ts": "6af8be2cdbab365427f000d0f9c99ae9",
@@ -260,5 +260,10 @@
   "src/domains/endpoint/lib/rerank-helpers.ts": "4c4831f7332ba6fecb50a3e18c1f4b64",
   "src/domains/endpoint/components/MaxLengthSelector.tsx": "91511356594fa7cd5ad104c217b88765",
   "src/domains/endpoint/components/TemperatureSelector.tsx": "b2c4bb1aede0b02c91d9794c77e3221c",
-  "src/domains/endpoint/components/TopPSelector.tsx": "e424b431fb0be770e7b734375151393c"
+  "src/domains/endpoint/components/TopPSelector.tsx": "e424b431fb0be770e7b734375151393c",
+  "src/domains/engine/lib/infer-schema.ts": "3733d0525fdbc4e9d61eebfdb4c51867",
+  "src/domains/engine/lib/merge-schema-properties.ts": "66715d7203795d9db9af9d155166e18e",
+  "src/domains/engine/lib/schema-type-color.ts": "afffb537eab8f58e1717e1b606277fda",
+  "src/domains/engine/lib/type-match.ts": "ea1627d7e2b315b0fa75e38290c5a221",
+  "src/domains/engine/components/SchemaTypeIcon.tsx": "61be79250524c422d7f8bc43f6832626"
 }

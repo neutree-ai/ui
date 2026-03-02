@@ -5,105 +5,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  AlertCircle,
-  Box,
-  CheckSquare,
-  ChevronDown,
-  ChevronRight,
-  Hash,
-  List,
-  Type,
-  XSquare,
-} from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
-
-interface SchemaTypeIconProps {
-  type: string;
-}
-
-const SchemaTypeIcon = ({ type }: SchemaTypeIconProps) => {
-  switch (type) {
-    case "object":
-      return <Box className="h-4 w-4" />;
-    case "array":
-      return <List className="h-4 w-4" />;
-    case "string":
-      return <Type className="h-4 w-4" />;
-    case "integer":
-    case "number":
-      return <Hash className="h-4 w-4" />;
-    case "boolean":
-      return (
-        <div className="flex">
-          <CheckSquare className="h-4 w-4" />
-          <XSquare className="h-4 w-4 -ml-1" />
-        </div>
-      );
-    default:
-      return <Type className="h-4 w-4" />;
-  }
-};
-
-const getTypeColorClass = (type: string) => {
-  switch (type) {
-    case "object":
-      return "text-blue-500 dark:text-blue-400";
-    case "array":
-      return "text-purple-500 dark:text-purple-400";
-    case "string":
-      return "text-green-500 dark:text-green-400";
-    case "integer":
-    case "number":
-      return "text-amber-500 dark:text-amber-400";
-    case "boolean":
-      return "";
-    default:
-      return "text-muted-foreground";
-  }
-};
-
-const inferSchemaFromValue = (value: unknown): Record<string, unknown> => {
-  if (value === null) {
-    return { type: "null" };
-  }
-
-  if (Array.isArray(value)) {
-    const itemType =
-      value.length > 0 ? inferSchemaFromValue(value[0]) : { type: "string" };
-    return {
-      type: "array",
-      items: itemType,
-    };
-  }
-
-  const actualType = typeof value;
-
-  switch (actualType) {
-    case "object": {
-      const properties: Record<string, unknown> = {};
-      for (const key of Object.keys(value as Record<string, unknown>)) {
-        properties[key] = inferSchemaFromValue(
-          (value as Record<string, unknown>)[key],
-        );
-      }
-      return {
-        type: "object",
-        properties,
-      };
-    }
-    case "string":
-      return { type: "string" };
-    case "number":
-      return {
-        type: Number.isInteger(value as number) ? "integer" : "number",
-      };
-    case "boolean":
-      return { type: "boolean" };
-    default:
-      return { type: "string" };
-  }
-};
+import { mergeSchemaProperties } from "../lib/merge-schema-properties";
+import { getTypeColorClass } from "../lib/schema-type-color";
+import { checkTypeMatch, getActualType } from "../lib/type-match";
+import { SchemaTypeIcon } from "./SchemaTypeIcon";
 
 interface ValueDisplayProps {
   value: unknown;
@@ -112,19 +19,8 @@ interface ValueDisplayProps {
 
 const ValueDisplay = ({ value, type }: ValueDisplayProps) => {
   const { t } = useTranslation();
-  const getActualType = (val: unknown) => {
-    if (val === null) return "null";
-    if (Array.isArray(val)) return "array";
-    return typeof val;
-  };
-
   const actualType = getActualType(value);
-  const isTypeMatch =
-    actualType === type ||
-    (type === "integer" &&
-      actualType === "number" &&
-      Number.isInteger(value)) ||
-    (type === "number" && actualType === "number");
+  const isTypeMatch = checkTypeMatch(value, type);
 
   const formatValue = () => {
     if (value === undefined)
@@ -216,24 +112,10 @@ const PropertyNode = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(depth < 2);
 
-  const getAllProperties = () => {
-    const schemaProperties =
-      (schema?.properties as Record<string, unknown>) || {};
-    const extraProperties: Record<string, Record<string, unknown>> = {};
-
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      const valueObj = value as Record<string, unknown>;
-      for (const key of Object.keys(valueObj)) {
-        if (!schemaProperties[key]) {
-          extraProperties[key] = inferSchemaFromValue(valueObj[key]);
-        }
-      }
-    }
-
-    return { schemaProperties, extraProperties };
-  };
-
-  const { schemaProperties, extraProperties } = getAllProperties();
+  const { schemaProperties, extraProperties } = mergeSchemaProperties(
+    schema,
+    value,
+  );
 
   const hasChildren = Boolean(
     (String(schema.type) === "object" &&
