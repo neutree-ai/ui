@@ -247,13 +247,14 @@
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "b2466d871f8436202bb1e6011ec61ecd",
   "src/pages/external-endpoints/create.tsx": "bd5d137b2a4a49d077ea1891707f2988",
   "src/pages/external-endpoints/edit.tsx": "e6fdd4684d41f910da1e2ca2ddf4cbd9",
-  "src/pages/external-endpoints/list.tsx": "b4ca4b028fe4cd556fe0c63b8b965c5f",
-  "src/pages/external-endpoints/show.tsx": "8fc61711c92dd0692b708ecc8bb7dab9",
-  "src/domains/external-endpoint/types.ts": "febaae21b90fe58ef017912ecbdfa192",
+  "src/pages/external-endpoints/list.tsx": "45651d77cf98208be3ace79a0bbacf62",
+  "src/pages/external-endpoints/show.tsx": "ece0a36c337cbefa19ca53376149e339",
+  "src/domains/external-endpoint/types.ts": "2d2ffcd4fd3a38fce4a2fced6f0ea5d7",
   "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "a4845b88dc7a7c480f82dc096c796fca",
   "src/domains/external-endpoint/components/CurlExample.tsx": "4c167de36a57a4fe741de084ae753a0c",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "1c1e5325079d9c25ac1f5f14fa47383f",
   "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "583e60b88556cc90bdc5fc71c3ab8a46",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "6c267e20656474b8cc2c3d54577aa936",
-  "src/domains/external-endpoint/lib/clean-upstreams-for-submit.ts": "442d33c190901600e20529acaa8e2a1b"
+  "src/domains/external-endpoint/lib/clean-upstreams-for-submit.ts": "442d33c190901600e20529acaa8e2a1b",
+  "src/domains/external-endpoint/lib/external-endpoint-helpers.ts": "edb244ef0977f028b7b3018256e095a1"
 }

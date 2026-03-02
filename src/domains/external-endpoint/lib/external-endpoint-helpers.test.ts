@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ExternalEndpointSpec, UpstreamSpec } from "./types";
-import { getExposedModels } from "./types";
+import type { ExternalEndpointSpec, UpstreamSpec } from "../types";
+import { getExposedModels } from "./external-endpoint-helpers";
 
 function makeUpstream(mapping: Record<string, string> | null): UpstreamSpec {
   return {

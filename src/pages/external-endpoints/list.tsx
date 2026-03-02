@@ -1,9 +1,9 @@
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
-import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import {
   ROUTE_TYPE_LABELS,
   getExposedModels,
-} from "@/domains/external-endpoint/types";
+} from "@/domains/external-endpoint/lib/external-endpoint-helpers";
+import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Table, defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";

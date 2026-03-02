@@ -2,21 +2,6 @@ import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 
 type ExternalEndpointPhase = "Pending" | "Running" | "Failed" | "Deleted";
 
-export const ROUTE_TYPE_LABELS: Record<string, string> = {
-  "/v1/chat/completions": "Chat Completions",
-};
-
-export function getExposedModels(spec: ExternalEndpointSpec | null): string[] {
-  if (!spec?.upstreams) return [];
-  const models: string[] = [];
-  for (const upstream of spec.upstreams) {
-    if (upstream.model_mapping) {
-      models.push(...Object.keys(upstream.model_mapping));
-    }
-  }
-  return models;
-}
-
 export type AuthSpec = {
   type: string;
   credential?: string;

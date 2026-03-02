@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CurlExample from "@/domains/external-endpoint/components/CurlExample";
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
-import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import {
   ROUTE_TYPE_LABELS,
   getExposedModels,
-} from "@/domains/external-endpoint/types";
+} from "@/domains/external-endpoint/lib/external-endpoint-helpers";
+import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
