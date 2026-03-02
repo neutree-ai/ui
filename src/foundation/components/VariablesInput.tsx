@@ -28,7 +28,7 @@ import {
   type EditingRow,
   type Schema,
   useVariablesInput,
-} from "@/domains/engine/hooks/use-variables-input";
+} from "@/foundation/hooks/use-variables-input";
 import { Plus, Trash } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

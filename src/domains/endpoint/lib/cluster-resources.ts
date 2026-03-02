@@ -1,4 +1,7 @@
-import type { Cluster, ResourceStatus } from "@/domains/cluster/types";
+import type {
+  ClusterResourceInfo,
+  ResourceStatus,
+} from "@/foundation/types/resource-types";
 
 /**
  * Cluster-level resource summary (for display purposes)
@@ -41,18 +44,16 @@ type ParsedClusterResources = {
 };
 
 /**
- * Parse cluster resources from cluster.status.resource_info
- * Returns cluster-level summary and available accelerator options
+ * Parse cluster resource info into a summary and available accelerator options.
  */
 export function parseClusterResources(
-  cluster: Cluster | undefined,
+  resourceInfo: ClusterResourceInfo | null | undefined,
   translateAcceleratorType: (type: string) => string,
 ): ParsedClusterResources {
-  if (!cluster?.status?.resource_info) {
+  if (!resourceInfo) {
     return { summary: null, acceleratorOptions: [] };
   }
 
-  const resourceInfo = cluster.status.resource_info;
   const allocatable = resourceInfo.allocatable;
   const available = resourceInfo.available;
 

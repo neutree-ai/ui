@@ -7,112 +7,38 @@ import {
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import {
-  findBestNodeForAccelerator,
-  parseClusterResources,
-} from "@/domains/cluster/lib/cluster-resources";
-import type { Cluster } from "@/domains/cluster/types";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { SliderWithInput } from "@/domains/endpoint/components/SliderWithInput";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
-import type { Endpoint } from "@/domains/endpoint/types";
-import { VariablesInput } from "@/domains/engine/components/VariablesInput";
-import type { Schema } from "@/domains/engine/hooks/use-variables-input";
-import type { Engine, EngineVersion } from "@/domains/engine/types";
-import type { ModelCatalog } from "@/domains/model-catalog/types";
-import type { ModelRegistry } from "@/domains/model-registry/types";
+import {
+  findBestNodeForAccelerator,
+  parseClusterResources,
+} from "@/domains/endpoint/lib/cluster-resources";
+import {
+  computeMaxAvailable,
+  deepMerge,
+  defaultEndpointSpec,
+} from "@/domains/endpoint/lib/endpoint-form-helpers";
+import type {
+  Endpoint,
+  EndpointClusterRef,
+  EndpointEngineRef,
+  EndpointEngineVersionRef,
+  EndpointModelCatalogRef,
+  EndpointModelRegistryRef,
+} from "@/domains/endpoint/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
+import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-// Helper function to validate current usage against total capacity.
-// Current usage is the endpoint's existing allocation, so it must not exceed total capacity.
-const validateCurrentUsage = (currentUsage: number, totalCapacity: number) => {
-  return Number(currentUsage || 0) <= totalCapacity
-    ? Number(currentUsage || 0)
-    : 0;
-};
-
-// Deep merge function for form data with smart overriding
-function deepMerge(
-  target: Record<string, unknown>,
-  source: Record<string, unknown>,
-): Record<string, unknown> {
-  if (source === null || source === undefined) return target;
-  if (target === null || target === undefined) return source;
-
-  if (typeof source !== "object" || typeof target !== "object") {
-    return source;
-  }
-
-  const result = { ...target };
-
-  for (const key of Object.keys(source)) {
-    const sourceValue = source[key];
-    if (sourceValue === null || sourceValue === undefined) {
-      continue; // Skip null/undefined values from source
-    }
-
-    const targetValue = target[key];
-
-    // Special handling for nested objects
-    if (
-      typeof sourceValue === "object" &&
-      typeof targetValue === "object" &&
-      !Array.isArray(sourceValue) &&
-      !Array.isArray(targetValue)
-    ) {
-      result[key] = deepMerge(
-        targetValue as Record<string, unknown>,
-        sourceValue as Record<string, unknown>,
-      );
-    } else {
-      result[key] = sourceValue;
-    }
-  }
-
-  return result;
-}
-
-const defaultSpec = {
-  cluster: "",
-  model: {
-    name: "",
-    version: "",
-    registry: "",
-    file: "",
-    task: "",
-  },
-  engine: {
-    engine: "",
-    version: "",
-  },
-  resources: {
-    cpu: "0",
-    memory: "0",
-    gpu: "0",
-    accelerator: null,
-  },
-  replicas: {
-    num: 1,
-  },
-  deployment_options: {
-    scheduler: {
-      type: "consistent_hash",
-    },
-  },
-  variables: {
-    engine_args: {},
-  },
-  env: {},
-} as const;
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -130,7 +56,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         name: "",
         workspace: currentWorkspace,
       },
-      spec: defaultSpec,
+      spec: defaultEndpointSpec,
     },
     refineCoreProps: {
       autoSave: {
@@ -204,22 +130,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     [workspace],
   );
 
-  const engines = useSelect<Engine>({
+  const engines = useSelect<EndpointEngineRef>({
     resource: "engines",
     meta,
   });
 
-  const clusters = useSelect<Cluster>({
+  const clusters = useSelect<EndpointClusterRef>({
     resource: "clusters",
     meta,
   });
 
-  const modelRegistries = useSelect<ModelRegistry>({
+  const modelRegistries = useSelect<EndpointModelRegistryRef>({
     resource: "model_registries",
     meta,
   });
 
-  const modelCatalogs = useSelect<ModelCatalog>({
+  const modelCatalogs = useSelect<EndpointModelCatalogRef>({
     resource: "model_catalogs",
     meta,
   });
@@ -231,13 +157,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
     return clusters.query.data?.data.find(
       (opt) => opt.metadata.name === currentCluster,
-    ) as unknown as Cluster | undefined;
+    ) as unknown as EndpointClusterRef | undefined;
   }, [currentCluster, clusters.query.data?.data]);
 
   // Parse cluster resources from cluster.status.resource_info
   const { summary: clusterResources, acceleratorOptions } = useMemo(() => {
-    return parseClusterResources(selectedCluster, (type) =>
-      t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
+    return parseClusterResources(
+      selectedCluster?.status?.resource_info,
+      (type) => t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
     );
   }, [selectedCluster, t]);
 
@@ -257,76 +184,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     );
   }, [selectedAccelerator, selectedCluster]);
 
-  // Max available resources - validate currentUsage before using it in calculations
-  const maxAvailable = useMemo(() => {
-    // When accelerator is selected, use single-node max (for TP deployment)
-    if (singleNodeMax) {
-      // Validate currentUsage against single node capacity
-      const validCurrentCpu = validateCurrentUsage(
-        currentUsage.cpu,
-        singleNodeMax.cpu.total,
-      );
-      const validCurrentMemory = validateCurrentUsage(
-        currentUsage.memory,
-        singleNodeMax.memory.total,
-      );
-      const validCurrentGpu = validateCurrentUsage(
-        currentUsage.gpu,
-        singleNodeMax.gpu.total,
-      );
-
-      return {
-        cpu: {
-          available: singleNodeMax.cpu.available + validCurrentCpu,
-          total: singleNodeMax.cpu.total,
-        },
-        memory: {
-          available: singleNodeMax.memory.available + validCurrentMemory,
-          total: singleNodeMax.memory.total,
-        },
-        gpu: {
-          available: singleNodeMax.gpu.available + validCurrentGpu,
-          total: singleNodeMax.gpu.total,
-        },
-      };
-    }
-
-    // Fallback to cluster-level resources when no accelerator selected
-    if (!clusterResources) {
-      return {
-        cpu: { available: 0, total: 0 },
-        memory: { available: 0, total: 0 },
-        gpu: { available: 0, total: 0 },
-      };
-    }
-
-    // Validate currentUsage against cluster total capacity (NOT remaining available)
-    const clusterCpuAvailable = Number(clusterResources.cpu?.available || 0);
-    const clusterMemoryAvailable = Number(
-      clusterResources.memory?.available || 0,
-    );
-
-    const validCurrentCpu = validateCurrentUsage(
-      currentUsage.cpu,
-      clusterResources.cpu.total,
-    );
-    const validCurrentMemory = validateCurrentUsage(
-      currentUsage.memory,
-      clusterResources.memory.total,
-    );
-
-    return {
-      cpu: {
-        available: clusterCpuAvailable + validCurrentCpu,
-        total: clusterResources.cpu.total,
-      },
-      memory: {
-        available: clusterMemoryAvailable + validCurrentMemory,
-        total: clusterResources.memory.total,
-      },
-      gpu: { available: 0, total: 0 },
-    };
-  }, [singleNodeMax, clusterResources, currentUsage]);
+  const maxAvailable = useMemo(
+    () => computeMaxAvailable(singleNodeMax, clusterResources, currentUsage),
+    [singleNodeMax, clusterResources, currentUsage],
+  );
 
   // Watch form values outside the useMemo to avoid dependency issues
   const cpuUsage = form.watch("spec.resources.cpu");
@@ -361,7 +222,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const { engineNames, engineVersions, engineTasks } = useMemo(() => {
     const engineNames: string[] = [];
-    const engineVersions: Record<string, EngineVersion[]> = {};
+    const engineVersions: Record<string, EndpointEngineVersionRef[]> = {};
     const engineTasks: Record<string, string[]> = {};
 
     for (const engine of engines.query.data?.data || []) {
@@ -417,25 +278,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       // selected catalog from leaking into the new one (e.g. extra
       // engine_args keys or a model.file the new catalog doesn't set).
       const mergedModel = deepMerge(
-        defaultSpec.model as Record<string, unknown>,
+        defaultEndpointSpec.model as Record<string, unknown>,
         selectedCatalog.spec.model as Record<string, unknown>,
       );
       const mergedEngine = deepMerge(
-        defaultSpec.engine as Record<string, unknown>,
+        defaultEndpointSpec.engine as Record<string, unknown>,
         selectedCatalog.spec.engine as Record<string, unknown>,
       );
       const mergedResources = selectedCatalog.spec.resources
         ? deepMerge(
-            defaultSpec.resources as Record<string, unknown>,
+            defaultEndpointSpec.resources as Record<string, unknown>,
             selectedCatalog.spec.resources as Record<string, unknown>,
           )
-        : defaultSpec.resources;
+        : defaultEndpointSpec.resources;
       const mergedReplicas = selectedCatalog.spec.replicas
         ? deepMerge(
-            defaultSpec.replicas as Record<string, unknown>,
+            defaultEndpointSpec.replicas as Record<string, unknown>,
             selectedCatalog.spec.replicas as Record<string, unknown>,
           )
-        : defaultSpec.replicas;
+        : defaultEndpointSpec.replicas;
 
       setLeafValues("spec.model", mergedModel);
       setLeafValues("spec.engine", mergedEngine);
@@ -446,7 +307,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       setLeafValues("spec.replicas", mergedReplicas as Record<string, unknown>);
 
       const mergedDeploymentOptions = deepMerge(
-        defaultSpec.deployment_options as Record<string, unknown>,
+        defaultEndpointSpec.deployment_options as Record<string, unknown>,
         (selectedCatalog.spec.deployment_options ?? {}) as Record<
           string,
           unknown
@@ -455,7 +316,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       setLeafValues("spec.deployment_options", mergedDeploymentOptions);
 
       const mergedVariables = deepMerge(
-        defaultSpec.variables as Record<string, unknown>,
+        defaultEndpointSpec.variables as Record<string, unknown>,
         (selectedCatalog.spec.variables ?? {}) as Record<string, unknown>,
       );
       setLeafValues("spec.variables", mergedVariables);

@@ -1,5 +1,5 @@
+import { useEndpointForm } from "@/domains/endpoint/hooks/use-endpoint-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { useEndpointForm } from "./use-endpoint-form";
 
 export const EndpointsCreate = () => {
   const {

@@ -1,4 +1,7 @@
-import type { Cluster, ResourceStatus } from "@/domains/cluster/types";
+import type {
+  ClusterResourceInfo,
+  ResourceStatus,
+} from "@/foundation/types/resource-types";
 import { describe, expect, it } from "vitest";
 import {
   findBestNodeForAccelerator,
@@ -14,29 +17,33 @@ const mockTranslate = (type: string) => {
 };
 
 describe("parseClusterResources", () => {
-  it("should return null summary when cluster is undefined", () => {
+  it("should return null summary when resourceInfo is undefined", () => {
     const result = parseClusterResources(undefined, mockTranslate);
     expect(result.summary).toBeNull();
     expect(result.acceleratorOptions).toEqual([]);
   });
 
-  it("should return null summary when resource_info is missing", () => {
-    const cluster = { status: {} } as unknown as Cluster;
-    const result = parseClusterResources(cluster, mockTranslate);
+  it("should return null summary when resourceInfo is null", () => {
+    const result = parseClusterResources(null, mockTranslate);
     expect(result.summary).toBeNull();
   });
 
   it("should parse basic CPU and memory resources", () => {
-    const cluster = {
-      status: {
-        resource_info: {
-          allocatable: { cpu: 100, memory: 256 },
-          available: { cpu: 80, memory: 200 },
-        },
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: {
+        cpu: 100,
+        memory: 256,
+        accelerator_groups: null,
       },
-    } as unknown as Cluster;
+      available: {
+        cpu: 80,
+        memory: 200,
+        accelerator_groups: null,
+      },
+      node_resources: null,
+    };
 
-    const result = parseClusterResources(cluster, mockTranslate);
+    const result = parseClusterResources(resourceInfo, mockTranslate);
     expect(result.summary).toEqual({
       cpu: { available: 80, total: 100 },
       memory: { available: 200, total: 256 },
@@ -44,40 +51,37 @@ describe("parseClusterResources", () => {
   });
 
   it("should parse accelerator options with product groups", () => {
-    const cluster = {
-      status: {
-        resource_info: {
-          allocatable: {
-            cpu: 100,
-            memory: 256,
-            accelerator_groups: {
-              nvidia_gpu: {
-                quantity: 8,
-                product_groups: {
-                  "Tesla-T4": 4,
-                  "Tesla-V100": 4,
-                },
-              },
-            },
-          },
-          available: {
-            cpu: 80,
-            memory: 200,
-            accelerator_groups: {
-              nvidia_gpu: {
-                quantity: 6,
-                product_groups: {
-                  "Tesla-T4": 3,
-                  "Tesla-V100": 3,
-                },
-              },
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: {
+        cpu: 100,
+        memory: 256,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 8,
+            product_groups: {
+              "Tesla-T4": 4,
+              "Tesla-V100": 4,
             },
           },
         },
       },
-    } as unknown as Cluster;
+      available: {
+        cpu: 80,
+        memory: 200,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 6,
+            product_groups: {
+              "Tesla-T4": 3,
+              "Tesla-V100": 3,
+            },
+          },
+        },
+      },
+      node_resources: null,
+    };
 
-    const result = parseClusterResources(cluster, mockTranslate);
+    const result = parseClusterResources(resourceInfo, mockTranslate);
     expect(result.acceleratorOptions).toHaveLength(2);
     expect(result.acceleratorOptions).toContainEqual({
       label: "NVIDIA GPU - Tesla-T4",
@@ -98,34 +102,31 @@ describe("parseClusterResources", () => {
   });
 
   it("should handle accelerators without product groups", () => {
-    const cluster = {
-      status: {
-        resource_info: {
-          allocatable: {
-            cpu: 100,
-            memory: 256,
-            accelerator_groups: {
-              nvidia_gpu: {
-                quantity: 4,
-                product_groups: null,
-              },
-            },
-          },
-          available: {
-            cpu: 80,
-            memory: 200,
-            accelerator_groups: {
-              nvidia_gpu: {
-                quantity: 2,
-                product_groups: null,
-              },
-            },
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: {
+        cpu: 100,
+        memory: 256,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 4,
+            product_groups: null,
           },
         },
       },
-    } as unknown as Cluster;
+      available: {
+        cpu: 80,
+        memory: 200,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: null,
+          },
+        },
+      },
+      node_resources: null,
+    };
 
-    const result = parseClusterResources(cluster, mockTranslate);
+    const result = parseClusterResources(resourceInfo, mockTranslate);
     expect(result.acceleratorOptions).toHaveLength(1);
     expect(result.acceleratorOptions[0]).toEqual({
       label: "NVIDIA GPU",
