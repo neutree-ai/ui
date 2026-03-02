@@ -242,5 +242,5 @@
   "src/foundation/components/VariablesInput.tsx": "322ef95b0efb9795b935e37ab3b79ead",
   "src/domains/endpoint/lib/cluster-resources.ts": "1c153dbd157f6d1713c4a8fc18daa472",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "33ae2c9f8d9ef75059aa5aa147ea5453",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "ab98aa2e8eb57811ca688a210a5968d9"
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "edca5bea812f00f4e7dab58804423ef4"
 }
