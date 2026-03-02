@@ -182,6 +182,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      external_endpoints: {
+        Row: {
+          api_version: string;
+          id: number;
+          kind: string;
+          metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec:
+            | Database["api"]["CompositeTypes"]["external_endpoint_spec"]
+            | null;
+          status:
+            | Database["api"]["CompositeTypes"]["external_endpoint_status"]
+            | null;
+        };
+        Insert: {
+          api_version: string;
+          id?: number;
+          kind: string;
+          metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec?:
+            | Database["api"]["CompositeTypes"]["external_endpoint_spec"]
+            | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["external_endpoint_status"]
+            | null;
+        };
+        Update: {
+          api_version?: string;
+          id?: number;
+          kind?: string;
+          metadata?: Database["api"]["CompositeTypes"]["metadata"] | null;
+          spec?:
+            | Database["api"]["CompositeTypes"]["external_endpoint_spec"]
+            | null;
+          status?:
+            | Database["api"]["CompositeTypes"]["external_endpoint_status"]
+            | null;
+        };
+        Relationships: [];
+      };
       engines: {
         Row: {
           api_version: string;
@@ -534,16 +573,20 @@ export type Database = {
           p_start_date: string;
           p_end_date: string;
           p_api_key_id?: string;
-          p_model?: string;
+          p_endpoint_name?: string;
           p_workspace?: string;
         };
         Returns: {
           date: string;
           api_key_id: string;
           api_key_name: string;
-          model: string;
+          endpoint_type: string | null;
+          endpoint_name: string;
+          model_name: string | null;
           workspace: string;
           usage: number;
+          prompt_tokens: number | null;
+          completion_tokens: number | null;
         }[];
       };
       has_permission: {
@@ -560,6 +603,10 @@ export type Database = {
           p_request_id: string;
           p_usage_amount: number;
           p_model?: string;
+          p_endpoint_type?: string;
+          p_model_name?: string;
+          p_prompt_tokens?: number;
+          p_completion_tokens?: number;
         };
         Returns: Json;
       };
@@ -620,6 +667,10 @@ export type Database = {
         | "model_catalog:create"
         | "model_catalog:update"
         | "model_catalog:delete"
+        | "external_endpoint:read"
+        | "external_endpoint:create"
+        | "external_endpoint:update"
+        | "external_endpoint:delete"
         | "system:admin";
       role_preset: "admin" | "workspace-user";
     };
@@ -629,6 +680,7 @@ export type Database = {
         usage_date: string | null;
         total_usage: number | null;
         dimensional_usage: Json | null;
+        detailed_dimensional_usage: Json | null;
       };
       api_daily_usage_status: {
         last_sync_time: string | null;
@@ -680,6 +732,17 @@ export type Database = {
         variables: Json | null;
       };
       endpoint_status: {
+        phase: string | null;
+        service_url: string | null;
+        last_transition_time: string | null;
+        error_message: string | null;
+      };
+      external_endpoint_spec: {
+        route_type: string | null;
+        timeout: number | null;
+        upstreams: Json | null;
+      };
+      external_endpoint_status: {
         phase: string | null;
         service_url: string | null;
         last_transition_time: string | null;

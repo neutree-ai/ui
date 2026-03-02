@@ -1,0 +1,80 @@
+import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
+import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
+import {
+  ROUTE_TYPE_LABELS,
+  getExposedModels,
+} from "@/domains/external-endpoint/types";
+import { ListPage } from "@/foundation/components/ListPage";
+import { Table, defaultSorters } from "@/foundation/components/Table";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import type { BaseStatus } from "@/foundation/types/basic-types";
+import { useTranslate } from "@refinedev/core";
+
+export const ExternalEndpointsList = () => {
+  const t = useTranslate();
+  const metadataColumns = useMetadataColumns();
+
+  return (
+    <ListPage>
+      <Table
+        enableSorting
+        enableFilters
+        enableBatchDelete
+        searchField="metadata->>name"
+        refineCoreProps={{
+          sorters: defaultSorters,
+        }}
+      >
+        {metadataColumns.name}
+        {metadataColumns.workspace}
+        <Table.Column
+          header={t("common.fields.status")}
+          accessorKey="status"
+          id="status"
+          enableHiding
+          cell={({ getValue }) => (
+            <ExternalEndpointStatus
+              {...(getValue() as unknown as BaseStatus)}
+            />
+          )}
+        />
+        <Table.Column
+          header={t("external_endpoints.fields.routeType")}
+          accessorKey="spec"
+          id="route_type"
+          enableHiding
+          cell={({ getValue }) => {
+            const spec = getValue() as unknown as ExternalEndpoint["spec"];
+            return ROUTE_TYPE_LABELS[spec?.route_type] || spec?.route_type;
+          }}
+        />
+        <Table.Column
+          header={t("external_endpoints.fields.models")}
+          accessorKey="spec"
+          id="models"
+          enableHiding
+          cell={({ getValue }) => {
+            const spec = getValue() as unknown as ExternalEndpoint["spec"];
+            const models = getExposedModels(spec);
+            if (models.length === 0) return "-";
+            return (
+              <div className="flex flex-wrap gap-1">
+                {models.map((m) => (
+                  <code
+                    key={m}
+                    className="rounded bg-muted px-1.5 py-0.5 text-xs"
+                  >
+                    {m}
+                  </code>
+                ))}
+              </div>
+            );
+          }}
+        />
+        {metadataColumns.update_timestamp}
+        {metadataColumns.creation_timestamp}
+        {metadataColumns.action}
+      </Table>
+    </ListPage>
+  );
+};

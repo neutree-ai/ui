@@ -1,0 +1,106 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Select as SelectUI,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+
+type CurlExampleProps = {
+  serviceUrl: string;
+  models: string[];
+};
+
+function buildCurlCommand(serviceUrl: string, modelName: string): string {
+  return `curl ${serviceUrl}/v1/chat/completions \\
+  -H "Authorization: Bearer <your-neutree-api-key>" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "${modelName}",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'`;
+}
+
+export default function CurlExample({ serviceUrl, models }: CurlExampleProps) {
+  const { t } = useTranslation();
+  const { current: workspace } = useWorkspace();
+  const [selectedModel, setSelectedModel] = useState(models[0] || "model-name");
+  const { copy, copied } = useCopyToClipboard();
+  const curlCommand = buildCurlCommand(serviceUrl, selectedModel);
+
+  return (
+    <Card className="mt-4">
+      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+        <CardTitle className="text-sm">
+          {t("external_endpoints.messages.curlExample")}
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          {models.length > 1 && (
+            <SelectUI value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger className="h-7 w-auto min-w-[160px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {models.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </SelectUI>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() =>
+              copy(curlCommand, {
+                successMessage: t("components.apiKey.copySuccess"),
+                errorMessage: t("components.apiKey.errors.copyFailed"),
+              })
+            }
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
+        <p className="mb-3 text-sm text-muted-foreground">
+          {t("external_endpoints.messages.curlHint", {
+            apiKeyPage: "{{apiKeyPage}}",
+          })
+            .split("{{apiKeyPage}}")
+            .flatMap((part, i, arr) =>
+              i < arr.length - 1
+                ? [
+                    part,
+                    <Link
+                      key="link"
+                      to={`/${workspace}/api-keys`}
+                      className="text-primary underline underline-offset-4 hover:text-primary/80"
+                    >
+                      {t("api_keys.title")}
+                    </Link>,
+                  ]
+                : [part],
+            )}
+        </p>
+        <pre className="overflow-x-auto rounded-md bg-muted p-4 text-xs">
+          <code>{curlCommand}</code>
+        </pre>
+      </CardContent>
+    </Card>
+  );
+}

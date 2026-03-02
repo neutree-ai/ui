@@ -559,6 +559,57 @@
 			"noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
 		}
 	},
+	"external_endpoints": {
+		"external_endpoints": "external endpoint",
+		"title": "External Endpoints",
+		"fields": {
+			"serviceUrl": "Service URL",
+			"routeType": "Route Type",
+			"timeout": "Timeout (seconds)",
+			"upstreamUrl": "Upstream URL",
+			"authType": "Auth Type",
+			"credential": "Credential",
+			"modelMapping": "Model Mapping",
+			"exposedModelName": "Exposed Model Name",
+			"upstreamModelName": "Upstream Model Name",
+			"models": "Models"
+		},
+		"sections": {
+			"upstreams": "Upstreams",
+			"upstream": "Upstream {{index}}"
+		},
+		"placeholders": {
+			"endpointName": "External Endpoint Name",
+			"selectRouteType": "Select Route Type",
+			"upstreamUrl": "e.g. https://api.openai.com",
+			"selectAuthType": "Select Auth Type",
+			"credential": "API Key or Token",
+			"timeout": "e.g. 300",
+			"exposedModelName": "Model name exposed to clients",
+			"upstreamModelName": "Model name at upstream provider"
+		},
+		"options": {
+			"chatCompletions": "Chat Completions"
+		},
+		"actions": {
+			"addUpstream": "Add Upstream",
+			"addModelMapping": "Add Model Mapping",
+			"removeUpstream": "Remove Upstream",
+			"removeModelMapping": "Remove"
+		},
+		"messages": {
+			"curlExample": "Curl Example",
+			"curlHint": "Replace <your-neutree-api-key> with your API key. You can create one at {{apiKeyPage}}.",
+			"credentialHidden": "Credential is hidden for security"
+		},
+		"validation": {
+			"nameRequired": "Name is required",
+			"routeTypeRequired": "Route type is required",
+			"upstreamUrlRequired": "Upstream URL is required",
+			"exposedModelRequired": "Exposed model name is required",
+			"upstreamModelRequired": "Upstream model name is required"
+		}
+	},
 	"user_profiles": {
 		"user_profiles": "user",
 		"title": "Users",
@@ -613,8 +664,12 @@
 		"fields": {
 			"secretKey": "Secret Key",
 			"date": "Date",
+			"endpointType": "Type",
 			"endpoint": "Endpoint",
-			"usage": "Usage"
+			"model": "Model",
+			"promptTokens": "Prompt Tokens",
+			"completionTokens": "Completion Tokens",
+			"usage": "Total Tokens"
 		},
 		"placeholders": {
 			"selectWorkspace": "Select A Workspace"
@@ -632,7 +687,11 @@
 		},
 		"usage": {
 			"title": "API Usage Statistics",
-			"tokens": "tokens"
+			"tokens": "tokens",
+			"endpointTypes": {
+				"endpoint": "Internal",
+				"external-endpoint": "External"
+			}
 		}
 	},
 	"infrastructure": {
@@ -916,6 +975,12 @@
 				"Running": "Running",
 				"Paused": "Paused",
 				"Deleting": "Deleting",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
+			"externalEndpoint": {
+				"Pending": "Pending",
+				"Running": "Running",
 				"Failed": "Failed",
 				"Deleted": "Deleted"
 			},

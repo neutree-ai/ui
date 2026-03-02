@@ -33,6 +33,11 @@ export type ApiUsageRecord = {
   date: string;
   api_key_id: string;
   api_key_name: string;
+  endpoint_type: string | null;
   endpoint_name: string;
+  model_name: string | null;
+  workspace: string;
   usage: number;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
 };

@@ -28,6 +28,7 @@ import {
   Cpu,
   Database,
   FileText,
+  Globe,
   HardDrive,
   Key,
   Layers,
@@ -86,6 +87,27 @@ const EndpointsEdit = lazy(() =>
 const EndpointsCreate = lazy(() =>
   import("./pages/endpoints/create").then((m) => ({
     default: m.EndpointsCreate,
+  })),
+);
+
+const ExternalEndpointsList = lazy(() =>
+  import("./pages/external-endpoints/list").then((m) => ({
+    default: m.ExternalEndpointsList,
+  })),
+);
+const ExternalEndpointsShow = lazy(() =>
+  import("./pages/external-endpoints/show").then((m) => ({
+    default: m.ExternalEndpointsShow,
+  })),
+);
+const ExternalEndpointsEdit = lazy(() =>
+  import("./pages/external-endpoints/edit").then((m) => ({
+    default: m.ExternalEndpointsEdit,
+  })),
+);
+const ExternalEndpointsCreate = lazy(() =>
+  import("./pages/external-endpoints/create").then((m) => ({
+    default: m.ExternalEndpointsCreate,
   })),
 );
 
@@ -303,6 +325,19 @@ const resources: ResourceProps[] = [
     show: "/:workspace/endpoints/show/:id",
     meta: {
       icon: <Server />,
+      workspaced: true,
+      idColumnName: "metadata->name",
+      parent: "model_service",
+    },
+  },
+  {
+    name: "external_endpoints",
+    list: "/:workspace/external-endpoints",
+    create: "/:workspace/external-endpoints/create",
+    edit: "/:workspace/external-endpoints/edit/:id",
+    show: "/:workspace/external-endpoints/show/:id",
+    meta: {
+      icon: <Globe />,
       workspaced: true,
       idColumnName: "metadata->name",
       parent: "model_service",
@@ -535,6 +570,12 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   <Route path="show/:id" element={<EndpointsShow />} />
                   <Route path="edit/:id" element={<EndpointsEdit />} />
                   <Route path="create" element={<EndpointsCreate />} />
+                </Route>
+                <Route path="/:workspace/external-endpoints">
+                  <Route index element={<ExternalEndpointsList />} />
+                  <Route path="show/:id" element={<ExternalEndpointsShow />} />
+                  <Route path="edit/:id" element={<ExternalEndpointsEdit />} />
+                  <Route path="create" element={<ExternalEndpointsCreate />} />
                 </Route>
                 <Route path="/user-profiles">
                   <Route index element={<UsersList />} />
