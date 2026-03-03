@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -26,6 +25,7 @@ import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
+import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
@@ -200,16 +200,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 <ShowPage.Row title={t("common.fields.status")}>
                   <EndpointStatus {...record.status} />
                 </ShowPage.Row>
-                <ShowPage.Row
-                  title={t("endpoints.fields.serviceUrl")}
-                  children={
-                    <a href={url} target="_blank" rel="noreferrer">
-                      <Button variant="link" className="p-0">
-                        {url}
-                      </Button>
-                    </a>
-                  }
-                />
+                {url && (
+                  <ShowPage.Row title={t("endpoints.fields.serviceUrl")}>
+                    <ServiceUrls serviceUrl={url} />
+                  </ShowPage.Row>
+                )}
               </div>
               <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("common.fields.cluster")}>

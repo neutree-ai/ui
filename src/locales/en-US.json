@@ -30,7 +30,9 @@
 			"permissions": "Permissions",
 			"permissionsCount": "{{count}} permissions",
 			"labels": "Labels",
-			"annotations": "Annotations"
+			"annotations": "Annotations",
+			"openaiUrl": "OpenAI Compatible URL",
+			"anthropicUrl": "Anthropic Compatible URL"
 		},
 		"sections": {
 			"basicInformation": "Basic Information"
@@ -600,6 +602,8 @@
 		"messages": {
 			"curlExample": "Curl Example",
 			"curlHint": "Replace <your-neutree-api-key> with your API key. You can create one at {{apiKeyPage}}.",
+			"curlExampleOpenai": "OpenAI",
+			"curlExampleAnthropic": "Anthropic",
 			"credentialHidden": "Credential is hidden for security"
 		},
 		"validation": {

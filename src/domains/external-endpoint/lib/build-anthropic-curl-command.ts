@@ -1,12 +1,13 @@
-export function buildOpenAICurlCommand(
+export function buildAnthropicCurlCommand(
   serviceUrl: string,
   modelName: string,
 ): string {
-  return `curl ${serviceUrl}/v1/chat/completions \\
-  -H "Authorization: Bearer <your-neutree-api-key>" \\
+  return `curl ${serviceUrl}/anthropic/v1/messages \\
+  -H "x-api-key: <your-neutree-api-key>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "${modelName}",
+    "max_tokens": 1024,
     "messages": [{"role": "user", "content": "Hello"}]
   }'`;
 }

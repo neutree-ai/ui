@@ -6,6 +6,7 @@ import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-mo
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
+import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { useShow } from "@refinedev/core";
@@ -43,9 +44,7 @@ export const ExternalEndpointsShow = () => {
             {record.status?.service_url && (
               <div className="col-span-3">
                 <ShowPage.Row title={t("external_endpoints.fields.serviceUrl")}>
-                  <code className="text-sm break-all">
-                    {record.status.service_url}
-                  </code>
+                  <ServiceUrls serviceUrl={record.status.service_url} />
                 </ShowPage.Row>
               </div>
             )}
