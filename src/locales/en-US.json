@@ -567,7 +567,9 @@
 		"fields": {
 			"serviceUrl": "Service URL",
 			"routeType": "Route Type",
-			"timeout": "Timeout (seconds)",
+			"timeout": "Timeout",
+			"timeoutUnitSeconds": "Seconds",
+			"timeoutUnitMinutes": "Minutes",
 			"upstreamUrl": "Upstream URL",
 			"authType": "Auth Type",
 			"credential": "Credential",
@@ -577,6 +579,7 @@
 			"models": "Models"
 		},
 		"sections": {
+			"configuration": "Configuration",
 			"upstreams": "Upstreams",
 			"upstream": "Upstream {{index}}"
 		},
@@ -586,7 +589,7 @@
 			"upstreamUrl": "e.g. https://api.openai.com",
 			"selectAuthType": "Select Auth Type",
 			"credential": "API Key or Token",
-			"timeout": "e.g. 300",
+			"timeout": "e.g. 60",
 			"exposedModelName": "Model name exposed to clients",
 			"upstreamModelName": "Model name at upstream provider"
 		},

@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CurlExample from "@/domains/external-endpoint/components/CurlExample";
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
 import { ROUTE_TYPE_LABELS } from "@/domains/external-endpoint/lib/constants";
+import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
@@ -40,6 +41,9 @@ export const ExternalEndpointsShow = () => {
             <ShowPage.Row title={t("external_endpoints.fields.routeType")}>
               {ROUTE_TYPE_LABELS[record.spec?.route_type] ||
                 record.spec?.route_type}
+            </ShowPage.Row>
+            <ShowPage.Row title={t("external_endpoints.fields.timeout")}>
+              {formatTimeout(record.spec?.timeout)}
             </ShowPage.Row>
             {record.status?.service_url && (
               <div className="col-span-3">

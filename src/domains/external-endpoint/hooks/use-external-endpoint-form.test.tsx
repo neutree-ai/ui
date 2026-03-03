@@ -29,6 +29,20 @@ vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
+vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
+  default: React.forwardRef(
+    (props: { value?: number; onChange?: (v: number) => void }, ref: any) => (
+      <input
+        ref={ref}
+        data-testid="timeout-input-mock"
+        type="number"
+        value={props.value ?? ""}
+        onChange={(e) => props.onChange?.(Number(e.target.value))}
+      />
+    ),
+  ),
+}));
+
 import { useExternalEndpointForm } from "./use-external-endpoint-form";
 
 function CreateForm() {
@@ -109,6 +123,11 @@ describe("useExternalEndpointForm", () => {
       render(<CreateForm />);
       const nameInput = screen.getByLabelText("common.fields.name");
       expect((nameInput as HTMLInputElement).disabled).toBe(false);
+    });
+
+    it("renders timeout field", () => {
+      render(<CreateForm />);
+      expect(screen.getByTestId("timeout-input-mock")).toBeTruthy();
     });
 
     it("adds a new upstream when add button is clicked", async () => {

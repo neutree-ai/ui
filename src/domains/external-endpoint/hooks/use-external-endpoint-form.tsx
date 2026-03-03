@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ModelMappingEditor from "@/domains/external-endpoint/components/ModelMappingEditor";
+import TimeoutInput from "@/domains/external-endpoint/components/TimeoutInput";
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type {
   ExternalEndpoint,
@@ -42,7 +43,7 @@ export const useExternalEndpointForm = ({
       },
       spec: {
         route_type: "/v1/chat/completions",
-        timeout: 300,
+        timeout: 60000,
         upstreams: [{ ...emptyUpstream }],
       },
     },
@@ -96,6 +97,15 @@ export const useExternalEndpointForm = ({
     ),
     specFields: (
       <>
+        <FormCardGrid title={t("external_endpoints.sections.configuration")}>
+          <FormFieldGroup
+            {...form}
+            name="spec.timeout"
+            label={t("external_endpoints.fields.timeout")}
+          >
+            <TimeoutInput />
+          </FormFieldGroup>
+        </FormCardGrid>
         {fields.map((field, index) => (
           <Card key={field.id} className="border-border/60 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-4">
