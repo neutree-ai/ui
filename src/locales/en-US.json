@@ -621,7 +621,9 @@
 			"endpointRefRequired": "Internal endpoint is required",
 			"upstreamUrlRequired": "Upstream URL is required",
 			"exposedModelRequired": "Exposed model name is required",
-			"upstreamModelRequired": "Upstream model name is required"
+			"upstreamModelRequired": "Upstream model name is required",
+			"duplicateModelKey": "Duplicate model key in this upstream",
+			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream"
 		}
 	},
 	"user_profiles": {

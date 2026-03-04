@@ -33,7 +33,8 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
       <FormField
         control={props.control}
         name={props.name}
-        render={({ field }: { field: any }) => {
+        rules={props.rules}
+        render={({ field }: { field: ControllerRenderProps }) => {
           return (
             <FormItem
               data-testid={`field-${props.name}`}

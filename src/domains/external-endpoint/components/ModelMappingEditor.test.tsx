@@ -108,4 +108,38 @@ describe("ModelMappingEditor", () => {
       expect((input as HTMLInputElement).disabled).toBe(true);
     }
   });
+
+  it("shows error on duplicate keys within the same upstream", () => {
+    render(<ModelMappingEditor value={{ a: "1" }} />);
+
+    // Add a second row
+    fireEvent.click(
+      screen.getByText("external_endpoints.actions.addModelMapping"),
+    );
+
+    const inputs = screen.getAllByRole("textbox");
+    // Type "a" in the second row's key field (inputs[2])
+    fireEvent.change(inputs[2], { target: { value: "a" } });
+
+    // Both rows should show duplicate error
+    const errors = screen.getAllByText(
+      "external_endpoints.validation.duplicateModelKey",
+    );
+    expect(errors).toHaveLength(2);
+  });
+
+  it("preserves duplicate rows without collapsing them", () => {
+    render(<ModelMappingEditor value={{ a: "1" }} />);
+
+    // Add a second row and set same key
+    fireEvent.click(
+      screen.getByText("external_endpoints.actions.addModelMapping"),
+    );
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[2], { target: { value: "a" } });
+    fireEvent.change(inputs[3], { target: { value: "2" } });
+
+    // Should still have 4 inputs (2 rows × 2 fields), not collapsed
+    expect(screen.getAllByRole("textbox")).toHaveLength(4);
+  });
 });

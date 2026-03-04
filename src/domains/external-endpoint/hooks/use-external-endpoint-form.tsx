@@ -6,6 +6,7 @@ import TimeoutInput from "@/domains/external-endpoint/components/TimeoutInput";
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
+import { findOverlappingModelKeys } from "@/domains/external-endpoint/lib/find-overlapping-model-keys";
 import type {
   ExternalEndpoint,
   UpstreamSpec,
@@ -52,7 +53,13 @@ export const useExternalEndpointForm = ({
         upstreams: [{ ...emptyExternalUpstream }],
       },
     },
-    refineCoreProps: {},
+    refineCoreProps: {
+      queryOptions: {
+        // Disable stale cache on mount so useFieldArray always initializes
+        // with fresh data after an edit-save-edit cycle.
+        cacheTime: 0,
+      },
+    },
     warnWhenUnsavedChanges: true,
   });
 
@@ -269,6 +276,22 @@ export const useExternalEndpointForm = ({
                     name={`spec.upstreams.${index}.model_mapping`}
                     label={t("external_endpoints.fields.modelMapping")}
                     className="col-span-4"
+                    rules={{
+                      validate: () => {
+                        const all = form.getValues("spec.upstreams");
+                        const overlapping = findOverlappingModelKeys(
+                          all,
+                          index,
+                        );
+                        if (overlapping.length > 0) {
+                          return t(
+                            "external_endpoints.validation.overlappingModelKeys",
+                            { keys: overlapping.join(", ") },
+                          );
+                        }
+                        return true;
+                      },
+                    }}
                   >
                     <ModelMappingEditor />
                   </FormFieldGroup>
