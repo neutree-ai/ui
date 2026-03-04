@@ -248,7 +248,7 @@
   "src/pages/external-endpoints/show.tsx": "cd3d5cb92e6c12bc7be111621d3e1775",
   "src/domains/external-endpoint/types.ts": "919dea3f18a6795e2dde24e4a460a89e",
   "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "58b586fdaf0cafcfd8558d66bf2613a2",
-  "src/domains/external-endpoint/components/CurlExample.tsx": "77dc35e3fad0ec681c997c17536e5a8e",
+  "src/domains/external-endpoint/components/CurlExample.tsx": "dcec443881aae4d5808b6ba38394fe9a",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "1c1e5325079d9c25ac1f5f14fa47383f",
   "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "583e60b88556cc90bdc5fc71c3ab8a46",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "bcb086f8784567608268f7584a2ed23c",
@@ -269,5 +269,6 @@
   "src/domains/external-endpoint/lib/build-anthropic-curl-command.ts": "3c24c24ed64f00598a00d7046b311589",
   "src/domains/external-endpoint/lib/convert-timeout.ts": "43a53c28487e11dadab7c57407dfc211",
   "src/domains/external-endpoint/components/TimeoutInput.tsx": "82fae831757bd8e9e31550ca65d8a25a",
-  "src/domains/external-endpoint/lib/derive-upstream-type.ts": "04eee2f899c37e7226b9138bb1817cdc"
+  "src/domains/external-endpoint/lib/derive-upstream-type.ts": "04eee2f899c37e7226b9138bb1817cdc",
+  "src/domains/external-endpoint/lib/build-embedding-curl-command.ts": "85d12f78fe8a5c38ea2cb22cccd17f09"
 }

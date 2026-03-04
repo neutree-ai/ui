@@ -612,6 +612,7 @@
 			"curlHint": "Replace <your-neutree-api-key> with your API key. You can create one at {{apiKeyPage}}.",
 			"curlExampleOpenai": "OpenAI",
 			"curlExampleAnthropic": "Anthropic",
+			"curlExampleEmbedding": "Embedding",
 			"credentialHidden": "Credential is hidden for security"
 		},
 		"validation": {
