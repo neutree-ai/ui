@@ -62,4 +62,89 @@ describe("cleanUpstreamsForSubmit", () => {
       expect(result[2].auth).toBeNull();
     });
   });
+
+  describe("mutual exclusion", () => {
+    it("removes upstream and auth when endpoint_ref is set", () => {
+      const upstream = {
+        upstream: { url: "https://api.openai.com" },
+        auth: { type: "bearer", credential: "sk-123" },
+        endpoint_ref: "my-endpoint",
+        model_mapping: { "gpt-4o": "gpt-4o" },
+        models: null,
+      };
+      const result = cleanUpstreamsForSubmit([upstream], false);
+      expect(result[0].endpoint_ref).toBe("my-endpoint");
+      expect("upstream" in result[0]).toBe(false);
+      expect("auth" in result[0]).toBe(false);
+    });
+
+    it("removes endpoint_ref when upstream url is set", () => {
+      const upstream = {
+        upstream: { url: "https://api.openai.com" },
+        auth: { type: "bearer", credential: "sk-123" },
+        endpoint_ref: "",
+        model_mapping: { "gpt-4o": "gpt-4o" },
+        models: null,
+      };
+      const result = cleanUpstreamsForSubmit([upstream], false);
+      expect(result[0].upstream).toEqual({ url: "https://api.openai.com" });
+      expect("endpoint_ref" in result[0]).toBe(false);
+    });
+
+    it("strips empty endpoint_ref (treated as external)", () => {
+      const upstream = {
+        upstream: { url: "https://example.com" },
+        auth: { type: "bearer", credential: "" },
+        endpoint_ref: "",
+        model_mapping: {},
+        models: null,
+      };
+      const result = cleanUpstreamsForSubmit([upstream], false);
+      expect("endpoint_ref" in result[0]).toBe(false);
+      expect(result[0].upstream).toEqual({ url: "https://example.com" });
+    });
+
+    it("handles endpoint_ref upstream in edit mode", () => {
+      const upstream = {
+        upstream: { url: "" },
+        auth: { type: "bearer", credential: "" },
+        endpoint_ref: "my-endpoint",
+        model_mapping: {},
+        models: null,
+      };
+      const result = cleanUpstreamsForSubmit([upstream], true);
+      expect(result[0].endpoint_ref).toBe("my-endpoint");
+      expect("upstream" in result[0]).toBe(false);
+      expect("auth" in result[0]).toBe(false);
+    });
+
+    it("handles mixed upstream types in same batch", () => {
+      const upstreams: import(
+        "@/domains/external-endpoint/types",
+      ).UpstreamSpec[] = [
+        {
+          upstream: { url: "https://api.openai.com" },
+          auth: { type: "bearer", credential: "sk-123" },
+          endpoint_ref: "",
+          model_mapping: {},
+          models: null,
+        },
+        {
+          upstream: { url: "" },
+          auth: null,
+          endpoint_ref: "internal-ep",
+          model_mapping: { "gpt-4": "gpt-4" },
+          models: null,
+        },
+      ];
+      const result = cleanUpstreamsForSubmit(upstreams, false);
+      // First: external
+      expect("endpoint_ref" in result[0]).toBe(false);
+      expect(result[0].upstream).toEqual({ url: "https://api.openai.com" });
+      // Second: endpoint_ref
+      expect(result[1].endpoint_ref).toBe("internal-ep");
+      expect("upstream" in result[1]).toBe(false);
+      expect("auth" in result[1]).toBe(false);
+    });
+  });
 });

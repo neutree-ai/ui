@@ -570,6 +570,8 @@
 			"timeout": "Timeout",
 			"timeoutUnitSeconds": "Seconds",
 			"timeoutUnitMinutes": "Minutes",
+			"upstreamType": "Upstream Type",
+			"endpointRef": "Internal Endpoint",
 			"upstreamUrl": "Upstream URL",
 			"authType": "Auth Type",
 			"credential": "Credential",
@@ -586,6 +588,7 @@
 		"placeholders": {
 			"endpointName": "External Endpoint Name",
 			"selectRouteType": "Select Route Type",
+			"selectEndpointRef": "Select an internal endpoint",
 			"upstreamUrl": "e.g. https://api.openai.com",
 			"selectAuthType": "Select Auth Type",
 			"credential": "API Key or Token",
@@ -594,7 +597,9 @@
 			"upstreamModelName": "Model name at upstream provider"
 		},
 		"options": {
-			"chatCompletions": "Chat Completions"
+			"chatCompletions": "Chat Completions",
+			"upstreamTypeExternal": "External",
+			"upstreamTypeEndpointRef": "Endpoint Ref"
 		},
 		"actions": {
 			"addUpstream": "Add Upstream",
@@ -612,6 +617,7 @@
 		"validation": {
 			"nameRequired": "Name is required",
 			"routeTypeRequired": "Route type is required",
+			"endpointRefRequired": "Internal endpoint is required",
 			"upstreamUrlRequired": "Upstream URL is required",
 			"exposedModelRequired": "Exposed model name is required",
 			"upstreamModelRequired": "Upstream model name is required"

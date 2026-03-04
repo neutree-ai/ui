@@ -8,14 +8,15 @@ export type AuthSpec = {
 };
 
 export type UpstreamSpec = {
-  upstream: { url: string } | null;
-  auth: AuthSpec | null;
+  upstream?: { url: string } | null;
+  auth?: AuthSpec | null;
+  endpoint_ref?: string;
   model_mapping: Record<string, string>;
   models: string[] | null;
 };
 
 export type ExternalEndpointSpec = {
-  route_type: string;
+  route_type?: string;
   timeout: number | null;
   upstreams: UpstreamSpec[];
 };

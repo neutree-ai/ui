@@ -1,5 +1,4 @@
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
-import { ROUTE_TYPE_LABELS } from "@/domains/external-endpoint/lib/constants";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
@@ -35,16 +34,6 @@ export const ExternalEndpointsList = () => {
               {...(getValue() as unknown as BaseStatus)}
             />
           )}
-        />
-        <Table.Column
-          header={t("external_endpoints.fields.routeType")}
-          accessorKey="spec"
-          id="route_type"
-          enableHiding
-          cell={({ getValue }) => {
-            const spec = getValue() as unknown as ExternalEndpoint["spec"];
-            return ROUTE_TYPE_LABELS[spec?.route_type] || spec?.route_type;
-          }}
         />
         <Table.Column
           header={t("external_endpoints.fields.models")}
