@@ -1,3 +1,4 @@
+import type { UpstreamSpec } from "@/domains/external-endpoint/types";
 import { describe, expect, it } from "vitest";
 import { cleanUpstreamsForSubmit } from "./clean-upstreams-for-submit";
 
@@ -119,9 +120,7 @@ describe("cleanUpstreamsForSubmit", () => {
     });
 
     it("handles mixed upstream types in same batch", () => {
-      const upstreams: import(
-        "@/domains/external-endpoint/types",
-      ).UpstreamSpec[] = [
+      const upstreams: UpstreamSpec[] = [
         {
           upstream: { url: "https://api.openai.com" },
           auth: { type: "bearer", credential: "sk-123" },
