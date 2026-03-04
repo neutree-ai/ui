@@ -1,7 +1,7 @@
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { NumberInput } from "@/foundation/components/NumberInput";
 import { formatToDecimal } from "@/foundation/lib/unit";
-import { type ElementRef, forwardRef, useEffect, useState } from "react";
+import { type ElementRef, forwardRef } from "react";
 
 interface SliderWithInputProps {
   value: number;
@@ -41,53 +41,21 @@ export const SliderWithInput = forwardRef<
     // remaining or out-of-range slider positions.
     const effectiveValue = Math.max(min, Math.min(value, max));
 
-    // Local state for input display value, allowing empty string while typing
-    const [inputValue, setInputValue] = useState<string>(
-      String(effectiveValue),
-    );
-
-    // Sync local state when external value changes (e.g., from slider or parent)
-    useEffect(() => {
-      setInputValue(String(effectiveValue));
-    }, [effectiveValue]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-      setInputValue(newValue);
-
-      // If it's a valid number, commit immediately for real-time slider response
-      const numValue = Number(newValue);
-      if (newValue !== "" && !Number.isNaN(numValue)) {
-        const clampedValue = Math.min(Math.max(min, numValue), max);
-        onChange(clampedValue);
-      }
-    };
-
-    const handleBlur = () => {
-      // On blur, normalize display and handle empty/invalid input
-      const numValue = Number(inputValue);
-      if (inputValue === "" || Number.isNaN(numValue)) {
-        setInputValue(String(min));
-        onChange(min);
-      } else {
-        // Sync display with actual clamped value
-        setInputValue(String(effectiveValue));
-      }
-    };
-
     return (
       <div className="flex flex-col gap-2">
         <div className="flex justify-between text-sm text-muted-foreground items-center">
           <div className="flex items-center gap-2">
-            <Input
+            <NumberInput
               data-testid="slider-input"
-              type="number"
               min={min}
               max={max}
               step={step}
-              value={inputValue}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
+              value={effectiveValue}
+              onValueChange={(num) => {
+                const clamped = Math.min(Math.max(min, num), max);
+                onChange(clamped);
+              }}
+              onInvalidBlur={() => onChange(min)}
               disabled={disabled}
               className="w-20 h-7 text-sm"
             />
