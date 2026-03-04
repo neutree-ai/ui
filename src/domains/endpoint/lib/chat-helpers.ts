@@ -1,4 +1,4 @@
-import type { CoreMessage, ImagePart, TextPart, ToolCallPart } from "ai";
+import type { ImagePart, ModelMessage, TextPart, ToolCallPart } from "ai";
 
 // Custom error part type for handling errors in chat
 export type ErrorPart = {
@@ -55,7 +55,7 @@ export function buildUserMessageContent(
  * - Array content messages have `error` and `reasoning` parts removed.
  * - Messages whose content becomes empty after filtering are dropped entirely.
  */
-export function filterMessagesForApi(messages: CoreMessage[]): CoreMessage[] {
+export function filterMessagesForApi(messages: ModelMessage[]): ModelMessage[] {
   return messages
     .map((msg) => {
       if (typeof msg.content === "string") {
@@ -75,5 +75,5 @@ export function filterMessagesForApi(messages: CoreMessage[]): CoreMessage[] {
         content: filteredContent,
       };
     })
-    .filter((msg) => msg !== null) as CoreMessage[];
+    .filter((msg) => msg !== null) as ModelMessage[];
 }

@@ -24,7 +24,7 @@ import {
 import { clientPostgrest } from "@/foundation/lib/api";
 import { useCustom } from "@refinedev/core";
 import {
-  type CoreMessage,
+  type ModelMessage,
   type ToolSet,
   jsonSchema,
   streamText,
@@ -60,7 +60,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   });
 
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<CoreMessage[]>([]);
+  const [messages, setMessages] = useState<ModelMessage[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming" | "submitted">(
     "idle",
   );
@@ -198,7 +198,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     setSelectedImages([]);
 
     // Build messages array with system message if present
-    const messagesToSend: CoreMessage[] = [];
+    const messagesToSend: ModelMessage[] = [];
 
     if (systemMessage.trim()) {
       messagesToSend.push({ role: "system", content: systemMessage.trim() });
@@ -214,7 +214,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
         model: openai(model),
         messages: messagesToSend,
         temperature,
-        maxTokens: max_length,
+        maxOutputTokens: max_length,
         topP: top_p,
         abortSignal: newAbortController.signal,
         tools: functions
@@ -222,7 +222,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
           .reduce<ToolSet>((prev, cur) => {
             prev[cur.name] = tool({
               description: cur.description || "",
-              parameters: jsonSchema(cur.parameters),
+              inputSchema: jsonSchema(cur.parameters),
             });
             return prev;
           }, {}),
@@ -246,27 +246,22 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
           switch (delta.type) {
             case "text-delta": {
               if (lastPart && lastPart.type === "text") {
-                // append
-                lastPart.text += delta.textDelta;
+                lastPart.text += delta.text;
               } else {
-                // create new text part
                 contentArray.push({
                   type: "text",
-                  text: delta.textDelta,
+                  text: delta.text,
                 });
               }
               break;
             }
-            case "reasoning": {
-              // Handle reasoning content - using textDelta for reasoning content
+            case "reasoning-delta": {
               if (lastPart && lastPart.type === "reasoning") {
-                // append to existing reasoning
-                lastPart.reasoning += delta.textDelta;
+                lastPart.reasoning += delta.text;
               } else {
-                // create new reasoning part
                 contentArray.push({
                   type: "reasoning",
-                  reasoning: delta.textDelta,
+                  reasoning: delta.text,
                 });
               }
               break;
@@ -283,9 +278,13 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
               });
               break;
             }
-            case "step-start":
-            case "step-finish":
+            case "start":
             case "finish":
+            case "reasoning-start":
+            case "reasoning-end":
+            case "text-start":
+            case "text-end":
+            case "source":
               break;
             default:
               console.log("Unhandled delta type:", delta);
@@ -431,7 +430,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                                   >
                                     <code>
                                       {part.toolName}(
-                                      {JSON.stringify(part.args, null, 2)})
+                                      {JSON.stringify(part.input, null, 2)})
                                     </code>
                                   </pre>
                                 );
@@ -465,9 +464,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                                       ) || "Reasoning"}
                                     </div>
                                     <div className="text-sm whitespace-pre-wrap">
-                                      <ReactMarkdown>
-                                        {part.reasoning}
-                                      </ReactMarkdown>
+                                      {part.reasoning}
                                     </div>
                                   </div>
                                 );

@@ -201,9 +201,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <EndpointStatus {...record.status} />
                 </ShowPage.Row>
                 {url && (
-                  <ShowPage.Row title={t("endpoints.fields.serviceUrl")}>
-                    <ServiceUrls serviceUrl={url} />
-                  </ShowPage.Row>
+                  <div className="col-span-3">
+                    <ShowPage.Row title={t("endpoints.fields.serviceUrl")}>
+                      <ServiceUrls serviceUrl={url} />
+                    </ShowPage.Row>
+                  </div>
                 )}
               </div>
               <div className="grid grid-cols-4 gap-8">

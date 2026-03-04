@@ -1,4 +1,4 @@
-import type { CoreMessage } from "ai";
+import type { ModelMessage } from "ai";
 import { describe, expect, it } from "vitest";
 import { buildUserMessageContent, filterMessagesForApi } from "./chat-helpers";
 
@@ -34,7 +34,7 @@ describe("buildUserMessageContent", () => {
 
 describe("filterMessagesForApi", () => {
   it("keeps string content messages as-is", () => {
-    const messages: CoreMessage[] = [
+    const messages: ModelMessage[] = [
       { role: "user", content: "hello" },
       { role: "assistant", content: "hi" },
     ];
@@ -42,7 +42,7 @@ describe("filterMessagesForApi", () => {
   });
 
   it("filters out error and reasoning parts from array content", () => {
-    const messages: CoreMessage[] = [
+    const messages: ModelMessage[] = [
       {
         role: "assistant",
         content: [
@@ -62,7 +62,7 @@ describe("filterMessagesForApi", () => {
   });
 
   it("removes messages whose content becomes empty after filtering", () => {
-    const messages: CoreMessage[] = [
+    const messages: ModelMessage[] = [
       {
         role: "assistant",
         content: [{ type: "error", error: "only error" } as never],
@@ -73,7 +73,7 @@ describe("filterMessagesForApi", () => {
   });
 
   it("handles mixed messages correctly", () => {
-    const messages: CoreMessage[] = [
+    const messages: ModelMessage[] = [
       { role: "user", content: "question" },
       {
         role: "assistant",
