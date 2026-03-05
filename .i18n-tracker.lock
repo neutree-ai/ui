@@ -82,7 +82,7 @@
   "src/pages/auth/LoginPage.tsx": "4152306676e63c6291ff78e1abad0bc4",
   "src/pages/auth/RegisterPage.tsx": "124ef7ae9c54b3d3f888b04e33a25b8c",
   "src/pages/auth/ThemedTitle.tsx": "a60968c88b09c990fbd570c729a2f09a",
-  "src/pages/auth/UpdatePasswordPage.tsx": "ca9c67eae536f4d66d9d09ac631c558a",
+  "src/pages/auth/UpdatePasswordPage.tsx": "3968ef325cb01ccdb2233215f40807bf",
   "src/pages/auth/styles.ts": "e2ae7bdc30d0bd757b031104483ac3d3",
   "src/foundation/types/basic-types.ts": "3c00d4c7117e24a442c303c7c0ff3bfa",
   "src/foundation/types/chat-types.ts": "c31082555c7146ce3cb384794d530d87",
@@ -272,5 +272,6 @@
   "src/domains/external-endpoint/lib/derive-upstream-type.ts": "04eee2f899c37e7226b9138bb1817cdc",
   "src/domains/external-endpoint/lib/build-embedding-curl-command.ts": "85d12f78fe8a5c38ea2cb22cccd17f09",
   "src/foundation/components/NumberInput.tsx": "48ac647b7f27621ace1542cb441c5a4d",
-  "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4"
+  "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
+  "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f"
 }

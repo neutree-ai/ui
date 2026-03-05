@@ -12,6 +12,7 @@ import type { UpdatePasswordFormTypes } from "@refinedev/core";
 import type React from "react";
 import { toast } from "sonner";
 import { ThemedTitle } from "./ThemedTitle";
+import { validatePasswordMatch } from "./lib/validate-password-match";
 
 type UpdatePasswordPageProps = {
   contentProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -65,7 +66,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
             const password = data.get("password") as string;
             const confirmPassword = data.get("confirmPassword") as string;
 
-            if (password !== confirmPassword) {
+            if (!validatePasswordMatch(password, confirmPassword)) {
               toast.error(
                 translate(
                   "pages.auth.errors.confirmPasswordNotMatch",
