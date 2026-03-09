@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatToDecimal } from "./unit";
+import { formatToDecimal, formatTokens } from "./unit";
 
 describe("formatToDecimal", () => {
   it("formats a number", () => {
@@ -27,5 +27,33 @@ describe("formatToDecimal", () => {
   it("handles zero", () => {
     expect(formatToDecimal(0)).toBe("0.0");
     expect(formatToDecimal("0")).toBe("0.0");
+  });
+});
+
+describe("formatTokens", () => {
+  it("returns null for null/undefined", () => {
+    expect(formatTokens(null)).toBeNull();
+    expect(formatTokens(undefined)).toBeNull();
+  });
+
+  it("shows raw number below 1K", () => {
+    expect(formatTokens(0)).toBe("0");
+    expect(formatTokens(999)).toBe("999");
+  });
+
+  it("formats thousands with K suffix", () => {
+    expect(formatTokens(1_000)).toBe("1K");
+    expect(formatTokens(1_230)).toBe("1.23K");
+    expect(formatTokens(45_600)).toBe("45.6K");
+  });
+
+  it("formats millions with M suffix", () => {
+    expect(formatTokens(1_000_000)).toBe("1M");
+    expect(formatTokens(1_234_567)).toBe("1.23M");
+  });
+
+  it("formats billions with B suffix", () => {
+    expect(formatTokens(1_000_000_000)).toBe("1B");
+    expect(formatTokens(2_500_000_000)).toBe("2.5B");
   });
 });

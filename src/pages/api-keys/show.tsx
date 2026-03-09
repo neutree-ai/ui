@@ -12,6 +12,7 @@ import { useApiKeyUsage } from "@/domains/api-key/hooks/use-api-key-usage";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
+import { formatTokens } from "@/foundation/lib/unit";
 import { useShow } from "@refinedev/core";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -132,20 +133,20 @@ export const ApiKeysShow = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       {row.prompt_tokens != null ? (
-                        row.prompt_tokens
+                        formatTokens(row.prompt_tokens)
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       {row.completion_tokens != null ? (
-                        row.completion_tokens
+                        formatTokens(row.completion_tokens)
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {row.usage}
+                      {formatTokens(row.usage)}
                     </TableCell>
                   </TableRow>
                 ))}
