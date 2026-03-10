@@ -331,6 +331,9 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "model_gateway",
+  },
+  {
     name: "external_endpoints",
     list: "/:workspace/external-endpoints",
     create: "/:workspace/external-endpoints/create",
@@ -340,7 +343,7 @@ const resources: ResourceProps[] = [
       icon: <Globe />,
       workspaced: true,
       idColumnName: "metadata->name",
-      parent: "model_service",
+      parent: "model_gateway",
     },
   },
   {

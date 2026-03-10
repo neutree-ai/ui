@@ -578,7 +578,8 @@
 			"modelMapping": "Model Mapping",
 			"exposedModelName": "Exposed Model Name",
 			"upstreamModelName": "Upstream Model Name",
-			"models": "Models"
+			"models": "Models",
+			"type": "Type"
 		},
 		"sections": {
 			"configuration": "Configuration",
@@ -599,7 +600,8 @@
 		"options": {
 			"chatCompletions": "Chat Completions",
 			"upstreamTypeExternal": "External",
-			"upstreamTypeEndpointRef": "Endpoint Ref"
+			"upstreamTypeEndpointRef": "Endpoint Ref",
+			"upstreamTypeMixed": "Mixed"
 		},
 		"actions": {
 			"addUpstream": "Add Upstream",
@@ -614,6 +616,19 @@
 			"curlExampleAnthropic": "Anthropic",
 			"curlExampleEmbedding": "Embedding",
 			"credentialHidden": "Credential is hidden for security"
+		},
+		"stats": {
+			"endpoints": "Endpoints",
+			"requests": "Requests",
+			"promptTokens": "Prompt Tokens",
+			"completionTokens": "Completion Tokens",
+			"totalTokens": "Total Tokens"
+		},
+		"monitor": {
+			"date": "Date",
+			"apiKey": "API Key",
+			"model": "Model",
+			"noData": "No usage data available yet"
 		},
 		"validation": {
 			"nameRequired": "Name is required",
@@ -715,6 +730,9 @@
 	},
 	"model_service": {
 		"title": "Model Service"
+	},
+	"model_gateway": {
+		"title": "Model Gateway"
 	},
 	"access_control": {
 		"title": "Access Control"
