@@ -541,7 +541,8 @@
 			"resumeSuccess": "Endpoint resumed successfully",
 			"resumeFailed": "Failed to resume endpoint",
 			"noAcceleratorsAvailable": "No accelerators available in this cluster",
-			"replicasMustBeAtLeastOne": "Replicas must be at least 1"
+			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
+			"schedulerTypeRequired": "Scheduler type is required"
 		},
 		"tabs": {
 			"playground": "Playground"

@@ -266,4 +266,30 @@ describe("useEndpointForm", () => {
       });
     });
   });
+
+  describe("scheduler type validation", () => {
+    it("defaults scheduler type to consistent_hash", () => {
+      render(<CreateForm />);
+      expect(
+        formInstance?.getValues("spec.deployment_options.scheduler.type"),
+      ).toBe("consistent_hash");
+    });
+
+    it("shows validation error when scheduler type is cleared", async () => {
+      render(<CreateForm />);
+
+      // Clear the scheduler type and trigger validation via resolver
+      formInstance?.setValue("spec.deployment_options.scheduler.type", "");
+
+      const valid = await formInstance?.trigger();
+      expect(valid).toBe(false);
+
+      const error =
+        formInstance?.formState.errors?.[
+          "spec.deployment_options.scheduler.type"
+        ];
+      expect(error).toBeTruthy();
+      expect(error?.message).toBe("endpoints.messages.schedulerTypeRequired");
+    });
+  });
 });

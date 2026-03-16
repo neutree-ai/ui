@@ -186,7 +186,10 @@ export function transformEndpointValues(spec: {
  * Validate endpoint spec values. Returns an errors map (empty = valid).
  */
 export function validateEndpointValues(
-  spec: { replicas?: { num?: number } | null },
+  spec: {
+    replicas?: { num?: number } | null;
+    deployment_options?: { scheduler?: { type?: string } | null } | null;
+  },
   context: {
     action: "create" | "edit";
     currentRegistry: string;
@@ -201,6 +204,13 @@ export function validateEndpointValues(
     errors["spec.replicas.num"] = {
       type: "manual",
       message: t("endpoints.messages.replicasMustBeAtLeastOne"),
+    };
+  }
+
+  if (!spec.deployment_options?.scheduler?.type) {
+    errors["spec.deployment_options.scheduler.type"] = {
+      type: "manual",
+      message: t("endpoints.messages.schedulerTypeRequired"),
     };
   }
 

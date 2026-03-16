@@ -164,9 +164,13 @@ describe("transformEndpointValues", () => {
 describe("validateEndpointValues", () => {
   const mockT = (key: string) => key;
 
+  const validScheduler = {
+    deployment_options: { scheduler: { type: "consistent_hash" } },
+  };
+
   it("returns error when replicas < 1", () => {
     const errors = validateEndpointValues(
-      { replicas: { num: 0 } },
+      { replicas: { num: 0 }, ...validScheduler },
       {
         action: "create",
         currentRegistry: "",
@@ -180,7 +184,7 @@ describe("validateEndpointValues", () => {
 
   it("returns no error when replicas >= 1", () => {
     const errors = validateEndpointValues(
-      { replicas: { num: 2 } },
+      { replicas: { num: 2 }, ...validScheduler },
       {
         action: "create",
         currentRegistry: "",
@@ -194,7 +198,7 @@ describe("validateEndpointValues", () => {
 
   it("returns error when model not found in create mode", () => {
     const errors = validateEndpointValues(
-      { replicas: { num: 1 } },
+      { replicas: { num: 1 }, ...validScheduler },
       {
         action: "create",
         currentRegistry: "my-registry",
@@ -208,7 +212,7 @@ describe("validateEndpointValues", () => {
 
   it("returns no error when model exists in create mode", () => {
     const errors = validateEndpointValues(
-      { replicas: { num: 1 } },
+      { replicas: { num: 1 }, ...validScheduler },
       {
         action: "create",
         currentRegistry: "my-registry",
@@ -222,7 +226,7 @@ describe("validateEndpointValues", () => {
 
   it("skips model check in edit mode", () => {
     const errors = validateEndpointValues(
-      { replicas: { num: 1 } },
+      { replicas: { num: 1 }, ...validScheduler },
       {
         action: "edit",
         currentRegistry: "my-registry",
@@ -232,5 +236,59 @@ describe("validateEndpointValues", () => {
       mockT,
     );
     expect(errors["-model-catalog"]).toBeUndefined();
+  });
+
+  it("returns error when scheduler type is empty", () => {
+    const errors = validateEndpointValues(
+      {
+        replicas: { num: 1 },
+        deployment_options: { scheduler: { type: "" } },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+    expect(errors["spec.deployment_options.scheduler.type"]).toBeDefined();
+    expect(errors["spec.deployment_options.scheduler.type"].message).toBe(
+      "endpoints.messages.schedulerTypeRequired",
+    );
+  });
+
+  it("returns error when deployment_options is null", () => {
+    const errors = validateEndpointValues(
+      {
+        replicas: { num: 1 },
+        deployment_options: null,
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+    expect(errors["spec.deployment_options.scheduler.type"]).toBeDefined();
+  });
+
+  it("returns no error when scheduler type is set", () => {
+    const errors = validateEndpointValues(
+      {
+        replicas: { num: 1 },
+        deployment_options: { scheduler: { type: "roundrobin" } },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+    expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
   });
 });
