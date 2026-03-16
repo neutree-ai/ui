@@ -66,7 +66,7 @@ export const authProvider: AuthProvider = {
       success: false,
       error: {
         message: "Login failed",
-        name: "Invalid email or password",
+        name: "Invalid username/email or password",
       },
     };
   },

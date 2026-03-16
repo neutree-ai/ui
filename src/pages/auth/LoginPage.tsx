@@ -139,19 +139,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  {translate("common.fields.email", "Email")}
+                  {translate(
+                    "pages.login.fields.identifier",
+                    "Username or Email",
+                  )}
                 </Label>
                 <Input
                   id="email"
                   name="email"
-                  type="email"
+                  type="text"
                   placeholder={translate(
-                    "pages.auth.emailPlaceholder",
-                    "you@example.com",
+                    "pages.login.fields.identifierPlaceholder",
+                    "username or email",
                   )}
                   required
                   className="h-10"
-                  autoComplete="email"
+                  autoComplete="username email"
                 />
               </div>
               <div className="space-y-2">
