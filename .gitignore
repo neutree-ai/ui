@@ -49,4 +49,4 @@ e2e/profiles/*
 # local agents
 .agents/
 .claude/
-.mcp.json
+.mcp.jsonpackage-lock.json
