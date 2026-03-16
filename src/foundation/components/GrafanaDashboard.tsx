@@ -82,7 +82,6 @@ export default function GrafanaDashboard({
       ref={iframeRef}
       src={dashboardUrl}
       className={`w-full border-0 ${className || ""}`}
-      style={{ minHeight: "600px" }}
       title={`Grafana Dashboard ${dashboardConfig.dashboardId}`}
       onLoad={handleIframeLoad}
     />
