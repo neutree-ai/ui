@@ -16,7 +16,7 @@ export type UpstreamSpec = {
 };
 
 export type ExternalEndpointSpec = {
-  route_type?: string;
+  route_type: string;
   timeout: number | null;
   upstreams: UpstreamSpec[];
 };

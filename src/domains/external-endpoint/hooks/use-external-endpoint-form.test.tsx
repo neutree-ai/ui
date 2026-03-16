@@ -82,9 +82,12 @@ function EditForm() {
 
 describe("useExternalEndpointForm", () => {
   describe("create mode", () => {
-    it("renders name, upstream type, upstream URL, auth type, and credential fields", () => {
+    it("renders name, route type, upstream type, upstream URL, auth type, and credential fields", () => {
       render(<CreateForm />);
       expect(screen.getByLabelText("common.fields.name")).toBeTruthy();
+      expect(
+        screen.getByLabelText("external_endpoints.fields.routeType"),
+      ).toBeTruthy();
       expect(
         screen.getByLabelText("external_endpoints.fields.upstreamType"),
       ).toBeTruthy();
@@ -133,6 +136,12 @@ describe("useExternalEndpointForm", () => {
       render(<CreateForm />);
       const nameInput = screen.getByLabelText("common.fields.name");
       expect((nameInput as HTMLInputElement).disabled).toBe(false);
+    });
+
+    it("renders route type field with default value", () => {
+      render(<CreateForm />);
+      const routeTypeField = screen.getByTestId("field-spec.route_type");
+      expect(routeTypeField).toBeTruthy();
     });
 
     it("renders timeout field", () => {

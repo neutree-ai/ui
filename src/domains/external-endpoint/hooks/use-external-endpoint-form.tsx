@@ -144,6 +144,27 @@ export const useExternalEndpointForm = ({
         <FormCardGrid title={t("external_endpoints.sections.configuration")}>
           <FormFieldGroup
             {...form}
+            name="spec.route_type"
+            label={t("external_endpoints.fields.routeType")}
+            rules={{
+              required: {
+                value: true,
+                message: t("external_endpoints.validation.routeTypeRequired"),
+              },
+            }}
+          >
+            <FormSelect
+              placeholder={t("external_endpoints.placeholders.selectRouteType")}
+              options={[
+                {
+                  label: t("external_endpoints.options.chatCompletions"),
+                  value: "/v1/chat/completions",
+                },
+              ]}
+            />
+          </FormFieldGroup>
+          <FormFieldGroup
+            {...form}
             name="spec.timeout"
             label={t("external_endpoints.fields.timeout")}
           >
