@@ -108,7 +108,10 @@ describe("login", () => {
 
     expect(result).toEqual({
       success: false,
-      error: { message: "Login failed", name: "Invalid email or password" },
+      error: {
+        message: "Login failed",
+        name: "Invalid username/email or password",
+      },
     });
   });
 
