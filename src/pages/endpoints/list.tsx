@@ -8,7 +8,7 @@ import type { Endpoint } from "@/domains/endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
-import { defaultSorters, Table } from "@/foundation/components/Table";
+import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
@@ -26,7 +26,12 @@ export const EndpointsList = () => {
         enableBatchDelete
         searchField="metadata->>name"
         refineCoreProps={{
-          sorters: defaultSorters,
+          sorters: {
+            initial: [
+              { field: "status_sort_priority", order: "asc" },
+              { field: "metadata->creation_timestamp", order: "desc" },
+            ],
+          },
         }}
         filters={({ filters, setFilters }) => (
           <ModelTaskFilter filters={filters} setFilters={setFilters} />
