@@ -99,7 +99,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="relative my-4">
               <Separator className="my-4">
                 <span className="text-[hsl(var(--muted-foreground))] px-2">
-                  {translate("pages.auth.divider", "or")}
+                  {translate("pages.auth.divider")}
                 </span>
               </Separator>
             </div>
@@ -117,7 +117,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     >
       <CardHeader className="pb-0 pt-6">
         <CardTitle className="text-center text-2xl font-bold text-[hsl(var(--foreground))]">
-          {translate("pages.login.title", "Sign in to your account")}
+          {translate("pages.login.title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-8 pt-6">
@@ -139,10 +139,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  {translate(
-                    "pages.login.fields.identifier",
-                    "Username or Email",
-                  )}
+                  {translate("pages.login.fields.identifier")}
                 </Label>
                 <Input
                   id="email"
@@ -150,7 +147,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   type="text"
                   placeholder={translate(
                     "pages.login.fields.identifierPlaceholder",
-                    "username or email",
                   )}
                   required
                   className="h-10"
@@ -165,10 +161,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   id="password"
                   name="password"
                   type="password"
-                  placeholder={translate(
-                    "pages.auth.passwordPlaceholder",
-                    "••••••••",
-                  )}
+                  placeholder={translate("pages.auth.passwordPlaceholder")}
                   required
                   className="h-10"
                   autoComplete="current-password"
@@ -179,10 +172,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   <div className="flex items-center space-x-2">
                     <Checkbox id="remember" name="remember" />
                     <Label htmlFor="remember" className="text-sm font-normal">
-                      {translate(
-                        "pages.login.buttons.rememberMe",
-                        "Remember me",
-                      )}
+                      {translate("pages.login.buttons.rememberMe")}
                     </Label>
                   </div>
                 )}
@@ -191,10 +181,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     className="text-sm font-medium text-[hsl(var(--primary))] hover:underline ml-auto"
                     to="/forgot-password"
                   >
-                    {translate(
-                      "pages.login.buttons.forgotPassword",
-                      "Forgot password?",
-                    )}
+                    {translate("pages.login.buttons.forgotPassword")}
                   </ActiveLink>
                 )}
               </div>
@@ -204,8 +191,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 disabled={isLoading}
               >
                 {isLoading
-                  ? translate("pages.auth.loading", "Loading...")
-                  : translate("pages.auth.signIn", "Sign in")}
+                  ? translate("pages.auth.loading")
+                  : translate("pages.auth.signIn")}
               </Button>
             </div>
           </form>

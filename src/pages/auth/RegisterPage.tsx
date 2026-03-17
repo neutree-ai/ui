@@ -92,7 +92,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             <div className="relative my-4">
               <Separator className="my-4">
                 <span className="text-[hsl(var(--muted-foreground))] px-2">
-                  {translate("pages.auth.divider", "or")}
+                  {translate("pages.auth.divider")}
                 </span>
               </Separator>
             </div>
@@ -110,7 +110,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     >
       <CardHeader className="pb-0 pt-6">
         <CardTitle className="text-center text-2xl font-bold text-[hsl(var(--foreground))]">
-          {translate("pages.register.title", "Sign up for your account")}
+          {translate("pages.register.title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-8 pt-6">
@@ -131,16 +131,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  {translate("common.fields.email", "Email")}
+                  {translate("common.fields.email")}
                 </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder={translate(
-                    "pages.auth.emailPlaceholder",
-                    "you@example.com",
-                  )}
+                  placeholder={translate("pages.auth.emailPlaceholder")}
                   required
                   className="h-10"
                 />
@@ -153,10 +150,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   id="password"
                   name="password"
                   type="password"
-                  placeholder={translate(
-                    "pages.auth.passwordPlaceholder",
-                    "••••••••",
-                  )}
+                  placeholder={translate("pages.auth.passwordPlaceholder")}
                   required
                   minLength={6}
                   className="h-10"
@@ -168,8 +162,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 disabled={isLoading}
               >
                 {isLoading
-                  ? translate("pages.auth.loading", "Loading...")
-                  : translate("pages.register.buttons.submit", "Sign up")}
+                  ? translate("pages.auth.loading")
+                  : translate("pages.register.buttons.submit")}
               </Button>
             </div>
           </form>
@@ -178,15 +172,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       <CardFooter className="pb-6 px-8 flex justify-center">
         {loginLink ?? (
           <div className="text-sm text-center">
-            {translate(
-              "pages.register.buttons.haveAccount",
-              "Have an account?",
-            )}{" "}
+            {translate("pages.register.buttons.haveAccount")}{" "}
             <ActiveLink
               to="/login"
               className="font-medium text-[hsl(var(--primary))] hover:underline"
             >
-              {translate("pages.auth.signIn", "Sign in")}
+              {translate("pages.auth.signIn")}
             </ActiveLink>
           </div>
         )}
