@@ -186,7 +186,7 @@
   "src/domains/endpoint/components/EndpointEngine.tsx": "70863dcae9d6b5373eb196a8fd445bbb",
   "src/domains/endpoint/components/EndpointLogTabs.tsx": "8ab81e4ef99fc85e6fea590d788d64f3",
   "src/domains/endpoint/components/EndpointModel.tsx": "4c634fda5f1146cd428486d64b6e53a6",
-  "src/domains/endpoint/components/EndpointPauseAction.tsx": "d9354949c4d8dc99bb9154fbcc90d0a6",
+  "src/domains/endpoint/components/EndpointPauseAction.tsx": "52154e666e54f6f804b4f012ab2db172",
   "src/domains/endpoint/components/EndpointStatus.tsx": "f6e686c6b984351ffc9bc7ae5ebb8b6e",
   "src/domains/endpoint/components/FunctionDialog.tsx": "ff7aef799f233272f766c615c711e6fc",
   "src/domains/endpoint/components/FunctionsManager.tsx": "340fa3f88d2568eb76209f4b36278c0b",
@@ -273,5 +273,6 @@
   "src/domains/external-endpoint/lib/build-embedding-curl-command.ts": "85d12f78fe8a5c38ea2cb22cccd17f09",
   "src/foundation/components/NumberInput.tsx": "48ac647b7f27621ace1542cb441c5a4d",
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
-  "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f"
+  "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f",
+  "src/domains/endpoint/lib/pause-action.ts": "3efa178458d6906c0cc81dad7c41e675"
 }

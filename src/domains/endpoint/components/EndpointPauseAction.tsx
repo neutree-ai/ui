@@ -1,6 +1,10 @@
 import { useInvalidate, useUpdate } from "@refinedev/core";
 import { PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  computeTogglePayload,
+  derivePauseState,
+} from "@/domains/endpoint/lib/pause-action";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { RowAction, type RowActionProps } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -8,16 +12,6 @@ import { useTranslation } from "@/foundation/lib/i18n";
 type EndpointPauseActionProps = RowActionProps & {
   endpoint: Endpoint;
   resource?: string;
-};
-
-const LAST_REPLICA_LABEL = "neutree.ai/last_replicas";
-
-const parseReplicaCount = (value: unknown): number | undefined => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return undefined;
-  }
-  return parsed;
 };
 
 export const EndpointPauseAction = ({
@@ -32,35 +26,12 @@ export const EndpointPauseAction = ({
   const invalidate = useInvalidate();
   const { mutateAsync, isLoading } = useUpdate<Endpoint>();
 
-  const rawReplicaCount = endpoint.spec.replicas?.num;
-  const replicaCount =
-    typeof rawReplicaCount === "number" ? rawReplicaCount : 1;
-  const labels = (endpoint.metadata.labels ?? {}) as Record<string, unknown>;
-  const storedReplicaCount = parseReplicaCount(labels[LAST_REPLICA_LABEL]);
-  const isPaused = replicaCount === 0;
-  const resumeReplicaCount =
-    storedReplicaCount ?? (replicaCount > 0 ? replicaCount : 1);
+  const { isPaused } = derivePauseState(endpoint);
 
   const handleToggle = async () => {
     if (isLoading) return;
 
-    const nextReplicaCount = isPaused
-      ? resumeReplicaCount > 0
-        ? resumeReplicaCount
-        : 1
-      : 0;
-
-    const nextLabels = { ...labels };
-    if (isPaused) {
-      delete nextLabels[LAST_REPLICA_LABEL];
-    } else {
-      const previousReplicas =
-        replicaCount > 0 ? replicaCount : (storedReplicaCount ?? 1);
-      nextLabels[LAST_REPLICA_LABEL] = String(previousReplicas);
-    }
-
-    const metadataLabels =
-      Object.keys(nextLabels).length > 0 ? nextLabels : null;
+    const { nextReplicaCount, nextLabels } = computeTogglePayload(endpoint);
 
     try {
       await mutateAsync({
@@ -70,7 +41,7 @@ export const EndpointPauseAction = ({
           ...endpoint,
           metadata: {
             ...endpoint.metadata,
-            labels: metadataLabels,
+            labels: nextLabels,
           },
           spec: {
             ...endpoint.spec,
