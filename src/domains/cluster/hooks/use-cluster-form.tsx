@@ -169,7 +169,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             <NodeIPsField
               control={form.control}
               name="spec.config.ssh_config.provider"
-              disabled={isEdit}
+              headIpDisabled={isEdit}
             />
           </div>
         )}

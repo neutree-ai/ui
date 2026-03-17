@@ -41,8 +41,12 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "default" }),
 }));
 
+const nodeIPsFieldProps = vi.fn();
 vi.mock("@/domains/cluster/components/NodeIPsField", () => ({
-  default: () => <div data-testid="node-ips-field-mock" />,
+  default: (props: Record<string, unknown>) => {
+    nodeIPsFieldProps(props);
+    return <div data-testid="node-ips-field-mock" />;
+  },
 }));
 
 vi.mock("@/domains/cluster/components/ModelCacheFields", () => ({
@@ -66,6 +70,21 @@ function CreateForm() {
   );
 }
 
+function EditForm() {
+  const { form, typeFields, providerFields, routerFields, authFields } =
+    useClusterForm({ action: "edit" });
+  return (
+    <FormProvider {...form}>
+      <form>
+        {typeFields}
+        {providerFields}
+        {routerFields}
+        {authFields}
+      </form>
+    </FormProvider>
+  );
+}
+
 function selectType(label: string) {
   const field = screen.getByTestId("field-spec.type");
   const trigger = field.querySelector('button[role="combobox"]');
@@ -75,6 +94,30 @@ function selectType(label: string) {
 }
 
 describe("useClusterForm", () => {
+  describe("edit mode — NodeIPsField props", () => {
+    it("passes headIpDisabled=true without disabled in edit mode", () => {
+      nodeIPsFieldProps.mockClear();
+      render(<EditForm />);
+      const lastCall =
+        nodeIPsFieldProps.mock.calls[
+          nodeIPsFieldProps.mock.calls.length - 1
+        ][0];
+      expect(lastCall.headIpDisabled).toBe(true);
+      expect(lastCall.disabled).toBeUndefined();
+    });
+
+    it("does not pass headIpDisabled=true in create mode", () => {
+      nodeIPsFieldProps.mockClear();
+      render(<CreateForm />);
+      const lastCall =
+        nodeIPsFieldProps.mock.calls[
+          nodeIPsFieldProps.mock.calls.length - 1
+        ][0];
+      expect(lastCall.headIpDisabled).toBeFalsy();
+      expect(lastCall.disabled).toBeUndefined();
+    });
+  });
+
   describe("type switching", () => {
     it("defaults to SSH with auth fields and no router fields", () => {
       render(<CreateForm />);

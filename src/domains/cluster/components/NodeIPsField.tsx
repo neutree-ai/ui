@@ -11,12 +11,14 @@ type NodeIPsFieldProps<T extends FieldValues> = {
   control: Control<T>;
   name: Path<T>;
   disabled?: boolean;
+  headIpDisabled?: boolean;
 };
 
 function NodeIPsField<T extends FieldValues>({
   control,
   name,
   disabled = false,
+  headIpDisabled = false,
 }: NodeIPsFieldProps<T>) {
   const { t } = useTranslation();
   const {
@@ -52,7 +54,7 @@ function NodeIPsField<T extends FieldValues>({
                 value={headIp}
                 onChange={handleHeadIpChange}
                 placeholder={t("clusters.placeholders.sshHeadNodeExample")}
-                disabled={disabled}
+                disabled={disabled || headIpDisabled}
                 className={headIpError ? "border-destructive" : ""}
               />
             </div>
