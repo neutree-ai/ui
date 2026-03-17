@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.4.7/schema.json",
 	"vcs": {
 		"enabled": false,
 		"clientKind": "git",
@@ -7,15 +7,19 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": ["dist", "playwright-report", "tmp", "coverage"]
+		"includes": [
+			"**",
+			"!**/dist",
+			"!**/playwright-report",
+			"!**/tmp",
+			"!**/coverage"
+		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"
 	},
-	"organizeImports": {
-		"enabled": true
-	},
+	"assist": { "actions": { "source": { "organizeImports": "on" } } },
 	"linter": {
 		"enabled": true,
 		"rules": {
@@ -28,10 +32,13 @@
 			},
 			"suspicious": {
 				"noExplicitAny": "warn",
-				"noArrayIndexKey": "off"
+				"noArrayIndexKey": "off",
+				"noUnknownAtRules": "off"
 			},
 			"a11y": {
-				"useKeyWithClickEvents": "off"
+				"useKeyWithClickEvents": "off",
+				"noStaticElementInteractions": "off",
+				"useSemanticElements": "off"
 			},
 			"performance": {
 				"noDelete": "off",
@@ -39,7 +46,26 @@
 			},
 			"complexity": {
 				"noForEach": "off"
+			},
+			"style": {
+				"noRestrictedImports": {
+					"level": "error",
+					"options": {
+						"paths": {
+							"@refinedev/core": {
+								"importNames": ["useTranslate"],
+								"message": "Use useTranslation from @/foundation/lib/i18n instead."
+							}
+						}
+					}
+				}
 			}
+		}
+	},
+	"css": {
+		"parser": {
+			"cssModules": false,
+			"tailwindDirectives": true
 		}
 	},
 	"javascript": {

@@ -1,3 +1,49 @@
+import {
+  CaretDownIcon,
+  CaretUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DotsHorizontalIcon,
+  DoubleArrowLeftIcon,
+  DoubleArrowRightIcon,
+  MixerHorizontalIcon,
+} from "@radix-ui/react-icons";
+import type { PopoverContentProps } from "@radix-ui/react-popover";
+import {
+  type BaseOption,
+  type BaseRecord,
+  type CrudFilter,
+  type HttpError,
+  useNavigation,
+  useResource,
+  type useTableProps,
+} from "@refinedev/core";
+import {
+  type UseTableProps,
+  type UseTableReturnType,
+  useTable,
+} from "@refinedev/react-table";
+import {
+  type Cell,
+  type CellContext,
+  type Column,
+  type ColumnDef,
+  type ColumnDefTemplate,
+  flexRender,
+  type Row,
+  type TableOptionsResolved,
+  type Table as TanStackTable,
+} from "@tanstack/react-table";
+import type React from "react";
+import {
+  type FC,
+  type PropsWithChildren,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -35,53 +81,6 @@ import {
   DeleteContext,
   DeleteProvider,
 } from "@/foundation/providers/delete-provider";
-import {
-  CaretDownIcon,
-  CaretUpIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DotsHorizontalIcon,
-  DoubleArrowLeftIcon,
-  DoubleArrowRightIcon,
-  MixerHorizontalIcon,
-} from "@radix-ui/react-icons";
-import type { PopoverContentProps } from "@radix-ui/react-popover";
-import {
-  type BaseOption,
-  type BaseRecord,
-  type CrudFilter,
-  type HttpError,
-  useResource,
-  type useTableProps,
-  useTranslate,
-} from "@refinedev/core";
-import { useNavigation } from "@refinedev/core";
-import {
-  type UseTableProps,
-  type UseTableReturnType,
-  useTable,
-} from "@refinedev/react-table";
-import {
-  type Cell,
-  type CellContext,
-  type Column,
-  type ColumnDef,
-  type ColumnDefTemplate,
-  type Row,
-  type TableOptionsResolved,
-  type Table as TanStackTable,
-  flexRender,
-} from "@tanstack/react-table";
-import type React from "react";
-import {
-  type FC,
-  type PropsWithChildren,
-  type ReactElement,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-} from "react";
 
 // ============================================================================
 // Types
@@ -192,8 +191,10 @@ const SortAction = <TData extends BaseRecord = BaseRecord>({
 
 const Pagination = <TData extends BaseRecord = BaseRecord>({
   table,
-}: { table: UseTableReturnType<TData> }) => {
-  const t = useTranslate();
+}: {
+  table: UseTableReturnType<TData>;
+}) => {
+  const { t } = useTranslation();
   const total = table.refineCore.tableQuery.data?.total ?? 0;
 
   return (
@@ -399,8 +400,10 @@ EditAction.displayName = "EditAction";
 
 const DataTableViewOptions = <TData,>({
   table,
-}: { table: TanStackTable<TData> }) => {
-  const t = useTranslate();
+}: {
+  table: TanStackTable<TData>;
+}) => {
+  const { t } = useTranslation();
   const columns = useMemo(() => {
     return table
       .getAllColumns()
@@ -494,7 +497,7 @@ export function Table<
   filters,
   ...props
 }: TableProps<TData, TError>) {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const { resource } = useResource();
 
   // Column visibility persistence

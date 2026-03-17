@@ -2,14 +2,13 @@ import EngineStatus from "@/domains/engine/components/EngineStatus";
 import EngineVersions from "@/domains/engine/components/EngineVersions";
 import type { EngineVersion } from "@/domains/engine/types";
 import { ListPage } from "@/foundation/components/ListPage";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-import { useTranslate } from "@refinedev/core";
 
 export const EnginesList = () => {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
 
   return (

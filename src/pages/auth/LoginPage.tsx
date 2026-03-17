@@ -1,3 +1,13 @@
+import type { LoginFormTypes } from "@refinedev/core";
+import {
+  type OAuthProvider,
+  useActiveAuthProvider,
+  useLink,
+  useLogin,
+  useRouterContext,
+  useRouterType,
+} from "@refinedev/core";
+import type React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,20 +20,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import {
-  type OAuthProvider,
-  useActiveAuthProvider,
-  useLink,
-  useLogin,
-  useRouterContext,
-  useRouterType,
-  useTranslate,
-} from "@refinedev/core";
-import type { LoginFormTypes } from "@refinedev/core";
-import type React from "react";
-import { ThemedTitle } from "./ThemedTitle";
 import { authStyles } from "./styles";
+import { ThemedTitle } from "./ThemedTitle";
 
 type LoginPageProps = {
   providers?: OAuthProvider[];
@@ -55,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   hideForm,
   mutationVariables,
 }) => {
-  const translate = useTranslate();
+  const { t: translate } = useTranslation();
   const routerType = useRouterType();
   const Link = useLink();
   const { Link: LegacyLink } = useRouterContext();

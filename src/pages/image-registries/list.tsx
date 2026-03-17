@@ -1,13 +1,12 @@
 import ImageRegistryStatus from "@/domains/image-registry/components/ImageRegistryStatus";
 import { ListPage } from "@/foundation/components/ListPage";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-import { useTranslate } from "@refinedev/core";
 
 export const ImageRegistriesList = () => {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
 
   return (

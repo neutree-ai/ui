@@ -2,13 +2,13 @@ import ExternalEndpointStatus from "@/domains/external-endpoint/components/Exter
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
-import { Table, defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-import { useTranslate } from "@refinedev/core";
 
 export const ExternalEndpointsList = () => {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
 
   return (

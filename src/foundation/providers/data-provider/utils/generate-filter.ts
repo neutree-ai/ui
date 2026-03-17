@@ -77,7 +77,7 @@ export const generateFilter = (filter: CrudFilter, query: any) => {
 
             return `${item.field}.${mapOperator(item.operator)}.${value}`;
           }
-          return;
+          return "";
         })
         .join(",");
       return query.or(orSyntax);

@@ -1,18 +1,17 @@
+import { Trash2 } from "lucide-react";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import { ListPage } from "@/foundation/components/ListPage";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-import { useTranslate } from "@refinedev/core";
-import { Trash2 } from "lucide-react";
 
 export const ModelCatalogsList = () => {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
 
   return (

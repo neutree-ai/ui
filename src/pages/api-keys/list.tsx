@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,16 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
 import { ListPage } from "@/foundation/components/ListPage";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { useTranslate } from "@refinedev/core";
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 const useApiKeyColumns = () => {
-  const t = useTranslate();
+  const { t } = useTranslation();
 
   return {
     action: (

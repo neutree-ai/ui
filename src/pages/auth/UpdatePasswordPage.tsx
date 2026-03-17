@@ -1,18 +1,15 @@
+import type { UpdatePasswordFormTypes } from "@refinedev/core";
+import { useActiveAuthProvider, useUpdatePassword } from "@refinedev/core";
+import type React from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import {
-  useActiveAuthProvider,
-  useTranslate,
-  useUpdatePassword,
-} from "@refinedev/core";
-import type { UpdatePasswordFormTypes } from "@refinedev/core";
-import type React from "react";
-import { toast } from "sonner";
-import { ThemedTitle } from "./ThemedTitle";
 import { validatePasswordMatch } from "./lib/validate-password-match";
+import { ThemedTitle } from "./ThemedTitle";
 
 type UpdatePasswordPageProps = {
   contentProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -34,7 +31,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
   title,
   mutationVariables,
 }) => {
-  const translate = useTranslate();
+  const { t: translate } = useTranslation();
   const authProvider = useActiveAuthProvider();
   const { mutate: updatePassword, isLoading } =
     useUpdatePassword<UpdatePasswordFormTypes>({

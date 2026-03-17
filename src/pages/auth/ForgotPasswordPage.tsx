@@ -1,3 +1,6 @@
+import type { ForgotPasswordFormTypes } from "@refinedev/core";
+import { useActiveAuthProvider, useForgotPassword } from "@refinedev/core";
+import type React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,16 +11,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import {
-  useActiveAuthProvider,
-  useForgotPassword,
-  useTranslate,
-} from "@refinedev/core";
-import type { ForgotPasswordFormTypes } from "@refinedev/core";
-import type React from "react";
-import { ThemedTitle } from "./ThemedTitle";
 import { authStyles } from "./styles";
+import { ThemedTitle } from "./ThemedTitle";
 
 type ForgotPasswordPageProps = {
   contentProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -39,7 +36,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
   title,
   mutationVariables = {},
 }) => {
-  const translate = useTranslate();
+  const { t: translate } = useTranslation();
   const authProvider = useActiveAuthProvider();
   const { mutate: forgotPassword, isLoading } =
     useForgotPassword<ForgotPasswordFormTypes>({

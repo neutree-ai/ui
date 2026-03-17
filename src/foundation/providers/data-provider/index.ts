@@ -1,6 +1,6 @@
-import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import type { DataProvider, HttpError } from "@refinedev/core";
 import { type PostgrestClient, PostgrestError } from "@supabase/postgrest-js";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { cleanInternalFields } from "./utils/clean-internal-fields";
 import { generateFilter } from "./utils/generate-filter";
 import { handleError } from "./utils/handle-error";
@@ -38,7 +38,11 @@ export const dataProvider = (
     resource,
     id,
     meta,
-  }: { resource: string; id: any; meta?: any }) => {
+  }: {
+    resource: string;
+    id: any;
+    meta?: any;
+  }) => {
     const current = await _getOne({ resource, id, meta });
 
     const client = meta?.schema
@@ -94,7 +98,7 @@ export const dataProvider = (
         query.range((current - 1) * pageSize, current * pageSize - 1);
       }
 
-      sorters?.map((item) => {
+      sorters?.forEach((item) => {
         const [foreignTable, field] = item.field.split(/\.(?=[^.]+$)/);
 
         if (foreignTable && field) {
@@ -111,7 +115,7 @@ export const dataProvider = (
         }
       });
 
-      filters?.map((item) => {
+      filters?.forEach((item) => {
         generateFilter(item, query);
       });
 

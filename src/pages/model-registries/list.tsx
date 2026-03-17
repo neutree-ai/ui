@@ -1,14 +1,13 @@
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import { ListPage } from "@/foundation/components/ListPage";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-import { useTranslate } from "@refinedev/core";
 
 export const ModelRegistriesList = () => {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
 
   return (

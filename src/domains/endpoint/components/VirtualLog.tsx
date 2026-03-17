@@ -1,9 +1,9 @@
-import { cn } from "@/foundation/lib/utils";
 import { createLowlight } from "lowlight";
 import { useTheme } from "next-themes";
 import { type FC, useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
+import { cn } from "@/foundation/lib/utils";
 import { filterByTimestamp } from "../lib/log-helpers";
 import "./LogViewer.css";
 
@@ -12,6 +12,7 @@ const lowlight = createLowlight();
 
 // Register prolog language for log files (same as Ray)
 import prolog from "highlight.js/lib/languages/prolog";
+
 lowlight.register("prolog", prolog);
 
 // Types for highlight.js AST nodes (simplified)
@@ -144,61 +145,58 @@ export const VirtualLog: FC<VirtualLogProps> = ({
       const lineNumber = index + 1;
 
       // Detect log level and apply appropriate styling
-      const logLevel = useMemo(() => {
-        const upperLine = line.toUpperCase();
-        if (upperLine.includes("ERROR") || upperLine.includes("FATAL"))
-          return "error";
-        if (upperLine.includes("WARN")) return "warning";
-        if (upperLine.includes("INFO")) return "info";
-        if (upperLine.includes("DEBUG") || upperLine.includes("TRACE"))
-          return "debug";
-        return "default";
-      }, [line]);
+      const upperLine = line.toUpperCase();
+      let logLevel: string;
+      if (upperLine.includes("ERROR") || upperLine.includes("FATAL"))
+        logLevel = "error";
+      else if (upperLine.includes("WARN")) logLevel = "warning";
+      else if (upperLine.includes("INFO")) logLevel = "info";
+      else if (upperLine.includes("DEBUG") || upperLine.includes("TRACE"))
+        logLevel = "debug";
+      else logLevel = "default";
 
-      // Try to detect log format for better highlighting
-      const logLanguage = useMemo(() => {
-        // Use prolog for log highlighting (same as Ray dashboard)
-        return "prolog";
-      }, []);
+      // Use prolog for log highlighting (same as Ray dashboard)
+      const logLanguage = "prolog";
 
       // Apply syntax highlighting
-      const highlightResult = useMemo(() => {
-        try {
-          return lowlight.highlight(logLanguage, line);
-        } catch (_error) {
-          // Fallback to plaintext if highlighting fails
-          return {
-            type: "root" as const,
-            children: [{ type: "text" as const, value: line }],
-          };
-        }
-      }, [line, logLanguage]);
+      let highlightResult: {
+        type: "root";
+        children: { type: string; value?: string }[];
+      };
+      try {
+        highlightResult = lowlight.highlight(logLanguage, line);
+      } catch (_error) {
+        highlightResult = {
+          type: "root" as const,
+          children: [{ type: "text" as const, value: line }],
+        };
+      }
 
       // Convert to React elements with search highlighting
-      const content = useMemo(() => {
-        const result = highlightResult as { children?: HastNode[] };
-        return (
-          result.children?.map((child, i) =>
-            value2react(child, `${index}-${i}`, search?.trim() || ""),
-          ) || []
-        );
-      }, [highlightResult, index, search]);
+      const result = highlightResult as { children?: HastNode[] };
+      const content =
+        result.children?.map((child, i) =>
+          value2react(child, `${index}-${i}`, search?.trim() || ""),
+        ) || [];
 
       // Get log level styling based on our theme system
-      const levelStyles = useMemo(() => {
-        switch (logLevel) {
-          case "error":
-            return "border-l-destructive";
-          case "warning":
-            return "border-l-yellow-500";
-          case "info":
-            return "border-l-primary";
-          case "debug":
-            return "border-l-muted-foreground";
-          default:
-            return "border-l-transparent";
-        }
-      }, [logLevel]);
+      let levelStyles: string;
+      switch (logLevel) {
+        case "error":
+          levelStyles = "border-l-destructive";
+          break;
+        case "warning":
+          levelStyles = "border-l-yellow-500";
+          break;
+        case "info":
+          levelStyles = "border-l-primary";
+          break;
+        case "debug":
+          levelStyles = "border-l-muted-foreground";
+          break;
+        default:
+          levelStyles = "border-l-transparent";
+      }
 
       return (
         <div

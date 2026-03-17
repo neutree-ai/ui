@@ -1,12 +1,9 @@
+import { useResource, useUserFriendlyName } from "@refinedev/core";
+import type { FC } from "react";
 import { CreateButton } from "@/foundation/components/CreateButton";
 import { PageHeader } from "@/foundation/components/PageHeader";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import {
-  useResource,
-  useTranslate,
-  useUserFriendlyName,
-} from "@refinedev/core";
-import type { FC } from "react";
 
 type ListProps = {
   title?: React.ReactNode;
@@ -29,7 +26,7 @@ export const ListPage: FC<ListProps> = ({
   extra,
   children,
 }) => {
-  const translate = useTranslate();
+  const { t: translate } = useTranslation();
   const getUserFriendlyName = useUserFriendlyName();
 
   const { resource, identifier } = useResource(resourceFromProps);

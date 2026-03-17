@@ -1,15 +1,14 @@
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import { ListPage } from "@/foundation/components/ListPage";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-import { useTranslate } from "@refinedev/core";
 
 export const ClustersList = () => {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
 
   return (

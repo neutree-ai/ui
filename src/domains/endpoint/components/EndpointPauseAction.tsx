@@ -1,8 +1,9 @@
-import type { Endpoint } from "@/domains/endpoint/types";
-import { RowAction, type RowActionProps } from "@/foundation/components/Table";
-import { useInvalidate, useTranslate, useUpdate } from "@refinedev/core";
+import { useInvalidate, useUpdate } from "@refinedev/core";
 import { PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
+import type { Endpoint } from "@/domains/endpoint/types";
+import { RowAction, type RowActionProps } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 type EndpointPauseActionProps = RowActionProps & {
   endpoint: Endpoint;
@@ -27,7 +28,7 @@ export const EndpointPauseAction = ({
   icon,
   ...props
 }: EndpointPauseActionProps) => {
-  const translate = useTranslate();
+  const { t: translate } = useTranslation();
   const invalidate = useInvalidate();
   const { mutateAsync, isLoading } = useUpdate<Endpoint>();
 

@@ -1,13 +1,14 @@
+import { useShow } from "@refinedev/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { useShow, useTranslate } from "@refinedev/core";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 export const WorkspacesShow = () => {
   const {
@@ -15,7 +16,7 @@ export const WorkspacesShow = () => {
   } = useShow<Workspace>();
   const record = data?.data;
   const metadataColumns = useMetadataColumns({ resource: "role_assignments" });
-  const t = useTranslate();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;

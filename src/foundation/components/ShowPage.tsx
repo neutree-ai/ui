@@ -1,3 +1,7 @@
+import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { useNavigation, useRefineContext, useResource } from "@refinedev/core";
+import { Edit, Trash2 } from "lucide-react";
+import { type FC, isValidElement, type PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,16 +11,8 @@ import {
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { DeleteAction, EditAction } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { DeleteProvider } from "@/foundation/providers/delete-provider";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import {
-  useNavigation,
-  useRefineContext,
-  useResource,
-  useTranslate,
-} from "@refinedev/core";
-import { Edit, Trash2 } from "lucide-react";
-import { type FC, type PropsWithChildren, isValidElement } from "react";
 
 const Row = ({
   title,
@@ -67,10 +63,8 @@ export const ShowPage: FC<ShowProps> & {
   record,
   children,
 }) => {
-  const translate = useTranslate();
-  const {
-    options: { breadcrumb: globalBreadcrumb } = {},
-  } = useRefineContext();
+  const { t: translate } = useTranslation();
+  const { options: { breadcrumb: globalBreadcrumb } = {} } = useRefineContext();
 
   const { resource, identifier } = useResource(resourceFromProps);
 

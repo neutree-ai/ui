@@ -1,8 +1,8 @@
-import { Input } from "@/components/ui/input";
-import { useTranslate } from "@refinedev/core";
 import type { UseTableReturnType } from "@refinedev/react-table";
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 interface TableSearchProps {
   field: string;
@@ -10,7 +10,7 @@ interface TableSearchProps {
 }
 
 export function TableSearch({ field, table }: TableSearchProps) {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const [value, setValue] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 

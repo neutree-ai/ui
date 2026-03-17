@@ -1,9 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { useDeleteMany, useResource, useTranslate } from "@refinedev/core";
+import { useDeleteMany, useResource } from "@refinedev/core";
 import type { Row } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 interface BatchDeleteBarProps {
   selectedRows: Row<any>[];
@@ -14,7 +15,7 @@ export function BatchDeleteBar({
   selectedRows,
   onDeleted,
 }: BatchDeleteBarProps) {
-  const t = useTranslate();
+  const { t } = useTranslation();
   const { resource } = useResource();
   const [open, setOpen] = useState(false);
   const { mutate: deleteMany, isLoading } = useDeleteMany();

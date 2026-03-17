@@ -6,17 +6,14 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-import { useTranslate } from "@refinedev/core";
-import { useTranslation } from "react-i18next";
 
 export const EndpointsList = () => {
   const { t } = useTranslation();
-  const tRefine = useTranslate();
   const metadataColumns = useMetadataColumns({
     extraActions: (row) => <EndpointPauseAction endpoint={row} />,
   });
@@ -38,7 +35,7 @@ export const EndpointsList = () => {
         {metadataColumns.name}
         {metadataColumns.workspace}
         <Table.Column
-          header={tRefine("common.fields.status")}
+          header={t("common.fields.status")}
           accessorKey="status"
           id="status"
           enableHiding
@@ -49,7 +46,7 @@ export const EndpointsList = () => {
           }}
         />
         <Table.Column
-          header={tRefine("common.fields.model")}
+          header={t("common.fields.model")}
           accessorKey="status"
           id="model"
           enableHiding
@@ -59,7 +56,7 @@ export const EndpointsList = () => {
           }}
         />
         <Table.Column
-          header={tRefine("common.fields.task")}
+          header={t("common.fields.task")}
           accessorKey="spec.model.task"
           id="task"
           enableHiding
@@ -69,7 +66,7 @@ export const EndpointsList = () => {
           }}
         />
         <Table.Column
-          header={tRefine("common.fields.engine")}
+          header={t("common.fields.engine")}
           accessorKey="spec.engine.engine"
           id="engine"
           enableHiding
@@ -78,7 +75,7 @@ export const EndpointsList = () => {
           }}
         />
         <Table.Column
-          header={tRefine("common.fields.cluster")}
+          header={t("common.fields.cluster")}
           accessorKey="spec.cluster"
           id="cluster"
           enableHiding
