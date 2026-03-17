@@ -10,7 +10,7 @@ describe("buildOpenAICurlCommand", () => {
 
   it("includes authorization header placeholder", () => {
     const result = buildOpenAICurlCommand("https://gw.example.com", "gpt-4o");
-    expect(result).toContain("Authorization: Bearer <your-neutree-api-key>");
+    expect(result).toContain("Authorization: Bearer <your-api-key>");
   });
 
   it("includes Content-Type header", () => {

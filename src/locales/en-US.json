@@ -614,7 +614,7 @@
 		},
 		"messages": {
 			"curlExample": "Curl Example",
-			"curlHint": "Replace <your-neutree-api-key> with your API key. You can create one at {{apiKeyPage}}.",
+			"curlHint": "Replace <your-api-key> with your API key. You can create one at {{apiKeyPage}}.",
 			"curlExampleOpenai": "OpenAI",
 			"curlExampleAnthropic": "Anthropic",
 			"curlExampleEmbedding": "Embedding",
