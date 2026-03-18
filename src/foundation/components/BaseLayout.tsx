@@ -1,7 +1,8 @@
+import type { PropsWithChildren } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { OemFavicon } from "@/foundation/components/OemFavicon";
 import { ThemeProvider } from "@/foundation/providers/theme-provider";
-import type { PropsWithChildren } from "react";
 
 type Props = PropsWithChildren<
   Partial<React.ComponentProps<typeof ThemeProvider>>
@@ -38,6 +39,7 @@ export const BaseLayout = ({
         skipDelayDuration={0}
         disableHoverableContent={true}
       >
+        <OemFavicon />
         {children}
         <Toaster richColors />
       </TooltipProvider>
