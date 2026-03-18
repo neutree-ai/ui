@@ -23,6 +23,16 @@ type ClusterUpgradeActionProps = {
   cluster: Cluster;
 };
 
+/**
+ * Upgrade action for cluster dropdown menus.
+ *
+ * Renders a DropdownMenuItem trigger and a Dialog. The Dialog is controlled
+ * via state so it persists after the dropdown closes (dropdown unmounts its
+ * content on close, but React state survives because the component instance
+ * is preserved by the parent — DropdownMenuContent with forceMount on
+ * ShowPage, and the cell renderer on the list page both keep the component
+ * mounted).
+ */
 export const ClusterUpgradeAction = ({
   cluster,
 }: ClusterUpgradeActionProps) => {
@@ -118,7 +128,8 @@ export const ClusterUpgradeAction = ({
   return (
     <>
       <DropdownMenuItem
-        onSelect={() => {
+        onSelect={(e) => {
+          e.preventDefault();
           setTargetVersion("");
           setOpen(true);
         }}

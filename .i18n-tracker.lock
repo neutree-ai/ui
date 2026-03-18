@@ -275,5 +275,5 @@
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
   "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f",
   "src/domains/endpoint/lib/pause-action.ts": "3efa178458d6906c0cc81dad7c41e675",
-  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "2fa7e12bc8fef412ab71f11cdb5e67d9"
+  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "ee1293c83b70d291ad67f63b337ea00f"
 }
