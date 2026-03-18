@@ -117,7 +117,7 @@
   "src/foundation/hooks/use-yaml-import.ts": "bf228c58ddc4332e73685fc134480a00",
   "src/foundation/components/AppBreadcrumbs.tsx": "01bacc5c5573275c18a2fdccf99ce43a",
   "src/foundation/components/AppSidebar.tsx": "2bf74a7a63eadc4382a0797120a6ee64",
-  "src/foundation/components/BaseLayout.tsx": "a8b94079e84511d0174bb1f8108ddfa2",
+  "src/foundation/components/BaseLayout.tsx": "64ddc4474cb6be136156ab722644c460",
   "src/foundation/components/BaseStatus.tsx": "4bdd1a3d50997cad867e852e5526a2c2",
   "src/foundation/components/BatchDeleteBar.tsx": "9825a8c0178b4a6bef389c8d61e326a4",
   "src/foundation/components/ConfirmDialog.tsx": "ebe2dec7a0f7bf14ffce2aba33b5e040",
@@ -275,5 +275,6 @@
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
   "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f",
   "src/domains/endpoint/lib/pause-action.ts": "3efa178458d6906c0cc81dad7c41e675",
-  "src/domains/external-endpoint/lib/get-endpoint-type.ts": "a5fec42612881e3206ee2e19ca3c820f"
+  "src/domains/external-endpoint/lib/get-endpoint-type.ts": "a5fec42612881e3206ee2e19ca3c820f",
+  "src/foundation/components/OemFavicon.tsx": "8f9a29762901e256578c9cdc4908eb7c"
 }
