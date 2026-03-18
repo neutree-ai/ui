@@ -31,6 +31,10 @@ vi.mock("@refinedev/core", () => ({
   useSelect: () => ({
     query: { data: { data: [] }, isLoading: false },
   }),
+  useCustom: () => ({
+    data: { data: { available_versions: [] } },
+    isLoading: false,
+  }),
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
