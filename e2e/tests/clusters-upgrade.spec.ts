@@ -105,11 +105,10 @@ test.describe("clusters - upgrade", () => {
           dialog.getByText(/target version/i),
         ).toBeVisible();
 
-        // Wait for dialog content to stabilize (API loading completes)
-        await clusters.page.waitForTimeout(500);
-
-        // Close dialog via the X button (more stable than Cancel during re-renders)
-        await dialog.locator('button[type="button"]').first().click();
+        // Wait for Cancel button to be stable, then close dialog
+        const cancelBtn = dialog.getByRole("button", { name: /cancel/i });
+        await expect(cancelBtn).toBeVisible();
+        await cancelBtn.click();
       },
     );
 
@@ -131,8 +130,9 @@ test.describe("clusters - upgrade", () => {
           dialog.getByText(/downtime during upgrade/i),
         ).toBeVisible();
 
-        await clusters.page.waitForTimeout(500);
-        await dialog.locator('button[type="button"]').first().click();
+        const cancelBtn = dialog.getByRole("button", { name: /cancel/i });
+        await expect(cancelBtn).toBeVisible();
+        await cancelBtn.click();
       },
     );
 
@@ -154,8 +154,9 @@ test.describe("clusters - upgrade", () => {
           dialog.getByText(/rolling updates/i),
         ).toBeVisible();
 
-        await clusters.page.waitForTimeout(500);
-        await dialog.locator('button[type="button"]').first().click();
+        const cancelBtn = dialog.getByRole("button", { name: /cancel/i });
+        await expect(cancelBtn).toBeVisible();
+        await cancelBtn.click();
       },
     );
   });
@@ -211,8 +212,9 @@ test.describe("clusters - upgrade", () => {
           dialog.getByText(/current version/i),
         ).toBeVisible();
 
-        await clusters.page.waitForTimeout(500);
-        await dialog.locator('button[type="button"]').first().click();
+        const cancelBtn = dialog.getByRole("button", { name: /cancel/i });
+        await expect(cancelBtn).toBeVisible();
+        await cancelBtn.click();
       },
     );
   });

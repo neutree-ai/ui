@@ -87,10 +87,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const availableVersions = versionsData?.data?.available_versions ?? [];
 
-  // Auto-select latest version when available versions load or dependencies change
+  // Auto-select latest version when available versions load or dependencies change.
+  // Skip in edit mode — the form already has the cluster's existing spec.version.
   const prevDepsRef = useRef({ workspace: "", imageRegistry: "", type: "" });
   useEffect(() => {
-    if (availableVersions.length === 0) return;
+    if (isEdit || availableVersions.length === 0) return;
     const depsChanged =
       prevDepsRef.current.workspace !== workspace ||
       prevDepsRef.current.imageRegistry !== imageRegistry ||
@@ -107,7 +108,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       );
     }
     prevDepsRef.current = { workspace, imageRegistry, type };
-  }, [availableVersions, workspace, imageRegistry, type, form]);
+  }, [isEdit, availableVersions, workspace, imageRegistry, type, form]);
 
   return {
     form,
