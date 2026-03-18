@@ -11,6 +11,9 @@ export default function ClusterStatus(status: BaseStatusType) {
     Paused: "bg-yellow-100 text-yellow-800",
     Deleted: "bg-gray-100 text-gray-800",
     Initializing: "bg-yellow-100 text-yellow-800",
+    Updating: "bg-yellow-100 text-yellow-800",
+    Upgrading: "bg-blue-100 text-blue-800",
+    Deleting: "bg-gray-100 text-gray-800",
   }[status.phase ?? "-"];
 
   const translatedPhase = t(`status.phases.cluster.${status.phase}`);

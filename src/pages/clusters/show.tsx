@@ -9,6 +9,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
+import { ClusterUpgradeAction } from "@/domains/cluster/components/ClusterUpgradeAction";
 import {
   NodeResourcesTable,
   ProductGroupsBreakdown,
@@ -78,7 +79,12 @@ export const ClustersShow = () => {
   const dashboardUrl = getRayDashboardProxy(data?.data);
 
   return (
-    <ShowPage record={record}>
+    <ShowPage
+      record={record}
+      extraActions={(record) => (
+        <ClusterUpgradeAction cluster={record as Cluster} />
+      )}
+    >
       <Tabs defaultValue="basic" className="h-full">
         <TabsList>
           <TabsTrigger value="basic">{t("common.tabs.basic")}</TabsTrigger>
@@ -102,6 +108,15 @@ export const ClustersShow = () => {
             <CardContent>
               <ShowPage.Row title={t("common.fields.status")}>
                 <ClusterStatus {...record.status} />
+              </ShowPage.Row>
+              <ShowPage.Row title={t("common.fields.version")}>
+                {record.status?.version ?? "-"}
+                {record.status?.phase === "Upgrading" && record.spec.version && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    &rarr; {record.spec.version}
+                  </span>
+                )}
               </ShowPage.Row>
               <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("common.fields.type")}>

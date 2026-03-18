@@ -1,5 +1,6 @@
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
+import type { Cluster } from "@/domains/cluster/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -31,6 +32,28 @@ export const ClustersList = () => {
           enableHiding
           cell={({ getValue }) => {
             return <ClusterStatus {...(getValue() as unknown as BaseStatus)} />;
+          }}
+        />
+        <Table.Column
+          header={t("common.fields.version")}
+          accessorKey="status.version"
+          id="version"
+          enableHiding
+          cell={({ row }) => {
+            const cluster = row.original as Cluster;
+            const version = cluster.status?.version;
+            if (!version) return "-";
+            if (cluster.status?.phase === "Upgrading" && cluster.spec.version) {
+              return (
+                <span>
+                  {version}{" "}
+                  <span className="text-muted-foreground">
+                    &rarr; {cluster.spec.version}
+                  </span>
+                </span>
+              );
+            }
+            return version;
           }}
         />
         <Table.Column

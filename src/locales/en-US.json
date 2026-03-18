@@ -33,7 +33,8 @@
 			"annotations": "Annotations",
 			"openaiUrl": "OpenAI Compatible URL",
 			"anthropicUrl": "Anthropic Compatible URL",
-			"allReplicas": "All Replicas"
+			"allReplicas": "All Replicas",
+			"version": "Version"
 		},
 		"sections": {
 			"basicInformation": "Basic Information"
@@ -313,6 +314,7 @@
 		"title": "Clusters",
 		"create": "Create Cluster",
 		"edit": "Edit Cluster",
+		"upgrade": "Upgrade Cluster",
 		"fields": {
 			"accessMode": "Access Mode",
 			"headIp": "Head IP",
@@ -322,6 +324,8 @@
 			"kubeconfig": "Kubeconfig",
 			"acceleratorCount": "Accelerator Count",
 			"replicas": "Replicas",
+			"currentVersion": "Current Version",
+			"targetVersion": "Target Version",
 			"sshHeadNodeIP": "Head Node IP",
 			"sshWorkerNodeIPs": "Worker Node IPs",
 			"sshUser": "SSH User",
@@ -384,7 +388,12 @@
 		"messages": {
 			"notFound": "404 not found",
 			"sshEmptyWorkerNodeIPs": "No worker nodes added",
-			"noModelCaches": "No model caches"
+			"noModelCaches": "No model caches",
+			"upgradeSuccess": "Cluster upgrade initiated successfully",
+			"upgradeFailed": "Failed to initiate cluster upgrade",
+			"noUpgradeVersions": "No upgrade versions available",
+			"upgradeWarningSSH": "SSH clusters will experience downtime during upgrade. All running endpoints will be temporarily interrupted.",
+			"upgradeWarningK8s": "Kubernetes clusters use rolling updates with zero downtime."
 		},
 		"monitor": {
 			"rayMetrics": "Ray Metrics",
@@ -393,7 +402,9 @@
 			"gpuMetrics": "GPU Metrics"
 		},
 		"actions": {
-			"addModelCache": "Add Model Cache"
+			"addModelCache": "Add Model Cache",
+			"upgrade": "Upgrade",
+			"upgradeTitle": "Upgrade Cluster"
 		},
 		"validation": {
 			"ipRequired": "IP address is required",
@@ -985,7 +996,10 @@
 				"Paused": "Paused",
 				"Failed": "Failed",
 				"Deleted": "Deleted",
-				"Initializing": "Initializing"
+				"Initializing": "Initializing",
+				"Updating": "Updating",
+				"Upgrading": "Upgrading",
+				"Deleting": "Deleting"
 			},
 			"registry": {
 				"Pending": "Pending",
