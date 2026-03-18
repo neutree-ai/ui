@@ -8,6 +8,7 @@ export const ClustersCreate = () => {
     form,
     metadataFields,
     imageRegistryFields,
+    versionFields,
     typeFields,
     providerFields,
     routerFields,
@@ -19,6 +20,7 @@ export const ClustersCreate = () => {
       {metadataFields}
       {imageRegistryFields}
       {typeFields}
+      {versionFields}
       {providerFields}
       {routerFields}
       {authFields}

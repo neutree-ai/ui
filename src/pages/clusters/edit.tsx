@@ -8,6 +8,7 @@ export const ClustersEdit = () => {
     form,
     metadataFields,
     imageRegistryFields,
+    versionFields,
     typeFields,
     providerFields,
     routerFields,
@@ -19,6 +20,7 @@ export const ClustersEdit = () => {
       {metadataFields}
       {imageRegistryFields}
       {typeFields}
+      {versionFields}
       {providerFields}
       {routerFields}
       {modelCacheFields}

@@ -1,8 +1,9 @@
 import { useCustom, useInvalidate, useUpdate } from "@refinedev/core";
 import { ArrowUpCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -10,32 +11,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type { Cluster } from "@/domains/cluster/types";
-import { RowAction, type RowActionProps } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-type AvailableUpgradeVersions = {
-  current_version: string;
+type AvailableVersionsResponse = {
   available_versions: string[];
 };
 
-type ClusterUpgradeActionProps = RowActionProps & {
+type ClusterUpgradeActionProps = {
   cluster: Cluster;
 };
 
 export const ClusterUpgradeAction = ({
   cluster,
-  title,
-  disabled,
-  icon,
-  ...props
 }: ClusterUpgradeActionProps) => {
   const { t } = useTranslation();
   const invalidate = useInvalidate();
@@ -44,23 +33,39 @@ export const ClusterUpgradeAction = ({
   const [open, setOpen] = useState(false);
   const [targetVersion, setTargetVersion] = useState<string>("");
 
+  const upgradeVersionsUrl = (() => {
+    const params = new URLSearchParams({
+      workspace: cluster.metadata.workspace ?? "",
+      image_registry: cluster.spec.image_registry,
+      cluster_type: cluster.spec.type,
+    });
+    if (cluster.status?.accelerator_type) {
+      params.set("accelerator_type", cluster.status.accelerator_type);
+    }
+    return `/clusters/available_versions?${params.toString()}`;
+  })();
+
   const { data, isLoading: isLoadingVersions } =
-    useCustom<AvailableUpgradeVersions>({
-      url: `/clusters/${cluster.metadata.workspace}/${cluster.metadata.name}/available_upgrade_versions`,
+    useCustom<AvailableVersionsResponse>({
+      url: upgradeVersionsUrl,
       method: "get",
       queryOptions: {
         enabled: open,
       },
     });
 
-  const availableVersions = data?.data?.available_versions ?? [];
-  const currentVersion =
-    data?.data?.current_version ?? cluster.status?.version ?? "-";
+  // Filter out current spec.version and sort for display
+  const availableVersions = (data?.data?.available_versions ?? []).filter(
+    (v) => v !== cluster.spec.version,
+  );
+  const currentVersion = cluster.status?.version ?? "-";
 
-  const handleOpen = () => {
-    setTargetVersion("");
-    setOpen(true);
-  };
+  // Default to latest version when data loads
+  useEffect(() => {
+    if (availableVersions.length > 0 && !targetVersion) {
+      setTargetVersion(availableVersions[availableVersions.length - 1]);
+    }
+  }, [availableVersions, targetVersion]);
 
   const handleUpgrade = async () => {
     if (!targetVersion || isUpdating) return;
@@ -109,13 +114,18 @@ export const ClusterUpgradeAction = ({
 
   return (
     <>
-      <RowAction
-        {...props}
-        icon={icon ?? <ArrowUpCircle size={16} />}
-        title={title ?? t("clusters.actions.upgrade")}
-        disabled={disabled}
-        onClick={handleOpen}
-      />
+      <DropdownMenuItem
+        onSelect={(e) => {
+          e.preventDefault();
+          setTargetVersion("");
+          setOpen(true);
+        }}
+      >
+        <span className="mr-2">
+          <ArrowUpCircle size={16} />
+        </span>
+        {t("clusters.actions.upgrade")}
+      </DropdownMenuItem>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
@@ -141,20 +151,17 @@ export const ClusterUpgradeAction = ({
                   {t("clusters.messages.noUpgradeVersions")}
                 </div>
               ) : (
-                <Select value={targetVersion} onValueChange={setTargetVersion}>
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t("clusters.fields.targetVersion")}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableVersions.map((version) => (
-                      <SelectItem key={version} value={version}>
-                        {version}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  value={targetVersion}
+                  onChange={setTargetVersion}
+                  options={availableVersions.map((v) => ({
+                    label: v,
+                    value: v,
+                  }))}
+                  placeholder={t("clusters.fields.targetVersion")}
+                  asField={false}
+                  allowUnselect={false}
+                />
               )}
             </div>
             <div className="rounded-md border p-3 text-sm text-muted-foreground">

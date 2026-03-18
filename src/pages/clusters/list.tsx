@@ -1,5 +1,6 @@
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
+import { ClusterUpgradeAction } from "@/domains/cluster/components/ClusterUpgradeAction";
 import type { Cluster } from "@/domains/cluster/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -10,7 +11,9 @@ import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ClustersList = () => {
   const { t } = useTranslation();
-  const metadataColumns = useMetadataColumns();
+  const metadataColumns = useMetadataColumns({
+    extraActions: (row) => <ClusterUpgradeAction cluster={row as Cluster} />,
+  });
 
   return (
     <ListPage>

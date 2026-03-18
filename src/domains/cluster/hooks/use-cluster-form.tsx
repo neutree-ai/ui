@@ -1,3 +1,7 @@
+import { useCustom, useSelect } from "@refinedev/core";
+import { useForm } from "@refinedev/react-hook-form";
+import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelCacheFields } from "@/domains/cluster/components/ModelCacheFields";
@@ -10,9 +14,6 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
-import { useSelect } from "@refinedev/core";
-import { useForm } from "@refinedev/react-hook-form";
-import { useTranslation } from "react-i18next";
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -67,6 +68,42 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
+  const imageRegistry = form.watch("spec.image_registry");
+
+  const versionsQueryEnabled = !!workspace && !!imageRegistry && !!type;
+  const versionsUrl = versionsQueryEnabled
+    ? `/clusters/available_versions?${new URLSearchParams({ workspace, image_registry: imageRegistry, cluster_type: type }).toString()}`
+    : "/clusters/available_versions";
+
+  const { data: versionsData, isLoading: isLoadingVersions } = useCustom<{
+    available_versions: string[];
+  }>({
+    url: versionsUrl,
+    method: "get",
+    queryOptions: {
+      enabled: versionsQueryEnabled,
+    },
+  });
+
+  const availableVersions = versionsData?.data?.available_versions ?? [];
+
+  // Auto-select latest version when available versions load or dependencies change
+  const prevDepsRef = useRef({ imageRegistry: "", type: "" });
+  useEffect(() => {
+    if (availableVersions.length === 0) return;
+    const depsChanged =
+      prevDepsRef.current.imageRegistry !== imageRegistry ||
+      prevDepsRef.current.type !== type;
+    const currentVersion = form.getValues("spec.version");
+    if (depsChanged || !currentVersion) {
+      form.setValue(
+        "spec.version",
+        availableVersions[availableVersions.length - 1],
+      );
+    }
+    prevDepsRef.current = { imageRegistry, type };
+  }, [availableVersions, imageRegistry, type, form]);
+
   return {
     form,
     metadataFields: (
@@ -104,6 +141,24 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               value: item.metadata.name,
             }))}
             disabled={imageRegistries.query.isLoading || isEdit}
+          />
+        </FormFieldGroup>
+      </FormCardGrid>
+    ),
+    versionFields: (
+      <FormCardGrid>
+        <FormFieldGroup
+          {...form}
+          name="spec.version"
+          label={t("common.fields.version")}
+        >
+          <FormCombobox
+            placeholder={t("clusters.placeholders.selectVersion")}
+            options={availableVersions.map((v) => ({
+              label: v,
+              value: v,
+            }))}
+            disabled={isLoadingVersions || !imageRegistry || isEdit}
           />
         </FormFieldGroup>
       </FormCardGrid>
