@@ -269,7 +269,7 @@
   "src/domains/external-endpoint/lib/build-anthropic-curl-command.ts": "c9a76fcc1dfff434c94f076244e309ad",
   "src/domains/external-endpoint/lib/convert-timeout.ts": "43a53c28487e11dadab7c57407dfc211",
   "src/domains/external-endpoint/components/TimeoutInput.tsx": "14c32e619eb08caef05e6f741f7806d8",
-  "src/domains/external-endpoint/lib/derive-upstream-type.ts": "04eee2f899c37e7226b9138bb1817cdc",
+  "src/domains/external-endpoint/lib/derive-upstream-type.ts": "aeb211afd59b3789db37c6c26b53d822",
   "src/domains/external-endpoint/lib/build-embedding-curl-command.ts": "b34affcc604409f758ff7d8cc31af247",
   "src/foundation/components/NumberInput.tsx": "48ac647b7f27621ace1542cb441c5a4d",
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
