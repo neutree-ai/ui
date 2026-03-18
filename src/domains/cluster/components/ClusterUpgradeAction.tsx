@@ -54,9 +54,12 @@ export const ClusterUpgradeAction = ({
       },
     });
 
-  // Filter out current spec.version and sort for display
+  // Filter out both current spec.version and status.version from upgrade targets
+  const excludeVersions = new Set(
+    [cluster.spec.version, cluster.status?.version].filter(Boolean),
+  );
   const availableVersions = (data?.data?.available_versions ?? []).filter(
-    (v) => v !== cluster.spec.version,
+    (v) => !excludeVersions.has(v),
   );
   const currentVersion = cluster.status?.version ?? "-";
 
@@ -115,8 +118,7 @@ export const ClusterUpgradeAction = ({
   return (
     <>
       <DropdownMenuItem
-        onSelect={(e) => {
-          e.preventDefault();
+        onSelect={() => {
           setTargetVersion("");
           setOpen(true);
         }}

@@ -88,21 +88,26 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const availableVersions = versionsData?.data?.available_versions ?? [];
 
   // Auto-select latest version when available versions load or dependencies change
-  const prevDepsRef = useRef({ imageRegistry: "", type: "" });
+  const prevDepsRef = useRef({ workspace: "", imageRegistry: "", type: "" });
   useEffect(() => {
     if (availableVersions.length === 0) return;
     const depsChanged =
+      prevDepsRef.current.workspace !== workspace ||
       prevDepsRef.current.imageRegistry !== imageRegistry ||
       prevDepsRef.current.type !== type;
     const currentVersion = form.getValues("spec.version");
-    if (depsChanged || !currentVersion) {
+    if (
+      depsChanged ||
+      !currentVersion ||
+      !availableVersions.includes(currentVersion)
+    ) {
       form.setValue(
         "spec.version",
         availableVersions[availableVersions.length - 1],
       );
     }
-    prevDepsRef.current = { imageRegistry, type };
-  }, [availableVersions, imageRegistry, type, form]);
+    prevDepsRef.current = { workspace, imageRegistry, type };
+  }, [availableVersions, workspace, imageRegistry, type, form]);
 
   return {
     form,
@@ -158,7 +163,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               label: v,
               value: v,
             }))}
-            disabled={isLoadingVersions || !imageRegistry || isEdit}
+            disabled={!versionsQueryEnabled || isLoadingVersions || isEdit}
           />
         </FormFieldGroup>
       </FormCardGrid>

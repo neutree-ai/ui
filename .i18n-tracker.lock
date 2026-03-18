@@ -233,7 +233,7 @@
   "src/domains/model-registry/hooks/use-model-registry-form.tsx": "e8a9470b28bcabdd47e52bfe77996c48",
   "src/domains/image-registry/lib/transform-image-registry-values.ts": "29354ba58a40bf0f421bc03b6a774cee",
   "src/domains/image-registry/hooks/use-image-registry-form.tsx": "81488170f914365f28b54064916fe8c5",
-  "src/domains/cluster/hooks/use-cluster-form.tsx": "19def197e15a4c97e57bf1f95fda8111",
+  "src/domains/cluster/hooks/use-cluster-form.tsx": "a7b810665e77ab8a1cfdee73e9b52a3a",
   "src/foundation/types/resource-types.ts": "828c217b8408bcac60799ab7fdb4189f",
   "src/foundation/hooks/use-variables-input.ts": "4b89bf232a2e5ae081417eb32cd07b27",
   "src/foundation/components/VariablesInput.tsx": "322ef95b0efb9795b935e37ab3b79ead",
@@ -275,5 +275,5 @@
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
   "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f",
   "src/domains/endpoint/lib/pause-action.ts": "3efa178458d6906c0cc81dad7c41e675",
-  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "f951b6b7cd30843d8a58d834256f1dd1"
+  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "2fa7e12bc8fef412ab71f11cdb5e67d9"
 }

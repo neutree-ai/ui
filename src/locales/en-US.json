@@ -362,7 +362,7 @@
 		"placeholders": {
 			"clusterName": "Cluster Name",
 			"selectImageRegistry": "Select A Image Registry",
-			"selectVersion": "Select A Version",
+			"selectVersion": "Select a version",
 			"sshHeadNodeExample": "e.g 192.168.1.1",
 			"sshUserExample": "e.g root",
 			"sshAddNewWorkerNode": "Add New Worker Node IP",
@@ -533,7 +533,7 @@
 			"selectNpuType": "Select NPU Type",
 			"selectModel": "Select A Model",
 			"selectEngine": "Select An Engine",
-			"selectVersion": "Select A Version",
+			"selectVersion": "Select a version",
 			"selectTaskType": "Select A Support Task Type",
 			"selectAccelerator": "Select An Accelerator",
 			"selectSchedulerType": "Select Scheduler Type"
