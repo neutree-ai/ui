@@ -1,6 +1,9 @@
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
-import { ClusterUpgradeAction } from "@/domains/cluster/components/ClusterUpgradeAction";
+import {
+  ClusterUpgradeAction,
+  ClusterUpgradeProvider,
+} from "@/domains/cluster/components/ClusterUpgradeAction";
 import type { Cluster } from "@/domains/cluster/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -16,6 +19,7 @@ export const ClustersList = () => {
   });
 
   return (
+    <ClusterUpgradeProvider>
     <ListPage>
       <Table
         enableSorting
@@ -95,5 +99,6 @@ export const ClustersList = () => {
         {metadataColumns.action}
       </Table>
     </ListPage>
+    </ClusterUpgradeProvider>
   );
 };

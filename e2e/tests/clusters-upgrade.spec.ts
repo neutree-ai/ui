@@ -79,7 +79,7 @@ test.describe("clusters - upgrade", () => {
       },
     );
 
-    test.skip(
+    test(
       "clicking upgrade in list opens upgrade dialog",
       async ({ clusters }) => {
         await clusters.goToList();
@@ -113,7 +113,7 @@ test.describe("clusters - upgrade", () => {
       },
     );
 
-    test.skip(
+    test(
       "SSH cluster upgrade dialog shows downtime warning",
       async ({ clusters }) => {
         await clusters.goToList();
@@ -136,7 +136,7 @@ test.describe("clusters - upgrade", () => {
       },
     );
 
-    test.skip(
+    test(
       "K8s cluster upgrade dialog shows rolling update message",
       async ({ clusters }) => {
         await clusters.goToList();

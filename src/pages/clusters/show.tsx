@@ -9,7 +9,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
-import { ClusterUpgradeAction } from "@/domains/cluster/components/ClusterUpgradeAction";
+import {
+  ClusterUpgradeAction,
+  ClusterUpgradeProvider,
+} from "@/domains/cluster/components/ClusterUpgradeAction";
 import {
   NodeResourcesTable,
   ProductGroupsBreakdown,
@@ -79,6 +82,7 @@ export const ClustersShow = () => {
   const dashboardUrl = getRayDashboardProxy(data?.data);
 
   return (
+    <ClusterUpgradeProvider>
     <ShowPage
       record={record}
       extraActions={(record) => (
@@ -550,5 +554,6 @@ export const ClustersShow = () => {
         )}
       </Tabs>
     </ShowPage>
+    </ClusterUpgradeProvider>
   );
 };
