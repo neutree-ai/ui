@@ -583,7 +583,8 @@
 			"modelMapping": "Model Mapping",
 			"exposedModelName": "Exposed Model Name",
 			"upstreamModelName": "Upstream Model Name",
-			"models": "Models"
+			"models": "Models",
+			"type": "Type"
 		},
 		"sections": {
 			"configuration": "Configuration",
@@ -604,7 +605,8 @@
 		"options": {
 			"chatCompletions": "Chat Completions",
 			"upstreamTypeExternal": "External",
-			"upstreamTypeEndpointRef": "Endpoint Ref"
+			"upstreamTypeEndpointRef": "Endpoint Ref",
+			"upstreamTypeMixed": "Mixed"
 		},
 		"actions": {
 			"addUpstream": "Add Upstream",
@@ -720,6 +722,9 @@
 	},
 	"model_service": {
 		"title": "Model Service"
+	},
+	"model_gateway": {
+		"title": "Model Gateway"
 	},
 	"access_control": {
 		"title": "Access Control"

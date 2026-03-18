@@ -5,24 +5,20 @@ import {
   type ResourceProps,
 } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-
-import { BaseLayout } from "@/foundation/components/BaseLayout";
-import { DefaultLayout } from "@/foundation/components/DefaultLayout";
-import { ModeToggle } from "@/foundation/components/ModeToggle";
-import { dataProvider } from "@/foundation/providers/data-provider";
-import { notificationProvider } from "@/foundation/providers/notification-provider";
 import routerProvider, {
   CatchAllNavigate,
   NavigateToResource,
 } from "@refinedev/react-router";
 import { HashRouter, Outlet, Route, Routes } from "react-router-dom";
+import { BaseLayout } from "@/foundation/components/BaseLayout";
+import { DefaultLayout } from "@/foundation/components/DefaultLayout";
+import { ModeToggle } from "@/foundation/components/ModeToggle";
+import { dataProvider } from "@/foundation/providers/data-provider";
+import { notificationProvider } from "@/foundation/providers/notification-provider";
 
 import "./global.css";
 import "./variables.css";
 
-import { Logo } from "@/foundation/components/Logo";
-import { clientPostgrest } from "@/foundation/lib/api";
-import { useTranslation } from "@/foundation/lib/i18n";
 import {
   BookOpen,
   Cpu,
@@ -39,14 +35,16 @@ import {
   User,
   UserCheck,
 } from "lucide-react";
-
+import { lazy, Suspense } from "react";
 import { Loader } from "@/foundation/components/Loader";
+import { Logo } from "@/foundation/components/Logo";
 import { UserDropdown } from "@/foundation/components/UserDropdown";
 import WorkspaceSelect from "@/foundation/components/WorkspaceSelect";
 import { YamlExportButton } from "@/foundation/components/YamlExportButton";
 import { YamlImportButton } from "@/foundation/components/YamlImportButton";
+import { clientPostgrest } from "@/foundation/lib/api";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { authProvider } from "@/foundation/providers/auth-provider";
-import { Suspense, lazy } from "react";
 
 const AuthPage = lazy(() =>
   import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),
@@ -331,6 +329,9 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "model_gateway",
+  },
+  {
     name: "external_endpoints",
     list: "/:workspace/external-endpoints",
     create: "/:workspace/external-endpoints/create",
@@ -340,7 +341,7 @@ const resources: ResourceProps[] = [
       icon: <Globe />,
       workspaced: true,
       idColumnName: "metadata->name",
-      parent: "model_service",
+      parent: "model_gateway",
     },
   },
   {

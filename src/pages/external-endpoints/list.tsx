@@ -1,4 +1,9 @@
+import { Badge } from "@/components/ui/badge";
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
+import {
+  type ExternalEndpointType,
+  getEndpointType,
+} from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
@@ -34,6 +39,25 @@ export const ExternalEndpointsList = () => {
               {...(getValue() as unknown as BaseStatus)}
             />
           )}
+        />
+        <Table.Column
+          header={t("external_endpoints.fields.type")}
+          accessorKey="spec"
+          id="type"
+          enableHiding
+          cell={({ getValue }) => {
+            const spec = getValue() as unknown as ExternalEndpoint["spec"];
+            const endpointType = getEndpointType(spec);
+            if (!endpointType) return "-";
+            const labelMap: Record<ExternalEndpointType, string> = {
+              external: t("external_endpoints.options.upstreamTypeExternal"),
+              endpoint_ref: t(
+                "external_endpoints.options.upstreamTypeEndpointRef",
+              ),
+              mixed: t("external_endpoints.options.upstreamTypeMixed"),
+            };
+            return <Badge variant="outline">{labelMap[endpointType]}</Badge>;
+          }}
         />
         <Table.Column
           header={t("external_endpoints.fields.models")}
