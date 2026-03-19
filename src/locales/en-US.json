@@ -32,7 +32,8 @@
 			"labels": "Labels",
 			"annotations": "Annotations",
 			"openaiUrl": "OpenAI Compatible URL",
-			"anthropicUrl": "Anthropic Compatible URL"
+			"anthropicUrl": "Anthropic Compatible URL",
+			"allReplicas": "All Replicas"
 		},
 		"sections": {
 			"basicInformation": "Basic Information"

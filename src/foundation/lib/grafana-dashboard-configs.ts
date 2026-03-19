@@ -88,6 +88,7 @@ export const getEndpointDashboardProps = (
   grafanaUrl: string,
   endpointName: string,
   clusterName: string,
+  replica?: string,
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
@@ -96,7 +97,7 @@ export const getEndpointDashboardProps = (
       ...getCommonVariables(),
       Application: endpointName,
       Deployment: "$__all",
-      Replica: "$__all",
+      Replica: replica || "$__all",
       Route: "$__all",
       Cluster: clusterName,
     },
@@ -107,6 +108,7 @@ export const getVllmDashboardProps = (
   grafanaUrl: string,
   endpointName: string,
   clusterName: string,
+  replica?: string,
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
@@ -115,6 +117,7 @@ export const getVllmDashboardProps = (
       ...getCommonVariables(),
       Cluster: clusterName,
       Application: endpointName,
+      Replica: replica || "$__all",
     },
   },
 });

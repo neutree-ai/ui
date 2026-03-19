@@ -1,3 +1,11 @@
+import {
+  type IResourceComponentsProps,
+  useList,
+  useOne,
+  useShow,
+} from "@refinedev/core";
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -15,6 +23,7 @@ import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPause
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
+import { useEndpointLogSources } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
 import {
   type EndpointMonitorPanelType,
   useEndpointMonitorPanels,
@@ -33,14 +42,6 @@ import {
   getEndpointDashboardProps,
   getVllmDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
-import {
-  type IResourceComponentsProps,
-  useList,
-  useOne,
-  useShow,
-} from "@refinedev/core";
-import { Suspense, lazy, useCallback, useRef } from "react";
-import { useTranslation } from "react-i18next";
 
 const EndpointLogTabs = lazy(() =>
   import("@/domains/endpoint/components/EndpointLogTabs").then((m) => ({
@@ -151,6 +152,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     clusterType,
     engineType: record?.spec.engine.engine,
   });
+
+  const { deployments } = useEndpointLogSources(record ?? null);
+  const monitorReplicas = useMemo(() => {
+    const backend =
+      deployments.find((d) => d.name === "Backend") || deployments[0];
+    return backend?.replicas ?? [];
+  }, [deployments]);
+  const [selectedReplica, setSelectedReplica] = useState<string>("$__all");
 
   const url = record?.status?.service_url ?? "";
 
@@ -289,36 +298,69 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         >
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
-              {showSelector && (
+              {(showSelector || monitorReplicas.length > 1) && (
                 <Card className="p-4">
-                  <div className="flex items-center justify-start">
-                    <Select
-                      value={selectedPanel || undefined}
-                      onValueChange={(value: EndpointMonitorPanelType) =>
-                        setSelectedPanel(value)
-                      }
-                    >
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {panels.includes("endpoint") && (
-                          <SelectItem value="endpoint">
-                            {t("endpoints.monitor.endpointMetrics")}
-                          </SelectItem>
-                        )}
-                        {panels.includes("vllm") && (
-                          <SelectItem value="vllm">
-                            {t("endpoints.monitor.vllmMetrics")}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground ml-4">
-                      {selectedPanel === "endpoint"
-                        ? t("endpoints.monitor.endpointDescription")
-                        : t("endpoints.monitor.vllmDescription")}
-                    </p>
+                  <div className="flex items-center justify-start gap-4">
+                    {showSelector && (
+                      <>
+                        <Select
+                          value={selectedPanel || undefined}
+                          onValueChange={(value: EndpointMonitorPanelType) =>
+                            setSelectedPanel(value)
+                          }
+                        >
+                          <SelectTrigger className="w-[220px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {panels.includes("endpoint") && (
+                              <SelectItem value="endpoint">
+                                {t("endpoints.monitor.endpointMetrics")}
+                              </SelectItem>
+                            )}
+                            {panels.includes("vllm") && (
+                              <SelectItem value="vllm">
+                                {t("endpoints.monitor.vllmMetrics")}
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedPanel === "endpoint"
+                            ? t("endpoints.monitor.endpointDescription")
+                            : t("endpoints.monitor.vllmDescription")}
+                        </p>
+                      </>
+                    )}
+                    {monitorReplicas.length > 1 && (
+                      <div className="flex items-center gap-2 ml-auto">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          {t("common.fields.replica")} ({monitorReplicas.length}
+                          )
+                        </span>
+                        <Select
+                          value={selectedReplica}
+                          onValueChange={setSelectedReplica}
+                        >
+                          <SelectTrigger className="w-[260px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="$__all">
+                              {t("common.fields.allReplicas")}
+                            </SelectItem>
+                            {monitorReplicas.map((replica) => (
+                              <SelectItem
+                                key={replica.replica_id}
+                                value={replica.replica_id}
+                              >
+                                {replica.replica_id}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 </Card>
               )}
@@ -329,6 +371,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
+                    selectedReplica !== "$__all" ? selectedReplica : undefined,
                   )}
                   className="flex-1"
                   hideVariables
@@ -339,6 +382,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
+                    selectedReplica !== "$__all" ? selectedReplica : undefined,
                   )}
                   className="flex-1"
                   hideVariables
