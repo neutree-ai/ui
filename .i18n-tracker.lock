@@ -184,7 +184,7 @@
   "src/domains/endpoint/components/DeploymentConfigCard.tsx": "b7dfb1faec09a87be1e888d34c7fc338",
   "src/domains/endpoint/components/EmbeddingPlayground.tsx": "f3571671096fa2d2b7d51c9368be5b7d",
   "src/domains/endpoint/components/EndpointEngine.tsx": "70863dcae9d6b5373eb196a8fd445bbb",
-  "src/domains/endpoint/components/EndpointLogTabs.tsx": "8ab81e4ef99fc85e6fea590d788d64f3",
+  "src/domains/endpoint/components/EndpointLogTabs.tsx": "21b9247b332c999a894b44905596c2f3",
   "src/domains/endpoint/components/EndpointModel.tsx": "4c634fda5f1146cd428486d64b6e53a6",
   "src/domains/endpoint/components/EndpointPauseAction.tsx": "52154e666e54f6f804b4f012ab2db172",
   "src/domains/endpoint/components/EndpointStatus.tsx": "f6e686c6b984351ffc9bc7ae5ebb8b6e",

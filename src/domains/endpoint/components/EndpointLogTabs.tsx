@@ -1,3 +1,5 @@
+import { type FC, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -10,8 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEndpointLogSources } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
 import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { type FC, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { LogViewer } from "./LogViewer";
 
 interface EndpointLogTabsProps {
@@ -162,13 +162,15 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     <div className="h-full flex flex-col">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
         <div className="flex items-center gap-4 pb-2">
-          <TabsList className={`grid flex-1 ${getGridClass()}`}>
-            {availableTabKeys.map((logType) => (
-              <TabsTrigger key={logType} value={logType}>
-                {getTabLabel(logType)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          {availableTabKeys.length > 1 && (
+            <TabsList className={`grid flex-1 ${getGridClass()}`}>
+              {availableTabKeys.map((logType) => (
+                <TabsTrigger key={logType} value={logType}>
+                  {getTabLabel(logType)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          )}
           {replicas.length > 1 && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">
