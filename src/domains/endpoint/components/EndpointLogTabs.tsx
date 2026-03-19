@@ -9,7 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEndpointLogSources } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
+import {
+  getBackendReplicas,
+  useEndpointLogSources,
+} from "@/domains/endpoint/hooks/use-endpoint-log-sources";
 import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { LogViewer } from "./LogViewer";
@@ -32,14 +35,9 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     refetch: refetchLogSources,
   } = useEndpointLogSources(endpoint);
 
-  // Find Backend deployment (or use first deployment if Backend not found)
-  const backendDeployment = useMemo(() => {
-    return deployments.find((d) => d.name === "Backend") || deployments[0];
-  }, [deployments]);
-
   const replicas = useMemo(
-    () => backendDeployment?.replicas ?? [],
-    [backendDeployment],
+    () => getBackendReplicas(deployments),
+    [deployments],
   );
 
   const [activeReplicaId, setActiveReplicaId] = useState<string | null>(
@@ -128,7 +126,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     );
   }
 
-  if (!backendDeployment || !availableLogs.length) {
+  if (!replicas.length || !availableLogs.length) {
     return (
       <Alert>
         <AlertDescription>

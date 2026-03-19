@@ -23,7 +23,10 @@ import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPause
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
-import { useEndpointLogSources } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
+import {
+  getBackendReplicas,
+  useEndpointLogSources,
+} from "@/domains/endpoint/hooks/use-endpoint-log-sources";
 import {
   type EndpointMonitorPanelType,
   useEndpointMonitorPanels,
@@ -39,6 +42,7 @@ import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
+  GRAFANA_VAR_ALL,
   getEndpointDashboardProps,
   getVllmDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
@@ -154,12 +158,25 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   });
 
   const { deployments } = useEndpointLogSources(record ?? null);
-  const monitorReplicas = useMemo(() => {
-    const backend =
-      deployments.find((d) => d.name === "Backend") || deployments[0];
-    return backend?.replicas ?? [];
-  }, [deployments]);
-  const [selectedReplica, setSelectedReplica] = useState<string>("$__all");
+  const monitorReplicas = useMemo(
+    () => getBackendReplicas(deployments),
+    [deployments],
+  );
+  const [selectedReplica, setSelectedReplica] =
+    useState<string>(GRAFANA_VAR_ALL);
+
+  // Reset selection when the selected replica no longer exists
+  useMemo(() => {
+    if (
+      selectedReplica !== GRAFANA_VAR_ALL &&
+      !monitorReplicas.some((r) => r.replica_id === selectedReplica)
+    ) {
+      setSelectedReplica(GRAFANA_VAR_ALL);
+    }
+  }, [monitorReplicas, selectedReplica]);
+
+  const replicaParam =
+    selectedReplica !== GRAFANA_VAR_ALL ? selectedReplica : undefined;
 
   const url = record?.status?.service_url ?? "";
 
@@ -346,7 +363,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="$__all">
+                            <SelectItem value={GRAFANA_VAR_ALL}>
                               {t("common.fields.allReplicas")}
                             </SelectItem>
                             {monitorReplicas.map((replica) => (
@@ -371,7 +388,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
-                    selectedReplica !== "$__all" ? selectedReplica : undefined,
+                    replicaParam,
                   )}
                   className="flex-1"
                   hideVariables
@@ -382,7 +399,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,
-                    selectedReplica !== "$__all" ? selectedReplica : undefined,
+                    replicaParam,
                   )}
                   className="flex-1"
                   hideVariables

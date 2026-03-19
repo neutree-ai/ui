@@ -1,5 +1,5 @@
-import type { Endpoint } from "@/domains/endpoint/types";
 import { useCustom } from "@refinedev/core";
+import type { Endpoint } from "@/domains/endpoint/types";
 
 /**
  * Interface for log source item
@@ -25,6 +25,15 @@ interface Deployment {
   name: string;
   replicas: Replica[];
 }
+
+/**
+ * Find the Backend deployment's replicas (or the first deployment's replicas as fallback)
+ */
+export const getBackendReplicas = (deployments: Deployment[]): Replica[] => {
+  const backend =
+    deployments.find((d) => d.name === "Backend") || deployments[0];
+  return backend?.replicas ?? [];
+};
 
 /**
  * Interface for log sources response
