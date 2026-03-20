@@ -47,6 +47,9 @@
 			"monitor": "Monitor",
 			"logs": "Logs",
 			"rayDashboard": "Ray Dashboard"
+		},
+		"options": {
+			"none": "None"
 		}
 	},
 	"appearance": {

@@ -1,3 +1,8 @@
+import { useCustom, useSelect } from "@refinedev/core";
+import { useForm } from "@refinedev/react-hook-form";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -32,11 +37,6 @@ import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
-import { useCustom, useSelect } from "@refinedev/core";
-import { useForm } from "@refinedev/react-hook-form";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -178,9 +178,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
+  // Reset all catalog-managed spec fields back to defaults.
+  // Cluster is the only field in defaultEndpointSpec that is user-selected,
+  // not catalog-managed, so we skip it.
+  const resetCatalogFields = () => {
+    for (const [key, value] of Object.entries(defaultEndpointSpec)) {
+      if (key === "cluster") continue;
+      setLeafValues(`spec.${key}`, value as Record<string, unknown>);
+    }
+  };
+
   // Handle model catalog selection with merge logic
   const handleModelCatalogSelect = (catalogId: string) => {
     setSelectedModelCatalog(catalogId);
+
+    if (!catalogId) {
+      resetCatalogFields();
+      return;
+    }
 
     const selectedCatalog = modelCatalogs.query.data?.data.find(
       (catalog) => catalog.id.toString() === catalogId,
@@ -191,49 +206,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       // template on top.  This prevents stale values from a previously
       // selected catalog from leaking into the new one (e.g. extra
       // engine_args keys or a model.file the new catalog doesn't set).
-      const mergedModel = deepMerge(
-        defaultEndpointSpec.model as Record<string, unknown>,
-        selectedCatalog.spec.model as Record<string, unknown>,
-      );
-      const mergedEngine = deepMerge(
-        defaultEndpointSpec.engine as Record<string, unknown>,
-        selectedCatalog.spec.engine as Record<string, unknown>,
-      );
-      const mergedResources = selectedCatalog.spec.resources
-        ? deepMerge(
-            defaultEndpointSpec.resources as Record<string, unknown>,
-            selectedCatalog.spec.resources as Record<string, unknown>,
-          )
-        : defaultEndpointSpec.resources;
-      const mergedReplicas = selectedCatalog.spec.replicas
-        ? deepMerge(
-            defaultEndpointSpec.replicas as Record<string, unknown>,
-            selectedCatalog.spec.replicas as Record<string, unknown>,
-          )
-        : defaultEndpointSpec.replicas;
-
-      setLeafValues("spec.model", mergedModel);
-      setLeafValues("spec.engine", mergedEngine);
-      setLeafValues(
-        "spec.resources",
-        mergedResources as Record<string, unknown>,
-      );
-      setLeafValues("spec.replicas", mergedReplicas as Record<string, unknown>);
-
-      const mergedDeploymentOptions = deepMerge(
-        defaultEndpointSpec.deployment_options as Record<string, unknown>,
-        (selectedCatalog.spec.deployment_options ?? {}) as Record<
-          string,
-          unknown
-        >,
-      );
-      setLeafValues("spec.deployment_options", mergedDeploymentOptions);
-
-      const mergedVariables = deepMerge(
-        defaultEndpointSpec.variables as Record<string, unknown>,
-        (selectedCatalog.spec.variables ?? {}) as Record<string, unknown>,
-      );
-      setLeafValues("spec.variables", mergedVariables);
+      const catalogSpec = selectedCatalog.spec as Record<string, unknown>;
+      for (const [key, defaultValue] of Object.entries(defaultEndpointSpec)) {
+        if (key === "cluster") continue;
+        const catalogValue = catalogSpec[key];
+        const merged = catalogValue
+          ? deepMerge(
+              defaultValue as Record<string, unknown>,
+              catalogValue as Record<string, unknown>,
+            )
+          : defaultValue;
+        setLeafValues(`spec.${key}`, merged as Record<string, unknown>);
+      }
     }
   };
 
@@ -314,10 +298,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             <FormCombobox
               placeholder={t("endpoints.placeholders.selectModelCatalog")}
               disabled={modelCatalogs.query.isLoading}
-              options={(modelCatalogs.query.data?.data || []).map((e) => ({
-                label: e.metadata.name,
-                value: e.id.toString(),
-              }))}
+              options={[
+                { label: t("common.options.none"), value: "" },
+                ...(modelCatalogs.query.data?.data || []).map((e) => ({
+                  label: e.metadata.name,
+                  value: e.id.toString(),
+                })),
+              ]}
               value={selectedModelCatalog}
               onChange={(value) => handleModelCatalogSelect(value as string)}
             />

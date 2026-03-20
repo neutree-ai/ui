@@ -265,6 +265,61 @@ describe("useEndpointForm", () => {
         expect(values?.spec.engine.engine).toBe("llama-cpp");
       });
     });
+
+    it("resets all fields to defaults when selecting None", async () => {
+      render(<CreateForm />);
+
+      // Select catalog A first
+      selectCatalog("vllm-llama");
+      await waitFor(() => {
+        expect(formInstance?.getValues("spec.model.name")).toBe("llama-3");
+        expect(formInstance?.getValues("spec.model.file")).toBe("model.bin");
+        expect(formInstance?.getValues("spec.engine.engine")).toBe("vllm");
+        expect(formInstance?.getValues("spec.resources.cpu")).toBe("4");
+        expect(formInstance?.getValues("spec.replicas.num")).toBe(2);
+      });
+
+      // Select "None" to clear catalog
+      selectCatalog("common.options.none");
+      await waitFor(() => {
+        const values = formInstance?.getValues();
+        // All catalog-managed fields should be reset to defaults
+        expect(values?.spec.model.name).toBe("");
+        expect(values?.spec.model.file).toBe("");
+        expect(values?.spec.model.registry).toBe("");
+        expect(values?.spec.engine.engine).toBe("");
+        expect(values?.spec.engine.version).toBe("");
+        expect(values?.spec.resources.cpu).toBe("0");
+        expect(values?.spec.resources.memory).toBe("0");
+        expect(values?.spec.replicas.num).toBe(1);
+        expect(values?.spec.deployment_options.scheduler.type).toBe(
+          "consistent_hash",
+        );
+      });
+    });
+
+    it("allows selecting a new catalog after clearing with None", async () => {
+      render(<CreateForm />);
+
+      // Select catalog A
+      selectCatalog("vllm-llama");
+      await waitFor(() => {
+        expect(formInstance?.getValues("spec.model.name")).toBe("llama-3");
+      });
+
+      // Clear with None
+      selectCatalog("common.options.none");
+      await waitFor(() => {
+        expect(formInstance?.getValues("spec.model.name")).toBe("");
+      });
+
+      // Select catalog B
+      selectCatalog("llama-cpp-basic");
+      await waitFor(() => {
+        expect(formInstance?.getValues("spec.model.name")).toBe("tiny-model");
+        expect(formInstance?.getValues("spec.engine.engine")).toBe("llama-cpp");
+      });
+    });
   });
 
   describe("scheduler type validation", () => {
