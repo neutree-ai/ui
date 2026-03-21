@@ -1,37 +1,36 @@
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { useEffect, useRef, useState } from "react";
+import { Controller, type SubmitHandler, useForm } from "react-hook-form";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-
 import { useChatState } from "@/domains/endpoint/hooks/use-chat-state";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { useEffect, useRef, useState } from "react";
-import { Controller, type SubmitHandler, useForm } from "react-hook-form";
-import ReactMarkdown from "react-markdown";
 import { ChatSidebar } from "./ChatSidebar";
 import { MaxLengthSelector } from "./MaxLengthSelector";
 import { TemperatureSelector } from "./TemperatureSelector";
 import { TopPSelector } from "./TopPSelector";
 import "github-markdown-css/github-markdown-light.css";
 import {
-  type ChatContentPart,
-  buildUserMessageContent,
-  filterMessagesForApi,
-} from "@/domains/endpoint/lib/chat-helpers";
-import { clientPostgrest } from "@/foundation/lib/api";
-import { useCustom } from "@refinedev/core";
-import {
-  type ModelMessage,
-  type ToolSet,
   jsonSchema,
+  type ModelMessage,
   streamText,
+  type ToolSet,
   tool,
 } from "ai";
 import { Image, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
+import {
+  buildUserMessageContent,
+  type ChatContentPart,
+  filterMessagesForApi,
+} from "@/domains/endpoint/lib/chat-helpers";
+import { clientPostgrest } from "@/foundation/lib/api";
 
 type FormValue = {
   model: string;
@@ -137,25 +136,11 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     },
   });
 
-  const modelsData = useCustom({
-    url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/models`,
-    method: "get",
-    queryOptions: {
-      enabled: Boolean(endpoint.metadata.name),
-    },
-  });
+  const { models } = usePlaygroundModels(endpoint, form);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const selectedModel = form.watch("model");
-
-  // Auto-select first model when models data is loaded and has results
-  useEffect(() => {
-    const models = modelsData.data?.data.data || [];
-    if (models.length > 0 && !selectedModel) {
-      form.setValue("model", models[0].id);
-    }
-  }, [modelsData.data, form.setValue, selectedModel]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: trigger scroll on messages change
   useEffect(() => {
@@ -351,12 +336,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                   placeholder={t("components.playground.chat.selectModel")}
                   triggerClassName="w-full"
                   popoverClassName="w-[320px]"
-                  options={(modelsData.data?.data.data || []).map(
-                    (v: { id: string }) => ({
-                      label: v.id,
-                      value: v.id,
-                    }),
-                  )}
+                  options={models}
                   {...field}
                 />
               )}

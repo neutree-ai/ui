@@ -1,19 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Combobox } from "@/components/ui/combobox";
-import { Form } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import type { Endpoint } from "@/domains/endpoint/types";
-import { clientPostgrest } from "@/foundation/lib/api";
 import { createOpenAI } from "@ai-sdk/openai";
-import { useCustom } from "@refinedev/core";
 import { embed } from "ai";
-import { PlusIcon, TrashIcon } from "lucide-react";
 import { PCA } from "ml-pca";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -25,8 +13,59 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
+import { Form } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DocumentListEditor } from "@/domains/endpoint/components/DocumentListEditor";
+import { PlaygroundLayout } from "@/domains/endpoint/components/PlaygroundLayout";
+import { useDocumentList } from "@/domains/endpoint/hooks/use-document-list";
+import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
+import type { Endpoint } from "@/domains/endpoint/types";
+import { clientPostgrest } from "@/foundation/lib/api";
 
-// Custom tooltip to show the text content when hovering on a point
+const INITIAL_DOCUMENTS = [
+  {
+    id: 1,
+    text: "The morning sun lit up the serene countryside, filling the air with warmth and tranquility.",
+  },
+  {
+    id: 2,
+    text: "A stormy sky loomed over the countryside, casting a shadow of gloom and unease.",
+  },
+  {
+    id: 3,
+    text: "Birds sang melodiously, their tunes weaving joy into the peaceful morning.",
+  },
+  {
+    id: 4,
+    text: "Silence prevailed, as even the birds seemed to retreat into stillness.",
+  },
+  {
+    id: 5,
+    text: "A soft breeze carried the sweet scent of fresh flowers, uplifting spirits.",
+  },
+  {
+    id: 6,
+    text: "The air was heavy and still, tinged with the earthy smell of approaching rain.",
+  },
+  {
+    id: 7,
+    text: "The countryside was alive with color and life, a celebration of nature's beauty.",
+  },
+  {
+    id: 8,
+    text: "The barren fields stretched endlessly, a stark reminder of life's harshness.",
+  },
+  {
+    id: 9,
+    text: "Golden rays danced across the dew-kissed grass, promising a day of happiness.",
+  },
+];
+
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -39,7 +78,6 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-// Custom scatter point with text label
 const CustomScatterPoint = ({ cx, cy, payload }: any) => {
   return (
     <g>
@@ -66,45 +104,13 @@ export default function EmbeddingPlayground({
   endpoint,
 }: EmbeddingPlaygroundProps) {
   const { t } = useTranslation();
-  const [documents, setDocuments] = useState([
-    {
-      id: 1,
-      text: "The morning sun lit up the serene countryside, filling the air with warmth and tranquility.",
-    },
-    {
-      id: 2,
-      text: "A stormy sky loomed over the countryside, casting a shadow of gloom and unease.",
-    },
-    {
-      id: 3,
-      text: "Birds sang melodiously, their tunes weaving joy into the peaceful morning.",
-    },
-    {
-      id: 4,
-      text: "Silence prevailed, as even the birds seemed to retreat into stillness.",
-    },
-    {
-      id: 5,
-      text: "A soft breeze carried the sweet scent of fresh flowers, uplifting spirits.",
-    },
-    {
-      id: 6,
-      text: "The air was heavy and still, tinged with the earthy smell of approaching rain.",
-    },
-    {
-      id: 7,
-      text: "The countryside was alive with color and life, a celebration of nature's beauty.",
-    },
-    {
-      id: 8,
-      text: "The barren fields stretched endlessly, a stark reminder of life's harshness.",
-    },
-    {
-      id: 9,
-      text: "Golden rays danced across the dew-kissed grass, promising a day of happiness.",
-    },
-  ]);
-
+  const {
+    documents,
+    addDocument,
+    updateDocument,
+    removeDocument,
+    clearDocuments,
+  } = useDocumentList(INITIAL_DOCUMENTS);
   const [embeddings, setEmbeddings] = useState<
     { index: number; text: string; x: number; y: number }[]
   >([]);
@@ -112,57 +118,10 @@ export default function EmbeddingPlayground({
   const [batchMode, setBatchMode] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const { ...form } = useForm({
-    mode: "all",
-    defaultValues: {
-      model: "",
-    },
-  });
-
-  // Fetch available models
-  const modelsData = useCustom({
-    url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/models`,
-    method: "get",
-    queryOptions: {
-      enabled: Boolean(endpoint?.metadata?.name),
-    },
-  });
-
-  const models = (modelsData.data?.data?.data || []).map((v: any) => ({
-    label: v.id,
-    value: v.id,
-  }));
-
+  const form = useForm({ mode: "all", defaultValues: { model: "" } });
+  const { models } = usePlaygroundModels(endpoint, form);
   const selectedModel = form.watch("model");
 
-  // Auto-select first model when models data is loaded and has results
-  useEffect(() => {
-    const modelList = modelsData.data?.data?.data || [];
-    if (modelList.length > 0 && !selectedModel) {
-      form.setValue("model", modelList[0].id);
-    }
-  }, [modelsData.data, form.setValue, selectedModel]);
-
-  // Function to add a new document
-  const addDocument = () => {
-    const newId =
-      documents.length > 0 ? Math.max(...documents.map((d) => d.id)) + 1 : 1;
-    setDocuments([...documents, { id: newId, text: "" }]);
-  };
-
-  // Function to update a document
-  const updateDocument = (id: number, text: string) => {
-    setDocuments(
-      documents.map((doc) => (doc.id === id ? { ...doc, text } : doc)),
-    );
-  };
-
-  // Function to remove a document
-  const removeDocument = (id: number) => {
-    setDocuments(documents.filter((doc) => doc.id !== id));
-  };
-
-  // Function to generate embeddings
   const generateEmbeddings = async () => {
     if (!selectedModel) {
       alert(t("components.playground.embedding.selectModelFirst"));
@@ -172,14 +131,12 @@ export default function EmbeddingPlayground({
     const openai = createOpenAI({
       baseURL: `/api/v1/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1`,
       apiKey: "no",
-      headers: {
-        ...clientPostgrest.headers,
-      },
+      headers: { ...clientPostgrest.headers },
     });
 
     setIsProcessing(true);
     try {
-      const embeddings = await Promise.all(
+      const rawEmbeddings = await Promise.all(
         documents.map(async (d) => {
           const { embedding } = await embed({
             model: openai.textEmbeddingModel(selectedModel),
@@ -189,8 +146,10 @@ export default function EmbeddingPlayground({
         }),
       );
 
-      const pca = new PCA(embeddings);
-      const pcadata = pca.predict(embeddings, { nComponents: 2 }).to2DArray();
+      const pca = new PCA(rawEmbeddings);
+      const pcadata = pca
+        .predict(rawEmbeddings, { nComponents: 2 })
+        .to2DArray();
 
       setEmbeddings(
         pcadata.map((v, i) => ({
@@ -207,202 +166,146 @@ export default function EmbeddingPlayground({
     }
   };
 
-  // Function to clear all documents
   const clearAll = () => {
-    setDocuments([]);
+    clearDocuments();
     setEmbeddings([]);
   };
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(generateEmbeddings)}
-        className="h-full overflow-auto"
-      >
-        <div className="h-full flex-col">
-          <div className="container h-full py-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">
-                {t("components.playground.embedding.title")}
-              </h2>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={() => generateEmbeddings()}
-                >
-                  {t("components.playground.embedding.generate")}
-                </Button>
-                <Button variant="outline" onClick={clearAll}>
-                  {t("buttons.clear")}
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid h-full items-stretch gap-6 md:grid-cols-[1fr_300px]">
-              <div className="flex-col space-y-4 sm:flex md:order-2">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="batchMode"
-                        checked={batchMode}
-                        onCheckedChange={(value) => {
-                          if (typeof value === "boolean") {
-                            setBatchMode(value);
-                          }
-                        }}
-                      />
-                      <Label htmlFor="batchMode">
-                        {t("components.playground.embedding.batchInputMode")}
-                      </Label>
-                    </div>
-                  </div>
-
-                  <Controller
-                    name="model"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Combobox
-                        placeholder={t(
-                          "components.playground.embedding.selectModel",
-                        )}
-                        triggerClassName="sm:w-[300px]"
-                        popoverClassName="w-[300px]"
-                        options={models}
-                        {...field}
-                      />
-                    )}
+      <form onSubmit={form.handleSubmit(generateEmbeddings)} className="h-full">
+        <PlaygroundLayout
+          title={t("components.playground.embedding.title")}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                type="button"
+                disabled={isProcessing}
+                onClick={() => generateEmbeddings()}
+              >
+                {t("components.playground.embedding.generate")}
+              </Button>
+              <Button variant="outline" type="button" onClick={clearAll}>
+                {t("buttons.clear")}
+              </Button>
+            </>
+          }
+          sidebar={
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="batchMode"
+                    checked={batchMode}
+                    onCheckedChange={(value) => {
+                      if (typeof value === "boolean") setBatchMode(value);
+                    }}
                   />
+                  <Label htmlFor="batchMode">
+                    {t("components.playground.embedding.batchInputMode")}
+                  </Label>
                 </div>
               </div>
-
-              <div className="md:order-1 space-y-6">
-                <div className="space-y-2">
-                  <h3 className="font-medium">
-                    {t("components.playground.embedding.documents")}
-                  </h3>
-                  <ScrollArea className="h-[400px] rounded-md border">
-                    <div className="p-4 space-y-4">
-                      {documents.map((doc, _index) => (
-                        <div
-                          key={doc.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <div className="flex-none w-8 h-8 flex items-center justify-center bg-muted text-muted-foreground rounded">
-                            {doc.id}
-                          </div>
-                          <Textarea
-                            value={doc.text}
-                            onChange={(e) =>
-                              updateDocument(doc.id, e.target.value)
-                            }
-                            placeholder={t(
-                              "components.playground.embedding.enterText",
-                            )}
-                            className="flex-1 min-h-12"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeDocument(doc.id)}
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={addDocument}
-                      >
-                        <PlusIcon className="h-4 w-4 mr-2" />{" "}
-                        {t("components.playground.embedding.addText")}
-                      </Button>
-                    </div>
-                  </ScrollArea>
-                </div>
-
-                <div className="flex items-center px-4 py-2 border-b">
-                  <Tabs
-                    value={activeTab}
-                    onValueChange={setActiveTab}
-                    className="w-full"
-                  >
-                    <TabsList className="grid w-40 grid-cols-2">
-                      <TabsTrigger value="chart">
-                        {t("components.playground.embedding.chart")}
-                      </TabsTrigger>
-                      <TabsTrigger value="json">
-                        {t("components.playground.embedding.json")}
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="chart" className="m-0 w-full">
-                      <div className="h-[300px] p-2 w-full">
-                        {embeddings.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <ScatterChart
-                              margin={{
-                                top: 20,
-                                right: 20,
-                                bottom: 20,
-                                left: 20,
-                              }}
-                            >
-                              <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="hsl(var(--border))"
-                              />
-                              <XAxis
-                                type="number"
-                                dataKey="x"
-                                name="sentiment"
-                                domain={[-1, 1]}
-                                tick={<span />}
-                                stroke="hsl(var(--foreground))"
-                              />
-                              <YAxis
-                                type="number"
-                                dataKey="y"
-                                name="nature"
-                                domain={[-1, 1]}
-                                tick={<span />}
-                                stroke="hsl(var(--foreground))"
-                              />
-                              <Tooltip content={<CustomTooltip />} />
-                              <Scatter
-                                data={embeddings}
-                                fill="hsl(var(--primary))"
-                                shape={<CustomScatterPoint />}
-                              />
-                            </ScatterChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            {t(
-                              "components.playground.embedding.noEmbeddingData",
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="json" className="m-0">
-                      <ScrollArea className="h-[300px]">
-                        <pre className="p-4 text-xs bg-muted/30 text-foreground rounded">
-                          {JSON.stringify(embeddings, null, 2)}
-                        </pre>
-                      </ScrollArea>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </div>
+              <Controller
+                name="model"
+                control={form.control}
+                render={({ field }) => (
+                  <Combobox
+                    placeholder={t(
+                      "components.playground.embedding.selectModel",
+                    )}
+                    triggerClassName="sm:w-[300px]"
+                    popoverClassName="w-[300px]"
+                    options={models}
+                    {...field}
+                  />
+                )}
+              />
             </div>
+          }
+        >
+          <div className="space-y-2">
+            <h3 className="font-medium">
+              {t("components.playground.embedding.documents")}
+            </h3>
+            <DocumentListEditor
+              documents={documents}
+              onUpdate={updateDocument}
+              onRemove={removeDocument}
+              onAdd={addDocument}
+              indexMode="id"
+              placeholder={t("components.playground.embedding.enterText")}
+              addButtonLabel={t("components.playground.embedding.addText")}
+            />
           </div>
-        </div>
+
+          <div className="flex items-center px-4 py-2 border-b">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="grid w-40 grid-cols-2">
+                <TabsTrigger value="chart">
+                  {t("components.playground.embedding.chart")}
+                </TabsTrigger>
+                <TabsTrigger value="json">
+                  {t("components.playground.embedding.json")}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="chart" className="m-0 w-full">
+                <div className="h-[300px] p-2 w-full">
+                  {embeddings.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart
+                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          type="number"
+                          dataKey="x"
+                          name="sentiment"
+                          domain={[-1, 1]}
+                          tick={<span />}
+                          stroke="hsl(var(--foreground))"
+                        />
+                        <YAxis
+                          type="number"
+                          dataKey="y"
+                          name="nature"
+                          domain={[-1, 1]}
+                          tick={<span />}
+                          stroke="hsl(var(--foreground))"
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Scatter
+                          data={embeddings}
+                          fill="hsl(var(--primary))"
+                          shape={<CustomScatterPoint />}
+                        />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      {t("components.playground.embedding.noEmbeddingData")}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="json" className="m-0">
+                <ScrollArea className="h-[300px]">
+                  <pre className="p-4 text-xs bg-muted/30 text-foreground rounded">
+                    {JSON.stringify(embeddings, null, 2)}
+                  </pre>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </PlaygroundLayout>
       </form>
     </Form>
   );
