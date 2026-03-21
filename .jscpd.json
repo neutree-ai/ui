@@ -1,0 +1,19 @@
+{
+	"threshold": 5,
+	"reporters": ["console"],
+	"ignore": [
+		"node_modules",
+		"dist",
+		"coverage",
+		"e2e",
+		"src/components/ui/**",
+		"src/foundation/lib/api/api-gen.ts",
+		"**/*.test.ts",
+		"**/*.test.tsx",
+		"**/*.d.ts",
+		".i18n-tracker.lock"
+	],
+	"absolute": true,
+	"gitignore": true,
+	"format": ["typescript", "tsx"]
+}
