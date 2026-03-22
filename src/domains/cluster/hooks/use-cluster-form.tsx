@@ -86,6 +86,17 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const availableVersions = versionsData?.data?.available_versions ?? [];
 
+  const specVersion = form.watch("spec.version");
+
+  // In edit mode, ensure the current version appears in the options list
+  // even if the API doesn't return it (it only returns upgrade targets).
+  const versionOptions = (() => {
+    if (isEdit && specVersion && !availableVersions.includes(specVersion)) {
+      return [specVersion, ...availableVersions];
+    }
+    return availableVersions;
+  })();
+
   // Auto-select latest version when no version is set yet.
   // Skip in edit mode — the form already has the cluster's existing spec.version.
   useEffect(() => {
@@ -149,7 +160,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <FormCombobox
             placeholder={t("clusters.placeholders.selectVersion")}
-            options={availableVersions.map((v) => ({
+            options={versionOptions.map((v) => ({
               label: v,
               value: v,
             }))}
