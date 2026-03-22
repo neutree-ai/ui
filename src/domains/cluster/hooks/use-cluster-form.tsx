@@ -163,6 +163,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="spec.version"
           label={t("common.fields.version")}
+          rules={{ required: true }}
         >
           <FormCombobox
             placeholder={t("clusters.placeholders.selectVersion")}
