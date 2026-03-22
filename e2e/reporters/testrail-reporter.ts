@@ -6,6 +6,7 @@ import type {
   TestCase,
   TestResult,
 } from "@playwright/test/reporter";
+import { config } from "../config";
 
 interface TestRailResult {
   case_id: number;
@@ -89,10 +90,10 @@ class TestRailReporter implements Reporter {
   private results = new Map<number, CollectedResult>();
 
   constructor() {
-    this.runId = process.env.TESTRAIL_RUN_ID;
-    this.baseUrl = process.env.TESTRAIL_URL || "";
-    this.user = process.env.TESTRAIL_USER || "";
-    this.password = process.env.TESTRAIL_PASSWORD || "";
+    this.runId = config.testrail.runId || undefined;
+    this.baseUrl = config.testrail.url;
+    this.user = config.testrail.user;
+    this.password = config.testrail.password;
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {

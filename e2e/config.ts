@@ -11,6 +11,7 @@ const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 export interface E2eConfig {
   auth: { email: string; password: string };
+  testrail: { runId: string; url: string; user: string; password: string };
   imageRegistry: {
     url: string;
     repository: string;
@@ -88,6 +89,8 @@ if (raw.sshCluster?.sshPrivateKeyFile) {
 
 // biome-ignore lint/suspicious/noExplicitAny: raw YAML sections are untyped
 function buildConfig(raw: Record<string, any>): E2eConfig {
+  const authRaw = raw.auth ?? {};
+  const testrailRaw = raw.testrail ?? {};
   const ir = raw.imageRegistry ?? {};
   const mr = raw.modelRegistry ?? {};
   const ssh = raw.sshCluster ?? {};
@@ -98,8 +101,14 @@ function buildConfig(raw: Record<string, any>): E2eConfig {
 
   const cfg: Omit<E2eConfig, "features"> = {
     auth: {
-      email: process.env.E2E_EMAIL || "admin@example.com",
-      password: process.env.E2E_PASSWORD || "admin",
+      email: authRaw.email ?? "admin@example.com",
+      password: authRaw.password ?? "admin",
+    },
+    testrail: {
+      runId: testrailRaw.runId ?? "",
+      url: testrailRaw.url ?? "",
+      user: testrailRaw.user ?? "",
+      password: testrailRaw.password ?? "",
     },
     imageRegistry: {
       url: ir.url ?? "https://index.docker.io/v1",

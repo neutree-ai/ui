@@ -1,12 +1,12 @@
 import { expect, test as setup } from "@playwright/test";
+import { config } from "../config";
 
 setup("authenticate", async ({ page }) => {
-  const email = process.env.E2E_USER_EMAIL;
-  const password = process.env.E2E_USER_PASSWORD;
+  const { email, password } = config.auth;
 
   if (!email || !password) {
     throw new Error(
-      "E2E_USER_EMAIL and E2E_USER_PASSWORD env vars must be set",
+      "Auth credentials must be set via profile YAML (auth.email / auth.password) or env vars (E2E_USER_EMAIL / E2E_USER_PASSWORD)",
     );
   }
 

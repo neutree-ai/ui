@@ -1,3 +1,13 @@
+auth:
+  email: "admin@example.com"
+  password: "admin"
+
+testrail:
+  runId: ""
+  url: ""
+  user: ""
+  password: ""
+
 imageRegistry:
   url: "https://index.docker.io/v1"
   repository: ""
