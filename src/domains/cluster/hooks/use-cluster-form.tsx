@@ -1,6 +1,6 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,14 +71,13 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const imageRegistry = form.watch("spec.image_registry");
 
   const versionsQueryEnabled = !!workspace && !!imageRegistry && !!type;
-  const versionsUrl = versionsQueryEnabled
-    ? `/clusters/available_versions?${new URLSearchParams({ workspace, image_registry: imageRegistry, cluster_type: type }).toString()}`
-    : "/clusters/available_versions";
 
   const { data: versionsData, isLoading: isLoadingVersions } = useCustom<{
     available_versions: string[];
   }>({
-    url: versionsUrl,
+    url: versionsQueryEnabled
+      ? `/clusters/available_versions?${new URLSearchParams({ workspace, image_registry: imageRegistry, cluster_type: type }).toString()}`
+      : "",
     method: "get",
     queryOptions: {
       enabled: versionsQueryEnabled,
@@ -87,28 +86,22 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const availableVersions = versionsData?.data?.available_versions ?? [];
 
-  // Auto-select latest version when available versions load or dependencies change.
+  // Sync spec.version with available versions.
   // Skip in edit mode — the form already has the cluster's existing spec.version.
-  const prevDepsRef = useRef({ workspace: "", imageRegistry: "", type: "" });
   useEffect(() => {
-    if (isEdit || availableVersions.length === 0) return;
-    const depsChanged =
-      prevDepsRef.current.workspace !== workspace ||
-      prevDepsRef.current.imageRegistry !== imageRegistry ||
-      prevDepsRef.current.type !== type;
+    if (isEdit) return;
     const currentVersion = form.getValues("spec.version");
-    if (
-      depsChanged ||
-      !currentVersion ||
-      !availableVersions.includes(currentVersion)
-    ) {
+    if (availableVersions.length === 0) {
+      if (currentVersion) form.setValue("spec.version", "");
+      return;
+    }
+    if (!currentVersion || !availableVersions.includes(currentVersion)) {
       form.setValue(
         "spec.version",
         availableVersions[availableVersions.length - 1],
       );
     }
-    prevDepsRef.current = { workspace, imageRegistry, type };
-  }, [isEdit, availableVersions, workspace, imageRegistry, type, form]);
+  }, [isEdit, availableVersions, form]);
 
   return {
     form,
