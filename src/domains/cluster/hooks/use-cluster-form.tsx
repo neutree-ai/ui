@@ -86,16 +86,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const availableVersions = versionsData?.data?.available_versions ?? [];
 
-  // Sync spec.version with available versions.
+  // Auto-select latest version when no version is set yet.
   // Skip in edit mode — the form already has the cluster's existing spec.version.
   useEffect(() => {
-    if (isEdit) return;
+    if (isEdit || availableVersions.length === 0) return;
     const currentVersion = form.getValues("spec.version");
-    if (availableVersions.length === 0) {
-      if (currentVersion) form.setValue("spec.version", "");
-      return;
-    }
-    if (!currentVersion || !availableVersions.includes(currentVersion)) {
+    if (!currentVersion) {
       form.setValue(
         "spec.version",
         availableVersions[availableVersions.length - 1],
