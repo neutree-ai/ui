@@ -97,12 +97,15 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     return availableVersions;
   })();
 
-  // Auto-select latest version when no version is set yet.
+  // Auto-select latest version in create mode:
+  // - When no version is set yet (initial load)
+  // - When the current version is not in the new available list
+  //   (e.g. user switched image registry or cluster type)
   // Skip in edit mode — the form already has the cluster's existing spec.version.
   useEffect(() => {
     if (isEdit || availableVersions.length === 0) return;
     const currentVersion = form.getValues("spec.version");
-    if (!currentVersion) {
+    if (!currentVersion || !availableVersions.includes(currentVersion)) {
       form.setValue(
         "spec.version",
         availableVersions[availableVersions.length - 1],
