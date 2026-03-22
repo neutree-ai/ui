@@ -76,7 +76,7 @@
   "src/pages/oem-config/use-oem-config-form.tsx": "fda7e13d0e09e6c7c1a878ab42f3192b",
   "src/pages/license/show.tsx": "587c5b7720e9b298859be07f2863bd36",
   "vitest.config.ts": "6e026a005e7f4ed7aa7f567b9999c069",
-  "playwright.config.ts": "43fd83543f2803aa95f080b106155b3e",
+  "playwright.config.ts": "1e624a5e7453327ec44105e414fc39d7",
   "src/pages/auth/AuthPage.tsx": "f4392c25334e26bba455114d3fe440ed",
   "src/pages/auth/ForgotPasswordPage.tsx": "f16e847fd4935b49246e9e8cb6b11b6f",
   "src/pages/auth/LoginPage.tsx": "dad1a585279952b94ac288cf003fb6e9",
