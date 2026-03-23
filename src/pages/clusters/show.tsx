@@ -13,6 +13,7 @@ import {
   ClusterUpgradeAction,
   ClusterUpgradeProvider,
 } from "@/domains/cluster/components/ClusterUpgradeAction";
+import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
 import {
   NodeResourcesTable,
   ProductGroupsBreakdown,
@@ -114,13 +115,18 @@ export const ClustersShow = () => {
                 <ClusterStatus {...record.status} />
               </ShowPage.Row>
               <ShowPage.Row title={t("common.fields.version")}>
-                {record.status?.version ?? "-"}
-                {record.status?.phase === "Upgrading" && record.spec.version && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    &rarr; {record.spec.version}
-                  </span>
-                )}
+                <span className="inline-flex items-center">
+                  {record.status?.version ?? "-"}
+                  {record.status?.phase === "Upgrading" && record.spec.version && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      &rarr; {record.spec.version}
+                    </span>
+                  )}
+                  {record.status?.phase !== "Upgrading" && (
+                    <ClusterUpgradeTip cluster={record} />
+                  )}
+                </span>
               </ShowPage.Row>
               <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("common.fields.type")}>

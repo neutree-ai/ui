@@ -4,6 +4,7 @@ import {
   ClusterUpgradeAction,
   ClusterUpgradeProvider,
 } from "@/domains/cluster/components/ClusterUpgradeAction";
+import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
 import type { Cluster } from "@/domains/cluster/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -52,7 +53,7 @@ export const ClustersList = () => {
             if (!version) return "-";
             if (cluster.status?.phase === "Upgrading" && cluster.spec.version) {
               return (
-                <span>
+                <span className="inline-flex items-center">
                   {version}{" "}
                   <span className="text-muted-foreground">
                     &rarr; {cluster.spec.version}
@@ -60,7 +61,12 @@ export const ClustersList = () => {
                 </span>
               );
             }
-            return version;
+            return (
+              <span className="inline-flex items-center">
+                {version}
+                <ClusterUpgradeTip cluster={cluster} />
+              </span>
+            );
           }}
         />
         <Table.Column

@@ -394,7 +394,8 @@
 			"upgradeFailed": "Failed to initiate cluster upgrade",
 			"noUpgradeVersions": "No upgrade versions available",
 			"upgradeWarningSSH": "SSH clusters will experience downtime during upgrade. All running endpoints will be temporarily interrupted.",
-			"upgradeWarningK8s": "Kubernetes clusters use rolling updates with zero downtime."
+			"upgradeWarningK8s": "Kubernetes clusters use rolling updates with zero downtime.",
+			"newVersionAvailable": "New version available"
 		},
 		"monitor": {
 			"rayMetrics": "Ray Metrics",

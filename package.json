@@ -36,6 +36,7 @@
 		"clipboard-polyfill": "^4.1.1",
 		"clsx": "^2.1.1",
 		"cmdk": "1.0.0",
+		"compare-versions": "^6.1.1",
 		"dayjs": "^1.11.13",
 		"github-markdown-css": "^5.8.1",
 		"highlight.js": "^11.11.1",
