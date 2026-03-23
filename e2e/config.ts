@@ -53,13 +53,20 @@ export interface FeatureFlags {
 }
 
 // ── Profile loading ──
+// Set E2E_PROFILE_PATH to an absolute path, or E2E_PROFILE to load from e2e/profiles/{name}.yaml
 
-const profileName = process.env.E2E_PROFILE || "default";
-const profilePath = resolve(E2E_DIR, `profiles/${profileName}.yaml`);
+let profilePath: string;
+
+if (process.env.E2E_PROFILE_PATH) {
+  profilePath = process.env.E2E_PROFILE_PATH;
+} else {
+  const profileName = process.env.E2E_PROFILE || "default";
+  profilePath = resolve(E2E_DIR, `profiles/${profileName}.yaml`);
+}
 
 if (!existsSync(profilePath)) {
   throw new Error(
-    `E2E profile "${profileName}" not found at ${profilePath}.\nSet E2E_PROFILE to a valid profile name or ensure the file exists.`,
+    `E2E profile not found at ${profilePath}.\nSet E2E_PROFILE_PATH or E2E_PROFILE to a valid profile.`,
   );
 }
 
@@ -68,47 +75,43 @@ const raw: Record<string, any> =
   (loadYaml(readFileSync(profilePath, "utf-8")) as Record<string, unknown>) ??
   {};
 
-// ── File references (resolve external files relative to profile) ──
+// ── Resolve file content from path ──
 
-if (raw.k8sCluster?.kubeconfigFile) {
-  const kcPath = resolve(dirname(profilePath), raw.k8sCluster.kubeconfigFile);
-  raw.k8sCluster.kubeconfig = readFileSync(kcPath, "utf-8");
-  delete raw.k8sCluster.kubeconfigFile;
-}
-
-if (raw.sshCluster?.sshPrivateKeyFile) {
-  const keyPath = resolve(
-    dirname(profilePath),
-    raw.sshCluster.sshPrivateKeyFile,
-  );
-  raw.sshCluster.sshPrivateKey = readFileSync(keyPath, "utf-8");
-  delete raw.sshCluster.sshPrivateKeyFile;
+function readFileAtPath(filePath: string): string | undefined {
+  const resolved = filePath.replace(/^~/, process.env.HOME || "~");
+  if (existsSync(resolved)) {
+    return readFileSync(resolved, "utf-8");
+  }
+  return undefined;
 }
 
 // ── Build typed config ──
 
 // biome-ignore lint/suspicious/noExplicitAny: raw YAML sections are untyped
 function buildConfig(raw: Record<string, any>): E2eConfig {
-  const authRaw = raw.auth ?? {};
-  const testrailRaw = raw.testrail ?? {};
-  const ir = raw.imageRegistry ?? {};
-  const mr = raw.modelRegistry ?? {};
-  const ssh = raw.sshCluster ?? {};
-  const k8s = raw.k8sCluster ?? {};
+  const auth = raw.auth ?? {};
+  const testrail = raw.testrail ?? {};
+  const ir = raw.image_registry ?? {};
+  const mr = raw.model_registry ?? {};
+  const sshNodes: { host: string; user: string; key_file?: string }[] =
+    raw.ssh_nodes ?? [];
+  const k8s = raw.kubernetes ?? {};
   const eng = raw.engine ?? {};
   const model = raw.model ?? {};
-  const mc = raw.modelCache ?? {};
+  const mc = raw.model_cache ?? {};
+
+  const headNode = sshNodes[0] ?? {};
 
   const cfg: Omit<E2eConfig, "features"> = {
     auth: {
-      email: authRaw.email ?? "admin@example.com",
-      password: authRaw.password ?? "admin",
+      email: auth.email ?? "admin@example.com",
+      password: auth.password ?? "admin",
     },
     testrail: {
-      runId: testrailRaw.runId ?? "",
-      url: testrailRaw.url ?? "",
-      user: testrailRaw.user ?? "",
-      password: testrailRaw.password ?? "",
+      runId: String(process.env.TESTRAIL_RUN_ID || testrail.run_id || ""),
+      url: testrail.url ?? "",
+      user: testrail.user ?? "",
+      password: testrail.password ?? "",
     },
     imageRegistry: {
       url: ir.url ?? "https://index.docker.io/v1",
@@ -122,15 +125,18 @@ function buildConfig(raw: Record<string, any>): E2eConfig {
       credentials: mr.credentials ?? "",
     },
     sshCluster: {
-      headIp: ssh.headIp ?? "192.168.1.100",
-      workerIps: ssh.workerIps ?? [],
-      sshUser: ssh.sshUser ?? "root",
-      sshPrivateKey: ssh.sshPrivateKey ?? "fake-ssh-key-for-e2e-testing",
+      headIp: headNode.host ?? "192.168.1.100",
+      workerIps: sshNodes.slice(1).map((n) => n.host),
+      sshUser: headNode.user ?? "root",
+      sshPrivateKey:
+        (headNode.key_file ? readFileAtPath(headNode.key_file) : undefined) ??
+        "fake-ssh-key-for-e2e-testing",
     },
     k8sCluster: {
       kubeconfig:
-        k8s.kubeconfig ?? "apiVersion: v1\nkind: Config\nclusters: []",
-      routerAccessMode: k8s.routerAccessMode ?? "LoadBalancer",
+        (k8s.kubeconfig ? readFileAtPath(k8s.kubeconfig) : undefined) ??
+        "apiVersion: v1\nkind: Config\nclusters: []",
+      routerAccessMode: k8s.router_access_mode ?? "LoadBalancer",
     },
     engine: {
       name: eng.name ?? "vllm",
@@ -143,10 +149,10 @@ function buildConfig(raw: Record<string, any>): E2eConfig {
       task: model.task ?? "text-generation",
     },
     modelCache: {
-      hostPath: mc.hostPath ?? "/data/models",
-      nfsServer: mc.nfsServer ?? "",
-      nfsPath: mc.nfsPath ?? "",
-      pvcStorageClass: mc.pvcStorageClass ?? "",
+      hostPath: mc.host_path ?? "/data/models",
+      nfsServer: mc.nfs_server ?? "",
+      nfsPath: mc.nfs_path ?? "",
+      pvcStorageClass: mc.pvc_storage_class ?? "",
     },
   };
 
