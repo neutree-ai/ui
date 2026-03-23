@@ -49,4 +49,5 @@ e2e/profiles/*
 # local agents
 .agents/
 .claude/
-.mcp.jsonskills-lock.json
+.mcp.json
+skills-lock.json
