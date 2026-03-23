@@ -38,7 +38,7 @@
   "src/pages/clusters/create.tsx": "1c086f83bd49a27c1628b075d485aaa5",
   "src/pages/clusters/edit.tsx": "03ee3be7dcd7b2639e66baff8ab987a1",
   "src/pages/clusters/list.tsx": "ca73ad6105d1eca4b3a23fc0bf50bf07",
-  "src/pages/clusters/show.tsx": "bace34639cbe476d02037b0fbae12b4e",
+  "src/pages/clusters/show.tsx": "b9e84ee705bf92e373640a1e75d04de5",
   "src/pages/api-keys/list.tsx": "93457bd6ae599c9cd8aa10036e7d846e",
   "src/pages/api-keys/show.tsx": "133e54b0fb9a1fb28753e9438bea550b",
   "src/components/ui/alert-dialog.tsx": "fd2a0854b18d61d21fe0e8effd7e4cd9",
@@ -282,5 +282,5 @@
   "src/domains/endpoint/hooks/use-playground-models.ts": "53c557aeb8282c5f4cb5dc1489688505",
   "src/domains/endpoint/components/DocumentListEditor.tsx": "397a5b14b2689352e678e44863b4e2f0",
   "src/domains/endpoint/components/PlaygroundLayout.tsx": "c4940cfc57dc4696b166ac65f5c769cb",
-  "src/domains/cluster/components/ClusterUpgradeTip.tsx": "459c8c39cbc21ffb400404ab00bcbecc"
+  "src/domains/cluster/components/ClusterUpgradeTip.tsx": "fd41e3d18ecd41c1efda9dc1d06da083"
 }

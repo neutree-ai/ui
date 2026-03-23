@@ -36,7 +36,10 @@ export function ClusterUpgradeTip({ cluster }: { cluster: Cluster }) {
     });
   })();
 
+  const isRunning = cluster.status?.phase === "Running";
+
   const queryEnabled =
+    isRunning &&
     !!currentMax &&
     !!cluster.metadata.workspace &&
     !!cluster.spec.image_registry &&

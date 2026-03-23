@@ -123,9 +123,7 @@ export const ClustersShow = () => {
                       &rarr; {record.spec.version}
                     </span>
                   )}
-                  {record.status?.phase !== "Upgrading" && (
-                    <ClusterUpgradeTip cluster={record} />
-                  )}
+                  <ClusterUpgradeTip cluster={record} />
                 </span>
               </ShowPage.Row>
               <div className="grid grid-cols-4 gap-8">
