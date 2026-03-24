@@ -18,7 +18,7 @@ import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoi
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
 import {
-  deepMerge,
+  buildCatalogMergedSpec,
   defaultEndpointSpec,
   transformEndpointValues,
   validateEndpointValues,
@@ -178,13 +178,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
-  // Reset all catalog-managed spec fields back to defaults.
-  // Cluster is the only field in defaultEndpointSpec that is user-selected,
-  // not catalog-managed, so we skip it.
-  const resetCatalogFields = () => {
-    for (const [key, value] of Object.entries(defaultEndpointSpec)) {
-      if (key === "cluster") continue;
-      setLeafValues(`spec.${key}`, value as Record<string, unknown>);
+  // Apply a merged catalog spec (or defaults when null) to the form.
+  const applyCatalogSpec = (catalogSpec: Record<string, unknown> | null) => {
+    const merged = buildCatalogMergedSpec(catalogSpec);
+    for (const [key, value] of Object.entries(merged)) {
+      setLeafValues(`spec.${key}`, value);
     }
   };
 
@@ -193,7 +191,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     setSelectedModelCatalog(catalogId);
 
     if (!catalogId) {
-      resetCatalogFields();
+      applyCatalogSpec(null);
       return;
     }
 
@@ -202,22 +200,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     );
 
     if (selectedCatalog) {
-      // Reset catalog-managed fields to defaults first, then apply the new
-      // template on top.  This prevents stale values from a previously
-      // selected catalog from leaking into the new one (e.g. extra
-      // engine_args keys or a model.file the new catalog doesn't set).
-      const catalogSpec = selectedCatalog.spec as Record<string, unknown>;
-      for (const [key, defaultValue] of Object.entries(defaultEndpointSpec)) {
-        if (key === "cluster") continue;
-        const catalogValue = catalogSpec[key];
-        const merged = catalogValue
-          ? deepMerge(
-              defaultValue as Record<string, unknown>,
-              catalogValue as Record<string, unknown>,
-            )
-          : defaultValue;
-        setLeafValues(`spec.${key}`, merged as Record<string, unknown>);
-      }
+      applyCatalogSpec(selectedCatalog.spec as Record<string, unknown>);
     }
   };
 

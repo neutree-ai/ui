@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCatalogMergedSpec,
   computeMaxAvailable,
   deepMerge,
+  defaultEndpointSpec,
   transformEndpointValues,
   validateCurrentUsage,
   validateEndpointValues,
@@ -290,5 +292,103 @@ describe("validateEndpointValues", () => {
       mockT,
     );
     expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
+  });
+});
+
+describe("buildCatalogMergedSpec", () => {
+  it("returns defaults (excluding cluster) when catalogSpec is null", () => {
+    const result = buildCatalogMergedSpec(null);
+
+    expect(result.cluster).toBeUndefined();
+    expect(result.model).toEqual(defaultEndpointSpec.model);
+    expect(result.engine).toEqual(defaultEndpointSpec.engine);
+    expect(result.resources).toEqual(defaultEndpointSpec.resources);
+    expect(result.replicas).toEqual(defaultEndpointSpec.replicas);
+    expect(result.deployment_options).toEqual(
+      defaultEndpointSpec.deployment_options,
+    );
+    expect(result.variables).toEqual(defaultEndpointSpec.variables);
+    expect(result.env).toEqual(defaultEndpointSpec.env);
+  });
+
+  it("merges catalog values onto defaults", () => {
+    const catalogSpec = {
+      model: { name: "llama-3", registry: "hf" },
+      engine: { engine: "vllm", version: "0.6.0" },
+    };
+
+    const result = buildCatalogMergedSpec(catalogSpec);
+
+    // Catalog values override defaults
+    expect(result.model).toEqual({
+      name: "llama-3",
+      version: "",
+      registry: "hf",
+      file: "",
+      task: "",
+    });
+    expect(result.engine).toEqual({ engine: "vllm", version: "0.6.0" });
+    // Sections not in catalog fall back to defaults
+    expect(result.resources).toEqual(defaultEndpointSpec.resources);
+    expect(result.replicas).toEqual(defaultEndpointSpec.replicas);
+  });
+
+  it("falls back to defaults for null catalog sections", () => {
+    const catalogSpec = {
+      model: { name: "tiny-model" },
+      resources: null,
+      replicas: null,
+    };
+
+    const result = buildCatalogMergedSpec(
+      catalogSpec as Record<string, unknown>,
+    );
+
+    expect(result.model).toMatchObject({ name: "tiny-model" });
+    expect(result.resources).toEqual(defaultEndpointSpec.resources);
+    expect(result.replicas).toEqual(defaultEndpointSpec.replicas);
+  });
+
+  it("never includes cluster in result", () => {
+    const catalogSpec = {
+      cluster: "should-be-ignored",
+      model: { name: "test" },
+    };
+
+    const result = buildCatalogMergedSpec(catalogSpec);
+
+    expect(result.cluster).toBeUndefined();
+  });
+
+  it("does not leak values between successive calls", () => {
+    const catalogA = {
+      model: { name: "model-a" },
+      variables: { engine_args: { tensor_parallel: "2" } },
+    };
+    const catalogB = {
+      model: { name: "model-b" },
+    };
+
+    const resultA = buildCatalogMergedSpec(catalogA);
+    const resultB = buildCatalogMergedSpec(catalogB);
+
+    expect(resultA.variables).toEqual({
+      engine_args: { tensor_parallel: "2" },
+    });
+    // Catalog B has no variables → defaults, no leak from A
+    expect(resultB.variables).toEqual(defaultEndpointSpec.variables);
+    expect(resultB.model).toMatchObject({ name: "model-b" });
+  });
+
+  it("deep merges nested engine_args", () => {
+    const catalogSpec = {
+      variables: { engine_args: { max_model_len: "4096" } },
+    };
+
+    const result = buildCatalogMergedSpec(catalogSpec);
+
+    expect(result.variables).toEqual({
+      engine_args: { max_model_len: "4096" },
+    });
   });
 });

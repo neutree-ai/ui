@@ -230,6 +230,30 @@ export function validateEndpointValues(
   return errors;
 }
 
+/**
+ * Build the merged spec from a catalog template and defaults.
+ * Each key (except "cluster") is deep-merged: catalog values override defaults.
+ * Null/missing catalog or null sections fall back to defaults entirely.
+ * Returns a map of spec keys to their merged values, ready to apply to the form.
+ */
+export function buildCatalogMergedSpec(
+  catalogSpec: Record<string, unknown> | null,
+): Record<string, Record<string, unknown>> {
+  const result: Record<string, Record<string, unknown>> = {};
+  for (const [key, defaultValue] of Object.entries(defaultEndpointSpec)) {
+    if (key === "cluster") continue;
+    const catalogValue = catalogSpec?.[key];
+    result[key] =
+      catalogValue != null
+        ? deepMerge(
+            defaultValue as Record<string, unknown>,
+            catalogValue as Record<string, unknown>,
+          )
+        : (defaultValue as Record<string, unknown>);
+  }
+  return result;
+}
+
 /** Default endpoint spec used for form initialization and catalog merge resets. */
 export const defaultEndpointSpec = {
   cluster: "",
