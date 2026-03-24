@@ -1,6 +1,6 @@
 import { Check, ChevronsUpDown } from "lucide-react";
+import { type ElementRef, forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -16,7 +16,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/foundation/lib/utils";
-import { type ElementRef, forwardRef, useState } from "react";
 
 type ComboboxProps = {
   value?: string;
@@ -70,7 +69,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
         )}
       >
         {value
-          ? options.find((item) => item.value === value)?.label
+          ? (options.find((item) => item.value === value)?.label ?? value)
           : defaultPlaceholder}
         <ChevronsUpDown className="opacity-50" />
       </Button>

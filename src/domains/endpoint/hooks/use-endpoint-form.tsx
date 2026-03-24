@@ -144,7 +144,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const isEdit = action === "edit";
 
-  const effectiveModelSearch = modelSearch || currentModelName || "";
+  const effectiveModelSearch = modelSearch || "";
 
   const modelsData = useCustom({
     url: `/workspaces/${workspace}/model_registries/${currentRegistry}/models?${effectiveModelSearch ? `search=${effectiveModelSearch}` : ""}&limit=20`,
