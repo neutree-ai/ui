@@ -1,21 +1,22 @@
+import { useDataProvider, useResource } from "@refinedev/core";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  serializeToYaml,
-  transformEntityForExport,
-} from "@/foundation/lib/yaml-transform";
 import type {
   ExportOptions,
   ResourceEntity,
 } from "@/foundation/lib/yaml-transform";
+import {
+  serializeToYaml,
+  transformEntityForExport,
+} from "@/foundation/lib/yaml-transform";
 import type { Metadata } from "@/foundation/types/basic-types";
-import { useDataProvider, useResource } from "@refinedev/core";
-import { useCallback, useMemo, useRef, useState } from "react";
 import { ALL_WORKSPACES, useWorkspace } from "./use-workspace";
 
 // Available resource types for export
 export const EXPORTABLE_RESOURCES = [
   "clusters",
   "endpoints",
+  "external_endpoints",
   "engines",
   "image_registries",
   "model_registries",
@@ -29,6 +30,7 @@ export const EXPORTABLE_RESOURCES = [
 // Resources that support credentials API for sensitive field export
 const CREDENTIAL_RESOURCES = [
   "clusters",
+  "external_endpoints",
   "image_registries",
   "model_registries",
 ] as const;
