@@ -34,7 +34,7 @@
   "src/pages/endpoints/edit.tsx": "23519d0d1c37c85b64567f7e6b42ff1d",
   "src/pages/endpoints/list.tsx": "aa1f159a45560783cd05531e54829a02",
   "src/pages/endpoints/show.tsx": "5b7a9ac0a04e33d09b809fbabf5a60ed",
-  "src/pages/dashboard/Dashboard.tsx": "982bc753b2a28b3490493d99b163df59",
+  "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "1c086f83bd49a27c1628b075d485aaa5",
   "src/pages/clusters/edit.tsx": "03ee3be7dcd7b2639e66baff8ab987a1",
   "src/pages/clusters/list.tsx": "ca73ad6105d1eca4b3a23fc0bf50bf07",
@@ -63,7 +63,7 @@
   "src/components/ui/scroll-area.tsx": "3cb075610cb184a400ef28fd216516c5",
   "src/components/ui/select.tsx": "64623577fefc1e51c6dc98992d26a8fc",
   "src/components/ui/separator.tsx": "2590cba8be4a866e21f2946c9b2e25ee",
-  "src/components/ui/sheet.tsx": "24742e9e3dcf254e87c09e8690435fcd",
+  "src/components/ui/sheet.tsx": "e090ce0245440924ad8b15400a1c9571",
   "src/components/ui/sidebar.tsx": "aa7fa834324cd510cb0b114aabc2a875",
   "src/components/ui/skeleton.tsx": "ad42ae16515658d9499e3dcca3d6bb03",
   "src/components/ui/slider.tsx": "72fe9f061e31b3392e9573253541c10c",
@@ -282,5 +282,7 @@
   "src/domains/endpoint/hooks/use-playground-models.ts": "53c557aeb8282c5f4cb5dc1489688505",
   "src/domains/endpoint/components/DocumentListEditor.tsx": "397a5b14b2689352e678e44863b4e2f0",
   "src/domains/endpoint/components/PlaygroundLayout.tsx": "c4940cfc57dc4696b166ac65f5c769cb",
-  "src/domains/cluster/components/ClusterUpgradeTip.tsx": "fd41e3d18ecd41c1efda9dc1d06da083"
+  "src/domains/cluster/components/ClusterUpgradeTip.tsx": "fd41e3d18ecd41c1efda9dc1d06da083",
+  "src/pages/dashboard/QuickStartDialog.tsx": "dedd1f8f5ddc7a25453eeda2c6241dd1",
+  "src/foundation/hooks/use-quick-start.ts": "95e3b15e22dffb680a0ab8a366a5fae8"
 }

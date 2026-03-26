@@ -33,6 +33,9 @@ jobs:
       - name: Check i18n translations
         run: node tools/i18n-tracker.cjs
 
+      - name: Check i18n key references
+        run: node tools/check-i18n-keys.cjs
+
       - name: Run tests
         run: yarn test:coverage
 

@@ -296,7 +296,50 @@
 		"idle": "waiting for changes"
 	},
 	"dashboard": {
-		"title": "Dashboard"
+		"title": "Dashboard",
+		"quickStart": "Quick Start",
+		"quickStartDescription": "Deploy your first AI inference endpoint in minutes"
+	},
+	"quick_start": {
+		"title": "Quick Start",
+		"description": "Set up a 1-node SSH cluster with a llama.cpp endpoint running the Tinystories-gpt-0.1-3m model.",
+		"fields": {
+			"serverIp": "Node IP Address",
+			"serverIpDescription": "The IP address of the node to deploy on",
+			"serverIpPlaceholder": "e.g., 192.168.1.100",
+			"sshUser": "SSH Username",
+			"sshUserDescription": "The SSH user for connecting to the node",
+			"sshUserPlaceholder": "e.g., root",
+			"sshPrivateKey": "SSH Private Key",
+			"sshPrivateKeyDescription": "Paste your SSH private key.",
+			"sshPrivateKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----"
+		},
+		"buttons": {
+			"deploy": "Deploy",
+			"retry": "Retry"
+		},
+		"steps": {
+			"imageRegistry": "Image Registry",
+			"modelRegistry": "Model Registry",
+			"cluster": "Cluster",
+			"endpoint": "Inference Endpoint"
+		},
+		"status": {
+			"pending": "Waiting",
+			"inProgress": "Creating...",
+			"success": "Created",
+			"skipped": "Already exists, skipped",
+			"error": "Failed"
+		},
+		"messages": {
+			"creating": "Setting up your infrastructure...",
+			"success": "All resources created. Cluster provisioning may take several minutes. You can check progress on the Cluster detail page, and then the Endpoint detail page once the cluster is ready.",
+			"error": "Something went wrong. You can retry — already created resources will be skipped."
+		},
+		"validation": {
+			"invalidIp": "Please enter a valid IP address",
+			"required": "This field is required"
+		}
 	},
 	"workspaces": {
 		"workspaces": "workspace",
@@ -823,6 +866,7 @@
 			"generateYaml": "Generate YAML",
 			"generatedYaml": "Generated YAML",
 			"copyToClipboard": "Copy to Clipboard",
+			"copied": "Copied",
 			"downloadFile": "Download File",
 			"yamlContentPlaceholder": "Generated YAML content will appear here...",
 			"backToSelection": "Back to Selection",

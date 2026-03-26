@@ -2,3 +2,4 @@ yarn dep-check
 yarn knip
 yarn lint-staged
 node tools/i18n-tracker.cjs
+node tools/check-i18n-keys.cjs
