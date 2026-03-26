@@ -51,6 +51,12 @@
 		},
 		"options": {
 			"none": "None"
+		},
+		"resourceResult": {
+			"created": "Successfully created",
+			"skipped": "Skipped (already exists)",
+			"creating": "Creating...",
+			"error": "Error"
 		}
 	},
 	"appearance": {

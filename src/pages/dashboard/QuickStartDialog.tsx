@@ -1,12 +1,4 @@
-import {
-  AlertCircle,
-  CheckCircle2,
-  Circle,
-  Loader2,
-  Rocket,
-  SkipForward,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, Rocket } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -22,69 +14,12 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  type QuickStartStep,
-  type StepStatus,
-  useQuickStart,
-} from "@/foundation/hooks/use-quick-start";
+  type ResourceResultItem,
+  ResourceResultList,
+} from "@/foundation/components/ResourceResultList";
+import { useQuickStart } from "@/foundation/hooks/use-quick-start";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { isValidIPAddress } from "@/foundation/lib/validate";
-
-function StepIcon({ status }: { status: StepStatus }) {
-  switch (status) {
-    case "pending":
-      return <Circle className="h-4 w-4 text-muted-foreground" />;
-    case "in-progress":
-      return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
-    case "success":
-      return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-    case "skipped":
-      return <SkipForward className="h-4 w-4 text-muted-foreground" />;
-    case "error":
-      return <XCircle className="h-4 w-4 text-destructive" />;
-  }
-}
-
-function StepList({ steps }: { steps: QuickStartStep[] }) {
-  const { t } = useTranslation();
-
-  const stepLabels: Record<string, string> = {
-    "image-registry": t("quick_start.steps.imageRegistry"),
-    "model-registry": t("quick_start.steps.modelRegistry"),
-    cluster: t("quick_start.steps.cluster"),
-    endpoint: t("quick_start.steps.endpoint"),
-  };
-
-  const statusLabels: Record<StepStatus, string> = {
-    pending: t("quick_start.status.pending"),
-    "in-progress": t("quick_start.status.inProgress"),
-    success: t("quick_start.status.success"),
-    skipped: t("quick_start.status.skipped"),
-    error: t("quick_start.status.error"),
-  };
-
-  return (
-    <div className="space-y-2">
-      {steps.map((step) => (
-        <div key={step.id} className="flex items-center gap-3">
-          <StepIcon status={step.status} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium truncate">
-                {stepLabels[step.id]}
-              </span>
-              <span className="text-xs text-muted-foreground ml-2 shrink-0">
-                {statusLabels[step.status]}
-              </span>
-            </div>
-            {step.error && (
-              <p className="text-xs text-destructive mt-0.5">{step.error}</p>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 interface QuickStartDialogProps {
   open: boolean;
@@ -102,6 +37,13 @@ export function QuickStartDialog({
   const [sshUser, setSshUser] = useState("");
   const [sshPrivateKey, setSshPrivateKey] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const stepLabels: Record<string, string> = {
+    "image-registry": t("quick_start.steps.imageRegistry"),
+    "model-registry": t("quick_start.steps.modelRegistry"),
+    cluster: t("quick_start.steps.cluster"),
+    endpoint: t("quick_start.steps.endpoint"),
+  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -140,11 +82,18 @@ export function QuickStartDialog({
 
   const isCreating = state.phase === "creating";
 
+  const resultItems: ResourceResultItem[] = state.steps.map((step) => ({
+    label: stepLabels[step.id] ?? step.id,
+    name: step.resourceName,
+    status: step.status,
+    error: step.error,
+  }));
+
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (isCreating) return; // prevent closing while creating
+        if (isCreating) return;
         onOpenChange(v);
       }}
     >
@@ -246,11 +195,11 @@ export function QuickStartDialog({
           state.phase === "error") && (
           <div className="space-y-4">
             <Progress value={progressValue} />
-            <StepList steps={state.steps} />
+            <ResourceResultList items={resultItems} />
 
             {state.phase === "done" && (
               <Alert>
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircle className="h-4 w-4" />
                 <AlertDescription>
                   {t("quick_start.messages.success")}
                 </AlertDescription>

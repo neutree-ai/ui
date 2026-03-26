@@ -150,7 +150,7 @@
   "src/foundation/components/YamlExportButton.tsx": "fef2b5c630ba49c01d9467e82978c7b1",
   "src/foundation/components/YamlExportDialog.tsx": "60a714cddc1f0cbd0662bb2d7b2645e0",
   "src/foundation/components/YamlImportButton.tsx": "6a4ef354414cd46d8ed8f259bf4ad26a",
-  "src/foundation/components/YamlImportDialog.tsx": "ecae062e97a1907f1e7255c76afc0dac",
+  "src/foundation/components/YamlImportDialog.tsx": "e5e0d61c2dfbd21f47ad28f157ac151d",
   "src/foundation/components/metadata-columns.tsx": "00c6752e9333d576a9db14843ef7709c",
   "src/domains/workspace/types.ts": "b66c7989e9e3d0632099aee7fa3e7720",
   "src/domains/user/types.ts": "46f595f24d513d8484343153cf547ca1",
@@ -283,6 +283,7 @@
   "src/domains/endpoint/components/DocumentListEditor.tsx": "397a5b14b2689352e678e44863b4e2f0",
   "src/domains/endpoint/components/PlaygroundLayout.tsx": "c4940cfc57dc4696b166ac65f5c769cb",
   "src/domains/cluster/components/ClusterUpgradeTip.tsx": "fd41e3d18ecd41c1efda9dc1d06da083",
-  "src/pages/dashboard/QuickStartDialog.tsx": "dedd1f8f5ddc7a25453eeda2c6241dd1",
-  "src/foundation/hooks/use-quick-start.ts": "95e3b15e22dffb680a0ab8a366a5fae8"
+  "src/pages/dashboard/QuickStartDialog.tsx": "141e2fd4d5a7b6d78d906ca7aa0703eb",
+  "src/foundation/hooks/use-quick-start.ts": "0d41b868c2357acbec6ba98230a0a3b4",
+  "src/foundation/components/ResourceResultList.tsx": "5b87054f8939e64a98ac67e886b68c64"
 }

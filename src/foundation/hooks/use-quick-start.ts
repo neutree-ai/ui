@@ -15,14 +15,9 @@ interface QuickStartInput {
   sshPrivateKey: string;
 }
 
-export type StepStatus =
-  | "pending"
-  | "in-progress"
-  | "success"
-  | "skipped"
-  | "error";
+type StepStatus = "pending" | "in-progress" | "success" | "skipped" | "error";
 
-export interface QuickStartStep {
+interface QuickStartStep {
   id: string;
   resourceTable: string;
   resourceName: string;

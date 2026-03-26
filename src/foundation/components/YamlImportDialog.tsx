@@ -1,3 +1,6 @@
+import { CheckCircle, FileText, Upload, XCircle } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,11 +17,11 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type ResourceResultItem,
+  ResourceResultList,
+} from "@/foundation/components/ResourceResultList";
 import { useYamlImport } from "@/foundation/hooks/use-yaml-import";
-import { cn } from "@/foundation/lib/utils";
-import { CheckCircle, FileText, Upload, XCircle } from "lucide-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 
 interface YamlImportDialogProps {
   trigger?: React.ReactNode;
@@ -265,58 +268,21 @@ export const YamlImportDialog = ({
               </div>
 
               <ScrollArea className="flex-1 border rounded-md">
-                <div className="p-4 space-y-1">
-                  {progress.results.map((result, index: number) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "p-3 rounded-lg border",
-                        result.success && !result.skipped
-                          ? "bg-green-50 border-green-200"
-                          : result.skipped
-                            ? "bg-gray-50 border-gray-200"
-                            : "bg-red-50 border-red-200",
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        {result.success && !result.skipped ? (
-                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                        ) : result.skipped ? (
-                          <CheckCircle className="h-5 w-5 text-gray-600 mt-0.5" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 text-secondary">
-                            <span className="font-medium">
-                              {t(`${result.resourceType}.title`)}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {result.resourceName}
-                            </span>
-                          </div>
-                          {!result.success && result.error && (
-                            <div className="text-sm text-red-700 mt-1">
-                              <strong>
-                                {t("components.yamlImport.errorLabel")}:
-                              </strong>{" "}
-                              {result.error}
-                            </div>
-                          )}
-                          {result.success && !result.skipped && (
-                            <div className="text-sm text-green-700">
-                              {t("components.yamlImport.successfullyCreated")}
-                            </div>
-                          )}
-                          {result.skipped && (
-                            <div className="text-sm text-gray-500">
-                              {t("components.yamlImport.skippedExisting")}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-4">
+                  <ResourceResultList
+                    items={progress.results.map(
+                      (result): ResourceResultItem => ({
+                        label: t(`${result.resourceType}.title`),
+                        name: result.resourceName,
+                        status: result.success
+                          ? result.skipped
+                            ? "skipped"
+                            : "success"
+                          : "error",
+                        error: result.error,
+                      }),
+                    )}
+                  />
                 </div>
               </ScrollArea>
 
