@@ -596,7 +596,7 @@
 			"endpointRef": "Internal Endpoint",
 			"upstreamUrl": "Upstream URL",
 			"authType": "Auth Type",
-			"credential": "Credential",
+			"credential": "API Key",
 			"modelMapping": "Model Mapping",
 			"exposedModelName": "Exposed Model Name",
 			"upstreamModelName": "Upstream Model Name",
@@ -614,7 +614,7 @@
 			"selectEndpointRef": "Select an internal endpoint",
 			"upstreamUrl": "e.g. https://api.openai.com",
 			"selectAuthType": "Select Auth Type",
-			"credential": "API Key or Token",
+			"credential": "Bearer token for the upstream",
 			"timeout": "e.g. 60",
 			"exposedModelName": "Model name exposed to clients",
 			"upstreamModelName": "Model name at upstream provider"
@@ -633,7 +633,7 @@
 		},
 		"messages": {
 			"curlExample": "Curl Example",
-			"curlHint": "Replace <your-api-key> with your API key. You can create one at {{apiKeyPage}}.",
+			"curlHint": "Set your API key first: {{exportCmd}}. You can create one at {{apiKeyPage}}.",
 			"curlExampleOpenai": "OpenAI",
 			"curlExampleAnthropic": "Anthropic",
 			"curlExampleEmbedding": "Embedding",

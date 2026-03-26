@@ -3,7 +3,7 @@ export function buildOpenAICurlCommand(
   modelName: string,
 ): string {
   return `curl ${serviceUrl}/v1/chat/completions \\
-  -H "Authorization: Bearer <your-api-key>" \\
+  -H "Authorization: Bearer $NEUTREE_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "${modelName}",

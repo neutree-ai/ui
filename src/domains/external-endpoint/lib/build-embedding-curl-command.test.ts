@@ -23,7 +23,7 @@ describe("buildEmbeddingCurlCommand", () => {
       "https://gw.example.com",
       "text-embedding-3-small",
     );
-    expect(result).toContain("Authorization: Bearer <your-api-key>");
+    expect(result).toContain("Authorization: Bearer $NEUTREE_API_KEY");
   });
 
   it("includes embedding-specific fields", () => {

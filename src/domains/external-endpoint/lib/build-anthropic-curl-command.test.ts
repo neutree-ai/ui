@@ -16,7 +16,7 @@ describe("buildAnthropicCurlCommand", () => {
       "https://gw.example.com",
       "claude-3-opus",
     );
-    expect(result).toContain("x-api-key: <your-api-key>");
+    expect(result).toContain("x-api-key: $NEUTREE_API_KEY");
   });
 
   it("includes Content-Type header", () => {

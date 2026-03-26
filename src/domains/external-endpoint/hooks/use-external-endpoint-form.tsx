@@ -1,3 +1,8 @@
+import { useSelect } from "@refinedev/core";
+import { useForm } from "@refinedev/react-hook-form";
+import { Plus, Trash2 } from "lucide-react";
+import { useCallback } from "react";
+import { useFieldArray } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,11 +23,6 @@ import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useSelect } from "@refinedev/core";
-import { useForm } from "@refinedev/react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
-import { useCallback } from "react";
-import { useFieldArray } from "react-hook-form";
 
 const emptyExternalUpstream: UpstreamSpec = {
   upstream: { url: "" },
@@ -50,7 +50,7 @@ export const useExternalEndpointForm = ({
       spec: {
         route_type: "/v1/chat/completions",
         timeout: 60000,
-        upstreams: [{ ...emptyExternalUpstream }],
+        upstreams: action === "create" ? [{ ...emptyExternalUpstream }] : [],
       },
     },
     refineCoreProps: {
@@ -97,10 +97,20 @@ export const useExternalEndpointForm = ({
     meta: { workspace: currentWorkspace },
   });
 
-  const endpointOptions = (endpoints.query.data?.data || []).map((item) => ({
-    label: item.metadata.name,
-    value: item.metadata.name,
-  }));
+  const endpointOptions = (endpoints.query.data?.data || [])
+    .map((item) => {
+      const phase = (item as { status?: { phase?: string } }).status?.phase;
+      return {
+        label: phase ? `${item.metadata.name} (${phase})` : item.metadata.name,
+        value: item.metadata.name,
+        phase,
+      };
+    })
+    .sort((a, b) => {
+      const aRunning = a.phase === "Running" ? 0 : 1;
+      const bRunning = b.phase === "Running" ? 0 : 1;
+      return aRunning - bRunning;
+    });
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
@@ -221,21 +231,10 @@ export const useExternalEndpointForm = ({
                           )}
                         />
                       </FormFieldGroup>
-                      <FormFieldGroup
-                        {...form}
-                        name={`spec.upstreams.${index}.auth.type`}
-                        label={t("external_endpoints.fields.authType")}
-                      >
-                        <FormSelect
-                          placeholder={t(
-                            "external_endpoints.placeholders.selectAuthType",
-                          )}
-                          options={[
-                            { label: "Bearer", value: "bearer" },
-                            { label: "API Key", value: "api_key" },
-                          ]}
-                        />
-                      </FormFieldGroup>
+                      <input
+                        type="hidden"
+                        {...form.register(`spec.upstreams.${index}.auth.type`)}
+                      />
                       <FormFieldGroup
                         {...form}
                         name={`spec.upstreams.${index}.auth.credential`}

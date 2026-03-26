@@ -1,3 +1,4 @@
+import { useShow } from "@refinedev/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CurlExample from "@/domains/external-endpoint/components/CurlExample";
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
@@ -9,7 +10,6 @@ import MetadataCard from "@/foundation/components/MetadataCard";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useShow } from "@refinedev/core";
 
 export const ExternalEndpointsShow = () => {
   const { t } = useTranslation();
@@ -84,13 +84,6 @@ export const ExternalEndpointsShow = () => {
                         </code>
                       </ShowPage.Row>
                     </div>
-                  )}
-                  {upstream.auth && (
-                    <ShowPage.Row
-                      title={t("external_endpoints.fields.authType")}
-                    >
-                      {upstream.auth.type}
-                    </ShowPage.Row>
                   )}
                 </>
               )}

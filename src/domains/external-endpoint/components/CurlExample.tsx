@@ -1,3 +1,6 @@
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,9 +17,6 @@ import { buildEmbeddingCurlCommand } from "@/domains/external-endpoint/lib/build
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
 
 type CurlExampleProps = {
   serviceUrl: string;
@@ -84,23 +84,34 @@ export default function CurlExample({ serviceUrl, models }: CurlExampleProps) {
       <CardContent className="px-4 pb-4">
         <p className="mb-3 text-sm text-muted-foreground">
           {t("external_endpoints.messages.curlHint", {
+            exportCmd: "{{exportCmd}}",
             apiKeyPage: "{{apiKeyPage}}",
           })
-            .split("{{apiKeyPage}}")
-            .flatMap((part, i, arr) =>
-              i < arr.length - 1
-                ? [
-                    part,
-                    <Link
-                      key="link"
-                      to={`/${workspace}/api-keys`}
-                      className="text-primary underline underline-offset-4 hover:text-primary/80"
-                    >
-                      {t("api_keys.title")}
-                    </Link>,
-                  ]
-                : [part],
-            )}
+            .split(/({{exportCmd}}|{{apiKeyPage}})/)
+            .map((segment, i) => {
+              if (segment === "{{exportCmd}}") {
+                return (
+                  <code
+                    key={i}
+                    className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono"
+                  >
+                    export NEUTREE_API_KEY=&lt;your-key&gt;
+                  </code>
+                );
+              }
+              if (segment === "{{apiKeyPage}}") {
+                return (
+                  <Link
+                    key={i}
+                    to={`/${workspace}/api-keys`}
+                    className="text-primary underline underline-offset-4 hover:text-primary/80"
+                  >
+                    {t("api_keys.title")}
+                  </Link>
+                );
+              }
+              return segment;
+            })}
         </p>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
