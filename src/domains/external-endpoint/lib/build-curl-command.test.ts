@@ -10,7 +10,7 @@ describe("buildOpenAICurlCommand", () => {
 
   it("includes authorization header placeholder", () => {
     const result = buildOpenAICurlCommand("https://gw.example.com", "gpt-4o");
-    expect(result).toContain("Authorization: Bearer $NEUTREE_API_KEY");
+    expect(result).toContain("Authorization: Bearer $ENDPOINT_API_KEY");
   });
 
   it("includes Content-Type header", () => {

@@ -3,7 +3,7 @@ export function buildEmbeddingCurlCommand(
   modelName: string,
 ): string {
   return `curl ${serviceUrl}/v1/embeddings \\
-  -H "Authorization: Bearer $NEUTREE_API_KEY" \\
+  -H "Authorization: Bearer $ENDPOINT_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "${modelName}",

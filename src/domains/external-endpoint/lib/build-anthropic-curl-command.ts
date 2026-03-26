@@ -3,7 +3,7 @@ export function buildAnthropicCurlCommand(
   modelName: string,
 ): string {
   return `curl ${serviceUrl}/anthropic/v1/messages \\
-  -H "x-api-key: $NEUTREE_API_KEY" \\
+  -H "x-api-key: $ENDPOINT_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "${modelName}",

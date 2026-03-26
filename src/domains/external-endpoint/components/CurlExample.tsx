@@ -95,7 +95,7 @@ export default function CurlExample({ serviceUrl, models }: CurlExampleProps) {
                     key={i}
                     className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono"
                   >
-                    export NEUTREE_API_KEY=&lt;your-key&gt;
+                    export ENDPOINT_API_KEY=&lt;your-key&gt;
                   </code>
                 );
               }
