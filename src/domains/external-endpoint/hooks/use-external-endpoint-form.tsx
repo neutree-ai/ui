@@ -1,8 +1,7 @@
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect } from "react";
-import { useFieldArray } from "react-hook-form";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +20,7 @@ import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -63,21 +63,13 @@ export const useExternalEndpointForm = ({
     warnWhenUnsavedChanges: true,
   });
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove } = useRefineFieldArray({
     control: form.control,
     name: "spec.upstreams",
+    refineForm: form,
   });
 
   const isEdit = action === "edit";
-
-  // Refine populates the form via setValue(), but useFieldArray does not
-  // respond to setValue on its array path. Sync manually with replace().
-  const queryUpstreams = form.refineCore.query?.data?.data?.spec?.upstreams;
-  useEffect(() => {
-    if (isEdit && queryUpstreams && queryUpstreams.length > 0) {
-      replace(queryUpstreams);
-    }
-  }, [isEdit, queryUpstreams, replace]);
 
   // Derive upstream types from form data — no separate state needed
   const upstreams = form.watch("spec.upstreams");

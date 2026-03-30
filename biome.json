@@ -55,6 +55,10 @@
 							"@refinedev/core": {
 								"importNames": ["useTranslate"],
 								"message": "Use useTranslation from @/foundation/lib/i18n instead."
+							},
+							"react-hook-form": {
+								"importNames": ["useFieldArray"],
+								"message": "Use useRefineFieldArray from @/foundation/hooks/use-refine-field-array instead. Refine's useForm uses setValue() which doesn't sync with useFieldArray."
 							}
 						}
 					}

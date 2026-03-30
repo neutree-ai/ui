@@ -1,11 +1,11 @@
+import type { UseFormReturnType } from "@refinedev/react-hook-form";
+import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   isValidIPAddress,
   isValidPath,
   isValidStorageQuantity,
 } from "@/foundation/lib/validate";
-import type { UseFormReturnType } from "@refinedev/react-hook-form";
-import { useFieldArray } from "react-hook-form";
 import { getCacheType as getCacheTypeFromObj } from "../lib/get-cache-type";
 import type { Cluster, ModelCache } from "../types";
 
@@ -42,9 +42,10 @@ const requiredField = (
 export function useModelCacheFields(form: UseFormReturnType<Cluster>) {
   const { t } = useTranslation();
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove } = useRefineFieldArray({
     control: form.control,
     name: "spec.config.model_caches",
+    refineForm: form,
   });
 
   const caches: { name?: string }[] =
