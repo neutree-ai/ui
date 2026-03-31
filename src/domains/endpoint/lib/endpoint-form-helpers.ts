@@ -111,15 +111,24 @@ export function computeMaxAvailable(
 
     return {
       cpu: {
-        available: singleNodeMax.cpu.available + validCurrentCpu,
+        available: Math.min(
+          singleNodeMax.cpu.available + validCurrentCpu,
+          singleNodeMax.cpu.total,
+        ),
         total: singleNodeMax.cpu.total,
       },
       memory: {
-        available: singleNodeMax.memory.available + validCurrentMemory,
+        available: Math.min(
+          singleNodeMax.memory.available + validCurrentMemory,
+          singleNodeMax.memory.total,
+        ),
         total: singleNodeMax.memory.total,
       },
       gpu: {
-        available: singleNodeMax.gpu.available + validCurrentGpu,
+        available: Math.min(
+          singleNodeMax.gpu.available + validCurrentGpu,
+          singleNodeMax.gpu.total,
+        ),
         total: singleNodeMax.gpu.total,
       },
     };
@@ -149,11 +158,17 @@ export function computeMaxAvailable(
 
   return {
     cpu: {
-      available: clusterCpuAvailable + validCurrentCpu,
+      available: Math.min(
+        clusterCpuAvailable + validCurrentCpu,
+        clusterResources.cpu.total,
+      ),
       total: clusterResources.cpu.total,
     },
     memory: {
-      available: clusterMemoryAvailable + validCurrentMemory,
+      available: Math.min(
+        clusterMemoryAvailable + validCurrentMemory,
+        clusterResources.memory.total,
+      ),
       total: clusterResources.memory.total,
     },
     gpu: { available: 0, total: 0 },

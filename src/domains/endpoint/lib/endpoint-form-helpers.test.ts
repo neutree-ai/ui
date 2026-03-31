@@ -87,10 +87,29 @@ describe("computeMaxAvailable", () => {
       memory: 4,
       gpu: 1,
     });
-    // available = singleNodeMax.available + validCurrentUsage
+    // available = singleNodeMax.available + validCurrentUsage, capped at total
     expect(result.cpu).toEqual({ available: 12, total: 16 });
     expect(result.memory).toEqual({ available: 24, total: 32 });
     expect(result.gpu).toEqual({ available: 3, total: 4 });
+  });
+
+  it("caps available at total when paused EP releases resources (singleNodeMax)", () => {
+    // When EP is paused, cluster reports all resources as available (e.g., gpu available=1, total=1)
+    // but currentUsage is still 1 from the form values → available + current would be 2 > total
+    const singleNodeMax = {
+      cpu: { available: 8, total: 8 },
+      memory: { available: 13.2, total: 13.2 },
+      gpu: { available: 1, total: 1 },
+    };
+    const result = computeMaxAvailable(singleNodeMax, null, {
+      cpu: 4,
+      memory: 8,
+      gpu: 1,
+    });
+    // available should never exceed total
+    expect(result.cpu).toEqual({ available: 8, total: 8 });
+    expect(result.memory).toEqual({ available: 13.2, total: 13.2 });
+    expect(result.gpu).toEqual({ available: 1, total: 1 });
   });
 
   it("falls back to cluster resources when singleNodeMax is null", () => {
@@ -106,6 +125,20 @@ describe("computeMaxAvailable", () => {
     expect(result.cpu).toEqual({ available: 84, total: 100 });
     expect(result.memory).toEqual({ available: 208, total: 256 });
     expect(result.gpu).toEqual({ available: 0, total: 0 });
+  });
+
+  it("caps available at total when paused EP releases resources (cluster)", () => {
+    const clusterResources = {
+      cpu: { available: 100, total: 100 },
+      memory: { available: 256, total: 256 },
+    };
+    const result = computeMaxAvailable(null, clusterResources, {
+      cpu: 4,
+      memory: 8,
+      gpu: 0,
+    });
+    expect(result.cpu).toEqual({ available: 100, total: 100 });
+    expect(result.memory).toEqual({ available: 256, total: 256 });
   });
 
   it("returns all zeros when both sources are null", () => {

@@ -238,7 +238,7 @@
   "src/foundation/hooks/use-variables-input.ts": "4b89bf232a2e5ae081417eb32cd07b27",
   "src/foundation/components/VariablesInput.tsx": "322ef95b0efb9795b935e37ab3b79ead",
   "src/domains/endpoint/lib/cluster-resources.ts": "1c153dbd157f6d1713c4a8fc18daa472",
-  "src/domains/endpoint/lib/endpoint-form-helpers.ts": "196e87a697c7cbfd4fbc20482e296ef9",
+  "src/domains/endpoint/lib/endpoint-form-helpers.ts": "8facf1f22d1187da99c8bf8b8f914279",
   "src/domains/endpoint/hooks/use-endpoint-form.tsx": "6824be71c33e92471b2d9b6816de064e",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "0a820b8bd31826bbecd4db33b02b74bc",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "b2466d871f8436202bb1e6011ec61ecd",
