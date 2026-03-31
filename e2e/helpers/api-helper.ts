@@ -358,7 +358,7 @@ export class ApiHelper {
       metadata: { name, workspace: options?.workspace ?? "default" },
       spec: {
         url: options?.url ?? config.imageRegistry.url,
-        repository: options?.repository ?? "",
+        repository: options?.repository ?? config.imageRegistry.repository,
         authconfig,
       },
     });
