@@ -661,7 +661,7 @@
 			"endpointName": "External Endpoint Name",
 			"selectRouteType": "Select Route Type",
 			"selectEndpointRef": "Select an internal endpoint",
-			"upstreamUrl": "e.g. https://api.openai.com",
+			"upstreamUrl": "e.g. https://api.openai.com/v1",
 			"selectAuthType": "Select Auth Type",
 			"credential": "Bearer token for the upstream",
 			"timeout": "e.g. 60",
@@ -686,7 +686,12 @@
 			"curlExampleOpenai": "OpenAI",
 			"curlExampleAnthropic": "Anthropic",
 			"curlExampleEmbedding": "Embedding",
-			"credentialHidden": "Credential is hidden for security"
+			"credentialHidden": "Credential is hidden for security",
+			"testConnectivity": "Test Connection",
+			"testConnectivityTesting": "Testing...",
+			"testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
+			"testConnectivityFailed": "Connection failed: {{error}}",
+			"testConnectivityError": "Request error: {{error}}"
 		},
 		"validation": {
 			"nameRequired": "Name is required",

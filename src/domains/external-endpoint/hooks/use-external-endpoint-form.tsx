@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ModelMappingEditor from "@/domains/external-endpoint/components/ModelMappingEditor";
+import TestConnectivityButton from "@/domains/external-endpoint/components/TestConnectivityButton";
 import TimeoutInput from "@/domains/external-endpoint/components/TimeoutInput";
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
@@ -253,6 +254,37 @@ export const useExternalEndpointForm = ({
                           )}
                         />
                       </FormFieldGroup>
+                      <div className="col-span-4 flex items-center">
+                        <TestConnectivityButton
+                          getValues={() => ({
+                            url:
+                              form.getValues(
+                                `spec.upstreams.${index}.upstream.url`,
+                              ) ?? "",
+                            credential:
+                              form.getValues(
+                                `spec.upstreams.${index}.auth.credential`,
+                              ) ?? "",
+                          })}
+                          onModelsReceived={(models) => {
+                            const current = form.getValues(
+                              `spec.upstreams.${index}.model_mapping`,
+                            );
+                            // Only auto-fill if model_mapping is empty
+                            if (!current || Object.keys(current).length === 0) {
+                              const mapping: Record<string, string> = {};
+                              for (const m of models) {
+                                mapping[m] = m;
+                              }
+                              form.setValue(
+                                `spec.upstreams.${index}.model_mapping`,
+                                mapping,
+                                { shouldDirty: true },
+                              );
+                            }
+                          }}
+                        />
+                      </div>
                     </>
                   ) : (
                     <FormFieldGroup

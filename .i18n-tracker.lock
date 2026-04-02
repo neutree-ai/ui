@@ -247,7 +247,7 @@
   "src/pages/external-endpoints/list.tsx": "1b58592b9a94b4853e701d9358b4394e",
   "src/pages/external-endpoints/show.tsx": "e054f192830c0a86929efd11a260f6ae",
   "src/domains/external-endpoint/types.ts": "919dea3f18a6795e2dde24e4a460a89e",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "cf4501151667b6b52541155aab1c4e3e",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "002fb50819dbf8c1fc2a4426105c51bf",
   "src/domains/external-endpoint/components/CurlExample.tsx": "5183a8958c58627f671b3d80313f016f",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "1c1e5325079d9c25ac1f5f14fa47383f",
   "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "8896f94694dbcf6d9f7ae221413e09d7",
@@ -286,5 +286,6 @@
   "src/pages/dashboard/QuickStartDialog.tsx": "141e2fd4d5a7b6d78d906ca7aa0703eb",
   "src/foundation/hooks/use-quick-start.ts": "0d41b868c2357acbec6ba98230a0a3b4",
   "src/foundation/components/ResourceResultList.tsx": "5b87054f8939e64a98ac67e886b68c64",
-  "src/foundation/hooks/use-refine-field-array.ts": "8e3ff4422156f31e4dd5928bff116427"
+  "src/foundation/hooks/use-refine-field-array.ts": "8e3ff4422156f31e4dd5928bff116427",
+  "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "12ae033238b87f8e38aefc01ab0afef1"
 }

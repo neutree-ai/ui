@@ -36,6 +36,13 @@ vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
+vi.mock(
+  "@/domains/external-endpoint/components/TestConnectivityButton",
+  () => ({
+    default: () => <div data-testid="test-connectivity-mock" />,
+  }),
+);
+
 vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
   default: React.forwardRef(
     (props: { value?: number; onChange?: (v: number) => void }, ref: any) => (
