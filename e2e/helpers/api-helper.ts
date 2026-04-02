@@ -255,9 +255,9 @@ export class ApiHelper {
           version: options?.engineVersion ?? config.engine.version,
         },
         resources: {
-          cpu: options?.cpu ?? 1,
-          memory: options?.memory ?? 1,
-          gpu: options?.gpu ?? 0,
+          cpu: String(options?.cpu ?? 1),
+          memory: String(options?.memory ?? 1),
+          gpu: String(options?.gpu ?? 0),
         },
         replicas: { num: options?.replicas ?? 1 },
         deployment_options: {
