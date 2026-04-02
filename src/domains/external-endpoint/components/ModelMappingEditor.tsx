@@ -1,9 +1,9 @@
+import { Plus, Trash2, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import { Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 type MappingRow = { key: string; value: string };
 
@@ -11,6 +11,8 @@ type ModelMappingEditorProps = {
   value?: Record<string, string>;
   onChange?: (v: Record<string, string>) => void;
   disabled?: boolean;
+  /** Known upstream models from test connectivity, used to warn on mismatches */
+  availableModels?: string[];
 };
 
 function toRows(mapping: Record<string, string> | undefined): MappingRow[] {
@@ -51,6 +53,7 @@ export default function ModelMappingEditor({
   value,
   onChange,
   disabled,
+  availableModels,
 }: ModelMappingEditorProps) {
   const { t } = useTranslation();
   const [rows, setRows] = useState<MappingRow[]>(() => toRows(value));
@@ -103,6 +106,11 @@ export default function ModelMappingEditor({
       </div>
       {rows.map((row, index) => {
         const isDup = duplicateIndices.has(index);
+        const isUnknownModel =
+          availableModels &&
+          availableModels.length > 0 &&
+          row.value !== "" &&
+          !availableModels.includes(row.value);
         return (
           <div key={index} className="space-y-1">
             <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
@@ -115,14 +123,20 @@ export default function ModelMappingEditor({
                 disabled={disabled}
                 className={cn(isDup && "border-destructive")}
               />
-              <Input
-                value={row.value}
-                onChange={(e) => updateRow(index, "value", e.target.value)}
-                placeholder={t(
-                  "external_endpoints.placeholders.upstreamModelName",
+              <div className="relative">
+                <Input
+                  value={row.value}
+                  onChange={(e) => updateRow(index, "value", e.target.value)}
+                  placeholder={t(
+                    "external_endpoints.placeholders.upstreamModelName",
+                  )}
+                  disabled={disabled}
+                  className={cn(isUnknownModel && "border-amber-500 pr-8")}
+                />
+                {isUnknownModel && (
+                  <TriangleAlert className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-500" />
                 )}
-                disabled={disabled}
-              />
+              </div>
               <Button
                 type="button"
                 variant="ghost"
@@ -136,6 +150,11 @@ export default function ModelMappingEditor({
             {isDup && (
               <p className="text-[0.8rem] text-destructive">
                 {t("external_endpoints.validation.duplicateModelKey")}
+              </p>
+            )}
+            {isUnknownModel && !isDup && (
+              <p className="text-[0.8rem] text-amber-500">
+                {t("external_endpoints.validation.unknownUpstreamModel")}
               </p>
             )}
           </div>

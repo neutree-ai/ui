@@ -701,6 +701,7 @@
 			"exposedModelRequired": "Exposed model name is required",
 			"upstreamModelRequired": "Upstream model name is required",
 			"duplicateModelKey": "Duplicate model key in this upstream",
+			"unknownUpstreamModel": "This model was not found in the upstream's model list",
 			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream"
 		}
 	},

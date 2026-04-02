@@ -1,7 +1,7 @@
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,11 @@ export const useExternalEndpointForm = ({
   });
 
   const isEdit = action === "edit";
+
+  // Models returned by test connectivity, keyed by upstream index
+  const [availableModelsMap, setAvailableModelsMap] = useState<
+    Record<number, string[]>
+  >({});
 
   // Derive upstream types from form data — no separate state needed
   const upstreams = form.watch("spec.upstreams");
@@ -267,6 +272,10 @@ export const useExternalEndpointForm = ({
                               ) ?? "",
                           })}
                           onModelsReceived={(models) => {
+                            setAvailableModelsMap((prev) => ({
+                              ...prev,
+                              [index]: models,
+                            }));
                             const current = form.getValues(
                               `spec.upstreams.${index}.model_mapping`,
                             );
@@ -325,7 +334,9 @@ export const useExternalEndpointForm = ({
                       },
                     }}
                   >
-                    <ModelMappingEditor />
+                    <ModelMappingEditor
+                      availableModels={availableModelsMap[index]}
+                    />
                   </FormFieldGroup>
                 </div>
               </CardContent>
