@@ -1410,15 +1410,10 @@ spec:
       await apiHelper.deleteImageRegistry(name).catch(() => {});
     });
 
-    test.skip(
+    test(
       "Docker Hub public URL, no auth → status becomes Connected",
       {
         tag: "@C2612047",
-        annotation: {
-          type: "skip",
-          description:
-            "Backend reconciler returns wrong status for Docker Hub public URL (shows Failed instead of Connected)",
-        },
       },
       async ({ imageRegistries }, testInfo) => {
         testInfo.setTimeout(CONNECTION_TIMEOUT + 30_000);
@@ -1432,15 +1427,10 @@ spec:
       },
     );
 
-    test.skip(
+    test(
       "wrong auth credentials → status becomes Failed",
       {
         tag: "@C2612051",
-        annotation: {
-          type: "skip",
-          description:
-            "Backend reconciler returns wrong status for bad auth (shows Connected instead of Failed)",
-        },
       },
       async ({ imageRegistries, apiHelper }, testInfo) => {
         testInfo.setTimeout(CONNECTION_TIMEOUT + 30_000);
