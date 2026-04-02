@@ -15,7 +15,7 @@ describe("useTestConnectivity", () => {
     expect(result.current.result).toBeNull();
   });
 
-  it("sends correct payload and returns success result", async () => {
+  it("sends correct payload for external upstream", async () => {
     mockMutateAsync.mockResolvedValueOnce({
       data: {
         success: true,
@@ -28,7 +28,11 @@ describe("useTestConnectivity", () => {
 
     let data: Awaited<ReturnType<typeof result.current.test>>;
     await act(async () => {
-      data = await result.current.test("https://api.openai.com/v1", "sk-test");
+      data = await result.current.test({
+        type: "external",
+        url: "https://api.openai.com/v1",
+        credential: "sk-test",
+      });
     });
 
     expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -54,6 +58,38 @@ describe("useTestConnectivity", () => {
     });
   });
 
+  it("sends correct payload for endpoint_ref", async () => {
+    mockMutateAsync.mockResolvedValueOnce({
+      data: { success: true, latency_ms: 80, models: ["llama-3"] },
+    });
+
+    const { result } = renderHook(() => useTestConnectivity());
+
+    let data: Awaited<ReturnType<typeof result.current.test>>;
+    await act(async () => {
+      data = await result.current.test({
+        type: "endpoint_ref",
+        endpoint_ref: "my-internal-endpoint",
+        workspace: "default",
+      });
+    });
+
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      url: "/external_endpoints/test_connectivity",
+      method: "post",
+      values: {
+        endpoint_ref: "my-internal-endpoint",
+        workspace: "default",
+      },
+      successNotification: false,
+      errorNotification: false,
+    });
+
+    expect(data!.success).toBe(true);
+    expect(data!.latency_ms).toBe(80);
+    expect(data!.models).toEqual(["llama-3"]);
+  });
+
   it("returns failure result from API", async () => {
     mockMutateAsync.mockResolvedValueOnce({
       data: { success: false, error: "connection refused" },
@@ -63,7 +99,11 @@ describe("useTestConnectivity", () => {
 
     let data: Awaited<ReturnType<typeof result.current.test>>;
     await act(async () => {
-      data = await result.current.test("https://bad.com/v1", "sk-test");
+      data = await result.current.test({
+        type: "external",
+        url: "https://bad.com/v1",
+        credential: "sk-test",
+      });
     });
 
     expect(data!.success).toBe(false);
@@ -78,7 +118,11 @@ describe("useTestConnectivity", () => {
 
     let data: Awaited<ReturnType<typeof result.current.test>>;
     await act(async () => {
-      data = await result.current.test("https://api.openai.com/v1", "sk-test");
+      data = await result.current.test({
+        type: "external",
+        url: "https://api.openai.com/v1",
+        credential: "sk-test",
+      });
     });
 
     expect(data!.success).toBe(false);
@@ -93,7 +137,11 @@ describe("useTestConnectivity", () => {
 
     let data: Awaited<ReturnType<typeof result.current.test>>;
     await act(async () => {
-      data = await result.current.test("https://api.openai.com/v1", "sk-test");
+      data = await result.current.test({
+        type: "endpoint_ref",
+        endpoint_ref: "bad-endpoint",
+        workspace: "default",
+      });
     });
 
     expect(data!.success).toBe(false);

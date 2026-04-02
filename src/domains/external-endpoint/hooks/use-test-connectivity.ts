@@ -8,23 +8,37 @@ export type TestConnectivityResult = {
   error?: string;
 };
 
+type TestConnectivityParams =
+  | { type: "external"; url: string; credential: string }
+  | { type: "endpoint_ref"; endpoint_ref: string; workspace: string };
+
+function buildPayload(params: TestConnectivityParams) {
+  if (params.type === "external") {
+    return {
+      upstream: { url: params.url },
+      auth: { type: "bearer", credential: params.credential },
+    };
+  }
+  return {
+    endpoint_ref: params.endpoint_ref,
+    workspace: params.workspace,
+  };
+}
+
 export function useTestConnectivity() {
   const { mutateAsync } = useCustomMutation();
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<TestConnectivityResult | null>(null);
 
   const test = useCallback(
-    async (url: string, credential: string) => {
+    async (params: TestConnectivityParams) => {
       setTesting(true);
       setResult(null);
       try {
         const res = await mutateAsync({
           url: "/external_endpoints/test_connectivity",
           method: "post",
-          values: {
-            upstream: { url },
-            auth: { type: "bearer", credential },
-          },
+          values: buildPayload(params),
           successNotification: false,
           errorNotification: false,
         });

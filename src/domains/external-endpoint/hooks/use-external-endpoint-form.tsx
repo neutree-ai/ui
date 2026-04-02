@@ -274,10 +274,11 @@ export const useExternalEndpointForm = ({
                               form.getValues(
                                 `spec.upstreams.${index}.auth.credential`,
                               ) ?? "";
-                            const data = await connectivity.test(
+                            const data = await connectivity.test({
+                              type: "external",
                               url,
                               credential,
-                            );
+                            });
                             if (data.success && data.models?.length) {
                               setAvailableModelsMap((prev) => ({
                                 ...prev,
@@ -289,19 +290,44 @@ export const useExternalEndpointForm = ({
                       </div>
                     </>
                   ) : (
-                    <FormFieldGroup
-                      {...form}
-                      name={`spec.upstreams.${index}.endpoint_ref`}
-                      label={t("external_endpoints.fields.endpointRef")}
-                      className="col-span-3"
-                    >
-                      <FormCombobox
-                        placeholder={t(
-                          "external_endpoints.placeholders.selectEndpointRef",
-                        )}
-                        options={endpointOptions}
-                      />
-                    </FormFieldGroup>
+                    <>
+                      <FormFieldGroup
+                        {...form}
+                        name={`spec.upstreams.${index}.endpoint_ref`}
+                        label={t("external_endpoints.fields.endpointRef")}
+                        className="col-span-3"
+                      >
+                        <FormCombobox
+                          placeholder={t(
+                            "external_endpoints.placeholders.selectEndpointRef",
+                          )}
+                          options={endpointOptions}
+                        />
+                      </FormFieldGroup>
+                      <div className="col-span-4 flex items-center">
+                        <TestConnectivityButton
+                          testing={connectivity.testing}
+                          result={connectivity.result}
+                          onTest={async () => {
+                            const endpointRef =
+                              form.getValues(
+                                `spec.upstreams.${index}.endpoint_ref`,
+                              ) ?? "";
+                            const data = await connectivity.test({
+                              type: "endpoint_ref",
+                              endpoint_ref: endpointRef,
+                              workspace: currentWorkspace,
+                            });
+                            if (data.success && data.models?.length) {
+                              setAvailableModelsMap((prev) => ({
+                                ...prev,
+                                [index]: data.models!,
+                              }));
+                            }
+                          }}
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
                 <div>
