@@ -276,21 +276,6 @@ export const useExternalEndpointForm = ({
                               ...prev,
                               [index]: models,
                             }));
-                            const current = form.getValues(
-                              `spec.upstreams.${index}.model_mapping`,
-                            );
-                            // Only auto-fill if model_mapping is empty
-                            if (!current || Object.keys(current).length === 0) {
-                              const mapping: Record<string, string> = {};
-                              for (const m of models) {
-                                mapping[m] = m;
-                              }
-                              form.setValue(
-                                `spec.upstreams.${index}.model_mapping`,
-                                mapping,
-                                { shouldDirty: true },
-                              );
-                            }
                           }}
                         />
                       </div>
