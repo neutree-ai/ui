@@ -428,7 +428,7 @@ test.describe("ui layout", () => {
         '[data-testid="dashboard-endpoint-count"]',
       );
       const quickStart = page.locator('[data-testid="dashboard-quick-start"]');
-      await expect(endpointsCard.or(quickStart)).toBeVisible({
+      await expect(endpointsCard.getByText(/\d+/).or(quickStart)).toBeVisible({
         timeout: 10000,
       });
     });
