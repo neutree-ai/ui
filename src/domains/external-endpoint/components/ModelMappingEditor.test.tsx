@@ -128,6 +128,49 @@ describe("ModelMappingEditor", () => {
     expect(errors).toHaveLength(2);
   });
 
+  it("shows warning when upstream model is not in availableModels", () => {
+    render(
+      <ModelMappingEditor
+        value={{ "my-model": "unknown-model" }}
+        availableModels={["gpt-4o", "gpt-4o-mini"]}
+      />,
+    );
+    expect(
+      screen.getByText("external_endpoints.validation.unknownUpstreamModel"),
+    ).toBeTruthy();
+  });
+
+  it("does not show warning when upstream model is in availableModels", () => {
+    render(
+      <ModelMappingEditor
+        value={{ "my-model": "gpt-4o" }}
+        availableModels={["gpt-4o", "gpt-4o-mini"]}
+      />,
+    );
+    expect(
+      screen.queryByText("external_endpoints.validation.unknownUpstreamModel"),
+    ).toBeNull();
+  });
+
+  it("does not show warning when availableModels is not provided", () => {
+    render(<ModelMappingEditor value={{ "my-model": "anything" }} />);
+    expect(
+      screen.queryByText("external_endpoints.validation.unknownUpstreamModel"),
+    ).toBeNull();
+  });
+
+  it("does not show warning for empty upstream model value", () => {
+    render(
+      <ModelMappingEditor
+        value={{ "my-model": "" }}
+        availableModels={["gpt-4o"]}
+      />,
+    );
+    expect(
+      screen.queryByText("external_endpoints.validation.unknownUpstreamModel"),
+    ).toBeNull();
+  });
+
   it("preserves duplicate rows without collapsing them", () => {
     render(<ModelMappingEditor value={{ a: "1" }} />);
 

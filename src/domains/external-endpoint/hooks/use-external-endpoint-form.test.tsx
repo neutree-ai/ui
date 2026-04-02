@@ -43,6 +43,14 @@ vi.mock(
   }),
 );
 
+vi.mock("@/domains/external-endpoint/hooks/use-test-connectivity", () => ({
+  useTestConnectivity: () => ({
+    test: vi.fn(),
+    testing: false,
+    result: null,
+  }),
+}));
+
 vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
   default: React.forwardRef(
     (props: { value?: number; onChange?: (v: number) => void }, ref: any) => (

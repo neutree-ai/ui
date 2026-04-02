@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import ModelMappingEditor from "@/domains/external-endpoint/components/ModelMappingEditor";
 import TestConnectivityButton from "@/domains/external-endpoint/components/TestConnectivityButton";
 import TimeoutInput from "@/domains/external-endpoint/components/TimeoutInput";
+import { useTestConnectivity } from "@/domains/external-endpoint/hooks/use-test-connectivity";
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
@@ -76,6 +77,7 @@ export const useExternalEndpointForm = ({
   const [availableModelsMap, setAvailableModelsMap] = useState<
     Record<number, string[]>
   >({});
+  const connectivity = useTestConnectivity();
 
   // Derive upstream types from form data — no separate state needed
   const upstreams = form.watch("spec.upstreams");
@@ -261,21 +263,27 @@ export const useExternalEndpointForm = ({
                       </FormFieldGroup>
                       <div className="col-span-4 flex items-center">
                         <TestConnectivityButton
-                          getValues={() => ({
-                            url:
+                          testing={connectivity.testing}
+                          result={connectivity.result}
+                          onTest={async () => {
+                            const url =
                               form.getValues(
                                 `spec.upstreams.${index}.upstream.url`,
-                              ) ?? "",
-                            credential:
+                              ) ?? "";
+                            const credential =
                               form.getValues(
                                 `spec.upstreams.${index}.auth.credential`,
-                              ) ?? "",
-                          })}
-                          onModelsReceived={(models) => {
-                            setAvailableModelsMap((prev) => ({
-                              ...prev,
-                              [index]: models,
-                            }));
+                              ) ?? "";
+                            const data = await connectivity.test(
+                              url,
+                              credential,
+                            );
+                            if (data.success && data.models?.length) {
+                              setAvailableModelsMap((prev) => ({
+                                ...prev,
+                                [index]: data.models!,
+                              }));
+                            }
                           }}
                         />
                       </div>

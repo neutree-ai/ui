@@ -1,59 +1,20 @@
-import { useCustomMutation } from "@refinedev/core";
 import { CheckCircle2, Loader2, Plug, XCircle } from "lucide-react";
-import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { TestConnectivityResult } from "@/domains/external-endpoint/hooks/use-test-connectivity";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-type TestConnectivityResult = {
-  success: boolean;
-  latency_ms?: number;
-  models?: string[];
-  error?: string;
-};
-
 type TestConnectivityButtonProps = {
-  getValues: () => { url: string; credential: string };
-  onModelsReceived?: (models: string[]) => void;
+  testing: boolean;
+  result: TestConnectivityResult | null;
+  onTest: () => void;
 };
 
 export default function TestConnectivityButton({
-  getValues,
-  onModelsReceived,
+  testing,
+  result,
+  onTest,
 }: TestConnectivityButtonProps) {
   const { t } = useTranslation();
-  const { mutateAsync } = useCustomMutation();
-  const [testing, setTesting] = useState(false);
-  const [result, setResult] = useState<TestConnectivityResult | null>(null);
-
-  const handleTest = useCallback(async () => {
-    const { url, credential } = getValues();
-    setTesting(true);
-    setResult(null);
-    try {
-      const res = await mutateAsync({
-        url: "/external_endpoints/test_connectivity",
-        method: "post",
-        values: {
-          upstream: { url },
-          auth: { type: "bearer", credential },
-        },
-        successNotification: false,
-        errorNotification: false,
-      });
-      const data = res.data as TestConnectivityResult;
-      setResult(data);
-      if (data.success && data.models?.length && onModelsReceived) {
-        onModelsReceived(data.models);
-      }
-    } catch (err) {
-      setResult({
-        success: false,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    } finally {
-      setTesting(false);
-    }
-  }, [getValues, mutateAsync, onModelsReceived]);
 
   return (
     <div className="flex items-center gap-3">
@@ -61,7 +22,7 @@ export default function TestConnectivityButton({
         type="button"
         variant="outline"
         size="sm"
-        onClick={handleTest}
+        onClick={onTest}
         disabled={testing}
       >
         {testing ? (
