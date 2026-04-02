@@ -162,10 +162,45 @@ class TestRailReporter implements Reporter {
       `${this.baseUrl}/index.php?/api/v2/${path}`;
     const headers = { Authorization: `Basic ${auth}` };
 
-    // Step 1: bulk report results
-    const payload: TestRailResult[] = collected.map(
+    // Step 0: fetch valid case IDs in this run to filter out unknown cases
+    let validCaseIds: Set<number> | undefined;
+    try {
+      const testsResp = await fetch(apiUrl(`get_tests/${this.runId}`), {
+        headers,
+      });
+      if (testsResp.ok) {
+        const tests = (await testsResp.json()) as
+          | { case_id: number }[]
+          | { tests: { case_id: number }[] };
+        const testArray = Array.isArray(tests) ? tests : (tests.tests ?? []);
+        validCaseIds = new Set(testArray.map((t) => t.case_id));
+        console.log(
+          `TestRail: Run ${this.runId} contains ${validCaseIds.size} case(s)`,
+        );
+      }
+    } catch {
+      // If fetching tests fails, proceed without filtering
+    }
+
+    // Step 1: bulk report results (filter out cases not in the run)
+    const allResults: TestRailResult[] = collected.map(
       ({ attachments: _, ...rest }) => rest,
     );
+    const payload = validCaseIds
+      ? allResults.filter((r) => validCaseIds.has(r.case_id))
+      : allResults;
+
+    const skippedCount = allResults.length - payload.length;
+    if (skippedCount > 0) {
+      console.log(
+        `TestRail: Skipped ${skippedCount} result(s) not in run ${this.runId}`,
+      );
+    }
+
+    if (payload.length === 0) {
+      console.log("TestRail: No matching results to report");
+      return;
+    }
 
     let resultIds: Map<number, number> | undefined;
     try {
