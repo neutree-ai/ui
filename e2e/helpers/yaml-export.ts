@@ -41,9 +41,7 @@ export class YamlExportHelper {
   /** Build a row locator that matches exactly the given label text */
   private resourceRow(label: string) {
     return this.dialog.locator(".border.rounded-lg").filter({
-      has: this.page.locator("span, h3, p").filter({
-        hasText: new RegExp(`^${label}$`),
-      }),
+      has: this.page.getByText(label, { exact: true }),
     });
   }
 

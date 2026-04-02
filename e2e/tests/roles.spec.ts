@@ -359,6 +359,8 @@ interface PermissionGroupSpec {
   groupTitle: string;
   cards: string[];
   depTrigger: string | null;
+  /** Override expected total when toggle-all adds cross-resource deps */
+  expectedTotal?: number;
 }
 
 const PERMISSION_GROUPS: PermissionGroupSpec[] = [
@@ -484,6 +486,7 @@ const PERMISSION_GROUPS: PermissionGroupSpec[] = [
     groupTitle: "Models",
     cards: ["Models:Delete", "Models:Pull", "Models:Push", "Models:Read"],
     depTrigger: null, // Models has cross-resource deps (push/pull → model_registry:read)
+    expectedTotal: 5, // 4 model perms + auto-selected model_registry:read
   },
 ];
 
@@ -547,7 +550,7 @@ async function verifyPermissionGroup(
   // Submit and verify
   await roles.form.submit();
   await roles.goToList();
-  await expectPermissionCount(roles, name, N);
+  await expectPermissionCount(roles, name, spec.expectedTotal ?? N);
 
   // Cleanup
   await roles.table.deleteRow(name, { noWait: true });

@@ -105,9 +105,7 @@ test.describe("yaml export", () => {
         // Should show either entities or "No entities found"
         const dialog = page.getByRole("dialog");
         const resourceRow = dialog.locator(".border.rounded-lg").filter({
-          has: page.locator("span, h3, p").filter({
-            hasText: new RegExp(`^${label}$`),
-          }),
+          has: page.getByText(label, { exact: true }),
         });
 
         // Wait for loading to finish
