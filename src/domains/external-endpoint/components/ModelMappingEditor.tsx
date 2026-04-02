@@ -123,18 +123,25 @@ export default function ModelMappingEditor({
                 disabled={disabled}
                 className={cn(isDup && "border-destructive")}
               />
-              <div className="relative">
-                <Input
-                  value={row.value}
-                  onChange={(e) => updateRow(index, "value", e.target.value)}
-                  placeholder={t(
-                    "external_endpoints.placeholders.upstreamModelName",
+              <div>
+                <div className="relative">
+                  <Input
+                    value={row.value}
+                    onChange={(e) => updateRow(index, "value", e.target.value)}
+                    placeholder={t(
+                      "external_endpoints.placeholders.upstreamModelName",
+                    )}
+                    disabled={disabled}
+                    className={cn(isUnknownModel && "border-amber-500 pr-8")}
+                  />
+                  {isUnknownModel && (
+                    <TriangleAlert className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-500" />
                   )}
-                  disabled={disabled}
-                  className={cn(isUnknownModel && "border-amber-500 pr-8")}
-                />
-                {isUnknownModel && (
-                  <TriangleAlert className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-500" />
+                </div>
+                {isUnknownModel && !isDup && (
+                  <p className="text-[0.8rem] text-amber-500">
+                    {t("external_endpoints.validation.unknownUpstreamModel")}
+                  </p>
                 )}
               </div>
               <Button
@@ -150,11 +157,6 @@ export default function ModelMappingEditor({
             {isDup && (
               <p className="text-[0.8rem] text-destructive">
                 {t("external_endpoints.validation.duplicateModelKey")}
-              </p>
-            )}
-            {isUnknownModel && !isDup && (
-              <p className="text-[0.8rem] text-amber-500">
-                {t("external_endpoints.validation.unknownUpstreamModel")}
               </p>
             )}
           </div>

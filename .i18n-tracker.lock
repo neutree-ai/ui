@@ -250,7 +250,7 @@
   "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "025f0db58e0f2c59add740c6aa182291",
   "src/domains/external-endpoint/components/CurlExample.tsx": "5183a8958c58627f671b3d80313f016f",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "1c1e5325079d9c25ac1f5f14fa47383f",
-  "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "64b6a55452e52678e6b0ffc2b618acef",
+  "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "874eeb4af618adc3b5ea54cbdf378c49",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "aef504b00a7ee2db2ff13d55784c114d",
   "src/domains/external-endpoint/lib/clean-upstreams-for-submit.ts": "18e326418e255dbfd5a938653e033fae",
   "src/domains/external-endpoint/lib/get-exposed-models.ts": "ac9b304f8eb1fca200e756b06970064c",
