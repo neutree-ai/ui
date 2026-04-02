@@ -26,6 +26,7 @@ export interface E2eConfig {
     sshPrivateKey: string;
   };
   k8sCluster: { kubeconfig: string; routerAccessMode: string };
+  cluster: { version: string };
   engine: { name: string; version: string };
   model: { name: string; version: string; file: string; task: string };
   modelCache: {
@@ -96,6 +97,7 @@ function buildConfig(raw: Record<string, any>): E2eConfig {
   const sshNodes: { host: string; user: string; key_file?: string }[] =
     raw.ssh_nodes ?? [];
   const k8s = raw.kubernetes ?? {};
+  const cl = raw.cluster ?? {};
   const eng = raw.engine ?? {};
   const model = raw.model ?? {};
   const mc = raw.model_cache ?? {};
@@ -137,6 +139,9 @@ function buildConfig(raw: Record<string, any>): E2eConfig {
         (k8s.kubeconfig ? readFileAtPath(k8s.kubeconfig) : undefined) ??
         "apiVersion: v1\nkind: Config\nclusters: []",
       routerAccessMode: k8s.router_access_mode ?? "LoadBalancer",
+    },
+    cluster: {
+      version: cl.version ?? "v1.0.0",
     },
     engine: {
       name: eng.name ?? "vllm",

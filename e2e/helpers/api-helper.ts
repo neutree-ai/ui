@@ -508,7 +508,7 @@ export class ApiHelper {
       metadata: { name, workspace },
       spec: {
         type,
-        version: options?.version ?? "v1.0.0",
+        version: options?.version ?? config.cluster.version,
         image_registry: options?.imageRegistry ?? "",
         config: clusterConfig,
       },
