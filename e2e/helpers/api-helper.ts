@@ -464,6 +464,7 @@ export class ApiHelper {
       sshPrivateKey?: string;
       imageRegistry?: string;
       kubeconfig?: string;
+      version?: string;
     },
   ): Promise<void> {
     const type = options?.type ?? "ssh";
@@ -507,6 +508,7 @@ export class ApiHelper {
       metadata: { name, workspace },
       spec: {
         type,
+        version: options?.version ?? "v1.0.0",
         image_registry: options?.imageRegistry ?? "",
         config: clusterConfig,
       },
