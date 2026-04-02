@@ -19,15 +19,12 @@ async function getDashboardCount(page: Page, title: string): Promise<number> {
   // Endpoint card may be replaced by Quick Start when count is 0
   if (title === "Endpoints") {
     const quickStart = page.locator('[data-testid="dashboard-quick-start"]');
-    const visible = await card
-      .getByText(/\d+/)
-      .isVisible()
-      .catch(() => false);
-    if (!visible) {
-      // Quick Start is shown instead → endpoint count is 0
-      await expect(quickStart).toBeVisible({ timeout: 10000 });
-      return 0;
-    }
+    // Wait for either the count card or Quick Start to appear
+    await expect(card.getByText(/\d+/).or(quickStart)).toBeVisible({
+      timeout: 10000,
+    });
+    const hasCount = await card.getByText(/\d+/).isVisible();
+    if (!hasCount) return 0;
   } else {
     await expect(card.getByText(/\d+/)).toBeVisible({ timeout: 10000 });
   }
