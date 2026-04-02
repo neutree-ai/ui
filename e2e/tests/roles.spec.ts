@@ -483,7 +483,7 @@ const PERMISSION_GROUPS: PermissionGroupSpec[] = [
     caseId: "C2611655c",
     groupTitle: "Models",
     cards: ["Models:Delete", "Models:Pull", "Models:Push", "Models:Read"],
-    depTrigger: "Models:Delete",
+    depTrigger: null, // Models has cross-resource deps (push/pull → model_registry:read)
   },
 ];
 
