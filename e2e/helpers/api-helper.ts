@@ -587,6 +587,75 @@ export class ApiHelper {
     await this.softDelete("endpoints", name, options);
   }
 
+  // ── External Endpoint CRUD ──
+
+  /** POST /api/v1/external_endpoints */
+  async createExternalEndpoint(
+    name: string,
+    options?: {
+      workspace?: string;
+      upstreamUrl?: string;
+      credential?: string;
+      modelMapping?: Record<string, string>;
+      timeout?: number;
+    },
+  ): Promise<void> {
+    const mapping = options?.modelMapping ?? { "test-model": "test-model" };
+    await this.api("POST", "/external_endpoints", {
+      api_version: "v1",
+      kind: "ExternalEndpoint",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec: {
+        timeout: options?.timeout ?? 60000,
+        upstreams: [
+          {
+            upstream: {
+              url: options?.upstreamUrl ?? "https://fake-upstream.invalid/v1",
+            },
+            auth: {
+              type: "bearer",
+              credential: options?.credential ?? "",
+            },
+            model_mapping: mapping,
+          },
+        ],
+      },
+    });
+  }
+
+  /** Create an ExternalEndpoint with multiple upstreams */
+  async createExternalEndpointMultiUpstream(
+    name: string,
+    upstreams: {
+      url: string;
+      credential?: string;
+      modelMapping: Record<string, string>;
+    }[],
+    options?: { workspace?: string; timeout?: number },
+  ): Promise<void> {
+    await this.api("POST", "/external_endpoints", {
+      api_version: "v1",
+      kind: "ExternalEndpoint",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec: {
+        timeout: options?.timeout ?? 60000,
+        upstreams: upstreams.map((u) => ({
+          upstream: { url: u.url },
+          auth: { type: "bearer", credential: u.credential ?? "" },
+          model_mapping: u.modelMapping,
+        })),
+      },
+    });
+  }
+
+  /** Soft-delete an external_endpoint by name */
+  async deleteExternalEndpoint(
+    name: string,
+    options?: { retries?: number; force?: boolean },
+  ): Promise<void> {
+    await this.softDelete("external_endpoints", name, options);
+  }
+
   // ── Generic soft-delete ──
 
   /**
