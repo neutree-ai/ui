@@ -27,13 +27,15 @@ function buildPayload(params: TestConnectivityParams) {
 
 export function useTestConnectivity() {
   const { mutateAsync } = useCustomMutation();
-  const [testing, setTesting] = useState(false);
-  const [result, setResult] = useState<TestConnectivityResult | null>(null);
+  const [testingMap, setTestingMap] = useState<Record<number, boolean>>({});
+  const [resultMap, setResultMap] = useState<
+    Record<number, TestConnectivityResult | null>
+  >({});
 
   const test = useCallback(
-    async (params: TestConnectivityParams) => {
-      setTesting(true);
-      setResult(null);
+    async (key: number, params: TestConnectivityParams) => {
+      setTestingMap((prev) => ({ ...prev, [key]: true }));
+      setResultMap((prev) => ({ ...prev, [key]: null }));
       try {
         const res = await mutateAsync({
           url: "/external_endpoints/test_connectivity",
@@ -43,21 +45,21 @@ export function useTestConnectivity() {
           errorNotification: false,
         });
         const data = res.data as TestConnectivityResult;
-        setResult(data);
+        setResultMap((prev) => ({ ...prev, [key]: data }));
         return data;
       } catch (err) {
         const data: TestConnectivityResult = {
           success: false,
           error: err instanceof Error ? err.message : String(err),
         };
-        setResult(data);
+        setResultMap((prev) => ({ ...prev, [key]: data }));
         return data;
       } finally {
-        setTesting(false);
+        setTestingMap((prev) => ({ ...prev, [key]: false }));
       }
     },
     [mutateAsync],
   );
 
-  return { test, testing, result };
+  return { test, testingMap, resultMap };
 }

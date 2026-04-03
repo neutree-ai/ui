@@ -263,8 +263,8 @@ export const useExternalEndpointForm = ({
                       </FormFieldGroup>
                       <div className="col-span-4 flex items-center">
                         <TestConnectivityButton
-                          testing={connectivity.testing}
-                          result={connectivity.result}
+                          testing={connectivity.testingMap[index] ?? false}
+                          result={connectivity.resultMap[index] ?? null}
                           onTest={async () => {
                             const url =
                               form.getValues(
@@ -274,7 +274,7 @@ export const useExternalEndpointForm = ({
                               form.getValues(
                                 `spec.upstreams.${index}.auth.credential`,
                               ) ?? "";
-                            const data = await connectivity.test({
+                            const data = await connectivity.test(index, {
                               type: "external",
                               url,
                               credential,
@@ -306,14 +306,14 @@ export const useExternalEndpointForm = ({
                       </FormFieldGroup>
                       <div className="col-span-4 flex items-center">
                         <TestConnectivityButton
-                          testing={connectivity.testing}
-                          result={connectivity.result}
+                          testing={connectivity.testingMap[index] ?? false}
+                          result={connectivity.resultMap[index] ?? null}
                           onTest={async () => {
                             const endpointRef =
                               form.getValues(
                                 `spec.upstreams.${index}.endpoint_ref`,
                               ) ?? "";
-                            const data = await connectivity.test({
+                            const data = await connectivity.test(index, {
                               type: "endpoint_ref",
                               endpoint_ref: endpointRef,
                               workspace: currentWorkspace,
