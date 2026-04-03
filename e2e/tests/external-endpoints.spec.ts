@@ -237,9 +237,9 @@ test.describe("external endpoints", () => {
       await exposedInputs.nth(1).fill("duplicate-key");
       await upstreamInputs.nth(1).fill("model-b");
 
-      // Should show duplicate key error
+      // Should show duplicate key error (appears on both rows)
       await expect(
-        externalEndpoints.page.getByText(/duplicate model key/i),
+        externalEndpoints.page.getByText(/duplicate model key/i).first(),
       ).toBeVisible();
     });
   });
@@ -365,15 +365,14 @@ test.describe("external endpoints", () => {
 
       // Should display all 3 upstreams
       await expect(
-        externalEndpoints.page.getByText(/upstream.*1/i).first(),
+        externalEndpoints.page.getByText("Upstream 1"),
       ).toBeVisible();
-
-      // Verify at least 3 upstream URL fields exist
-      const urlInputs = externalEndpoints.page.locator(
-        '[data-testid^="field-spec.upstreams."] input[type="text"]',
-      );
-      const count = await urlInputs.count();
-      expect(count).toBeGreaterThanOrEqual(3);
+      await expect(
+        externalEndpoints.page.getByText("Upstream 2"),
+      ).toBeVisible();
+      await expect(
+        externalEndpoints.page.getByText("Upstream 3"),
+      ).toBeVisible();
     });
   });
 
