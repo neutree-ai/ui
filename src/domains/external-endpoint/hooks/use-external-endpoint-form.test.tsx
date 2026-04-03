@@ -46,8 +46,8 @@ vi.mock(
 vi.mock("@/domains/external-endpoint/hooks/use-test-connectivity", () => ({
   useTestConnectivity: () => ({
     test: vi.fn(),
-    testing: false,
-    result: null,
+    testingMap: {},
+    resultMap: {},
   }),
 }));
 
