@@ -340,7 +340,8 @@ describe("usePermissionDependencies", () => {
 
   describe("cross-resource dependencies", () => {
     const crossRules: PermissionDependencyRule[] = [
-      { action: "endpoint:create", deps: ["workspace:read"] },
+      // Resource-specific rule overrides generic "create" for endpoint
+      { action: "endpoint:create", deps: ["read", "workspace:read"] },
       { action: "create", deps: ["read"] },
     ];
 
@@ -511,6 +512,199 @@ describe("usePermissionDependencies", () => {
       expect(called).toContain("endpoint:delete");
       // cross-resource dep: endpoint:create → workspace:read
       expect(called).toContain("workspace:read");
+    });
+  });
+
+  describe("resource-specific rule overrides generic rule", () => {
+    const overrideRules: PermissionDependencyRule[] = [
+      { action: "create", deps: ["read"] },
+      { action: "delete", deps: ["read"] },
+      { action: "model:delete", deps: ["model_registry:read"] },
+    ];
+
+    it("should use specific rule deps instead of generic for matching resource", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          rules: overrideRules,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("model", "delete");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("model:delete");
+      expect(called).toContain("model_registry:read");
+      // generic delete→read should NOT apply for model
+      expect(called).not.toContain("model:read");
+    });
+
+    it("should still apply generic rule for resources without specific override", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          rules: overrideRules,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("endpoint", "delete");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("endpoint:delete");
+      expect(called).toContain("endpoint:read"); // generic delete→read still applies
+    });
+
+    it("should not lock model:read when model:delete is selected (override has no model:read dep)", () => {
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["model:read", "model:delete", "model_registry:read"],
+          allPermissions: TEST_PERMISSIONS,
+          rules: overrideRules,
+        }),
+      );
+
+      // model:read should NOT be locked by model:delete
+      expect(result.current.getActionDependents("model", "read")).toEqual([]);
+    });
+
+    it("should lock model_registry:read when model:delete is selected", () => {
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["model:delete", "model_registry:read"],
+          allPermissions: TEST_PERMISSIONS,
+          rules: overrideRules,
+        }),
+      );
+
+      expect(
+        result.current.getActionDependents("model_registry", "read"),
+      ).toEqual(["model:delete"]);
+    });
+  });
+
+  describe("default rules - NEU-394/395/396", () => {
+    // These tests use default ALL_RULES to verify the actual business rules
+
+    it("NEU-396: model:delete should auto-select model_registry:read, not model:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("model", "delete");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("model:delete");
+      expect(called).toContain("model_registry:read");
+      expect(called).not.toContain("model:read");
+    });
+
+    it("NEU-396: model:push should not auto-select model:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("model", "push");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("model:push");
+      expect(called).toContain("model_registry:read");
+      expect(called).not.toContain("model:read");
+    });
+
+    it("NEU-396: model:pull should not auto-select model:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("model", "pull");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("model:pull");
+      expect(called).toContain("model_registry:read");
+      expect(called).not.toContain("model:read");
+    });
+
+    it("NEU-395: model:read should auto-select model_registry:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("model", "read");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("model:read");
+      expect(called).toContain("model_registry:read");
+    });
+
+    it("NEU-394: endpoint:create should auto-select workspace:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("endpoint", "create");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("endpoint:create");
+      expect(called).toContain("endpoint:read");
+      expect(called).toContain("workspace:read");
+    });
+
+    it("NEU-394: workspace:read should be locked when endpoint:create is selected", () => {
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["workspace:read", "endpoint:read", "endpoint:create"],
+          allPermissions: TEST_PERMISSIONS,
+        }),
+      );
+
+      expect(result.current.getActionDependents("workspace", "read")).toContain(
+        "endpoint:create",
+      );
     });
   });
 
