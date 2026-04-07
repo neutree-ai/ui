@@ -274,10 +274,16 @@ export const useExternalEndpointForm = ({
                               form.getValues(
                                 `spec.upstreams.${index}.auth.credential`,
                               ) ?? "";
+                            const name = isEdit
+                              ? (form.getValues("metadata.name") ?? "")
+                              : "";
                             const data = await connectivity.test(index, {
                               type: "external",
                               url,
                               credential,
+                              ...(isEdit
+                                ? { name, workspace: currentWorkspace }
+                                : {}),
                             });
                             if (data.success && data.models?.length) {
                               setAvailableModelsMap((prev) => ({

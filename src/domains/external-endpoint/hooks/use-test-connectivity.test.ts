@@ -58,6 +58,37 @@ describe("useTestConnectivity", () => {
     });
   });
 
+  it("sends name and workspace for external upstream when provided", async () => {
+    mockMutateAsync.mockResolvedValueOnce({
+      data: { success: true, latency_ms: 200, models: ["gpt-4o"] },
+    });
+
+    const { result } = renderHook(() => useTestConnectivity());
+
+    await act(async () => {
+      await result.current.test(0, {
+        type: "external",
+        url: "https://api.openai.com/v1",
+        credential: "",
+        name: "my-ee",
+        workspace: "default",
+      });
+    });
+
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      url: "/external_endpoints/test_connectivity",
+      method: "post",
+      values: {
+        upstream: { url: "https://api.openai.com/v1" },
+        auth: { type: "bearer", credential: "" },
+        name: "my-ee",
+        workspace: "default",
+      },
+      successNotification: false,
+      errorNotification: false,
+    });
+  });
+
   it("sends correct payload for endpoint_ref", async () => {
     mockMutateAsync.mockResolvedValueOnce({
       data: { success: true, latency_ms: 80, models: ["llama-3"] },
