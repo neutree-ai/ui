@@ -43,12 +43,39 @@ vi.mock(
   }),
 );
 
+const mockConnectivityTest = vi.fn().mockResolvedValue({ success: false });
 vi.mock("@/domains/external-endpoint/hooks/use-test-connectivity", () => ({
   useTestConnectivity: () => ({
-    test: vi.fn(),
+    test: mockConnectivityTest,
     testingMap: {},
     resultMap: {},
   }),
+}));
+
+vi.mock("@/foundation/components/FormSelect", () => ({
+  FormSelect: React.forwardRef(
+    (
+      props: {
+        value?: string;
+        onChange?: (v: string) => void;
+        options?: { label: string; value: string }[];
+      },
+      ref: any,
+    ) => (
+      <select
+        ref={ref}
+        data-testid="form-select-mock"
+        value={props.value}
+        onChange={(e) => props.onChange?.(e.target.value)}
+      >
+        {props.options?.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    ),
+  ),
 }));
 
 vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
@@ -100,9 +127,7 @@ describe("useExternalEndpointForm", () => {
     it("renders name, upstream type, upstream URL, and credential fields", () => {
       render(<CreateForm />);
       expect(screen.getByLabelText("common.fields.name")).toBeTruthy();
-      expect(
-        screen.getByLabelText("external_endpoints.fields.upstreamType"),
-      ).toBeTruthy();
+      expect(screen.getByTestId("field-_upstreamType_0")).toBeTruthy();
       expect(
         screen.getByLabelText("external_endpoints.fields.upstreamUrl"),
       ).toBeTruthy();
@@ -193,6 +218,29 @@ describe("useExternalEndpointForm", () => {
         expect(
           screen.getAllByLabelText("external_endpoints.fields.upstreamUrl"),
         ).toHaveLength(1);
+      });
+    });
+
+    it("clears model mapping when switching upstream type", async () => {
+      render(<CreateForm />);
+
+      // Add a model mapping entry: type upstream model name
+      const upstreamInputs = screen.getAllByPlaceholderText(
+        "external_endpoints.placeholders.upstreamModelName",
+      );
+      fireEvent.change(upstreamInputs[0], { target: { value: "gpt-4o" } });
+
+      // Switch to endpoint_ref
+      const typeSelect = screen.getByTestId("form-select-mock");
+      fireEvent.change(typeSelect, { target: { value: "endpoint_ref" } });
+
+      // Model mapping should be cleared — the upstream model input should
+      // no longer have the old value
+      await waitFor(() => {
+        const mappingInputs = screen.getAllByPlaceholderText(
+          "external_endpoints.placeholders.upstreamModelName",
+        );
+        expect((mappingInputs[0] as HTMLInputElement).value).toBe("");
       });
     });
 
