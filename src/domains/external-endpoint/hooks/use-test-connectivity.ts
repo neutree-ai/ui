@@ -15,6 +15,7 @@ type TestConnectivityParams =
       credential: string;
       name?: string;
       workspace?: string;
+      stored_upstream_url?: string;
     }
   | { type: "endpoint_ref"; endpoint_ref: string; workspace: string };
 
@@ -25,6 +26,9 @@ function buildPayload(params: TestConnectivityParams) {
       auth: { type: "bearer", credential: params.credential },
       ...(params.name ? { name: params.name } : {}),
       ...(params.workspace ? { workspace: params.workspace } : {}),
+      ...(params.stored_upstream_url
+        ? { stored_upstream_url: params.stored_upstream_url }
+        : {}),
     };
   }
   return {

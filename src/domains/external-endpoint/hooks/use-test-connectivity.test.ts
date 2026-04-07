@@ -58,7 +58,7 @@ describe("useTestConnectivity", () => {
     });
   });
 
-  it("sends name and workspace for external upstream when provided", async () => {
+  it("sends name, workspace and stored_upstream_url for external upstream when provided", async () => {
     mockMutateAsync.mockResolvedValueOnce({
       data: { success: true, latency_ms: 200, models: ["gpt-4o"] },
     });
@@ -68,10 +68,11 @@ describe("useTestConnectivity", () => {
     await act(async () => {
       await result.current.test(0, {
         type: "external",
-        url: "https://api.openai.com/v1",
+        url: "https://api.new-provider.com/v1",
         credential: "",
         name: "my-ee",
         workspace: "default",
+        stored_upstream_url: "https://api.openai.com/v1",
       });
     });
 
@@ -79,10 +80,11 @@ describe("useTestConnectivity", () => {
       url: "/external_endpoints/test_connectivity",
       method: "post",
       values: {
-        upstream: { url: "https://api.openai.com/v1" },
+        upstream: { url: "https://api.new-provider.com/v1" },
         auth: { type: "bearer", credential: "" },
         name: "my-ee",
         workspace: "default",
+        stored_upstream_url: "https://api.openai.com/v1",
       },
       successNotification: false,
       errorNotification: false,
