@@ -105,13 +105,18 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     if (isEdit) return;
     const currentVersion = form.getValues("spec.version");
     if (availableVersions.length === 0) {
-      if (currentVersion) form.setValue("spec.version", "");
+      if (currentVersion)
+        form.setValue("spec.version", "", {
+          shouldValidate: false,
+          shouldDirty: false,
+        });
       return;
     }
     if (!currentVersion || !availableVersions.includes(currentVersion)) {
       form.setValue(
         "spec.version",
         availableVersions[availableVersions.length - 1],
+        { shouldValidate: false, shouldDirty: false },
       );
     }
   }, [isEdit, availableVersions, form]);
@@ -162,8 +167,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <FormFieldGroup
           {...form}
           name="spec.version"
-          label={t("common.fields.version")}
-          rules={{ required: true }}
+          rules={{ required: t("clusters.validation.versionRequired") }}
         >
           <FormCombobox
             placeholder={t("clusters.placeholders.selectVersion")}
