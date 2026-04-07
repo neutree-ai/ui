@@ -126,6 +126,13 @@ export const useExternalEndpointForm = ({
           credential: "",
         });
       }
+      // Clear model mapping and available models when switching upstream type
+      form.setValue(`spec.upstreams.${index}.model_mapping`, {});
+      setAvailableModelsMap((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
     },
     [form],
   );
