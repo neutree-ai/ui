@@ -8,10 +8,11 @@ vi.mock("@/foundation/lib/i18n", () => ({
 import ModelMappingEditor from "./ModelMappingEditor";
 
 describe("ModelMappingEditor", () => {
+  // Column order: upstream model name (value), exposed model name (key)
   it("renders one empty row by default", () => {
     render(<ModelMappingEditor />);
     const inputs = screen.getAllByRole("textbox");
-    expect(inputs).toHaveLength(2); // key + value
+    expect(inputs).toHaveLength(2); // value + key
     expect((inputs[0] as HTMLInputElement).value).toBe("");
     expect((inputs[1] as HTMLInputElement).value).toBe("");
   });
@@ -22,11 +23,12 @@ describe("ModelMappingEditor", () => {
     );
     const inputs = screen.getAllByRole("textbox");
     // 2 entries × 2 fields = 4 inputs
+    // Order: [value0, key0, value1, key1]
     expect(inputs).toHaveLength(4);
-    expect((inputs[0] as HTMLInputElement).value).toBe("gpt-4o");
-    expect((inputs[1] as HTMLInputElement).value).toBe("gpt-4o");
-    expect((inputs[2] as HTMLInputElement).value).toBe("claude");
-    expect((inputs[3] as HTMLInputElement).value).toBe("claude-3");
+    expect((inputs[0] as HTMLInputElement).value).toBe("gpt-4o"); // upstream
+    expect((inputs[1] as HTMLInputElement).value).toBe("gpt-4o"); // exposed
+    expect((inputs[2] as HTMLInputElement).value).toBe("claude-3"); // upstream
+    expect((inputs[3] as HTMLInputElement).value).toBe("claude"); // exposed
   });
 
   it("adds a new row when add button is clicked", () => {
@@ -42,16 +44,48 @@ describe("ModelMappingEditor", () => {
     expect(inputs).toHaveLength(4);
   });
 
-  it("calls onChange with updated record when key is typed", () => {
+  it("calls onChange with updated record when upstream model is typed", () => {
     const onChange = vi.fn();
     render(<ModelMappingEditor onChange={onChange} />);
 
     const inputs = screen.getAllByRole("textbox");
-    fireEvent.change(inputs[0], { target: { value: "my-model" } });
-    fireEvent.change(inputs[1], { target: { value: "upstream-model" } });
+    // inputs[0] = upstream (value), inputs[1] = exposed (key)
+    fireEvent.change(inputs[0], { target: { value: "upstream-model" } });
 
+    // Auto-sync: key should equal value
     expect(onChange).toHaveBeenLastCalledWith({
-      "my-model": "upstream-model",
+      "upstream-model": "upstream-model",
+    });
+  });
+
+  it("auto-syncs exposed name from upstream name on fresh row", () => {
+    const onChange = vi.fn();
+    render(<ModelMappingEditor onChange={onChange} />);
+
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[0], { target: { value: "gpt-4o" } });
+
+    // Both fields should show the same value
+    expect((inputs[0] as HTMLInputElement).value).toBe("gpt-4o");
+    expect((inputs[1] as HTMLInputElement).value).toBe("gpt-4o");
+  });
+
+  it("stops auto-sync after user edits exposed name", () => {
+    const onChange = vi.fn();
+    render(<ModelMappingEditor onChange={onChange} />);
+
+    const inputs = screen.getAllByRole("textbox");
+    // Type upstream → auto-syncs
+    fireEvent.change(inputs[0], { target: { value: "gpt-4o" } });
+    // User edits exposed name
+    fireEvent.change(inputs[1], { target: { value: "my-model" } });
+    // Change upstream again → exposed should NOT change
+    fireEvent.change(inputs[0], { target: { value: "gpt-4o-mini" } });
+
+    expect((inputs[0] as HTMLInputElement).value).toBe("gpt-4o-mini");
+    expect((inputs[1] as HTMLInputElement).value).toBe("my-model");
+    expect(onChange).toHaveBeenLastCalledWith({
+      "my-model": "gpt-4o-mini",
     });
   });
 
@@ -118,10 +152,12 @@ describe("ModelMappingEditor", () => {
     );
 
     const inputs = screen.getAllByRole("textbox");
-    // Type "a" in the second row's key field (inputs[2])
+    // inputs: [value0, key0, value1, key1]
+    // Type "a" in the second row's upstream field — auto-syncs key to "a"
     fireEvent.change(inputs[2], { target: { value: "a" } });
 
-    // Both rows should show duplicate error
+    // Both rows should show duplicate error (key "a" appears twice)
+    // Note: row 0 key is "a" (from value prop), row 1 key auto-synced to "a"
     const errors = screen.getAllByText(
       "external_endpoints.validation.duplicateModelKey",
     );
@@ -174,13 +210,13 @@ describe("ModelMappingEditor", () => {
   it("preserves duplicate rows without collapsing them", () => {
     render(<ModelMappingEditor value={{ a: "1" }} />);
 
-    // Add a second row and set same key
+    // Add a second row and set same upstream model
     fireEvent.click(
       screen.getByText("external_endpoints.actions.addModelMapping"),
     );
     const inputs = screen.getAllByRole("textbox");
+    // inputs[2] = upstream of row 1
     fireEvent.change(inputs[2], { target: { value: "a" } });
-    fireEvent.change(inputs[3], { target: { value: "2" } });
 
     // Should still have 4 inputs (2 rows × 2 fields), not collapsed
     expect(screen.getAllByRole("textbox")).toHaveLength(4);

@@ -82,6 +82,36 @@ export const useExternalEndpointForm = ({
   // Derive upstream types from form data — no separate state needed
   const upstreams = form.watch("spec.upstreams");
 
+  /** Auto-load models when an endpoint_ref is selected in the combobox */
+  const handleEndpointRefChange = useCallback(
+    async (index: number, endpointRef: string) => {
+      if (!endpointRef) return;
+      const data = await connectivity.test(index, {
+        type: "endpoint_ref",
+        endpoint_ref: endpointRef,
+        workspace: currentWorkspace,
+      });
+      if (data.success && data.models?.length) {
+        setAvailableModelsMap((prev) => ({
+          ...prev,
+          [index]: data.models!,
+        }));
+        // Auto-fill model mapping if currently empty
+        const currentMapping = form.getValues(
+          `spec.upstreams.${index}.model_mapping`,
+        );
+        if (!currentMapping || Object.keys(currentMapping).length === 0) {
+          const mapping: Record<string, string> = {};
+          for (const model of data.models!) {
+            mapping[model] = model;
+          }
+          form.setValue(`spec.upstreams.${index}.model_mapping`, mapping);
+        }
+      }
+    },
+    [connectivity, currentWorkspace, form],
+  );
+
   const handleUpstreamTypeChange = useCallback(
     (index: number, newType: UpstreamType) => {
       if (newType === "endpoint_ref") {
@@ -320,6 +350,14 @@ export const useExternalEndpointForm = ({
                             "external_endpoints.placeholders.selectEndpointRef",
                           )}
                           options={endpointOptions}
+                          onChange={(val) => {
+                            const ref = String(val);
+                            form.setValue(
+                              `spec.upstreams.${index}.endpoint_ref`,
+                              ref,
+                            );
+                            handleEndpointRefChange(index, ref);
+                          }}
                         />
                       </FormFieldGroup>
                       <div className="col-span-4 flex items-center">
