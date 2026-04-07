@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   type PermissionDependencyRule,
   usePermissionDependencies,
+  WORKSPACED_RESOURCES,
 } from "./use-permission-dependencies";
 
 const TEST_PERMISSIONS = [
@@ -10,11 +13,26 @@ const TEST_PERMISSIONS = [
   "endpoint:create",
   "endpoint:update",
   "endpoint:delete",
+  "cluster:read",
+  "cluster:create",
+  "cluster:update",
+  "cluster:delete",
+  "external_endpoint:read",
+  "external_endpoint:create",
+  "external_endpoint:update",
+  "external_endpoint:delete",
+  "image_registry:read",
+  "image_registry:create",
+  "image_registry:update",
+  "image_registry:delete",
+  "model_registry:read",
+  "model_registry:create",
+  "model_registry:update",
+  "model_registry:delete",
   "model:read",
   "model:push",
   "model:pull",
   "model:delete",
-  "model_registry:read",
   "workspace:read",
   "workspace:create",
   "workspace:update",
@@ -674,7 +692,13 @@ describe("usePermissionDependencies", () => {
       expect(called).toContain("model_registry:read");
     });
 
-    it("NEU-394: endpoint:create should auto-select workspace:read", () => {
+    it.each([
+      "endpoint",
+      "cluster",
+      "external_endpoint",
+      "image_registry",
+      "model_registry",
+    ])("NEU-394: %s:create should auto-select workspace:read", (resource) => {
       const onChange = vi.fn();
       const { result } = renderHook(() =>
         usePermissionDependencies({
@@ -685,26 +709,45 @@ describe("usePermissionDependencies", () => {
       );
 
       act(() => {
-        result.current.togglePermission("endpoint", "create");
+        result.current.togglePermission(resource, "create");
       });
 
       const called = onChange.mock.calls[0][0] as string[];
-      expect(called).toContain("endpoint:create");
-      expect(called).toContain("endpoint:read");
+      expect(called).toContain(`${resource}:create`);
+      expect(called).toContain(`${resource}:read`);
       expect(called).toContain("workspace:read");
     });
 
-    it("NEU-394: workspace:read should be locked when endpoint:create is selected", () => {
+    it("NEU-394: workspace:read should be locked by any workspaced write action", () => {
       const { result } = renderHook(() =>
         usePermissionDependencies({
-          value: ["workspace:read", "endpoint:read", "endpoint:create"],
+          value: ["workspace:read", "cluster:read", "cluster:delete"],
           allPermissions: TEST_PERMISSIONS,
         }),
       );
 
       expect(result.current.getActionDependents("workspace", "read")).toContain(
-        "endpoint:create",
+        "cluster:delete",
       );
+    });
+
+    it("NEU-394: workspaced resource:read should NOT depend on workspace:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("endpoint", "read");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("endpoint:read");
+      expect(called).not.toContain("workspace:read");
     });
   });
 
@@ -734,11 +777,61 @@ describe("usePermissionDependencies", () => {
       );
 
       expect(result.current.sortedResources).toEqual([
+        "cluster",
         "endpoint",
+        "external_endpoint",
+        "image_registry",
         "model",
         "model_registry",
         "workspace",
       ]);
+    });
+  });
+
+  describe("WORKSPACED_RESOURCES guard", () => {
+    /**
+     * Guard test: ensures WORKSPACED_RESOURCES stays in sync with App.tsx.
+     *
+     * How it works:
+     *   Reads App.tsx as plain text, uses a regex to find resource blocks
+     *   with `workspaced: true`, converts plural names to singular permission
+     *   prefixes (e.g. "image_registries" → "image_registry"), and compares
+     *   the result with the exported WORKSPACED_RESOURCES set.
+     *
+     * When this test fails:
+     *   1. If you added/removed a workspaced resource in App.tsx — update
+     *      WORKSPACED_RESOURCES in use-permission-dependencies.ts to match.
+     *   2. If the regex no longer parses App.tsx correctly (e.g. the resource
+     *      definition format changed) — fix the regex below, or as a last
+     *      resort replace the parsing logic with a hardcoded expected list
+     *      and add a comment pointing back to App.tsx.
+     */
+    it("should match workspaced resources defined in App.tsx", () => {
+      const appSource = readFileSync(
+        resolve(__dirname, "../../../App.tsx"),
+        "utf-8",
+      );
+
+      // Match each resource block: { name: "xxx", ... workspaced: true ... }
+      const resourceBlocks = appSource.matchAll(
+        /\{\s*name:\s*"(\w+)"[\s\S]*?\}/g,
+      );
+
+      const workspacedFromApp: string[] = [];
+      for (const match of resourceBlocks) {
+        const [block, name] = match;
+        if (block.includes("workspaced: true")) {
+          // Convert plural resource name to singular permission prefix:
+          // "image_registries" → "image_registry", "clusters" → "cluster"
+          const singular = name.replace(/ies$/, "y").replace(/s$/, "");
+          workspacedFromApp.push(singular);
+        }
+      }
+
+      // api_key has no corresponding permissions — exclude from comparison
+      const filtered = workspacedFromApp.filter((r) => r !== "api_key");
+
+      expect([...WORKSPACED_RESOURCES].sort()).toEqual(filtered.sort());
     });
   });
 });

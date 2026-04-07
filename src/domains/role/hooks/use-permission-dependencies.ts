@@ -6,6 +6,20 @@ export type PermissionDependencyRule = {
   deps: string[]; // "read" (same resource) or "workspace:read" (specific)
 };
 
+/** Resources scoped to a workspace — their write actions depend on workspace:read.
+ *  Keep in sync with App.tsx resource definitions (meta.workspaced: true).
+ *  A guard test in use-permission-dependencies.test.ts will fail if this drifts.
+ *  @see use-permission-dependencies.test.ts "WORKSPACED_RESOURCES guard" */
+export const WORKSPACED_RESOURCES = new Set([
+  "cluster",
+  "endpoint",
+  "external_endpoint",
+  "image_registry",
+  "model_registry",
+  "model_catalog",
+  "engine",
+]);
+
 const ALL_RULES: PermissionDependencyRule[] = [
   { action: "create", deps: ["read"] },
   { action: "update", deps: ["read"] },
@@ -16,8 +30,6 @@ const ALL_RULES: PermissionDependencyRule[] = [
   { action: "model:pull", deps: ["model_registry:read"] },
   // model:read depends on model_registry:read
   { action: "model:read", deps: ["model_registry:read"] },
-  // endpoint:create also depends on workspace:read
-  { action: "endpoint:create", deps: ["read", "workspace:read"] },
 ];
 
 type PermissionsTreeData = Record<
@@ -100,6 +112,7 @@ function getDepsForAction(
   resource: string,
   action: string,
   rules: PermissionDependencyRule[],
+  workspacedResources: Set<string> = WORKSPACED_RESOURCES,
 ): string[] {
   const deps: string[] = [];
   const skipGeneric = hasSpecificRule(resource, action, rules);
@@ -111,6 +124,14 @@ function getDepsForAction(
       const parsed = parseRuleKey(dep);
       deps.push(`${parsed.resource ?? resource}:${parsed.action}`);
     }
+  }
+  // Workspaced resources implicitly depend on workspace:read for write actions
+  if (
+    workspacedResources.has(resource) &&
+    action !== "read" &&
+    resource !== "workspace"
+  ) {
+    deps.push("workspace:read");
   }
   return [...new Set(deps)];
 }
@@ -124,6 +145,7 @@ function findActionDependents(
   resource: string,
   action: string,
   rules: PermissionDependencyRule[],
+  workspacedResources: Set<string> = WORKSPACED_RESOURCES,
 ): string[] {
   const dependents: string[] = [];
   const target = `${resource}:${action}`;
@@ -143,6 +165,15 @@ function findActionDependents(
           dependents.push(selectedPerm);
         }
       }
+    }
+    // Implicit workspace:read dependency for workspaced write actions
+    if (
+      resource === "workspace" &&
+      action === "read" &&
+      workspacedResources.has(selResource) &&
+      selAction !== "read"
+    ) {
+      dependents.push(selectedPerm);
     }
   }
 
