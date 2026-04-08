@@ -92,6 +92,22 @@ vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
   ),
 }));
 
+vi.mock("@/foundation/components/FormCombobox", () => ({
+  FormCombobox: ({
+    onChange,
+    placeholder,
+  }: {
+    onChange?: (v: string) => void;
+    placeholder?: string;
+  }) => (
+    <input
+      data-testid="form-combobox-mock"
+      placeholder={placeholder}
+      onChange={(e) => onChange?.(e.target.value)}
+    />
+  ),
+}));
+
 import { useExternalEndpointForm } from "./use-external-endpoint-form";
 
 function CreateForm() {
@@ -241,6 +257,46 @@ describe("useExternalEndpointForm", () => {
           "external_endpoints.placeholders.upstreamModelName",
         );
         expect((mappingInputs[0] as HTMLInputElement).value).toBe("");
+      });
+    });
+
+    it("updates model mapping when switching endpoint ref", async () => {
+      render(<CreateForm />);
+
+      // Switch to endpoint_ref type
+      const typeSelect = screen.getByTestId("form-select-mock");
+      fireEvent.change(typeSelect, { target: { value: "endpoint_ref" } });
+
+      // First endpoint ref returns models ["model-a", "model-b"]
+      mockConnectivityTest.mockResolvedValueOnce({
+        success: true,
+        models: ["model-a", "model-b"],
+      });
+
+      const combobox = await screen.findByTestId("form-combobox-mock");
+      fireEvent.change(combobox, { target: { value: "endpoint-1" } });
+
+      await waitFor(() => {
+        const inputs = screen.getAllByPlaceholderText(
+          "external_endpoints.placeholders.upstreamModelName",
+        );
+        expect((inputs[0] as HTMLInputElement).value).toBe("model-a");
+      });
+
+      // Switch to a different endpoint ref returning ["model-x"]
+      mockConnectivityTest.mockResolvedValueOnce({
+        success: true,
+        models: ["model-x"],
+      });
+
+      fireEvent.change(combobox, { target: { value: "endpoint-2" } });
+
+      await waitFor(() => {
+        const inputs = screen.getAllByPlaceholderText(
+          "external_endpoints.placeholders.upstreamModelName",
+        );
+        expect(inputs).toHaveLength(1);
+        expect((inputs[0] as HTMLInputElement).value).toBe("model-x");
       });
     });
 

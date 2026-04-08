@@ -96,17 +96,12 @@ export const useExternalEndpointForm = ({
           ...prev,
           [index]: data.models!,
         }));
-        // Auto-fill model mapping if currently empty
-        const currentMapping = form.getValues(
-          `spec.upstreams.${index}.model_mapping`,
-        );
-        if (!currentMapping || Object.keys(currentMapping).length === 0) {
-          const mapping: Record<string, string> = {};
-          for (const model of data.models!) {
-            mapping[model] = model;
-          }
-          form.setValue(`spec.upstreams.${index}.model_mapping`, mapping);
+        // Auto-fill model mapping from the selected endpoint ref's models
+        const mapping: Record<string, string> = {};
+        for (const model of data.models!) {
+          mapping[model] = model;
         }
+        form.setValue(`spec.upstreams.${index}.model_mapping`, mapping);
       }
     },
     [connectivity, currentWorkspace, form],
