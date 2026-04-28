@@ -284,7 +284,7 @@
   "src/domains/endpoint/components/PlaygroundLayout.tsx": "c4940cfc57dc4696b166ac65f5c769cb",
   "src/domains/cluster/components/ClusterUpgradeTip.tsx": "fd41e3d18ecd41c1efda9dc1d06da083",
   "src/pages/dashboard/QuickStartDialog.tsx": "141e2fd4d5a7b6d78d906ca7aa0703eb",
-  "src/foundation/hooks/use-quick-start.ts": "0d41b868c2357acbec6ba98230a0a3b4",
+  "src/foundation/hooks/use-quick-start.ts": "04189be863e68f0769b650db5a60b985",
   "src/foundation/components/ResourceResultList.tsx": "5b87054f8939e64a98ac67e886b68c64",
   "src/foundation/hooks/use-refine-field-array.ts": "8e3ff4422156f31e4dd5928bff116427",
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "c4c97cc62ad41f004d08238c569e0054",

@@ -29,8 +29,11 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
+let mockCurrentWorkspace: string = "test-ws";
+
 vi.mock("./use-workspace", () => ({
-  useWorkspace: () => ({ current: "test-ws" }),
+  ALL_WORKSPACES: "_all_",
+  useWorkspace: () => ({ current: mockCurrentWorkspace }),
 }));
 
 // --- Helpers ---
@@ -52,6 +55,7 @@ async function quickStartHook() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockEnginesData = defaultEnginesData;
+  mockCurrentWorkspace = "test-ws";
   mockGetOne.mockRejectedValue(new Error("not found"));
   mockMutateAsync.mockResolvedValue({ data: {} });
 });
@@ -124,6 +128,18 @@ describe("useQuickStart", () => {
           workspace: "test-ws",
           workspaced: true,
         });
+      }
+    });
+
+    it("falls back to 'default' workspace when current is the _all_ sentinel", async () => {
+      mockCurrentWorkspace = "_all_";
+      const { result } = await quickStartHook();
+
+      await act(() => result.current.execute(TEST_INPUT));
+
+      for (const call of mockMutateAsync.mock.calls) {
+        expect(call[0].meta.workspace).toBe("default");
+        expect(call[0].values.metadata.workspace).toBe("default");
       }
     });
 

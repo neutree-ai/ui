@@ -1,6 +1,6 @@
 import { useCreate, useDataProvider, useSelect } from "@refinedev/core";
 import { useCallback, useMemo, useState } from "react";
-import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 /** Inline type to avoid L1→L2 dependency on endpoint types */
@@ -139,11 +139,19 @@ export function useQuickStart() {
   const { mutateAsync: createResource } = useCreate();
   const dataProvider = useDataProvider();
 
+  // `currentWorkspace` may be the `_all_` sentinel when no workspace is
+  // selected (fresh session with empty localStorage). That value is invalid
+  // as a real `metadata.workspace`, so fall back to "default".
+  const workspace =
+    currentWorkspace && currentWorkspace !== ALL_WORKSPACES
+      ? currentWorkspace
+      : "default";
+
   const engines = useSelect<EngineRef>({
     resource: "engines",
     meta: {
       idColumnName: "metadata->name",
-      workspace: currentWorkspace,
+      workspace,
       workspaced: true,
     },
   });
@@ -171,7 +179,7 @@ export function useQuickStart() {
           id: resourceName,
           meta: {
             idColumnName: "metadata->name",
-            workspace: currentWorkspace,
+            workspace,
             workspaced: true,
           },
         });
@@ -180,7 +188,7 @@ export function useQuickStart() {
         return false;
       }
     },
-    [dataProvider, currentWorkspace],
+    [dataProvider, workspace],
   );
 
   const execute = useCallback(
@@ -188,7 +196,6 @@ export function useQuickStart() {
       const steps = INITIAL_STEPS.map((s) => ({ ...s }));
       setState({ phase: "creating", steps });
 
-      const workspace = currentWorkspace || "default";
       const createMeta = {
         idColumnName: "metadata->name",
         workspace,
@@ -239,7 +246,7 @@ export function useQuickStart() {
 
       setState({ phase: "done", steps: [...steps] });
     },
-    [currentWorkspace, llamaCppVersion, checkResourceExists, createResource],
+    [workspace, llamaCppVersion, checkResourceExists, createResource],
   );
 
   const reset = useCallback(() => {
