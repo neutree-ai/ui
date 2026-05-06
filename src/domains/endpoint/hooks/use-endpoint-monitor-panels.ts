@@ -21,7 +21,7 @@ export const useEndpointMonitorPanels = ({
     if (engineType === "vllm") {
       list.push("vllm");
     }
-    // Rule 2: If engine is sglang, always have sglang related panels
+    // Rule 2: If engine is sglang, always have sglang related panel
     if (engineType === "sglang") {
       list.push("sglang");
     }

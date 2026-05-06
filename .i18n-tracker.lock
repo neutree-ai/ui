@@ -176,7 +176,7 @@
   "src/domains/endpoint/types.ts": "f91a12a5dadb80eba826a38682f9fadb",
   "src/domains/endpoint/hooks/use-chat-state.ts": "094d9c572609338e647b6b020234e0d5",
   "src/domains/endpoint/hooks/use-endpoint-log-sources.ts": "db5f58fbfdf90e73192f68cd4c29b7da",
-  "src/domains/endpoint/hooks/use-endpoint-monitor-panels.ts": "8d2ef71240d203983c3e2b6e96c615a3",
+  "src/domains/endpoint/hooks/use-endpoint-monitor-panels.ts": "ee79e54b29246baa805733e91a4f68bf",
   "src/domains/endpoint/hooks/use-endpoint-resources.ts": "317792312a52e0d145765e7dd4dd8785",
   "src/domains/endpoint/hooks/use-streaming-logs.ts": "1d8b9797310db32450bc6817f5313797",
   "src/domains/endpoint/components/ChatPlayground.tsx": "ad2794daa4d1a16c178e60bbb8bea19c",

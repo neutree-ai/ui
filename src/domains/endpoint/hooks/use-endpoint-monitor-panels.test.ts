@@ -99,4 +99,23 @@ describe("useEndpointMonitorPanels", () => {
     // Should fallback to first available panel
     expect(result.current.selectedPanel).toBe("endpoint");
   });
+
+  it("should fallback to first panel when sglang panel is no longer available", () => {
+    const { result, rerender } = renderHook(
+      ({ clusterType, engineType }) =>
+        useEndpointMonitorPanels({ clusterType, engineType }),
+      { initialProps: { clusterType: "ssh", engineType: "sglang" } },
+    );
+
+    act(() => {
+      result.current.setSelectedPanel("sglang");
+    });
+    expect(result.current.selectedPanel).toBe("sglang");
+
+    // Remove sglang engine, sglang panel should no longer be available
+    rerender({ clusterType: "ssh", engineType: undefined as any });
+
+    // Should fallback to first available panel
+    expect(result.current.selectedPanel).toBe("endpoint");
+  });
 });
