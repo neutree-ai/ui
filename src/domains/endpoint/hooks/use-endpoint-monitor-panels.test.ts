@@ -2,6 +2,11 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useEndpointMonitorPanels } from "./use-endpoint-monitor-panels";
 
+type UseHookArgs = {
+  clusterType?: string;
+  engineType?: string;
+};
+
 describe("useEndpointMonitorPanels", () => {
   it("should return empty panels when no cluster type or engine type", () => {
     const { result } = renderHook(() => useEndpointMonitorPanels({}));
@@ -83,9 +88,11 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should fallback to first panel if selected panel is invalid", () => {
     const { result, rerender } = renderHook(
-      ({ clusterType, engineType }) =>
+      ({ clusterType, engineType }: UseHookArgs) =>
         useEndpointMonitorPanels({ clusterType, engineType }),
-      { initialProps: { clusterType: "ssh", engineType: "vllm" } },
+      {
+        initialProps: { clusterType: "ssh", engineType: "vllm" } as UseHookArgs,
+      },
     );
 
     act(() => {
@@ -94,7 +101,7 @@ describe("useEndpointMonitorPanels", () => {
     expect(result.current.selectedPanel).toBe("vllm");
 
     // Remove vllm engine, vllm panel should no longer be available
-    rerender({ clusterType: "ssh", engineType: undefined as any });
+    rerender({ clusterType: "ssh", engineType: undefined });
 
     // Should fallback to first available panel
     expect(result.current.selectedPanel).toBe("endpoint");
@@ -102,9 +109,14 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should fallback to first panel when sglang panel is no longer available", () => {
     const { result, rerender } = renderHook(
-      ({ clusterType, engineType }) =>
+      ({ clusterType, engineType }: UseHookArgs) =>
         useEndpointMonitorPanels({ clusterType, engineType }),
-      { initialProps: { clusterType: "ssh", engineType: "sglang" } },
+      {
+        initialProps: {
+          clusterType: "ssh",
+          engineType: "sglang",
+        } as UseHookArgs,
+      },
     );
 
     act(() => {
@@ -113,7 +125,7 @@ describe("useEndpointMonitorPanels", () => {
     expect(result.current.selectedPanel).toBe("sglang");
 
     // Remove sglang engine, sglang panel should no longer be available
-    rerender({ clusterType: "ssh", engineType: undefined as any });
+    rerender({ clusterType: "ssh", engineType: undefined });
 
     // Should fallback to first available panel
     expect(result.current.selectedPanel).toBe("endpoint");
