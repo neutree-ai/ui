@@ -34,6 +34,17 @@ describe("useEndpointMonitorPanels", () => {
     expect(result.current.showSelector).toBe(false);
   });
 
+  it("should return sglang panel for sglang engine", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({ engineType: "sglang" }),
+    );
+
+    expect(result.current.panels).toEqual(["sglang"]);
+    expect(result.current.selectedPanel).toBe("sglang");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(false);
+  });
+
   it("should return both panels for ssh cluster with vllm engine", () => {
     const { result } = renderHook(() =>
       useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
@@ -41,6 +52,17 @@ describe("useEndpointMonitorPanels", () => {
 
     expect(result.current.panels).toEqual(["vllm", "endpoint"]);
     expect(result.current.selectedPanel).toBe("vllm");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(true);
+  });
+
+  it("should return both panels for ssh cluster with sglang engine", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "sglang" }),
+    );
+
+    expect(result.current.panels).toEqual(["sglang", "endpoint"]);
+    expect(result.current.selectedPanel).toBe("sglang");
     expect(result.current.showMonitorTab).toBe(true);
     expect(result.current.showSelector).toBe(true);
   });

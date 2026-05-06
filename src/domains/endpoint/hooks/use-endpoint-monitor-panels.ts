@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 // Endpoint monitor panel types
-export type EndpointMonitorPanelType = "endpoint" | "vllm";
+export type EndpointMonitorPanelType = "endpoint" | "vllm" | "sglang";
 
 interface UseEndpointMonitorPanelsProps {
   clusterType?: string;
@@ -21,7 +21,11 @@ export const useEndpointMonitorPanels = ({
     if (engineType === "vllm") {
       list.push("vllm");
     }
-    // Rule 2: If cluster is ssh, always have ray related endpoint panel
+    // Rule 2: If engine is sglang, always have sglang related panels
+    if (engineType === "sglang") {
+      list.push("sglang");
+    }
+    // Rule 3: If cluster is ssh, always have ray related endpoint panel
     if (clusterType === "ssh") {
       list.push("endpoint");
     }
