@@ -617,8 +617,10 @@
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",
 			"vllmMetrics": "vLLM Engine Metrics",
+			"sglangMetrics": "SGLang Engine Metrics",
 			"endpointDescription": "Ray Serve deployment metrics including requests, latency, and replica status",
-			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization"
+			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization",
+			"sglangDescription": "SGLang engine specific metrics including TTFT, cache hit rate, queue depth, and throughput"
 		},
 		"logs": {
 			"application": "Application",

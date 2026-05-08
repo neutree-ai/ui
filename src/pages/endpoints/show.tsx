@@ -44,6 +44,7 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   GRAFANA_VAR_ALL,
   getEndpointDashboardProps,
+  getSglangDashboardProps,
   getVllmDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
 
@@ -340,12 +341,19 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                                 {t("endpoints.monitor.vllmMetrics")}
                               </SelectItem>
                             )}
+                            {panels.includes("sglang") && (
+                              <SelectItem value="sglang">
+                                {t("endpoints.monitor.sglangMetrics")}
+                              </SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                         <p className="text-sm text-muted-foreground">
                           {selectedPanel === "endpoint"
                             ? t("endpoints.monitor.endpointDescription")
-                            : t("endpoints.monitor.vllmDescription")}
+                            : selectedPanel === "sglang"
+                              ? t("endpoints.monitor.sglangDescription")
+                              : t("endpoints.monitor.vllmDescription")}
                         </p>
                       </>
                     )}
@@ -385,6 +393,17 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               {selectedPanel === "vllm" ? (
                 <GrafanaDashboard
                   {...getVllmDashboardProps(
+                    grafanaUrl,
+                    record.metadata.name,
+                    record.spec.cluster,
+                    replicaParam,
+                  )}
+                  className="flex-1"
+                  hideVariables
+                />
+              ) : selectedPanel === "sglang" ? (
+                <GrafanaDashboard
+                  {...getSglangDashboardProps(
                     grafanaUrl,
                     record.metadata.name,
                     record.spec.cluster,

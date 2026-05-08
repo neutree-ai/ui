@@ -124,3 +124,21 @@ export const getVllmDashboardProps = (
     },
   },
 });
+
+export const getSglangDashboardProps = (
+  grafanaUrl: string,
+  endpointName: string,
+  clusterName: string,
+  replica?: string,
+): GrafanaDashboardProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "sglang",
+    variables: {
+      ...getCommonVariables(),
+      Cluster: clusterName,
+      Application: endpointName,
+      Replica: replica || GRAFANA_VAR_ALL,
+    },
+  },
+});
