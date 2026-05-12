@@ -16,7 +16,7 @@ interface MaxLengthSelectorProps {
 const KB = 1024;
 const MB = 1024 * 1024;
 
-function formatMaxLength(v: number): string {
+export function formatMaxLength(v: number): string {
   if (v >= MB) {
     const m = v / MB;
     return `${Number.isInteger(m) ? m : m.toFixed(2)}M`;
