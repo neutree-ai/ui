@@ -24,8 +24,8 @@ const Row = ({
 >) => {
   return (
     <>
-      <dl className="flex flex-wrap">
-        <div className="flex-auto pt-4">
+      <dl className="flex flex-wrap min-w-0">
+        <div className="flex-auto min-w-0 pt-4">
           <dt className="scroll-m-20 text-xs font-semibold tracking-tight">
             {title}
           </dt>
