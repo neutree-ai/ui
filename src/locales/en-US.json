@@ -801,6 +801,47 @@
 	"model_gateway": {
 		"title": "Model Gateway"
 	},
+	"observability": {
+		"title": "Observability"
+	},
+	"ai_traces": {
+		"title": "Inference Trace",
+		"empty": "No traces in the selected window.",
+		"refreshing": "Refreshing…",
+		"filters": {
+			"endpoint": "Endpoint name",
+			"endpointType": "Endpoint type",
+			"allTypes": "All types",
+			"status": "Status",
+			"allStatuses": "All statuses",
+			"model": "Model"
+		},
+		"columns": {
+			"time": "Time",
+			"endpoint": "Endpoint",
+			"model": "Model",
+			"status": "Status",
+			"tokens": "Tokens"
+		},
+		"detail": {
+			"title": "Trace detail",
+			"time": "Time",
+			"status": "Status",
+			"endpoint": "Endpoint",
+			"workspace": "Workspace",
+			"requestModel": "Request model",
+			"responseModel": "Response model",
+			"tokens": "Tokens",
+			"tokenParts": {
+				"prompt": "prompt",
+				"completion": "completion",
+				"total": "total"
+			},
+			"apiKey": "API key",
+			"request": "Request body",
+			"response": "Response body"
+		}
+	},
 	"access_control": {
 		"title": "Access Control"
 	},
