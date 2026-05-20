@@ -23,6 +23,15 @@ type AITraceListResponse = {
   next_before?: string;
 };
 
+export type AITraceDayCount = {
+  date: string;
+  count: number;
+};
+
+type AITraceStatsResponse = {
+  days: AITraceDayCount[];
+};
+
 type AITraceListParams = {
   workspace: string;
   endpoint_name?: string;
@@ -85,4 +94,15 @@ export async function fetchAITrace(
 ): Promise<AITrace> {
   const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/${encodeURIComponent(requestId)}`;
   return apiGet<AITrace>(url, signal);
+}
+
+// fetchAITraceStats returns per-day request counts for the activity chart.
+export async function fetchAITraceStats(
+  workspace: string,
+  days?: number,
+  signal?: AbortSignal,
+): Promise<AITraceStatsResponse> {
+  const qs = days != null ? `?days=${days}` : "";
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/stats${qs}`;
+  return apiGet<AITraceStatsResponse>(url, signal);
 }

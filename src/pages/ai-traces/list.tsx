@@ -1,5 +1,5 @@
 import { useParsed } from "@refinedev/core";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ import { type AITrace, fetchAITraces } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
+import { TraceStatsChart } from "./components/TraceStatsChart";
 
 const LIMIT = 50;
 
@@ -50,11 +51,17 @@ export const AITracesList = () => {
     limit: LIMIT,
   };
 
+  const queryClient = useQueryClient();
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["ai-traces", queryArgs],
     queryFn: ({ signal }) => fetchAITraces(queryArgs, signal),
     enabled: Boolean(workspace),
   });
+
+  const handleRefresh = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ["ai-trace-stats"] });
+  };
 
   const items = data?.items ?? [];
 
@@ -67,7 +74,7 @@ export const AITracesList = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => refetch()}
+          onClick={handleRefresh}
           disabled={isFetching}
         >
           <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
@@ -75,6 +82,8 @@ export const AITracesList = () => {
         </Button>
       }
     >
+      <TraceStatsChart workspace={workspace} />
+
       <div className="flex flex-wrap gap-2 mb-4">
         <Input
           className="w-[200px]"

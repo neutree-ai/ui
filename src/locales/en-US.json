@@ -808,6 +808,11 @@
 		"title": "Inference Trace",
 		"empty": "No traces in the selected window.",
 		"refresh": "Refresh",
+		"stats": {
+			"title": "Requests (last 7 days)",
+			"requests": "Requests",
+			"totalRequests": "{{total}} total"
+		},
 		"filters": {
 			"endpoint": "Endpoint name",
 			"endpointType": "Endpoint type",
