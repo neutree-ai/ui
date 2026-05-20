@@ -839,7 +839,33 @@
 			},
 			"apiKey": "API key",
 			"request": "Request body",
-			"response": "Response body"
+			"response": "Response body",
+			"viewFormatted": "Formatted",
+			"viewRaw": "Raw",
+			"wrap": "Wrap lines",
+			"noWrap": "No wrap",
+			"collapse": "Collapse",
+			"expand": "Expand",
+			"searchPlaceholder": "Search in body…",
+			"matchCount": "{{current}} / {{total}}",
+			"noMatches": "No matches",
+			"prevMatch": "Previous match",
+			"nextMatch": "Next match",
+			"role": {
+				"system": "System",
+				"user": "User",
+				"assistant": "Assistant",
+				"tool": "Tool",
+				"developer": "Developer"
+			},
+			"block": {
+				"text": "Text",
+				"toolUse": "Tool use",
+				"toolResult": "Tool result",
+				"image": "Image",
+				"thinking": "Thinking",
+				"unknown": "Content block"
+			}
 		}
 	},
 	"access_control": {
