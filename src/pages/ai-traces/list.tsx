@@ -1,7 +1,9 @@
 import { useParsed } from "@refinedev/core";
 import { useQuery } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,10 +25,10 @@ import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { type AITrace, fetchAITraces } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
 
 const LIMIT = 50;
-const REFRESH_INTERVAL_MS = 10_000;
 
 export const AITracesList = () => {
   const { t } = useTranslation();
@@ -48,11 +50,10 @@ export const AITracesList = () => {
     limit: LIMIT,
   };
 
-  const { data, isLoading, isFetching, error } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["ai-traces", queryArgs],
     queryFn: ({ signal }) => fetchAITraces(queryArgs, signal),
     enabled: Boolean(workspace),
-    refetchInterval: REFRESH_INTERVAL_MS,
   });
 
   const items = data?.items ?? [];
@@ -63,9 +64,15 @@ export const AITracesList = () => {
       canCreate={false}
       breadcrumb={false}
       extra={
-        <div className="text-sm text-muted-foreground">
-          {isFetching ? t("ai_traces.refreshing") : null}
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
+          {t("ai_traces.refresh")}
+        </Button>
       }
     >
       <div className="flex flex-wrap gap-2 mb-4">

@@ -1,4 +1,5 @@
 import { useOne } from "@refinedev/core";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
@@ -24,9 +25,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Loader } from "@/foundation/components/Loader";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
-import type { AITrace } from "@/foundation/lib/api/ai-traces";
+import { type AITrace, fetchAITrace } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
@@ -38,6 +40,20 @@ type Props = {
 
 export const TraceDetailDrawer = ({ trace, open, onOpenChange }: Props) => {
   const { t } = useTranslation();
+
+  // The list omits request/response bodies (they are large); fetch the full
+  // record lazily when the drawer opens. Metadata renders instantly from the
+  // list row passed in via `trace`.
+  const {
+    data: detail,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["ai-trace", trace?.workspace, trace?.request_id],
+    queryFn: ({ signal }) =>
+      fetchAITrace(trace?.workspace ?? "", trace?.request_id ?? "", signal),
+    enabled: open && Boolean(trace?.workspace && trace?.request_id),
+  });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -55,16 +71,30 @@ export const TraceDetailDrawer = ({ trace, open, onOpenChange }: Props) => {
             <div className="space-y-4 pb-6">
               <MetaGrid trace={trace} />
               <Separator />
-              <BodySection
-                title={t("ai_traces.detail.request")}
-                body={trace.request_body}
-                kind="request"
-              />
-              <BodySection
-                title={t("ai_traces.detail.response")}
-                body={trace.response_body}
-                kind="response"
-              />
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader className="w-8 text-muted-foreground" />
+                </div>
+              ) : error ? (
+                <div className="text-sm text-destructive">
+                  {(error as Error).message}
+                </div>
+              ) : (
+                <>
+                  <BodySection
+                    key={`${trace.request_id}-request`}
+                    title={t("ai_traces.detail.request")}
+                    body={detail?.request_body}
+                    kind="request"
+                  />
+                  <BodySection
+                    key={`${trace.request_id}-response`}
+                    title={t("ai_traces.detail.response")}
+                    body={detail?.response_body}
+                    kind="response"
+                  />
+                </>
+              )}
             </div>
           </ScrollArea>
         )}

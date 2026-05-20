@@ -34,20 +34,7 @@ type AITraceListParams = {
   before?: string;
 };
 
-export async function fetchAITraces(
-  params: AITraceListParams,
-  signal?: AbortSignal,
-): Promise<AITraceListResponse> {
-  const { workspace, ...rest } = params;
-  const search = new URLSearchParams();
-  for (const [k, v] of Object.entries(rest)) {
-    if (v !== undefined && v !== "") {
-      search.set(k, String(v));
-    }
-  }
-
-  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}?${search.toString()}`;
-
+async function apiGet<T>(url: string, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = {};
   const auth = clientPostgrest.headers.Authorization;
   if (typeof auth === "string" && auth) {
@@ -68,5 +55,34 @@ export async function fetchAITraces(
     );
   }
 
-  return (await res.json()) as AITraceListResponse;
+  return (await res.json()) as T;
+}
+
+// fetchAITraces lists trace records (metadata only — no request/response
+// bodies, which the list view does not render).
+export async function fetchAITraces(
+  params: AITraceListParams,
+  signal?: AbortSignal,
+): Promise<AITraceListResponse> {
+  const { workspace, ...rest } = params;
+  const search = new URLSearchParams();
+  for (const [k, v] of Object.entries(rest)) {
+    if (v !== undefined && v !== "") {
+      search.set(k, String(v));
+    }
+  }
+
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}?${search.toString()}`;
+  return apiGet<AITraceListResponse>(url, signal);
+}
+
+// fetchAITrace loads a single trace including the full request/response
+// bodies — used by the detail drawer so the list stays lightweight.
+export async function fetchAITrace(
+  workspace: string,
+  requestId: string,
+  signal?: AbortSignal,
+): Promise<AITrace> {
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/${encodeURIComponent(requestId)}`;
+  return apiGet<AITrace>(url, signal);
 }

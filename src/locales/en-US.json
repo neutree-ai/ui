@@ -807,7 +807,7 @@
 	"ai_traces": {
 		"title": "Inference Trace",
 		"empty": "No traces in the selected window.",
-		"refreshing": "Refreshing…",
+		"refresh": "Refresh",
 		"filters": {
 			"endpoint": "Endpoint name",
 			"endpointType": "Endpoint type",
