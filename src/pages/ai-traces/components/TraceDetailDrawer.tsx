@@ -68,7 +68,10 @@ export const TraceDetailDrawer = ({ trace, open, onOpenChange }: Props) => {
 
         {trace && (
           <ScrollArea className="flex-1 -mx-6 px-6">
-            <div className="space-y-4 pb-6">
+            {/* w-0 min-w-full pins the content to the viewport width so the
+                body's overflow-x-auto scrolls internally instead of widening
+                the drawer. */}
+            <div className="w-0 min-w-full space-y-4 pb-6">
               <MetaGrid trace={trace} />
               <Separator />
               {isLoading ? (
@@ -784,6 +787,11 @@ function parseResponseJSON(json: unknown): ChatMessage[] {
         const role =
           typeof message.role === "string" ? message.role : "assistant";
         const blocks = normalizeContent(message.content);
+        // Reasoning models return chain-of-thought in a separate field.
+        const reason = message.reasoning ?? message.reasoning_content;
+        if (typeof reason === "string" && reason) {
+          blocks.unshift({ kind: "thinking", text: reason });
+        }
         if (isRecord(message.tool_calls) || Array.isArray(message.tool_calls)) {
           for (const tc of asArray(message.tool_calls)) {
             blocks.push(toolCallBlock(tc));
@@ -808,6 +816,7 @@ function parseResponseJSON(json: unknown): ChatMessage[] {
 function parseSSEResponse(text: string): ChatMessage[] {
   const lines = text.split(/\r?\n/);
   let assistant = "";
+  let reasoning = "";
   const toolBlocks: ContentBlock[] = [];
 
   for (const line of lines) {
@@ -823,9 +832,11 @@ function parseSSEResponse(text: string): ChatMessage[] {
       for (const choice of evt.choices) {
         if (!isRecord(choice)) continue;
         const delta = choice.delta;
-        if (isRecord(delta) && typeof delta.content === "string") {
-          assistant += delta.content;
-        }
+        if (!isRecord(delta)) continue;
+        if (typeof delta.content === "string") assistant += delta.content;
+        // Reasoning models stream chain-of-thought in a separate field.
+        const r = delta.reasoning ?? delta.reasoning_content;
+        if (typeof r === "string") reasoning += r;
       }
       continue;
     }
@@ -834,11 +845,13 @@ function parseSSEResponse(text: string): ChatMessage[] {
     if (evt.type === "content_block_delta" && isRecord(evt.delta)) {
       const d = evt.delta;
       if (typeof d.text === "string") assistant += d.text;
+      else if (typeof d.thinking === "string") reasoning += d.thinking;
       else if (typeof d.partial_json === "string") assistant += d.partial_json;
     }
   }
 
   const blocks: ContentBlock[] = [];
+  if (reasoning) blocks.push({ kind: "thinking", text: reasoning });
   if (assistant) blocks.push({ kind: "text", text: assistant });
   blocks.push(...toolBlocks);
   return blocks.length > 0 ? [{ role: "assistant", blocks }] : [];
