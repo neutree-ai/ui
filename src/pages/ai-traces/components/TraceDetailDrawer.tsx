@@ -191,7 +191,7 @@ const WorkspaceLink = ({ name }: { name?: string }) => {
 
 const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
   const enabled = Boolean(id && workspace);
-  const { data, isLoading } = useOne({
+  const { data } = useOne({
     resource: "api_keys",
     id: id ?? "",
     queryOptions: { enabled },
@@ -206,15 +206,21 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
   const name = (data?.data as { metadata?: { name?: string } } | undefined)
     ?.metadata?.name;
 
+  // The api_keys show route is keyed by metadata.name, not the raw key id —
+  // render a link only once the name has resolved, otherwise it 404s.
+  if (!name) {
+    return <span className="font-mono text-xs">{id}</span>;
+  }
+
   return (
     <ShowButton
       resource="api_keys"
-      recordItemId={id}
+      recordItemId={name}
       meta={{ workspace }}
       variant="link"
       className="!h-auto !p-0 font-mono text-xs"
     >
-      {isLoading ? id : (name ?? id)}
+      {name}
     </ShowButton>
   );
 };
