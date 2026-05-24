@@ -821,15 +821,20 @@
 			"allStatuses": "All statuses",
 			"model": "Model",
 			"apiKey": "API key",
-			"allApiKeys": "All API keys"
+			"allApiKeys": "All API keys",
+			"finishReason": "Finish",
+			"allFinishReasons": "All finish reasons"
 		},
 		"columns": {
 			"time": "Time",
 			"endpoint": "Endpoint",
+			"app": "App",
 			"model": "Model",
 			"status": "Status",
 			"apiKey": "API key",
-			"tokens": "Tokens"
+			"tokens": "Tokens",
+			"throughput": "Tok/s",
+			"finishReason": "Finish"
 		},
 		"detail": {
 			"title": "Trace detail",
@@ -850,6 +855,8 @@
 			"response": "Response body",
 			"viewFormatted": "Formatted",
 			"viewRaw": "Raw",
+			"messageRaw": "</> View raw",
+			"messageHideRaw": "</> Hide raw",
 			"wrap": "Wrap lines",
 			"noWrap": "No wrap",
 			"collapse": "Collapse",

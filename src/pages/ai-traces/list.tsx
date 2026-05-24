@@ -42,6 +42,7 @@ export const AITracesList = () => {
   const [status, setStatus] = useState<string>("");
   const [model, setModel] = useState("");
   const [apiKeyId, setApiKeyId] = useState<string>("");
+  const [finishReason, setFinishReason] = useState<string>("");
   const [selected, setSelected] = useState<AITrace | null>(null);
 
   // Workspace's API keys — for both the filter dropdown and id→name resolution
@@ -68,6 +69,7 @@ export const AITracesList = () => {
     status: status || undefined,
     model: model.trim() || undefined,
     api_key_id: apiKeyId || undefined,
+    finish_reason: finishReason || undefined,
     limit: LIMIT,
   };
 
@@ -169,6 +171,23 @@ export const AITracesList = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          value={finishReason || "all"}
+          onValueChange={(v) => setFinishReason(v === "all" ? "" : v)}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder={t("ai_traces.filters.finishReason")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              {t("ai_traces.filters.allFinishReasons")}
+            </SelectItem>
+            <SelectItem value="stop">stop</SelectItem>
+            <SelectItem value="length">length</SelectItem>
+            <SelectItem value="tool_calls">tool_calls</SelectItem>
+            <SelectItem value="content_filter">content_filter</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {error ? (
@@ -185,22 +204,31 @@ export const AITracesList = () => {
                 {t("ai_traces.columns.time")}
               </TableHead>
               <TableHead>{t("ai_traces.columns.endpoint")}</TableHead>
+              <TableHead className="w-[120px]">
+                {t("ai_traces.columns.app")}
+              </TableHead>
               <TableHead>{t("ai_traces.columns.model")}</TableHead>
-              <TableHead className="w-[100px]">
+              <TableHead className="w-[90px]">
                 {t("ai_traces.columns.status")}
               </TableHead>
-              <TableHead className="w-[160px]">
+              <TableHead className="w-[140px]">
                 {t("ai_traces.columns.apiKey")}
               </TableHead>
-              <TableHead className="w-[100px] text-right">
+              <TableHead className="w-[90px] text-right">
                 {t("ai_traces.columns.tokens")}
+              </TableHead>
+              <TableHead className="w-[90px] text-right">
+                {t("ai_traces.columns.throughput")}
+              </TableHead>
+              <TableHead className="w-[110px]">
+                {t("ai_traces.columns.finishReason")}
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <Loader className="mx-auto w-8 text-muted-foreground" />
                 </TableCell>
               </TableRow>
@@ -234,18 +262,31 @@ export const AITracesList = () => {
                   </div>
                 </TableCell>
                 <TableCell className="text-sm">
+                  {userAgentToApp(row.user_agent) || (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm">
                   {row.response_model || row.request_model || "-"}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={row.response_status} />
                 </TableCell>
-                <TableCell className="text-sm truncate max-w-[160px]">
+                <TableCell className="text-sm truncate max-w-[140px]">
                   {keyName(row.api_key_id) || (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(row.total_tokens) ?? "-"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatThroughput(row.completion_tokens, row.duration_ms)}
+                </TableCell>
+                <TableCell className="text-xs font-mono">
+                  {row.finish_reason || (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -263,6 +304,31 @@ export const AITracesList = () => {
     </ListPage>
   );
 };
+
+// userAgentToApp picks a short app label from the request's User-Agent — the
+// SDK / client name when we recognise it, otherwise the leading token.
+function userAgentToApp(ua?: string): string {
+  if (!ua) return "";
+  if (ua.startsWith("claude-cli")) return "Claude Code";
+  if (ua.includes("claude.ai")) return "claude.ai";
+  if (ua.includes("openai")) return "OpenAI SDK";
+  if (ua.includes("anthropic")) return "Anthropic SDK";
+  if (ua.includes("openrouter")) return "OpenRouter";
+  const m = ua.match(/^[^/\s]+/);
+  return m ? m[0] : ua.slice(0, 24);
+}
+
+// formatThroughput renders completion tokens per second as "X.X tok/s".
+function formatThroughput(
+  completionTokens?: number,
+  durationMs?: number,
+): React.ReactNode {
+  if (completionTokens == null || !durationMs) {
+    return <span className="text-muted-foreground">-</span>;
+  }
+  const tps = completionTokens / (durationMs / 1000);
+  return `${tps.toFixed(1)} tok/s`;
+}
 
 const StatusBadge = ({ status }: { status: number }) => {
   if (status >= 200 && status < 300) {

@@ -290,8 +290,8 @@
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "c4c97cc62ad41f004d08238c569e0054",
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "71fed924f6125ed6cfbbc8891b96c282",
   "src/domains/external-endpoint/hooks/use-model-mapping-rows.ts": "8acf1e3078e104a09eaa7ce60bb41b56",
-  "src/pages/ai-traces/list.tsx": "e76d0367efd7f4d400bbbf356007e16a",
-  "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "302140f7302c5b4428131ce48371b238",
-  "src/foundation/lib/api/ai-traces.ts": "fe8faaee3e2145e5aa0254a9d53b48db",
+  "src/pages/ai-traces/list.tsx": "a8172f9ddeba0fee531f6497947ad86f",
+  "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "c6eb255b1003c7ddecb40de8d92b8528",
+  "src/foundation/lib/api/ai-traces.ts": "0afab0f8449c11aa17397d4939153063",
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "72d803582532b53b21c0bce895d0142f"
 }

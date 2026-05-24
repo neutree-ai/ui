@@ -442,15 +442,54 @@ const ConversationView = ({
           cursor += occ;
           return node;
         });
-        return (
-          <div key={mi} className="rounded border bg-muted/40 overflow-hidden">
-            <div className="border-b bg-muted px-3 py-1.5">
-              <RoleBadge role={msg.role} />
-            </div>
-            <div className="space-y-2 p-3">{blocks}</div>
-          </div>
-        );
+        return <MessageCard key={mi} msg={msg} wrap={wrap} blocks={blocks} />;
       })}
+    </div>
+  );
+};
+
+const MessageCard = ({
+  msg,
+  blocks,
+  wrap,
+}: {
+  msg: ChatMessage;
+  blocks: React.ReactNode;
+  wrap: boolean;
+}) => {
+  const { t } = useTranslation();
+  const [showRaw, setShowRaw] = useState(false);
+  return (
+    <div className="rounded border bg-muted/40 overflow-hidden">
+      <div className="border-b bg-muted px-3 py-1.5 flex items-center justify-between gap-2">
+        <RoleBadge role={msg.role} />
+        {msg.raw ? (
+          <button
+            type="button"
+            onClick={() => setShowRaw((v) => !v)}
+            className="text-[11px] text-muted-foreground hover:text-foreground font-mono"
+          >
+            {showRaw
+              ? t("ai_traces.detail.messageHideRaw")
+              : t("ai_traces.detail.messageRaw")}
+          </button>
+        ) : null}
+      </div>
+      <div className="space-y-2 p-3">
+        {blocks}
+        {showRaw && msg.raw ? (
+          <pre
+            className={cn(
+              "text-[11px] bg-background border rounded p-2 font-mono mt-2",
+              wrap
+                ? "whitespace-pre-wrap break-words"
+                : "whitespace-pre overflow-x-auto",
+            )}
+          >
+            {msg.raw}
+          </pre>
+        ) : null}
+      </div>
     </div>
   );
 };
@@ -711,6 +750,10 @@ type ContentBlock = {
 type ChatMessage = {
   role: string;
   blocks: ContentBlock[];
+  // The original JSON for this message — surfaced behind a per-message "Raw"
+  // toggle so users can inspect the exact wire payload of one message
+  // without scrolling the full body.
+  raw?: string;
 };
 
 /**
@@ -761,15 +804,24 @@ function parseRequestJSON(json: unknown): ChatMessage[] {
     result.push({
       role: "system",
       blocks: [{ kind: "text", text: json.system }],
+      raw: JSON.stringify(json.system, null, 2),
     });
   } else if (Array.isArray(json.system)) {
-    result.push({ role: "system", blocks: normalizeContent(json.system) });
+    result.push({
+      role: "system",
+      blocks: normalizeContent(json.system),
+      raw: JSON.stringify(json.system, null, 2),
+    });
   }
 
   for (const m of messages) {
     if (!isRecord(m)) continue;
     const role = typeof m.role === "string" ? m.role : "unknown";
-    result.push({ role, blocks: normalizeContent(m.content) });
+    result.push({
+      role,
+      blocks: normalizeContent(m.content),
+      raw: JSON.stringify(m, null, 2),
+    });
   }
   return result;
 }
@@ -797,7 +849,9 @@ function parseResponseJSON(json: unknown): ChatMessage[] {
             blocks.push(toolCallBlock(tc));
           }
         }
-        if (blocks.length > 0) out.push({ role, blocks });
+        if (blocks.length > 0) {
+          out.push({ role, blocks, raw: JSON.stringify(choice, null, 2) });
+        }
       }
     }
     if (out.length > 0) return out;
@@ -807,7 +861,9 @@ function parseResponseJSON(json: unknown): ChatMessage[] {
   if (json.role === "assistant" || Array.isArray(json.content)) {
     const role = typeof json.role === "string" ? json.role : "assistant";
     const blocks = normalizeContent(json.content);
-    if (blocks.length > 0) return [{ role, blocks }];
+    if (blocks.length > 0) {
+      return [{ role, blocks, raw: JSON.stringify(json, null, 2) }];
+    }
   }
 
   return [];
@@ -854,7 +910,8 @@ function parseSSEResponse(text: string): ChatMessage[] {
   if (reasoning) blocks.push({ kind: "thinking", text: reasoning });
   if (assistant) blocks.push({ kind: "text", text: assistant });
   blocks.push(...toolBlocks);
-  return blocks.length > 0 ? [{ role: "assistant", blocks }] : [];
+  // SSE has no per-message wire shape — surface the full stream as the raw.
+  return blocks.length > 0 ? [{ role: "assistant", blocks, raw: text }] : [];
 }
 
 function normalizeContent(content: unknown): ContentBlock[] {

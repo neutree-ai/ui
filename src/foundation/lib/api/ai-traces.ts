@@ -14,6 +14,9 @@ export type AITrace = {
   prompt_tokens?: number;
   completion_tokens?: number;
   total_tokens?: number;
+  finish_reason?: string;
+  user_agent?: string;
+  duration_ms?: number;
   request_body?: string;
   response_body?: string;
 };
@@ -39,6 +42,7 @@ type AITraceListParams = {
   status?: string;
   model?: string;
   api_key_id?: string;
+  finish_reason?: string;
   limit?: number;
   start?: string;
   before?: string;
