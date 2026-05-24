@@ -1,4 +1,4 @@
-import { useOne } from "@refinedev/core";
+import { useList } from "@refinedev/core";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -676,12 +676,16 @@ const WorkspaceLink = ({ name }: { name?: string }) => {
 };
 
 const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
-  const enabled = Boolean(id && workspace);
-  const { data } = useOne({
+  // The api_keys resource has resource-level
+  // meta: { idColumnName: "metadata->name" }, so useOne by uuid id misses
+  // (it looks up metadata.name = <uuid>). Fetch the workspace's keys via
+  // useList and resolve locally — shares the react-query cache with the
+  // list page's identical query.
+  const { data } = useList<{ id: string; metadata?: { name?: string } }>({
     resource: "api_keys",
-    id: id ?? "",
-    queryOptions: { enabled },
+    pagination: { mode: "off" },
     meta: { workspace },
+    queryOptions: { enabled: Boolean(workspace) },
   });
 
   if (!id) return <span className="text-muted-foreground">-</span>;
@@ -689,8 +693,7 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
     return <span className="font-mono text-xs">{id}</span>;
   }
 
-  const name = (data?.data as { metadata?: { name?: string } } | undefined)
-    ?.metadata?.name;
+  const name = data?.data?.find((k) => k.id === id)?.metadata?.name;
 
   // The api_keys show route is keyed by metadata.name, not the raw key id —
   // render a link only once the name has resolved, otherwise it 404s.

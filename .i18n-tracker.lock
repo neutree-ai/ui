@@ -291,7 +291,7 @@
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "71fed924f6125ed6cfbbc8891b96c282",
   "src/domains/external-endpoint/hooks/use-model-mapping-rows.ts": "8acf1e3078e104a09eaa7ce60bb41b56",
   "src/pages/ai-traces/list.tsx": "a8172f9ddeba0fee531f6497947ad86f",
-  "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "c6eb255b1003c7ddecb40de8d92b8528",
+  "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "04f066407adaec583f58c5445c190281",
   "src/foundation/lib/api/ai-traces.ts": "0afab0f8449c11aa17397d4939153063",
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "72d803582532b53b21c0bce895d0142f"
 }
