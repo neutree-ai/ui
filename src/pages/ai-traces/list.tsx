@@ -1,4 +1,4 @@
-import { useParsed } from "@refinedev/core";
+import { useList, useParsed } from "@refinedev/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
@@ -25,6 +25,7 @@ import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { type AITrace, fetchAITraces } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
 import { TraceStatsChart } from "./components/TraceStatsChart";
@@ -40,7 +41,25 @@ export const AITracesList = () => {
   const [endpointType, setEndpointType] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [model, setModel] = useState("");
+  const [apiKeyId, setApiKeyId] = useState<string>("");
   const [selected, setSelected] = useState<AITrace | null>(null);
+
+  // Workspace's API keys — for both the filter dropdown and id→name resolution
+  // in the table cell.
+  const { data: keysData } = useList<{
+    id: string;
+    metadata?: { name?: string };
+  }>({
+    resource: "api_keys",
+    pagination: { mode: "off" },
+    meta: { workspace },
+    queryOptions: { enabled: Boolean(workspace) },
+  });
+  const keys = keysData?.data ?? [];
+  const keyName = (id?: string) => {
+    if (!id) return "";
+    return keys.find((k) => k.id === id)?.metadata?.name ?? "";
+  };
 
   const queryArgs = {
     workspace,
@@ -48,6 +67,7 @@ export const AITracesList = () => {
     endpoint_type: endpointType || undefined,
     status: status || undefined,
     model: model.trim() || undefined,
+    api_key_id: apiKeyId || undefined,
     limit: LIMIT,
   };
 
@@ -131,6 +151,24 @@ export const AITracesList = () => {
           value={model}
           onChange={(e) => setModel(e.target.value)}
         />
+        <Select
+          value={apiKeyId || "all"}
+          onValueChange={(v) => setApiKeyId(v === "all" ? "" : v)}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t("ai_traces.filters.apiKey")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              {t("ai_traces.filters.allApiKeys")}
+            </SelectItem>
+            {keys.map((k) => (
+              <SelectItem key={k.id} value={k.id}>
+                {k.metadata?.name ?? k.id}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {error ? (
@@ -151,7 +189,10 @@ export const AITracesList = () => {
               <TableHead className="w-[100px]">
                 {t("ai_traces.columns.status")}
               </TableHead>
-              <TableHead className="w-[120px] text-right">
+              <TableHead className="w-[160px]">
+                {t("ai_traces.columns.apiKey")}
+              </TableHead>
+              <TableHead className="w-[100px] text-right">
                 {t("ai_traces.columns.tokens")}
               </TableHead>
             </TableRow>
@@ -159,7 +200,7 @@ export const AITracesList = () => {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12">
+                <TableCell colSpan={6} className="text-center py-12">
                   <Loader className="mx-auto w-8 text-muted-foreground" />
                 </TableCell>
               </TableRow>
@@ -198,8 +239,13 @@ export const AITracesList = () => {
                 <TableCell>
                   <StatusBadge status={row.response_status} />
                 </TableCell>
+                <TableCell className="text-sm truncate max-w-[160px]">
+                  {keyName(row.api_key_id) || (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right font-mono text-xs">
-                  {row.total_tokens != null ? row.total_tokens : "-"}
+                  {formatTokens(row.total_tokens) ?? "-"}
                 </TableCell>
               </TableRow>
             ))}

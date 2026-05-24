@@ -819,13 +819,16 @@
 			"allTypes": "All types",
 			"status": "Status",
 			"allStatuses": "All statuses",
-			"model": "Model"
+			"model": "Model",
+			"apiKey": "API key",
+			"allApiKeys": "All API keys"
 		},
 		"columns": {
 			"time": "Time",
 			"endpoint": "Endpoint",
 			"model": "Model",
 			"status": "Status",
+			"apiKey": "API key",
 			"tokens": "Tokens"
 		},
 		"detail": {

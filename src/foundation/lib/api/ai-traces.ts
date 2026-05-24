@@ -38,6 +38,7 @@ type AITraceListParams = {
   endpoint_type?: string;
   status?: string;
   model?: string;
+  api_key_id?: string;
   limit?: number;
   start?: string;
   before?: string;
