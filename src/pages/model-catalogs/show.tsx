@@ -130,7 +130,7 @@ export const ModelCatalogsShow = () => {
                 </ShowPage.Row>
               </div>
               <ShowPage.Row title={t("common.fields.task")}>
-                <ModelTask task={heroModel?.task ?? record.spec.model.task} />
+                <ModelTask task={heroModel?.task ?? ""} />
               </ShowPage.Row>
             </div>
             {heroModel?.file && (
