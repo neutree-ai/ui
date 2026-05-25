@@ -1,4 +1,6 @@
-import { Trash2 } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
@@ -9,13 +11,23 @@ import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
+import { ImportDialog } from "./components/ImportDialog";
 
 export const ModelCatalogsList = () => {
   const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
-    <ListPage canCreate={false}>
+    <ListPage
+      canCreate={false}
+      extra={
+        <Button size="sm" onClick={() => setImportOpen(true)}>
+          <Download className="size-4 mr-1.5 rotate-180" />
+          {t("model_catalogs.import.button", "Import")}
+        </Button>
+      }
+    >
       <Table
         enableSorting
         enableFilters
@@ -88,6 +100,7 @@ export const ModelCatalogsList = () => {
           )}
         />
       </Table>
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </ListPage>
   );
 };

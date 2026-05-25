@@ -22,8 +22,8 @@
   "src/pages/model-registries/edit.tsx": "0f8edeacc4f79e9814958f468a96fb87",
   "src/pages/model-registries/list.tsx": "0ab15b64c879d9369f5f97ac198daf2b",
   "src/pages/model-registries/show.tsx": "9da8ba6911b30d3a325e7b41f16ff1d8",
-  "src/pages/model-catalogs/list.tsx": "fe96d303469eb5866c0945d6cd3d6cb8",
-  "src/pages/model-catalogs/show.tsx": "e57c12eeddcebeb75ed2f3d69fade43a",
+  "src/pages/model-catalogs/list.tsx": "d656bb37b8cc6dbf51b22c8967ae24f0",
+  "src/pages/model-catalogs/show.tsx": "f65417622304b4b2ab92f652c41dbf94",
   "src/pages/image-registries/create.tsx": "8f23795e86d78127382ef53a8cb15488",
   "src/pages/image-registries/edit.tsx": "70b4ec2249988bba2726da5308172e49",
   "src/pages/image-registries/list.tsx": "2f5ca9c3216946403689bede93a5ae0a",
@@ -163,7 +163,7 @@
   "src/domains/model-registry/types.ts": "f1af5141f8aee9c147932bdda6f34ca6",
   "src/domains/model-registry/components/ModelRegistryStatus.tsx": "2683d6d752fe80c13efa3583d4e1985f",
   "src/domains/model-registry/components/ModelRegistryType.tsx": "9585615662f17ec03ea42671bc52df5c",
-  "src/domains/model-catalog/types.ts": "47d13619e9a0fd21cce5cb82d0b017f2",
+  "src/domains/model-catalog/types.ts": "67e65ff59c9a4d4e2432edd4baccecaf",
   "src/domains/model-catalog/components/ModelCatalogStatus.tsx": "a090e1d95df3be6f6b9e722e9aebd528",
   "src/domains/image-registry/types.ts": "d63ecb27f4dd788187d49224d2ac2e0d",
   "src/domains/image-registry/components/ImageRegistryStatus.tsx": "a173cda0e38d0c9359063af149ac22ea",
@@ -293,5 +293,8 @@
   "src/pages/ai-traces/list.tsx": "a8172f9ddeba0fee531f6497947ad86f",
   "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "04f066407adaec583f58c5445c190281",
   "src/foundation/lib/api/ai-traces.ts": "0afab0f8449c11aa17397d4939153063",
-  "src/pages/ai-traces/components/TraceStatsChart.tsx": "72d803582532b53b21c0bce895d0142f"
+  "src/pages/ai-traces/components/TraceStatsChart.tsx": "72d803582532b53b21c0bce895d0142f",
+  "src/pages/model-catalogs/components/ImportDialog.tsx": "a5f47af5a5254132aa0e77e25675096d",
+  "src/pages/model-catalogs/components/KeyConfigCard.tsx": "a3e49d8166c2440bfa82b6d6b53cc2e1",
+  "src/foundation/lib/api/model-catalogs.ts": "7f9e9d4ef7bcb0f5b7fd15a0d0d03de3"
 }

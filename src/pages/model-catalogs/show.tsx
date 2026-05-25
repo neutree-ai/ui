@@ -1,10 +1,18 @@
+import { useOne, useShow } from "@refinedev/core";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
-import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
+import JSONSchemaValueVisualizer from "@/domains/engine/components/JsonSchemaValueVisualizer";
 import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
@@ -12,7 +20,7 @@ import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useOne, useShow } from "@refinedev/core";
+import { EnvCard, KeyConfigCard } from "./components/KeyConfigCard";
 
 export const ModelCatalogsShow = () => {
   const { t } = useTranslation();
@@ -20,6 +28,7 @@ export const ModelCatalogsShow = () => {
     query: { data, isLoading },
   } = useShow<ModelCatalog>({});
   const record = data?.data;
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -69,11 +78,13 @@ export const ModelCatalogsShow = () => {
                 <ModelTask task={record.spec.model.task} />
               </ShowPage.Row>
             </div>
-            <div className="grid grid-cols-4 gap-8">
-              <ShowPage.Row title={t("model_catalogs.fields.modelFile")}>
-                {record.spec.model.file}
-              </ShowPage.Row>
-            </div>
+            {record.spec.model.file && (
+              <div className="grid grid-cols-4 gap-8">
+                <ShowPage.Row title={t("model_catalogs.fields.modelFile")}>
+                  {record.spec.model.file}
+                </ShowPage.Row>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -82,15 +93,45 @@ export const ModelCatalogsShow = () => {
           titleTranslationKey="common.fields.resources"
         />
 
+        <KeyConfigCard variables={record.spec.variables} />
+
+        <EnvCard env={record.spec.env ?? null} />
+
         <DeploymentConfigCard
           replicas={record.spec.replicas}
           deploymentOptions={record.spec.deployment_options}
         />
 
-        <EngineVariablesCard
-          schema={engineVersionSchema}
-          variables={record.spec.variables}
-        />
+        {engineVersionSchema && record.spec.variables && (
+          <Collapsible
+            open={advancedOpen}
+            onOpenChange={setAdvancedOpen}
+            className="mt-4"
+          >
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardContent className="cursor-pointer py-3 flex items-center gap-2 hover:bg-accent/40">
+                  {advancedOpen ? (
+                    <ChevronDown className="size-4" />
+                  ) : (
+                    <ChevronRight className="size-4" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {t("model_catalogs.sections.advanced")}
+                  </span>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <JSONSchemaValueVisualizer
+                    schema={engineVersionSchema as Record<string, unknown>}
+                    value={record.spec.variables}
+                  />
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
       </div>
     </ShowPage>
   );

@@ -505,6 +505,44 @@
 			"errorMessage": "Error Message",
 			"registry": "Registry",
 			"modelFile": "Model File"
+		},
+		"sections": {
+			"overview": "Overview",
+			"keyConfig": "Key Configuration",
+			"engineArgs": "Engine Arguments",
+			"env": "Environment Variables",
+			"advanced": "Advanced (all fields)"
+		},
+		"keyConfig": {
+			"contextLength": "Context Length",
+			"tensorParallel": "Tensor Parallel",
+			"dataParallel": "Data Parallel",
+			"pipelineParallel": "Pipeline Parallel",
+			"expertParallel": "Expert Parallel",
+			"quantization": "Quantization",
+			"kvCacheDtype": "KV Cache Dtype",
+			"reasoningParser": "Reasoning Parser",
+			"toolParser": "Tool Parser",
+			"prefixCaching": "Prefix Caching",
+			"speculative": "Speculative Decoding",
+			"none": "—"
+		},
+		"import": {
+			"button": "Import",
+			"title": "Import model catalogs",
+			"description": "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported.",
+			"tabYaml": "Paste YAML",
+			"tabFile": "Upload file",
+			"tabUrl": "From URL",
+			"chooseFile": "Choose file",
+			"urlHint": "Backend fetches the URL (1 MiB / 10 s limit). Use a raw YAML link.",
+			"workspaceLabel": "Default workspace",
+			"workspacePlaceholder": "Used when the YAML has no metadata.workspace",
+			"submit": "Import",
+			"detail": "Detail",
+			"successAll": "Imported {{count}} catalogs",
+			"failedAll": "All {{count}} imports failed",
+			"partial": "{{ok}} imported, {{failed}} failed"
 		}
 	},
 	"image_registries": {
