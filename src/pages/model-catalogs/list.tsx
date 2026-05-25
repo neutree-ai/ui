@@ -11,7 +11,22 @@ import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
+import type { ModelSpec } from "@/foundation/types/serving-types";
 import { ImportDialog } from "./components/ImportDialog";
+
+// pickRepresentativeModel returns the model for the list row's Model/Task
+// columns. For a recipe MC (no top-level spec.model) it falls back to the
+// first variant's model — list display only needs *a* representative entry.
+function pickRepresentativeModel(spec: {
+  model?: ModelSpec | null;
+  variants?: Record<string, { model?: ModelSpec | null } | null> | null;
+}): ModelSpec | null {
+  if (spec.model) return spec.model;
+  for (const v of Object.values(spec.variants ?? {})) {
+    if (v?.model) return v.model;
+  }
+  return null;
+}
 
 export const ModelCatalogsList = () => {
   const { t } = useTranslation();
@@ -48,8 +63,12 @@ export const ModelCatalogsList = () => {
           id="model"
           enableHiding
           cell={({ row }) => {
-            const { model } = row.original.spec;
-            return <EndpointModel model={model} />;
+            const model = pickRepresentativeModel(row.original.spec);
+            return model ? (
+              <EndpointModel model={model} />
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            );
           }}
         />
         <Table.Column
@@ -58,8 +77,12 @@ export const ModelCatalogsList = () => {
           id="task"
           enableHiding
           cell={({ row }) => {
-            const { model } = row.original.spec;
-            return <ModelTask task={model.task} />;
+            const model = pickRepresentativeModel(row.original.spec);
+            return model ? (
+              <ModelTask task={model.task} />
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            );
           }}
         />
         <Table.Column
