@@ -9,11 +9,11 @@ import type {
 } from "@/foundation/types/serving-types";
 
 export type {
-  ModelSpec,
-  EndpointEngineSpec,
-  ResourceSpec,
-  ReplicaSpec,
   DeploymentOptions,
+  EndpointEngineSpec,
+  ModelSpec,
+  ReplicaSpec,
+  ResourceSpec,
 } from "@/foundation/types/serving-types";
 
 enum EndpointPhase {
@@ -35,6 +35,12 @@ export type EndpointSpec = {
   deployment_options: DeploymentOptions | null;
   variables: Record<string, any> | null;
   env: Record<string, string> | null;
+  // Recipe extension — filled in when the endpoint was created from a
+  // Recipe MC. The frontend currently double-writes both these refs AND the
+  // expanded model/resources/variables/env so existing backends keep working.
+  model_catalog?: string;
+  variant?: string;
+  enabled_features?: string[];
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
@@ -87,6 +93,32 @@ export type EndpointModelCatalogRef = {
     replicas: ReplicaSpec | null;
     deployment_options: DeploymentOptions | null;
     variables: Record<string, unknown> | null;
+    env?: Record<string, string> | null;
+    // Recipe extension — present on Recipe MCs.
+    base?: {
+      engine_args?: Record<string, unknown> | null;
+      env?: Record<string, string> | null;
+    } | null;
+    variants?: Record<
+      string,
+      {
+        model?: ModelSpec | null;
+        resources?: ResourceSpec | null;
+        engine_args?: Record<string, unknown> | null;
+        env?: Record<string, string> | null;
+        description?: string;
+      }
+    > | null;
+    features?: Record<
+      string,
+      {
+        description?: string;
+        default?: boolean;
+        engine_args?: Record<string, unknown> | null;
+        env?: Record<string, string> | null;
+        conflicts_with?: string[] | null;
+      }
+    > | null;
   };
 };
 

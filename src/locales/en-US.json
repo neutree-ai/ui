@@ -34,7 +34,8 @@
 			"openaiUrl": "OpenAI Compatible URL",
 			"anthropicUrl": "Anthropic Compatible URL",
 			"allReplicas": "All Replicas",
-			"version": "Version"
+			"version": "Version",
+			"description": "Description"
 		},
 		"sections": {
 			"basicInformation": "Basic Information"
@@ -527,6 +528,15 @@
 			"speculative": "Speculative Decoding",
 			"none": "—"
 		},
+		"recipe": {
+			"variants": "Variants",
+			"features": "Features",
+			"variantKey": "Variant",
+			"argsOverrides": "Args overrides",
+			"defaultOn": "default on",
+			"optIn": "opt-in",
+			"conflictsWith": "conflicts with"
+		},
 		"import": {
 			"button": "Import",
 			"title": "Import model catalogs",
@@ -651,6 +661,18 @@
 		},
 		"tabs": {
 			"playground": "Playground"
+		},
+		"recipe": {
+			"section": "Recipe options",
+			"variant": "Variant",
+			"features": "Features",
+			"selectVariant": "Select a variant",
+			"defaultOn": "default on",
+			"conflictsWith": "conflicts with",
+			"preview": "Composed preview",
+			"previewError": "Cannot compose",
+			"engineArgs": "Engine args",
+			"env": "Environment"
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",

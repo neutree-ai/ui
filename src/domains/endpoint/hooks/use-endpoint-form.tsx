@@ -12,8 +12,11 @@ import {
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
+import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { SliderWithInput } from "@/domains/endpoint/components/SliderWithInput";
+import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
@@ -37,6 +40,12 @@ import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  composeEndpointSpec,
+  defaultEnabledFeatures,
+} from "@/foundation/recipe/compose";
+import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
+import type { ComposedSpec, RecipeInputSpec } from "@/foundation/recipe/types";
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -44,6 +53,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
+  // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
+  const [selectedVariant, setSelectedVariant] = useState<string>("");
+  const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
 
   const form = useForm<Endpoint>({
     mode: "all",
@@ -186,21 +198,151 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
-  // Handle model catalog selection with merge logic
+  // Locate the currently selected catalog (or undefined).
+  const selectedCatalog = useMemo<EndpointModelCatalogRef | undefined>(
+    () =>
+      modelCatalogs.query.data?.data.find(
+        (catalog) => catalog.id.toString() === selectedModelCatalog,
+      ),
+    [modelCatalogs.query.data?.data, selectedModelCatalog],
+  );
+
+  // True when the selected catalog uses the Recipe extension.
+  const isRecipeCatalog = useMemo(
+    () => isRecipeShape(selectedCatalog?.spec ?? null),
+    [selectedCatalog],
+  );
+
+  // Live composition for Recipe MCs — used for preview and for populating the
+  // legacy form fields on selection / when the user toggles features/variant.
+  const composeResult = useMemo(() => {
+    if (!selectedCatalog || !isRecipeCatalog) return null;
+    return composeEndpointSpec(
+      selectedCatalog.spec as RecipeInputSpec,
+      selectedVariant,
+      enabledFeatures,
+    );
+  }, [selectedCatalog, isRecipeCatalog, selectedVariant, enabledFeatures]);
+
+  // Apply a composed Recipe spec onto the form. Mirrors `applyCatalogSpec`'s
+  // semantics (deep-merge over defaults) but uses the ComposedSpec fields and
+  // additionally writes the new ref fields (model_catalog/variant/enabled_features).
+  const applyComposedToForm = (
+    catalogName: string,
+    variant: string,
+    features: string[],
+    composed: ComposedSpec,
+  ) => {
+    // Build a pseudo catalog spec containing only the kernel fields so we can
+    // reuse buildCatalogMergedSpec's deep-merge over defaults.
+    const pseudoCatalogSpec: Record<string, unknown> = {
+      model: composed.model ?? undefined,
+      engine: composed.engine ?? undefined,
+      resources: composed.resources ?? undefined,
+      variables: { engine_args: composed.engine_args ?? {} },
+      env: composed.env ?? {},
+    };
+    const merged = buildCatalogMergedSpec(pseudoCatalogSpec);
+    for (const [key, value] of Object.entries(merged)) {
+      setLeafValues(`spec.${key}`, value);
+    }
+    // Double-write the recipe refs so the backend has the option of
+    // recomposing in the future without losing the user's selection.
+    form.setValue("spec.model_catalog" as any, catalogName);
+    form.setValue("spec.variant" as any, variant || DEFAULT_VARIANT);
+    form.setValue("spec.enabled_features" as any, features);
+  };
+
+  // Handle model catalog selection with merge logic. Trivial MCs go through
+  // the original `applyCatalogSpec` path; Recipe MCs go through the composer.
   const handleModelCatalogSelect = (catalogId: string) => {
     setSelectedModelCatalog(catalogId);
 
     if (!catalogId) {
       applyCatalogSpec(null);
+      // Clear recipe ref fields when going back to "none"
+      form.setValue("spec.model_catalog" as any, "");
+      form.setValue("spec.variant" as any, "");
+      form.setValue("spec.enabled_features" as any, []);
+      setSelectedVariant("");
+      setEnabledFeatures([]);
       return;
     }
 
-    const selectedCatalog = modelCatalogs.query.data?.data.find(
-      (catalog) => catalog.id.toString() === catalogId,
+    const catalog = modelCatalogs.query.data?.data.find(
+      (c) => c.id.toString() === catalogId,
     );
+    if (!catalog) return;
 
-    if (selectedCatalog) {
-      applyCatalogSpec(selectedCatalog.spec as Record<string, unknown>);
+    if (isRecipeShape(catalog.spec)) {
+      // Recipe path — initialize variant/features defaults, then compose.
+      const variants = Object.keys(catalog.spec.variants ?? {});
+      const initialVariant = variants.includes(DEFAULT_VARIANT)
+        ? DEFAULT_VARIANT
+        : (variants[0] ?? DEFAULT_VARIANT);
+      const initialFeatures = defaultEnabledFeatures(
+        catalog.spec as RecipeInputSpec,
+      );
+      setSelectedVariant(initialVariant);
+      setEnabledFeatures(initialFeatures);
+      const result = composeEndpointSpec(
+        catalog.spec as RecipeInputSpec,
+        initialVariant,
+        initialFeatures,
+      );
+      if (result.ok) {
+        applyComposedToForm(
+          catalog.metadata.name,
+          initialVariant,
+          initialFeatures,
+          result.spec,
+        );
+      }
+    } else {
+      // Trivial path — current behavior, unchanged.
+      applyCatalogSpec(catalog.spec as Record<string, unknown>);
+      form.setValue("spec.model_catalog" as any, "");
+      form.setValue("spec.variant" as any, "");
+      form.setValue("spec.enabled_features" as any, []);
+      setSelectedVariant("");
+      setEnabledFeatures([]);
+    }
+  };
+
+  // When user changes variant or features, re-apply the composed result.
+  const handleVariantChange = (v: string) => {
+    setSelectedVariant(v);
+    if (!selectedCatalog) return;
+    const result = composeEndpointSpec(
+      selectedCatalog.spec as RecipeInputSpec,
+      v,
+      enabledFeatures,
+    );
+    if (result.ok) {
+      applyComposedToForm(
+        selectedCatalog.metadata.name,
+        v,
+        enabledFeatures,
+        result.spec,
+      );
+    }
+  };
+
+  const handleFeaturesChange = (next: string[]) => {
+    setEnabledFeatures(next);
+    if (!selectedCatalog) return;
+    const result = composeEndpointSpec(
+      selectedCatalog.spec as RecipeInputSpec,
+      selectedVariant,
+      next,
+    );
+    if (result.ok) {
+      applyComposedToForm(
+        selectedCatalog.metadata.name,
+        selectedVariant,
+        next,
+        result.spec,
+      );
     }
   };
 
@@ -295,6 +437,51 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         )}
       </FormCardGrid>
     ),
+    // Recipe selection section — shown only when the selected MC is a Recipe MC.
+    // For trivial MCs this returns `null` so the existing form layout is
+    // pixel-identical to before.
+    recipeFields:
+      !isEdit && isRecipeCatalog && selectedCatalog ? (
+        <FormCardGrid title={t("endpoints.recipe.section", "Recipe options")}>
+          <FormFieldGroup
+            {...form}
+            name="spec.variant"
+            label={t("endpoints.recipe.variant", "Variant")}
+            className="col-span-2"
+          >
+            <VariantPicker
+              variants={selectedCatalog.spec.variants ?? {}}
+              value={selectedVariant}
+              onChange={handleVariantChange}
+            />
+          </FormFieldGroup>
+          {selectedCatalog.spec.features &&
+            Object.keys(selectedCatalog.spec.features).length > 0 && (
+              <FormFieldGroup
+                {...form}
+                name="spec.enabled_features"
+                label={t("endpoints.recipe.features", "Features")}
+                className="col-span-4"
+              >
+                <FeaturePicker
+                  features={selectedCatalog.spec.features ?? {}}
+                  value={enabledFeatures}
+                  onChange={handleFeaturesChange}
+                />
+              </FormFieldGroup>
+            )}
+          <div className="col-span-4">
+            <ComposePreview
+              composed={
+                composeResult && composeResult.ok ? composeResult.spec : null
+              }
+              error={
+                composeResult && !composeResult.ok ? composeResult.error : null
+              }
+            />
+          </div>
+        </FormCardGrid>
+      ) : null,
     // Resource settings section - always visible
     resourceFields: (
       <FormCardGrid title={t("endpoints.sections.resourceSettings")}>
