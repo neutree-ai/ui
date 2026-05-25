@@ -7,6 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -20,7 +21,10 @@ import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { isRecipeShape } from "@/foundation/recipe/normalize";
+import { FeaturesList } from "./components/FeaturesList";
 import { EnvCard, KeyConfigCard } from "./components/KeyConfigCard";
+import { VariantTable } from "./components/VariantTable";
 
 export const ModelCatalogsShow = () => {
   const { t } = useTranslation();
@@ -29,6 +33,7 @@ export const ModelCatalogsShow = () => {
   } = useShow<ModelCatalog>({});
   const record = data?.data;
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<string>("");
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -50,6 +55,37 @@ export const ModelCatalogsShow = () => {
     (v) => v.version === record.spec.engine.version,
   )?.values_schema;
 
+  const isRecipe = isRecipeShape(record.spec);
+  const variantEntries = isRecipe
+    ? Object.entries(record.spec.variants ?? {})
+    : [];
+  // For Hero display in recipe mode we use the currently-selected variant.
+  const heroModel = isRecipe
+    ? (variantEntries.find(([k]) => k === selectedVariant)?.[1]?.model ??
+      variantEntries[0]?.[1]?.model ??
+      record.spec.model)
+    : record.spec.model;
+  const heroResources = isRecipe
+    ? (variantEntries.find(([k]) => k === selectedVariant)?.[1]?.resources ??
+      variantEntries[0]?.[1]?.resources ??
+      record.spec.resources)
+    : record.spec.resources;
+  // Advanced section for Recipe MC: union of base.engine_args + every
+  // variant.engine_args + every feature.engine_args (presentation only).
+  const buildRecipeAdvancedView = (): Record<string, unknown> | null => {
+    if (!isRecipe) return null;
+    const acc: Record<string, unknown> = {};
+    Object.assign(acc, record.spec.base?.engine_args ?? {});
+    for (const v of Object.values(record.spec.variants ?? {})) {
+      Object.assign(acc, v?.engine_args ?? {});
+    }
+    for (const f of Object.values(record.spec.features ?? {})) {
+      Object.assign(acc, f?.engine_args ?? {});
+    }
+    return { engine_args: acc };
+  };
+  const recipeAdvancedView = buildRecipeAdvancedView();
+
   return (
     <ShowPage record={record} canEdit={false}>
       <div className="overflow-auto h-full">
@@ -65,23 +101,42 @@ export const ModelCatalogsShow = () => {
 
         <Card className="mt-4">
           <CardContent>
+            {isRecipe && variantEntries.length > 0 && (
+              <Tabs
+                value={selectedVariant || variantEntries[0][0]}
+                onValueChange={setSelectedVariant}
+                className="mb-4"
+              >
+                <TabsList>
+                  {variantEntries.map(([key]) => (
+                    <TabsTrigger key={key} value={key}>
+                      {key}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            )}
             <div className="grid grid-cols-4 gap-8">
               <ShowPage.Row title={t("common.fields.engine")}>
                 <EndpointEngine spec={record.spec} metadata={record.metadata} />
               </ShowPage.Row>
               <div className="col-span-2">
                 <ShowPage.Row title={t("common.fields.model")}>
-                  <EndpointModel model={record.spec.model} />
+                  {heroModel ? (
+                    <EndpointModel model={heroModel} />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </ShowPage.Row>
               </div>
               <ShowPage.Row title={t("common.fields.task")}>
-                <ModelTask task={record.spec.model.task} />
+                <ModelTask task={heroModel?.task ?? record.spec.model.task} />
               </ShowPage.Row>
             </div>
-            {record.spec.model.file && (
+            {heroModel?.file && (
               <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("model_catalogs.fields.modelFile")}>
-                  {record.spec.model.file}
+                  {heroModel.file}
                 </ShowPage.Row>
               </div>
             )}
@@ -89,49 +144,69 @@ export const ModelCatalogsShow = () => {
         </Card>
 
         <ResourcesCard
-          resources={record.spec.resources}
+          resources={heroResources}
           titleTranslationKey="common.fields.resources"
         />
 
-        <KeyConfigCard variables={record.spec.variables} />
-
-        <EnvCard env={record.spec.env ?? null} />
+        {isRecipe ? (
+          <>
+            <KeyConfigCard
+              variables={{ engine_args: record.spec.base?.engine_args ?? {} }}
+            />
+            <EnvCard env={record.spec.base?.env ?? null} />
+            <VariantTable
+              variants={record.spec.variants ?? {}}
+              base={record.spec.base ?? {}}
+            />
+            <FeaturesList features={record.spec.features ?? {}} />
+          </>
+        ) : (
+          <>
+            <KeyConfigCard variables={record.spec.variables} />
+            <EnvCard env={record.spec.env ?? null} />
+          </>
+        )}
 
         <DeploymentConfigCard
           replicas={record.spec.replicas}
           deploymentOptions={record.spec.deployment_options}
         />
 
-        {engineVersionSchema && record.spec.variables && (
-          <Collapsible
-            open={advancedOpen}
-            onOpenChange={setAdvancedOpen}
-            className="mt-4"
-          >
-            <Card>
-              <CollapsibleTrigger asChild>
-                <CardContent className="cursor-pointer py-3 flex items-center gap-2 hover:bg-accent/40">
-                  {advancedOpen ? (
-                    <ChevronDown className="size-4" />
-                  ) : (
-                    <ChevronRight className="size-4" />
-                  )}
-                  <span className="text-sm font-medium">
-                    {t("model_catalogs.sections.advanced")}
-                  </span>
-                </CardContent>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <JSONSchemaValueVisualizer
-                    schema={engineVersionSchema as Record<string, unknown>}
-                    value={record.spec.variables}
-                  />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-        )}
+        {engineVersionSchema &&
+          (isRecipe ? recipeAdvancedView : record.spec.variables) && (
+            <Collapsible
+              open={advancedOpen}
+              onOpenChange={setAdvancedOpen}
+              className="mt-4"
+            >
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardContent className="cursor-pointer py-3 flex items-center gap-2 hover:bg-accent/40">
+                    {advancedOpen ? (
+                      <ChevronDown className="size-4" />
+                    ) : (
+                      <ChevronRight className="size-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {t("model_catalogs.sections.advanced")}
+                    </span>
+                  </CardContent>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <JSONSchemaValueVisualizer
+                      schema={engineVersionSchema as Record<string, unknown>}
+                      value={
+                        isRecipe
+                          ? (recipeAdvancedView as Record<string, unknown>)
+                          : record.spec.variables
+                      }
+                    />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          )}
       </div>
     </ShowPage>
   );

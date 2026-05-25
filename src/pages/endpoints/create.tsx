@@ -6,6 +6,7 @@ export const EndpointsCreate = () => {
     form,
     metadataFields,
     templateFields,
+    recipeFields,
     resourceFields,
     customizeFields,
   } = useEndpointForm({
@@ -16,6 +17,7 @@ export const EndpointsCreate = () => {
     <ResourceForm {...form}>
       {metadataFields}
       {templateFields}
+      {recipeFields}
       {resourceFields}
       {customizeFields}
     </ResourceForm>
