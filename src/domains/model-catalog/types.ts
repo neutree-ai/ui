@@ -21,6 +21,7 @@ export type ModelCatalogSpec = {
   replicas: ReplicaSpec | null;
   deployment_options: DeploymentOptions | null;
   variables: Record<string, any> | null;
+  env: Record<string, string> | null;
 };
 
 export type ModelCatalogStatus = BaseStatus<ModelCatalogPhase>;
