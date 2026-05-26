@@ -52,45 +52,60 @@ export const FeaturePicker = ({
     }
   };
 
-  return (
-    <div className="space-y-3">
-      {entries.map(([key, f]) => {
-        const isChecked = enabled.has(key);
-        const conflict = !isChecked ? conflictingWithSelection(key) : null;
-        const itemDisabled = disabled || (!isChecked && conflict !== null);
-        return (
-          <div key={key} className="flex items-start gap-3">
-            <Checkbox
-              id={`feature-${key}`}
-              checked={isChecked}
-              disabled={itemDisabled}
-              onCheckedChange={(checked) => toggle(key, checked === true)}
-              className="mt-1"
-            />
-            <label htmlFor={`feature-${key}`} className="flex-1 cursor-pointer">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-sm">{key}</span>
-                {f.default && (
-                  <Badge variant="outline" className="text-xs">
-                    {t("endpoints.recipe.defaultOn", "default on")}
-                  </Badge>
-                )}
-                {conflict && (
-                  <span className="text-xs text-destructive">
-                    {t("endpoints.recipe.conflictsWith", "conflicts with")}{" "}
-                    <span className="font-mono">{conflict}</span>
-                  </span>
-                )}
-              </div>
-              {f.description && (
-                <div className="text-xs text-muted-foreground">
-                  {f.description}
-                </div>
-              )}
-            </label>
+  // Split entries by category: behavior features (no category) and tuning.
+  // Stable order within each group: keep YAML iteration order.
+  const behaviorEntries = entries.filter(([, f]) => f?.category !== "tuning");
+  const tuningEntries = entries.filter(([, f]) => f?.category === "tuning");
+
+  const renderItem = ([key, f]: [string, RecipeFeature]) => {
+    const isChecked = enabled.has(key);
+    const conflict = !isChecked ? conflictingWithSelection(key) : null;
+    const itemDisabled = disabled || (!isChecked && conflict !== null);
+    return (
+      <div key={key} className="flex items-start gap-3">
+        <Checkbox
+          id={`feature-${key}`}
+          checked={isChecked}
+          disabled={itemDisabled}
+          onCheckedChange={(checked) => toggle(key, checked === true)}
+          className="mt-1"
+        />
+        <label htmlFor={`feature-${key}`} className="flex-1 cursor-pointer">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-sm">{key}</span>
+            {f.default && (
+              <Badge variant="outline" className="text-xs">
+                {t("endpoints.recipe.defaultOn", "default on")}
+              </Badge>
+            )}
+            {conflict && (
+              <span className="text-xs text-destructive">
+                {t("endpoints.recipe.conflictsWith", "conflicts with")}{" "}
+                <span className="font-mono">{conflict}</span>
+              </span>
+            )}
           </div>
-        );
-      })}
+          {f.description && (
+            <div className="text-xs text-muted-foreground">{f.description}</div>
+          )}
+        </label>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      {behaviorEntries.length > 0 && (
+        <div className="space-y-3">{behaviorEntries.map(renderItem)}</div>
+      )}
+      {tuningEntries.length > 0 && (
+        <div className="space-y-3 pt-4 border-t">
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("endpoints.recipe.performanceTuning", "Performance tuning")}
+          </div>
+          {tuningEntries.map(renderItem)}
+        </div>
+      )}
     </div>
   );
 };

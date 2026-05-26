@@ -25,6 +25,9 @@ export type RecipeVariant = {
 export type RecipeFeature = {
   description?: string;
   default?: boolean;
+  /** Free-form grouping hint for the UI; "tuning" goes under a separate
+   * "Performance tuning" section. No effect on composition. */
+  category?: string;
   engine_args?: Record<string, unknown> | null;
   env?: Record<string, string> | null;
   conflicts_with?: string[] | null;
