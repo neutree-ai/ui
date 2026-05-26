@@ -545,7 +545,8 @@
 			"variantLabel": "Variant",
 			"variantHint": "Engine, model, resources below reflect this variant",
 			"verifiedHardware": "Verified hardware",
-			"performanceTuning": "Performance tuning"
+			"performanceTuning": "Performance tuning",
+			"vramMin": "Min VRAM"
 		},
 		"import": {
 			"button": "Import",
@@ -684,7 +685,9 @@
 			"engineArgs": "Engine args",
 			"env": "Environment",
 			"performanceTuning": "Performance tuning",
-			"verifiedOn": "Verified on:"
+			"verifiedOn": "Verified on:",
+			"vramOk": "Sufficient VRAM",
+			"vramLow": "Insufficient VRAM"
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",

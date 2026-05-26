@@ -107,6 +107,7 @@ export type EndpointModelCatalogRef = {
         engine_args?: Record<string, unknown> | null;
         env?: Record<string, string> | null;
         description?: string;
+        vram_minimum_gb?: number | null;
       }
     > | null;
     features?: Record<
@@ -114,6 +115,7 @@ export type EndpointModelCatalogRef = {
       {
         description?: string;
         default?: boolean;
+        category?: string;
         engine_args?: Record<string, unknown> | null;
         env?: Record<string, string> | null;
         conflicts_with?: string[] | null;

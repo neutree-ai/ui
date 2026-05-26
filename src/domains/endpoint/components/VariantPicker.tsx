@@ -50,6 +50,11 @@ export const VariantPicker = ({
           >
             <div className="flex items-center gap-2 w-full">
               <span className="font-mono text-sm">{key}</span>
+              {v.vram_minimum_gb != null && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-muted text-muted-foreground">
+                  ≥{v.vram_minimum_gb} GB
+                </span>
+              )}
               {selected && <Check className="size-4 text-primary ml-auto" />}
             </div>
             {v.description && (
