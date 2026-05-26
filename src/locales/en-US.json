@@ -683,7 +683,8 @@
 			"previewError": "Cannot compose",
 			"engineArgs": "Engine args",
 			"env": "Environment",
-			"performanceTuning": "Performance tuning"
+			"performanceTuning": "Performance tuning",
+			"verifiedOn": "Verified on:"
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",
