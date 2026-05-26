@@ -1,6 +1,7 @@
 import { useOne, useShow } from "@refinedev/core";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Collapsible,
@@ -86,6 +87,16 @@ export const ModelCatalogsShow = () => {
   };
   const recipeAdvancedView = buildRecipeAdvancedView();
 
+  // Verified-hardware list comes via the well-known annotation
+  // `recipe.vllm.ai/hardware-verified` as a comma-separated list of
+  // accelerator product names. Display-only; rendered as badges.
+  const verifiedHardware = (
+    record.metadata.annotations?.["recipe.vllm.ai/hardware-verified"] ?? ""
+  )
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return (
     <ShowPage record={record} canEdit={false}>
       <div className="overflow-auto h-full">
@@ -96,6 +107,26 @@ export const ModelCatalogsShow = () => {
             <ShowPage.Row title={t("common.fields.status")}>
               <ModelCatalogStatus {...record.status} />
             </ShowPage.Row>
+            {verifiedHardware.length > 0 && (
+              <ShowPage.Row
+                title={t(
+                  "model_catalogs.recipe.verifiedHardware",
+                  "Verified hardware",
+                )}
+              >
+                <div className="flex flex-wrap gap-1.5">
+                  {verifiedHardware.map((hw) => (
+                    <Badge
+                      key={hw}
+                      variant="outline"
+                      className="border-green-600/40 text-green-700 dark:text-green-400"
+                    >
+                      ✓ {hw}
+                    </Badge>
+                  ))}
+                </div>
+              </ShowPage.Row>
+            )}
           </CardContent>
         </Card>
 
