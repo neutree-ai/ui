@@ -2,6 +2,7 @@ import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
+import type { FieldPath, FieldPathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { SliderWithInput } from "@/domains/endpoint/components/SliderWithInput";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
@@ -38,12 +40,29 @@ import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 
+type EndpointDeploymentMode = "standard" | "pd";
+type EndpointRoleName = "prefill" | "decode";
+type EndpointFormPath = FieldPath<Endpoint>;
+type EndpointFormValue = FieldPathValue<Endpoint, EndpointFormPath>;
+type ResourceAccelerator = NonNullable<
+  Endpoint["spec"]["resources"]
+>["accelerator"];
+
+const roleIndexByName: Record<EndpointRoleName, number> = {
+  prefill: 0,
+  decode: 1,
+};
+
+const endpointPath = (path: string) => path as EndpointFormPath;
+const endpointValue = (value: unknown) => value as EndpointFormValue;
+
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
+  const [activeRole, setActiveRole] = useState<EndpointRoleName>("prefill");
 
   const form = useForm<Endpoint>({
     mode: "all",
@@ -93,6 +112,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentRegistry = form.watch("spec.model.registry");
   const currentCluster = form.watch("spec.cluster");
   const engineSpec = form.watch("spec.engine");
+  const deploymentMode: EndpointDeploymentMode =
+    form.watch("spec.strategy") === "pd" ? "pd" : "standard";
+  const isPdMode = deploymentMode === "pd";
+  const activeRoleIndex = roleIndexByName[activeRole];
 
   const meta = useMemo(
     () => ({
@@ -122,9 +145,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
-  const selectedAccelerator = form.watch("spec.resources.accelerator");
-  const cpuUsage = form.watch("spec.resources.cpu");
-  const memoryUsage = form.watch("spec.resources.memory");
+  const selectedAccelerator = (
+    isPdMode
+      ? form.watch(
+          endpointPath(`spec.roles.${activeRoleIndex}.resources.accelerator`),
+        )
+      : form.watch("spec.resources.accelerator")
+  ) as ResourceAccelerator;
+  const cpuUsage = Number(
+    (isPdMode
+      ? form.watch(endpointPath(`spec.roles.${activeRoleIndex}.resources.cpu`))
+      : form.watch("spec.resources.cpu")) || 0,
+  );
+  const memoryUsage = Number(
+    (isPdMode
+      ? form.watch(
+          endpointPath(`spec.roles.${activeRoleIndex}.resources.memory`),
+        )
+      : form.watch("spec.resources.memory")) || 0,
+  );
 
   const {
     clusterResources,
@@ -160,21 +199,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       engineSpec,
     });
 
-  // Set each key of obj as a separate form.setValue call, recursing into
-  // nested plain objects. This ensures mounted FormField controllers get
-  // notified, because useController uses useWatch with exact:true and
-  // only reacts to setValue calls whose path exactly matches the field name.
-  const setLeafValues = (basePath: string, obj: Record<string, unknown>) => {
-    for (const [key, value] of Object.entries(obj)) {
-      const path = `${basePath}.${key}`;
-      form.setValue(path as any, value);
-      if (
-        typeof value === "object" &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
-        setLeafValues(path, value as Record<string, unknown>);
-      }
+  // Set the branch value and each nested value so exact FormField watchers
+  // update for objects, arrays, and scalar spec fields.
+  const setFormValueTree = (basePath: string, value: unknown) => {
+    form.setValue(endpointPath(basePath), endpointValue(value));
+
+    if (typeof value !== "object" || value === null) {
+      return;
+    }
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+      setFormValueTree(`${basePath}.${key}`, nestedValue);
     }
   };
 
@@ -182,7 +217,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const applyCatalogSpec = (catalogSpec: Record<string, unknown> | null) => {
     const merged = buildCatalogMergedSpec(catalogSpec);
     for (const [key, value] of Object.entries(merged)) {
-      setLeafValues(`spec.${key}`, value);
+      setFormValueTree(`spec.${key}`, value);
     }
   };
 
@@ -202,6 +237,343 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (selectedCatalog) {
       applyCatalogSpec(selectedCatalog.spec as Record<string, unknown>);
     }
+  };
+
+  const cloneDefaultRoles = () =>
+    defaultEndpointSpec.roles.map((role) => ({
+      name: role.name,
+      replicas: { ...role.replicas },
+      resources: { ...role.resources },
+      variables: { engine_args: {} },
+      env: {},
+    }));
+
+  const handleDeploymentModeChange = (mode: EndpointDeploymentMode) => {
+    if (mode === deploymentMode) return;
+
+    if (mode === "pd") {
+      form.setValue("spec.strategy", "pd");
+      form.setValue("spec.placement", { roles: "same-host" });
+      form.setValue("spec.replicas.num", 1);
+
+      if (!form.getValues("spec.roles")?.length) {
+        form.setValue("spec.roles", cloneDefaultRoles());
+      }
+      if (!form.getValues("spec.kv")) {
+        form.setValue("spec.kv", defaultEndpointSpec.kv);
+      }
+      setActiveRole("prefill");
+      return;
+    }
+
+    form.setValue("spec.strategy", "");
+    form.setValue("spec.placement", defaultEndpointSpec.placement);
+    if (!form.getValues("spec.resources")) {
+      form.setValue("spec.resources", { ...defaultEndpointSpec.resources });
+    }
+    if (!form.getValues("spec.replicas")) {
+      form.setValue("spec.replicas", { ...defaultEndpointSpec.replicas });
+    }
+    if (!form.getValues("spec.deployment_options")) {
+      form.setValue("spec.deployment_options", {
+        scheduler: { ...defaultEndpointSpec.deployment_options.scheduler },
+      });
+    }
+  };
+
+  const currentEngine = form.watch("spec.engine.engine");
+  const currentEngineVersions = engineVersions[currentEngine] || [];
+  const currentEngineTasks = engineTasks[currentEngine] || [];
+
+  const modelNameField = (
+    <FormFieldGroup
+      {...form}
+      name="spec.model.name"
+      label={t("endpoints.fields.modelName")}
+    >
+      <div className="space-y-2">
+        <AsyncCombobox
+          placeholder={t("endpoints.placeholders.selectModel")}
+          loading={
+            modelsData.isFetching ? (
+              <CommandLoading className="px-2 py-1.5 text-muted-foreground">
+                {t("endpoints.messages.fetching")}
+              </CommandLoading>
+            ) : null
+          }
+          options={(modelsData.data?.data || []).map((e: { name: string }) => {
+            return {
+              label: e.name,
+              value: e.name,
+            };
+          })}
+          shouldFilter={false}
+          onSearchChange={setModelSearch}
+          triggerClassName="w-full"
+          disabled={!currentRegistry}
+          value={currentModelName}
+          onChange={(value: string) => {
+            form.setValue("spec.model.name", value);
+          }}
+        />
+      </div>
+    </FormFieldGroup>
+  );
+
+  const engineRuntimeFields = (
+    <>
+      <FormFieldGroup
+        {...form}
+        name="spec.engine.engine"
+        label={t("common.fields.engine")}
+      >
+        <FormCombobox
+          placeholder={t("endpoints.placeholders.selectEngine")}
+          disabled={engines.query.isLoading}
+          options={engineNames.map((v) => ({
+            label: v,
+            value: v,
+          }))}
+          onChange={(value) => {
+            const engine = String(value);
+            const versions = engineVersions[engine] || [];
+            const tasks = engineTasks[engine] || [];
+
+            form.setValue("spec.engine", {
+              engine,
+              version: versions[0]?.version ?? "",
+            });
+            form.setValue("spec.model.task", tasks[0] ?? "");
+            form.trigger("spec.engine.engine");
+          }}
+        />
+      </FormFieldGroup>
+      <FormFieldGroup
+        {...form}
+        name="spec.engine.version"
+        label={t("endpoints.fields.engineVersion")}
+      >
+        <FormCombobox
+          placeholder={t("endpoints.placeholders.selectVersion")}
+          disabled={!currentEngine}
+          options={currentEngineVersions.map(({ version: v }) => ({
+            label: v,
+            value: v,
+          }))}
+        />
+      </FormFieldGroup>
+      <FormFieldGroup
+        {...form}
+        name="spec.model.task"
+        label={t("endpoints.fields.taskType")}
+      >
+        <FormCombobox
+          placeholder={t("endpoints.placeholders.selectTaskType")}
+          disabled={!currentEngine}
+          options={currentEngineTasks.map((v) => ({
+            label:
+              t(`models.tasks.${v}`) === `models.tasks.${v}`
+                ? formatTaskName(v)
+                : t(`models.tasks.${v}`),
+            value: v,
+          }))}
+        />
+      </FormFieldGroup>
+    </>
+  );
+
+  const renderDeploymentModeButton = (
+    mode: EndpointDeploymentMode,
+    label: string,
+  ) => (
+    <Button
+      type="button"
+      variant={deploymentMode === mode ? "default" : "outline"}
+      aria-pressed={deploymentMode === mode}
+      disabled={isEdit}
+      onClick={() => handleDeploymentModeChange(mode)}
+      className="justify-center"
+    >
+      {label}
+    </Button>
+  );
+
+  const renderResourceFields = (basePath: string, roleIndex?: number) => {
+    const acceleratorPath = `${basePath}.accelerator`;
+    const currentGpu = Number(form.watch(endpointPath(`${basePath}.gpu`)) || 0);
+    const currentAccelerator = form.watch(
+      endpointPath(acceleratorPath),
+    ) as ResourceAccelerator;
+
+    return (
+      <>
+        <FormFieldGroup
+          {...form}
+          name={endpointPath(`${basePath}.cpu`)}
+          label={t("common.fields.cpu")}
+          className="col-span-2"
+        >
+          <SliderWithInput
+            value={Number(form.watch(endpointPath(`${basePath}.cpu`)) || 0)}
+            onChange={(value) =>
+              form.setValue(endpointPath(`${basePath}.cpu`), value)
+            }
+            min={0}
+            max={maxAvailable.cpu.available}
+            step={0.1}
+            unit="cores"
+            disabled={!currentCluster}
+            remainingInfo={
+              maxAvailable.cpu.total > 0
+                ? {
+                    remaining: dynamicAvailability.cpu,
+                    total: maxAvailable.cpu.total,
+                    label: t("endpoints.fields.remaining"),
+                  }
+                : undefined
+            }
+          />
+        </FormFieldGroup>
+
+        <FormFieldGroup
+          {...form}
+          name={endpointPath(`${basePath}.memory`)}
+          label={t("endpoints.fields.memoryGb")}
+          className="col-span-2"
+        >
+          <SliderWithInput
+            value={Number(form.watch(endpointPath(`${basePath}.memory`)) || 0)}
+            onChange={(value) =>
+              form.setValue(endpointPath(`${basePath}.memory`), value)
+            }
+            min={0}
+            max={maxAvailable.memory.available}
+            step={0.5}
+            unit="GiB"
+            disabled={!currentCluster}
+            remainingInfo={
+              maxAvailable.memory.total > 0
+                ? {
+                    remaining: dynamicAvailability.memory,
+                    total: maxAvailable.memory.total,
+                    label: t("endpoints.fields.remaining"),
+                  }
+                : undefined
+            }
+          />
+        </FormFieldGroup>
+
+        <FormFieldGroup
+          {...form}
+          name={endpointPath(acceleratorPath)}
+          label={t("endpoints.fields.accelerator")}
+          className="col-span-4"
+        >
+          <FormCombobox
+            options={acceleratorOptions.map((opt) => ({
+              label: opt.label,
+              value: opt.value,
+            }))}
+            value={
+              currentAccelerator?.type && currentAccelerator?.product
+                ? `${currentAccelerator.type}:${currentAccelerator.product}`
+                : ""
+            }
+            onChange={(value) => {
+              const selectedOption = acceleratorOptions.find(
+                (opt) => opt.value === value,
+              );
+              if (selectedOption) {
+                form.setValue(endpointPath(acceleratorPath), {
+                  type: selectedOption.type,
+                  product: selectedOption.product,
+                });
+              } else {
+                form.setValue(endpointPath(acceleratorPath), null);
+              }
+            }}
+            placeholder={t("endpoints.placeholders.selectAccelerator")}
+            disabled={!currentCluster || acceleratorOptions.length === 0}
+            emptyMessage={t("endpoints.messages.noAcceleratorsAvailable")}
+          />
+        </FormFieldGroup>
+
+        {currentAccelerator?.type && currentAccelerator?.product && (
+          <FormFieldGroup
+            {...form}
+            name={endpointPath(`${basePath}.gpu`)}
+            label={t("endpoints.fields.acceleratorCount")}
+            className="col-span-4"
+          >
+            <SliderWithInput
+              value={currentGpu}
+              onChange={(value) =>
+                form.setValue(endpointPath(`${basePath}.gpu`), value)
+              }
+              min={0}
+              max={maxAvailable.gpu.available}
+              step={gpuStep}
+              disabled={!currentCluster}
+              remainingInfo={
+                maxAvailable.gpu.total > 0
+                  ? {
+                      remaining: maxAvailable.gpu.available - currentGpu,
+                      total: maxAvailable.gpu.total,
+                      label: t("endpoints.fields.remaining"),
+                    }
+                  : undefined
+              }
+            />
+          </FormFieldGroup>
+        )}
+
+        {roleIndex != null && (
+          <>
+            <FormFieldGroup
+              {...form}
+              name={endpointPath(
+                `spec.roles.${roleIndex}.variables.engine_args`,
+              )}
+              label={t("endpoints.fields.engineVariables")}
+              className="col-span-4"
+            >
+              <VariablesInput
+                schema={engineValueSchema?.properties as unknown as Schema}
+              />
+            </FormFieldGroup>
+            <FormFieldGroup
+              {...form}
+              name={endpointPath(`spec.roles.${roleIndex}.env`)}
+              label={t("endpoints.fields.environment")}
+              className="col-span-4"
+            >
+              <VariablesInput schema={{}} />
+            </FormFieldGroup>
+          </>
+        )}
+      </>
+    );
+  };
+
+  const renderRoleTab = (role: EndpointRoleName) => {
+    const roleIndex = roleIndexByName[role];
+    const basePath = `spec.roles.${roleIndex}.resources`;
+
+    return (
+      <TabsContent value={role} className="mt-4" forceMount>
+        <div className="grid grid-cols-4 xs:grid-cols-1 gap-4">
+          <FormFieldGroup
+            {...form}
+            name={endpointPath(`spec.roles.${roleIndex}.replicas.num`)}
+            label={t(`endpoints.fields.${role}Instances`)}
+            className="col-span-4"
+          >
+            <Input type="number" min={1} />
+          </FormFieldGroup>
+          {renderResourceFields(basePath, roleIndex)}
+        </div>
+      </TabsContent>
+    );
   };
 
   return {
@@ -293,10 +665,26 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             />
           </FormFieldGroup>
         )}
+        {modelNameField}
+        {engineRuntimeFields}
+      </FormCardGrid>
+    ),
+    deploymentModeFields: (
+      <FormCardGrid title={t("endpoints.sections.deploymentMode")}>
+        <div className="col-span-4 grid grid-cols-2 xs:grid-cols-1 gap-2">
+          {renderDeploymentModeButton(
+            "standard",
+            t("endpoints.deploymentModes.standard"),
+          )}
+          {renderDeploymentModeButton(
+            "pd",
+            t("endpoints.deploymentModes.prefillDecode"),
+          )}
+        </div>
       </FormCardGrid>
     ),
     // Resource settings section - always visible
-    resourceFields: (
+    resourceFields: isPdMode ? null : (
       <FormCardGrid title={t("endpoints.sections.resourceSettings")}>
         <FormFieldGroup
           {...form}
@@ -305,7 +693,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           className="col-span-2"
         >
           <SliderWithInput
-            value={form.watch("spec.resources.cpu") || 0}
+            value={Number(form.watch("spec.resources.cpu") || 0)}
             onChange={(value) => form.setValue("spec.resources.cpu", value)}
             min={0}
             max={maxAvailable.cpu.available}
@@ -331,7 +719,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           className="col-span-2"
         >
           <SliderWithInput
-            value={form.watch("spec.resources.memory") || 0}
+            value={Number(form.watch("spec.resources.memory") || 0)}
             onChange={(value) => form.setValue("spec.resources.memory", value)}
             min={0}
             max={maxAvailable.memory.available}
@@ -398,7 +786,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               className="col-span-4"
             >
               {(() => {
-                const currentGpu = form.watch("spec.resources.gpu") || 0;
+                const currentGpu = Number(
+                  form.watch("spec.resources.gpu") || 0,
+                );
 
                 return (
                   <SliderWithInput
@@ -435,8 +825,58 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         )}
       </FormCardGrid>
     ),
+    roleFields: !isPdMode ? null : (
+      <FormCardGrid title={t("endpoints.sections.roleSettings")}>
+        <div className="col-span-4">
+          <Tabs
+            value={activeRole}
+            onValueChange={(value) => setActiveRole(value as EndpointRoleName)}
+          >
+            <TabsList>
+              <TabsTrigger value="prefill">
+                {t("endpoints.roles.prefill")}
+              </TabsTrigger>
+              <TabsTrigger value="decode">
+                {t("endpoints.roles.decode")}
+              </TabsTrigger>
+            </TabsList>
+            {renderRoleTab("prefill")}
+            {renderRoleTab("decode")}
+          </Tabs>
+        </div>
+      </FormCardGrid>
+    ),
+    kvFields: !isPdMode ? null : (
+      <FormCardGrid title={t("endpoints.sections.kvSettings")}>
+        <FormFieldGroup
+          {...form}
+          name="spec.kv.transfer.connector"
+          label={t("endpoints.fields.kvConnector")}
+          className="col-span-2"
+        >
+          <FormCombobox
+            placeholder={t("endpoints.placeholders.defaultKvConnector")}
+            options={[
+              {
+                label: t("endpoints.placeholders.defaultKvConnector"),
+                value: "",
+              },
+              { label: "nixl", value: "nixl" },
+            ]}
+          />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="spec.kv.transfer.extra"
+          label={t("endpoints.fields.kvExtraOptions")}
+          className="col-span-4"
+        >
+          <VariablesInput schema={{}} />
+        </FormFieldGroup>
+      </FormCardGrid>
+    ),
     // Collapsible customize section for both create and edit modes
-    customizeFields: (
+    customizeFields: isPdMode ? null : (
       <Collapsible open={isCustomizeOpen} onOpenChange={setIsCustomizeOpen}>
         <CollapsibleTrigger asChild>
           <Button variant="outline" className="w-full justify-between">
@@ -454,43 +894,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           <FormCardGrid title={t("endpoints.sections.modelSettings")}>
             <FormFieldGroup
               {...form}
-              name="spec.model.name"
-              label={t("endpoints.fields.modelName")}
-            >
-              <div className="space-y-2">
-                <AsyncCombobox
-                  placeholder={t("endpoints.placeholders.selectModel")}
-                  loading={
-                    modelsData.isFetching ? (
-                      <CommandLoading className="px-2 py-1.5 text-muted-foreground">
-                        {t("endpoints.messages.fetching")}
-                      </CommandLoading>
-                    ) : null
-                  }
-                  options={(modelsData.data?.data || []).map(
-                    (e: { name: string }) => {
-                      return {
-                        label: e.name,
-                        value: e.name,
-                      };
-                    },
-                  )}
-                  shouldFilter={false}
-                  onSearchChange={setModelSearch}
-                  triggerClassName="w-full"
-                  // Only disable if no registry is selected
-                  disabled={!currentRegistry}
-                  // Show current model name
-                  value={currentModelName}
-                  // Handle model selection
-                  onChange={(value: string) => {
-                    form.setValue("spec.model.name", value);
-                  }}
-                />
-              </div>
-            </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
               name="spec.model.version"
               label={t("endpoints.fields.modelVersion")}
             >
@@ -502,69 +905,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               label={t("endpoints.fields.modelFile")}
             >
               <Input />
-            </FormFieldGroup>
-          </FormCardGrid>
-
-          <FormCardGrid title={t("endpoints.sections.engineSettings")}>
-            <FormFieldGroup
-              {...form}
-              name="spec.engine.engine"
-              label={t("common.fields.engine")}
-            >
-              <FormCombobox
-                placeholder={t("endpoints.placeholders.selectEngine")}
-                disabled={engines.query.isLoading}
-                options={engineNames.map((v) => ({
-                  label: v,
-                  value: v,
-                }))}
-                onChange={(value) => {
-                  form.setValue("spec.engine", {
-                    engine: value,
-                    version: engineVersions[String(value)][0].version,
-                  });
-                  form.setValue(
-                    "spec.model.task",
-                    engineTasks[String(value)][0],
-                  );
-                  form.trigger("spec.engine.engine");
-                }}
-              />
-            </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="spec.engine.version"
-              label={t("endpoints.fields.engineVersion")}
-            >
-              <FormCombobox
-                placeholder={t("endpoints.placeholders.selectVersion")}
-                disabled={!form.getValues().spec.engine.engine}
-                options={(
-                  engineVersions[form.getValues().spec.engine.engine] || []
-                ).map(({ version: v }) => ({
-                  label: v,
-                  value: v,
-                }))}
-              />
-            </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="spec.model.task"
-              label={t("endpoints.fields.taskType")}
-            >
-              <FormCombobox
-                placeholder={t("endpoints.placeholders.selectTaskType")}
-                disabled={!form.getValues().spec.engine.engine}
-                options={(
-                  engineTasks[form.getValues().spec.engine.engine] || []
-                ).map((v) => ({
-                  label:
-                    t(`models.tasks.${v}`) === `models.tasks.${v}`
-                      ? formatTaskName(v)
-                      : t(`models.tasks.${v}`),
-                  value: v,
-                }))}
-              />
             </FormFieldGroup>
           </FormCardGrid>
 

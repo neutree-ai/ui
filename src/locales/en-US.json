@@ -557,8 +557,12 @@
 			"engineVersion": "Engine Version",
 			"taskType": "Task Type",
 			"replicas": "Replicas",
+			"prefillInstances": "Prefill Instances",
+			"decodeInstances": "Decode Instances",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
+			"kvConnector": "Connector",
+			"kvExtraOptions": "Extra Options",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"accelerator": "Accelerator"
@@ -567,6 +571,9 @@
 			"templateSelection": "Template Selection",
 			"configuration": "Configuration",
 			"resourceSettings": "Resource Settings",
+			"deploymentMode": "Deployment Mode",
+			"roleSettings": "Role Settings",
+			"kvSettings": "KV Settings",
 			"customizeSettings": "Customize Settings",
 			"configurationDetails": "Configuration Details",
 			"modelSettings": "Model Settings",
@@ -587,10 +594,19 @@
 			"selectVersion": "Select A Version",
 			"selectTaskType": "Select A Support Task Type",
 			"selectAccelerator": "Select An Accelerator",
-			"selectSchedulerType": "Select Scheduler Type"
+			"selectSchedulerType": "Select Scheduler Type",
+			"defaultKvConnector": "Default: nixl"
 		},
 		"options": {
 			"generic": "Generic"
+		},
+		"deploymentModes": {
+			"standard": "Standard",
+			"prefillDecode": "Prefill / Decode"
+		},
+		"roles": {
+			"prefill": "Prefill",
+			"decode": "Decode"
 		},
 		"actions": {
 			"pause": "Pause",
@@ -609,6 +625,9 @@
 			"resumeFailed": "Failed to resume endpoint",
 			"noAcceleratorsAvailable": "No accelerators available in this cluster",
 			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
+			"prefillInstancesMustBeAtLeastOne": "Prefill instances must be at least 1",
+			"decodeInstancesMustBeAtLeastOne": "Decode instances must be at least 1",
+			"roleInstancesMustBeAtLeastOne": "Role instances must be at least 1",
 			"schedulerTypeRequired": "Scheduler type is required"
 		},
 		"tabs": {

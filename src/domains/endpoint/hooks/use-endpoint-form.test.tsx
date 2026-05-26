@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -116,23 +122,17 @@ const defaultSelectResult = {
 };
 
 function setupMocks(catalogs = [catalogA, catalogB]) {
-  vi.mocked(useSelect).mockImplementation(
-    // biome-ignore lint/suspicious/noExplicitAny: mock implementation doesn't need full Refine types
-    ((opts: { resource: string }) => {
-      if (opts.resource === "model_catalogs") {
-        return { query: { data: { data: catalogs }, isLoading: false } };
-      }
-      return defaultSelectResult;
-    }) as any,
-  );
+  vi.mocked(useSelect).mockImplementation(((opts: { resource: string }) => {
+    if (opts.resource === "model_catalogs") {
+      return { query: { data: { data: catalogs }, isLoading: false } };
+    }
+    return defaultSelectResult;
+  }) as never);
 
-  vi.mocked(useCustom).mockReturnValue(
-    // biome-ignore lint/suspicious/noExplicitAny: mock return doesn't need full Refine types
-    {
-      data: null,
-      isFetching: false,
-    } as any,
-  );
+  vi.mocked(useCustom).mockReturnValue({
+    data: null,
+    isFetching: false,
+  } as never);
 }
 
 // --- Test components ---
@@ -147,7 +147,10 @@ function CreateForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.deploymentModeFields}
         {result.resourceFields}
+        {result.roleFields}
+        {result.kvFields}
         {result.customizeFields}
       </form>
     </FormProvider>
@@ -162,7 +165,10 @@ function EditForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.deploymentModeFields}
         {result.resourceFields}
+        {result.roleFields}
+        {result.kvFields}
         {result.customizeFields}
       </form>
     </FormProvider>
@@ -212,6 +218,77 @@ describe("useEndpointForm", () => {
         .getByTestId("field-metadata.name")
         .querySelector("input");
       expect(input?.disabled).toBe(true);
+    });
+
+    it("create mode shows model runtime fields in the main flow", () => {
+      render(<CreateForm />);
+      expect(screen.getByTestId("field-spec.model.name")).toBeTruthy();
+      expect(screen.getByTestId("field-spec.engine.engine")).toBeTruthy();
+      expect(screen.getByTestId("field-spec.engine.version")).toBeTruthy();
+      expect(screen.getByTestId("field-spec.model.task")).toBeTruthy();
+    });
+  });
+
+  describe("deployment mode", () => {
+    it("defaults to standard mode", () => {
+      render(<CreateForm />);
+
+      expect(formInstance?.getValues("spec.strategy")).toBe("");
+      expect(screen.getByTestId("field-spec.resources.cpu")).toBeTruthy();
+      expect(
+        screen.queryByTestId("field-spec.roles.0.replicas.num"),
+      ).toBeNull();
+      expect(
+        screen.queryByTestId("field-spec.kv.transfer.connector"),
+      ).toBeNull();
+    });
+
+    it("switches to prefill/decode mode and hides global resource controls", () => {
+      render(<CreateForm />);
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "endpoints.deploymentModes.prefillDecode",
+        }),
+      );
+
+      expect(formInstance?.getValues("spec.strategy")).toBe("pd");
+      expect(formInstance?.getValues("spec.placement.roles")).toBe("same-host");
+      expect(formInstance?.getValues("spec.replicas.num")).toBe(1);
+      expect(screen.queryByTestId("field-spec.resources.cpu")).toBeNull();
+      expect(screen.queryByTestId("field-spec.replicas.num")).toBeNull();
+      expect(
+        screen.getByTestId("field-spec.roles.0.replicas.num"),
+      ).toBeTruthy();
+      expect(
+        screen.getByTestId("field-spec.kv.transfer.connector"),
+      ).toBeTruthy();
+    });
+
+    it("shows independent decode role settings in prefill/decode mode", async () => {
+      render(<CreateForm />);
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "endpoints.deploymentModes.prefillDecode",
+        }),
+      );
+      fireEvent.click(
+        screen.getByRole("tab", { name: "endpoints.roles.decode" }),
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("field-spec.roles.1.replicas.num"),
+        ).toBeTruthy();
+      });
+      expect(
+        screen.getByTestId("field-spec.roles.1.resources.cpu"),
+      ).toBeTruthy();
+      expect(
+        screen.getByTestId("field-spec.roles.1.variables.engine_args"),
+      ).toBeTruthy();
+      expect(screen.getByTestId("field-spec.roles.1.env")).toBeTruthy();
     });
   });
 
@@ -334,9 +411,11 @@ describe("useEndpointForm", () => {
       render(<CreateForm />);
 
       // Clear the scheduler type and trigger validation via resolver
-      formInstance?.setValue("spec.deployment_options.scheduler.type", "");
-
-      const valid = await formInstance?.trigger();
+      let valid: boolean | undefined;
+      await act(async () => {
+        formInstance?.setValue("spec.deployment_options.scheduler.type", "");
+        valid = await formInstance?.trigger();
+      });
       expect(valid).toBe(false);
 
       const error =

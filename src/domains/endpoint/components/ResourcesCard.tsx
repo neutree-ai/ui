@@ -1,8 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
-import { useTranslation } from "react-i18next";
 
 interface ResourcesCardProps {
   resources: ResourceSpec | null;
@@ -18,7 +18,7 @@ export default function ResourcesCard({
   const { t } = useTranslation();
 
   const shouldShowGpu = showGpuConditionally
-    ? Boolean(resources?.gpu && resources.gpu > 0)
+    ? Number(resources?.gpu ?? 0) > 0
     : true;
 
   const hasAccelerator = Boolean(
