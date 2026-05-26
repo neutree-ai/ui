@@ -1,3 +1,7 @@
+import { Plus, Trash } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,15 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type EditingRow,
   type Schema,
   useVariablesInput,
 } from "@/foundation/hooks/use-variables-input";
-import { Plus, Trash } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { useTranslation } from "react-i18next";
 
 interface VariablesInputProps {
   value?: Record<string, any>;
@@ -101,12 +102,73 @@ export const VariablesInput = React.forwardRef<
     }
   }, [focusedRowId]);
 
-  // Render appropriate input based on schema type for existing variables
-  const renderValueInput = (key: string, val: any) => {
-    if (schema[key]) {
-      const { type } = schema[key];
+  // JsonValueInput is a textarea bound to a JSON-encoded view of the value.
+  // We buffer the raw text so the user can type intermediate invalid JSON
+  // (e.g. half-typed quotes) without losing it; on blur we try to parse and
+  // commit. Border turns destructive while the buffer is unparseable.
+  const JsonValueInput: React.FC<{
+    value: unknown;
+    onChange: (next: unknown) => void;
+  }> = ({ value, onChange }) => {
+    const initial = React.useMemo(() => {
+      try {
+        return JSON.stringify(value ?? null, null, 2);
+      } catch {
+        return "";
+      }
+    }, [value]);
+    const [draft, setDraft] = useState(initial);
+    const [hasError, setHasError] = useState(false);
+    useEffect(() => {
+      setDraft(initial);
+    }, [initial]);
+    const commit = () => {
+      try {
+        const parsed = JSON.parse(draft);
+        setHasError(false);
+        onChange(parsed);
+      } catch {
+        setHasError(true);
+      }
+    };
+    return (
+      <Textarea
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          if (hasError) setHasError(false);
+        }}
+        onBlur={commit}
+        className={`font-mono text-xs min-h-[80px] w-full ${hasError ? "border-destructive" : ""}`}
+        placeholder='{ "key": "value" }'
+      />
+    );
+  };
 
-      switch (type) {
+  // Render appropriate input based on schema type for existing variables.
+  // Falls back to a JSON textarea when the value (or its declared schema type)
+  // is non-primitive — avoids the `[object Object]` placeholder for fields
+  // like vllm's `speculative_config` and `hf_overrides`.
+  const renderValueInput = (key: string, val: any) => {
+    const schemaType = schema[key]?.type as string | undefined;
+    const isComplexValue =
+      val !== null && typeof val === "object" && val !== undefined;
+
+    if (
+      schemaType === "object" ||
+      schemaType === "array" ||
+      (schemaType === undefined && isComplexValue)
+    ) {
+      return (
+        <JsonValueInput
+          value={val}
+          onChange={(next) => handleUpdateValue(key, next)}
+        />
+      );
+    }
+
+    if (schema[key]) {
+      switch (schemaType) {
         case "boolean":
           return (
             <Checkbox
@@ -150,7 +212,6 @@ export const VariablesInput = React.forwardRef<
       }
     }
 
-    // Default to string input for unknown types
     return (
       <Input
         value={val}

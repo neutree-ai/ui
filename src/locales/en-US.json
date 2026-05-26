@@ -535,7 +535,9 @@
 			"argsOverrides": "Args overrides",
 			"defaultOn": "default on",
 			"optIn": "opt-in",
-			"conflictsWith": "conflicts with"
+			"conflictsWith": "conflicts with",
+			"variantLabel": "Variant",
+			"variantHint": "Engine, model, resources below reflect this variant"
 		},
 		"import": {
 			"button": "Import",
