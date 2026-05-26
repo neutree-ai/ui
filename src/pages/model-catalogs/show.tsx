@@ -102,19 +102,29 @@ export const ModelCatalogsShow = () => {
         <Card className="mt-4">
           <CardContent>
             {isRecipe && variantEntries.length > 0 && (
-              <Tabs
-                value={selectedVariant || variantEntries[0][0]}
-                onValueChange={setSelectedVariant}
-                className="mb-4"
-              >
-                <TabsList>
-                  {variantEntries.map(([key]) => (
-                    <TabsTrigger key={key} value={key}>
-                      {key}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t("model_catalogs.recipe.variantLabel", "Variant")}
+                </span>
+                <Tabs
+                  value={selectedVariant || variantEntries[0][0]}
+                  onValueChange={setSelectedVariant}
+                >
+                  <TabsList>
+                    {variantEntries.map(([key]) => (
+                      <TabsTrigger key={key} value={key}>
+                        {key}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {t(
+                    "model_catalogs.recipe.variantHint",
+                    "Engine, model, resources below reflect this variant",
+                  )}
+                </span>
+              </div>
             )}
             <div className="grid grid-cols-4 gap-8">
               <ShowPage.Row title={t("common.fields.engine")}>
