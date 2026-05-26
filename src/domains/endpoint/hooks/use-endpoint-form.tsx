@@ -18,6 +18,7 @@ import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { SliderWithInput } from "@/domains/endpoint/components/SliderWithInput";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
+import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
@@ -483,6 +484,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               onChange={handleVariantChange}
             />
           </FormFieldGroup>
+          {(() => {
+            const v =
+              selectedCatalog.spec.variants?.[selectedVariant] ??
+              selectedCatalog.spec.variants?.["default"];
+            const req = v?.vram_minimum_gb ?? null;
+            if (!req) return null;
+            return (
+              <div className="col-span-4">
+                <VRAMCheckBadge
+                  acceleratorProduct={
+                    form.watch("spec.resources.accelerator")?.product
+                  }
+                  gpuCount={form.watch("spec.resources.gpu")}
+                  requiredGb={req}
+                />
+              </div>
+            );
+          })()}
           {selectedCatalog.spec.features &&
             Object.keys(selectedCatalog.spec.features).length > 0 && (
               <FormFieldGroup

@@ -80,6 +80,9 @@ export const VariantTable = ({ variants, base }: Props) => {
                   {t("common.fields.resources", "Resources")}
                 </th>
                 <th className="py-2 pr-4 font-medium">
+                  {t("model_catalogs.recipe.vramMin", "Min VRAM")}
+                </th>
+                <th className="py-2 pr-4 font-medium">
                   {t("model_catalogs.recipe.argsOverrides", "Args overrides")}
                 </th>
               </tr>
@@ -105,6 +108,11 @@ export const VariantTable = ({ variants, base }: Props) => {
                     </td>
                     <td className="py-2 pr-4">
                       {resourceSummary(v.resources)}
+                    </td>
+                    <td className="py-2 pr-4 font-mono text-xs">
+                      {v.vram_minimum_gb != null
+                        ? `≥${v.vram_minimum_gb} GB`
+                        : "—"}
                     </td>
                     <td className="py-2 pr-4">
                       {diffs.length === 0 ? (

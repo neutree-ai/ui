@@ -20,6 +20,9 @@ export type RecipeVariant = {
   engine_args?: Record<string, unknown> | null;
   env?: Record<string, string> | null;
   description?: string;
+  /** Minimum total VRAM (in GB) needed to load + serve this variant; mirrors
+   * upstream `vram_minimum_gb`. Feeds the OOM-risk warning. */
+  vram_minimum_gb?: number | null;
 };
 
 export type RecipeFeature = {
