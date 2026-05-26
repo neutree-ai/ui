@@ -26,70 +26,96 @@ const summarize = (m: Record<string, unknown> | null | undefined): string => {
     .join(", ");
 };
 
+const renderItem = (
+  [key, f]: [string, RecipeFeature],
+  t: (k: string, d: string) => string,
+) => {
+  const argsSummary = summarize(f.engine_args);
+  const envSummary = summarize(f.env);
+  const conflicts = f.conflicts_with ?? [];
+  return (
+    <li key={key} className="border-b last:border-b-0 pb-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant="secondary" className="font-mono">
+          {key}
+        </Badge>
+        {f.default ? (
+          <Badge variant="default">
+            {t("model_catalogs.recipe.defaultOn", "default on")}
+          </Badge>
+        ) : (
+          <Badge variant="outline">
+            {t("model_catalogs.recipe.optIn", "opt-in")}
+          </Badge>
+        )}
+        {conflicts.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {t("model_catalogs.recipe.conflictsWith", "conflicts with")}
+            {": "}
+            {conflicts.join(", ")}
+          </span>
+        )}
+      </div>
+      {f.description && (
+        <div className="text-sm text-muted-foreground mt-1">
+          {f.description}
+        </div>
+      )}
+      {argsSummary && (
+        <div className="font-mono text-xs mt-1 break-all">
+          <span className="text-muted-foreground">args:</span> {argsSummary}
+        </div>
+      )}
+      {envSummary && (
+        <div className="font-mono text-xs mt-1 break-all">
+          <span className="text-muted-foreground">env:</span> {envSummary}
+        </div>
+      )}
+    </li>
+  );
+};
+
 export const FeaturesList = ({ features }: Props) => {
   const { t } = useTranslation();
   const entries = Object.entries(features);
   if (entries.length === 0) return null;
 
+  const behaviorEntries = entries.filter(([, f]) => f?.category !== "tuning");
+  const tuningEntries = entries.filter(([, f]) => f?.category === "tuning");
+
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>{t("model_catalogs.recipe.features", "Features")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-3">
-          {entries.map(([key, f]) => {
-            const argsSummary = summarize(f.engine_args);
-            const envSummary = summarize(f.env);
-            const conflicts = f.conflicts_with ?? [];
-            return (
-              <li key={key} className="border-b last:border-b-0 pb-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="secondary" className="font-mono">
-                    {key}
-                  </Badge>
-                  {f.default ? (
-                    <Badge variant="default">
-                      {t("model_catalogs.recipe.defaultOn", "default on")}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">
-                      {t("model_catalogs.recipe.optIn", "opt-in")}
-                    </Badge>
-                  )}
-                  {conflicts.length > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {t(
-                        "model_catalogs.recipe.conflictsWith",
-                        "conflicts with",
-                      )}
-                      {": "}
-                      {conflicts.join(", ")}
-                    </span>
-                  )}
-                </div>
-                {f.description && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {f.description}
-                  </div>
-                )}
-                {argsSummary && (
-                  <div className="font-mono text-xs mt-1 break-all">
-                    <span className="text-muted-foreground">args:</span>{" "}
-                    {argsSummary}
-                  </div>
-                )}
-                {envSummary && (
-                  <div className="font-mono text-xs mt-1 break-all">
-                    <span className="text-muted-foreground">env:</span>{" "}
-                    {envSummary}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+    <>
+      {behaviorEntries.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>
+              {t("model_catalogs.recipe.features", "Features")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {behaviorEntries.map((e) => renderItem(e, t))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+      {tuningEntries.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>
+              {t(
+                "model_catalogs.recipe.performanceTuning",
+                "Performance tuning",
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {tuningEntries.map((e) => renderItem(e, t))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+    </>
   );
 };

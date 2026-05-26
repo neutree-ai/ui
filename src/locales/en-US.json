@@ -544,7 +544,8 @@
 			"conflictsWith": "conflicts with",
 			"variantLabel": "Variant",
 			"variantHint": "Engine, model, resources below reflect this variant",
-			"verifiedHardware": "Verified hardware"
+			"verifiedHardware": "Verified hardware",
+			"performanceTuning": "Performance tuning"
 		},
 		"import": {
 			"button": "Import",
@@ -681,7 +682,8 @@
 			"preview": "Composed preview",
 			"previewError": "Cannot compose",
 			"engineArgs": "Engine args",
-			"env": "Environment"
+			"env": "Environment",
+			"performanceTuning": "Performance tuning"
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",
