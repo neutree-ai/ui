@@ -6,6 +6,8 @@ export const EndpointsEdit = () => {
     form,
     metadataFields,
     templateFields,
+    modelFields,
+    engineFields,
     deploymentModeFields,
     resourceFields,
     roleFields,
@@ -19,6 +21,8 @@ export const EndpointsEdit = () => {
     <ResourceForm {...form}>
       {metadataFields}
       {templateFields}
+      {modelFields}
+      {engineFields}
       {deploymentModeFields}
       {resourceFields}
       {roleFields}

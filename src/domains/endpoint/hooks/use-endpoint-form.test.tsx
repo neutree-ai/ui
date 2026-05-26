@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
@@ -147,6 +148,8 @@ function CreateForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.modelFields}
+        {result.engineFields}
         {result.deploymentModeFields}
         {result.resourceFields}
         {result.roleFields}
@@ -165,6 +168,8 @@ function EditForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.modelFields}
+        {result.engineFields}
         {result.deploymentModeFields}
         {result.resourceFields}
         {result.roleFields}
@@ -183,6 +188,12 @@ function selectCatalog(label: string) {
   if (!trigger) throw new Error("catalog combobox trigger not found");
   fireEvent.click(trigger);
   fireEvent.click(screen.getByRole("option", { name: label }));
+}
+
+function section(title: string) {
+  const card = screen.getByText(title).closest("[class*='shadow-sm']");
+  if (!card) throw new Error(`section ${title} not found`);
+  return card as HTMLElement;
 }
 
 // --- Tests ---
@@ -227,6 +238,56 @@ describe("useEndpointForm", () => {
       expect(screen.getByTestId("field-spec.engine.version")).toBeTruthy();
       expect(screen.getByTestId("field-spec.model.task")).toBeTruthy();
     });
+
+    it("renders model and engine settings as standalone sections before deployment mode", () => {
+      render(<CreateForm />);
+
+      const templateSection = section("endpoints.sections.templateSelection");
+      const modelSection = section("endpoints.sections.modelSettings");
+      const engineSection = section("endpoints.sections.engineSettings");
+      const deploymentSection = section("endpoints.sections.deploymentMode");
+
+      expect(
+        templateSection.compareDocumentPosition(modelSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        modelSection.compareDocumentPosition(engineSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        engineSection.compareDocumentPosition(deploymentSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+
+      expect(
+        within(templateSection).queryByTestId("field-spec.model.name"),
+      ).toBeNull();
+      expect(
+        within(templateSection).queryByTestId("field-spec.engine.engine"),
+      ).toBeNull();
+      expect(
+        within(modelSection).getByTestId("field-spec.model.registry"),
+      ).toBeTruthy();
+      expect(
+        within(modelSection).getByTestId("field-spec.model.name"),
+      ).toBeTruthy();
+      expect(
+        within(modelSection).getByTestId("field-spec.model.version"),
+      ).toBeTruthy();
+      expect(
+        within(modelSection).getByTestId("field-spec.model.file"),
+      ).toBeTruthy();
+      expect(
+        within(engineSection).getByTestId("field-spec.engine.engine"),
+      ).toBeTruthy();
+      expect(
+        within(engineSection).getByTestId("field-spec.engine.version"),
+      ).toBeTruthy();
+      expect(
+        within(engineSection).getByTestId("field-spec.model.task"),
+      ).toBeTruthy();
+    });
   });
 
   describe("deployment mode", () => {
@@ -257,12 +318,23 @@ describe("useEndpointForm", () => {
       expect(formInstance?.getValues("spec.replicas.num")).toBe(1);
       expect(screen.queryByTestId("field-spec.resources.cpu")).toBeNull();
       expect(screen.queryByTestId("field-spec.replicas.num")).toBeNull();
+      expect(screen.getByText("endpoints.fields.replicas")).toBeTruthy();
       expect(
         screen.getByTestId("field-spec.roles.0.replicas.num"),
       ).toBeTruthy();
       expect(
         screen.getByTestId("field-spec.kv.transfer.connector"),
       ).toBeTruthy();
+      expect(formInstance?.getValues("spec.kv.transfer.connector")).toBe(
+        "nixl",
+      );
+
+      const connectorTrigger = screen
+        .getByTestId("field-spec.kv.transfer.connector")
+        .querySelector('button[role="combobox"]');
+      if (!connectorTrigger) throw new Error("connector trigger not found");
+      fireEvent.click(connectorTrigger);
+      expect(screen.getByRole("option", { name: "mooncake" })).toBeTruthy();
     });
 
     it("shows independent decode role settings in prefill/decode mode", async () => {
@@ -273,7 +345,7 @@ describe("useEndpointForm", () => {
           name: "endpoints.deploymentModes.prefillDecode",
         }),
       );
-      fireEvent.click(
+      fireEvent.mouseDown(
         screen.getByRole("tab", { name: "endpoints.roles.decode" }),
       );
 
@@ -282,6 +354,9 @@ describe("useEndpointForm", () => {
           screen.getByTestId("field-spec.roles.1.replicas.num"),
         ).toBeTruthy();
       });
+      expect(
+        screen.queryByTestId("field-spec.roles.0.replicas.num"),
+      ).toBeNull();
       expect(
         screen.getByTestId("field-spec.roles.1.resources.cpu"),
       ).toBeTruthy();

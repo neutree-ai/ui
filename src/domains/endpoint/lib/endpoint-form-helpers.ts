@@ -319,28 +319,19 @@ export function transformEndpointValues(spec: {
   }
 }
 
-function validatePdRoleInstances(
+function validatePdRoleReplicas(
   spec: MutableEndpointSpec,
   errors: Record<string, { type: string; message: string }>,
   t: (key: string) => string,
 ) {
-  const roleMessages: Record<string, string> = {
-    prefill: "endpoints.messages.prefillInstancesMustBeAtLeastOne",
-    decode: "endpoints.messages.decodeInstancesMustBeAtLeastOne",
-  };
-
   const roles = spec.roles ?? [];
   roles.forEach((role, index) => {
-    const roleName = role.name ?? roleDefaults[index]?.name ?? "role";
     const value = Number(role.replicas?.num ?? 0);
 
     if (value < 1) {
       errors[`spec.roles.${index}.replicas.num`] = {
         type: "manual",
-        message: t(
-          roleMessages[roleName] ??
-            "endpoints.messages.roleInstancesMustBeAtLeastOne",
-        ),
+        message: t("endpoints.messages.replicasMustBeAtLeastOne"),
       };
     }
   });
@@ -369,7 +360,7 @@ export function validateEndpointValues(
   const isPd = isPdStrategy(spec.strategy);
 
   if (isPd) {
-    validatePdRoleInstances(spec, errors, t);
+    validatePdRoleReplicas(spec, errors, t);
   } else if (spec.replicas?.num != null && spec.replicas.num < 1) {
     errors["spec.replicas.num"] = {
       type: "manual",
@@ -467,7 +458,7 @@ export const defaultEndpointSpec = {
   roles: roleDefaults,
   kv: {
     transfer: {
-      connector: "",
+      connector: "nixl",
       extra: {},
     },
   },

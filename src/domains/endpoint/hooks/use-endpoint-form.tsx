@@ -560,12 +560,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const basePath = `spec.roles.${roleIndex}.resources`;
 
     return (
-      <TabsContent value={role} className="mt-4" forceMount>
+      <TabsContent value={role} className="mt-4">
         <div className="grid grid-cols-4 xs:grid-cols-1 gap-4">
           <FormFieldGroup
             {...form}
             name={endpointPath(`spec.roles.${roleIndex}.replicas.num`)}
-            label={t(`endpoints.fields.${role}Instances`)}
+            label={t("endpoints.fields.replicas")}
             className="col-span-4"
           >
             <Input type="number" min={1} />
@@ -624,26 +624,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             })}
           />
         </FormFieldGroup>
-        <FormFieldGroup
-          {...form}
-          name="spec.model.registry"
-          label={t("endpoints.fields.modelRegistry")}
-        >
-          <FormCombobox
-            placeholder={t("endpoints.placeholders.selectModelRegistry")}
-            disabled={modelRegistries.query.isLoading}
-            options={(modelRegistries.query.data?.data || []).map((e) => ({
-              label: e.metadata.name,
-              value: e.metadata.name,
-            }))}
-            onChange={(value) => {
-              form.setValue("spec.model.registry", value as string);
-              // Reset model name and search when registry changes
-              form.setValue("spec.model.name", "");
-              setModelSearch("");
-            }}
-          />
-        </FormFieldGroup>
         {!isEdit && (
           <FormFieldGroup
             {...form}
@@ -665,7 +645,49 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             />
           </FormFieldGroup>
         )}
+      </FormCardGrid>
+    ),
+    modelFields: (
+      <FormCardGrid title={t("endpoints.sections.modelSettings")}>
+        <FormFieldGroup
+          {...form}
+          name="spec.model.registry"
+          label={t("endpoints.fields.modelRegistry")}
+        >
+          <FormCombobox
+            placeholder={t("endpoints.placeholders.selectModelRegistry")}
+            disabled={modelRegistries.query.isLoading}
+            options={(modelRegistries.query.data?.data || []).map((e) => ({
+              label: e.metadata.name,
+              value: e.metadata.name,
+            }))}
+            onChange={(value) => {
+              form.setValue("spec.model.registry", value as string);
+              // Reset model name and search when registry changes
+              form.setValue("spec.model.name", "");
+              setModelSearch("");
+            }}
+          />
+        </FormFieldGroup>
         {modelNameField}
+        <FormFieldGroup
+          {...form}
+          name="spec.model.version"
+          label={t("endpoints.fields.modelVersion")}
+        >
+          <Input />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="spec.model.file"
+          label={t("endpoints.fields.modelFile")}
+        >
+          <Input />
+        </FormFieldGroup>
+      </FormCardGrid>
+    ),
+    engineFields: (
+      <FormCardGrid title={t("endpoints.sections.engineSettings")}>
         {engineRuntimeFields}
       </FormCardGrid>
     ),
@@ -855,13 +877,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           className="col-span-2"
         >
           <FormCombobox
-            placeholder={t("endpoints.placeholders.defaultKvConnector")}
+            placeholder={t("endpoints.placeholders.selectKvConnector")}
             options={[
-              {
-                label: t("endpoints.placeholders.defaultKvConnector"),
-                value: "",
-              },
               { label: "nixl", value: "nixl" },
+              { label: "mooncake", value: "mooncake" },
             ]}
           />
         </FormFieldGroup>
@@ -891,23 +910,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-4">
-          <FormCardGrid title={t("endpoints.sections.modelSettings")}>
-            <FormFieldGroup
-              {...form}
-              name="spec.model.version"
-              label={t("endpoints.fields.modelVersion")}
-            >
-              <Input />
-            </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="spec.model.file"
-              label={t("endpoints.fields.modelFile")}
-            >
-              <Input />
-            </FormFieldGroup>
-          </FormCardGrid>
-
           <FormCardGrid title={t("endpoints.sections.replicaSettings")}>
             <FormFieldGroup
               {...form}

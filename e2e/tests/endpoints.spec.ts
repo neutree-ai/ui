@@ -380,14 +380,19 @@ test.describe("endpoints", () => {
     }) => {
       await endpoints.goToCreate();
 
-      await expect(endpoints.form.field("spec.model.file")).toBeHidden();
+      await expect(endpoints.form.field("spec.model.file")).toBeVisible();
+      await expect(
+        endpoints.form.field("spec.variables.engine_args"),
+      ).toBeHidden();
 
       // Click "Customize Settings" to expand
       await endpoints.page
         .getByRole("button", { name: /customize settings/i })
         .click();
 
-      await expect(endpoints.form.field("spec.model.file")).toBeVisible();
+      await expect(
+        endpoints.form.field("spec.variables.engine_args"),
+      ).toBeVisible();
       await expect(endpoints.form.field("spec.replicas.num")).toBeVisible();
     });
 

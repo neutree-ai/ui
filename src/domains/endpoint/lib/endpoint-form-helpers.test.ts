@@ -230,7 +230,7 @@ describe("transformEndpointValues", () => {
       ],
       kv: {
         transfer: {
-          connector: "",
+          connector: "mooncake",
           extra: { buffer_size: "1073741824" },
         },
       },
@@ -272,8 +272,32 @@ describe("transformEndpointValues", () => {
       ],
       kv: {
         transfer: {
+          connector: "mooncake",
           extra: { buffer_size: "1073741824" },
         },
+      },
+    });
+  });
+
+  it("includes the default nixl connector in prefill/decode payloads", () => {
+    const spec = {
+      strategy: "pd",
+      resources: null,
+      replicas: null,
+      roles: [],
+      kv: {
+        transfer: {
+          connector: defaultEndpointSpec.kv.transfer.connector,
+          extra: {},
+        },
+      },
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.kv).toEqual({
+      transfer: {
+        connector: "nixl",
       },
     });
   });
@@ -438,7 +462,7 @@ describe("validateEndpointValues", () => {
     expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
   });
 
-  it("validates prefill/decode instances instead of global scheduler", () => {
+  it("validates prefill/decode replicas instead of global scheduler", () => {
     const errors = validateEndpointValues(
       {
         strategy: "pd",
@@ -460,10 +484,10 @@ describe("validateEndpointValues", () => {
 
     expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
     expect(errors["spec.roles.0.replicas.num"]?.message).toBe(
-      "endpoints.messages.prefillInstancesMustBeAtLeastOne",
+      "endpoints.messages.replicasMustBeAtLeastOne",
     );
     expect(errors["spec.roles.1.replicas.num"]?.message).toBe(
-      "endpoints.messages.decodeInstancesMustBeAtLeastOne",
+      "endpoints.messages.replicasMustBeAtLeastOne",
     );
   });
 });
