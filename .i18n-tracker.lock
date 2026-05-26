@@ -297,12 +297,12 @@
   "src/pages/model-catalogs/components/ImportDialog.tsx": "a5f47af5a5254132aa0e77e25675096d",
   "src/pages/model-catalogs/components/KeyConfigCard.tsx": "a3e49d8166c2440bfa82b6d6b53cc2e1",
   "src/foundation/lib/api/model-catalogs.ts": "7f9e9d4ef7bcb0f5b7fd15a0d0d03de3",
-  "src/pages/model-catalogs/components/FeaturesList.tsx": "98f97e9e2241fc101342f714a98b694b",
+  "src/pages/model-catalogs/components/FeaturesList.tsx": "d6db973109c3dc9e72d701f9b75b23ac",
   "src/pages/model-catalogs/components/VariantTable.tsx": "dfee242a624bef8d48d368a8a5188f04",
   "src/domains/endpoint/components/ComposePreview.tsx": "86c0d033948a7ade1abe8028c82d8d89",
-  "src/domains/endpoint/components/FeaturePicker.tsx": "eb099e3fd02e940956af58758232127a",
+  "src/domains/endpoint/components/FeaturePicker.tsx": "1d66ae8f41b907041582c807731d8790",
   "src/domains/endpoint/components/VariantPicker.tsx": "3438c73e1b9ff16610593e9c9402aa23",
   "src/foundation/recipe/compose.ts": "c7764ad69cd0b721333b728ce25544ab",
   "src/foundation/recipe/normalize.ts": "1f6bd18adb4cc58b944f1874389418fa",
-  "src/foundation/recipe/types.ts": "86d8a44ed48702cdb7dd9909fd6bc4e7"
+  "src/foundation/recipe/types.ts": "4c3b1d433057345e12fb9e3061592a48"
 }
