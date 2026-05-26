@@ -3,6 +3,7 @@ import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -443,6 +444,33 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     recipeFields:
       !isEdit && isRecipeCatalog && selectedCatalog ? (
         <FormCardGrid title={t("endpoints.recipe.section", "Recipe options")}>
+          {(() => {
+            const verified = (
+              selectedCatalog.metadata.annotations?.[
+                "recipe.vllm.ai/hardware-verified"
+              ] ?? ""
+            )
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            if (verified.length === 0) return null;
+            return (
+              <div className="col-span-4 flex items-center gap-2 flex-wrap text-sm">
+                <span className="text-muted-foreground">
+                  {t("endpoints.recipe.verifiedOn", "Verified on:")}
+                </span>
+                {verified.map((hw) => (
+                  <Badge
+                    key={hw}
+                    variant="outline"
+                    className="border-green-600/40 text-green-700 dark:text-green-400"
+                  >
+                    ✓ {hw}
+                  </Badge>
+                ))}
+              </div>
+            );
+          })()}
           <FormFieldGroup
             {...form}
             name="spec.variant"
