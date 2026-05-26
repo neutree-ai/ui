@@ -23,7 +23,7 @@
   "src/pages/model-registries/list.tsx": "0ab15b64c879d9369f5f97ac198daf2b",
   "src/pages/model-registries/show.tsx": "9da8ba6911b30d3a325e7b41f16ff1d8",
   "src/pages/model-catalogs/list.tsx": "a5c54f6822cff18e137dccf7d699902a",
-  "src/pages/model-catalogs/show.tsx": "e3ce6d51dc6dcd88a8f80c5693ffb5ac",
+  "src/pages/model-catalogs/show.tsx": "0b02d149fee6c4c3f2f40cf17730e999",
   "src/pages/image-registries/create.tsx": "8f23795e86d78127382ef53a8cb15488",
   "src/pages/image-registries/edit.tsx": "70b4ec2249988bba2726da5308172e49",
   "src/pages/image-registries/list.tsx": "2f5ca9c3216946403689bede93a5ae0a",
