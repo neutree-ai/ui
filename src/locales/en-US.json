@@ -602,6 +602,11 @@
 			"prefill": "Prefill",
 			"decode": "Decode"
 		},
+		"status": {
+			"replicaStatus": "Replica status",
+			"node": "Node",
+			"phase": "Phase"
+		},
 		"actions": {
 			"pause": "Pause",
 			"resume": "Resume"

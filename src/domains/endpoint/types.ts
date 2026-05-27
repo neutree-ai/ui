@@ -49,6 +49,14 @@ export type EndpointSpec = {
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
+  replicas?: EndpointReplicaStatus[] | null;
+};
+
+export type EndpointReplicaStatus = {
+  id?: string | null;
+  role?: string | null;
+  node_name?: string | null;
+  phase?: string | null;
 };
 
 export type Endpoint = {
