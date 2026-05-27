@@ -574,6 +574,7 @@
 			"modelSettings": "Model Settings",
 			"engineSettings": "Engine Settings",
 			"replicaSettings": "Replica Settings",
+			"schedulerSettings": "Scheduler Settings",
 			"advancedOptions": "Advanced Options",
 			"environmentVariables": "Environment Variables"
 		},

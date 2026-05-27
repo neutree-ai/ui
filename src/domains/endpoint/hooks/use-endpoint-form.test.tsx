@@ -304,6 +304,31 @@ describe("useEndpointForm", () => {
       ).toBeNull();
     });
 
+    it("renders standard replicas in a standalone replica settings section", () => {
+      render(<CreateForm />);
+
+      const engineSection = section("endpoints.sections.engineSettings");
+      const replicaSection = section("endpoints.sections.replicaSettings");
+      const deploymentSection = section("endpoints.sections.deploymentMode");
+
+      expect(
+        engineSection.compareDocumentPosition(replicaSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        replicaSection.compareDocumentPosition(deploymentSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        within(replicaSection).getByTestId("field-spec.replicas.num"),
+      ).toBeTruthy();
+      expect(
+        within(replicaSection).queryByTestId(
+          "field-spec.deployment_options.scheduler.type",
+        ),
+      ).toBeNull();
+    });
+
     it("switches to prefill/decode mode and hides global resource controls", () => {
       render(<CreateForm />);
 

@@ -705,7 +705,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </div>
       </FormCardGrid>
     ),
-    replicaFields: !isPdMode ? null : (
+    replicaFields: (
       <FormCardGrid title={t("endpoints.sections.replicaSettings")}>
         <FormFieldGroup
           {...form}
@@ -895,15 +895,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-4">
-          <FormCardGrid title={t("endpoints.sections.replicaSettings")}>
-            <FormFieldGroup
-              {...form}
-              name="spec.replicas.num"
-              label={t("endpoints.fields.replicas")}
-            >
-              <Input type="number" min={1} />
-            </FormFieldGroup>
-
+          <FormCardGrid title={t("endpoints.sections.schedulerSettings")}>
             <FormFieldGroup
               {...form}
               name="spec.deployment_options.scheduler.type"
