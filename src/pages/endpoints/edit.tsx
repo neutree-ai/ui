@@ -11,7 +11,6 @@ export const EndpointsEdit = () => {
     deploymentModeFields,
     resourceFields,
     roleFields,
-    kvFields,
     customizeFields,
   } = useEndpointForm({
     action: "edit",
@@ -26,7 +25,6 @@ export const EndpointsEdit = () => {
       {deploymentModeFields}
       {resourceFields}
       {roleFields}
-      {kvFields}
       {customizeFields}
     </ResourceForm>
   );

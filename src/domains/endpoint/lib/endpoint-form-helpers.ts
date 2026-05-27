@@ -144,10 +144,6 @@ function convertResourceFields(resources?: Record<string, unknown> | null) {
   }
 }
 
-function hasObjectValues(value?: Record<string, unknown> | null) {
-  return Boolean(value && Object.keys(value).length > 0);
-}
-
 /**
  * Compute maximum available resources for the endpoint form sliders.
  *
@@ -275,7 +271,9 @@ export function transformEndpointValues(spec: {
   endpointSpec.strategy = "pd";
   endpointSpec.placement = { roles: "same-host" };
   endpointSpec.resources = null;
-  endpointSpec.replicas = { num: 1 };
+  endpointSpec.replicas = {
+    num: Number(endpointSpec.replicas?.num ?? defaultEndpointSpec.replicas.num),
+  };
   endpointSpec.deployment_options = null;
 
   const sourceRoles = endpointSpec.roles ?? [];
@@ -298,25 +296,7 @@ export function transformEndpointValues(spec: {
     };
   });
 
-  const transfer = endpointSpec.kv?.transfer;
-  const normalizedTransfer: {
-    connector?: string;
-    extra?: Record<string, unknown>;
-  } = {};
-
-  if (transfer?.connector) {
-    normalizedTransfer.connector = transfer.connector;
-  }
-
-  if (hasObjectValues(transfer?.extra)) {
-    normalizedTransfer.extra = transfer?.extra ?? {};
-  }
-
-  if (Object.keys(normalizedTransfer).length > 0) {
-    endpointSpec.kv = { transfer: normalizedTransfer };
-  } else {
-    delete endpointSpec.kv;
-  }
+  delete endpointSpec.kv;
 }
 
 function validatePdRoleReplicas(
@@ -359,13 +339,15 @@ export function validateEndpointValues(
 
   const isPd = isPdStrategy(spec.strategy);
 
-  if (isPd) {
-    validatePdRoleReplicas(spec, errors, t);
-  } else if (spec.replicas?.num != null && spec.replicas.num < 1) {
+  if (spec.replicas?.num != null && spec.replicas.num < 1) {
     errors["spec.replicas.num"] = {
       type: "manual",
       message: t("endpoints.messages.replicasMustBeAtLeastOne"),
     };
+  }
+
+  if (isPd) {
+    validatePdRoleReplicas(spec, errors, t);
   }
 
   if (!isPd && !spec.deployment_options?.scheduler?.type) {
@@ -456,10 +438,4 @@ export const defaultEndpointSpec = {
     roles: "",
   },
   roles: roleDefaults,
-  kv: {
-    transfer: {
-      connector: "nixl",
-      extra: {},
-    },
-  },
 } as const;

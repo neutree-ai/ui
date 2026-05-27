@@ -254,13 +254,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (mode === "pd") {
       form.setValue("spec.strategy", "pd");
       form.setValue("spec.placement", { roles: "same-host" });
-      form.setValue("spec.replicas.num", 1);
+      if (!form.getValues("spec.replicas")) {
+        form.setValue("spec.replicas", { ...defaultEndpointSpec.replicas });
+      }
+      form.setValue("spec.kv", undefined);
 
       if (!form.getValues("spec.roles")?.length) {
         form.setValue("spec.roles", cloneDefaultRoles());
-      }
-      if (!form.getValues("spec.kv")) {
-        form.setValue("spec.kv", defaultEndpointSpec.kv);
       }
       setActiveRole("prefill");
       return;
@@ -703,6 +703,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             t("endpoints.deploymentModes.prefillDecode"),
           )}
         </div>
+        {isPdMode && (
+          <FormFieldGroup
+            {...form}
+            name="spec.replicas.num"
+            label={t("endpoints.fields.replicas")}
+            className="col-span-4"
+          >
+            <Input type="number" min={1} />
+          </FormFieldGroup>
+        )}
       </FormCardGrid>
     ),
     // Resource settings section - always visible
@@ -866,32 +876,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             {renderRoleTab("decode")}
           </Tabs>
         </div>
-      </FormCardGrid>
-    ),
-    kvFields: !isPdMode ? null : (
-      <FormCardGrid title={t("endpoints.sections.kvSettings")}>
-        <FormFieldGroup
-          {...form}
-          name="spec.kv.transfer.connector"
-          label={t("endpoints.fields.kvConnector")}
-          className="col-span-2"
-        >
-          <FormCombobox
-            placeholder={t("endpoints.placeholders.selectKvConnector")}
-            options={[
-              { label: "nixl", value: "nixl" },
-              { label: "mooncake", value: "mooncake" },
-            ]}
-          />
-        </FormFieldGroup>
-        <FormFieldGroup
-          {...form}
-          name="spec.kv.transfer.extra"
-          label={t("endpoints.fields.kvExtraOptions")}
-          className="col-span-4"
-        >
-          <VariablesInput schema={{}} />
-        </FormFieldGroup>
       </FormCardGrid>
     ),
     // Collapsible customize section for both create and edit modes

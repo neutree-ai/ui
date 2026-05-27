@@ -345,7 +345,7 @@ test.describe("endpoints", () => {
       ).toBeHidden();
     });
 
-    test("prefill/decode mode shows role and KV settings", async ({
+    test("prefill/decode mode shows role settings without KV settings", async ({
       endpoints,
     }) => {
       await endpoints.goToCreate();
@@ -355,12 +355,13 @@ test.describe("endpoints", () => {
         .click();
 
       await expect(endpoints.form.field("spec.resources.cpu")).toBeHidden();
+      await expect(endpoints.form.field("spec.replicas.num")).toBeVisible();
       await expect(
         endpoints.form.field("spec.roles.0.replicas.num"),
       ).toBeVisible();
       await expect(
         endpoints.form.field("spec.kv.transfer.connector"),
-      ).toBeVisible();
+      ).toBeHidden();
     });
 
     test("create form shows resource fields", { tag: "@C2613240" }, async ({

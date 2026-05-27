@@ -559,8 +559,6 @@
 			"replicas": "Replicas",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
-			"kvConnector": "Connector",
-			"kvExtraOptions": "Extra Options",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"accelerator": "Accelerator"
@@ -571,7 +569,6 @@
 			"resourceSettings": "Resource Settings",
 			"deploymentMode": "Deployment Mode",
 			"roleSettings": "Role Settings",
-			"kvSettings": "KV Settings",
 			"customizeSettings": "Customize Settings",
 			"configurationDetails": "Configuration Details",
 			"modelSettings": "Model Settings",
@@ -592,8 +589,7 @@
 			"selectVersion": "Select A Version",
 			"selectTaskType": "Select A Support Task Type",
 			"selectAccelerator": "Select An Accelerator",
-			"selectSchedulerType": "Select Scheduler Type",
-			"selectKvConnector": "Select Connector"
+			"selectSchedulerType": "Select Scheduler Type"
 		},
 		"options": {
 			"generic": "Generic"

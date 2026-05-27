@@ -11,7 +11,6 @@ export const EndpointsCreate = () => {
     deploymentModeFields,
     resourceFields,
     roleFields,
-    kvFields,
     customizeFields,
   } = useEndpointForm({
     action: "create",
@@ -26,7 +25,6 @@ export const EndpointsCreate = () => {
       {deploymentModeFields}
       {resourceFields}
       {roleFields}
-      {kvFields}
       {customizeFields}
     </ResourceForm>
   );

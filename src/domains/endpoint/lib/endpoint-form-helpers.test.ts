@@ -230,7 +230,7 @@ describe("transformEndpointValues", () => {
       ],
       kv: {
         transfer: {
-          connector: "mooncake",
+          connector: "nixl",
           extra: { buffer_size: "1073741824" },
         },
       },
@@ -242,7 +242,7 @@ describe("transformEndpointValues", () => {
       strategy: "pd",
       placement: { roles: "same-host" },
       resources: null,
-      replicas: { num: 1 },
+      replicas: { num: 3 },
       deployment_options: null,
       roles: [
         {
@@ -270,16 +270,11 @@ describe("transformEndpointValues", () => {
           env: { DECODE_ONLY: "true" },
         },
       ],
-      kv: {
-        transfer: {
-          connector: "mooncake",
-          extra: { buffer_size: "1073741824" },
-        },
-      },
+      kv: undefined,
     });
   });
 
-  it("includes the default nixl connector in prefill/decode payloads", () => {
+  it("removes KV settings from prefill/decode payloads", () => {
     const spec = {
       strategy: "pd",
       resources: null,
@@ -287,7 +282,7 @@ describe("transformEndpointValues", () => {
       roles: [],
       kv: {
         transfer: {
-          connector: defaultEndpointSpec.kv.transfer.connector,
+          connector: "nixl",
           extra: {},
         },
       },
@@ -295,11 +290,7 @@ describe("transformEndpointValues", () => {
 
     transformEndpointValues(spec);
 
-    expect(spec.kv).toEqual({
-      transfer: {
-        connector: "nixl",
-      },
-    });
+    expect(spec.kv).toBeUndefined();
   });
 
   it("removes prefill/decode-only fields from standard payloads", () => {
@@ -490,6 +481,31 @@ describe("validateEndpointValues", () => {
       "endpoints.messages.replicasMustBeAtLeastOne",
     );
   });
+
+  it("validates prefill/decode global replicas", () => {
+    const errors = validateEndpointValues(
+      {
+        strategy: "pd",
+        replicas: { num: 0 },
+        deployment_options: null,
+        roles: [
+          { name: "prefill", replicas: { num: 1 } },
+          { name: "decode", replicas: { num: 1 } },
+        ],
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(errors["spec.replicas.num"]?.message).toBe(
+      "endpoints.messages.replicasMustBeAtLeastOne",
+    );
+  });
 });
 
 describe("buildCatalogMergedSpec", () => {
@@ -509,7 +525,7 @@ describe("buildCatalogMergedSpec", () => {
     expect(result.strategy).toBe(defaultEndpointSpec.strategy);
     expect(result.placement).toEqual(defaultEndpointSpec.placement);
     expect(result.roles).toEqual(defaultEndpointSpec.roles);
-    expect(result.kv).toEqual(defaultEndpointSpec.kv);
+    expect(result.kv).toBeUndefined();
   });
 
   it("merges catalog values onto defaults", () => {

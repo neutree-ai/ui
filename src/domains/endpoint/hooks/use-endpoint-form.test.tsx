@@ -153,7 +153,6 @@ function CreateForm() {
         {result.deploymentModeFields}
         {result.resourceFields}
         {result.roleFields}
-        {result.kvFields}
         {result.customizeFields}
       </form>
     </FormProvider>
@@ -173,7 +172,6 @@ function EditForm() {
         {result.deploymentModeFields}
         {result.resourceFields}
         {result.roleFields}
-        {result.kvFields}
         {result.customizeFields}
       </form>
     </FormProvider>
@@ -317,24 +315,14 @@ describe("useEndpointForm", () => {
       expect(formInstance?.getValues("spec.placement.roles")).toBe("same-host");
       expect(formInstance?.getValues("spec.replicas.num")).toBe(1);
       expect(screen.queryByTestId("field-spec.resources.cpu")).toBeNull();
-      expect(screen.queryByTestId("field-spec.replicas.num")).toBeNull();
-      expect(screen.getByText("endpoints.fields.replicas")).toBeTruthy();
+      expect(screen.getByTestId("field-spec.replicas.num")).toBeTruthy();
       expect(
         screen.getByTestId("field-spec.roles.0.replicas.num"),
       ).toBeTruthy();
       expect(
-        screen.getByTestId("field-spec.kv.transfer.connector"),
-      ).toBeTruthy();
-      expect(formInstance?.getValues("spec.kv.transfer.connector")).toBe(
-        "nixl",
-      );
-
-      const connectorTrigger = screen
-        .getByTestId("field-spec.kv.transfer.connector")
-        .querySelector('button[role="combobox"]');
-      if (!connectorTrigger) throw new Error("connector trigger not found");
-      fireEvent.click(connectorTrigger);
-      expect(screen.getByRole("option", { name: "mooncake" })).toBeTruthy();
+        screen.queryByTestId("field-spec.kv.transfer.connector"),
+      ).toBeNull();
+      expect(formInstance?.getValues("spec.kv")).toBeUndefined();
     });
 
     it("shows independent decode role settings in prefill/decode mode", async () => {
