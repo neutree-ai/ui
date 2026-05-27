@@ -150,6 +150,7 @@ function CreateForm() {
         {result.templateFields}
         {result.modelFields}
         {result.engineFields}
+        {result.replicaFields}
         {result.deploymentModeFields}
         {result.resourceFields}
         {result.roleFields}
@@ -169,6 +170,7 @@ function EditForm() {
         {result.templateFields}
         {result.modelFields}
         {result.engineFields}
+        {result.replicaFields}
         {result.deploymentModeFields}
         {result.resourceFields}
         {result.roleFields}
@@ -323,6 +325,40 @@ describe("useEndpointForm", () => {
         screen.queryByTestId("field-spec.kv.transfer.connector"),
       ).toBeNull();
       expect(formInstance?.getValues("spec.kv")).toBeUndefined();
+    });
+
+    it("renders prefill/decode replicas in a standalone replica settings section", () => {
+      render(<CreateForm />);
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "endpoints.deploymentModes.prefillDecode",
+        }),
+      );
+
+      const engineSection = section("endpoints.sections.engineSettings");
+      const replicaSection = section("endpoints.sections.replicaSettings");
+      const deploymentSection = section("endpoints.sections.deploymentMode");
+
+      expect(
+        engineSection.compareDocumentPosition(replicaSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        replicaSection.compareDocumentPosition(deploymentSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        within(deploymentSection).queryByTestId("field-spec.replicas.num"),
+      ).toBeNull();
+      expect(
+        within(replicaSection).getByTestId("field-spec.replicas.num"),
+      ).toBeTruthy();
+      expect(
+        within(replicaSection).queryByTestId(
+          "field-spec.deployment_options.scheduler.type",
+        ),
+      ).toBeNull();
     });
 
     it("shows independent decode role settings in prefill/decode mode", async () => {

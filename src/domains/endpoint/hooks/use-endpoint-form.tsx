@@ -703,16 +703,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             t("endpoints.deploymentModes.prefillDecode"),
           )}
         </div>
-        {isPdMode && (
-          <FormFieldGroup
-            {...form}
-            name="spec.replicas.num"
-            label={t("endpoints.fields.replicas")}
-            className="col-span-4"
-          >
-            <Input type="number" min={1} />
-          </FormFieldGroup>
-        )}
+      </FormCardGrid>
+    ),
+    replicaFields: !isPdMode ? null : (
+      <FormCardGrid title={t("endpoints.sections.replicaSettings")}>
+        <FormFieldGroup
+          {...form}
+          name="spec.replicas.num"
+          label={t("endpoints.fields.replicas")}
+        >
+          <Input type="number" min={1} />
+        </FormFieldGroup>
       </FormCardGrid>
     ),
     // Resource settings section - always visible

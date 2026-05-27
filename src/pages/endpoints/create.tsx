@@ -9,6 +9,7 @@ export const EndpointsCreate = () => {
     modelFields,
     engineFields,
     deploymentModeFields,
+    replicaFields,
     resourceFields,
     roleFields,
     customizeFields,
@@ -22,6 +23,7 @@ export const EndpointsCreate = () => {
       {templateFields}
       {modelFields}
       {engineFields}
+      {replicaFields}
       {deploymentModeFields}
       {resourceFields}
       {roleFields}

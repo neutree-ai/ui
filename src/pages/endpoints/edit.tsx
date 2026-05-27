@@ -9,6 +9,7 @@ export const EndpointsEdit = () => {
     modelFields,
     engineFields,
     deploymentModeFields,
+    replicaFields,
     resourceFields,
     roleFields,
     customizeFields,
@@ -22,6 +23,7 @@ export const EndpointsEdit = () => {
       {templateFields}
       {modelFields}
       {engineFields}
+      {replicaFields}
       {deploymentModeFields}
       {resourceFields}
       {roleFields}
