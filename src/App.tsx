@@ -21,6 +21,7 @@ import "./variables.css";
 
 import {
   Activity,
+  BarChart3,
   BookOpen,
   Cpu,
   Database,
@@ -54,6 +55,11 @@ const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
 
 const AITracesList = lazy(() =>
   import("./pages/ai-traces/list").then((m) => ({ default: m.AITracesList })),
+);
+const ModelUsageList = lazy(() =>
+  import("./pages/model-usage/list").then((m) => ({
+    default: m.ModelUsageList,
+  })),
 );
 
 const ApiKeysList = lazy(() =>
@@ -362,6 +368,15 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "model_usage",
+    list: "/:workspace/model-usage",
+    meta: {
+      icon: <BarChart3 />,
+      workspaced: true,
+      parent: "observability",
+    },
+  },
+  {
     name: "access_control",
   },
   {
@@ -619,6 +634,9 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 </Route>
                 <Route path="/:workspace/ai-traces">
                   <Route index element={<AITracesList />} />
+                </Route>
+                <Route path="/:workspace/model-usage">
+                  <Route index element={<ModelUsageList />} />
                 </Route>
                 <Route path="/oem-configs">
                   <Route index element={<OemConfigShow />} />

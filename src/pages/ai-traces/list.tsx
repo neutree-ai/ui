@@ -220,6 +220,9 @@ export const AITracesList = () => {
               <TableHead className="w-[90px] text-right">
                 {t("ai_traces.columns.throughput")}
               </TableHead>
+              <TableHead className="w-[90px] text-right">
+                {t("ai_traces.columns.duration")}
+              </TableHead>
               <TableHead className="w-[110px]">
                 {t("ai_traces.columns.finishReason")}
               </TableHead>
@@ -228,7 +231,7 @@ export const AITracesList = () => {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-12">
+                <TableCell colSpan={10} className="text-center py-12">
                   <Loader className="mx-auto w-8 text-muted-foreground" />
                 </TableCell>
               </TableRow>
@@ -236,7 +239,7 @@ export const AITracesList = () => {
             {!isLoading && items.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={10}
                   className="text-center py-12 text-muted-foreground"
                 >
                   {t("ai_traces.empty")}
@@ -283,6 +286,9 @@ export const AITracesList = () => {
                 <TableCell className="text-right font-mono text-xs">
                   {formatThroughput(row.completion_tokens, row.duration_ms)}
                 </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatDuration(row.duration_ms)}
+                </TableCell>
                 <TableCell className="text-xs font-mono">
                   {row.finish_reason || (
                     <span className="text-muted-foreground">-</span>
@@ -328,6 +334,14 @@ function formatThroughput(
   }
   const tps = completionTokens / (durationMs / 1000);
   return `${tps.toFixed(1)} tok/s`;
+}
+
+// formatDuration renders the request duration in seconds with 2 decimals.
+function formatDuration(durationMs?: number): React.ReactNode {
+  if (durationMs == null) {
+    return <span className="text-muted-foreground">-</span>;
+  }
+  return `${(durationMs / 1000).toFixed(2)} s`;
 }
 
 const StatusBadge = ({ status }: { status: number }) => {

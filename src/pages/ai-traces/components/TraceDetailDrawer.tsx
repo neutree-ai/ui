@@ -2,6 +2,7 @@ import { useList } from "@refinedev/core";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Search as SearchIcon,
   WrapText,
@@ -141,6 +142,15 @@ const MetaGrid = ({ trace }: { trace: AITrace }) => {
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.responseModel")}>
         {trace.response_model || "-"}
+      </MetaRow>
+      <MetaRow label={t("ai_traces.detail.stream")}>
+        {trace.stream ? (
+          <Badge variant="secondary">{t("ai_traces.detail.streamOn")}</Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            {t("ai_traces.detail.streamOff")}
+          </span>
+        )}
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.tokens")}>
         <TokenSummary trace={trace} />
@@ -459,10 +469,32 @@ const MessageCard = ({
 }) => {
   const { t } = useTranslation();
   const [showRaw, setShowRaw] = useState(false);
+  const [open, setOpen] = useState(true);
   return (
-    <div className="rounded border bg-muted/40 overflow-hidden">
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className="rounded border bg-muted/40 overflow-hidden"
+    >
       <div className="border-b bg-muted px-3 py-1.5 flex items-center justify-between gap-2">
-        <RoleBadge role={msg.role} />
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 -ml-1 text-left"
+            aria-label={
+              open
+                ? t("ai_traces.detail.collapse")
+                : t("ai_traces.detail.expand")
+            }
+          >
+            {open ? (
+              <ChevronDown className="size-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="size-3.5 text-muted-foreground" />
+            )}
+            <RoleBadge role={msg.role} />
+          </button>
+        </CollapsibleTrigger>
         {msg.raw ? (
           <button
             type="button"
@@ -475,22 +507,24 @@ const MessageCard = ({
           </button>
         ) : null}
       </div>
-      <div className="space-y-2 p-3">
-        {blocks}
-        {showRaw && msg.raw ? (
-          <pre
-            className={cn(
-              "text-[11px] bg-background border rounded p-2 font-mono mt-2",
-              wrap
-                ? "whitespace-pre-wrap break-words"
-                : "whitespace-pre overflow-x-auto",
-            )}
-          >
-            {msg.raw}
-          </pre>
-        ) : null}
-      </div>
-    </div>
+      <CollapsibleContent>
+        <div className="space-y-2 p-3">
+          {blocks}
+          {showRaw && msg.raw ? (
+            <pre
+              className={cn(
+                "text-[11px] bg-background border rounded p-2 font-mono mt-2",
+                wrap
+                  ? "whitespace-pre-wrap break-words"
+                  : "whitespace-pre overflow-x-auto",
+              )}
+            >
+              {msg.raw}
+            </pre>
+          ) : null}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
@@ -531,31 +565,91 @@ const BlockView = ({
             : block.kind === "text"
               ? "ai_traces.detail.block.text"
               : "ai_traces.detail.block.unknown";
+  const label = `${t(labelKey)}${block.label ? `: ${block.label}` : ""}`;
+
+  const body = (
+    <pre
+      className={cn(
+        "text-xs font-mono leading-relaxed",
+        wrap
+          ? "whitespace-pre-wrap break-words"
+          : "whitespace-pre overflow-x-auto",
+      )}
+    >
+      <Highlighted text={block.text} query={query} activeMatch={activeMatch} />
+    </pre>
+  );
+
+  // tool_use / tool_result / thinking get a distinct background and their own
+  // collapse toggle so they stand out from plain message text.
+  const accent = BLOCK_ACCENT[block.kind];
+  if (accent) {
+    return (
+      <AccentBlock accent={accent} label={label}>
+        {body}
+      </AccentBlock>
+    );
+  }
 
   return (
     <div className="space-y-1">
       {block.kind !== "text" && (
         <div className="text-[11px] font-medium text-muted-foreground">
-          {t(labelKey)}
-          {block.label ? `: ${block.label}` : ""}
+          {label}
         </div>
       )}
-      <pre
-        className={cn(
-          "text-xs font-mono leading-relaxed",
-          wrap
-            ? "whitespace-pre-wrap break-words"
-            : "whitespace-pre overflow-x-auto",
-        )}
-      >
-        <Highlighted
-          text={block.text}
-          query={query}
-          activeMatch={activeMatch}
-        />
-      </pre>
+      {body}
     </div>
   );
+};
+
+// AccentBlock wraps a tool_use / tool_result / thinking block in a tinted,
+// individually collapsible card. Owning its own open state keeps the collapse
+// hook out of plain text/image blocks that never render a toggle.
+const AccentBlock = ({
+  accent,
+  label,
+  children,
+}: {
+  accent: string;
+  label: string;
+  children: React.ReactNode;
+}) => {
+  const [open, setOpen] = useState(true);
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className={cn("rounded border", accent)}
+    >
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="flex w-full items-center gap-1 px-2 py-1 text-[11px] font-medium text-muted-foreground"
+        >
+          {open ? (
+            <ChevronDown className="size-3" />
+          ) : (
+            <ChevronRight className="size-3" />
+          )}
+          {label}
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="px-2 pb-2">{children}</CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+// Background accents for the content-block kinds that warrant visual
+// separation from ordinary message text. Tailwind classes include dark-mode
+// variants so the cards read well under either theme.
+const BLOCK_ACCENT: Record<string, string> = {
+  thinking:
+    "bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:border-purple-900",
+  tool_use:
+    "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-900",
+  tool_result:
+    "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900",
 };
 
 /** Splits `text` on `query` and wraps every occurrence in a <mark>. */

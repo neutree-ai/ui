@@ -15,6 +15,7 @@ export type AITrace = {
   completion_tokens?: number;
   total_tokens?: number;
   finish_reason?: string;
+  stream?: boolean;
   user_agent?: string;
   duration_ms?: number;
   request_body?: string;

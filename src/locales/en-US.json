@@ -903,6 +903,7 @@
 			"apiKey": "API key",
 			"tokens": "Tokens",
 			"throughput": "Tok/s",
+			"duration": "Duration",
 			"finishReason": "Finish"
 		},
 		"detail": {
@@ -913,6 +914,9 @@
 			"workspace": "Workspace",
 			"requestModel": "Request model",
 			"responseModel": "Response model",
+			"stream": "Stream",
+			"streamOn": "Streaming",
+			"streamOff": "Non-streaming",
 			"tokens": "Tokens",
 			"tokenParts": {
 				"prompt": "prompt",
@@ -949,6 +953,31 @@
 				"image": "Image",
 				"thinking": "Thinking",
 				"unknown": "Content block"
+			}
+		}
+	},
+	"model_usage": {
+		"title": "Model Usage",
+		"empty": "No usage in the selected window.",
+		"apiKey": "API key",
+		"model": "Model",
+		"promptTokens": "Prompt",
+		"completionTokens": "Completion",
+		"totalTokens": "Total",
+		"byApiKey": "By API key",
+		"byModel": "By model",
+		"range": {
+			"7": "Last 7 days",
+			"30": "Last 30 days",
+			"90": "Last 90 days"
+		},
+		"daily": {
+			"title": "Daily tokens",
+			"totalTokens": "{{total}} total",
+			"tooltip": {
+				"prompt": "Prompt",
+				"completion": "Completion",
+				"total": "Total"
 			}
 		}
 	},
