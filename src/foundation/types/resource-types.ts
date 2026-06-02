@@ -8,6 +8,18 @@ type AcceleratorType = string;
  */
 type AcceleratorProduct = string;
 
+type AcceleratorProductResources = {
+  quantity: number;
+  virtualization?: {
+    memory_mib?: number | null;
+    core_units?: number | null;
+  } | null;
+};
+
+export type AcceleratorProductMetadata = {
+  memory_total_mib?: number | null;
+};
+
 /**
  * AcceleratorGroup represents accelerator resources grouped by type.
  * It supports heterogeneous clusters where multiple accelerator types can coexist.
@@ -26,6 +38,12 @@ type AcceleratorGroup = {
    * Value: number of accelerators of that product model
    */
   product_groups: Record<AcceleratorProduct, number> | null;
+
+  /**
+   * Products contains product-level accelerator resources. New code should prefer
+   * this over product_groups because it can carry virtualization pools.
+   */
+  products?: Record<AcceleratorProduct, AcceleratorProductResources> | null;
 };
 
 /**
@@ -76,6 +94,11 @@ export type ResourceStatus = {
  * This follows Kubernetes Node Status pattern for consistency and clarity.
  */
 export type ClusterResourceInfo = ResourceStatus & {
+  accelerator_metadata?: Record<
+    AcceleratorType,
+    { products?: Record<AcceleratorProduct, AcceleratorProductMetadata> | null }
+  > | null;
+
   /**
    * NodeResources contains per-node resource information.
    * Key: node identifier (IP address for SSH clusters, node name for Kubernetes clusters).

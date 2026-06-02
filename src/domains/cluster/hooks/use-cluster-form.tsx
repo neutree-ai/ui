@@ -2,6 +2,7 @@ import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelCacheFields } from "@/domains/cluster/components/ModelCacheFields";
@@ -211,6 +212,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   },
                   model_caches: [],
                 });
+                form.setValue("spec.accelerator_virtualization", undefined);
               } else if (value === "kubernetes") {
                 form.setValue("spec.config", {
                   kubernetes_config: {
@@ -227,6 +229,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   },
                   model_caches: [],
                 });
+                form.setValue("spec.accelerator_virtualization.enabled", false);
               }
             }}
             disabled={isEdit}
@@ -303,6 +306,30 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("common.fields.memory")}
         >
           <Input />
+        </FormFieldGroup>
+      </FormCardGrid>
+    ) : null,
+    acceleratorVirtualizationFields: isKubernetes ? (
+      <FormCardGrid title={t("clusters.sections.acceleratorVirtualization")}>
+        <FormFieldGroup
+          {...form}
+          name="spec.accelerator_virtualization.enabled"
+          label={t("clusters.fields.acceleratorVirtualization")}
+          description={t("clusters.descriptions.acceleratorVirtualization")}
+          isCheckbox
+          className="col-span-4"
+        >
+          <Checkbox
+            checked={
+              form.watch("spec.accelerator_virtualization.enabled") === true
+            }
+            onCheckedChange={(checked) =>
+              form.setValue(
+                "spec.accelerator_virtualization.enabled",
+                checked === true,
+              )
+            }
+          />
         </FormFieldGroup>
       </FormCardGrid>
     ) : null,

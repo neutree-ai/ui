@@ -40,6 +40,10 @@ export function transformClusterValues(
     );
   }
 
+  if (values.spec.type !== "kubernetes") {
+    delete transformed.spec.accelerator_virtualization;
+  }
+
   // In edit mode, remove empty sensitive fields to avoid overwriting backend config
   if (isEdit) {
     if (config.ssh_config?.auth && !config.ssh_config.auth.ssh_private_key) {

@@ -12,6 +12,7 @@ export const ClustersEdit = () => {
     typeFields,
     providerFields,
     routerFields,
+    acceleratorVirtualizationFields,
     modelCacheFields,
     authFields,
   } = useClusterForm({ action: "edit" });
@@ -23,6 +24,7 @@ export const ClustersEdit = () => {
       {versionFields}
       {providerFields}
       {routerFields}
+      {acceleratorVirtualizationFields}
       {modelCacheFields}
       {authFields}
     </ResourceForm>

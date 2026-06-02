@@ -194,6 +194,33 @@ describe("transformEndpointValues", () => {
     const spec = { resources: { cpu: 1 }, replicas: null };
     expect(() => transformEndpointValues(spec)).not.toThrow();
   });
+
+  it("normalizes vGPU virtualization before submission", () => {
+    const spec = {
+      resources: {
+        cpu: 4,
+        memory: 8,
+        gpu: 1,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            memory_mib: "10240",
+            memory_percent: "",
+            core_percent: "30",
+          },
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.accelerator.virtualization).toEqual({
+      memory_mib: 10240,
+      core_percent: 30,
+    });
+  });
 });
 
 describe("validateEndpointValues", () => {
@@ -325,6 +352,70 @@ describe("validateEndpointValues", () => {
       mockT,
     );
     expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
+  });
+
+  it("returns error when vGPU memory_mib and memory_percent are both set", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 10240,
+              memory_percent: 50,
+              core_percent: 30,
+            },
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(
+      errors["spec.resources.accelerator.virtualization.memory_percent"]
+        ?.message,
+    ).toBe("endpoints.messages.vgpuMemoryMutuallyExclusive");
+  });
+
+  it("returns error when vGPU percentages are out of range", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_percent: 101,
+              core_percent: 0,
+            },
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(
+      errors["spec.resources.accelerator.virtualization.memory_percent"]
+        ?.message,
+    ).toBe("endpoints.messages.vgpuMemoryPercentRange");
+    expect(
+      errors["spec.resources.accelerator.virtualization.core_percent"]?.message,
+    ).toBe("endpoints.messages.vgpuCorePercentRange");
   });
 });
 

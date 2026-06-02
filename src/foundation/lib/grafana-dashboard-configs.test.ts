@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   GRAFANA_VAR_ALL,
+  getClusterVgpuDashboardProps,
   getEndpointDashboardProps,
+  getEndpointVgpuDashboardProps,
   getVllmDashboardProps,
 } from "./grafana-dashboard-configs";
 
@@ -66,5 +68,46 @@ describe("getVllmDashboardProps", () => {
     expect(props.dashboardConfig.dashboardId).toBe("vllm");
     expect(props.dashboardConfig.variables!.Application).toBe("my-endpoint");
     expect(props.dashboardConfig.variables!.Cluster).toBe("my-cluster");
+  });
+});
+
+describe("getClusterVgpuDashboardProps", () => {
+  it("sets the vGPU cluster dashboard ID and variables", () => {
+    const props = getClusterVgpuDashboardProps("http://grafana", "cluster-a");
+
+    expect(props.dashboardConfig.dashboardId).toBe(
+      "hami-vgpu-cluster-overview",
+    );
+    expect(props.dashboardConfig.variables).toMatchObject({
+      datasource: "neutree-cluster",
+      Cluster: "cluster-a",
+      node: GRAFANA_VAR_ALL,
+      product: GRAFANA_VAR_ALL,
+    });
+  });
+});
+
+describe("getEndpointVgpuDashboardProps", () => {
+  it("sets endpoint monitor context variables", () => {
+    const props = getEndpointVgpuDashboardProps("http://grafana", {
+      cluster: "cluster-a",
+      workspace: "default",
+      endpoint: "ep-a",
+      namespace: "ns-a",
+      pod: "ep-a-.*",
+    });
+
+    expect(props.dashboardConfig.dashboardId).toBe("hami-vgpu-endpoint");
+    expect(props.dashboardConfig.variables).toMatchObject({
+      datasource: "neutree-cluster",
+      Cluster: "cluster-a",
+      workspace: "default",
+      endpoint: "ep-a",
+      namespace: "ns-a",
+      pod: "ep-a-.*",
+      node: GRAFANA_VAR_ALL,
+      container: GRAFANA_VAR_ALL,
+      device_uuid: GRAFANA_VAR_ALL,
+    });
   });
 });

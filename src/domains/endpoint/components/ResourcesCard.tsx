@@ -1,8 +1,12 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  getVgpuMemoryDisplay,
+  hasVgpuResources,
+} from "@/domains/endpoint/lib/vgpu";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
-import { useTranslation } from "react-i18next";
 
 interface ResourcesCardProps {
   resources: ResourceSpec | null;
@@ -23,6 +27,11 @@ export default function ResourcesCard({
 
   const hasAccelerator = Boolean(
     resources?.accelerator?.type && resources?.accelerator?.product,
+  );
+  const isVgpu = hasVgpuResources(resources);
+  const vgpuMemory = getVgpuMemoryDisplay(
+    resources?.accelerator?.virtualization,
+    undefined,
   );
 
   return (
@@ -55,6 +64,16 @@ export default function ResourcesCard({
             <ShowPage.Row title={t("common.fields.acceleratorProduct")}>
               {resources.accelerator.product}
             </ShowPage.Row>
+            {isVgpu && (
+              <>
+                <ShowPage.Row title={t("endpoints.fields.requestedVgpuMemory")}>
+                  {vgpuMemory ?? "-"}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("endpoints.fields.vgpuCorePercent")}>
+                  {resources.accelerator.virtualization?.core_percent ?? "-"}%
+                </ShowPage.Row>
+              </>
+            )}
           </div>
         )}
       </CardContent>

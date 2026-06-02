@@ -31,6 +31,8 @@ import {
   type EndpointMonitorPanelType,
   useEndpointMonitorPanels,
 } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
+import { useEndpointVgpuMonitorContext } from "@/domains/endpoint/hooks/use-endpoint-vgpu-monitor-context";
+import { hasVgpuResources } from "@/domains/endpoint/lib/vgpu";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
 import type { Engine } from "@/domains/engine/types";
@@ -44,6 +46,7 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   GRAFANA_VAR_ALL,
   getEndpointDashboardProps,
+  getEndpointVgpuDashboardProps,
   getSglangDashboardProps,
   getVllmDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
@@ -146,6 +149,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const clusterType = clusterData?.data?.[0]?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
+  const endpointHasVgpuResources = hasVgpuResources(record?.spec.resources);
 
   const {
     panels,
@@ -156,7 +160,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   } = useEndpointMonitorPanels({
     clusterType,
     engineType: record?.spec.engine.engine,
+    hasVgpuResources: endpointHasVgpuResources,
   });
+
+  const {
+    data: vgpuMonitorContextData,
+    isLoading: isLoadingVgpuMonitorContext,
+    error: vgpuMonitorContextError,
+  } = useEndpointVgpuMonitorContext(record, endpointHasVgpuResources);
 
   const { deployments } = useEndpointLogSources(record ?? null);
   const monitorReplicas = useMemo(
@@ -336,6 +347,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                                 {t("endpoints.monitor.endpointMetrics")}
                               </SelectItem>
                             )}
+                            {panels.includes("vgpu") && (
+                              <SelectItem value="vgpu">
+                                {t("endpoints.monitor.vgpuMetrics")}
+                              </SelectItem>
+                            )}
                             {panels.includes("vllm") && (
                               <SelectItem value="vllm">
                                 {t("endpoints.monitor.vllmMetrics")}
@@ -351,9 +367,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                         <p className="text-sm text-muted-foreground">
                           {selectedPanel === "endpoint"
                             ? t("endpoints.monitor.endpointDescription")
-                            : selectedPanel === "sglang"
-                              ? t("endpoints.monitor.sglangDescription")
-                              : t("endpoints.monitor.vllmDescription")}
+                            : selectedPanel === "vgpu"
+                              ? t("endpoints.monitor.vgpuDescription")
+                              : selectedPanel === "sglang"
+                                ? t("endpoints.monitor.sglangDescription")
+                                : t("endpoints.monitor.vllmDescription")}
                         </p>
                       </>
                     )}
@@ -423,6 +441,51 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   className="flex-1"
                   hideVariables
                 />
+              ) : selectedPanel === "vgpu" ? (
+                (() => {
+                  const context = vgpuMonitorContextData?.data;
+                  const namespace = context?.namespace;
+                  const pod = context?.pod_regex;
+                  const clusterName = context?.cluster || record.spec.cluster;
+                  const workspaceName =
+                    context?.workspace || record.metadata.workspace || "";
+                  const endpointName =
+                    context?.endpoint || record.metadata.name;
+                  if (isLoadingVgpuMonitorContext) {
+                    return <Loader className="h-4 text-primary" />;
+                  }
+                  if (vgpuMonitorContextError) {
+                    return (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground">
+                          {t("endpoints.messages.vgpuMonitorContextFailed")}
+                        </p>
+                      </div>
+                    );
+                  }
+                  if (!namespace || !pod) {
+                    return (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground">
+                          {t("endpoints.messages.noRunningVgpuPods")}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <GrafanaDashboard
+                      {...getEndpointVgpuDashboardProps(grafanaUrl, {
+                        cluster: clusterName,
+                        workspace: workspaceName,
+                        endpoint: endpointName,
+                        namespace,
+                        pod,
+                      })}
+                      className="flex-1"
+                      hideVariables
+                    />
+                  );
+                })()
               ) : null}
             </div>
           ) : (

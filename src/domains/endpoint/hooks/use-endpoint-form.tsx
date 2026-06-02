@@ -1,7 +1,7 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,20 +23,29 @@ import {
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
+import {
+  getEffectiveVgpuMemoryMiB,
+  getVgpuMemoryDisplay,
+} from "@/domains/endpoint/lib/vgpu";
 import type {
   Endpoint,
   EndpointClusterRef,
   EndpointEngineRef,
   EndpointModelCatalogRef,
   EndpointModelRegistryRef,
+  ResourceSpec,
 } from "@/domains/endpoint/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { FormSelect } from "@/foundation/components/FormSelect";
+import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
+
+type VgpuMemoryMode = "mib" | "gib" | "percent";
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -44,6 +53,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
+  const [vgpuMemoryMode, setVgpuMemoryMode] = useState<VgpuMemoryMode>("mib");
 
   const form = useForm<Endpoint>({
     mode: "all",
@@ -127,8 +137,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const memoryUsage = form.watch("spec.resources.memory");
 
   const {
+    selectedCluster,
     clusterResources,
     acceleratorOptions,
+    selectedAcceleratorOption,
     maxAvailable,
     dynamicAvailability,
     gpuStep,
@@ -143,6 +155,83 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const isEdit = action === "edit";
+
+  const selectedVirtualization = selectedAccelerator?.virtualization;
+  const isSelectedClusterVgpuEnabled =
+    selectedCluster?.spec.type === "kubernetes" &&
+    selectedCluster.spec.accelerator_virtualization?.enabled === true;
+  const hasResolvedClusterSelection = Boolean(
+    currentCluster && selectedCluster,
+  );
+  const showVgpuFields = Boolean(
+    isSelectedClusterVgpuEnabled &&
+      selectedAccelerator?.type &&
+      selectedAccelerator?.product,
+  );
+  const selectedMemoryTotalMiB = selectedAcceleratorOption?.memoryTotalMiB;
+  const effectiveVgpuMemoryMiB = getEffectiveVgpuMemoryMiB(
+    selectedVirtualization,
+    selectedMemoryTotalMiB,
+  );
+  const vgpuMemoryDisplay = getVgpuMemoryDisplay(
+    selectedVirtualization,
+    selectedMemoryTotalMiB,
+  );
+  const vgpuMemoryInputValue =
+    vgpuMemoryMode === "percent"
+      ? selectedVirtualization?.memory_percent || 0
+      : vgpuMemoryMode === "gib"
+        ? Number(selectedVirtualization?.memory_mib || 0) / 1024
+        : selectedVirtualization?.memory_mib || 0;
+  const vgpuMemoryInputMax =
+    vgpuMemoryMode === "percent"
+      ? 100
+      : vgpuMemoryMode === "gib"
+        ? selectedMemoryTotalMiB
+          ? selectedMemoryTotalMiB / 1024
+          : undefined
+        : selectedMemoryTotalMiB || undefined;
+
+  useEffect(() => {
+    if (
+      hasResolvedClusterSelection &&
+      !isSelectedClusterVgpuEnabled &&
+      selectedVirtualization
+    ) {
+      form.setValue("spec.resources.accelerator.virtualization", undefined, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [
+    form,
+    hasResolvedClusterSelection,
+    isSelectedClusterVgpuEnabled,
+    selectedVirtualization,
+  ]);
+
+  const setVgpuMemoryValue = (value: number) => {
+    if (vgpuMemoryMode === "percent") {
+      form.setValue(
+        "spec.resources.accelerator.virtualization.memory_percent",
+        value,
+      );
+      form.setValue(
+        "spec.resources.accelerator.virtualization.memory_mib",
+        undefined,
+      );
+      return;
+    }
+
+    form.setValue(
+      "spec.resources.accelerator.virtualization.memory_mib",
+      vgpuMemoryMode === "gib" ? Math.ceil(value * 1024) : value,
+    );
+    form.setValue(
+      "spec.resources.accelerator.virtualization.memory_percent",
+      undefined,
+    );
+  };
 
   const effectiveModelSearch = modelSearch || "";
 
@@ -374,10 +463,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 (opt) => opt.value === value,
               );
               if (selectedOption) {
+                const currentVirtualization = form.getValues(
+                  "spec.resources.accelerator.virtualization",
+                );
                 form.setValue("spec.resources.accelerator", {
                   type: selectedOption.type,
                   product: selectedOption.product,
-                });
+                  ...(isSelectedClusterVgpuEnabled
+                    ? { virtualization: currentVirtualization || {} }
+                    : {}),
+                } satisfies ResourceSpec["accelerator"]);
               } else {
                 form.setValue("spec.resources.accelerator", null);
               }
@@ -424,6 +519,117 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               })()}
             </FormFieldGroup>
           )}
+
+        {showVgpuFields && (
+          <>
+            <FormFieldGroup
+              {...form}
+              name="-vgpu-memory-mode"
+              label={t("endpoints.fields.vgpuMemoryMode")}
+              className="col-span-1"
+            >
+              <FormSelect
+                value={vgpuMemoryMode}
+                onChange={(value) => {
+                  const nextMode = value as VgpuMemoryMode;
+                  setVgpuMemoryMode(nextMode);
+                  if (nextMode === "percent") {
+                    form.setValue(
+                      "spec.resources.accelerator.virtualization.memory_mib",
+                      undefined,
+                    );
+                  } else {
+                    const effective = getEffectiveVgpuMemoryMiB(
+                      selectedVirtualization,
+                      selectedMemoryTotalMiB,
+                    );
+                    form.setValue(
+                      "spec.resources.accelerator.virtualization.memory_mib",
+                      effective ?? undefined,
+                    );
+                    form.setValue(
+                      "spec.resources.accelerator.virtualization.memory_percent",
+                      undefined,
+                    );
+                  }
+                }}
+                options={[
+                  { label: t("endpoints.options.mib"), value: "mib" },
+                  { label: t("endpoints.options.gib"), value: "gib" },
+                  { label: t("endpoints.options.percent"), value: "percent" },
+                ]}
+              />
+            </FormFieldGroup>
+
+            <FormFieldGroup
+              {...form}
+              name={
+                vgpuMemoryMode === "percent"
+                  ? "spec.resources.accelerator.virtualization.memory_percent"
+                  : "spec.resources.accelerator.virtualization.memory_mib"
+              }
+              label={
+                vgpuMemoryMode === "percent"
+                  ? t("endpoints.fields.vgpuMemoryPercent")
+                  : t("endpoints.fields.vgpuMemory")
+              }
+              className="col-span-1"
+            >
+              <NumberInput
+                value={vgpuMemoryInputValue}
+                onValueChange={setVgpuMemoryValue}
+                min={1}
+                max={vgpuMemoryInputMax}
+                step={vgpuMemoryMode === "gib" ? 0.5 : 1}
+              />
+            </FormFieldGroup>
+
+            <FormFieldGroup
+              {...form}
+              name="spec.resources.accelerator.virtualization.core_percent"
+              label={t("endpoints.fields.vgpuCorePercent")}
+              className="col-span-1"
+            >
+              <NumberInput
+                value={selectedVirtualization?.core_percent || 0}
+                onValueChange={(value) =>
+                  form.setValue(
+                    "spec.resources.accelerator.virtualization.core_percent",
+                    value,
+                  )
+                }
+                min={1}
+                max={100}
+                step={1}
+              />
+            </FormFieldGroup>
+
+            <div className="col-span-4 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                <span>
+                  {t("endpoints.fields.singleCardMemory")}:{" "}
+                  {selectedMemoryTotalMiB
+                    ? `${selectedMemoryTotalMiB} MiB`
+                    : "-"}
+                </span>
+                <span>
+                  {t("endpoints.fields.requestedVgpuMemory")}:{" "}
+                  {vgpuMemoryDisplay ?? "-"}
+                </span>
+                <span>
+                  {t("endpoints.fields.effectiveVgpuMemory")}:{" "}
+                  {effectiveVgpuMemoryMiB
+                    ? `${effectiveVgpuMemoryMiB} MiB`
+                    : "-"}
+                </span>
+                <span>
+                  {t("endpoints.fields.vgpuCorePercent")}:{" "}
+                  {selectedVirtualization?.core_percent ?? "-"}%
+                </span>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Cluster status indicator */}
         {currentCluster && !clusterResources && (

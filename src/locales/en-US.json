@@ -50,7 +50,9 @@
 			"rayDashboard": "Ray Dashboard"
 		},
 		"options": {
-			"none": "None"
+			"none": "None",
+			"enabled": "Enabled",
+			"disabled": "Disabled"
 		},
 		"resourceResult": {
 			"created": "Successfully created",
@@ -377,6 +379,12 @@
 			"usedSlashTotal": "used / total",
 			"kubeconfig": "Kubeconfig",
 			"acceleratorCount": "Accelerator Count",
+			"acceleratorVirtualization": "Accelerator Virtualization",
+			"hamiStatus": "HAMi Status",
+			"physicalGpu": "Physical GPU",
+			"singleCardMemory": "Single-card Memory",
+			"vgpuMemoryPool": "vGPU Memory Pool",
+			"vgpuCorePool": "vGPU Core Pool",
 			"replicas": "Replicas",
 			"currentVersion": "Current Version",
 			"targetVersion": "Target Version",
@@ -410,6 +418,7 @@
 			"headNode": "Head Node",
 			"workerNode": "Worker Node",
 			"router": "Router",
+			"acceleratorVirtualization": "Accelerator Virtualization",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
 			"nodes": "Nodes"
@@ -452,11 +461,15 @@
 			"upgradeWarningK8s": "Kubernetes clusters use rolling updates with zero downtime.",
 			"newVersionAvailable": "New version available"
 		},
+		"descriptions": {
+			"acceleratorVirtualization": "Enable accelerator virtualization for Kubernetes clusters."
+		},
 		"monitor": {
 			"rayMetrics": "Ray Metrics",
 			"routerMetrics": "Router Metrics",
 			"nodeMetrics": "Node Metrics",
-			"gpuMetrics": "GPU Metrics"
+			"gpuMetrics": "GPU Metrics",
+			"vgpuMetrics": "vGPU Metrics"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
@@ -567,7 +580,14 @@
 			"engineVariables": "Engine Variables",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
-			"accelerator": "Accelerator"
+			"accelerator": "Accelerator",
+			"vgpuMemoryMode": "vGPU Memory Mode",
+			"vgpuMemory": "vGPU Memory",
+			"vgpuMemoryPercent": "vGPU Memory Percent",
+			"vgpuCorePercent": "vGPU Core Percent",
+			"singleCardMemory": "Single-card Memory",
+			"requestedVgpuMemory": "Requested vGPU Memory",
+			"effectiveVgpuMemory": "Effective vGPU Memory"
 		},
 		"sections": {
 			"templateSelection": "Template Selection",
@@ -596,7 +616,10 @@
 			"selectSchedulerType": "Select Scheduler Type"
 		},
 		"options": {
-			"generic": "Generic"
+			"generic": "Generic",
+			"mib": "MiB",
+			"gib": "GiB",
+			"percent": "%"
 		},
 		"actions": {
 			"pause": "Pause",
@@ -615,7 +638,13 @@
 			"resumeFailed": "Failed to resume endpoint",
 			"noAcceleratorsAvailable": "No accelerators available in this cluster",
 			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
-			"schedulerTypeRequired": "Scheduler type is required"
+			"schedulerTypeRequired": "Scheduler type is required",
+			"vgpuMemoryMutuallyExclusive": "Use either vGPU memory amount or memory percent, not both",
+			"vgpuMemoryMiBPositive": "vGPU memory must be greater than 0",
+			"vgpuMemoryPercentRange": "vGPU memory percent must be between 1 and 100",
+			"vgpuCorePercentRange": "vGPU core percent must be between 1 and 100",
+			"vgpuMonitorContextFailed": "Failed to load vGPU monitor context",
+			"noRunningVgpuPods": "No running vGPU pods"
 		},
 		"tabs": {
 			"playground": "Playground"
@@ -624,7 +653,9 @@
 			"endpointMetrics": "Ray Metrics",
 			"vllmMetrics": "vLLM Engine Metrics",
 			"sglangMetrics": "SGLang Engine Metrics",
+			"vgpuMetrics": "vGPU Metrics",
 			"endpointDescription": "Ray Serve deployment metrics including requests, latency, and replica status",
+			"vgpuDescription": "HAMi vGPU allocation and runtime metrics scoped to this endpoint",
 			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization",
 			"sglangDescription": "SGLang engine specific metrics including TTFT, cache hit rate, queue depth, and throughput"
 		},

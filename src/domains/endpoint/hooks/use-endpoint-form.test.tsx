@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -65,9 +71,20 @@ vi.mock("@/foundation/components/VariablesInput", () => ({
 }));
 
 import { useCustom, useSelect } from "@refinedev/core";
+import type { EndpointClusterRef } from "@/domains/endpoint/types";
 import { useEndpointForm } from "./use-endpoint-form";
 
 // --- Fixtures ---
+
+const metadata = (name: string) => ({
+  name,
+  workspace: "default",
+  deletion_timestamp: null,
+  creation_timestamp: "",
+  update_timestamp: "",
+  labels: {},
+  annotations: {},
+});
 
 const catalogA = {
   id: 1,
@@ -111,28 +128,34 @@ const catalogB = {
 
 // --- Mocks setup ---
 
+const plainKubernetesCluster = {
+  metadata: metadata("plain-k8s"),
+  spec: { type: "kubernetes" },
+  status: { resource_info: null },
+} satisfies EndpointClusterRef;
+
 const defaultSelectResult = {
   query: { data: { data: [] }, isLoading: false },
 };
 
-function setupMocks(catalogs = [catalogA, catalogB]) {
-  vi.mocked(useSelect).mockImplementation(
-    // biome-ignore lint/suspicious/noExplicitAny: mock implementation doesn't need full Refine types
-    ((opts: { resource: string }) => {
-      if (opts.resource === "model_catalogs") {
-        return { query: { data: { data: catalogs }, isLoading: false } };
-      }
-      return defaultSelectResult;
-    }) as any,
-  );
+function setupMocks(
+  catalogs = [catalogA, catalogB],
+  clusters: EndpointClusterRef[] = [],
+) {
+  vi.mocked(useSelect).mockImplementation(((opts: { resource: string }) => {
+    if (opts.resource === "model_catalogs") {
+      return { query: { data: { data: catalogs }, isLoading: false } };
+    }
+    if (opts.resource === "clusters") {
+      return { query: { data: { data: clusters }, isLoading: false } };
+    }
+    return defaultSelectResult;
+  }) as unknown as typeof useSelect);
 
-  vi.mocked(useCustom).mockReturnValue(
-    // biome-ignore lint/suspicious/noExplicitAny: mock return doesn't need full Refine types
-    {
-      data: null,
-      isFetching: false,
-    } as any,
-  );
+  vi.mocked(useCustom).mockReturnValue({
+    data: null,
+    isFetching: false,
+  } as unknown as ReturnType<typeof useCustom>);
 }
 
 // --- Test components ---
@@ -212,6 +235,33 @@ describe("useEndpointForm", () => {
         .getByTestId("field-metadata.name")
         .querySelector("input");
       expect(input?.disabled).toBe(true);
+    });
+  });
+
+  describe("vGPU fields", () => {
+    it("clears stale accelerator virtualization when the selected cluster is not vGPU-enabled", async () => {
+      setupMocks([catalogA, catalogB], [plainKubernetesCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "plain-k8s");
+        formInstance?.setValue("spec.resources.accelerator", {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            memory_mib: 10240,
+            core_percent: 30,
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toBeUndefined();
+      });
     });
   });
 

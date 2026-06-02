@@ -21,6 +21,9 @@ type AcceleratorOption = {
   product: string; // Product name: "Tesla-V100"
   available: number; // Cluster-level available (for reference)
   total: number; // Cluster-level total (for reference)
+  memoryTotalMiB?: number | null;
+  virtualizationMemoryMiB?: number | null;
+  virtualizationCoreUnits?: number | null;
 };
 
 /**
@@ -85,7 +88,30 @@ export function parseClusterResources(
 
       const translatedType = translateAcceleratorType(type);
 
-      if (allocatableGroup.product_groups) {
+      const metadataProducts =
+        resourceInfo.accelerator_metadata?.[type]?.products ?? {};
+
+      if (allocatableGroup.products) {
+        for (const [product, productResources] of Object.entries(
+          allocatableGroup.products,
+        )) {
+          const availableProduct = availableGroup?.products?.[product];
+
+          acceleratorOptions.push({
+            label: `${translatedType} - ${product}`,
+            value: `${type}:${product}`,
+            type,
+            product,
+            available: availableProduct?.quantity || 0,
+            total: productResources.quantity || 0,
+            memoryTotalMiB: metadataProducts[product]?.memory_total_mib,
+            virtualizationMemoryMiB:
+              availableProduct?.virtualization?.memory_mib,
+            virtualizationCoreUnits:
+              availableProduct?.virtualization?.core_units,
+          });
+        }
+      } else if (allocatableGroup.product_groups) {
         // Create an option for each product
         for (const [product, productTotal] of Object.entries(
           allocatableGroup.product_groups,
@@ -100,6 +126,7 @@ export function parseClusterResources(
             product,
             available: productAvailable,
             total: productTotal,
+            memoryTotalMiB: metadataProducts[product]?.memory_total_mib,
           });
         }
       } else {

@@ -1,10 +1,10 @@
+import { useMemo } from "react";
 import {
   findBestNodeForAccelerator,
   parseClusterResources,
 } from "@/domains/endpoint/lib/cluster-resources";
 import { computeMaxAvailable } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
-import { useMemo } from "react";
 
 interface UseEndpointClusterResourcesProps {
   currentCluster: string;
@@ -52,6 +52,15 @@ export function useEndpointClusterResources({
     );
   }, [selectedAccelerator, selectedCluster]);
 
+  const selectedAcceleratorOption = useMemo(() => {
+    if (!selectedAccelerator) return undefined;
+    return acceleratorOptions.find(
+      (option) =>
+        option.type === selectedAccelerator.type &&
+        option.product === selectedAccelerator.product,
+    );
+  }, [acceleratorOptions, selectedAccelerator]);
+
   const maxAvailable = useMemo(
     () => computeMaxAvailable(singleNodeMax, clusterResources, currentUsage),
     [singleNodeMax, clusterResources, currentUsage],
@@ -75,6 +84,7 @@ export function useEndpointClusterResources({
     selectedCluster,
     clusterResources,
     acceleratorOptions,
+    selectedAcceleratorOption,
     maxAvailable,
     dynamicAvailability,
     gpuStep,
