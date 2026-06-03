@@ -42,5 +42,5 @@ export function useUsageByDimension(params: Record<string, unknown> | null) {
     return () => clearInterval(interval);
   }, [fetchUsageData]);
 
-  return { usageData, isLoading, error };
+  return { usageData, isLoading, error, refetch: fetchUsageData };
 }

@@ -1,6 +1,9 @@
-import { useParsed } from "@refinedev/core";
+import { useList, useParsed } from "@refinedev/core";
+import { RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -22,6 +25,7 @@ import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
+import { cn } from "@/foundation/lib/utils";
 
 type DayTotals = {
   date: string;
@@ -44,32 +48,60 @@ export const ModelUsageList = () => {
   const workspace = (params?.workspace as string) ?? "";
 
   const [days, setDays] = useState(30);
+  const [apiKeyId, setApiKeyId] = useState<string>("");
+  const [model, setModel] = useState("");
+
   const { startDate, endDate } = useMemo(() => dateRange(days), [days]);
 
-  const { usageData, isLoading, error } = useWorkspaceUsage(
+  const { usageData, isLoading, error, refetch } = useWorkspaceUsage(
     workspace,
     startDate,
     endDate,
   );
 
-  const daily = useMemo(() => aggregateByDay(usageData), [usageData]);
+  // Workspace API keys for the filter dropdown (matches the trace list).
+  const { data: keysData } = useList<{
+    id: string;
+    metadata?: { name?: string };
+  }>({
+    resource: "api_keys",
+    pagination: { mode: "off" },
+    meta: { workspace },
+    queryOptions: { enabled: Boolean(workspace) },
+  });
+  const keys = keysData?.data ?? [];
+
+  const filtered = useMemo(
+    () =>
+      usageData.filter(
+        (r) =>
+          (!apiKeyId || r.api_key_id === apiKeyId) &&
+          (!model ||
+            (r.model_name ?? "")
+              .toLowerCase()
+              .includes(model.trim().toLowerCase())),
+      ),
+    [usageData, apiKeyId, model],
+  );
+
+  const daily = useMemo(() => aggregateByDay(filtered), [filtered]);
   const byKey = useMemo(
     () =>
       aggregateBy(
-        usageData,
+        filtered,
         (r) => r.api_key_id,
         (r) => r.api_key_name,
       ),
-    [usageData],
+    [filtered],
   );
   const byModel = useMemo(
     () =>
       aggregateBy(
-        usageData,
+        filtered,
         (r) => r.model_name ?? "-",
         (r) => r.model_name ?? "-",
       ),
-    [usageData],
+    [filtered],
   );
 
   const totalTokens = daily.reduce((sum, d) => sum + d.total, 0);
@@ -80,16 +112,15 @@ export const ModelUsageList = () => {
       canCreate={false}
       breadcrumb={false}
       extra={
-        <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">{t("model_usage.range.7")}</SelectItem>
-            <SelectItem value="30">{t("model_usage.range.30")}</SelectItem>
-            <SelectItem value="90">{t("model_usage.range.90")}</SelectItem>
-          </SelectContent>
-        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isLoading}
+        >
+          <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
+          {t("model_usage.refresh")}
+        </Button>
       }
     >
       <div className="border rounded-md p-4 mb-4">
@@ -146,6 +177,43 @@ export const ModelUsageList = () => {
             </ResponsiveContainer>
           )}
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7">{t("model_usage.range.7")}</SelectItem>
+            <SelectItem value="30">{t("model_usage.range.30")}</SelectItem>
+            <SelectItem value="90">{t("model_usage.range.90")}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={apiKeyId || "all"}
+          onValueChange={(v) => setApiKeyId(v === "all" ? "" : v)}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t("model_usage.filters.apiKey")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              {t("model_usage.filters.allApiKeys")}
+            </SelectItem>
+            {keys.map((k) => (
+              <SelectItem key={k.id} value={k.id}>
+                {k.metadata?.name ?? k.id}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          className="w-[200px]"
+          placeholder={t("model_usage.filters.model")}
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+        />
       </div>
 
       {error ? (

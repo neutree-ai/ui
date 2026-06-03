@@ -307,7 +307,7 @@
   "src/foundation/recipe/types.ts": "326479973ed028177f19f1853f445ea4",
   "src/foundation/recipe/vram.ts": "7cc88b1e663e8810bc78a6ce4ad2e8a0",
   "src/domains/endpoint/components/VRAMCheckBadge.tsx": "d6bcfb3fe865b8df9e7d893c0a9273e2",
-  "src/pages/model-usage/list.tsx": "b07d7e4d2e47462bedccbcceb27a1153",
-  "src/domains/api-key/hooks/use-usage-by-dimension.ts": "995f42f1902a45e8b97d620f7dff3f1c",
+  "src/pages/model-usage/list.tsx": "adeb5081f9a108bb1af1ffc00453b47b",
+  "src/domains/api-key/hooks/use-usage-by-dimension.ts": "180fbbc1c2b848f8b9d4172c85835344",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "b6d1bc5f44a709f8d0bd703f67c2937b"
 }

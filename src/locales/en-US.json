@@ -958,7 +958,13 @@
 	},
 	"model_usage": {
 		"title": "Model Usage",
+		"refresh": "Refresh",
 		"empty": "No usage in the selected window.",
+		"filters": {
+			"apiKey": "API key",
+			"allApiKeys": "All API keys",
+			"model": "Model"
+		},
 		"apiKey": "API key",
 		"model": "Model",
 		"promptTokens": "Prompt",
