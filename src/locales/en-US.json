@@ -989,7 +989,17 @@
 				"prompt": "Prompt",
 				"completion": "Completion",
 				"total": "Total"
-			}
+			},
+			"titleByKey": "Daily tokens by API key",
+			"titleByModel": "Daily tokens by model"
+		},
+		"detail": {
+			"title": "Daily detail",
+			"date": "Date",
+			"type": "Type",
+			"endpoint": "Endpoint",
+			"internal": "Internal",
+			"external": "External"
 		}
 	},
 	"access_control": {
