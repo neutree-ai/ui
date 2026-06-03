@@ -1,5 +1,6 @@
 import { useList, useParsed } from "@refinedev/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  type DateRange,
+  DateRangePicker,
+  trailingRange,
+} from "@/foundation/components/DateRangePicker";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -43,6 +49,7 @@ export const AITracesList = () => {
   const [model, setModel] = useState("");
   const [apiKeyId, setApiKeyId] = useState<string>("");
   const [finishReason, setFinishReason] = useState<string>("");
+  const [range, setRange] = useState<DateRange>(() => trailingRange(7));
   const [selected, setSelected] = useState<AITrace | null>(null);
 
   // Workspace's API keys — for both the filter dropdown and id→name resolution
@@ -70,6 +77,9 @@ export const AITracesList = () => {
     model: model.trim() || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
+    // Date-range filter → inclusive [start-of-day, end-of-day] timestamps.
+    start: dayjs(range.start).startOf("day").toISOString(),
+    end: dayjs(range.end).endOf("day").toISOString(),
     limit: LIMIT,
   };
 
@@ -107,6 +117,7 @@ export const AITracesList = () => {
       <TraceStatsChart workspace={workspace} />
 
       <div className="flex flex-wrap gap-2 mb-4">
+        <DateRangePicker value={range} onChange={setRange} />
         <Input
           className="w-[200px]"
           placeholder={t("ai_traces.filters.endpoint")}

@@ -1,7 +1,14 @@
 import { useList, useParsed } from "@refinedev/core";
 import { RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,18 +28,16 @@ import {
 } from "@/components/ui/table";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
+import {
+  type DateRange,
+  DateRangePicker,
+  trailingRange,
+} from "@/foundation/components/DateRangePicker";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
-
-type DayTotals = {
-  date: string;
-  prompt: number;
-  completion: number;
-  total: number;
-};
 
 type NamedTotals = {
   key: string;
@@ -42,21 +47,42 @@ type NamedTotals = {
   total: number;
 };
 
+// One day's tokens broken down per model: model names become dynamic keys
+// (one stacked bar segment each) alongside `date` and `total`.
+type DailyModelRow = {
+  date: string;
+  total: number;
+  [model: string]: number | string;
+};
+
+// Distinct colors for the per-model stacked bars; cycles if a workspace has
+// more models than colors.
+const MODEL_COLORS = [
+  "hsl(217 91% 60%)",
+  "hsl(142 71% 45%)",
+  "hsl(38 92% 50%)",
+  "hsl(271 81% 56%)",
+  "hsl(0 84% 60%)",
+  "hsl(199 89% 48%)",
+  "hsl(330 81% 60%)",
+  "hsl(160 84% 39%)",
+  "hsl(48 96% 53%)",
+  "hsl(240 5% 50%)",
+];
+
 export const ModelUsageList = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
   const workspace = (params?.workspace as string) ?? "";
 
-  const [days, setDays] = useState(30);
+  const [range, setRange] = useState<DateRange>(() => trailingRange(30));
   const [apiKeyId, setApiKeyId] = useState<string>("");
   const [model, setModel] = useState("");
 
-  const { startDate, endDate } = useMemo(() => dateRange(days), [days]);
-
   const { usageData, isLoading, error, refetch } = useWorkspaceUsage(
     workspace,
-    startDate,
-    endDate,
+    range.start,
+    range.end,
   );
 
   // Workspace API keys for the filter dropdown (matches the trace list).
@@ -84,7 +110,10 @@ export const ModelUsageList = () => {
     [usageData, apiKeyId, model],
   );
 
-  const daily = useMemo(() => aggregateByDay(filtered), [filtered]);
+  const { data: dailyData, models } = useMemo(
+    () => aggregateDailyByModel(filtered),
+    [filtered],
+  );
   const byKey = useMemo(
     () =>
       aggregateBy(
@@ -104,7 +133,7 @@ export const ModelUsageList = () => {
     [filtered],
   );
 
-  const totalTokens = daily.reduce((sum, d) => sum + d.total, 0);
+  const totalTokens = filtered.reduce((sum, r) => sum + (r.usage ?? 0), 0);
 
   return (
     <ListPage
@@ -134,19 +163,19 @@ export const ModelUsageList = () => {
             })}
           </span>
         </div>
-        <div className="h-[160px]">
-          {isLoading && daily.length === 0 ? (
+        <div className="h-[200px]">
+          {isLoading && dailyData.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <Loader className="w-8 text-muted-foreground" />
             </div>
-          ) : daily.length === 0 ? (
+          ) : dailyData.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               {t("model_usage.empty")}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={daily}
+                data={dailyData}
                 margin={{ top: 4, right: 4, bottom: 0, left: 4 }}
               >
                 <XAxis
@@ -159,20 +188,18 @@ export const ModelUsageList = () => {
                 />
                 <Tooltip
                   cursor={{ fill: "hsl(var(--muted))" }}
-                  content={<DailyTooltip />}
+                  content={<ModelTooltip />}
                 />
-                <Bar
-                  dataKey="prompt"
-                  stackId="tokens"
-                  fill="hsl(var(--primary))"
-                />
-                <Bar
-                  dataKey="completion"
-                  stackId="tokens"
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.4}
-                  radius={[3, 3, 0, 0]}
-                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {models.map((m, i) => (
+                  <Bar
+                    key={m}
+                    dataKey={m}
+                    stackId="models"
+                    fill={MODEL_COLORS[i % MODEL_COLORS.length]}
+                    radius={i === models.length - 1 ? [3, 3, 0, 0] : undefined}
+                  />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -180,16 +207,7 @@ export const ModelUsageList = () => {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">{t("model_usage.range.7")}</SelectItem>
-            <SelectItem value="30">{t("model_usage.range.30")}</SelectItem>
-            <SelectItem value="90">{t("model_usage.range.90")}</SelectItem>
-          </SelectContent>
-        </Select>
+        <DateRangePicker value={range} onChange={setRange} />
         <Select
           value={apiKeyId || "all"}
           onValueChange={(v) => setApiKeyId(v === "all" ? "" : v)}
@@ -298,60 +316,76 @@ const UsageTable = ({
   );
 };
 
-const DailyTooltip = ({
+const ModelTooltip = ({
   active,
   payload,
+  label,
 }: {
   active?: boolean;
-  payload?: Array<{ payload: DayTotals }>;
+  payload?: Array<{ dataKey: string; value: number; color: string }>;
+  label?: string;
 }) => {
   const { t } = useTranslation();
   if (!active || !payload || payload.length === 0) return null;
-  const d = payload[0].payload;
+  const rows = payload.filter((p) => (p.value ?? 0) > 0);
+  const total = payload.reduce((sum, p) => sum + (p.value ?? 0), 0);
   return (
     <div className="rounded border bg-popover px-2 py-1 text-xs shadow">
-      <div className="font-medium">{d.date}</div>
-      <div className="text-muted-foreground">
-        {t("model_usage.daily.tooltip.prompt")}: {formatTokens(d.prompt)}
-      </div>
-      <div className="text-muted-foreground">
-        {t("model_usage.daily.tooltip.completion")}:{" "}
-        {formatTokens(d.completion)}
-      </div>
-      <div className="text-muted-foreground">
-        {t("model_usage.daily.tooltip.total")}: {formatTokens(d.total)}
+      <div className="font-medium mb-1">{label}</div>
+      {rows.map((p) => (
+        <div
+          key={p.dataKey}
+          className="flex items-center gap-1.5 text-muted-foreground"
+        >
+          <span
+            className="inline-block size-2 rounded-sm"
+            style={{ backgroundColor: p.color }}
+          />
+          <span className="truncate max-w-[160px]">{p.dataKey}</span>
+          <span className="ml-auto font-mono">{formatTokens(p.value)}</span>
+        </div>
+      ))}
+      <div className="mt-1 flex border-t pt-1">
+        <span>{t("model_usage.daily.tooltip.total")}</span>
+        <span className="ml-auto font-mono">{formatTokens(total)}</span>
       </div>
     </div>
   );
 };
 
-// dateRange returns an inclusive [start, end] window of the trailing `days`
-// days as YYYY-MM-DD strings, suitable for the RPC's DATE params.
-function dateRange(days: number): { startDate: string; endDate: string } {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - (days - 1));
-  return {
-    startDate: start.toISOString().slice(0, 10),
-    endDate: end.toISOString().slice(0, 10),
-  };
-}
-
-function aggregateByDay(rows: ApiUsageRecord[]): DayTotals[] {
-  const byDate = new Map<string, DayTotals>();
+// aggregateDailyByModel buckets usage into per-day per-model token totals for a
+// stacked bar chart, plus the list of model names (sorted by total desc) that
+// become the stack segments.
+function aggregateDailyByModel(rows: ApiUsageRecord[]): {
+  data: DailyModelRow[];
+  models: string[];
+} {
+  const byDate = new Map<string, Record<string, number>>();
+  const modelTotals = new Map<string, number>();
   for (const r of rows) {
-    const cur = byDate.get(r.date) ?? {
-      date: r.date,
-      prompt: 0,
-      completion: 0,
-      total: 0,
-    };
-    cur.prompt += r.prompt_tokens ?? 0;
-    cur.completion += r.completion_tokens ?? 0;
-    cur.total += r.usage ?? 0;
-    byDate.set(r.date, cur);
+    const m = r.model_name ?? "-";
+    const day = byDate.get(r.date) ?? {};
+    day[m] = (day[m] ?? 0) + (r.usage ?? 0);
+    byDate.set(r.date, day);
+    modelTotals.set(m, (modelTotals.get(m) ?? 0) + (r.usage ?? 0));
   }
-  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  const models = [...modelTotals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([m]) => m);
+  const data = [...byDate.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, perModel]) => {
+      const row: DailyModelRow = { date, total: 0 };
+      let total = 0;
+      for (const m of models) {
+        const v = perModel[m] ?? 0;
+        row[m] = v;
+        total += v;
+      }
+      row.total = total;
+      return row;
+    });
+  return { data, models };
 }
 
 function aggregateBy(

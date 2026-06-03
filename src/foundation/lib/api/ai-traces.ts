@@ -46,6 +46,7 @@ type AITraceListParams = {
   finish_reason?: string;
   limit?: number;
   start?: string;
+  end?: string;
   before?: string;
 };
 

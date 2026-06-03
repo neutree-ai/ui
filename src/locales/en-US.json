@@ -1,6 +1,11 @@
 {
 	"nativeName": "English",
 	"common": {
+		"dateRange": {
+			"lastDays": "Last {{days}} days",
+			"from": "From",
+			"to": "To"
+		},
 		"fields": {
 			"resources": "Resources",
 			"gpu": "GPU",
