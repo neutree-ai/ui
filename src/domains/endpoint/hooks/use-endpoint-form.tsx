@@ -1,7 +1,8 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,8 @@ import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resource
 import {
   buildCatalogMergedSpec,
   defaultEndpointSpec,
+  normalizeEndpointRecordForForm,
+  normalizeEndpointResourcesForForm,
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
@@ -70,10 +73,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       autoSave: {
         enabled: false,
       },
+      queryOptions: {
+        select: (response) => ({
+          ...response,
+          data: response.data
+            ? normalizeEndpointRecordForForm(response.data as Endpoint)
+            : response.data,
+        }),
+      },
     },
     warnWhenUnsavedChanges: true,
     resolver: (values) => {
-      transformEndpointValues(values.spec);
       const errors = validateEndpointValues(
         values.spec,
         {
@@ -90,11 +100,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     },
   });
 
+  const originalOnFinishRef = useRef(form.refineCore.onFinish);
+  form.refineCore.onFinish = async (values) => {
+    const transformedValues =
+      typeof structuredClone === "function"
+        ? structuredClone(values)
+        : JSON.parse(JSON.stringify(values));
+    transformEndpointValues((transformedValues as Endpoint).spec);
+    return originalOnFinishRef.current(transformedValues);
+  };
+
   const formValues = form.getValues();
+  const watchedResources = form.watch("spec.resources");
+  const normalizedResources = normalizeEndpointResourcesForForm(
+    watchedResources as unknown as Record<string, unknown> | null | undefined,
+  );
   // Only consider current usage in edit mode (for resources already allocated to this endpoint)
   // In create mode, the endpoint doesn't exist yet, so current usage should always be 0
   const currentUsage = useEndpointResources(
-    action === "edit" ? formValues.spec?.resources : undefined,
+    action === "edit" ? (normalizedResources ?? undefined) : undefined,
     action === "edit" ? formValues.metadata : undefined,
   );
 
@@ -132,9 +156,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
-  const selectedAccelerator = form.watch("spec.resources.accelerator");
-  const cpuUsage = form.watch("spec.resources.cpu");
-  const memoryUsage = form.watch("spec.resources.memory");
+  const selectedAccelerator = normalizedResources?.accelerator;
+  const cpuUsage = normalizedResources?.cpu || 0;
+  const memoryUsage = normalizedResources?.memory || 0;
 
   const {
     selectedCluster,
@@ -253,19 +277,73 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // nested plain objects. This ensures mounted FormField controllers get
   // notified, because useController uses useWatch with exact:true and
   // only reacts to setValue calls whose path exactly matches the field name.
-  const setLeafValues = (basePath: string, obj: Record<string, unknown>) => {
-    for (const [key, value] of Object.entries(obj)) {
-      const path = `${basePath}.${key}`;
-      form.setValue(path as any, value);
-      if (
-        typeof value === "object" &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
-        setLeafValues(path, value as Record<string, unknown>);
+  const setLeafValues = useCallback(
+    (basePath: string, obj: Record<string, unknown>) => {
+      for (const [key, value] of Object.entries(obj)) {
+        const path = `${basePath}.${key}` as Path<Endpoint>;
+        form.setValue(path, value as PathValue<Endpoint, typeof path>);
+        if (
+          typeof value === "object" &&
+          value !== null &&
+          !Array.isArray(value)
+        ) {
+          setLeafValues(path, value as Record<string, unknown>);
+        }
       }
+    },
+    [form],
+  );
+
+  const queryResources = form.refineCore.query?.data?.data?.spec?.resources as
+    | Record<string, unknown>
+    | null
+    | undefined;
+
+  useEffect(() => {
+    if (action !== "edit" || !queryResources) return;
+
+    const resourcesForForm = normalizeEndpointResourcesForForm(queryResources);
+    if (!resourcesForForm) return;
+
+    const currentResources = form.getValues("spec.resources") as
+      | Record<string, unknown>
+      | null
+      | undefined;
+    if (JSON.stringify(currentResources) === JSON.stringify(resourcesForForm)) {
+      return;
     }
-  };
+
+    form.setValue("spec.resources", resourcesForForm as ResourceSpec, {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+    setLeafValues(
+      "spec.resources",
+      resourcesForForm as unknown as Record<string, unknown>,
+    );
+  }, [action, form, queryResources, setLeafValues]);
+
+  useEffect(() => {
+    if (action !== "edit") return;
+
+    const currentResources = (form.getValues("spec.resources") ??
+      watchedResources) as Record<string, unknown> | null | undefined;
+    const resourcesForForm =
+      normalizeEndpointResourcesForForm(currentResources);
+    if (!resourcesForForm) return;
+    if (JSON.stringify(currentResources) === JSON.stringify(resourcesForForm)) {
+      return;
+    }
+
+    form.setValue("spec.resources", resourcesForForm as ResourceSpec, {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+    setLeafValues(
+      "spec.resources",
+      resourcesForForm as unknown as Record<string, unknown>,
+    );
+  }, [action, form, watchedResources, setLeafValues]);
 
   // Apply a merged catalog spec (or defaults when null) to the form.
   const applyCatalogSpec = (catalogSpec: Record<string, unknown> | null) => {
@@ -394,7 +472,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           className="col-span-2"
         >
           <SliderWithInput
-            value={form.watch("spec.resources.cpu") || 0}
+            value={normalizedResources?.cpu || 0}
             onChange={(value) => form.setValue("spec.resources.cpu", value)}
             min={0}
             max={maxAvailable.cpu.available}
@@ -420,7 +498,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           className="col-span-2"
         >
           <SliderWithInput
-            value={form.watch("spec.resources.memory") || 0}
+            value={normalizedResources?.memory || 0}
             onChange={(value) => form.setValue("spec.resources.memory", value)}
             min={0}
             max={maxAvailable.memory.available}
@@ -452,9 +530,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               value: opt.value,
             }))}
             value={
-              form.watch("spec.resources.accelerator")?.type &&
-              form.watch("spec.resources.accelerator")?.product
-                ? `${form.watch("spec.resources.accelerator").type}:${form.watch("spec.resources.accelerator").product}`
+              selectedAccelerator?.type && selectedAccelerator?.product
+                ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
                 : ""
             }
             onChange={(value) => {
@@ -484,41 +561,40 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </FormFieldGroup>
 
         {/* Accelerator Count Slider */}
-        {form.watch("spec.resources.accelerator")?.type &&
-          form.watch("spec.resources.accelerator")?.product && (
-            <FormFieldGroup
-              {...form}
-              name="spec.resources.gpu"
-              label={t("endpoints.fields.acceleratorCount")}
-              className="col-span-4"
-            >
-              {(() => {
-                const currentGpu = form.watch("spec.resources.gpu") || 0;
+        {selectedAccelerator?.type && selectedAccelerator?.product && (
+          <FormFieldGroup
+            {...form}
+            name="spec.resources.gpu"
+            label={t("endpoints.fields.acceleratorCount")}
+            className="col-span-4"
+          >
+            {(() => {
+              const currentGpu = normalizedResources?.gpu || 0;
 
-                return (
-                  <SliderWithInput
-                    value={currentGpu}
-                    onChange={(value) =>
-                      form.setValue("spec.resources.gpu", value)
-                    }
-                    min={0}
-                    max={maxAvailable.gpu.available}
-                    step={gpuStep}
-                    disabled={!currentCluster}
-                    remainingInfo={
-                      maxAvailable.gpu.total > 0
-                        ? {
-                            remaining: maxAvailable.gpu.available - currentGpu,
-                            total: maxAvailable.gpu.total,
-                            label: t("endpoints.fields.remaining"),
-                          }
-                        : undefined
-                    }
-                  />
-                );
-              })()}
-            </FormFieldGroup>
-          )}
+              return (
+                <SliderWithInput
+                  value={currentGpu}
+                  onChange={(value) =>
+                    form.setValue("spec.resources.gpu", value)
+                  }
+                  min={0}
+                  max={maxAvailable.gpu.available}
+                  step={gpuStep}
+                  disabled={!currentCluster}
+                  remainingInfo={
+                    maxAvailable.gpu.total > 0
+                      ? {
+                          remaining: maxAvailable.gpu.available - currentGpu,
+                          total: maxAvailable.gpu.total,
+                          label: t("endpoints.fields.remaining"),
+                        }
+                      : undefined
+                  }
+                />
+              );
+            })()}
+          </FormFieldGroup>
+        )}
 
         {showVgpuFields && (
           <>

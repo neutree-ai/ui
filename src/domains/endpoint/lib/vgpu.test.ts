@@ -3,6 +3,7 @@ import type { ResourceSpec } from "@/foundation/types/serving-types";
 import {
   getEffectiveVgpuMemoryMiB,
   getVgpuMemoryDisplay,
+  getVgpuVirtualization,
   hasVgpuResources,
   normalizeVgpuVirtualization,
 } from "./vgpu";
@@ -31,6 +32,24 @@ describe("endpoint vgpu helpers", () => {
         accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
       } as ResourceSpec),
     ).toBe(false);
+  });
+
+  it("detects backend flat vGPU keys", () => {
+    const resources = {
+      gpu: 1,
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        "virtualization.memory_mib": "8192",
+        "virtualization.core_percent": "50",
+      },
+    } as unknown as ResourceSpec;
+
+    expect(hasVgpuResources(resources)).toBe(true);
+    expect(getVgpuVirtualization(resources.accelerator)).toEqual({
+      memory_mib: 8192,
+      core_percent: 50,
+    });
   });
 
   it("computes effective memory from percentage using ceiling", () => {

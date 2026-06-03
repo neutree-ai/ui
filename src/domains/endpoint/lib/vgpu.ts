@@ -4,6 +4,9 @@ type VgpuVirtualization = NonNullable<
   NonNullable<ResourceSpec["accelerator"]>["virtualization"]
 >;
 
+type VgpuAccelerator = NonNullable<ResourceSpec["accelerator"]> &
+  Record<string, unknown>;
+
 const toOptionalNumber = (value: unknown): number | undefined => {
   if (value === null || value === undefined || value === "") return undefined;
   const numberValue = Number(value);
@@ -32,12 +35,30 @@ export function normalizeVgpuVirtualization(
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
+export function getVgpuVirtualization(
+  accelerator: ResourceSpec["accelerator"] | null | undefined,
+): VgpuVirtualization | undefined {
+  if (!accelerator) return undefined;
+
+  const acceleratorMap = accelerator as VgpuAccelerator;
+  const nested =
+    typeof acceleratorMap.virtualization === "object" &&
+    acceleratorMap.virtualization !== null
+      ? (acceleratorMap.virtualization as Record<string, unknown>)
+      : {};
+
+  return normalizeVgpuVirtualization({
+    memory_mib: acceleratorMap["virtualization.memory_mib"],
+    memory_percent: acceleratorMap["virtualization.memory_percent"],
+    core_percent: acceleratorMap["virtualization.core_percent"],
+    ...nested,
+  } as VgpuVirtualization);
+}
+
 export function hasVgpuResources(
   resources: ResourceSpec | null | undefined,
 ): boolean {
-  const virtualization = normalizeVgpuVirtualization(
-    resources?.accelerator?.virtualization,
-  );
+  const virtualization = getVgpuVirtualization(resources?.accelerator);
   return Boolean(resources?.accelerator?.type && virtualization);
 }
 

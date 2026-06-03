@@ -17,6 +17,14 @@ globalThis.ResizeObserver = class ResizeObserver {
 };
 Element.prototype.scrollIntoView = vi.fn();
 
+const refineCoreOnFinishMock = vi.hoisted(() => vi.fn());
+const useFormOptionsRef = vi.hoisted(() => ({
+  current: null as Record<string, unknown> | null,
+}));
+const queryDataRef = vi.hoisted(() => ({
+  current: null as Record<string, unknown> | null,
+}));
+
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -31,10 +39,14 @@ vi.mock("@refinedev/react-hook-form", async () => {
     await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
   return {
     useForm: (opts: Record<string, unknown>) => {
+      useFormOptionsRef.current = opts;
       const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
       const form = rhf.useForm(rhfOpts);
       (form as Record<string, unknown>).refineCore = {
-        onFinish: vi.fn(),
+        onFinish: refineCoreOnFinishMock,
+        query: queryDataRef.current
+          ? { data: { data: queryDataRef.current } }
+          : undefined,
       };
       return form;
     },
@@ -134,6 +146,15 @@ const plainKubernetesCluster = {
   status: { resource_info: null },
 } satisfies EndpointClusterRef;
 
+const hamiKubernetesCluster = {
+  metadata: metadata("hami-k8s"),
+  spec: {
+    type: "kubernetes",
+    accelerator_virtualization: { enabled: true },
+  },
+  status: { resource_info: null },
+} satisfies EndpointClusterRef;
+
 const defaultSelectResult = {
   query: { data: { data: [] }, isLoading: false },
 };
@@ -207,6 +228,10 @@ function selectCatalog(label: string) {
 describe("useEndpointForm", () => {
   beforeEach(() => {
     setupMocks();
+    refineCoreOnFinishMock.mockReset();
+    refineCoreOnFinishMock.mockResolvedValue(undefined);
+    useFormOptionsRef.current = null;
+    queryDataRef.current = null;
     formInstance = null;
   });
 
@@ -239,6 +264,94 @@ describe("useEndpointForm", () => {
   });
 
   describe("vGPU fields", () => {
+    it("syncs normalized resources from query data into the edit form", async () => {
+      queryDataRef.current = {
+        spec: {
+          resources: {
+            cpu: "2",
+            memory: "8Gi",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "8192",
+              "virtualization.core_percent": "50",
+            },
+          },
+        },
+      };
+
+      render(<EditForm />);
+
+      await waitFor(() => {
+        expect(formInstance?.getValues("spec.resources")).toEqual({
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+    });
+
+    it("normalizes backend query resources before editing an existing vGPU endpoint", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      const select = (
+        useFormOptionsRef.current?.refineCoreProps as {
+          queryOptions?: {
+            select?: (response: Record<string, unknown>) => {
+              data?: { spec?: { resources?: Record<string, unknown> | null } };
+            };
+          };
+        }
+      )?.queryOptions?.select;
+
+      expect(select).toBeTypeOf("function");
+      const selected = select?.({
+        data: {
+          metadata: metadata("hami-endpoint"),
+          spec: {
+            cluster: "hami-k8s",
+            resources: {
+              cpu: "2",
+              memory: "8Gi",
+              gpu: "1",
+              accelerator: {
+                type: "nvidia_gpu",
+                product: "Tesla-T4",
+                "virtualization.memory_mib": "8192",
+                "virtualization.core_percent": "50",
+              },
+            },
+          },
+        },
+      });
+
+      expect(selected?.data?.spec?.resources).toEqual({
+        cpu: 2,
+        memory: 8,
+        gpu: 1,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            memory_mib: 8192,
+            core_percent: 50,
+          },
+        },
+      });
+    });
+
     it("clears stale accelerator virtualization when the selected cluster is not vGPU-enabled", async () => {
       setupMocks([catalogA, catalogB], [plainKubernetesCluster]);
       render(<CreateForm />);
@@ -262,6 +375,51 @@ describe("useEndpointForm", () => {
           formInstance?.getValues("spec.resources.accelerator.virtualization"),
         ).toBeUndefined();
       });
+    });
+  });
+
+  describe("submit transform", () => {
+    it("submits backend-compatible flat vGPU resource keys", async () => {
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("metadata.name", "hami-endpoint");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await formInstance?.refineCore.onFinish(formInstance.getValues());
+      });
+
+      const submitted = refineCoreOnFinishMock.mock.calls[0]?.[0];
+      expect(submitted?.spec.resources).toEqual({
+        cpu: "2",
+        memory: "8",
+        gpu: "1",
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          "virtualization.memory_mib": "8192",
+          "virtualization.core_percent": "50",
+        },
+      });
+      expect(submitted?.spec.resources.accelerator.virtualization).toBe(
+        undefined,
+      );
     });
   });
 
@@ -384,9 +542,11 @@ describe("useEndpointForm", () => {
       render(<CreateForm />);
 
       // Clear the scheduler type and trigger validation via resolver
-      formInstance?.setValue("spec.deployment_options.scheduler.type", "");
-
-      const valid = await formInstance?.trigger();
+      let valid: boolean | undefined;
+      await act(async () => {
+        formInstance?.setValue("spec.deployment_options.scheduler.type", "");
+        valid = await formInstance?.trigger();
+      });
       expect(valid).toBe(false);
 
       const error =

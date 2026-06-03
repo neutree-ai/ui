@@ -4,6 +4,8 @@ import {
   computeMaxAvailable,
   deepMerge,
   defaultEndpointSpec,
+  normalizeEndpointRecordForForm,
+  normalizeEndpointResourcesForForm,
   transformEndpointValues,
   validateCurrentUsage,
   validateEndpointValues,
@@ -216,9 +218,90 @@ describe("transformEndpointValues", () => {
 
     transformEndpointValues(spec);
 
-    expect(spec.resources.accelerator.virtualization).toEqual({
-      memory_mib: 10240,
-      core_percent: 30,
+    expect(spec.resources.accelerator).toEqual({
+      type: "nvidia_gpu",
+      product: "Tesla-T4",
+      "virtualization.memory_mib": "10240",
+      "virtualization.core_percent": "30",
+    });
+  });
+});
+
+describe("normalizeEndpointResourcesForForm", () => {
+  it("normalizes backend resource strings and flat vGPU keys for form editing", () => {
+    expect(
+      normalizeEndpointResourcesForForm({
+        cpu: "2",
+        memory: "8Gi",
+        gpu: "1",
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          "virtualization.memory_mib": "8192",
+          "virtualization.core_percent": "50",
+        },
+      }),
+    ).toEqual({
+      cpu: 2,
+      memory: 8,
+      gpu: 1,
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: {
+          memory_mib: 8192,
+          core_percent: 50,
+        },
+      },
+    });
+  });
+
+  it("normalizes MiB memory quantities to GiB values for the form", () => {
+    expect(
+      normalizeEndpointResourcesForForm({
+        cpu: "2",
+        memory: "8192Mi",
+        gpu: "1",
+        accelerator: null,
+      }),
+    ).toMatchObject({
+      cpu: 2,
+      memory: 8,
+      gpu: 1,
+      accelerator: null,
+    });
+  });
+
+  it("normalizes endpoint records before refine writes query data into the form", () => {
+    const record = {
+      id: 1,
+      spec: {
+        resources: {
+          cpu: "2",
+          memory: "8Gi",
+          gpu: "1",
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            "virtualization.memory_mib": "8192",
+            "virtualization.core_percent": "50",
+          },
+        },
+      },
+    };
+
+    expect(normalizeEndpointRecordForForm(record).spec.resources).toEqual({
+      cpu: 2,
+      memory: 8,
+      gpu: 1,
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: {
+          memory_mib: 8192,
+          core_percent: 50,
+        },
+      },
     });
   });
 });

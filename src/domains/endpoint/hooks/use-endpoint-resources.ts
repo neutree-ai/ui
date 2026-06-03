@@ -1,23 +1,27 @@
 import { useMemo } from "react";
+import { normalizeEndpointResourcesForForm } from "@/domains/endpoint/lib/endpoint-form-helpers";
 
 const useEndpointResources = (
   resources?: {
-    cpu?: number;
-    memory?: number;
-    gpu?: number;
-    accelerator?: { type: string; product: string };
+    cpu?: number | string | null;
+    memory?: number | string | null;
+    gpu?: number | string | null;
+    accelerator?: { type: string; product: string } | null;
   },
-  metadata?: Record<string, any>,
+  metadata?: Record<string, unknown>,
 ) => {
   return useMemo(() => {
     const hasRealData = metadata?.name && metadata.name !== "" && resources;
 
     if (hasRealData) {
+      const normalizedResources = normalizeEndpointResourcesForForm(
+        resources as Record<string, unknown>,
+      );
       return {
-        cpu: resources?.cpu || 0,
-        memory: resources?.memory || 0,
-        gpu: resources?.gpu || 0,
-        accelerator: resources?.accelerator || null,
+        cpu: normalizedResources?.cpu || 0,
+        memory: normalizedResources?.memory || 0,
+        gpu: normalizedResources?.gpu || 0,
+        accelerator: normalizedResources?.accelerator || null,
       };
     }
 
