@@ -8,7 +8,7 @@ vi.mock("react-i18next", () => ({
 
 describe("EndpointRuntimeResourcesCard", () => {
   it("renders endpoint resource summary and replica device allocations", () => {
-    render(
+    const { container } = render(
       <EndpointRuntimeResourcesCard
         resources={{
           summary: {
@@ -39,6 +39,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
+    expect(container.firstElementChild?.className).toContain("border-t");
     expect(
       screen.getByText("endpoints.sections.runtimeResources"),
     ).toBeTruthy();

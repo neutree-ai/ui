@@ -34,7 +34,9 @@
 			"openaiUrl": "OpenAI Compatible URL",
 			"anthropicUrl": "Anthropic Compatible URL",
 			"allReplicas": "All Replicas",
-			"version": "Version"
+			"version": "Version",
+			"reason": "Reason",
+			"message": "Message"
 		},
 		"sections": {
 			"basicInformation": "Basic Information"
@@ -381,6 +383,8 @@
 			"acceleratorCount": "Accelerator Count",
 			"acceleratorVirtualization": "Accelerator Virtualization",
 			"hamiStatus": "HAMi Status",
+			"componentName": "Component",
+			"managed": "Managed",
 			"physicalGpu": "Physical GPU",
 			"singleCardMemory": "Single-card Memory",
 			"vgpuMemoryPool": "vGPU Memory Pool",
@@ -424,6 +428,7 @@
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
 			"nodes": "Nodes",
+			"componentStatus": "Component Status",
 			"nodeDevices": "Node Devices"
 		},
 		"placeholders": {

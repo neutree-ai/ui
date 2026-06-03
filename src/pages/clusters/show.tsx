@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClusterComponentStatusList } from "@/domains/cluster/components/ClusterComponentStatusList";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
@@ -29,7 +30,6 @@ import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label"
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import {
-  getHamiComponentStatus,
   getVgpuProductRows,
   isAcceleratorVirtualizationEnabled,
 } from "@/domains/cluster/lib/hami";
@@ -92,7 +92,6 @@ export const ClustersShow = () => {
   const dashboardUrl = getRayDashboardProxy(data?.data);
   const acceleratorVirtualizationEnabled =
     isAcceleratorVirtualizationEnabled(record);
-  const hamiStatus = getHamiComponentStatus(record);
   const vgpuProductRows = getVgpuProductRows(record.status?.resource_info);
 
   return (
@@ -145,23 +144,13 @@ export const ClustersShow = () => {
                     <ClusterType type={record.spec.type} />
                   </ShowPage.Row>
                   {record.spec.type === "kubernetes" && (
-                    <>
-                      <ShowPage.Row
-                        title={t("clusters.fields.acceleratorVirtualization")}
-                      >
-                        {acceleratorVirtualizationEnabled
-                          ? t("common.options.enabled")
-                          : t("common.options.disabled")}
-                      </ShowPage.Row>
-                      <ShowPage.Row title={t("clusters.fields.hamiStatus")}>
-                        {hamiStatus?.phase ?? "-"}
-                        {hamiStatus?.reason ? (
-                          <span className="ml-2 text-muted-foreground">
-                            {hamiStatus.reason}
-                          </span>
-                        ) : null}
-                      </ShowPage.Row>
-                    </>
+                    <ShowPage.Row
+                      title={t("clusters.fields.acceleratorVirtualization")}
+                    >
+                      {acceleratorVirtualizationEnabled
+                        ? t("common.options.enabled")
+                        : t("common.options.disabled")}
+                    </ShowPage.Row>
                   )}
                   <ShowPage.Row title={t("common.fields.imageRegistry")}>
                     <ShowButton
@@ -220,6 +209,12 @@ export const ClustersShow = () => {
                       </div>
                     </CardContent>
                   </Card>
+                )}
+                {record.status?.component_status && (
+                  <ClusterComponentStatusList
+                    componentStatus={record.status.component_status}
+                    t={t}
+                  />
                 )}
               </CardContent>
             </Card>

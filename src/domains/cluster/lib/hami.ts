@@ -1,13 +1,5 @@
-import type { Cluster } from "@/domains/cluster/types";
+import type { Cluster, ClusterComponentStatus } from "@/domains/cluster/types";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
-
-type HamiComponentStatus = {
-  phase?: string | null;
-  managed?: boolean | null;
-  version?: string | null;
-  reason?: string | null;
-  message?: string | null;
-};
 
 type VgpuProductRow = {
   acceleratorType: string;
@@ -29,7 +21,7 @@ export function isAcceleratorVirtualizationEnabled(
 
 export function getHamiComponentStatus(
   cluster: Pick<Cluster, "status"> | null | undefined,
-): HamiComponentStatus | null {
+): ClusterComponentStatus | null {
   return cluster?.status?.component_status?.hami ?? null;
 }
 

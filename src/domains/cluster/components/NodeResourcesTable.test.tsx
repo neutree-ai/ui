@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { NodeResourcesTable } from "./NodeResourcesTable";
 
@@ -11,7 +11,7 @@ vi.mock("@/components/ui/progress", () => ({
 const t = (key: string) => key;
 
 describe("NodeResourcesTable", () => {
-  it("renders node device resource pools from node_resources devices", () => {
+  it("shows node device resource pools under the expanded node", () => {
     render(
       <NodeResourcesTable
         nodeResources={{
@@ -64,19 +64,35 @@ describe("NodeResourcesTable", () => {
               },
             ],
           },
+          "node-b": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-2",
+                product: "Tesla-A10",
+                health: false,
+              },
+            ],
+          },
         }}
         acceleratorTypes={["nvidia_gpu"]}
         t={t}
       />,
     );
 
+    expect(screen.queryByText("GPU-1")).toBeNull();
+    expect(screen.queryByText("GPU-2")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "node-a devices" }));
+
     expect(screen.getByText("clusters.sections.nodeDevices")).toBeTruthy();
-    expect(screen.getAllByText("node-a").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
     expect(screen.getByText("GPU-1")).toBeTruthy();
     expect(screen.getByText("clusters.options.healthy")).toBeTruthy();
     expect(screen.getByText("7680 / 15360 MiB")).toBeTruthy();
     expect(screen.getByText("50 / 100")).toBeTruthy();
     expect(screen.getByText("5 / 10")).toBeTruthy();
+    expect(screen.queryByText("GPU-2")).toBeNull();
   });
 });

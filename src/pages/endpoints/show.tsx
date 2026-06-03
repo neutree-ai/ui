@@ -247,6 +247,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   </div>
                 )}
               </div>
+              <EndpointRuntimeResourcesCard
+                resources={record.status?.resources}
+              />
               <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("common.fields.cluster")}>
                   <ShowButton
@@ -286,7 +289,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             showGpuConditionally={true}
             titleTranslationKey="endpoints.sections.requestedResources"
           />
-          <EndpointRuntimeResourcesCard resources={record.status?.resources} />
           <DeploymentConfigCard
             replicas={record.spec.replicas}
             deploymentOptions={record.spec.deployment_options}

@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -33,75 +32,73 @@ export default function EndpointRuntimeResourcesCard({
   }
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>{t("endpoints.sections.runtimeResources")}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {summaryRows.length > 0 && (
-          <div className="overflow-x-auto">
-            <div className="mb-2 text-sm font-medium">
-              {t("endpoints.sections.resourceSummary")}
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("common.fields.acceleratorProduct")}</TableHead>
-                  <TableHead>{t("endpoints.fields.vgpuMemory")}</TableHead>
-                  <TableHead>{t("endpoints.fields.vgpuCoreUnits")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {summaryRows.map((row) => (
-                  <TableRow key={row.product}>
-                    <TableCell className="font-medium">{row.product}</TableCell>
-                    <TableCell>{formatInteger(row.memoryMiB)} MiB</TableCell>
-                    <TableCell>{formatInteger(row.coreUnits)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+    <div className="mt-6 space-y-6 border-t pt-4">
+      <div className="text-sm font-medium">
+        {t("endpoints.sections.runtimeResources")}
+      </div>
+      {summaryRows.length > 0 && (
+        <div className="overflow-x-auto">
+          <div className="mb-2 text-sm font-medium">
+            {t("endpoints.sections.resourceSummary")}
           </div>
-        )}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("common.fields.acceleratorProduct")}</TableHead>
+                <TableHead>{t("endpoints.fields.vgpuMemory")}</TableHead>
+                <TableHead>{t("endpoints.fields.vgpuCoreUnits")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {summaryRows.map((row) => (
+                <TableRow key={row.product}>
+                  <TableCell className="font-medium">{row.product}</TableCell>
+                  <TableCell>{formatInteger(row.memoryMiB)} MiB</TableCell>
+                  <TableCell>{formatInteger(row.coreUnits)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-        {replicaRows.length > 0 && (
-          <div className="overflow-x-auto">
-            <div className="mb-2 text-sm font-medium">
-              {t("endpoints.sections.replicaResources")}
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("endpoints.fields.instance")}</TableHead>
-                  <TableHead>{t("common.fields.replica")}</TableHead>
-                  <TableHead>{t("clusters.fields.nodeName")}</TableHead>
-                  <TableHead>{t("common.fields.acceleratorProduct")}</TableHead>
-                  <TableHead>{t("clusters.fields.deviceUuid")}</TableHead>
-                  <TableHead>{t("endpoints.fields.vgpuMemory")}</TableHead>
-                  <TableHead>{t("endpoints.fields.vgpuCoreUnits")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {replicaRows.map((row) => (
-                  <TableRow key={`${row.instanceId}:${row.uuid}`}>
-                    <TableCell className="font-medium">
-                      {row.instanceId || "-"}
-                    </TableCell>
-                    <TableCell>{row.replicaId || "-"}</TableCell>
-                    <TableCell>{row.nodeId || "-"}</TableCell>
-                    <TableCell>{row.product || "-"}</TableCell>
-                    <TableCell>
-                      <code className="break-all text-xs">{row.uuid}</code>
-                    </TableCell>
-                    <TableCell>{formatInteger(row.memoryMiB)} MiB</TableCell>
-                    <TableCell>{formatInteger(row.coreUnits)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+      {replicaRows.length > 0 && (
+        <div className="overflow-x-auto">
+          <div className="mb-2 text-sm font-medium">
+            {t("endpoints.sections.replicaResources")}
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("endpoints.fields.instance")}</TableHead>
+                <TableHead>{t("common.fields.replica")}</TableHead>
+                <TableHead>{t("clusters.fields.nodeName")}</TableHead>
+                <TableHead>{t("common.fields.acceleratorProduct")}</TableHead>
+                <TableHead>{t("clusters.fields.deviceUuid")}</TableHead>
+                <TableHead>{t("endpoints.fields.vgpuMemory")}</TableHead>
+                <TableHead>{t("endpoints.fields.vgpuCoreUnits")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {replicaRows.map((row) => (
+                <TableRow key={`${row.instanceId}:${row.uuid}`}>
+                  <TableCell className="font-medium">
+                    {row.instanceId || "-"}
+                  </TableCell>
+                  <TableCell>{row.replicaId || "-"}</TableCell>
+                  <TableCell>{row.nodeId || "-"}</TableCell>
+                  <TableCell>{row.product || "-"}</TableCell>
+                  <TableCell>
+                    <code className="break-all text-xs">{row.uuid}</code>
+                  </TableCell>
+                  <TableCell>{formatInteger(row.memoryMiB)} MiB</TableCell>
+                  <TableCell>{formatInteger(row.coreUnits)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
   );
 }
