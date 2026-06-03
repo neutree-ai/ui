@@ -33,6 +33,7 @@ import {
   getVgpuProductRows,
   isAcceleratorVirtualizationEnabled,
 } from "@/domains/cluster/lib/hami";
+import { getAcceleratorProductQuantities } from "@/domains/cluster/lib/resource-status";
 import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -284,10 +285,12 @@ export const ClustersShow = () => {
                               total={allocatableGroup.quantity}
                             />
                             <ProductGroupsBreakdown
-                              allocatableGroups={
-                                allocatableGroup.product_groups
-                              }
-                              availableGroups={availableGroup?.product_groups}
+                              allocatableGroups={getAcceleratorProductQuantities(
+                                allocatableGroup,
+                              )}
+                              availableGroups={getAcceleratorProductQuantities(
+                                availableGroup,
+                              )}
                             />
                           </div>
                         );

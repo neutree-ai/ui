@@ -385,6 +385,8 @@
 			"singleCardMemory": "Single-card Memory",
 			"vgpuMemoryPool": "vGPU Memory Pool",
 			"vgpuCorePool": "vGPU Core Pool",
+			"vgpuSlotPool": "vGPU Slot Pool",
+			"deviceUuid": "Device UUID",
 			"replicas": "Replicas",
 			"currentVersion": "Current Version",
 			"targetVersion": "Target Version",
@@ -421,7 +423,8 @@
 			"acceleratorVirtualization": "Accelerator Virtualization",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
-			"nodes": "Nodes"
+			"nodes": "Nodes",
+			"nodeDevices": "Node Devices"
 		},
 		"placeholders": {
 			"clusterName": "Cluster Name",
@@ -448,7 +451,9 @@
 			"none": "None",
 			"hostPath": "Host Path",
 			"nfs": "NFS",
-			"pvc": "PVC"
+			"pvc": "PVC",
+			"healthy": "Healthy",
+			"unhealthy": "Unhealthy"
 		},
 		"messages": {
 			"notFound": "404 not found",
@@ -585,9 +590,11 @@
 			"vgpuMemory": "vGPU Memory",
 			"vgpuMemoryPercent": "vGPU Memory Percent",
 			"vgpuCorePercent": "vGPU Core Percent",
+			"vgpuCoreUnits": "vGPU Core Units",
 			"singleCardMemory": "Single-card Memory",
 			"requestedVgpuMemory": "Requested vGPU Memory",
-			"effectiveVgpuMemory": "Effective vGPU Memory"
+			"effectiveVgpuMemory": "Effective vGPU Memory",
+			"instance": "Instance"
 		},
 		"sections": {
 			"templateSelection": "Template Selection",
@@ -599,7 +606,11 @@
 			"engineSettings": "Engine Settings",
 			"replicaSettings": "Replica Settings",
 			"advancedOptions": "Advanced Options",
-			"environmentVariables": "Environment Variables"
+			"environmentVariables": "Environment Variables",
+			"requestedResources": "Requested Resources",
+			"runtimeResources": "Runtime Resources",
+			"resourceSummary": "Resource Summary",
+			"replicaResources": "Replica Resources"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",

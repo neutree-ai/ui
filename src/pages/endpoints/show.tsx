@@ -20,6 +20,7 @@ import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfig
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
+import EndpointRuntimeResourcesCard from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
@@ -283,8 +284,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <ResourcesCard
             resources={record.spec.resources}
             showGpuConditionally={true}
-            titleTranslationKey="common.fields.resources"
+            titleTranslationKey="endpoints.sections.requestedResources"
           />
+          <EndpointRuntimeResourcesCard resources={record.status?.resources} />
           <DeploymentConfigCard
             replicas={record.spec.replicas}
             deploymentOptions={record.spec.deployment_options}

@@ -1,5 +1,8 @@
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
-import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
+import type {
+  ClusterResourceInfo,
+  EndpointResourceStatus,
+} from "@/foundation/types/resource-types";
 import type {
   DeploymentOptions,
   EndpointEngineSpec,
@@ -33,12 +36,13 @@ export type EndpointSpec = {
   resources: ResourceSpec | null;
   replicas: ReplicaSpec | null;
   deployment_options: DeploymentOptions | null;
-  variables: Record<string, any> | null;
+  variables: Record<string, unknown> | null;
   env: Record<string, string> | null;
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
+  resources?: EndpointResourceStatus | null;
 };
 
 export type Endpoint = {
