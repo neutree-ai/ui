@@ -83,6 +83,7 @@ export const ModelUsageList = () => {
 
   const [range, setRange] = useState<DateRange>(() => trailingRange(30));
   const [apiKeyId, setApiKeyId] = useState<string>("");
+  const [endpointType, setEndpointType] = useState<string>("");
   const [model, setModel] = useState("");
   // Series toggled off via the (clickable) chart legend.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
@@ -112,12 +113,13 @@ export const ModelUsageList = () => {
       usageData.filter(
         (r) =>
           (!apiKeyId || r.api_key_id === apiKeyId) &&
+          (!endpointType || r.endpoint_type === endpointType) &&
           (!model ||
             (r.model_name ?? "")
               .toLowerCase()
               .includes(model.trim().toLowerCase())),
       ),
-    [usageData, apiKeyId, model],
+    [usageData, apiKeyId, endpointType, model],
   );
 
   // With "All API keys" each line is an API key; once a key is picked we drill
@@ -301,6 +303,25 @@ export const ModelUsageList = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          value={endpointType || "all"}
+          onValueChange={(v) => setEndpointType(v === "all" ? "" : v)}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder={t("model_usage.filters.endpointType")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              {t("model_usage.filters.allTypes")}
+            </SelectItem>
+            <SelectItem value="endpoint">
+              {t("model_usage.detail.internal")}
+            </SelectItem>
+            <SelectItem value="external-endpoint">
+              {t("model_usage.detail.external")}
+            </SelectItem>
+          </SelectContent>
+        </Select>
         <Input
           className="w-[200px]"
           placeholder={t("model_usage.filters.model")}
@@ -323,9 +344,7 @@ export const ModelUsageList = () => {
         <div className="text-sm text-destructive mb-2">{error.message}</div>
       ) : null}
 
-      <DetailTable rows={detailRows} />
-
-      <div className="grid gap-4 md:grid-cols-2 mt-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <UsageTable
           title={t("model_usage.byApiKey")}
           nameHeader={t("model_usage.apiKey")}
@@ -336,6 +355,10 @@ export const ModelUsageList = () => {
           nameHeader={t("model_usage.model")}
           rows={byModel}
         />
+      </div>
+
+      <div className="mt-4">
+        <DetailTable rows={detailRows} />
       </div>
     </ListPage>
   );

@@ -968,7 +968,9 @@
 		"filters": {
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",
-			"model": "Model"
+			"model": "Model",
+			"endpointType": "Type",
+			"allTypes": "All types"
 		},
 		"apiKey": "API key",
 		"model": "Model",
