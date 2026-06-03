@@ -78,6 +78,8 @@ export const ModelUsageList = () => {
   const [range, setRange] = useState<DateRange>(() => trailingRange(30));
   const [apiKeyId, setApiKeyId] = useState<string>("");
   const [model, setModel] = useState("");
+  // Models toggled off via the (clickable) chart legend.
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set());
 
   const { usageData, isLoading, error, refetch } = useWorkspaceUsage(
     workspace,
@@ -190,12 +192,41 @@ export const ModelUsageList = () => {
                   cursor={{ fill: "hsl(var(--muted))" }}
                   content={<ModelTooltip />}
                 />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Legend
+                  wrapperStyle={{ fontSize: 11 }}
+                  onClick={(o) => {
+                    const key = String(o.dataKey ?? o.value ?? "");
+                    if (!key) return;
+                    setHidden((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(key)) {
+                        next.delete(key);
+                      } else {
+                        next.add(key);
+                      }
+                      return next;
+                    });
+                  }}
+                  formatter={(val, entry) => {
+                    const key = String(entry?.dataKey ?? val ?? "");
+                    return (
+                      <span
+                        style={{
+                          cursor: "pointer",
+                          opacity: hidden.has(key) ? 0.35 : 1,
+                        }}
+                      >
+                        {val}
+                      </span>
+                    );
+                  }}
+                />
                 {models.map((m, i) => (
                   <Bar
                     key={m}
                     dataKey={m}
                     stackId="models"
+                    hide={hidden.has(m)}
                     fill={MODEL_COLORS[i % MODEL_COLORS.length]}
                     radius={i === models.length - 1 ? [3, 3, 0, 0] : undefined}
                   />

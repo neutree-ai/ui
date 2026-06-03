@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import { CalendarDays } from "lucide-react";
-import { useId } from "react";
+import type { DateRange as RdpRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -28,8 +28,9 @@ export function trailingRange(days: number): DateRange {
   };
 }
 
-// DateRangePicker is a reusable date-range control: quick presets plus two
-// native date inputs, in a popover. Shared by the trace and model-usage lists.
+// DateRangePicker is a reusable date-range control: quick presets plus a
+// shadcn calendar (react-day-picker), in a popover. Shared by the trace and
+// model-usage lists.
 export function DateRangePicker({
   value,
   onChange,
@@ -40,72 +41,51 @@ export function DateRangePicker({
   className?: string;
 }) {
   const { t } = useTranslation();
-  const fromId = useId();
-  const toId = useId();
   const label = `${dayjs(value.start).format("MMM D")} – ${dayjs(value.end).format("MMM D")}`;
+  const selected: RdpRange = {
+    from: dayjs(value.start).toDate(),
+    to: dayjs(value.end).toDate(),
+  };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
-          className={cn("justify-start font-normal", className)}
+          className={cn("h-9 justify-start font-normal", className)}
         >
           <CalendarDays className="size-4" />
           {label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-1">
-            {PRESETS.map((d) => (
-              <Button
-                key={d}
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={() => onChange(trailingRange(d))}
-              >
-                {t("common.dateRange.lastDays", { days: d })}
-              </Button>
-            ))}
-          </div>
-          <div className="flex items-end gap-2">
-            <div className="flex flex-col gap-1">
-              <label htmlFor={fromId} className="text-xs text-muted-foreground">
-                {t("common.dateRange.from")}
-              </label>
-              <Input
-                id={fromId}
-                type="date"
-                className="h-8 w-[150px]"
-                value={value.start}
-                max={value.end}
-                onChange={(e) =>
-                  e.target.value &&
-                  onChange({ ...value, start: e.target.value })
-                }
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor={toId} className="text-xs text-muted-foreground">
-                {t("common.dateRange.to")}
-              </label>
-              <Input
-                id={toId}
-                type="date"
-                className="h-8 w-[150px]"
-                value={value.end}
-                min={value.start}
-                onChange={(e) =>
-                  e.target.value && onChange({ ...value, end: e.target.value })
-                }
-              />
-            </div>
-          </div>
+      <PopoverContent align="start" className="w-auto p-0">
+        <div className="flex flex-wrap gap-1 border-b p-2">
+          {PRESETS.map((d) => (
+            <Button
+              key={d}
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => onChange(trailingRange(d))}
+            >
+              {t("common.dateRange.lastDays", { days: d })}
+            </Button>
+          ))}
         </div>
+        <Calendar
+          mode="range"
+          defaultMonth={selected.from}
+          selected={selected}
+          onSelect={(r: RdpRange | undefined) => {
+            if (r?.from) {
+              onChange({
+                start: dayjs(r.from).format("YYYY-MM-DD"),
+                end: dayjs(r.to ?? r.from).format("YYYY-MM-DD"),
+              });
+            }
+          }}
+        />
       </PopoverContent>
     </Popover>
   );
