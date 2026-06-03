@@ -671,6 +671,8 @@ export type Database = {
         | "external_endpoint:create"
         | "external_endpoint:update"
         | "external_endpoint:delete"
+        | "endpoint:trace-read"
+        | "external_endpoint:trace-read"
         | "system:admin";
       role_preset: "admin" | "workspace-user";
     };

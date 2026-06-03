@@ -1329,6 +1329,7 @@
 		"pull": "Pull",
 		"system_admin": "System Admin",
 		"read-credentials": "Read Credentials",
+		"trace-read": "Trace Read",
 		"requiredBy": "Required by: {{actions}}"
 	},
 	"systems": {

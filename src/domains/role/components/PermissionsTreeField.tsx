@@ -1,13 +1,5 @@
-import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { usePermissionDependencies } from "@/domains/role/hooks/use-permission-dependencies";
-import { getResourcePlural } from "@/foundation/lib/plural";
-import { cn } from "@/foundation/lib/utils";
-import {
+  Activity,
   BookOpen,
   Box,
   CheckSquare,
@@ -18,6 +10,7 @@ import {
   Download,
   Eye,
   FileText,
+  Globe,
   HardDrive,
   Layers,
   Lock,
@@ -33,6 +26,15 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { usePermissionDependencies } from "@/domains/role/hooks/use-permission-dependencies";
+import { getResourcePlural } from "@/foundation/lib/plural";
+import { cn } from "@/foundation/lib/utils";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,
@@ -41,6 +43,7 @@ const actionIcons: Record<string, React.ReactNode> = {
   delete: <Trash className="h-4 w-4" />,
   push: <Upload className="h-4 w-4" />,
   pull: <Download className="h-4 w-4" />,
+  "trace-read": <Activity className="h-4 w-4" />,
 };
 
 const resourceIcons: Record<string, React.ReactNode> = {
@@ -48,6 +51,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   role: <Users className="h-5 w-5" />,
   role_assignment: <FileText className="h-5 w-5" />,
   endpoint: <Server className="h-5 w-5" />,
+  external_endpoint: <Globe className="h-5 w-5" />,
   image_registry: <Database className="h-5 w-5" />,
   model_registry: <Layers className="h-5 w-5" />,
   model: <Package className="h-5 w-5" />,
