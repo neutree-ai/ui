@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "b5ddb4884b5e78497ba6b421685b1a0e",
   "src/pages/endpoints/edit.tsx": "23519d0d1c37c85b64567f7e6b42ff1d",
   "src/pages/endpoints/list.tsx": "aa1f159a45560783cd05531e54829a02",
-  "src/pages/endpoints/show.tsx": "c7368a51d6a07e06743f09f210f14e9d",
+  "src/pages/endpoints/show.tsx": "e164f9f86c047188d3c28aacd7722512",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "ee6e135f119688d2f7a72c3ecd2cd42a",
   "src/pages/clusters/edit.tsx": "ecb3a6e4f04286c161d3872d9e91bfa9",
