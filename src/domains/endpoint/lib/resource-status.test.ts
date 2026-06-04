@@ -146,9 +146,6 @@ describe("endpoint resource status helpers", () => {
       workspace: "default",
       endpoint: "hami-smoke-vllm-021112",
       namespace: ".*",
-      node: "neutree-gpu-t4-02",
-      deviceUuid:
-        "(?:GPU-cd4432b1-8084-2bdd-d962-54f805358b57|GPU-5ad72eb2-9871-1aba-55b8-ade03c41e56a)",
     });
   });
 });

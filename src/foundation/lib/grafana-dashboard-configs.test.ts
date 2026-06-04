@@ -116,15 +116,13 @@ describe("getEndpointVgpuDashboardProps", () => {
       workspace: "default",
       endpoint: "ep-a",
       pod: "ep-a-replica-0",
-      node: "node-a",
-      deviceUuid: "(?:GPU-a|GPU-b)",
     });
 
     expect(props.dashboardConfig.variables).toMatchObject({
       namespace: ".*",
       pod: "ep-a-replica-0",
-      node: "node-a",
-      device_uuid: "(?:GPU-a|GPU-b)",
+      node: GRAFANA_VAR_ALL,
+      device_uuid: GRAFANA_VAR_ALL,
     });
   });
 });

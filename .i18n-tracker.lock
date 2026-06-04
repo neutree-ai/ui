@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "b5ddb4884b5e78497ba6b421685b1a0e",
   "src/pages/endpoints/edit.tsx": "23519d0d1c37c85b64567f7e6b42ff1d",
   "src/pages/endpoints/list.tsx": "aa1f159a45560783cd05531e54829a02",
-  "src/pages/endpoints/show.tsx": "e692450e2080f8955d0f968496ab8dec",
+  "src/pages/endpoints/show.tsx": "2104ec64d7b4b3f840d1591349b8427b",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "ee6e135f119688d2f7a72c3ecd2cd42a",
   "src/pages/clusters/edit.tsx": "ecb3a6e4f04286c161d3872d9e91bfa9",
@@ -302,7 +302,7 @@
   "src/domains/endpoint/lib/vgpu.ts": "8f884b4e999ad82eed53f617c7543aa3",
   "src/domains/endpoint/hooks/use-endpoint-vgpu-monitor-context.ts": "2b46ebf04e431b64cec084e639a1ca36",
   "src/domains/cluster/lib/hami.ts": "3dace76bcba610e416315c998ab5f6b0",
-  "src/domains/endpoint/lib/resource-status.ts": "27d45b65ba211c8254b9e0921c6f2ded",
+  "src/domains/endpoint/lib/resource-status.ts": "0941da9d110b8fc12450d8d2c78d9647",
   "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "4471ad60c9fdf520576be9e997c936cf",
   "src/domains/cluster/lib/resource-status.ts": "49c12aab38e5614d132bf3058991fd56",
   "src/domains/cluster/components/ClusterComponentStatusList.tsx": "ce0c4c64a4117c0a97e5079f0a1be77d"

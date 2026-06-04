@@ -21,8 +21,6 @@ type EndpointVgpuDashboardContext = {
   workspace: string;
   endpoint: string;
   namespace: string;
-  node?: string;
-  deviceUuid?: string;
 };
 
 type EndpointVgpuDashboardContextInput = {
@@ -30,16 +28,6 @@ type EndpointVgpuDashboardContextInput = {
   cluster: string;
   workspace: string;
   endpoint: string;
-};
-
-const escapeRegex = (value: string) =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const buildRegexFilter = (values: string[]): string | undefined => {
-  const unique = Array.from(new Set(values.filter(Boolean)));
-  if (unique.length === 0) return undefined;
-  if (unique.length === 1) return escapeRegex(unique[0]);
-  return `(?:${unique.map(escapeRegex).join("|")})`;
 };
 
 export function getEndpointResourceSummaryRows(
@@ -84,7 +72,5 @@ export function getEndpointVgpuDashboardContext({
     workspace,
     endpoint,
     namespace: ".*",
-    node: buildRegexFilter(rows.map((row) => row.nodeId)),
-    deviceUuid: buildRegexFilter(rows.map((row) => row.uuid)),
   };
 }

@@ -483,8 +483,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                         endpoint: endpointName,
                         namespace,
                         pod: replicaParam,
-                        node: vgpuDashboardContext?.node,
-                        deviceUuid: vgpuDashboardContext?.deviceUuid,
                       })}
                       className="flex-1"
                       hideVariables
