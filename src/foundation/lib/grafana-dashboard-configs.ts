@@ -127,7 +127,7 @@ export const getEndpointVgpuDashboardProps = (
       workspace: context.workspace,
       endpoint: context.endpoint,
       namespace: context.namespace || ".*",
-      pod: context.pod || ".*",
+      pod: context.pod || `${context.endpoint}.*`,
       node: context.node || GRAFANA_VAR_ALL,
       container: context.container || GRAFANA_VAR_ALL,
       device_uuid: context.deviceUuid || GRAFANA_VAR_ALL,

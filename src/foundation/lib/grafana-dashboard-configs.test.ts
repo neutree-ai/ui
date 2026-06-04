@@ -92,7 +92,6 @@ describe("getEndpointVgpuDashboardProps", () => {
       workspace: "default",
       endpoint: "ep-a",
       namespace: "ns-a",
-      pod: "ep-a-.*",
     });
 
     expect(props.dashboardConfig.dashboardId).toBe(
@@ -104,26 +103,26 @@ describe("getEndpointVgpuDashboardProps", () => {
       workspace: "default",
       endpoint: "ep-a",
       namespace: "ns-a",
-      pod: "ep-a-.*",
+      pod: "ep-a.*",
       node: GRAFANA_VAR_ALL,
       container: GRAFANA_VAR_ALL,
       device_uuid: GRAFANA_VAR_ALL,
     });
   });
 
-  it("uses runtime resource filters when provided", () => {
+  it("uses a selected replica as the pod variable when provided", () => {
     const props = getEndpointVgpuDashboardProps("http://grafana", {
       cluster: "cluster-a",
       workspace: "default",
       endpoint: "ep-a",
-      pod: "(?:pod-a|pod-b)",
+      pod: "ep-a-replica-0",
       node: "node-a",
       deviceUuid: "(?:GPU-a|GPU-b)",
     });
 
     expect(props.dashboardConfig.variables).toMatchObject({
       namespace: ".*",
-      pod: "(?:pod-a|pod-b)",
+      pod: "ep-a-replica-0",
       node: "node-a",
       device_uuid: "(?:GPU-a|GPU-b)",
     });

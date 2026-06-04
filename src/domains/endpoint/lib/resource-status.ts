@@ -21,7 +21,6 @@ type EndpointVgpuDashboardContext = {
   workspace: string;
   endpoint: string;
   namespace: string;
-  pod: string;
   node?: string;
   deviceUuid?: string;
 };
@@ -78,15 +77,13 @@ export function getEndpointVgpuDashboardContext({
   endpoint,
 }: EndpointVgpuDashboardContextInput): EndpointVgpuDashboardContext | null {
   const rows = getEndpointReplicaResourceRows(resourceStatus);
-  const pod = buildRegexFilter(rows.map((row) => row.instanceId));
-  if (!pod) return null;
+  if (rows.length === 0) return null;
 
   return {
     cluster,
     workspace,
     endpoint,
     namespace: ".*",
-    pod,
     node: buildRegexFilter(rows.map((row) => row.nodeId)),
     deviceUuid: buildRegexFilter(rows.map((row) => row.uuid)),
   };

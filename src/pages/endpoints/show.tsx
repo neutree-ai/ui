@@ -175,11 +175,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     });
   }, [record]);
 
-  const {
-    data: vgpuMonitorContextData,
-    isLoading: isLoadingVgpuMonitorContext,
-    error: vgpuMonitorContextError,
-  } = useEndpointVgpuMonitorContext(
+  const { data: vgpuMonitorContextData } = useEndpointVgpuMonitorContext(
     record,
     endpointHasVgpuResources && !vgpuDashboardContext,
   );
@@ -463,9 +459,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 (() => {
                   const legacyContext = vgpuMonitorContextData?.data;
                   const namespace =
-                    vgpuDashboardContext?.namespace ?? legacyContext?.namespace;
-                  const pod =
-                    vgpuDashboardContext?.pod ?? legacyContext?.pod_regex;
+                    vgpuDashboardContext?.namespace ??
+                    legacyContext?.namespace ??
+                    ".*";
                   const clusterName =
                     vgpuDashboardContext?.cluster ??
                     legacyContext?.cluster ??
@@ -479,27 +475,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     vgpuDashboardContext?.endpoint ??
                     legacyContext?.endpoint ??
                     record.metadata.name;
-                  if (!vgpuDashboardContext && isLoadingVgpuMonitorContext) {
-                    return <Loader className="h-4 text-primary" />;
-                  }
-                  if (!vgpuDashboardContext && vgpuMonitorContextError) {
-                    return (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-muted-foreground">
-                          {t("endpoints.messages.vgpuMonitorContextFailed")}
-                        </p>
-                      </div>
-                    );
-                  }
-                  if (!namespace || !pod) {
-                    return (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-muted-foreground">
-                          {t("endpoints.messages.noRunningVgpuPods")}
-                        </p>
-                      </div>
-                    );
-                  }
                   return (
                     <GrafanaDashboard
                       {...getEndpointVgpuDashboardProps(grafanaUrl, {
@@ -507,7 +482,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                         workspace: workspaceName,
                         endpoint: endpointName,
                         namespace,
-                        pod,
+                        pod: replicaParam,
                         node: vgpuDashboardContext?.node,
                         deviceUuid: vgpuDashboardContext?.deviceUuid,
                       })}
