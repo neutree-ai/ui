@@ -1002,6 +1002,10 @@
 			"endpoint": "Endpoint",
 			"internal": "Internal",
 			"external": "External"
+		},
+		"chart": {
+			"line": "Line chart",
+			"bar": "Bar chart"
 		}
 	},
 	"access_control": {

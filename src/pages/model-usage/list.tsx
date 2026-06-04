@@ -1,7 +1,14 @@
 import { useList, useParsed } from "@refinedev/core";
-import { RefreshCw, X } from "lucide-react";
+import {
+  BarChart3,
+  LineChart as LineChartIcon,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   Legend,
   Line,
@@ -76,6 +83,8 @@ const SERIES_COLORS = [
   "hsl(240 5% 50%)",
 ];
 
+const CHART_MARGIN = { top: 4, right: 8, bottom: 0, left: 4 };
+
 export const ModelUsageList = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
@@ -85,6 +94,8 @@ export const ModelUsageList = () => {
   const [apiKeyId, setApiKeyId] = useState<string>("");
   const [endpointType, setEndpointType] = useState<string>("");
   const [model, setModel] = useState("");
+  // Chart display mode — line (trend per series) or stacked bar (daily volume).
+  const [chartType, setChartType] = useState<"line" | "bar">("line");
   // Series toggled off via the (clickable) chart legend.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
   // Day focused by clicking a chart point — narrows the detail table.
@@ -163,6 +174,73 @@ export const ModelUsageList = () => {
   const seriesName = (key: string) =>
     series.find((s) => s.key === key)?.name ?? key;
 
+  // Clicking a day in either chart focuses (or clears) the detail table.
+  const onPick = (e: { activeLabel?: string | number }) => {
+    const day = typeof e?.activeLabel === "string" ? e.activeLabel : "";
+    if (day) setFocusDate((prev) => (prev === day ? "" : day));
+  };
+
+  const toggleSeries = (key: string) => {
+    if (!key) return;
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  // Axes / grid / tooltip / legend are identical across line and bar modes, so
+  // share them as a keyed child array between the two chart elements (recharts
+  // flattens arrays of children when detecting axis/legend components).
+  const commonAxes = [
+    <CartesianGrid
+      key="grid"
+      strokeDasharray="3 3"
+      vertical={false}
+      stroke="hsl(var(--border))"
+    />,
+    <XAxis
+      key="x"
+      dataKey="date"
+      tickFormatter={formatTick}
+      tickLine={false}
+      axisLine={false}
+      fontSize={11}
+      interval="preserveStartEnd"
+    />,
+    <YAxis
+      key="y"
+      tickFormatter={(v) => formatTokens(v) ?? ""}
+      tickLine={false}
+      axisLine={false}
+      fontSize={11}
+      width={48}
+    />,
+    <Tooltip key="tip" content={<UsageTooltip seriesName={seriesName} />} />,
+    <Legend
+      key="legend"
+      wrapperStyle={{ fontSize: 11 }}
+      onClick={(o) => toggleSeries(String(o.dataKey ?? ""))}
+      formatter={(_val, entry) => {
+        const key = String(entry?.dataKey ?? "");
+        return (
+          <span
+            style={{
+              cursor: "pointer",
+              opacity: hidden.has(key) ? 0.35 : 1,
+            }}
+          >
+            {seriesName(key)}
+          </span>
+        );
+      }}
+    />,
+  ];
+
   return (
     <ListPage
       title={t("model_usage.title")}
@@ -187,11 +265,37 @@ export const ModelUsageList = () => {
               ? t("model_usage.daily.titleByModel")
               : t("model_usage.daily.titleByKey")}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {t("model_usage.daily.totalTokens", {
-              total: formatTokens(totalTokens),
-            })}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              {t("model_usage.daily.totalTokens", {
+                total: formatTokens(totalTokens),
+              })}
+            </span>
+            <div className="inline-flex rounded-md border p-0.5">
+              <Button
+                type="button"
+                variant={chartType === "line" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 px-2"
+                aria-label={t("model_usage.chart.line")}
+                title={t("model_usage.chart.line")}
+                onClick={() => setChartType("line")}
+              >
+                <LineChartIcon className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant={chartType === "bar" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 px-2"
+                aria-label={t("model_usage.chart.bar")}
+                title={t("model_usage.chart.bar")}
+                onClick={() => setChartType("bar")}
+              >
+                <BarChart3 className="size-4" />
+              </Button>
+            </div>
+          </div>
         </div>
         <div className="h-[240px]">
           {isLoading && dailyData.length === 0 ? (
@@ -204,80 +308,50 @@ export const ModelUsageList = () => {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={dailyData}
-                margin={{ top: 4, right: 8, bottom: 0, left: 4 }}
-                onClick={(e) => {
-                  const day =
-                    typeof e?.activeLabel === "string" ? e.activeLabel : "";
-                  if (day) setFocusDate((prev) => (prev === day ? "" : day));
-                }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatTick}
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tickFormatter={(v) => formatTokens(v) ?? ""}
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                  width={48}
-                />
-                <Tooltip content={<UsageTooltip seriesName={seriesName} />} />
-                <Legend
-                  wrapperStyle={{ fontSize: 11 }}
-                  onClick={(o) => {
-                    const key = String(o.dataKey ?? "");
-                    if (!key) return;
-                    setHidden((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(key)) {
-                        next.delete(key);
-                      } else {
-                        next.add(key);
+              {chartType === "bar" ? (
+                <BarChart
+                  data={dailyData}
+                  margin={CHART_MARGIN}
+                  onClick={onPick}
+                >
+                  {commonAxes}
+                  {series.map((s, i) => (
+                    <Bar
+                      key={s.key}
+                      dataKey={s.key}
+                      name={s.name}
+                      stackId="usage"
+                      hide={hidden.has(s.key)}
+                      fill={SERIES_COLORS[i % SERIES_COLORS.length]}
+                      radius={
+                        i === series.length - 1 ? [3, 3, 0, 0] : undefined
                       }
-                      return next;
-                    });
-                  }}
-                  formatter={(_val, entry) => {
-                    const key = String(entry?.dataKey ?? "");
-                    return (
-                      <span
-                        style={{
-                          cursor: "pointer",
-                          opacity: hidden.has(key) ? 0.35 : 1,
-                        }}
-                      >
-                        {seriesName(key)}
-                      </span>
-                    );
-                  }}
-                />
-                {series.map((s, i) => (
-                  <Line
-                    key={s.key}
-                    type="monotone"
-                    dataKey={s.key}
-                    name={s.name}
-                    hide={hidden.has(s.key)}
-                    stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                    activeDot={{ r: 4 }}
-                    connectNulls
-                  />
-                ))}
-              </LineChart>
+                    />
+                  ))}
+                </BarChart>
+              ) : (
+                <LineChart
+                  data={dailyData}
+                  margin={CHART_MARGIN}
+                  onClick={onPick}
+                >
+                  {commonAxes}
+                  {series.map((s, i) => (
+                    <Line
+                      key={s.key}
+                      type="monotone"
+                      dataKey={s.key}
+                      name={s.name}
+                      hide={hidden.has(s.key)}
+                      stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                      strokeWidth={2}
+                      dot={{ r: 2 }}
+                      activeDot={{ r: 4 }}
+                      connectNulls
+                    />
+                  ))}
+                </LineChart>
+              )}
             </ResponsiveContainer>
           )}
         </div>
