@@ -210,6 +210,14 @@ const setFlatVgpuValue = (
   accelerator[key] = String(value);
 };
 
+const parseOptionalValidationNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === "") {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+};
+
 /**
  * Compute maximum available resources for the endpoint form sliders.
  *
@@ -427,12 +435,19 @@ export function validateEndpointValues(
   }
 
   const virtualization = spec.resources?.accelerator?.virtualization;
-  const memoryMiB = Number(virtualization?.memory_mib ?? 0);
-  const memoryPercent = Number(virtualization?.memory_percent ?? 0);
-  const corePercent = Number(virtualization?.core_percent ?? 0);
-  const hasMemoryMiB = virtualization?.memory_mib != null && memoryMiB > 0;
+  const memoryMiB = parseOptionalValidationNumber(virtualization?.memory_mib);
+  const memoryPercent = parseOptionalValidationNumber(
+    virtualization?.memory_percent,
+  );
+  const corePercent = parseOptionalValidationNumber(
+    virtualization?.core_percent,
+  );
+  const hasMemoryMiB =
+    memoryMiB !== undefined && Number.isFinite(memoryMiB) && memoryMiB > 0;
   const hasMemoryPercent =
-    virtualization?.memory_percent != null && memoryPercent > 0;
+    memoryPercent !== undefined &&
+    Number.isFinite(memoryPercent) &&
+    memoryPercent > 0;
 
   if (hasMemoryMiB && hasMemoryPercent) {
     errors["spec.resources.accelerator.virtualization.memory_percent"] = {
@@ -441,7 +456,10 @@ export function validateEndpointValues(
     };
   }
 
-  if (virtualization?.memory_mib != null && memoryMiB <= 0) {
+  if (
+    memoryMiB !== undefined &&
+    (!Number.isFinite(memoryMiB) || memoryMiB <= 0)
+  ) {
     errors["spec.resources.accelerator.virtualization.memory_mib"] = {
       type: "manual",
       message: t("endpoints.messages.vgpuMemoryMiBPositive"),
@@ -449,8 +467,10 @@ export function validateEndpointValues(
   }
 
   if (
-    virtualization?.memory_percent != null &&
-    (memoryPercent < 1 || memoryPercent > 100)
+    memoryPercent !== undefined &&
+    (!Number.isFinite(memoryPercent) ||
+      memoryPercent < 1 ||
+      memoryPercent > 100)
   ) {
     errors["spec.resources.accelerator.virtualization.memory_percent"] = {
       type: "manual",
@@ -459,8 +479,8 @@ export function validateEndpointValues(
   }
 
   if (
-    virtualization?.core_percent != null &&
-    (corePercent < 1 || corePercent > 100)
+    corePercent !== undefined &&
+    (!Number.isFinite(corePercent) || corePercent < 1 || corePercent > 100)
   ) {
     errors["spec.resources.accelerator.virtualization.core_percent"] = {
       type: "manual",

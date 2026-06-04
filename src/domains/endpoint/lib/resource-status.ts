@@ -16,6 +16,33 @@ type EndpointReplicaResourceRow = {
   coreUnits: number;
 };
 
+type EndpointVgpuDashboardContext = {
+  cluster: string;
+  workspace: string;
+  endpoint: string;
+  namespace: string;
+  pod: string;
+  node?: string;
+  deviceUuid?: string;
+};
+
+type EndpointVgpuDashboardContextInput = {
+  resourceStatus: EndpointResourceStatus | null | undefined;
+  cluster: string;
+  workspace: string;
+  endpoint: string;
+};
+
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const buildRegexFilter = (values: string[]): string | undefined => {
+  const unique = Array.from(new Set(values.filter(Boolean)));
+  if (unique.length === 0) return undefined;
+  if (unique.length === 1) return escapeRegex(unique[0]);
+  return `(?:${unique.map(escapeRegex).join("|")})`;
+};
+
 export function getEndpointResourceSummaryRows(
   resourceStatus: EndpointResourceStatus | null | undefined,
 ): EndpointResourceSummaryRow[] {
@@ -42,4 +69,25 @@ export function getEndpointReplicaResourceRows(
       coreUnits: device.core_units,
     })),
   );
+}
+
+export function getEndpointVgpuDashboardContext({
+  resourceStatus,
+  cluster,
+  workspace,
+  endpoint,
+}: EndpointVgpuDashboardContextInput): EndpointVgpuDashboardContext | null {
+  const rows = getEndpointReplicaResourceRows(resourceStatus);
+  const pod = buildRegexFilter(rows.map((row) => row.instanceId));
+  if (!pod) return null;
+
+  return {
+    cluster,
+    workspace,
+    endpoint,
+    namespace: ".*",
+    pod,
+    node: buildRegexFilter(rows.map((row) => row.nodeId)),
+    deviceUuid: buildRegexFilter(rows.map((row) => row.uuid)),
+  };
 }

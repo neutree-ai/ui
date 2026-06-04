@@ -300,6 +300,51 @@ describe("useEndpointForm", () => {
       });
     });
 
+    it("does not overwrite user-edited vGPU resources with stale query resources", async () => {
+      queryDataRef.current = {
+        spec: {
+          resources: {
+            cpu: "2",
+            memory: "8Gi",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "8192",
+              "virtualization.core_percent": "50",
+            },
+          },
+        },
+      };
+      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(8192);
+      });
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s");
+      });
+
+      const input = await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuMemory/i,
+      });
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "4096" } });
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("endpoints.fields.requestedVgpuMemory: 4096 MiB"),
+        ).toBeTruthy();
+      });
+    });
+
     it("normalizes backend query resources before editing an existing vGPU endpoint", async () => {
       setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
       render(<EditForm />);
@@ -374,6 +419,85 @@ describe("useEndpointForm", () => {
         expect(
           formInstance?.getValues("spec.resources.accelerator.virtualization"),
         ).toBeUndefined();
+      });
+    });
+
+    it("updates vGPU memory through the NumberInput parser", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const input = await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuMemory/i,
+      });
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "4096" } });
+
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBe(4096);
+      await waitFor(() => {
+        expect(
+          screen.getByText("endpoints.fields.requestedVgpuMemory: 4096 MiB"),
+        ).toBeTruthy();
+      });
+    });
+
+    it("validates vGPU memory input changes immediately", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const input = await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuMemory/i,
+      });
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "0" } });
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("endpoints.messages.vgpuMemoryMiBPositive"),
+        ).toBeTruthy();
       });
     });
   });

@@ -80,7 +80,7 @@ export const getClusterVgpuDashboardProps = (
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: "hami-vgpu-cluster-overview",
+    dashboardId: "hami-vgpu-dashboard",
     variables: {
       ...getCommonVariables(),
       Cluster: clusterName,
@@ -107,8 +107,11 @@ type EndpointVgpuDashboardContext = {
   cluster: string;
   workspace: string;
   endpoint: string;
-  namespace: string;
-  pod: string;
+  namespace?: string;
+  pod?: string;
+  node?: string;
+  container?: string;
+  deviceUuid?: string;
 };
 
 export const getEndpointVgpuDashboardProps = (
@@ -117,17 +120,17 @@ export const getEndpointVgpuDashboardProps = (
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: "hami-vgpu-endpoint",
+    dashboardId: "hami-endpoint-vgpu-dashboard",
     variables: {
       ...getCommonVariables(),
       Cluster: context.cluster,
       workspace: context.workspace,
       endpoint: context.endpoint,
-      namespace: context.namespace,
-      pod: context.pod,
-      node: GRAFANA_VAR_ALL,
-      container: GRAFANA_VAR_ALL,
-      device_uuid: GRAFANA_VAR_ALL,
+      namespace: context.namespace || ".*",
+      pod: context.pod || ".*",
+      node: context.node || GRAFANA_VAR_ALL,
+      container: context.container || GRAFANA_VAR_ALL,
+      device_uuid: context.deviceUuid || GRAFANA_VAR_ALL,
     },
   },
 });

@@ -468,6 +468,34 @@ describe("validateEndpointValues", () => {
     ).toBe("endpoints.messages.vgpuMemoryMutuallyExclusive");
   });
 
+  it("treats blank optional vGPU fields as not configured", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: "" as unknown as number,
+              memory_percent: "" as unknown as number,
+              core_percent: "" as unknown as number,
+            },
+          },
+        },
+      },
+      {
+        action: "edit",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(errors).toEqual({});
+  });
+
   it("returns error when vGPU percentages are out of range", () => {
     const errors = validateEndpointValues(
       {

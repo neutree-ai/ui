@@ -50,6 +50,12 @@ import { useWorkspace } from "@/foundation/hooks/use-workspace";
 
 type VgpuMemoryMode = "mib" | "gib" | "percent";
 
+const userSetValueOptions = {
+  shouldDirty: true,
+  shouldTouch: true,
+  shouldValidate: true,
+} as const;
+
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
@@ -101,6 +107,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const originalOnFinishRef = useRef(form.refineCore.onFinish);
+  const syncedQueryResourcesKeyRef = useRef<string | null>(null);
   form.refineCore.onFinish = async (values) => {
     const transformedValues =
       typeof structuredClone === "function"
@@ -110,8 +117,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     return originalOnFinishRef.current(transformedValues);
   };
 
-  const formValues = form.getValues();
-  const watchedResources = form.watch("spec.resources");
+  const watchedFormValues = form.watch();
+  const formValues = watchedFormValues ?? form.getValues();
+  const watchedResources = formValues.spec?.resources;
   const normalizedResources = normalizeEndpointResourcesForForm(
     watchedResources as unknown as Record<string, unknown> | null | undefined,
   );
@@ -239,10 +247,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       form.setValue(
         "spec.resources.accelerator.virtualization.memory_percent",
         value,
+        userSetValueOptions,
       );
       form.setValue(
         "spec.resources.accelerator.virtualization.memory_mib",
         undefined,
+        userSetValueOptions,
       );
       return;
     }
@@ -250,10 +260,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form.setValue(
       "spec.resources.accelerator.virtualization.memory_mib",
       vgpuMemoryMode === "gib" ? Math.ceil(value * 1024) : value,
+      userSetValueOptions,
     );
     form.setValue(
       "spec.resources.accelerator.virtualization.memory_percent",
       undefined,
+      userSetValueOptions,
     );
   };
 
@@ -302,8 +314,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   useEffect(() => {
     if (action !== "edit" || !queryResources) return;
 
+    const queryResourcesKey = JSON.stringify(queryResources);
+    if (syncedQueryResourcesKeyRef.current === queryResourcesKey) return;
+
     const resourcesForForm = normalizeEndpointResourcesForForm(queryResources);
     if (!resourcesForForm) return;
+    syncedQueryResourcesKeyRef.current = queryResourcesKey;
 
     const currentResources = form.getValues("spec.resources") as
       | Record<string, unknown>
@@ -613,6 +629,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     form.setValue(
                       "spec.resources.accelerator.virtualization.memory_mib",
                       undefined,
+                      userSetValueOptions,
                     );
                   } else {
                     const effective = getEffectiveVgpuMemoryMiB(
@@ -622,10 +639,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     form.setValue(
                       "spec.resources.accelerator.virtualization.memory_mib",
                       effective ?? undefined,
+                      userSetValueOptions,
                     );
                     form.setValue(
                       "spec.resources.accelerator.virtualization.memory_percent",
                       undefined,
+                      userSetValueOptions,
                     );
                   }
                 }}
@@ -672,6 +691,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   form.setValue(
                     "spec.resources.accelerator.virtualization.core_percent",
                     value,
+                    userSetValueOptions,
                   )
                 }
                 min={1}

@@ -75,9 +75,7 @@ describe("getClusterVgpuDashboardProps", () => {
   it("sets the vGPU cluster dashboard ID and variables", () => {
     const props = getClusterVgpuDashboardProps("http://grafana", "cluster-a");
 
-    expect(props.dashboardConfig.dashboardId).toBe(
-      "hami-vgpu-cluster-overview",
-    );
+    expect(props.dashboardConfig.dashboardId).toBe("hami-vgpu-dashboard");
     expect(props.dashboardConfig.variables).toMatchObject({
       datasource: "neutree-cluster",
       Cluster: "cluster-a",
@@ -97,7 +95,9 @@ describe("getEndpointVgpuDashboardProps", () => {
       pod: "ep-a-.*",
     });
 
-    expect(props.dashboardConfig.dashboardId).toBe("hami-vgpu-endpoint");
+    expect(props.dashboardConfig.dashboardId).toBe(
+      "hami-endpoint-vgpu-dashboard",
+    );
     expect(props.dashboardConfig.variables).toMatchObject({
       datasource: "neutree-cluster",
       Cluster: "cluster-a",
@@ -108,6 +108,24 @@ describe("getEndpointVgpuDashboardProps", () => {
       node: GRAFANA_VAR_ALL,
       container: GRAFANA_VAR_ALL,
       device_uuid: GRAFANA_VAR_ALL,
+    });
+  });
+
+  it("uses runtime resource filters when provided", () => {
+    const props = getEndpointVgpuDashboardProps("http://grafana", {
+      cluster: "cluster-a",
+      workspace: "default",
+      endpoint: "ep-a",
+      pod: "(?:pod-a|pod-b)",
+      node: "node-a",
+      deviceUuid: "(?:GPU-a|GPU-b)",
+    });
+
+    expect(props.dashboardConfig.variables).toMatchObject({
+      namespace: ".*",
+      pod: "(?:pod-a|pod-b)",
+      node: "node-a",
+      device_uuid: "(?:GPU-a|GPU-b)",
     });
   });
 });

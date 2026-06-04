@@ -33,6 +33,7 @@ import {
   useEndpointMonitorPanels,
 } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { useEndpointVgpuMonitorContext } from "@/domains/endpoint/hooks/use-endpoint-vgpu-monitor-context";
+import { getEndpointVgpuDashboardContext } from "@/domains/endpoint/lib/resource-status";
 import { hasVgpuResources } from "@/domains/endpoint/lib/vgpu";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
@@ -164,11 +165,24 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     hasVgpuResources: endpointHasVgpuResources,
   });
 
+  const vgpuDashboardContext = useMemo(() => {
+    if (!record) return null;
+    return getEndpointVgpuDashboardContext({
+      resourceStatus: record.status?.resources,
+      cluster: record.spec.cluster,
+      workspace: record.metadata.workspace || "",
+      endpoint: record.metadata.name,
+    });
+  }, [record]);
+
   const {
     data: vgpuMonitorContextData,
     isLoading: isLoadingVgpuMonitorContext,
     error: vgpuMonitorContextError,
-  } = useEndpointVgpuMonitorContext(record, endpointHasVgpuResources);
+  } = useEndpointVgpuMonitorContext(
+    record,
+    endpointHasVgpuResources && !vgpuDashboardContext,
+  );
 
   const { deployments } = useEndpointLogSources(record ?? null);
   const monitorReplicas = useMemo(
@@ -447,18 +461,28 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 />
               ) : selectedPanel === "vgpu" ? (
                 (() => {
-                  const context = vgpuMonitorContextData?.data;
-                  const namespace = context?.namespace;
-                  const pod = context?.pod_regex;
-                  const clusterName = context?.cluster || record.spec.cluster;
+                  const legacyContext = vgpuMonitorContextData?.data;
+                  const namespace =
+                    vgpuDashboardContext?.namespace ?? legacyContext?.namespace;
+                  const pod =
+                    vgpuDashboardContext?.pod ?? legacyContext?.pod_regex;
+                  const clusterName =
+                    vgpuDashboardContext?.cluster ??
+                    legacyContext?.cluster ??
+                    record.spec.cluster;
                   const workspaceName =
-                    context?.workspace || record.metadata.workspace || "";
+                    vgpuDashboardContext?.workspace ??
+                    legacyContext?.workspace ??
+                    record.metadata.workspace ??
+                    "";
                   const endpointName =
-                    context?.endpoint || record.metadata.name;
-                  if (isLoadingVgpuMonitorContext) {
+                    vgpuDashboardContext?.endpoint ??
+                    legacyContext?.endpoint ??
+                    record.metadata.name;
+                  if (!vgpuDashboardContext && isLoadingVgpuMonitorContext) {
                     return <Loader className="h-4 text-primary" />;
                   }
-                  if (vgpuMonitorContextError) {
+                  if (!vgpuDashboardContext && vgpuMonitorContextError) {
                     return (
                       <div className="flex items-center justify-center h-full">
                         <p className="text-muted-foreground">
@@ -484,6 +508,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                         endpoint: endpointName,
                         namespace,
                         pod,
+                        node: vgpuDashboardContext?.node,
+                        deviceUuid: vgpuDashboardContext?.deviceUuid,
                       })}
                       className="flex-1"
                       hideVariables

@@ -1,5 +1,10 @@
+import {
+  type ComponentPropsWithoutRef,
+  forwardRef,
+  useRef,
+  useState,
+} from "react";
 import { Input } from "@/components/ui/input";
-import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
 
 type NumberInputProps = Omit<
   ComponentPropsWithoutRef<typeof Input>,
@@ -14,19 +19,31 @@ type NumberInputProps = Omit<
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   ({ value, onValueChange, onInvalidBlur, ...rest }, ref) => {
     const [draft, setDraft] = useState<string | null>(null);
+    const lastEmittedDraftRef = useRef<string | null>(null);
 
     const displayValue = String(value);
 
     const handleFocus = () => {
       setDraft(displayValue);
+      lastEmittedDraftRef.current = null;
+    };
+
+    const handleInputValue = (nextDraft: string) => {
+      setDraft(nextDraft);
+      const num = Number.parseFloat(nextDraft);
+      if (!Number.isNaN(num)) {
+        if (lastEmittedDraftRef.current === nextDraft) return;
+        lastEmittedDraftRef.current = nextDraft;
+        onValueChange?.(num);
+      }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setDraft(e.target.value);
-      const num = Number.parseFloat(e.target.value);
-      if (!Number.isNaN(num)) {
-        onValueChange?.(num);
-      }
+      handleInputValue(e.target.value);
+    };
+
+    const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+      handleInputValue(e.currentTarget.value);
     };
 
     const handleBlur = () => {
@@ -35,17 +52,19 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         onInvalidBlur?.();
       }
       setDraft(null);
+      lastEmittedDraftRef.current = null;
     };
 
     return (
       <Input
         ref={ref}
         type="number"
+        {...rest}
         value={draft ?? displayValue}
         onFocus={handleFocus}
+        onInput={handleInput}
         onChange={handleChange}
         onBlur={handleBlur}
-        {...rest}
       />
     );
   },
