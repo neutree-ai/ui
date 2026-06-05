@@ -266,11 +266,14 @@ export const ModelUsageList = () => {
               : t("model_usage.daily.titleByKey")}
           </span>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">
-              {t("model_usage.daily.totalTokens", {
-                total: formatTokens(totalTokens),
-              })}
-            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-semibold tabular-nums">
+                {formatTokens(totalTokens)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t("model_usage.daily.totalLabel")}
+              </span>
+            </div>
             <div className="inline-flex rounded-md border p-0.5">
               <Button
                 type="button"
@@ -361,7 +364,13 @@ export const ModelUsageList = () => {
         <DateRangePicker value={range} onChange={setRange} />
         <Select
           value={apiKeyId || "all"}
-          onValueChange={(v) => setApiKeyId(v === "all" ? "" : v)}
+          onValueChange={(v) => {
+            const next = v === "all" ? "" : v;
+            setApiKeyId(next);
+            // A single key reads best as a stacked bar of its daily model mix;
+            // "All keys" reads best as per-key trend lines.
+            setChartType(next ? "bar" : "line");
+          }}
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder={t("model_usage.filters.apiKey")} />
@@ -454,6 +463,9 @@ const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
             <TableHead className="w-[110px]">
               {t("model_usage.detail.date")}
             </TableHead>
+            <TableHead className="w-[140px]">
+              {t("model_usage.apiKey")}
+            </TableHead>
             <TableHead className="w-[90px]">
               {t("model_usage.detail.type")}
             </TableHead>
@@ -474,7 +486,7 @@ const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
           {rows.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={8}
                 className="text-center py-8 text-muted-foreground"
               >
                 {t("model_usage.empty")}
@@ -487,6 +499,11 @@ const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
               >
                 <TableCell className="font-mono text-xs">
                   {formatTick(r.date)}
+                </TableCell>
+                <TableCell className="text-sm truncate max-w-[140px]">
+                  {r.api_key_name || (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <EndpointTypeBadge type={r.endpoint_type} />

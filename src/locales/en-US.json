@@ -993,7 +993,8 @@
 				"total": "Total"
 			},
 			"titleByKey": "Daily tokens by API key",
-			"titleByModel": "Daily tokens by model"
+			"titleByModel": "Daily tokens by model",
+			"totalLabel": "total tokens"
 		},
 		"detail": {
 			"title": "Daily detail",
