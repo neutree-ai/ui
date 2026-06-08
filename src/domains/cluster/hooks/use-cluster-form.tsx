@@ -163,7 +163,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     versionFields: (
-      <FormCardGrid>
+      <FormCardGrid title={t("clusters.sections.clusterVersion")}>
         <FormFieldGroup
           {...form}
           name="spec.version"
