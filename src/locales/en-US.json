@@ -1208,6 +1208,7 @@
 			"collapse": "Collapse",
 			"expand": "Expand",
 			"searchPlaceholder": "Search in body…",
+			"clearSearch": "Clear search",
 			"matchCount": "{{current}} / {{total}}",
 			"noMatches": "No matches",
 			"prevMatch": "Previous match",

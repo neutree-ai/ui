@@ -1,8 +1,8 @@
 import { useList, useParsed } from "@refinedev/core";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,9 +84,26 @@ export const AITracesList = () => {
   };
 
   const queryClient = useQueryClient();
-  const { data, isLoading, isFetching, error, refetch } = useQuery({
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+    refetch,
+  } = useInfiniteQuery({
     queryKey: ["ai-traces", queryArgs],
-    queryFn: ({ signal }) => fetchAITraces(queryArgs, signal),
+    queryFn: ({ pageParam, signal }) =>
+      fetchAITraces(
+        { ...queryArgs, before: pageParam as string | undefined },
+        signal,
+      ),
+    initialPageParam: undefined as string | undefined,
+    // The list endpoint returns `next_before` (the last row's timestamp) as the
+    // cursor for the next, strictly-older page; empty means no more records.
+    getNextPageParam: (lastPage) => lastPage.next_before || undefined,
     enabled: Boolean(workspace),
   });
 
@@ -95,7 +112,25 @@ export const AITracesList = () => {
     queryClient.invalidateQueries({ queryKey: ["ai-trace-stats"] });
   };
 
-  const items = data?.items ?? [];
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
+
+  // Infinite scroll: load the next page when the sentinel near the bottom of
+  // the list scrolls into view.
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <ListPage
@@ -310,6 +345,14 @@ export const AITracesList = () => {
           </TableBody>
         </Table>
       </div>
+
+      {hasNextPage && (
+        <div ref={loadMoreRef} className="flex justify-center py-4">
+          {isFetchingNextPage && (
+            <Loader className="w-6 text-muted-foreground" />
+          )}
+        </div>
+      )}
 
       <TraceDetailDrawer
         trace={selected}

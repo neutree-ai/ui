@@ -309,7 +309,7 @@ const BodySection = ({
                   setActiveMatch(0);
                 }}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={t("ai_traces.detail.noMatches")}
+                aria-label={t("ai_traces.detail.clearSearch")}
               >
                 <X className="size-3.5" />
               </button>
@@ -970,7 +970,24 @@ function parseSSEResponse(text: string): ChatMessage[] {
   const lines = text.split(/\r?\n/);
   let assistant = "";
   let reasoning = "";
-  const toolBlocks: ContentBlock[] = [];
+
+  // Tool calls arrive fragmented and keyed by index in both dialects: OpenAI
+  // streams `delta.tool_calls[]` (first fragment carries the function name,
+  // later ones append `arguments` chunks); Anthropic streams a
+  // `content_block_start` of type `tool_use` (carrying the name) followed by
+  // `input_json_delta` fragments (`partial_json`). Accumulate both into a
+  // per-index {name, args} record, preserving first-seen order.
+  const toolAcc = new Map<number, { name?: string; args: string }>();
+  const toolOrder: number[] = [];
+  const ensureTool = (index: number) => {
+    let entry = toolAcc.get(index);
+    if (!entry) {
+      entry = { args: "" };
+      toolAcc.set(index, entry);
+      toolOrder.push(index);
+    }
+    return entry;
+  };
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -990,23 +1007,58 @@ function parseSSEResponse(text: string): ChatMessage[] {
         // Reasoning models stream chain-of-thought in a separate field.
         const r = delta.reasoning ?? delta.reasoning_content;
         if (typeof r === "string") reasoning += r;
+        if (Array.isArray(delta.tool_calls)) {
+          for (const tc of delta.tool_calls) {
+            if (!isRecord(tc)) continue;
+            const index =
+              typeof tc.index === "number" ? tc.index : toolOrder.length;
+            const entry = ensureTool(index);
+            const fn = isRecord(tc.function) ? tc.function : undefined;
+            if (fn && typeof fn.name === "string" && fn.name) {
+              entry.name = fn.name;
+            }
+            if (fn && typeof fn.arguments === "string") {
+              entry.args += fn.arguments;
+            }
+          }
+        }
       }
       continue;
     }
 
     // Anthropic streaming events
+    if (evt.type === "content_block_start" && isRecord(evt.content_block)) {
+      const block = evt.content_block;
+      if (block.type === "tool_use") {
+        const index =
+          typeof evt.index === "number" ? evt.index : toolOrder.length;
+        const entry = ensureTool(index);
+        if (typeof block.name === "string") entry.name = block.name;
+      }
+      continue;
+    }
     if (evt.type === "content_block_delta" && isRecord(evt.delta)) {
       const d = evt.delta;
       if (typeof d.text === "string") assistant += d.text;
       else if (typeof d.thinking === "string") reasoning += d.thinking;
-      else if (typeof d.partial_json === "string") assistant += d.partial_json;
+      else if (typeof d.partial_json === "string") {
+        // Tool-call arguments for the block at this index.
+        const index =
+          typeof evt.index === "number"
+            ? evt.index
+            : (toolOrder[toolOrder.length - 1] ?? 0);
+        ensureTool(index).args += d.partial_json;
+      }
     }
   }
 
   const blocks: ContentBlock[] = [];
   if (reasoning) blocks.push({ kind: "thinking", text: reasoning });
   if (assistant) blocks.push({ kind: "text", text: assistant });
-  blocks.push(...toolBlocks);
+  for (const index of toolOrder) {
+    const entry = toolAcc.get(index);
+    if (entry) blocks.push({ kind: "tool_use", label: entry.name, text: entry.args || "{}" });
+  }
   // SSE has no per-message wire shape — surface the full stream as the raw.
   return blocks.length > 0 ? [{ role: "assistant", blocks, raw: text }] : [];
 }
