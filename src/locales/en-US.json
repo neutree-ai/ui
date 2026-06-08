@@ -1308,6 +1308,7 @@
 		"title": "Model Usage",
 		"refresh": "Refresh",
 		"empty": "No usage in the selected window.",
+		"clearFocusDate": "Clear focused date",
 		"filters": {
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",

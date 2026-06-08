@@ -412,14 +412,18 @@ export const ModelUsageList = () => {
           onChange={(e) => setModel(e.target.value)}
         />
         {focusDate ? (
-          <Badge
+          <Button
+            type="button"
             variant="secondary"
-            className="h-9 gap-1 px-3 font-normal cursor-pointer"
+            size="sm"
+            className="h-9 gap-1 px-3 font-normal"
+            aria-label={t("model_usage.clearFocusDate")}
+            title={t("model_usage.clearFocusDate")}
             onClick={() => setFocusDate("")}
           >
             {formatTick(focusDate)}
             <X className="size-3.5" />
-          </Badge>
+          </Button>
         ) : null}
       </div>
 
