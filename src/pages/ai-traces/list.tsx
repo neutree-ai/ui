@@ -100,7 +100,6 @@ export const AITracesList = () => {
         { ...queryArgs, before: pageParam as string | undefined },
         signal,
       ),
-    initialPageParam: undefined as string | undefined,
     // The list endpoint returns `next_before` (the last row's timestamp) as the
     // cursor for the next, strictly-older page; empty means no more records.
     getNextPageParam: (lastPage) => lastPage.next_before || undefined,
