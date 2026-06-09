@@ -74,6 +74,15 @@ function CreateForm() {
   );
 }
 
+function VersionFieldsForm() {
+  const { form, versionFields } = useClusterForm({ action: "create" });
+  return (
+    <FormProvider {...form}>
+      <form>{versionFields}</form>
+    </FormProvider>
+  );
+}
+
 function EditForm() {
   const { form, typeFields, providerFields, routerFields, authFields } =
     useClusterForm({ action: "edit" });
@@ -98,6 +107,12 @@ function selectType(label: string) {
 }
 
 describe("useClusterForm", () => {
+  it("labels the version section as cluster version", () => {
+    render(<VersionFieldsForm />);
+
+    expect(screen.getByText("clusters.sections.clusterVersion")).toBeTruthy();
+  });
+
   describe("edit mode — NodeIPsField props", () => {
     it("passes headIpDisabled=true without disabled in edit mode", () => {
       nodeIPsFieldProps.mockClear();
