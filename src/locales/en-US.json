@@ -1,6 +1,9 @@
 {
 	"nativeName": "English",
 	"common": {
+		"dateRange": {
+			"lastDays": "Last {{days}} days"
+		},
 		"fields": {
 			"resources": "Resources",
 			"gpu": "GPU",
@@ -1141,6 +1144,93 @@
 			"optional": "(Optional)"
 		}
 	},
+	"observability": {
+		"title": "Observability"
+	},
+	"ai_traces": {
+		"title": "Inference Trace",
+		"empty": "No traces in the selected window.",
+		"refresh": "Refresh",
+		"stats": {
+			"title": "Requests (last 7 days)",
+			"requests": "Requests",
+			"totalRequests": "{{total}} total"
+		},
+		"filters": {
+			"endpoint": "Endpoint name",
+			"endpointType": "Endpoint type",
+			"allTypes": "All types",
+			"status": "Status",
+			"allStatuses": "All statuses",
+			"model": "Model",
+			"apiKey": "API key",
+			"allApiKeys": "All API keys",
+			"finishReason": "Finish",
+			"allFinishReasons": "All finish reasons"
+		},
+		"columns": {
+			"time": "Time",
+			"endpoint": "Endpoint",
+			"app": "App",
+			"model": "Model",
+			"status": "Status",
+			"apiKey": "API key",
+			"tokens": "Tokens",
+			"throughput": "Tok/s",
+			"duration": "Duration",
+			"finishReason": "Finish"
+		},
+		"detail": {
+			"title": "Trace detail",
+			"time": "Time",
+			"status": "Status",
+			"endpoint": "Endpoint",
+			"workspace": "Workspace",
+			"requestModel": "Request model",
+			"responseModel": "Response model",
+			"stream": "Stream",
+			"streamOn": "Streaming",
+			"streamOff": "Non-streaming",
+			"tokens": "Tokens",
+			"tokenParts": {
+				"prompt": "prompt",
+				"completion": "completion",
+				"total": "total"
+			},
+			"apiKey": "API key",
+			"request": "Request body",
+			"response": "Response body",
+			"viewFormatted": "Formatted",
+			"viewRaw": "Raw",
+			"messageRaw": "</> View raw",
+			"messageHideRaw": "</> Hide raw",
+			"wrap": "Wrap lines",
+			"noWrap": "No wrap",
+			"collapse": "Collapse",
+			"expand": "Expand",
+			"searchPlaceholder": "Search in body…",
+			"clearSearch": "Clear search",
+			"matchCount": "{{current}} / {{total}}",
+			"noMatches": "No matches",
+			"prevMatch": "Previous match",
+			"nextMatch": "Next match",
+			"role": {
+				"system": "System",
+				"user": "User",
+				"assistant": "Assistant",
+				"tool": "Tool",
+				"developer": "Developer"
+			},
+			"block": {
+				"text": "Text",
+				"toolUse": "Tool use",
+				"toolResult": "Tool result",
+				"image": "Image",
+				"thinking": "Thinking",
+				"unknown": "Content block"
+			}
+		}
+	},
 	"permissions": {
 		"create": "Create",
 		"read": "Read",
@@ -1150,6 +1240,7 @@
 		"pull": "Pull",
 		"system_admin": "System Admin",
 		"read-credentials": "Read Credentials",
+		"trace-read": "Trace Read",
 		"requiredBy": "Required by: {{actions}}"
 	},
 	"systems": {

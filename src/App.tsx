@@ -20,6 +20,7 @@ import "./global.css";
 import "./variables.css";
 
 import {
+  Activity,
   BookOpen,
   Cpu,
   Database,
@@ -50,6 +51,10 @@ const AuthPage = lazy(() =>
   import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),
 );
 const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+
+const AITracesList = lazy(() =>
+  import("./pages/ai-traces/list").then((m) => ({ default: m.AITracesList })),
+);
 
 const ApiKeysList = lazy(() =>
   import("./pages/api-keys/list").then((m) => ({ default: m.ApiKeysList })),
@@ -345,6 +350,18 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "observability",
+  },
+  {
+    name: "ai_traces",
+    list: "/:workspace/ai-traces",
+    meta: {
+      icon: <Activity />,
+      workspaced: true,
+      parent: "observability",
+    },
+  },
+  {
     name: "access_control",
   },
   {
@@ -599,6 +616,9 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route path="/:workspace/api-keys">
                   <Route index element={<ApiKeysList />} />
                   <Route path="show/:id" element={<ApiKeysShow />} />
+                </Route>
+                <Route path="/:workspace/ai-traces">
+                  <Route index element={<AITracesList />} />
                 </Route>
                 <Route path="/oem-configs">
                   <Route index element={<OemConfigShow />} />

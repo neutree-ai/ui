@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "a2ebabd7035347e83eb48536602b2fe1",
-  "src/App.tsx": "f19688157e3025633937e3aba95d5cb0",
+  "src/App.tsx": "b5ee1edc2d905ed33e7c53a556a09633",
   "src/Root.tsx": "0bf1b5abed7cbc71c06832cc2de84f12",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",
@@ -102,7 +102,7 @@
   "src/foundation/lib/unit.ts": "11b547f08b0fc547ae3070e7aaa11597",
   "src/foundation/lib/utils.ts": "618d00bf4537ce84f9ba62c5b215fb30",
   "src/foundation/lib/validate.ts": "5b121181f9539313e8400c5a7cf35ae2",
-  "src/foundation/lib/api/api-gen.ts": "57df3f496d3097b8d6c0a60efc7a6c0b",
+  "src/foundation/lib/api/api-gen.ts": "6caf024d2bc7094daae5a590d9b2caeb",
   "src/foundation/lib/api/index.ts": "dd598b7ac20a55d8a1791983f31d47c0",
   "src/foundation/hooks/use-column-visibility.ts": "34df48e802e538f49e37e3e7af1722e5",
   "src/foundation/hooks/use-delete-helper.tsx": "590940db014362dc6a7e84c0dfa4e8fd",
@@ -156,10 +156,10 @@
   "src/domains/user/types.ts": "46f595f24d513d8484343153cf547ca1",
   "src/domains/role-assignment/types.ts": "ef54639c9b39af1db44d8956f4fc1759",
   "src/domains/role-assignment/components/UserCell.tsx": "ddabf86c8ea0897d69b22f9ac5b73f77",
-  "src/domains/role/types.ts": "65ee23d50d12b87f5f1e0a2df42ee3f9",
+  "src/domains/role/types.ts": "d98296c8f3098507006978cc1ad78e24",
   "src/domains/role/hooks/use-permission-dependencies.ts": "fdfc65ef00604ba7d4306eb37ecefe46",
   "src/domains/role/components/PermissionsTree.tsx": "70d1f5fc23960b83cc1b4939f6052b36",
-  "src/domains/role/components/PermissionsTreeField.tsx": "752f3f11a536c4a9438cb38785c43570",
+  "src/domains/role/components/PermissionsTreeField.tsx": "86a3980c563433de3a8eca51a5cbbe6b",
   "src/domains/model-registry/types.ts": "f1af5141f8aee9c147932bdda6f34ca6",
   "src/domains/model-registry/components/ModelRegistryStatus.tsx": "2683d6d752fe80c13efa3583d4e1985f",
   "src/domains/model-registry/components/ModelRegistryType.tsx": "9585615662f17ec03ea42671bc52df5c",
@@ -289,5 +289,11 @@
   "src/foundation/hooks/use-refine-field-array.ts": "8e3ff4422156f31e4dd5928bff116427",
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "c4c97cc62ad41f004d08238c569e0054",
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "71fed924f6125ed6cfbbc8891b96c282",
-  "src/domains/external-endpoint/hooks/use-model-mapping-rows.ts": "8acf1e3078e104a09eaa7ce60bb41b56"
+  "src/domains/external-endpoint/hooks/use-model-mapping-rows.ts": "8acf1e3078e104a09eaa7ce60bb41b56",
+  "src/pages/ai-traces/list.tsx": "681afba0c025cf9b88755d193edc7b25",
+  "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "c88cb4acc0d3e138398bf7a18f4c4fd2",
+  "src/pages/ai-traces/components/TraceStatsChart.tsx": "72d803582532b53b21c0bce895d0142f",
+  "src/foundation/lib/api/ai-traces.ts": "d989ddca41c00c96b1803f69be83c0fc",
+  "src/foundation/components/DateRangePicker.tsx": "7db897cba5bece0433e75fcd91d305b1",
+  "src/components/ui/calendar.tsx": "67b3c096201e6f030437e9127db7c586"
 }
