@@ -250,11 +250,17 @@ export const VirtualLog: FC<VirtualLogProps> = ({
 
     // Track whether the user is pinned to the bottom so auto-refresh only
     // follows the tail when they haven't scrolled up to read older lines.
-    const maxScrollOffset = Math.max(
-      0,
-      processedLines.length * lineHeight - listHeight,
-    );
-    isAtBottomRef.current = scrollOffset >= maxScrollOffset - lineHeight;
+    // The "pinned to bottom" concept only applies to normal (non-reversed)
+    // order, so we only update it there. In reverse mode the latest line sits
+    // at the top, so scrolling would otherwise wrongly flip this to false and
+    // suppress the expected auto-scroll after switching back to normal order.
+    if (!reverse) {
+      const maxScrollOffset = Math.max(
+        0,
+        processedLines.length * lineHeight - listHeight,
+      );
+      isAtBottomRef.current = scrollOffset >= maxScrollOffset - lineHeight;
+    }
 
     if (!onScrollBottom) return;
 
