@@ -1,9 +1,6 @@
 {
 	"nativeName": "English",
 	"common": {
-		"dateRange": {
-			"lastDays": "Last {{days}} days"
-		},
 		"fields": {
 			"resources": "Resources",
 			"gpu": "GPU",
@@ -60,6 +57,11 @@
 			"skipped": "Skipped (already exists)",
 			"creating": "Creating...",
 			"error": "Error"
+		},
+		"dateRange": {
+			"lastDays": "Last {{days}} days",
+			"from": "From",
+			"to": "To"
 		}
 	},
 	"appearance": {
@@ -1301,5 +1303,54 @@
 	},
 	"file": {
 		"title": "File"
+	},
+	"model_usage": {
+		"title": "Model Usage",
+		"refresh": "Refresh",
+		"empty": "No usage in the selected window.",
+		"clearFocusDate": "Clear focused date",
+		"filters": {
+			"apiKey": "API key",
+			"allApiKeys": "All API keys",
+			"model": "Model",
+			"endpointType": "Type",
+			"allTypes": "All types"
+		},
+		"apiKey": "API key",
+		"model": "Model",
+		"promptTokens": "Prompt",
+		"completionTokens": "Completion",
+		"totalTokens": "Total",
+		"byApiKey": "By API key",
+		"byModel": "By model",
+		"range": {
+			"7": "Last 7 days",
+			"30": "Last 30 days",
+			"90": "Last 90 days"
+		},
+		"daily": {
+			"title": "Daily tokens",
+			"totalTokens": "{{total}} total",
+			"tooltip": {
+				"prompt": "Prompt",
+				"completion": "Completion",
+				"total": "Total"
+			},
+			"titleByKey": "Daily tokens by API key",
+			"titleByModel": "Daily tokens by model",
+			"totalLabel": "total tokens"
+		},
+		"detail": {
+			"title": "Daily detail",
+			"date": "Date",
+			"type": "Type",
+			"endpoint": "Endpoint",
+			"internal": "Internal",
+			"external": "External"
+		},
+		"chart": {
+			"line": "Line chart",
+			"bar": "Bar chart"
+		}
 	}
 }

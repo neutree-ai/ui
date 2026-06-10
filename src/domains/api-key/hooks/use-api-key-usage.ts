@@ -1,46 +1,24 @@
-import type { ApiUsageRecord } from "@/domains/api-key/types";
-import { useCustomMutation } from "@refinedev/core";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useUsageByDimension } from "./use-usage-by-dimension";
 
-export const POLL_INTERVAL_MS = 60_000;
+export { POLL_INTERVAL_MS } from "./use-usage-by-dimension";
 
+// useApiKeyUsage returns one API key's per-day, per-dimension token usage.
+// The end bound is a fixed far-future date rather than "now": useUsageByDimension
+// requires a stable (memoized) params reference, so a mount-time `new Date()` would
+// freeze the upper bound and the 60s poll would stop reflecting usage accruing later
+// today. A far-future bound keeps params stable while always covering "up to now".
 export function useApiKeyUsage(apiKeyId: string | number | undefined) {
-  const [usageData, setUsageData] = useState<ApiUsageRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const { mutateAsync } = useCustomMutation();
-
-  const fetchUsageData = useCallback(async () => {
-    if (!apiKeyId) return;
-
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await mutateAsync({
-        url: "/rpc/get_usage_by_dimension",
-        method: "post",
-        values: {
-          p_start_date: "2025-01-01",
-          p_end_date: new Date().toISOString(),
-          p_api_key_id: apiKeyId,
-        },
-      });
-      setUsageData(res.data as ApiUsageRecord[]);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiKeyId, mutateAsync]);
-
-  useEffect(() => {
-    fetchUsageData();
-  }, [fetchUsageData]);
-
-  useEffect(() => {
-    const interval = setInterval(fetchUsageData, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [fetchUsageData]);
-
-  return { usageData, isLoading, error };
+  const params = useMemo(
+    () =>
+      apiKeyId
+        ? {
+            p_start_date: "2025-01-01",
+            p_end_date: "2100-01-01",
+            p_api_key_id: apiKeyId,
+          }
+        : null,
+    [apiKeyId],
+  );
+  return useUsageByDimension(params);
 }
