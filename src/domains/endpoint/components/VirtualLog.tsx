@@ -116,6 +116,15 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   const listRef = useRef<List>(null);
 
   /**
+   * Tracks whether the user is currently pinned to the bottom of the log.
+   * Starts true so the very first render auto-scrolls to the latest line.
+   * While true, new log content (e.g. from auto-refresh) keeps following the
+   * tail; once the user scrolls up to read older lines it becomes false and we
+   * stop yanking them back down on every refresh.
+   */
+  const isAtBottomRef = useRef(true);
+
+  /**
    * Process log lines:
    * 1. Split lines
    * 2. Filter by time window (if provided)
@@ -236,10 +245,24 @@ export const VirtualLog: FC<VirtualLogProps> = ({
    * Handle scroll to detect when user reaches bottom/top for infinite loading
    */
   const handleScroll = (props: ListOnScrollProps) => {
-    if (!onScrollBottom) return;
-
     const { scrollDirection, scrollOffset, scrollUpdateWasRequested } = props;
     if (scrollUpdateWasRequested) return; // Skip programmatic scrolls
+
+    // Track whether the user is pinned to the bottom so auto-refresh only
+    // follows the tail when they haven't scrolled up to read older lines.
+    // The "pinned to bottom" concept only applies to normal (non-reversed)
+    // order, so we only update it there. In reverse mode the latest line sits
+    // at the top, so scrolling would otherwise wrongly flip this to false and
+    // suppress the expected auto-scroll after switching back to normal order.
+    if (!reverse) {
+      const maxScrollOffset = Math.max(
+        0,
+        processedLines.length * lineHeight - listHeight,
+      );
+      isAtBottomRef.current = scrollOffset >= maxScrollOffset - lineHeight;
+    }
+
+    if (!onScrollBottom) return;
 
     if (!reverse) {
       // Normal order: detect bottom
@@ -257,12 +280,14 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   };
 
   /**
-   * Auto-scroll to latest logs when in normal mode
+   * Auto-scroll to latest logs when in normal mode, but only while the user is
+   * already following the tail. If they scrolled up to inspect earlier output,
+   * preserve their position across auto-refreshes instead of jumping down.
    */
   useEffect(() => {
     if (!listRef.current || !processedLines.length) return;
 
-    if (!reverse) {
+    if (!reverse && isAtBottomRef.current) {
       // Scroll to bottom for latest logs
       listRef.current.scrollToItem(processedLines.length - 1, "end");
     }
