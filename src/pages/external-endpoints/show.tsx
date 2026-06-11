@@ -99,10 +99,10 @@ export const ExternalEndpointsShow = () => {
                       <thead>
                         <tr className="border-b bg-muted/50">
                           <th className="w-1/2 px-4 py-2 text-left font-medium">
-                            {t("external_endpoints.fields.exposedModelName")}
+                            {t("external_endpoints.fields.upstreamModelName")}
                           </th>
                           <th className="w-1/2 px-4 py-2 text-left font-medium">
-                            {t("external_endpoints.fields.upstreamModelName")}
+                            {t("external_endpoints.fields.exposedModelName")}
                           </th>
                         </tr>
                       </thead>
@@ -114,10 +114,10 @@ export const ExternalEndpointsShow = () => {
                               className="border-b last:border-0"
                             >
                               <td className="px-4 py-2">
-                                <code className="text-sm">{exposed}</code>
+                                <code className="text-sm">{upstreamModel}</code>
                               </td>
                               <td className="px-4 py-2">
-                                <code className="text-sm">{upstreamModel}</code>
+                                <code className="text-sm">{exposed}</code>
                               </td>
                             </tr>
                           ),
