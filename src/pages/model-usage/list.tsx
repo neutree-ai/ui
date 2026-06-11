@@ -1,4 +1,4 @@
-import { useList, useParsed } from "@refinedev/core";
+import { useParsed } from "@refinedev/core";
 import {
   BarChart3,
   LineChart as LineChartIcon,
@@ -107,36 +107,26 @@ export const ModelUsageList = () => {
     range.end,
   );
 
-  // Workspace API keys for the filter dropdown (matches the trace list). This
-  // is the caller's own keys only (api_keys RLS is creator-only).
-  const { data: keysData } = useList<{
-    id: string;
-    metadata?: { name?: string };
-  }>({
-    resource: "api_keys",
-    pagination: { mode: "off" },
-    meta: { workspace },
-    queryOptions: { enabled: Boolean(workspace) },
-  });
-
-  // Dropdown options = own keys (from api_keys, incl. keys with no usage in the
-  // window) UNION every key the usage RPC surfaced. With workspace:usage-read
-  // the RPC returns other members' keys too, so this lets a permitted user
-  // actually filter by them — without widening api_keys row visibility (we only
-  // reuse the id/name the RPC already returned). Derived from usageData (not the
-  // key-filtered rows) so picking a key never prunes the dropdown.
+  // Filter dropdown options are derived entirely from the usage RPC rows. The
+  // RPC (SECURITY DEFINER) already returns the id + name of every key visible to
+  // the caller — their own keys, plus other members' keys when they hold
+  // workspace:usage-read — so a permitted user can filter by those keys without
+  // a separate api_keys query and without widening api_keys row visibility (we
+  // only reuse the id/name the RPC already returned). Keys with no usage in the
+  // selected window are intentionally absent: picking one would only ever yield
+  // an empty view. Derived from usageData (not the key-filtered rows) so picking
+  // a key never prunes the dropdown; sorted by name for a stable order.
   const keyOptions = useMemo(() => {
     const byId = new Map<string, string>();
-    for (const k of keysData?.data ?? []) {
-      byId.set(k.id, k.metadata?.name ?? k.id);
-    }
     for (const r of usageData) {
       if (r.api_key_id && !byId.has(r.api_key_id)) {
         byId.set(r.api_key_id, r.api_key_name || r.api_key_id);
       }
     }
-    return [...byId.entries()].map(([id, name]) => ({ id, name }));
-  }, [keysData?.data, usageData]);
+    return [...byId.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [usageData]);
 
   const filtered = useMemo(
     () =>
