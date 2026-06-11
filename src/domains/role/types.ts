@@ -17,6 +17,7 @@ export interface Role {
 
 export const ALL_PERMISSIONS = [
   "workspace:read",
+  "workspace:usage-read",
   "workspace:create",
   "workspace:update",
   "workspace:delete",

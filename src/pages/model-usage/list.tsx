@@ -107,7 +107,8 @@ export const ModelUsageList = () => {
     range.end,
   );
 
-  // Workspace API keys for the filter dropdown (matches the trace list).
+  // Workspace API keys for the filter dropdown (matches the trace list). This
+  // is the caller's own keys only (api_keys RLS is creator-only).
   const { data: keysData } = useList<{
     id: string;
     metadata?: { name?: string };
@@ -117,7 +118,25 @@ export const ModelUsageList = () => {
     meta: { workspace },
     queryOptions: { enabled: Boolean(workspace) },
   });
-  const keys = keysData?.data ?? [];
+
+  // Dropdown options = own keys (from api_keys, incl. keys with no usage in the
+  // window) UNION every key the usage RPC surfaced. With workspace:usage-read
+  // the RPC returns other members' keys too, so this lets a permitted user
+  // actually filter by them — without widening api_keys row visibility (we only
+  // reuse the id/name the RPC already returned). Derived from usageData (not the
+  // key-filtered rows) so picking a key never prunes the dropdown.
+  const keyOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const k of keysData?.data ?? []) {
+      byId.set(k.id, k.metadata?.name ?? k.id);
+    }
+    for (const r of usageData) {
+      if (r.api_key_id && !byId.has(r.api_key_id)) {
+        byId.set(r.api_key_id, r.api_key_name || r.api_key_id);
+      }
+    }
+    return [...byId.entries()].map(([id, name]) => ({ id, name }));
+  }, [keysData?.data, usageData]);
 
   const filtered = useMemo(
     () =>
@@ -379,9 +398,9 @@ export const ModelUsageList = () => {
             <SelectItem value="all">
               {t("model_usage.filters.allApiKeys")}
             </SelectItem>
-            {keys.map((k) => (
+            {keyOptions.map((k) => (
               <SelectItem key={k.id} value={k.id}>
-                {k.metadata?.name ?? k.id}
+                {k.name}
               </SelectItem>
             ))}
           </SelectContent>

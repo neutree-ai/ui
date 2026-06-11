@@ -1243,6 +1243,7 @@
 		"system_admin": "System Admin",
 		"read-credentials": "Read Credentials",
 		"trace-read": "Trace Read",
+		"usage-read": "Usage Read",
 		"requiredBy": "Required by: {{actions}}"
 	},
 	"systems": {
