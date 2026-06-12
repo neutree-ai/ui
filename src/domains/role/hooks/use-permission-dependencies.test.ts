@@ -828,9 +828,16 @@ describe("usePermissionDependencies", () => {
         }
       }
 
-      // Workspaced views with no permission_action entries (API keys and the
-      // observability pages) are not RBAC resources — exclude from comparison.
-      const permissionless = new Set(["api_key", "ai_trace", "model_usage"]);
+      // Workspaced views with no permission_action entries (API keys, the
+      // observability pages, and the quota page — quota reuses workspace:update
+      // and api_key:* rather than having its own quota:* actions) are not RBAC
+      // resources — exclude from comparison.
+      const permissionless = new Set([
+        "api_key",
+        "ai_trace",
+        "model_usage",
+        "quota",
+      ]);
       const filtered = workspacedFromApp.filter((r) => !permissionless.has(r));
 
       expect([...WORKSPACED_RESOURCES].sort()).toEqual(filtered.sort());
