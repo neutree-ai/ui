@@ -378,14 +378,6 @@ function selectCatalog(label: string) {
   fireEvent.click(screen.getByRole("option", { name: label }));
 }
 
-function selectFieldOption(testId: string, label: string) {
-  const field = screen.getByTestId(testId);
-  const trigger = field.querySelector('button[role="combobox"]');
-  if (!trigger) throw new Error(`${testId} combobox trigger not found`);
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole("option", { name: label }));
-}
-
 function getAcceleratorCardText() {
   return screen.getByTestId("endpoint-accelerator-resource-card").textContent;
 }
@@ -495,7 +487,7 @@ describe("useEndpointForm", () => {
     );
   });
 
-  it("adds extra spacing between allocation mode label and options", async () => {
+  it("renders resource inputs in the PRD order", async () => {
     setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
     render(<CreateForm />);
 
@@ -513,9 +505,34 @@ describe("useEndpointForm", () => {
       });
     });
 
+    const requestGrid = await screen.findByTestId(
+      "endpoint-resource-request-grid",
+    );
+    const orderedFields = [
+      within(requestGrid).getByTestId("field-spec.resources.cpu"),
+      within(requestGrid).getByTestId("field-spec.resources.memory"),
+      within(requestGrid).getByTestId("field-spec.resources.accelerator"),
+      within(requestGrid).getByTestId("field-spec.resources.gpu"),
+      within(requestGrid).getByTestId(
+        "field-spec.resources.accelerator.virtualization.memory_mib",
+      ),
+      within(requestGrid).getByTestId(
+        "field-spec.resources.accelerator.virtualization.core_percent",
+      ),
+    ];
+
+    for (let index = 0; index < orderedFields.length - 1; index += 1) {
+      expect(
+        orderedFields[index].compareDocumentPosition(orderedFields[index + 1]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
     expect(
-      (await screen.findByTestId("field--gpu-allocation-mode")).className,
-    ).toContain("space-y-3");
+      within(requestGrid).queryByTestId("field--gpu-allocation-mode"),
+    ).toBeNull();
+    expect(
+      within(requestGrid).queryByTestId("field--vgpu-memory-mode"),
+    ).toBeNull();
   });
 
   it("does not render cluster capability in cluster settings", async () => {
@@ -632,11 +649,11 @@ describe("useEndpointForm", () => {
       });
 
       const input = await screen.findByRole("spinbutton", {
-        name: /endpoints.fields.vgpuMemory/i,
+        name: /endpoints.fields.singleCardMemory/i,
       });
 
       fireEvent.focus(input);
-      fireEvent.change(input, { target: { value: "4096" } });
+      fireEvent.change(input, { target: { value: "4" } });
 
       await waitFor(() => {
         expect(
@@ -727,7 +744,7 @@ describe("useEndpointForm", () => {
       });
     });
 
-    it("updates vGPU memory through the NumberInput parser", async () => {
+    it("updates single-card memory as backend MiB", async () => {
       setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<EditForm />);
 
@@ -751,11 +768,11 @@ describe("useEndpointForm", () => {
       });
 
       const input = await screen.findByRole("spinbutton", {
-        name: /endpoints.fields.vgpuMemory/i,
+        name: /endpoints.fields.singleCardMemory/i,
       });
 
       fireEvent.focus(input);
-      fireEvent.change(input, { target: { value: "4096" } });
+      fireEvent.change(input, { target: { value: "4" } });
 
       expect(
         formInstance?.getValues(
@@ -767,7 +784,45 @@ describe("useEndpointForm", () => {
       ).toBeNull();
     });
 
-    it("derives virtual card memory values when switching memory modes", async () => {
+    it("renders percent-backed virtual memory as GiB and edits it as MiB", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.resources.accelerator", {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            memory_percent: 50,
+            core_percent: 0,
+          },
+        });
+      });
+
+      expect(await screen.findByDisplayValue("7.5")).toBeTruthy();
+
+      const memoryInput = screen.getByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      });
+      fireEvent.focus(memoryInput);
+      fireEvent.change(memoryInput, { target: { value: "8" } });
+
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_percent",
+        ),
+      ).toBeUndefined();
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBe(8192);
+    });
+
+    it("keeps core limit optional until single-card memory is configured", async () => {
       setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<CreateForm />);
 
@@ -781,109 +836,38 @@ describe("useEndpointForm", () => {
         });
       });
 
-      fireEvent.click(
-        await screen.findByRole("button", {
-          name: "endpoints.fields.vgpu",
-        }),
-      );
+      expect(
+        screen.getByText("endpoints.descriptions.vgpuCorePercentZero"),
+      ).toBeTruthy();
+      expect(
+        (
+          screen.getByRole("spinbutton", {
+            name: "endpoints.fields.vgpuCoreLimit",
+          }) as HTMLInputElement
+        ).disabled,
+      ).toBe(true);
+
+      const memoryInput = screen.getByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      });
+      fireEvent.focus(memoryInput);
+      fireEvent.change(memoryInput, { target: { value: "4" } });
 
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.memory_mib",
         ),
       ).toBe(4096);
-
-      selectFieldOption("field--vgpu-memory-mode", "endpoints.options.percent");
-
-      expect(
-        formInstance?.getValues(
-          "spec.resources.accelerator.virtualization.memory_mib",
-        ),
-      ).toBeUndefined();
-      expect(
-        formInstance?.getValues(
-          "spec.resources.accelerator.virtualization.memory_percent",
-        ),
-      ).toBe(27);
-
-      const percentInput = await screen.findByRole("spinbutton", {
-        name: /endpoints.fields.vgpuMemoryPercent/i,
-      });
-      fireEvent.focus(percentInput);
-      fireEvent.change(percentInput, { target: { value: "50" } });
-
-      selectFieldOption("field--vgpu-memory-mode", "endpoints.options.gib");
-
-      expect(
-        formInstance?.getValues(
-          "spec.resources.accelerator.virtualization.memory_percent",
-        ),
-      ).toBeUndefined();
-      expect(
-        formInstance?.getValues(
-          "spec.resources.accelerator.virtualization.memory_mib",
-        ),
-      ).toBe(7680);
-      expect(await screen.findByDisplayValue("7.5")).toBeTruthy();
-    });
-
-    it("de-emphasizes virtual card core limit by default", async () => {
-      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
-      render(<CreateForm />);
-
-      await waitFor(() => expect(formInstance).not.toBeNull());
-
-      act(() => {
-        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
-        formInstance?.setValue("spec.resources.accelerator", {
-          type: "nvidia_gpu",
-          product: "Tesla-T4",
-        });
-      });
-
-      fireEvent.click(
-        await screen.findByRole("button", {
-          name: "endpoints.fields.vgpu",
-        }),
-      );
-
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.core_percent",
         ),
       ).toBe(0);
-      expect(
-        screen.getByText("endpoints.descriptions.vgpuCorePercentZero"),
-      ).toBeTruthy();
-      expect(screen.getByTestId("vgpu-core-limit-field")).toBeTruthy();
-      expect(
-        screen.queryByRole("spinbutton", {
-          name: /endpoints.fields.vgpuCorePercent/i,
-        }),
-      ).toBeNull();
-      expect(
-        screen.queryByRole("checkbox", {
-          name: "endpoints.fields.vgpuCoreLimit",
-        }),
-      ).toBeNull();
 
-      const coreLimitTrigger = screen.getByRole("combobox", {
+      const coreInput = screen.getByRole("spinbutton", {
         name: "endpoints.fields.vgpuCoreLimit",
-      });
-      expect(
-        within(screen.getByTestId("vgpu-core-limit-field")).getAllByText(
-          "common.options.disabled",
-        ).length,
-      ).toBeGreaterThan(0);
-
-      fireEvent.click(coreLimitTrigger);
-      fireEvent.click(
-        screen.getByRole("option", { name: "common.options.enabled" }),
-      );
-
-      const coreInput = await screen.findByRole("spinbutton", {
-        name: /endpoints.fields.vgpuCorePercent/i,
-      });
+      }) as HTMLInputElement;
+      expect(coreInput.disabled).toBe(false);
       fireEvent.focus(coreInput);
       fireEvent.change(coreInput, { target: { value: "25" } });
 
@@ -894,7 +878,7 @@ describe("useEndpointForm", () => {
       ).toBe(25);
     });
 
-    it("expands virtual card core limit when editing a configured core percent", async () => {
+    it("renders configured core limit when editing a vGPU endpoint", async () => {
       setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<EditForm />);
 
@@ -917,11 +901,10 @@ describe("useEndpointForm", () => {
         });
       });
 
-      expect(
-        await screen.findByRole("spinbutton", {
-          name: /endpoints.fields.vgpuCorePercent/i,
-        }),
-      ).toBeTruthy();
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: "endpoints.fields.vgpuCoreLimit",
+      })) as HTMLInputElement;
+      expect(coreInput.value).toBe("50");
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.core_percent",
@@ -953,7 +936,7 @@ describe("useEndpointForm", () => {
       });
 
       const input = await screen.findByRole("spinbutton", {
-        name: /endpoints.fields.vgpuMemory/i,
+        name: /endpoints.fields.singleCardMemory/i,
       });
 
       fireEvent.focus(input);
@@ -991,8 +974,8 @@ describe("useEndpointForm", () => {
       });
 
       expect(
-        (await screen.findAllByText("endpoints.fields.accelerator")).length,
-      ).toBeGreaterThan(0);
+        await screen.findByTestId("field-spec.resources.accelerator"),
+      ).toBeTruthy();
       expect(screen.queryByText("endpoints.actions.openResources")).toBeNull();
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(screen.queryByRole("tab")).toBeNull();
@@ -1047,13 +1030,21 @@ describe("useEndpointForm", () => {
         }),
       ).toBeTruthy();
 
-      fireEvent.click(
-        screen.getByRole("button", {
-          name: "endpoints.fields.fullGpu",
-        }),
-      );
+      const singleCardMemoryInput = screen.getByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      });
+      fireEvent.focus(singleCardMemoryInput);
+      fireEvent.change(singleCardMemoryInput, { target: { value: "" } });
 
       await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toBeUndefined();
+        expect(
+          screen.getByTestId(
+            "field-spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBeTruthy();
         expect(getAcceleratorCardText()).toContain(
           "endpoints.fields.physicalGpu: 2 / 0",
         );
@@ -1092,11 +1083,6 @@ describe("useEndpointForm", () => {
       expect(
         screen.getByRole("heading", {
           name: "endpoints.sections.resourcePlan",
-        }),
-      ).toBeTruthy();
-      expect(
-        screen.getByRole("heading", {
-          name: "endpoints.fields.accelerator",
         }),
       ).toBeTruthy();
       const acceleratorCard = screen.getByTestId(
@@ -1142,46 +1128,41 @@ describe("useEndpointForm", () => {
       expect(
         within(acceleratorCard).getByText("endpoints.sections.currentRequest"),
       ).toBeTruthy();
-      expect(
-        screen.getByText("endpoints.fields.vgpuMemoryCapacity"),
-      ).toBeTruthy();
-      expect(
-        screen.getByRole("button", {
-          name: "endpoints.fields.vgpu",
-        }),
-      ).toBeTruthy();
+      expect(getAcceleratorCardText()).toContain("endpoints.fields.vgpuSlices");
       expect(
         within(acceleratorCard).getByTestId(
           "endpoint-accelerator-allocator-row",
         ),
       ).toBeTruthy();
-      expect(
-        within(acceleratorCard).getByTestId(
-          "endpoint-accelerator-allocator-row",
-        ).className,
-      ).toContain("minmax(220px,280px)");
-      const vgpuPrimaryRow = within(acceleratorCard).getByTestId(
-        "endpoint-vgpu-primary-row",
-      );
-      expect(
-        within(vgpuPrimaryRow).getByTestId("field--vgpu-memory-mode"),
-      ).toBeTruthy();
-      expect(
-        within(vgpuPrimaryRow).getByTestId(
+      const requestGrid = screen.getByTestId("endpoint-resource-request-grid");
+      const orderedFields = [
+        within(requestGrid).getByTestId("field-spec.resources.cpu"),
+        within(requestGrid).getByTestId("field-spec.resources.memory"),
+        within(requestGrid).getByTestId("field-spec.resources.accelerator"),
+        within(requestGrid).getByTestId("field-spec.resources.gpu"),
+        within(requestGrid).getByTestId(
           "field-spec.resources.accelerator.virtualization.memory_mib",
         ),
-      ).toBeTruthy();
+        within(requestGrid).getByTestId(
+          "field-spec.resources.accelerator.virtualization.core_percent",
+        ),
+      ];
+      for (let index = 0; index < orderedFields.length - 1; index += 1) {
+        expect(
+          orderedFields[index].compareDocumentPosition(
+            orderedFields[index + 1],
+          ) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+      }
       expect(
-        within(vgpuPrimaryRow).getByTestId("field-spec.resources.gpu"),
-      ).toBeTruthy();
-      const coreRow = within(acceleratorCard).getByTestId(
-        "endpoint-vgpu-core-row",
-      );
-      expect(within(coreRow).getByTestId("vgpu-core-limit-field")).toBeTruthy();
-      expect(within(coreRow).getByRole("combobox")).toBeTruthy();
+        within(requestGrid).queryByTestId("field--gpu-allocation-mode"),
+      ).toBeNull();
+      expect(
+        within(requestGrid).queryByTestId("field--vgpu-memory-mode"),
+      ).toBeNull();
       expect(
         screen.getByTestId("field-spec.resources.gpu").className,
-      ).toContain("space-y-2");
+      ).toContain("col-span-1");
     });
 
     it("shows vGPU slice capacity warnings in the edit resource form", async () => {
@@ -1208,9 +1189,11 @@ describe("useEndpointForm", () => {
         });
       });
 
-      expect(
-        await screen.findByText("endpoints.fields.vgpuCount"),
-      ).toBeTruthy();
+      await waitFor(() => {
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.fields.vgpuSlices",
+        );
+      });
       expect(getAcceleratorCardText()).toContain(
         "endpoints.fields.vgpuSlices: 4 / 1",
       );
@@ -1392,9 +1375,11 @@ describe("useEndpointForm", () => {
         formInstance?.setValue("spec.replicas.num", 1);
       });
 
-      expect(
-        await screen.findByText("endpoints.fields.vgpuCount"),
-      ).toBeTruthy();
+      await waitFor(() => {
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.fields.vgpuSlices",
+        );
+      });
       expect(getAcceleratorCardText()).toContain(
         "endpoints.fields.vgpuSlices: 1 / 1",
       );
@@ -1403,7 +1388,7 @@ describe("useEndpointForm", () => {
       ).toBeNull();
     });
 
-    it("restores vGPU settings when toggling allocation modes", async () => {
+    it("switches allocation mode by clearing or setting single-card memory", async () => {
       setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
       render(<EditForm />);
 
@@ -1426,32 +1411,41 @@ describe("useEndpointForm", () => {
         });
       });
 
-      expect(
-        await screen.findByText("endpoints.fields.vgpuCount"),
-      ).toBeTruthy();
+      await waitFor(() => {
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.fields.vgpuSlices",
+        );
+      });
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.memory_mib",
         ),
       ).toBe(8192);
 
-      fireEvent.click(
-        screen.getByRole("button", { name: "endpoints.fields.fullGpu" }),
-      );
+      const memoryInput = screen.getByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      });
+      fireEvent.focus(memoryInput);
+      fireEvent.change(memoryInput, { target: { value: "" } });
+
       await waitFor(() => {
-        expect(screen.queryByText("endpoints.fields.vgpuMemory")).toBeNull();
         expect(screen.queryByText(/endpoints\.fields\.vgpuSlices/)).toBeNull();
         expect(
           screen.getByText("endpoints.fields.physicalGpu: 1 / 0"),
         ).toBeTruthy();
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toBeUndefined();
       });
 
-      fireEvent.click(
-        screen.getByRole("button", { name: "endpoints.fields.vgpu" }),
-      );
-      expect(
-        await screen.findByText("endpoints.fields.vgpuMemory"),
-      ).toBeTruthy();
+      fireEvent.focus(memoryInput);
+      fireEvent.change(memoryInput, { target: { value: "8" } });
+
+      await waitFor(() => {
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.fields.vgpuSlices",
+        );
+      });
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.memory_mib",
