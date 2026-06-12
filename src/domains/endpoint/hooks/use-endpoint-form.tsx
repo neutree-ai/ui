@@ -823,7 +823,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </div>
           </section>
 
-          <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+          <div
+            data-testid="endpoint-resource-layout-grid"
+            className="grid gap-4 xl:grid-cols-2"
+          >
             <div
               data-testid="endpoint-resource-config-main"
               className="min-w-0 xl:sticky xl:top-4"

@@ -1107,6 +1107,9 @@ describe("useEndpointForm", () => {
       expect(
         screen.getByTestId("endpoint-resource-config-grid").className,
       ).toContain("space-y-4");
+      expect(
+        screen.getByTestId("endpoint-resource-layout-grid").className,
+      ).toContain("xl:grid-cols-2");
       expect(screen.getByTestId("endpoint-resource-config-main")).toBeTruthy();
       expect(resourceContext).toBeTruthy();
       expect(
