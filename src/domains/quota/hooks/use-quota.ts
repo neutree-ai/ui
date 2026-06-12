@@ -8,6 +8,7 @@ import type {
   QuotaPolicyRow,
   QuotaUserLite,
 } from "@/domains/quota/types";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 
 // Params accepted by /rpc/set_quota_policy (snake_case p_* mirror the SQL
 // function signature). Only the fields relevant to the chosen level are sent.
@@ -74,7 +75,10 @@ export function useQuota(workspace: string | undefined) {
       const res = await mutateAsync({
         url: "/rpc/get_quota_policies",
         method: "post",
-        values: { p_workspace: workspace },
+        // "All workspaces" is a UI-only sentinel — omit the filter so the RPC
+        // returns every policy the caller may see (RLS-scoped), mirroring how
+        // workspace usage drops the filter for ALL_WORKSPACES.
+        values: workspace === ALL_WORKSPACES ? {} : { p_workspace: workspace },
       });
       const policies = (res.data as QuotaPolicy[]) ?? [];
 

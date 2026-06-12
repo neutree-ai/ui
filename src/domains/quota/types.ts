@@ -52,6 +52,7 @@ export type QuotaApiKeyLite = {
   metadata?: { name?: string };
 };
 
-export type QuotaMemberAssignmentLite = {
-  spec?: { user_id?: string; workspace?: string | null };
+export type QuotaWorkspaceLite = {
+  id: number;
+  metadata?: { name?: string };
 };

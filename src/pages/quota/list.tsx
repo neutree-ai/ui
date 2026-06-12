@@ -77,6 +77,7 @@ export const QuotaList = () => {
           <TableHeader>
             <TableRow>
               <TableHead>{t("quota.fields.level")}</TableHead>
+              <TableHead>{t("common.fields.workspace")}</TableHead>
               <TableHead>{t("quota.fields.target")}</TableHead>
               <TableHead>{t("quota.fields.period")}</TableHead>
               <TableHead className="text-right">
@@ -94,7 +95,7 @@ export const QuotaList = () => {
           <TableBody>
             {isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   <Loader className="mx-auto w-6 text-muted-foreground" />
                 </TableCell>
               </TableRow>
@@ -102,7 +103,7 @@ export const QuotaList = () => {
             {!isLoading && rows.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="h-24 text-center text-muted-foreground"
                 >
                   {t("quota.messages.empty")}
@@ -114,6 +115,7 @@ export const QuotaList = () => {
                 <TableCell>
                   <Badge variant="outline">{t(`quota.levels.${row.level}`)}</Badge>
                 </TableCell>
+                <TableCell>{row.workspace}</TableCell>
                 <TableCell className="font-medium">{row.targetName}</TableCell>
                 <TableCell>{t(`quota.periods.${row.period}`)}</TableCell>
                 <TableCell className="text-right">

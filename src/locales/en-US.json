@@ -1378,6 +1378,7 @@
 			"remaining": "Remaining"
 		},
 		"placeholders": {
+			"selectWorkspace": "Select a workspace",
 			"selectUser": "Select a user",
 			"selectApiKey": "Select an API key"
 		},

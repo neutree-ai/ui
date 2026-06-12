@@ -439,6 +439,7 @@ const resources: ResourceProps[] = [
     meta: {
       icon: <BarChart3 />,
       workspaced: true,
+      parent: "observability",
     },
   },
   {
