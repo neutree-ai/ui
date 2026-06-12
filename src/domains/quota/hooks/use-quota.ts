@@ -137,6 +137,22 @@ export function useQuota(workspace: string | undefined) {
     [mutateAsync, fetch],
   );
 
+  // Upsert several policies (a base quota + dimension sub-quotas) for one scope
+  // in a single submit, refetching once. Each is an independent overlay row.
+  const setQuotaMany = useCallback(
+    async (paramsList: SetQuotaParams[]) => {
+      for (const params of paramsList) {
+        await mutateAsync({
+          url: "/rpc/set_quota_policy",
+          method: "post",
+          values: params,
+        });
+      }
+      await fetch();
+    },
+    [mutateAsync, fetch],
+  );
+
   const deleteQuota = useCallback(
     async (id: number) => {
       await mutateAsync({
@@ -149,5 +165,29 @@ export function useQuota(workspace: string | undefined) {
     [mutateAsync, fetch],
   );
 
-  return { rows, isLoading, error, refetch: fetch, setQuota, deleteQuota };
+  // Delete a whole group (the base policy + all its dimension sub-quotas).
+  const deleteQuotaMany = useCallback(
+    async (ids: number[]) => {
+      for (const id of ids) {
+        await mutateAsync({
+          url: "/rpc/delete_quota_policy",
+          method: "post",
+          values: { p_id: id },
+        });
+      }
+      await fetch();
+    },
+    [mutateAsync, fetch],
+  );
+
+  return {
+    rows,
+    isLoading,
+    error,
+    refetch: fetch,
+    setQuota,
+    setQuotaMany,
+    deleteQuota,
+    deleteQuotaMany,
+  };
 }

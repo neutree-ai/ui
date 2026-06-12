@@ -1379,7 +1379,11 @@
 			"remaining": "Remaining",
 			"dimension": "Dimension",
 			"dimensionValue": "Dimension value",
-			"modelName": "Model name"
+			"modelName": "Model name",
+			"overall": "Overall",
+			"setOverall": "Set an overall quota",
+			"overallLimit": "Overall token limit",
+			"overallLimitHint": "Optional — leave empty to cap only specific dimensions below."
 		},
 		"placeholders": {
 			"selectWorkspace": "Select a workspace",
@@ -1391,13 +1395,19 @@
 		"messages": {
 			"setDescription": "Set a token quota for a workspace, user, or API key over a time period. A child quota total may not exceed its parent.",
 			"empty": "No quota policies yet. Use \"Create\" to set one.",
-			"setSuccess": "Quota saved"
+			"setSuccess": "Quota saved",
+			"needOneQuota": "Set an overall quota or at least one sub-quota."
 		},
 		"dimensions": {
 			"none": "None (whole scope)",
 			"endpoint": "Endpoint",
 			"external_endpoint": "External endpoint",
 			"model": "Model"
+		},
+		"subQuotas": {
+			"title": "Per-dimension sub-quotas",
+			"add": "Add sub-quota",
+			"empty": "No sub-quotas. Add one to cap a specific endpoint or model."
 		}
 	}
 }

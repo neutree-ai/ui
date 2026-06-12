@@ -26,7 +26,7 @@ vi.mock("@refinedev/react-hook-form", async () => {
   };
 });
 
-// Controlled resource data for the three lookups the form performs.
+// Controlled resource data for the lookups the form performs.
 vi.mock("@refinedev/core", () => ({
   useList: ({ resource }: { resource: string }) => {
     if (resource === "workspaces") {
@@ -63,12 +63,16 @@ function selectOption(fieldName: string, optionName: string) {
   fireEvent.click(screen.getByRole("option", { name: optionName }));
 }
 
+function setInput(fieldName: string, value: string) {
+  const input = screen.getByTestId(`field-${fieldName}`).querySelector("input");
+  fireEvent.change(input as Element, { target: { value } });
+}
+
 describe("QuotaForm", () => {
   it("bug1: workspace scope exposes a workspace selector defaulted to current", () => {
     render(<QuotaForm workspace="default" onSubmit={vi.fn()} />);
     const wsField = screen.getByTestId("field-workspace");
     expect(wsField).toBeTruthy();
-    // The current workspace is pre-selected (trigger shows its name).
     expect(wsField.textContent).toContain("default");
   });
 
@@ -97,60 +101,61 @@ describe("QuotaForm", () => {
       expect(screen.getByTestId("field-target")).toBeTruthy();
     });
     selectOption("target", "key-A");
-
-    // The selected key shows in the trigger.
     expect(screen.getByTestId("field-target").textContent).toContain("key-A");
 
     // Re-render via an unrelated field change — previously this wiped target.
-    const limit = screen
-      .getByTestId("field-limit_tokens")
-      .querySelector("input");
-    fireEvent.change(limit as Element, { target: { value: "100" } });
-
-    // Still selected.
+    setInput("base_limit", "100");
     expect(screen.getByTestId("field-target").textContent).toContain("key-A");
 
-    // Submit carries the api key id.
     fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
     });
-    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+    const list = onSubmit.mock.calls[0][0];
+    expect(Array.isArray(list)).toBe(true);
+    expect(list[0]).toMatchObject({
       p_level: "api_key",
       p_api_key_id: "k1",
       p_limit_tokens: 100,
     });
   });
 
-  it("dimension: a model overlay is carried in the submit payload", async () => {
+  it("multi-dimension: one submit carries a base quota + a model sub-quota", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(<QuotaForm workspace="default" onSubmit={onSubmit} />);
 
-    // workspace level (default) on model "gpt-4o".
-    selectOption("dimension_type", "quota.dimensions.model");
+    // workspace level (default): overall 300k + a per-model sub-quota.
+    setInput("base_limit", "300");
+    fireEvent.click(screen.getByRole("button", { name: "quota.subQuotas.add" }));
     await waitFor(() => {
-      expect(screen.getByTestId("field-dimension_value")).toBeTruthy();
+      expect(screen.getByTestId("field-subs.0.dimension_value")).toBeTruthy();
     });
-    const modelInput = screen
-      .getByTestId("field-dimension_value")
-      .querySelector("input");
-    fireEvent.change(modelInput as Element, { target: { value: "gpt-4o" } });
-
-    const limit = screen
-      .getByTestId("field-limit_tokens")
-      .querySelector("input");
-    fireEvent.change(limit as Element, { target: { value: "500" } });
+    // New row defaults to dimension_type "model" -> a text value input.
+    setInput("subs.0.dimension_value", "gpt-4o");
+    setInput("subs.0.limit_tokens", "100");
 
     fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
     });
-    expect(onSubmit.mock.calls[0][0]).toMatchObject({
-      p_level: "workspace",
-      p_workspace: "default",
-      p_limit_tokens: 500,
-      p_dimension_type: "model",
-      p_dimension_value: "gpt-4o",
-    });
+    const list = onSubmit.mock.calls[0][0];
+    expect(list).toHaveLength(2);
+    // Base (dimension-agnostic) quota.
+    expect(list).toContainEqual(
+      expect.objectContaining({
+        p_level: "workspace",
+        p_workspace: "default",
+        p_limit_tokens: 300,
+      }),
+    );
+    // Model sub-quota overlay.
+    expect(list).toContainEqual(
+      expect.objectContaining({
+        p_level: "workspace",
+        p_dimension_type: "model",
+        p_dimension_value: "gpt-4o",
+        p_limit_tokens: 100,
+      }),
+    );
   });
 });

@@ -1,5 +1,5 @@
 import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,14 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { QuotaForm } from "@/domains/quota/components/QuotaForm";
 import { useQuota } from "@/domains/quota/hooks/use-quota";
 import type { QuotaPolicyRow } from "@/domains/quota/types";
@@ -35,7 +27,7 @@ const UsageBar = ({ used, limit }: { used: number; limit: number }) => {
   const over = limit > 0 && used >= limit;
   const warn = !over && ratio >= 0.8;
   return (
-    <div className="min-w-[160px]">
+    <div className="min-w-[180px] flex-1">
       <div className="h-2 w-full overflow-hidden rounded-full bg-primary/20">
         <div
           className={cn(
@@ -53,30 +45,61 @@ const UsageBar = ({ used, limit }: { used: number; limit: number }) => {
   );
 };
 
+type QuotaGroup = {
+  key: string;
+  level: QuotaPolicyRow["level"];
+  workspace: string;
+  targetName: string;
+  period: QuotaPolicyRow["period"];
+  base?: QuotaPolicyRow;
+  subs: QuotaPolicyRow[];
+};
+
 export const QuotaList = () => {
   const { t } = useTranslation();
   const { current: workspace } = useWorkspace();
   const [open, setOpen] = useState(false);
-  const { rows, isLoading, setQuota, deleteQuota } = useQuota(workspace);
+  const { rows, isLoading, setQuotaMany, deleteQuota } = useQuota(workspace);
 
-  const dimensionLabel = (row: QuotaPolicyRow) =>
-    row.dimension_type
-      ? `${t(`quota.dimensions.${row.dimension_type}`)}: ${row.dimension_value}`
-      : "—";
+  // Group flat policy rows by scope (level + workspace + target + period); a
+  // group has an optional base (dimension-agnostic) quota plus dimension
+  // sub-quotas.
+  const groups = useMemo<QuotaGroup[]>(() => {
+    const map = new Map<string, QuotaGroup>();
+    for (const row of rows) {
+      const key = `${row.level}|${row.workspace}|${row.user_id ?? ""}|${row.api_key_id ?? ""}|${row.period}`;
+      let g = map.get(key);
+      if (!g) {
+        g = {
+          key,
+          level: row.level,
+          workspace: row.workspace,
+          targetName: row.targetName,
+          period: row.period,
+          subs: [],
+        };
+        map.set(key, g);
+      }
+      if (row.dimension_type) g.subs.push(row);
+      else g.base = row;
+    }
+    return Array.from(map.values());
+  }, [rows]);
 
-  const remainingBadge = (row: QuotaPolicyRow) => {
-    if (row.remaining <= 0) {
-      return <Badge variant="destructive">{fmt(row.remaining)}</Badge>;
-    }
-    if (row.remaining < row.limit_tokens * 0.2) {
-      return (
-        <Badge className="bg-amber-500 hover:bg-amber-500">
-          {fmt(row.remaining)}
-        </Badge>
-      );
-    }
-    return <span>{fmt(row.remaining)}</span>;
-  };
+  const quotaRow = (label: React.ReactNode, row: QuotaPolicyRow) => (
+    <div key={row.id} className="flex items-center gap-3 py-1">
+      <div className="w-44 shrink-0 text-sm">{label}</div>
+      <UsageBar used={row.usage} limit={row.limit_tokens} />
+      <Button
+        variant="ghost"
+        size="icon"
+        title={t("buttons.delete")}
+        onClick={() => deleteQuota(row.id)}
+      >
+        <Trash2 size={16} />
+      </Button>
+    </div>
+  );
 
   return (
     <ListPage
@@ -86,7 +109,7 @@ export const QuotaList = () => {
       }}
     >
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("quota.set")}</DialogTitle>
             <DialogDescription>
@@ -96,82 +119,48 @@ export const QuotaList = () => {
           {workspace && (
             <QuotaForm
               workspace={workspace}
-              onSubmit={setQuota}
+              onSubmit={setQuotaMany}
               onClose={() => setOpen(false)}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      <div className="pt-2 sm:pt-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("quota.fields.level")}</TableHead>
-              <TableHead>{t("common.fields.workspace")}</TableHead>
-              <TableHead>{t("quota.fields.target")}</TableHead>
-              <TableHead>{t("quota.fields.dimension")}</TableHead>
-              <TableHead>{t("quota.fields.period")}</TableHead>
-              <TableHead className="min-w-[160px]">
-                {t("quota.fields.currentUsage")}
-              </TableHead>
-              <TableHead className="text-right">
-                {t("quota.fields.remaining")}
-              </TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  <Loader className="mx-auto w-6 text-muted-foreground" />
-                </TableCell>
-              </TableRow>
+      <div className="space-y-3 pt-2 sm:pt-4">
+        {isLoading && groups.length === 0 && (
+          <div className="flex h-24 items-center justify-center">
+            <Loader className="w-6 text-muted-foreground" />
+          </div>
+        )}
+        {!isLoading && groups.length === 0 && (
+          <div className="flex h-24 items-center justify-center text-muted-foreground">
+            {t("quota.messages.empty")}
+          </div>
+        )}
+        {groups.map((g) => (
+          <div key={g.key} className="rounded-lg border p-4">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+              <Badge variant="outline">{t(`quota.levels.${g.level}`)}</Badge>
+              <span className="text-muted-foreground">{g.workspace}</span>
+              <span className="font-medium">{g.targetName}</span>
+              <Badge variant="secondary">
+                {t(`quota.periods.${g.period}`)}
+              </Badge>
+            </div>
+            {g.base && quotaRow(t("quota.fields.overall"), g.base)}
+            {g.subs.map((s) =>
+              quotaRow(
+                <span>
+                  <span className="text-muted-foreground">
+                    {t(`quota.dimensions.${s.dimension_type}`)}:
+                  </span>{" "}
+                  {s.dimension_value}
+                </span>,
+                s,
+              ),
             )}
-            {!isLoading && rows.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  {t("quota.messages.empty")}
-                </TableCell>
-              </TableRow>
-            )}
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>
-                  <Badge variant="outline">
-                    {t(`quota.levels.${row.level}`)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{row.workspace}</TableCell>
-                <TableCell className="font-medium">{row.targetName}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {dimensionLabel(row)}
-                </TableCell>
-                <TableCell>{t(`quota.periods.${row.period}`)}</TableCell>
-                <TableCell>
-                  <UsageBar used={row.usage} limit={row.limit_tokens} />
-                </TableCell>
-                <TableCell className="text-right">
-                  {remainingBadge(row)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title={t("buttons.delete")}
-                    onClick={() => deleteQuota(row.id)}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+          </div>
+        ))}
       </div>
     </ListPage>
   );
