@@ -812,10 +812,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </div>
           </section>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
             <div
               data-testid="endpoint-resource-config-main"
-              className="min-w-0"
+              className="min-w-0 xl:sticky xl:top-4"
             >
               <section
                 data-testid="endpoint-resource-plan-card"
@@ -831,61 +831,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
                 <div
                   data-testid="endpoint-resource-request-grid"
-                  className="grid grid-cols-2 content-start items-start gap-4 self-start xs:grid-cols-1"
+                  className="grid grid-cols-1 content-start items-start gap-4 self-start"
                 >
-                  <div
-                    data-testid="endpoint-basic-resource-card"
-                    className="contents"
-                  >
-                    <FormFieldGroup
-                      {...form}
-                      name="spec.resources.cpu"
-                      label={t("common.fields.cpu")}
-                      className="col-span-1"
-                    >
-                      <NumberInput
-                        value={formatOneDecimal(normalizedResources?.cpu || 0)}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "spec.resources.cpu",
-                            value,
-                            userSetValueOptions,
-                          )
-                        }
-                        min={0}
-                        max={maxAvailable.cpu.available}
-                        step={0.1}
-                        disabled={!currentCluster}
-                        className="h-9"
-                      />
-                    </FormFieldGroup>
-
-                    <FormFieldGroup
-                      {...form}
-                      name="spec.resources.memory"
-                      label={t("endpoints.fields.memoryGb")}
-                      className="col-span-1"
-                    >
-                      <NumberInput
-                        value={formatOneDecimal(
-                          normalizedResources?.memory || 0,
-                        )}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "spec.resources.memory",
-                            value,
-                            userSetValueOptions,
-                          )
-                        }
-                        min={0}
-                        max={maxAvailable.memory.available}
-                        step={0.5}
-                        disabled={!currentCluster}
-                        className="h-9"
-                      />
-                    </FormFieldGroup>
-                  </div>
-
                   <div
                     data-testid="endpoint-accelerator-resource-card"
                     className="contents"
@@ -897,7 +844,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       <FormFieldGroup
                         {...form}
                         name="spec.resources.accelerator"
-                        label={t("common.fields.acceleratorProduct")}
+                        label={t("endpoints.fields.accelerator")}
                         className="col-span-1 min-w-0"
                       >
                         <FormCombobox
@@ -950,7 +897,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     <FormFieldGroup
                       {...form}
                       name="spec.resources.gpu"
-                      label={t("endpoints.fields.acceleratorCount")}
+                      label={t(
+                        isVgpuAllocationMode
+                          ? "endpoints.fields.vgpuCount"
+                          : "endpoints.fields.physicalGpuCount",
+                      )}
                       className="col-span-1"
                     >
                       <NumberInput
@@ -1034,93 +985,143 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         className="h-9"
                       />
                     </FormFieldGroup>
-
-                    {selectedAccelerator?.type &&
-                      selectedAccelerator?.product && (
-                        <div className="col-span-2 rounded-md border bg-muted/20 px-3 py-2 text-sm xs:col-span-1">
-                          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                            <div className="font-medium">
-                              {t("endpoints.sections.currentRequest")}
-                            </div>
-                            <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-muted-foreground">
-                              {isVgpuAllocationMode ? (
-                                <>
-                                  <span className="text-foreground">
-                                    {t("endpoints.fields.vgpuSlices")}:{" "}
-                                    {formatOneDecimal(requestedVgpuSlices)} /{" "}
-                                    {formatOneDecimal(totalVgpuSliceCapacity)}
-                                  </span>
-                                  <span>
-                                    <span>
-                                      {t("endpoints.fields.vgpuMemoryCapacity")}
-                                    </span>
-                                    :{" "}
-                                    {availableVgpuMemoryMiB
-                                      ? `${formatOneDecimal(
-                                          requestedVgpuMemoryMiB,
-                                        )} / ${formatOneDecimal(
-                                          availableVgpuMemoryMiB,
-                                        )} MiB`
-                                      : "-"}
-                                  </span>
-                                  <span>
-                                    <span>
-                                      {t("endpoints.fields.vgpuCoreCapacity")}
-                                    </span>
-                                    :{" "}
-                                    {availableVgpuCoreUnits
-                                      ? `${formatOneDecimal(
-                                          requestedVgpuCoreUnits,
-                                        )} / ${formatOneDecimal(
-                                          availableVgpuCoreUnits,
-                                        )}`
-                                      : "-"}
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="text-foreground">
-                                    {t("endpoints.fields.physicalGpu")}:{" "}
-                                    {formatOneDecimal(requestedFullGpuCards)} /{" "}
-                                    {formatOneDecimal(fullGpuCardCapacity)}
-                                  </span>
-                                  <span>
-                                    {t("endpoints.fields.replicas")}:{" "}
-                                    {formatOneDecimal(replicaCount)}
-                                  </span>
-                                  <span>
-                                    {t("endpoints.fields.perReplica")}:{" "}
-                                    {formatOneDecimal(gpuUsage)}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          {isVgpuAllocationMode
-                            ? isVgpuCapacityExceeded && (
-                                <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                                  {t(
-                                    "endpoints.messages.vgpuResourcesInsufficient",
-                                  )}
-                                </div>
-                              )
-                            : isFullGpuCapacityExceeded && (
-                                <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                                  {t(
-                                    "endpoints.messages.fullGpuResourcesInsufficient",
-                                  )}
-                                </div>
-                              )}
-                        </div>
-                      )}
                   </div>
+
+                  <div
+                    data-testid="endpoint-basic-resource-card"
+                    className="contents"
+                  >
+                    <FormFieldGroup
+                      {...form}
+                      name="spec.resources.cpu"
+                      label={t("common.fields.cpu")}
+                      className="col-span-1"
+                    >
+                      <NumberInput
+                        value={formatOneDecimal(normalizedResources?.cpu || 0)}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            "spec.resources.cpu",
+                            value,
+                            userSetValueOptions,
+                          )
+                        }
+                        min={0}
+                        max={maxAvailable.cpu.available}
+                        step={0.1}
+                        disabled={!currentCluster}
+                        className="h-9"
+                      />
+                    </FormFieldGroup>
+
+                    <FormFieldGroup
+                      {...form}
+                      name="spec.resources.memory"
+                      label={t("endpoints.fields.memoryGb")}
+                      className="col-span-1"
+                    >
+                      <NumberInput
+                        value={formatOneDecimal(
+                          normalizedResources?.memory || 0,
+                        )}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            "spec.resources.memory",
+                            value,
+                            userSetValueOptions,
+                          )
+                        }
+                        min={0}
+                        max={maxAvailable.memory.available}
+                        step={0.5}
+                        disabled={!currentCluster}
+                        className="h-9"
+                      />
+                    </FormFieldGroup>
+                  </div>
+
+                  {selectedAccelerator?.type &&
+                    selectedAccelerator?.product && (
+                      <div className="col-span-1 rounded-md border bg-muted/20 px-3 py-2 text-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                          <div className="font-medium">
+                            {t("endpoints.sections.currentRequest")}
+                          </div>
+                          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-muted-foreground">
+                            {isVgpuAllocationMode ? (
+                              <>
+                                <span className="text-foreground">
+                                  {t("endpoints.fields.vgpuSlices")}:{" "}
+                                  {formatOneDecimal(requestedVgpuSlices)} /{" "}
+                                  {formatOneDecimal(totalVgpuSliceCapacity)}
+                                </span>
+                                <span>
+                                  <span>
+                                    {t("endpoints.fields.vgpuMemoryCapacity")}
+                                  </span>
+                                  :{" "}
+                                  {availableVgpuMemoryMiB
+                                    ? `${formatOneDecimal(
+                                        requestedVgpuMemoryMiB,
+                                      )} / ${formatOneDecimal(
+                                        availableVgpuMemoryMiB,
+                                      )} MiB`
+                                    : "-"}
+                                </span>
+                                <span>
+                                  <span>
+                                    {t("endpoints.fields.vgpuCoreCapacity")}
+                                  </span>
+                                  :{" "}
+                                  {availableVgpuCoreUnits
+                                    ? `${formatOneDecimal(
+                                        requestedVgpuCoreUnits,
+                                      )} / ${formatOneDecimal(
+                                        availableVgpuCoreUnits,
+                                      )}`
+                                    : "-"}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-foreground">
+                                  {t("endpoints.fields.physicalGpu")}:{" "}
+                                  {formatOneDecimal(requestedFullGpuCards)} /{" "}
+                                  {formatOneDecimal(fullGpuCardCapacity)}
+                                </span>
+                                <span>
+                                  {t("endpoints.fields.replicas")}:{" "}
+                                  {formatOneDecimal(replicaCount)}
+                                </span>
+                                <span>
+                                  {t("endpoints.fields.perReplica")}:{" "}
+                                  {formatOneDecimal(gpuUsage)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {isVgpuAllocationMode
+                          ? isVgpuCapacityExceeded && (
+                              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
+                                {t(
+                                  "endpoints.messages.vgpuResourcesInsufficient",
+                                )}
+                              </div>
+                            )
+                          : isFullGpuCapacityExceeded && (
+                              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
+                                {t(
+                                  "endpoints.messages.fullGpuResourcesInsufficient",
+                                )}
+                              </div>
+                            )}
+                      </div>
+                    )}
                 </div>
               </section>
             </div>
-            <div
-              data-testid="endpoint-resource-context"
-              className="min-w-0 xl:sticky xl:top-4"
-            >
+            <div data-testid="endpoint-resource-context" className="min-w-0">
               {clusterGpuResourcesPanel}
             </div>
           </div>

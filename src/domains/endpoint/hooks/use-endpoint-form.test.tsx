@@ -371,7 +371,7 @@ function selectCatalog(label: string) {
 }
 
 function getAcceleratorCardText() {
-  return screen.getByTestId("endpoint-accelerator-resource-card").textContent;
+  return screen.getByTestId("endpoint-resource-request-grid").textContent;
 }
 
 // --- Tests ---
@@ -500,10 +500,8 @@ describe("useEndpointForm", () => {
     const requestGrid = await screen.findByTestId(
       "endpoint-resource-request-grid",
     );
-    expect(requestGrid.className).toContain("grid-cols-2");
+    expect(requestGrid.className).toContain("grid-cols-1");
     const orderedFields = [
-      within(requestGrid).getByTestId("field-spec.resources.cpu"),
-      within(requestGrid).getByTestId("field-spec.resources.memory"),
       within(requestGrid).getByTestId("field-spec.resources.accelerator"),
       within(requestGrid).getByTestId("field-spec.resources.gpu"),
       within(requestGrid).getByTestId(
@@ -512,6 +510,8 @@ describe("useEndpointForm", () => {
       within(requestGrid).getByTestId(
         "field-spec.resources.accelerator.virtualization.core_percent",
       ),
+      within(requestGrid).getByTestId("field-spec.resources.cpu"),
+      within(requestGrid).getByTestId("field-spec.resources.memory"),
     ];
 
     for (let index = 0; index < orderedFields.length - 1; index += 1) {
@@ -1087,8 +1087,8 @@ describe("useEndpointForm", () => {
       const resourceContext = screen.getByTestId("endpoint-resource-context");
       const resourceContextPanel = within(resourceContext);
       expect(
-        resourceContextPanel.getAllByText("clusters.fields.gpuNumber").length,
-      ).toBeGreaterThan(0);
+        resourceContextPanel.getByText("endpoints.fields.physicalGpu"),
+      ).toBeTruthy();
       expect(
         resourceContextPanel.getByTestId("endpoint-cluster-resource-summary"),
       ).toBeTruthy();
@@ -1117,7 +1117,7 @@ describe("useEndpointForm", () => {
       expect(screen.getByTestId("endpoint-resource-config-main")).toBeTruthy();
       expect(resourceContext).toBeTruthy();
       expect(
-        within(acceleratorCard).getByText("endpoints.sections.currentRequest"),
+        screen.getByText("endpoints.sections.currentRequest"),
       ).toBeTruthy();
       expect(getAcceleratorCardText()).toContain("endpoints.fields.vgpuSlices");
       expect(
@@ -1126,10 +1126,8 @@ describe("useEndpointForm", () => {
         ),
       ).toBeTruthy();
       const requestGrid = screen.getByTestId("endpoint-resource-request-grid");
-      expect(requestGrid.className).toContain("grid-cols-2");
+      expect(requestGrid.className).toContain("grid-cols-1");
       const orderedFields = [
-        within(requestGrid).getByTestId("field-spec.resources.cpu"),
-        within(requestGrid).getByTestId("field-spec.resources.memory"),
         within(requestGrid).getByTestId("field-spec.resources.accelerator"),
         within(requestGrid).getByTestId("field-spec.resources.gpu"),
         within(requestGrid).getByTestId(
@@ -1138,6 +1136,8 @@ describe("useEndpointForm", () => {
         within(requestGrid).getByTestId(
           "field-spec.resources.accelerator.virtualization.core_percent",
         ),
+        within(requestGrid).getByTestId("field-spec.resources.cpu"),
+        within(requestGrid).getByTestId("field-spec.resources.memory"),
       ];
       for (let index = 0; index < orderedFields.length - 1; index += 1) {
         expect(

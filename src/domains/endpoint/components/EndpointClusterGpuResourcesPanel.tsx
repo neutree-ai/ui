@@ -179,48 +179,50 @@ function EndpointClusterResourceSummary({
   return (
     <div
       data-testid="endpoint-cluster-resource-summary"
-      className="space-y-2 rounded-md border bg-background p-3"
+      className="rounded-md border bg-background p-3"
     >
-      <div className="text-sm font-medium">
+      <div className="mb-2 text-sm font-medium">
         {t("clusters.sections.clusterResources")}
       </div>
-      <ClusterResourceRow
-        label={t("clusters.fields.gpuNumber")}
-        used={gpuSummary.used}
-        total={gpuSummary.total}
-        remaining={gpuSummary.available}
-      />
-      {virtualizationEnabled && (
-        <>
-          <ClusterResourceRow
-            label={t("clusters.fields.memoryUsage")}
-            used={acceleratorMemorySummary.used}
-            total={acceleratorMemorySummary.total}
-            remaining={acceleratorMemorySummary.available}
-            unit=" MiB"
-          />
-          <ClusterResourceRow
-            label={t("clusters.fields.coreUsage")}
-            used={acceleratorCoreSummary.used}
-            total={acceleratorCoreSummary.total}
-            remaining={acceleratorCoreSummary.available}
-          />
-        </>
-      )}
-      <ClusterResourceRow
-        label={t("common.fields.cpu")}
-        used={cpuSummary.used}
-        total={cpuSummary.total}
-        remaining={cpuSummary.available}
-        unit=" cores"
-      />
-      <ClusterResourceRow
-        label={t("common.fields.memory")}
-        used={memorySummary.used}
-        total={memorySummary.total}
-        remaining={memorySummary.available}
-        unit=" GiB"
-      />
+      <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-5">
+        <ClusterResourceRow
+          label={t("endpoints.fields.physicalGpu")}
+          used={gpuSummary.used}
+          total={gpuSummary.total}
+          remaining={gpuSummary.available}
+        />
+        {virtualizationEnabled && (
+          <>
+            <ClusterResourceRow
+              label={t("clusters.fields.memoryUsage")}
+              used={acceleratorMemorySummary.used}
+              total={acceleratorMemorySummary.total}
+              remaining={acceleratorMemorySummary.available}
+              unit=" MiB"
+            />
+            <ClusterResourceRow
+              label={t("clusters.fields.coreUsage")}
+              used={acceleratorCoreSummary.used}
+              total={acceleratorCoreSummary.total}
+              remaining={acceleratorCoreSummary.available}
+            />
+          </>
+        )}
+        <ClusterResourceRow
+          label={t("common.fields.cpu")}
+          used={cpuSummary.used}
+          total={cpuSummary.total}
+          remaining={cpuSummary.available}
+          unit=" cores"
+        />
+        <ClusterResourceRow
+          label={t("common.fields.memory")}
+          used={memorySummary.used}
+          total={memorySummary.total}
+          remaining={memorySummary.available}
+          unit=" GiB"
+        />
+      </div>
     </div>
   );
 }
@@ -381,7 +383,7 @@ function EndpointNodeGpuResources({
             </div>
           </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
             {group.rows.map((row) => {
               const usable = isDeviceUsableForRequest(row, request);
 
@@ -547,7 +549,7 @@ function EndpointClusterGpuResourcesInlineContent({
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   return (
-    <div className="max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pr-1">
+    <div className="space-y-3 pr-1 xl:max-h-[calc(100vh-180px)] xl:overflow-y-auto">
       <EndpointClusterResourceSummary
         resourceInfo={resourceInfo}
         summaryRows={summaryRows}
