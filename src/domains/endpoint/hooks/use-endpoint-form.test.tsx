@@ -453,9 +453,6 @@ describe("useEndpointForm", () => {
       within(schedulingTarget).queryByTestId("field--scheduling-scope"),
     ).toBeNull();
     expect(
-      within(schedulingTarget).getByText("endpoints.options.clusterScheduling"),
-    ).toBeTruthy();
-    expect(
       within(schedulingTarget).getAllByText(
         "endpoints.descriptions.clusterSchedulingTarget",
       ).length,
@@ -1001,22 +998,24 @@ describe("useEndpointForm", () => {
       expect(screen.queryByRole("tab")).toBeNull();
 
       const panel = within(screen.getByTestId("endpoint-resource-context"));
-      expect(panel.getByTestId("endpoint-resource-toolbar")).toBeTruthy();
-      expect(panel.getByText("clusters.fields.cardProducts")).toBeTruthy();
+      expect(
+        panel.getByTestId("endpoint-cluster-resource-summary"),
+      ).toBeTruthy();
+      expect(panel.getByTestId("endpoint-compact-node-resources")).toBeTruthy();
+      expect(panel.getAllByTestId("endpoint-compact-node-card").length).toBe(2);
+      expect(panel.queryByTestId("endpoint-resource-toolbar")).toBeNull();
       expect(panel.getByText("common.fields.cpu")).toBeTruthy();
       expect(panel.getByText("common.fields.memory")).toBeTruthy();
       expect(panel.queryByText("endpoints.sections.currentRequest")).toBeNull();
       expect(panel.queryByRole("table")).toBeNull();
-      expect(panel.getAllByRole("combobox").length).toBe(1);
+      expect(panel.queryByRole("combobox")).toBeNull();
       expect(panel.queryByText("clusters.options.summary")).toBeNull();
       expect(panel.queryByText("clusters.options.nodes")).toBeNull();
       expect(panel.queryByText("clusters.options.table")).toBeNull();
-      const clusterSection = panel.getByRole("heading", {
-        name: "clusters.sections.clusterResources",
-      });
-      const nodeSection = panel.getByRole("heading", {
-        name: "clusters.sections.nodeResources",
-      });
+      const clusterSection = panel.getByTestId(
+        "endpoint-cluster-resource-summary",
+      );
+      const nodeSection = panel.getByTestId("endpoint-compact-node-resources");
       expect(
         clusterSection.compareDocumentPosition(nodeSection) &
           Node.DOCUMENT_POSITION_FOLLOWING,
@@ -1032,6 +1031,10 @@ describe("useEndpointForm", () => {
       ).toBeGreaterThan(0);
       expect(
         screen.getAllByText((text) => text.includes("50 / 200")).length,
+      ).toBeGreaterThan(0);
+      expect(
+        panel.getAllByText((text) => text.includes("clusters.options.usable"))
+          .length,
       ).toBeGreaterThan(0);
       expect(
         panel.getByRole("button", {
@@ -1084,8 +1087,11 @@ describe("useEndpointForm", () => {
       });
 
       expect(
-        await screen.findByRole("heading", {
-          name: "endpoints.sections.basicResources",
+        await screen.findByTestId("endpoint-resource-plan-card"),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole("heading", {
+          name: "endpoints.sections.resourcePlan",
         }),
       ).toBeTruthy();
       expect(
@@ -1104,7 +1110,13 @@ describe("useEndpointForm", () => {
       const resourceContext = screen.getByTestId("endpoint-resource-context");
       const resourceContextPanel = within(resourceContext);
       expect(
-        resourceContextPanel.getByText("clusters.fields.physicalGpu"),
+        resourceContextPanel.getAllByText("clusters.fields.gpuNumber").length,
+      ).toBeGreaterThan(0);
+      expect(
+        resourceContextPanel.getByTestId("endpoint-cluster-resource-summary"),
+      ).toBeTruthy();
+      expect(
+        resourceContextPanel.getByTestId("endpoint-compact-node-resources"),
       ).toBeTruthy();
       expect(
         resourceContextPanel.getAllByText("clusters.fields.memoryUsage").length,

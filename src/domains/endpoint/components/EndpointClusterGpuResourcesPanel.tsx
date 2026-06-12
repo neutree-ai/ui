@@ -1,10 +1,19 @@
-import { Cpu } from "lucide-react";
+import { CircleAlert, CircleCheck, Copy, Cpu } from "lucide-react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
-import { buildGpuCardResourceRows } from "@/foundation/lib/gpu-device-resources";
-import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import {
+  buildGpuCardResourceRows,
+  buildGpuDeviceResourceRows,
+  type GpuDeviceResourceRow,
+} from "@/foundation/lib/gpu-device-resources";
+import { cn } from "@/foundation/lib/utils";
+import type {
+  ClusterResourceInfo,
+  NodeResourceStatus,
+} from "@/foundation/types/resource-types";
 
 type SelectedAccelerator = {
   type?: string | null;
@@ -18,23 +27,6 @@ type EndpointClusterGpuResourcesPanelProps = {
   virtualizationEnabled: boolean;
   request?: EndpointResourceRequestContext;
   t: (key: string, options?: { defaultValue?: string }) => string;
-};
-
-type ResourceMetricProps = {
-  label: string;
-  value: string;
-  remaining?: string;
-  remainingLabel?: string;
-  percent?: number;
-};
-
-type EndpointGpuResourceSummaryMetricsProps = {
-  rows: ReturnType<typeof buildGpuCardResourceRows>;
-  virtualizationEnabled: boolean;
-  t: (key: string, options?: { defaultValue?: string }) => string;
-  includeProductCount?: boolean;
-  testId?: string;
-  className?: string;
 };
 
 type EndpointResourceRequestContext = {
@@ -55,6 +47,21 @@ type EndpointResourceRequestContext = {
 
 const formatCount = (value: number | null | undefined) =>
   value == null ? "-" : String(value);
+
+const formatUsage = (
+  used: number | null | undefined,
+  total: number | null | undefined,
+  unit = "",
+) => {
+  if (used == null || total == null) {
+    return "-";
+  }
+
+  return `${formatCount(used)} / ${formatCount(total)}${unit}`;
+};
+
+const formatRemaining = (value: number | null | undefined, unit = "") =>
+  value == null ? "-" : `${formatCount(value)}${unit}`;
 
 const summarizeResourcePool = (
   total: number | null | undefined,
@@ -96,104 +103,50 @@ const summarizeRows = (
   };
 };
 
-const ResourceMetric = ({
+function ClusterResourceRow({
   label,
-  value,
+  used,
+  total,
   remaining,
-  remainingLabel,
-  percent,
-}: ResourceMetricProps) => (
-  <div className="rounded-md bg-muted/40 px-3 py-2">
-    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-      <span>{label}</span>
-      {percent !== undefined && (
-        <span className="tabular-nums">{percent}%</span>
-      )}
-    </div>
-    <div className="mt-1 text-sm font-medium tabular-nums">{value}</div>
-    {percent !== undefined && <Progress value={percent} className="mt-2 h-2" />}
-    {remaining && remainingLabel && (
-      <div className="mt-1 flex items-center justify-between gap-2 text-xs">
-        <span className="text-muted-foreground">{remainingLabel}</span>
-        <span className="tabular-nums">{remaining}</span>
-      </div>
-    )}
-  </div>
-);
-
-function EndpointGpuResourceSummaryMetrics({
-  rows,
-  virtualizationEnabled,
-  t,
-  includeProductCount = false,
-  testId,
-  className,
-}: EndpointGpuResourceSummaryMetricsProps) {
-  const quantitySummary = useMemo(
-    () => summarizeRows(rows, "quantity"),
-    [rows],
-  );
-  const memorySummary = useMemo(() => summarizeRows(rows, "memory"), [rows]);
-  const coreSummary = useMemo(() => summarizeRows(rows, "core"), [rows]);
-  const columnsClass = includeProductCount
-    ? "sm:grid-cols-2"
-    : virtualizationEnabled
-      ? "sm:grid-cols-3"
-      : "sm:grid-cols-1";
+  unit,
+}: {
+  label: string;
+  used: number | null | undefined;
+  total: number | null | undefined;
+  remaining: number | null | undefined;
+  unit?: string;
+}) {
+  const percent =
+    total && total > 0 && used != null ? Math.round((used / total) * 100) : 0;
 
   return (
-    <div
-      data-testid={testId}
-      className={["grid gap-2", columnsClass, className]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      {includeProductCount && (
-        <ResourceMetric
-          label={t("clusters.fields.cardProducts")}
-          value={formatCount(rows.length)}
-        />
-      )}
-      <ResourceMetric
-        label={t("clusters.fields.physicalGpu")}
-        value={`${formatCount(quantitySummary.used)} / ${formatCount(
-          quantitySummary.total,
-        )}`}
-        remaining={formatCount(quantitySummary.available)}
-        remainingLabel={t("clusters.fields.remaining")}
-        percent={quantitySummary.percent}
-      />
-      {virtualizationEnabled && (
-        <>
-          <ResourceMetric
-            label={t("clusters.fields.memoryUsage")}
-            value={`${formatCount(memorySummary.used)} / ${formatCount(
-              memorySummary.total,
-            )} MiB`}
-            remaining={`${formatCount(memorySummary.available)} MiB`}
-            remainingLabel={t("clusters.fields.remaining")}
-            percent={memorySummary.percent}
-          />
-          <ResourceMetric
-            label={t("clusters.fields.coreUsage")}
-            value={`${formatCount(coreSummary.used)} / ${formatCount(
-              coreSummary.total,
-            )}`}
-            remaining={formatCount(coreSummary.available)}
-            remainingLabel={t("clusters.fields.remaining")}
-            percent={coreSummary.percent}
-          />
-        </>
-      )}
+    <div className="space-y-1 rounded-md bg-muted/30 px-2.5 py-2">
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="font-medium">{label}</span>
+        <span className="tabular-nums text-muted-foreground">{percent}%</span>
+      </div>
+      <Progress value={percent} className="h-1.5" />
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="tabular-nums text-muted-foreground">
+          {formatUsage(used, total, unit)}
+        </span>
+        <span className="font-medium tabular-nums">
+          {formatRemaining(remaining, unit)}
+        </span>
+      </div>
     </div>
   );
 }
 
 function EndpointClusterResourceSummary({
   resourceInfo,
+  summaryRows,
+  virtualizationEnabled,
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
+  summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
+  virtualizationEnabled: boolean;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   const cpuSummary = summarizeResourcePool(
@@ -204,27 +157,295 @@ function EndpointClusterResourceSummary({
     resourceInfo.allocatable?.memory,
     resourceInfo.available?.memory,
   );
+  const gpuSummary = summarizeRows(summaryRows, "quantity");
+  const acceleratorMemorySummary = summarizeRows(summaryRows, "memory");
+  const acceleratorCoreSummary = summarizeRows(summaryRows, "core");
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      <ResourceMetric
+    <div
+      data-testid="endpoint-cluster-resource-summary"
+      className="space-y-2 rounded-md border bg-background p-3"
+    >
+      <div className="text-sm font-medium">
+        {t("clusters.sections.clusterResources")}
+      </div>
+      <ClusterResourceRow
+        label={t("clusters.fields.gpuNumber")}
+        used={gpuSummary.used}
+        total={gpuSummary.total}
+        remaining={gpuSummary.available}
+      />
+      {virtualizationEnabled && (
+        <>
+          <ClusterResourceRow
+            label={t("clusters.fields.memoryUsage")}
+            used={acceleratorMemorySummary.used}
+            total={acceleratorMemorySummary.total}
+            remaining={acceleratorMemorySummary.available}
+            unit=" MiB"
+          />
+          <ClusterResourceRow
+            label={t("clusters.fields.coreUsage")}
+            used={acceleratorCoreSummary.used}
+            total={acceleratorCoreSummary.total}
+            remaining={acceleratorCoreSummary.available}
+          />
+        </>
+      )}
+      <ClusterResourceRow
         label={t("common.fields.cpu")}
-        value={`${formatCount(cpuSummary.used)} / ${formatCount(
-          cpuSummary.total,
-        )} cores`}
-        remaining={`${formatCount(cpuSummary.available)} cores`}
-        remainingLabel={t("clusters.fields.remaining")}
-        percent={cpuSummary.percent}
+        used={cpuSummary.used}
+        total={cpuSummary.total}
+        remaining={cpuSummary.available}
+        unit=" cores"
       />
-      <ResourceMetric
+      <ClusterResourceRow
         label={t("common.fields.memory")}
-        value={`${formatCount(memorySummary.used)} / ${formatCount(
-          memorySummary.total,
-        )} GiB`}
-        remaining={`${formatCount(memorySummary.available)} GiB`}
-        remainingLabel={t("clusters.fields.remaining")}
-        percent={memorySummary.percent}
+        used={memorySummary.used}
+        total={memorySummary.total}
+        remaining={memorySummary.available}
+        unit=" GiB"
       />
+    </div>
+  );
+}
+
+const isDeviceUsableForRequest = (
+  row: GpuDeviceResourceRow,
+  request: EndpointResourceRequestContext | undefined,
+) => {
+  if (!request) {
+    return row.matchesSelectedAccelerator || row.fullFree;
+  }
+
+  if (!row.healthy || !row.matchesSelectedAccelerator) {
+    return false;
+  }
+
+  if (request.allocationMode === "full") {
+    return row.fullFree;
+  }
+
+  const memoryMiBPerSlice = Number(request.memoryMiBPerSlice || 0);
+  const coreUnitsPerSlice = Number(request.coreUnitsPerSlice || 0);
+  const availableMemory = Number(row.memory.available || 0);
+  const availableCore = Number(row.core.available || 0);
+
+  if (memoryMiBPerSlice > 0 && availableMemory < memoryMiBPerSlice) {
+    return false;
+  }
+
+  if (coreUnitsPerSlice > 0 && availableCore < coreUnitsPerSlice) {
+    return false;
+  }
+
+  return availableMemory > 0 || row.fullFree;
+};
+
+const groupRowsByNode = (
+  rows: GpuDeviceResourceRow[],
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  request: EndpointResourceRequestContext | undefined,
+): Array<{
+  availableCore: number;
+  availableMemory: number;
+  cpuSummary: ReturnType<typeof summarizeResourcePool>;
+  memorySummary: ReturnType<typeof summarizeResourcePool>;
+  nodeName: string;
+  rows: GpuDeviceResourceRow[];
+  usableCount: number;
+}> => {
+  const groups = new Map<string, GpuDeviceResourceRow[]>();
+  for (const row of rows) {
+    groups.set(row.nodeName, [...(groups.get(row.nodeName) ?? []), row]);
+  }
+
+  return Array.from(groups.entries()).map(([nodeName, nodeRows]) => {
+    const nodeStatus = nodeResources?.[nodeName];
+    const cpuSummary = summarizeResourcePool(
+      nodeStatus?.allocatable?.cpu,
+      nodeStatus?.available?.cpu,
+    );
+    const memorySummary = summarizeResourcePool(
+      nodeStatus?.allocatable?.memory,
+      nodeStatus?.available?.memory,
+    );
+    const availableMemory = nodeRows.reduce(
+      (sum, row) => sum + (row.memory.available ?? 0),
+      0,
+    );
+    const availableCore = nodeRows.reduce(
+      (sum, row) => sum + (row.core.available ?? 0),
+      0,
+    );
+    const usableCount = nodeRows.filter((row) =>
+      isDeviceUsableForRequest(row, request),
+    ).length;
+
+    return {
+      availableCore,
+      availableMemory,
+      cpuSummary,
+      memorySummary,
+      nodeName,
+      rows: nodeRows,
+      usableCount,
+    };
+  });
+};
+
+function EndpointNodeGpuResources({
+  nodeResources,
+  selectedAccelerator,
+  request,
+  t,
+}: {
+  nodeResources: ClusterResourceInfo["node_resources"];
+  selectedAccelerator?: SelectedAccelerator | null;
+  request?: EndpointResourceRequestContext;
+  t: (key: string, options?: { defaultValue?: string }) => string;
+}) {
+  const { copy } = useCopyToClipboard();
+  const rows = useMemo(
+    () => buildGpuDeviceResourceRows(nodeResources, selectedAccelerator),
+    [nodeResources, selectedAccelerator],
+  );
+  const nodeGroups = useMemo(
+    () => groupRowsByNode(rows, nodeResources, request),
+    [nodeResources, request, rows],
+  );
+
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-md border bg-background p-3 text-sm text-muted-foreground">
+        {t("clusters.messages.noGpuDevices")}
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="endpoint-compact-node-resources" className="space-y-2">
+      {nodeGroups.map((group) => (
+        <div
+          data-testid="endpoint-compact-node-card"
+          key={group.nodeName}
+          className="rounded-md border bg-background p-3"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium">
+                {group.nodeName}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {t("common.fields.cpu")} {group.cpuSummary.percent}% (
+                {formatRemaining(group.cpuSummary.available, " cores")}) ·{" "}
+                {t("common.fields.memory")} {group.memorySummary.percent}% (
+                {formatRemaining(group.memorySummary.available, " GiB")})
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="font-normal">
+                  {group.rows.length} {t("clusters.fields.gpuNumber")}
+                </Badge>
+                <Badge
+                  variant={group.usableCount > 0 ? "secondary" : "outline"}
+                  className="font-normal"
+                >
+                  {t("clusters.options.usable")} {group.usableCount}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {t("clusters.fields.memoryUsage")}{" "}
+                  {formatRemaining(group.availableMemory, " MiB")}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {t("clusters.fields.coreUsage")}{" "}
+                  {formatRemaining(group.availableCore)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {group.rows.map((row) => {
+              const usable = isDeviceUsableForRequest(row, request);
+
+              return (
+                <div
+                  key={`${row.nodeName}:${row.uuid}`}
+                  className={cn(
+                    "rounded-md border bg-muted/20 p-2",
+                    usable && "border-primary/40 bg-primary/5",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      title={row.uuid}
+                      aria-label={`${t("clusters.fields.gpuNumber")} ${row.gpuNumber}, ${t("clusters.fields.deviceUuid")} ${row.uuid}`}
+                      className="-ml-2 h-7 min-w-0 justify-start px-2 text-xs"
+                      onClick={() =>
+                        copy(row.uuid, {
+                          successMessage: t(
+                            "clusters.messages.copyUuidSuccess",
+                          ),
+                          errorMessage: t("clusters.messages.copyUuidFailed"),
+                        })
+                      }
+                    >
+                      <span className="truncate font-medium tabular-nums">
+                        {t("clusters.fields.gpuNumber")} {row.gpuNumber}
+                      </span>
+                      <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    </Button>
+                    <span
+                      className="flex items-center justify-center"
+                      role="img"
+                      aria-label={
+                        row.healthy
+                          ? t("clusters.options.healthy")
+                          : t("clusters.options.unhealthy")
+                      }
+                      title={
+                        row.healthy
+                          ? t("clusters.options.healthy")
+                          : t("clusters.options.unhealthy")
+                      }
+                    >
+                      {row.healthy ? (
+                        <CircleCheck className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <CircleAlert className="h-4 w-4 text-destructive" />
+                      )}
+                    </span>
+                  </div>
+                  <div className="mt-1 truncate text-xs text-muted-foreground">
+                    {row.product || "-"}
+                  </div>
+                  <div className="mt-2 grid gap-1 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        {t("clusters.fields.memoryUsage")}
+                      </span>
+                      <span className="font-medium tabular-nums">
+                        {formatRemaining(row.memory.available, " MiB")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        {t("clusters.fields.coreUsage")}
+                      </span>
+                      <span className="font-medium tabular-nums">
+                        {formatRemaining(row.core.available)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -237,7 +458,7 @@ export function EndpointClusterGpuResourcesPanel({
   request,
   t,
 }: EndpointClusterGpuResourcesPanelProps) {
-  const title = t("clusters.sections.clusterResources");
+  const title = t("endpoints.sections.clusterDeviceResources");
   const rows = useMemo(
     () => buildGpuCardResourceRows(resourceInfo, selectedAccelerator),
     [resourceInfo, selectedAccelerator],
@@ -265,43 +486,30 @@ export function EndpointClusterGpuResourcesPanel({
   }
 
   return (
-    <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-3">
+      <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <Cpu className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <div className="min-w-0">
-            <div className="text-sm font-medium">{title}</div>
-            <div className="truncate text-xs text-muted-foreground">
-              {selectedProduct
-                ? `${t("clusters.fields.selected")}: ${selectedProduct}`
-                : t("endpoints.messages.noAcceleratorSelected")}
-            </div>
-          </div>
+          <div className="truncate text-sm font-medium">{title}</div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {currentCluster && (
-            <Badge variant="outline" className="font-normal">
-              {currentCluster}
-            </Badge>
-          )}
-          {selectedProduct && (
-            <Badge variant="secondary" className="font-normal">
-              {selectedProduct}
-            </Badge>
-          )}
-        </div>
+        {selectedProduct && (
+          <Badge
+            variant="secondary"
+            className="max-w-[160px] truncate font-normal"
+          >
+            {selectedProduct}
+          </Badge>
+        )}
       </div>
 
-      <div className="max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
-        <EndpointClusterGpuResourcesInlineContent
-          resourceInfo={resourceInfo}
-          selectedAccelerator={selectedAccelerator}
-          virtualizationEnabled={virtualizationEnabled}
-          summaryRows={summaryRows}
-          request={request}
-          t={t}
-        />
-      </div>
+      <EndpointClusterGpuResourcesInlineContent
+        resourceInfo={resourceInfo}
+        selectedAccelerator={selectedAccelerator}
+        virtualizationEnabled={virtualizationEnabled}
+        summaryRows={summaryRows}
+        request={request}
+        t={t}
+      />
     </div>
   );
 }
@@ -322,78 +530,19 @@ function EndpointClusterGpuResourcesInlineContent({
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   return (
-    <div className="space-y-5">
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium">
-            {t("clusters.sections.clusterResources")}
-          </h3>
-        </div>
-        <EndpointClusterResourceSummary resourceInfo={resourceInfo} t={t} />
-        <EndpointGpuResourceSummaryMetrics
-          rows={summaryRows}
-          virtualizationEnabled={virtualizationEnabled}
-          t={t}
-          includeProductCount={true}
-        />
-      </section>
-      <section className="space-y-3 border-t pt-5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium">
-            {t("clusters.sections.nodeResources")}
-          </h3>
-        </div>
-        <GpuDeviceResourcesView
-          nodeResources={resourceInfo.node_resources}
-          selectedAccelerator={selectedAccelerator}
-          labels={{
-            title: t("clusters.sections.nodeResources"),
-            deviceCount: t("clusters.fields.deviceCount"),
-            healthyDevices: t("clusters.fields.healthyDevices"),
-            memoryUsage: t("clusters.fields.memoryUsage"),
-            coreUsage: t("clusters.fields.coreUsage"),
-            allProducts: t("clusters.options.allGpuProducts"),
-            allNodes: t("clusters.options.allNodes"),
-            searchPlaceholder: t("clusters.placeholders.searchGpuDevices"),
-            gpuNumber: t("clusters.fields.gpuNumber"),
-            uuid: t("clusters.fields.deviceUuid"),
-            status: t("common.fields.status"),
-            healthy: t("clusters.options.healthy"),
-            unhealthy: t("clusters.options.unhealthy"),
-            node: t("clusters.fields.nodeName"),
-            product: t("common.fields.acceleratorProduct"),
-            selected: t("clusters.fields.selected"),
-            usable: t("clusters.options.usable"),
-            free: t("clusters.options.free"),
-            allocated: t("clusters.options.allocated"),
-            resourceScope: t("clusters.fields.resourceScope"),
-            freeCards: t("clusters.options.freeCards"),
-            usableForRequest: t("clusters.options.usableForRequest"),
-            copyUuid: t("clusters.actions.copyUuid"),
-            copyUuidSuccess: t("clusters.messages.copyUuidSuccess"),
-            copyUuidFailed: t("clusters.messages.copyUuidFailed"),
-            remaining: t("clusters.fields.remaining"),
-            usedSlashTotal: t("clusters.fields.usedSlashTotal"),
-            empty: t("clusters.messages.noGpuDevices"),
-          }}
-          variant="cards"
-          showHeader={false}
-          showFilters={false}
-          showSummary={false}
-          showResourceControls={true}
-          resourceControlsTestId="endpoint-resource-toolbar"
-          request={
-            request
-              ? {
-                  allocationMode: request.allocationMode,
-                  memoryMiBPerSlice: request.memoryMiBPerSlice,
-                  coreUnitsPerSlice: request.coreUnitsPerSlice,
-                }
-              : undefined
-          }
-          className="border-0 p-0"
-        />
-      </section>
+    <div className="max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pr-1">
+      <EndpointClusterResourceSummary
+        resourceInfo={resourceInfo}
+        summaryRows={summaryRows}
+        virtualizationEnabled={virtualizationEnabled}
+        t={t}
+      />
+      <EndpointNodeGpuResources
+        nodeResources={resourceInfo.node_resources}
+        selectedAccelerator={selectedAccelerator}
+        request={request}
+        t={t}
+      />
     </div>
   );
 }

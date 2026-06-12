@@ -658,6 +658,7 @@
 			"advancedOptions": "Advanced Options",
 			"environmentVariables": "Environment Variables",
 			"currentRequest": "Current Request",
+			"resourcePlan": "Resource Plan",
 			"requestedResources": "Requested Resources",
 			"runtimeResources": "Runtime Resources",
 			"clusterDeviceResources": "Cluster Accelerator Resources",
