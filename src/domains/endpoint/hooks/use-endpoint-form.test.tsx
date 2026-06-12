@@ -390,12 +390,6 @@ function getAcceleratorCardText() {
   return screen.getByTestId("endpoint-accelerator-resource-card").textContent;
 }
 
-function getResourcePanelRequestText() {
-  return within(screen.getByTestId("endpoint-resource-context")).getByTestId(
-    "endpoint-resource-panel-request",
-  ).textContent;
-}
-
 // --- Tests ---
 
 describe("useEndpointForm", () => {
@@ -456,19 +450,16 @@ describe("useEndpointForm", () => {
       within(schedulingTarget).getByTestId("field-spec.cluster"),
     ).toBeTruthy();
     expect(
-      within(schedulingTarget).getByText("endpoints.fields.schedulingScope"),
-    ).toBeTruthy();
-    expect(
-      within(schedulingTarget).getByTestId("field--scheduling-scope"),
-    ).toBeTruthy();
+      within(schedulingTarget).queryByTestId("field--scheduling-scope"),
+    ).toBeNull();
     expect(
       within(schedulingTarget).getByText("endpoints.options.clusterScheduling"),
     ).toBeTruthy();
     expect(
-      within(schedulingTarget).getByText(
-        "endpoints.messages.clusterSchedulingOnly",
-      ),
-    ).toBeTruthy();
+      within(schedulingTarget).getAllByText(
+        "endpoints.descriptions.clusterSchedulingTarget",
+      ).length,
+    ).toBeGreaterThan(0);
 
     expect(indexOf("endpoints.fields.schedulerType")).toBeGreaterThan(
       advancedIndex,
@@ -1011,11 +1002,10 @@ describe("useEndpointForm", () => {
 
       const panel = within(screen.getByTestId("endpoint-resource-context"));
       expect(panel.getByTestId("endpoint-resource-toolbar")).toBeTruthy();
-      expect(panel.queryByText("clusters.fields.cardProducts")).toBeNull();
-      expect(panel.getByText("endpoints.sections.currentRequest")).toBeTruthy();
-      expect(
-        panel.getByText("endpoints.fields.vgpuSlices: 2 / 2"),
-      ).toBeTruthy();
+      expect(panel.getByText("clusters.fields.cardProducts")).toBeTruthy();
+      expect(panel.getByText("common.fields.cpu")).toBeTruthy();
+      expect(panel.getByText("common.fields.memory")).toBeTruthy();
+      expect(panel.queryByText("endpoints.sections.currentRequest")).toBeNull();
       expect(panel.queryByRole("table")).toBeNull();
       expect(panel.getAllByRole("combobox").length).toBe(1);
       expect(panel.queryByText("clusters.options.summary")).toBeNull();
@@ -1061,10 +1051,10 @@ describe("useEndpointForm", () => {
       );
 
       await waitFor(() => {
-        expect(getResourcePanelRequestText()).toContain(
+        expect(getAcceleratorCardText()).toContain(
           "endpoints.fields.physicalGpu: 2 / 0",
         );
-        expect(getResourcePanelRequestText()).toContain(
+        expect(getAcceleratorCardText()).toContain(
           "endpoints.messages.fullGpuResourcesInsufficient",
         );
       });
@@ -1106,24 +1096,37 @@ describe("useEndpointForm", () => {
       const acceleratorCard = screen.getByTestId(
         "endpoint-accelerator-resource-card",
       );
-      const acceleratorMetrics = within(acceleratorCard).getByTestId(
-        "endpoint-accelerator-resource-metrics",
-      );
       expect(
-        within(acceleratorMetrics).getByText("clusters.fields.physicalGpu"),
+        within(acceleratorCard).queryByTestId(
+          "endpoint-accelerator-resource-metrics",
+        ),
+      ).toBeNull();
+      const resourceContext = screen.getByTestId("endpoint-resource-context");
+      const resourceContextPanel = within(resourceContext);
+      expect(
+        resourceContextPanel.getByText("clusters.fields.physicalGpu"),
       ).toBeTruthy();
       expect(
-        within(acceleratorMetrics).getByText("clusters.fields.memoryUsage"),
+        resourceContextPanel.getAllByText("clusters.fields.memoryUsage").length,
+      ).toBeGreaterThan(0);
+      expect(
+        resourceContextPanel.getAllByText("clusters.fields.coreUsage").length,
+      ).toBeGreaterThan(0);
+      expect(resourceContextPanel.getByText("common.fields.cpu")).toBeTruthy();
+      expect(
+        resourceContextPanel.getByText("common.fields.memory"),
       ).toBeTruthy();
       expect(
-        within(acceleratorMetrics).getByText("clusters.fields.coreUsage"),
-      ).toBeTruthy();
+        resourceContextPanel.queryByTestId(
+          "endpoint-accelerator-resource-metrics",
+        ),
+      ).toBeNull();
       expect(screen.getByTestId("endpoint-resource-config-grid")).toBeTruthy();
       expect(
         screen.getByTestId("endpoint-resource-config-grid").className,
-      ).toContain("minmax(320px,360px)");
+      ).toContain("space-y-4");
       expect(screen.getByTestId("endpoint-resource-config-main")).toBeTruthy();
-      expect(screen.getByTestId("endpoint-resource-context")).toBeTruthy();
+      expect(resourceContext).toBeTruthy();
       expect(
         within(acceleratorCard).getByText("endpoints.sections.currentRequest"),
       ).toBeTruthy();

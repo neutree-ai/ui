@@ -56,6 +56,23 @@ type EndpointResourceRequestContext = {
 const formatCount = (value: number | null | undefined) =>
   value == null ? "-" : String(value);
 
+const summarizeResourcePool = (
+  total: number | null | undefined,
+  available: number | null | undefined,
+) => {
+  const normalizedTotal = total ?? 0;
+  const normalizedAvailable = available ?? 0;
+  const used = Math.max(0, normalizedTotal - normalizedAvailable);
+
+  return {
+    available: normalizedAvailable,
+    total: normalizedTotal,
+    used,
+    percent:
+      normalizedTotal > 0 ? Math.round((used / normalizedTotal) * 100) : 0,
+  };
+};
+
 const summarizeRows = (
   rows: ReturnType<typeof buildGpuCardResourceRows>,
   field: "quantity" | "memory" | "core",
@@ -104,7 +121,7 @@ const ResourceMetric = ({
   </div>
 );
 
-export function EndpointGpuResourceSummaryMetrics({
+function EndpointGpuResourceSummaryMetrics({
   rows,
   virtualizationEnabled,
   t,
@@ -172,66 +189,42 @@ export function EndpointGpuResourceSummaryMetrics({
   );
 }
 
-function EndpointResourceRequestSummary({
-  request,
+function EndpointClusterResourceSummary({
+  resourceInfo,
   t,
 }: {
-  request: EndpointResourceRequestContext;
+  resourceInfo: ClusterResourceInfo;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
-  const isFullAllocation = request.allocationMode === "full";
-  const isExceeded = isFullAllocation
-    ? request.fullGpuCapacityExceeded
-    : request.vgpuCapacityExceeded;
+  const cpuSummary = summarizeResourcePool(
+    resourceInfo.allocatable?.cpu,
+    resourceInfo.available?.cpu,
+  );
+  const memorySummary = summarizeResourcePool(
+    resourceInfo.allocatable?.memory,
+    resourceInfo.available?.memory,
+  );
 
   return (
-    <div
-      data-testid="endpoint-resource-panel-request"
-      className="rounded-md border bg-background px-3 py-2 text-sm"
-    >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <div className="font-medium">
-          {t("endpoints.sections.currentRequest")}
-        </div>
-        <Badge variant={isExceeded ? "destructive" : "secondary"}>
-          {isFullAllocation
-            ? t("endpoints.fields.fullGpu")
-            : t("endpoints.fields.vgpu")}
-        </Badge>
-        {isFullAllocation ? (
-          <span className="text-xs text-muted-foreground">
-            {t("endpoints.fields.physicalGpu")}: {request.requestedFullGpuCards}{" "}
-            / {request.fullGpuCardCapacity}
-          </span>
-        ) : (
-          <>
-            <span className="text-xs text-muted-foreground">
-              {t("endpoints.fields.vgpuSlices")}: {request.requestedVgpuSlices}{" "}
-              / {request.totalVgpuSliceCapacity}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {t("endpoints.fields.vgpuMemoryCapacity")}:{" "}
-              {request.availableVgpuMemoryMiB
-                ? `${request.requestedVgpuMemoryMiB} / ${request.availableVgpuMemoryMiB} MiB`
-                : "-"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {t("endpoints.fields.vgpuCoreCapacity")}:{" "}
-              {request.requestedVgpuCoreUnits > 0 &&
-              request.availableVgpuCoreUnits
-                ? `${request.requestedVgpuCoreUnits} / ${request.availableVgpuCoreUnits}`
-                : "-"}
-            </span>
-          </>
-        )}
-      </div>
-      {isExceeded && (
-        <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive">
-          {isFullAllocation
-            ? t("endpoints.messages.fullGpuResourcesInsufficient")
-            : t("endpoints.messages.vgpuResourcesInsufficient")}
-        </div>
-      )}
+    <div className="grid gap-2 sm:grid-cols-2">
+      <ResourceMetric
+        label={t("common.fields.cpu")}
+        value={`${formatCount(cpuSummary.used)} / ${formatCount(
+          cpuSummary.total,
+        )} cores`}
+        remaining={`${formatCount(cpuSummary.available)} cores`}
+        remainingLabel={t("clusters.fields.remaining")}
+        percent={cpuSummary.percent}
+      />
+      <ResourceMetric
+        label={t("common.fields.memory")}
+        value={`${formatCount(memorySummary.used)} / ${formatCount(
+          memorySummary.total,
+        )} GiB`}
+        remaining={`${formatCount(memorySummary.available)} GiB`}
+        remainingLabel={t("clusters.fields.remaining")}
+        percent={memorySummary.percent}
+      />
     </div>
   );
 }
@@ -244,7 +237,7 @@ export function EndpointClusterGpuResourcesPanel({
   request,
   t,
 }: EndpointClusterGpuResourcesPanelProps) {
-  const title = t("endpoints.sections.clusterDeviceResources");
+  const title = t("clusters.sections.clusterResources");
   const rows = useMemo(
     () => buildGpuCardResourceRows(resourceInfo, selectedAccelerator),
     [resourceInfo, selectedAccelerator],
@@ -329,19 +322,20 @@ function EndpointClusterGpuResourcesInlineContent({
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-medium">
             {t("clusters.sections.clusterResources")}
           </h3>
         </div>
+        <EndpointClusterResourceSummary resourceInfo={resourceInfo} t={t} />
         <EndpointGpuResourceSummaryMetrics
           rows={summaryRows}
           virtualizationEnabled={virtualizationEnabled}
           t={t}
+          includeProductCount={true}
         />
-        {request && <EndpointResourceRequestSummary request={request} t={t} />}
       </section>
       <section className="space-y-3 border-t pt-5">
         <div className="flex items-center justify-between gap-2">

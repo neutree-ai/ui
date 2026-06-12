@@ -291,8 +291,10 @@ describe("gpu device resource helpers", () => {
         nodeName: "node-a",
         uuid: "GPU-11111111-2222-3333-4444-555555555555",
         shortUuid: "GPU-1111...555555",
+        gpuNumber: 1,
         product: "Tesla-T4",
         healthy: true,
+        fullFree: false,
         matchesSelectedAccelerator: true,
         memory: {
           available: 7680,
@@ -312,8 +314,10 @@ describe("gpu device resource helpers", () => {
         nodeName: "node-b",
         uuid: "GPU-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
         shortUuid: "GPU-aaaa...eeeeee",
+        gpuNumber: 2,
         product: "Tesla-A10",
         healthy: false,
+        fullFree: false,
         matchesSelectedAccelerator: false,
         memory: {
           available: 12288,
