@@ -67,14 +67,6 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "default" }),
 }));
 
-vi.mock("@/domains/endpoint/components/SliderWithInput", () => ({
-  SliderWithInput: React.forwardRef(
-    (props: { unit?: string }, ref: React.Ref<HTMLDivElement>) => (
-      <div data-testid={`slider-mock-${props.unit || "default"}`} ref={ref} />
-    ),
-  ),
-}));
-
 vi.mock("@/foundation/components/VariablesInput", () => ({
   VariablesInput: React.forwardRef(
     (_props: unknown, ref: React.Ref<HTMLDivElement>) => (
@@ -508,6 +500,7 @@ describe("useEndpointForm", () => {
     const requestGrid = await screen.findByTestId(
       "endpoint-resource-request-grid",
     );
+    expect(requestGrid.className).toContain("grid-cols-2");
     const orderedFields = [
       within(requestGrid).getByTestId("field-spec.resources.cpu"),
       within(requestGrid).getByTestId("field-spec.resources.memory"),
@@ -533,6 +526,7 @@ describe("useEndpointForm", () => {
     expect(
       within(requestGrid).queryByTestId("field--vgpu-memory-mode"),
     ).toBeNull();
+    expect(screen.queryByTestId("slider-input")).toBeNull();
   });
 
   it("does not render cluster capability in cluster settings", async () => {
@@ -904,7 +898,7 @@ describe("useEndpointForm", () => {
       const coreInput = (await screen.findByRole("spinbutton", {
         name: "endpoints.fields.vgpuCoreLimit",
       })) as HTMLInputElement;
-      expect(coreInput.value).toBe("50");
+      expect(coreInput.value).toBe("50.0");
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.core_percent",
@@ -1006,14 +1000,11 @@ describe("useEndpointForm", () => {
       expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
       expect(screen.queryByText("clusters.fields.vgpuMemoryUsage")).toBeNull();
 
-      expect(await screen.findAllByText("15360 / 30720 MiB")).not.toHaveLength(
-        0,
-      );
       expect(
-        screen.getAllByText((text) => text.includes("0 / 2")).length,
-      ).toBeGreaterThan(0);
+        await screen.findAllByText("15360.0 / 30720.0 MiB"),
+      ).not.toHaveLength(0);
       expect(
-        screen.getAllByText((text) => text.includes("50 / 200")).length,
+        screen.getAllByText((text) => text.includes("50.0 / 200.0")).length,
       ).toBeGreaterThan(0);
       expect(
         panel.getAllByText((text) => text.includes("clusters.options.usable"))
@@ -1046,7 +1037,7 @@ describe("useEndpointForm", () => {
           ),
         ).toBeTruthy();
         expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.physicalGpu: 2 / 0",
+          "endpoints.fields.physicalGpu: 2.0 / 0.0",
         );
         expect(getAcceleratorCardText()).toContain(
           "endpoints.messages.fullGpuResourcesInsufficient",
@@ -1135,6 +1126,7 @@ describe("useEndpointForm", () => {
         ),
       ).toBeTruthy();
       const requestGrid = screen.getByTestId("endpoint-resource-request-grid");
+      expect(requestGrid.className).toContain("grid-cols-2");
       const orderedFields = [
         within(requestGrid).getByTestId("field-spec.resources.cpu"),
         within(requestGrid).getByTestId("field-spec.resources.memory"),
@@ -1163,6 +1155,7 @@ describe("useEndpointForm", () => {
       expect(
         screen.getByTestId("field-spec.resources.gpu").className,
       ).toContain("col-span-1");
+      expect(screen.queryByTestId("slider-input")).toBeNull();
     });
 
     it("shows vGPU slice capacity warnings in the edit resource form", async () => {
@@ -1195,7 +1188,7 @@ describe("useEndpointForm", () => {
         );
       });
       expect(getAcceleratorCardText()).toContain(
-        "endpoints.fields.vgpuSlices: 4 / 1",
+        "endpoints.fields.vgpuSlices: 4.0 / 1.0",
       );
       expect(getAcceleratorCardText()).toContain(
         "endpoints.messages.vgpuResourcesInsufficient",
@@ -1310,7 +1303,7 @@ describe("useEndpointForm", () => {
 
       await waitFor(() => {
         expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.physicalGpu: 1 / 1",
+          "endpoints.fields.physicalGpu: 1.0 / 1.0",
         );
       });
       expect(
@@ -1381,7 +1374,7 @@ describe("useEndpointForm", () => {
         );
       });
       expect(getAcceleratorCardText()).toContain(
-        "endpoints.fields.vgpuSlices: 1 / 1",
+        "endpoints.fields.vgpuSlices: 1.0 / 1.0",
       );
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
@@ -1431,7 +1424,7 @@ describe("useEndpointForm", () => {
       await waitFor(() => {
         expect(screen.queryByText(/endpoints\.fields\.vgpuSlices/)).toBeNull();
         expect(
-          screen.getByText("endpoints.fields.physicalGpu: 1 / 0"),
+          screen.getByText("endpoints.fields.physicalGpu: 1.0 / 0.0"),
         ).toBeTruthy();
         expect(
           formInstance?.getValues("spec.resources.accelerator.virtualization"),

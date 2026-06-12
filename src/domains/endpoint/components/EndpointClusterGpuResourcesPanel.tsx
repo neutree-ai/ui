@@ -45,8 +45,11 @@ type EndpointResourceRequestContext = {
   vgpuCapacityExceeded: boolean;
 };
 
-const formatCount = (value: number | null | undefined) =>
-  value == null ? "-" : String(value);
+const formatCount = (value: number | null | undefined) => {
+  if (value == null) return "-";
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue.toFixed(1) : "-";
+};
 
 const formatUsage = (
   used: number | null | undefined,
@@ -63,6 +66,19 @@ const formatUsage = (
 const formatRemaining = (value: number | null | undefined, unit = "") =>
   value == null ? "-" : `${formatCount(value)}${unit}`;
 
+const toPercentValue = (
+  used: number | null | undefined,
+  total: number | null | undefined,
+) => {
+  const numericUsed = Number(used ?? 0);
+  const numericTotal = Number(total ?? 0);
+  if (!Number.isFinite(numericUsed) || numericTotal <= 0) return 0;
+
+  return Number(((numericUsed / numericTotal) * 100).toFixed(1));
+};
+
+const formatPercent = (value: number) => `${formatCount(value)}%`;
+
 const summarizeResourcePool = (
   total: number | null | undefined,
   available: number | null | undefined,
@@ -75,8 +91,7 @@ const summarizeResourcePool = (
     available: normalizedAvailable,
     total: normalizedTotal,
     used,
-    percent:
-      normalizedTotal > 0 ? Math.round((used / normalizedTotal) * 100) : 0,
+    percent: toPercentValue(used, normalizedTotal),
   };
 };
 
@@ -98,8 +113,7 @@ const summarizeRows = (
 
   return {
     ...totals,
-    percent:
-      totals.total > 0 ? Math.round((totals.used / totals.total) * 100) : 0,
+    percent: toPercentValue(totals.used, totals.total),
   };
 };
 
@@ -116,14 +130,15 @@ function ClusterResourceRow({
   remaining: number | null | undefined;
   unit?: string;
 }) {
-  const percent =
-    total && total > 0 && used != null ? Math.round((used / total) * 100) : 0;
+  const percent = toPercentValue(used, total);
 
   return (
     <div className="space-y-1 rounded-md bg-muted/30 px-2.5 py-2">
       <div className="flex items-center justify-between gap-2 text-xs">
         <span className="font-medium">{label}</span>
-        <span className="tabular-nums text-muted-foreground">{percent}%</span>
+        <span className="tabular-nums text-muted-foreground">
+          {formatPercent(percent)}
+        </span>
       </div>
       <Progress value={percent} className="h-1.5" />
       <div className="flex items-center justify-between gap-2 text-xs">
@@ -337,9 +352,11 @@ function EndpointNodeGpuResources({
                 {group.nodeName}
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                {t("common.fields.cpu")} {group.cpuSummary.percent}% (
+                {t("common.fields.cpu")}{" "}
+                {formatPercent(group.cpuSummary.percent)} (
                 {formatRemaining(group.cpuSummary.available, " cores")}) ·{" "}
-                {t("common.fields.memory")} {group.memorySummary.percent}% (
+                {t("common.fields.memory")}{" "}
+                {formatPercent(group.memorySummary.percent)} (
                 {formatRemaining(group.memorySummary.available, " GiB")})
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">

@@ -8,7 +8,6 @@ import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
-import { SliderWithInput } from "@/domains/endpoint/components/SliderWithInput";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
@@ -32,6 +31,7 @@ import type {
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
@@ -61,7 +61,10 @@ const userSetValueOptions = {
   shouldValidate: true,
 } as const;
 
-const roundVgpuDisplayValue = (value: number) => Number(value.toFixed(2));
+const formatOneDecimal = (value: number | null | undefined) => {
+  const numberValue = Number(value ?? 0);
+  return Number.isFinite(numberValue) ? numberValue.toFixed(1) : "0.0";
+};
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -219,7 +222,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     acceleratorOptions,
     selectedAcceleratorOption,
     maxAvailable,
-    dynamicAvailability,
     gpuStep,
   } = useEndpointClusterResources({
     currentCluster,
@@ -252,9 +254,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   );
   const vgpuMemoryGiBInputValue =
     selectedVirtualization?.memory_mib !== undefined
-      ? roundVgpuDisplayValue(Number(selectedVirtualization.memory_mib) / 1024)
+      ? formatOneDecimal(Number(selectedVirtualization.memory_mib) / 1024)
       : effectiveVgpuMemoryMiB
-        ? roundVgpuDisplayValue(effectiveVgpuMemoryMiB / 1024)
+        ? formatOneDecimal(effectiveVgpuMemoryMiB / 1024)
         : "";
   const effectiveGpuAllocationMode: GpuAllocationMode =
     showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
@@ -829,7 +831,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
                 <div
                   data-testid="endpoint-resource-request-grid"
-                  className="grid grid-cols-4 content-start items-start gap-4 self-start xs:grid-cols-1"
+                  className="grid grid-cols-2 content-start items-start gap-4 self-start xs:grid-cols-1"
                 >
                   <div
                     data-testid="endpoint-basic-resource-card"
@@ -841,25 +843,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       label={t("common.fields.cpu")}
                       className="col-span-1"
                     >
-                      <SliderWithInput
-                        value={normalizedResources?.cpu || 0}
-                        onChange={(value) =>
-                          form.setValue("spec.resources.cpu", value)
+                      <NumberInput
+                        value={formatOneDecimal(normalizedResources?.cpu || 0)}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            "spec.resources.cpu",
+                            value,
+                            userSetValueOptions,
+                          )
                         }
                         min={0}
                         max={maxAvailable.cpu.available}
                         step={0.1}
-                        unit="cores"
                         disabled={!currentCluster}
-                        remainingInfo={
-                          maxAvailable.cpu.total > 0
-                            ? {
-                                remaining: dynamicAvailability.cpu,
-                                total: maxAvailable.cpu.total,
-                                label: t("endpoints.fields.remaining"),
-                              }
-                            : undefined
-                        }
+                        className="h-9"
                       />
                     </FormFieldGroup>
 
@@ -869,25 +866,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       label={t("endpoints.fields.memoryGb")}
                       className="col-span-1"
                     >
-                      <SliderWithInput
-                        value={normalizedResources?.memory || 0}
-                        onChange={(value) =>
-                          form.setValue("spec.resources.memory", value)
+                      <NumberInput
+                        value={formatOneDecimal(
+                          normalizedResources?.memory || 0,
+                        )}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            "spec.resources.memory",
+                            value,
+                            userSetValueOptions,
+                          )
                         }
                         min={0}
                         max={maxAvailable.memory.available}
                         step={0.5}
-                        unit="GiB"
                         disabled={!currentCluster}
-                        remainingInfo={
-                          maxAvailable.memory.total > 0
-                            ? {
-                                remaining: dynamicAvailability.memory,
-                                total: maxAvailable.memory.total,
-                                label: t("endpoints.fields.remaining"),
-                              }
-                            : undefined
-                        }
+                        className="h-9"
                       />
                     </FormFieldGroup>
                   </div>
@@ -959,10 +953,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       label={t("endpoints.fields.acceleratorCount")}
                       className="col-span-1"
                     >
-                      <SliderWithInput
-                        value={gpuUsage}
-                        onChange={(value) =>
-                          form.setValue("spec.resources.gpu", value)
+                      <NumberInput
+                        value={formatOneDecimal(gpuUsage)}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            "spec.resources.gpu",
+                            value,
+                            userSetValueOptions,
+                          )
                         }
                         min={0}
                         max={
@@ -976,25 +974,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           !selectedAccelerator?.type ||
                           !selectedAccelerator?.product
                         }
-                        remainingInfo={
-                          selectedAccelerator?.type &&
-                          selectedAccelerator?.product
-                            ? isVgpuAllocationMode
-                              ? {
-                                  remaining: maxVgpuPerReplica - gpuUsage,
-                                  total: maxVgpuPerReplica,
-                                  label: t("endpoints.fields.remaining"),
-                                }
-                              : maxAvailable.gpu.total > 0
-                                ? {
-                                    remaining:
-                                      maxAvailable.gpu.available - gpuUsage,
-                                    total: maxAvailable.gpu.total,
-                                    label: t("endpoints.fields.remaining"),
-                                  }
-                                : undefined
-                            : undefined
-                        }
+                        className="h-9"
                       />
                     </FormFieldGroup>
 
@@ -1014,8 +994,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         min={0}
                         max={
                           selectedMemoryTotalMiB
-                            ? roundVgpuDisplayValue(
-                                selectedMemoryTotalMiB / 1024,
+                            ? Number(
+                                formatOneDecimal(selectedMemoryTotalMiB / 1024),
                               )
                             : undefined
                         }
@@ -1040,7 +1020,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         aria-label={t("endpoints.fields.vgpuCoreLimit")}
                         value={
                           isVgpuAllocationMode && vgpuCoreUnitsPerSlice > 0
-                            ? vgpuCoreUnitsPerSlice
+                            ? formatOneDecimal(vgpuCoreUnitsPerSlice)
                             : ""
                         }
                         onChange={(event) =>
@@ -1057,7 +1037,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
                     {selectedAccelerator?.type &&
                       selectedAccelerator?.product && (
-                        <div className="col-span-4 rounded-md border bg-muted/20 px-3 py-2 text-sm">
+                        <div className="col-span-2 rounded-md border bg-muted/20 px-3 py-2 text-sm xs:col-span-1">
                           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                             <div className="font-medium">
                               {t("endpoints.sections.currentRequest")}
@@ -1067,8 +1047,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                 <>
                                   <span className="text-foreground">
                                     {t("endpoints.fields.vgpuSlices")}:{" "}
-                                    {requestedVgpuSlices} /{" "}
-                                    {totalVgpuSliceCapacity}
+                                    {formatOneDecimal(requestedVgpuSlices)} /{" "}
+                                    {formatOneDecimal(totalVgpuSliceCapacity)}
                                   </span>
                                   <span>
                                     <span>
@@ -1076,7 +1056,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                     </span>
                                     :{" "}
                                     {availableVgpuMemoryMiB
-                                      ? `${requestedVgpuMemoryMiB} / ${availableVgpuMemoryMiB} MiB`
+                                      ? `${formatOneDecimal(
+                                          requestedVgpuMemoryMiB,
+                                        )} / ${formatOneDecimal(
+                                          availableVgpuMemoryMiB,
+                                        )} MiB`
                                       : "-"}
                                   </span>
                                   <span>
@@ -1085,7 +1069,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                     </span>
                                     :{" "}
                                     {availableVgpuCoreUnits
-                                      ? `${requestedVgpuCoreUnits} / ${availableVgpuCoreUnits}`
+                                      ? `${formatOneDecimal(
+                                          requestedVgpuCoreUnits,
+                                        )} / ${formatOneDecimal(
+                                          availableVgpuCoreUnits,
+                                        )}`
                                       : "-"}
                                   </span>
                                 </>
@@ -1093,16 +1081,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                 <>
                                   <span className="text-foreground">
                                     {t("endpoints.fields.physicalGpu")}:{" "}
-                                    {requestedFullGpuCards} /{" "}
-                                    {fullGpuCardCapacity}
+                                    {formatOneDecimal(requestedFullGpuCards)} /{" "}
+                                    {formatOneDecimal(fullGpuCardCapacity)}
                                   </span>
                                   <span>
                                     {t("endpoints.fields.replicas")}:{" "}
-                                    {replicaCount}
+                                    {formatOneDecimal(replicaCount)}
                                   </span>
                                   <span>
                                     {t("endpoints.fields.perReplica")}:{" "}
-                                    {gpuUsage}
+                                    {formatOneDecimal(gpuUsage)}
                                   </span>
                                 </>
                               )}
