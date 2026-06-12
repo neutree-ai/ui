@@ -368,6 +368,15 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "model_usage",
+    list: "/:workspace/model-usage",
+    meta: {
+      icon: <BarChart3 />,
+      workspaced: true,
+      parent: "observability",
+    },
+  },
+  {
     name: "access_control",
   },
   {
@@ -427,14 +436,6 @@ const resources: ResourceProps[] = [
       workspaced: true,
       idColumnName: "metadata->name",
       parent: "access_control",
-    },
-  },
-  {
-    name: "model_usage",
-    list: "/:workspace/model-usage",
-    meta: {
-      icon: <BarChart3 />,
-      workspaced: true,
     },
   },
   {
