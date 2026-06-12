@@ -66,6 +66,18 @@ const formatUsage = (
 const formatRemaining = (value: number | null | undefined, unit = "") =>
   value == null ? "-" : `${formatCount(value)}${unit}`;
 
+const formatAvailableTotal = (
+  available: number | null | undefined,
+  total: number | null | undefined,
+  unit = "",
+) => {
+  if (available == null || total == null) {
+    return "-";
+  }
+
+  return `${formatCount(available)} / ${formatCount(total)}${unit}`;
+};
+
 const toPercentValue = (
   used: number | null | undefined,
   total: number | null | undefined,
@@ -270,6 +282,8 @@ const groupRowsByNode = (
   memorySummary: ReturnType<typeof summarizeResourcePool>;
   nodeName: string;
   rows: GpuDeviceResourceRow[];
+  totalCore: number;
+  totalMemory: number;
   usableCount: number;
 }> => {
   const groups = new Map<string, GpuDeviceResourceRow[]>();
@@ -295,6 +309,14 @@ const groupRowsByNode = (
       (sum, row) => sum + (row.core.available ?? 0),
       0,
     );
+    const totalMemory = nodeRows.reduce(
+      (sum, row) => sum + (row.memory.total ?? 0),
+      0,
+    );
+    const totalCore = nodeRows.reduce(
+      (sum, row) => sum + (row.core.total ?? 0),
+      0,
+    );
     const usableCount = nodeRows.filter((row) =>
       isDeviceUsableForRequest(row, request),
     ).length;
@@ -306,6 +328,8 @@ const groupRowsByNode = (
       memorySummary,
       nodeName,
       rows: nodeRows,
+      totalCore,
+      totalMemory,
       usableCount,
     };
   });
@@ -355,11 +379,17 @@ function EndpointNodeGpuResources({
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
                 {t("common.fields.cpu")}{" "}
-                {formatPercent(group.cpuSummary.percent)} (
-                {formatRemaining(group.cpuSummary.available, " cores")}) ·{" "}
-                {t("common.fields.memory")}{" "}
-                {formatPercent(group.memorySummary.percent)} (
-                {formatRemaining(group.memorySummary.available, " GiB")})
+                {formatAvailableTotal(
+                  group.cpuSummary.available,
+                  group.cpuSummary.total,
+                  " cores",
+                )}{" "}
+                · {t("common.fields.memory")}{" "}
+                {formatAvailableTotal(
+                  group.memorySummary.available,
+                  group.memorySummary.total,
+                  " GiB",
+                )}
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="font-normal">
@@ -373,11 +403,15 @@ function EndpointNodeGpuResources({
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   {t("clusters.fields.memoryUsage")}{" "}
-                  {formatRemaining(group.availableMemory, " MiB")}
+                  {formatAvailableTotal(
+                    group.availableMemory,
+                    group.totalMemory,
+                    " MiB",
+                  )}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {t("clusters.fields.coreUsage")}{" "}
-                  {formatRemaining(group.availableCore)}
+                  {formatAvailableTotal(group.availableCore, group.totalCore)}
                 </span>
               </div>
             </div>
@@ -447,7 +481,11 @@ function EndpointNodeGpuResources({
                         {t("clusters.fields.memoryUsage")}
                       </span>
                       <span className="font-medium tabular-nums">
-                        {formatRemaining(row.memory.available, " MiB")}
+                        {formatAvailableTotal(
+                          row.memory.available,
+                          row.memory.total,
+                          " MiB",
+                        )}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
@@ -455,7 +493,10 @@ function EndpointNodeGpuResources({
                         {t("clusters.fields.coreUsage")}
                       </span>
                       <span className="font-medium tabular-nums">
-                        {formatRemaining(row.core.available)}
+                        {formatAvailableTotal(
+                          row.core.available,
+                          row.core.total,
+                        )}
                       </span>
                     </div>
                   </div>

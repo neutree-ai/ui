@@ -12,10 +12,10 @@ vi.mock("@/components/ui/progress", () => ({
 const labels = {
   title: "Cluster Resources",
   productCount: "Card Products",
-  physicalGpu: "Full Cards",
-  singleCardMemory: "Single-card Memory",
-  memoryUsage: "Virtual Card Memory Usage",
-  coreUsage: "Virtual Card Core Usage",
+  physicalGpu: "Card Count",
+  singleCardMemory: "VRAM",
+  memoryUsage: "VRAM",
+  coreUsage: "Core",
   allProducts: "All Card Products",
   searchPlaceholder: "Search card product or type",
   acceleratorType: "Accelerator Type",
@@ -88,12 +88,8 @@ describe("GpuCardResourcesView", () => {
     );
 
     expect(screen.getByText("Cluster Resources")).toBeTruthy();
-    expect(
-      screen.getAllByText("Virtual Card Memory Usage").length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText("Virtual Card Core Usage").length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText("VRAM").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Core").length).toBeGreaterThan(0);
     expect(screen.getAllByText("15360 MiB").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Remaining").length).toBeGreaterThan(0);
@@ -109,10 +105,10 @@ describe("GpuCardResourcesView", () => {
     );
 
     expect(screen.getByText("Cluster Resources")).toBeTruthy();
-    expect(screen.getAllByText("Full Cards").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Card Count").length).toBeGreaterThan(0);
     expect(screen.getByText("15360 MiB")).toBeTruthy();
-    expect(screen.queryByText("Virtual Card Memory Usage")).toBeNull();
-    expect(screen.queryByText("Virtual Card Core Usage")).toBeNull();
+    expect(screen.getAllByText("VRAM").length).toBe(1);
+    expect(screen.queryByText("Core")).toBeNull();
   });
 
   it("renders compact cards without table or filters", () => {
@@ -134,8 +130,8 @@ describe("GpuCardResourcesView", () => {
     expect(screen.getByText("Tesla-T4")).toBeTruthy();
     expect(screen.getByText("nvidia_gpu")).toBeTruthy();
     expect(screen.getByText("Selected")).toBeTruthy();
-    expect(screen.getByText("Full Cards")).toBeTruthy();
-    expect(screen.getByText("Single-card Memory")).toBeTruthy();
+    expect(screen.getByText("Card Count")).toBeTruthy();
+    expect(screen.getAllByText("VRAM").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/^Remaining/).length).toBeGreaterThan(0);
   });
 
@@ -155,7 +151,7 @@ describe("GpuCardResourcesView", () => {
 
     const usageRow = screen.getByTestId("gpu-card-resource-usage-row");
     expect(usageRow.className).toContain("grid-cols-2");
-    expect(screen.getByText("Virtual Card Core Usage")).toBeTruthy();
-    expect(screen.getByText("Virtual Card Memory Usage")).toBeTruthy();
+    expect(screen.getByText("Core")).toBeTruthy();
+    expect(screen.getAllByText("VRAM").length).toBeGreaterThan(0);
   });
 });

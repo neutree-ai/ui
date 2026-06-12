@@ -1000,6 +1000,22 @@ describe("useEndpointForm", () => {
         screen.getAllByText((text) => text.includes("50.0 / 200.0")).length,
       ).toBeGreaterThan(0);
       expect(
+        screen.getAllByText((text) =>
+          text.includes("common.fields.cpu 12.0 / 16.0 cores"),
+        ).length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText((text) =>
+          text.includes("common.fields.memory 48.0 / 64.0 GiB"),
+        ).length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText("7680.0 / 15360.0 MiB").length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText((text) => text.includes("50.0 / 100.0")).length,
+      ).toBeGreaterThan(0);
+      expect(
         panel.getAllByText((text) => text.includes("clusters.options.usable"))
           .length,
       ).toBeGreaterThan(0);
