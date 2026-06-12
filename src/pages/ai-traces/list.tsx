@@ -303,7 +303,9 @@ export const AITracesList = () => {
             )}
             {items.map((row) => (
               <TableRow
-                key={row.request_id}
+                // request_id is unique only within a workspace; the All view
+                // mixes workspaces, so qualify the key to avoid collisions.
+                key={`${row.workspace}/${row.request_id}`}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => setSelected(row)}
               >
