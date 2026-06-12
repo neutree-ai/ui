@@ -24,14 +24,45 @@ import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
 
 const fmt = (n: number) => Number(n).toLocaleString();
+
+// Progress bar of used / limit, colored amber >=80% and red when over quota.
+const UsageBar = ({ used, limit }: { used: number; limit: number }) => {
+  const ratio = limit > 0 ? used / limit : 0;
+  const pct = Math.max(0, Math.min(100, ratio * 100));
+  const over = limit > 0 && used >= limit;
+  const warn = !over && ratio >= 0.8;
+  return (
+    <div className="min-w-[160px]">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-primary/20">
+        <div
+          className={cn(
+            "h-full transition-all",
+            over ? "bg-destructive" : warn ? "bg-amber-500" : "bg-primary",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground">
+        {fmt(used)} / {fmt(limit)}
+        {limit > 0 ? ` (${Math.round(ratio * 100)}%)` : ""}
+      </div>
+    </div>
+  );
+};
 
 export const QuotaList = () => {
   const { t } = useTranslation();
   const { current: workspace } = useWorkspace();
   const [open, setOpen] = useState(false);
   const { rows, isLoading, setQuota, deleteQuota } = useQuota(workspace);
+
+  const dimensionLabel = (row: QuotaPolicyRow) =>
+    row.dimension_type
+      ? `${t(`quota.dimensions.${row.dimension_type}`)}: ${row.dimension_value}`
+      : "—";
 
   const remainingBadge = (row: QuotaPolicyRow) => {
     if (row.remaining <= 0) {
@@ -79,11 +110,9 @@ export const QuotaList = () => {
               <TableHead>{t("quota.fields.level")}</TableHead>
               <TableHead>{t("common.fields.workspace")}</TableHead>
               <TableHead>{t("quota.fields.target")}</TableHead>
+              <TableHead>{t("quota.fields.dimension")}</TableHead>
               <TableHead>{t("quota.fields.period")}</TableHead>
-              <TableHead className="text-right">
-                {t("quota.fields.limitTokens")}
-              </TableHead>
-              <TableHead className="text-right">
+              <TableHead className="min-w-[160px]">
                 {t("quota.fields.currentUsage")}
               </TableHead>
               <TableHead className="text-right">
@@ -113,15 +142,19 @@ export const QuotaList = () => {
             {rows.map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <Badge variant="outline">{t(`quota.levels.${row.level}`)}</Badge>
+                  <Badge variant="outline">
+                    {t(`quota.levels.${row.level}`)}
+                  </Badge>
                 </TableCell>
                 <TableCell>{row.workspace}</TableCell>
                 <TableCell className="font-medium">{row.targetName}</TableCell>
-                <TableCell>{t(`quota.periods.${row.period}`)}</TableCell>
-                <TableCell className="text-right">
-                  {fmt(row.limit_tokens)}
+                <TableCell className="text-muted-foreground">
+                  {dimensionLabel(row)}
                 </TableCell>
-                <TableCell className="text-right">{fmt(row.usage)}</TableCell>
+                <TableCell>{t(`quota.periods.${row.period}`)}</TableCell>
+                <TableCell>
+                  <UsageBar used={row.usage} limit={row.limit_tokens} />
+                </TableCell>
                 <TableCell className="text-right">
                   {remainingBadge(row)}
                 </TableCell>

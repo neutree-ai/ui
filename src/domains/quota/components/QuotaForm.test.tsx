@@ -121,4 +121,36 @@ describe("QuotaForm", () => {
       p_limit_tokens: 100,
     });
   });
+
+  it("dimension: a model overlay is carried in the submit payload", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<QuotaForm workspace="default" onSubmit={onSubmit} />);
+
+    // workspace level (default) on model "gpt-4o".
+    selectOption("dimension_type", "quota.dimensions.model");
+    await waitFor(() => {
+      expect(screen.getByTestId("field-dimension_value")).toBeTruthy();
+    });
+    const modelInput = screen
+      .getByTestId("field-dimension_value")
+      .querySelector("input");
+    fireEvent.change(modelInput as Element, { target: { value: "gpt-4o" } });
+
+    const limit = screen
+      .getByTestId("field-limit_tokens")
+      .querySelector("input");
+    fireEvent.change(limit as Element, { target: { value: "500" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      p_level: "workspace",
+      p_workspace: "default",
+      p_limit_tokens: 500,
+      p_dimension_type: "model",
+      p_dimension_value: "gpt-4o",
+    });
+  });
 });

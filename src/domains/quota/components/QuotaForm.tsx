@@ -8,10 +8,12 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
+  QUOTA_DIMENSION_TYPES,
   QUOTA_LEVELS,
   QUOTA_PERIODS,
   type QuotaApiKeyLite,
   type QuotaLevel,
+  type QuotaNamedLite,
   type QuotaPeriod,
   type QuotaUserLite,
   type QuotaWorkspaceLite,
@@ -28,6 +30,10 @@ type FormValues = {
   period: QuotaPeriod;
   target: string;
   limit_tokens: number;
+  // "" = no dimension (whole-scope quota); otherwise an overlay on a specific
+  // endpoint / external_endpoint / model.
+  dimension_type: "" | "endpoint" | "external_endpoint" | "model";
+  dimension_value: string;
 };
 
 type QuotaFormProps = {
@@ -49,11 +55,14 @@ export const QuotaForm = ({ workspace, onSubmit, onClose }: QuotaFormProps) => {
       period: "monthly",
       target: "",
       limit_tokens: 0,
+      dimension_type: "",
+      dimension_value: "",
     },
   });
 
   const level = form.watch("level");
   const selectedWorkspace = form.watch("workspace");
+  const dimensionType = form.watch("dimension_type");
 
   // Reset the target selection only when the scope (level or workspace) actually
   // changes — a user id is not a valid api-key id, and members/keys are
@@ -67,6 +76,16 @@ export const QuotaForm = ({ workspace, onSubmit, onClose }: QuotaFormProps) => {
       form.setValue("target", "");
     }
   }, [level, selectedWorkspace, form]);
+
+  // Reset the dimension value when the dimension type changes (same ref-guard
+  // pattern so picking a value does not wipe it).
+  const prevDim = useRef(dimensionType);
+  useEffect(() => {
+    if (prevDim.current !== dimensionType) {
+      prevDim.current = dimensionType;
+      form.setValue("dimension_value", "");
+    }
+  }, [dimensionType, form]);
 
   const { data: workspacesData } = useList<QuotaWorkspaceLite>({
     resource: "workspaces",
@@ -85,6 +104,18 @@ export const QuotaForm = ({ workspace, onSubmit, onClose }: QuotaFormProps) => {
     pagination: { mode: "off" },
     meta: { workspace: selectedWorkspace },
     queryOptions: { enabled: level === "api_key" && !!selectedWorkspace },
+  });
+  const dimResource =
+    dimensionType === "endpoint"
+      ? "endpoints"
+      : dimensionType === "external_endpoint"
+        ? "external_endpoints"
+        : null;
+  const { data: dimData } = useList<QuotaNamedLite>({
+    resource: dimResource ?? "endpoints",
+    pagination: { mode: "off" },
+    meta: { workspace: selectedWorkspace },
+    queryOptions: { enabled: !!dimResource && !!selectedWorkspace },
   });
 
   const workspaceOptions = useMemo(
@@ -114,6 +145,15 @@ export const QuotaForm = ({ workspace, onSubmit, onClose }: QuotaFormProps) => {
     [keysData],
   );
 
+  const dimValueOptions = useMemo(
+    () =>
+      (dimData?.data ?? [])
+        .map((d) => d.metadata?.name)
+        .filter((n): n is string => !!n)
+        .map((n) => ({ label: n, value: n })),
+    [dimData],
+  );
+
   const submit = async (values: FieldValues) => {
     setSubmitError(null);
     const params: SetQuotaParams = {
@@ -128,6 +168,10 @@ export const QuotaForm = ({ workspace, onSubmit, onClose }: QuotaFormProps) => {
       params.p_user_id = values.target;
     } else {
       params.p_api_key_id = values.target;
+    }
+    if (values.dimension_type) {
+      params.p_dimension_type = values.dimension_type;
+      params.p_dimension_value = values.dimension_value;
     }
     try {
       await onSubmit(params);
@@ -231,6 +275,51 @@ export const QuotaForm = ({ workspace, onSubmit, onClose }: QuotaFormProps) => {
         >
           <Input type="number" min={0} />
         </FormFieldGroup>
+
+        {/* Optional dimension overlay: restrict this quota to one
+            endpoint / external_endpoint / model. */}
+        <FormFieldGroup
+          {...form}
+          name="dimension_type"
+          label={t("quota.fields.dimension")}
+        >
+          <FormCombobox
+            placeholder={t("quota.dimensions.none")}
+            options={[
+              { label: t("quota.dimensions.none"), value: "" },
+              ...QUOTA_DIMENSION_TYPES.map((d) => ({
+                label: t(`quota.dimensions.${d}`),
+                value: d,
+              })),
+            ]}
+          />
+        </FormFieldGroup>
+
+        {(dimensionType === "endpoint" ||
+          dimensionType === "external_endpoint") && (
+          <FormFieldGroup
+            {...form}
+            name="dimension_value"
+            label={t("quota.fields.dimensionValue")}
+            rules={{ required: true }}
+          >
+            <FormCombobox
+              placeholder={t("quota.placeholders.selectDimensionValue")}
+              options={dimValueOptions}
+            />
+          </FormFieldGroup>
+        )}
+
+        {dimensionType === "model" && (
+          <FormFieldGroup
+            {...form}
+            name="dimension_value"
+            label={t("quota.fields.modelName")}
+            rules={{ required: true }}
+          >
+            <Input placeholder={t("quota.placeholders.modelName")} />
+          </FormFieldGroup>
+        )}
 
         {submitError && (
           <Alert variant="destructive">

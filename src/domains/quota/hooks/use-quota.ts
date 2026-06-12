@@ -19,6 +19,8 @@ export type SetQuotaParams = {
   p_workspace?: string;
   p_user_id?: string;
   p_api_key_id?: string;
+  p_dimension_type?: string;
+  p_dimension_value?: string;
 };
 
 // useQuota lists the quota policies visible to the caller in one workspace and
@@ -95,6 +97,8 @@ export function useQuota(workspace: string | undefined) {
                 p_workspace: p.workspace,
                 p_user_id: p.user_id ?? undefined,
                 p_api_key_id: p.api_key_id ?? undefined,
+                p_dimension_type: p.dimension_type ?? undefined,
+                p_dimension_value: p.dimension_value ?? undefined,
               },
             });
             usage = Number(u.data ?? 0) || 0;

@@ -299,8 +299,8 @@
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "180fbbc1c2b848f8b9d4172c85835344",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "5f008c9efecb5f75398ae4fb67414d69",
   "src/components/ui/calendar.tsx": "67b3c096201e6f030437e9127db7c586",
-  "src/pages/quota/list.tsx": "5b822525489b186e97bfb9af9815518c",
-  "src/domains/quota/types.ts": "ec0aaa9dcae00e87b82006e272c052a7",
-  "src/domains/quota/hooks/use-quota.ts": "3e7ee32bd84d46a7235f07fd2b6c7a0f",
-  "src/domains/quota/components/QuotaForm.tsx": "579b4bcec9017a13daacea2bd63291c9"
+  "src/pages/quota/list.tsx": "92d167564472f24f1cca9a7f6c94cf95",
+  "src/domains/quota/types.ts": "5ec5e021c054cb64ab2f82ad0bf81add",
+  "src/domains/quota/hooks/use-quota.ts": "261fcab4a08a9cce818bb83acf074dca",
+  "src/domains/quota/components/QuotaForm.tsx": "267246cc3b43a38eab98276bc8ae507b"
 }

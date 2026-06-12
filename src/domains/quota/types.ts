@@ -16,6 +16,15 @@ export const QUOTA_PERIODS: QuotaPeriod[] = [
   "yearly",
 ];
 
+// Optional dimension a policy can be scoped to (independent overlay constraint).
+export type QuotaDimensionType = "endpoint" | "external_endpoint" | "model";
+
+export const QUOTA_DIMENSION_TYPES: QuotaDimensionType[] = [
+  "endpoint",
+  "external_endpoint",
+  "model",
+];
+
 // One row of api.quota_policies, as returned by /rpc/get_quota_policies.
 export type QuotaPolicy = {
   id: number;
@@ -25,6 +34,8 @@ export type QuotaPolicy = {
   api_key_id: string | null;
   period: QuotaPeriod;
   limit_tokens: number;
+  dimension_type: QuotaDimensionType | null;
+  dimension_value: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -54,5 +65,11 @@ export type QuotaApiKeyLite = {
 
 export type QuotaWorkspaceLite = {
   id: number;
+  metadata?: { name?: string };
+};
+
+// endpoints / external_endpoints picked as a dimension value (by name).
+export type QuotaNamedLite = {
+  id: string | number;
   metadata?: { name?: string };
 };

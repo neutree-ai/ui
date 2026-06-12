@@ -1172,6 +1172,7 @@
 		},
 		"columns": {
 			"time": "Time",
+			"workspace": "Workspace",
 			"endpoint": "Endpoint",
 			"app": "App",
 			"model": "Model",
@@ -1375,17 +1376,28 @@
 			"period": "Period",
 			"limitTokens": "Token Limit",
 			"currentUsage": "Used (this period)",
-			"remaining": "Remaining"
+			"remaining": "Remaining",
+			"dimension": "Dimension",
+			"dimensionValue": "Dimension value",
+			"modelName": "Model name"
 		},
 		"placeholders": {
 			"selectWorkspace": "Select a workspace",
 			"selectUser": "Select a user",
-			"selectApiKey": "Select an API key"
+			"selectApiKey": "Select an API key",
+			"selectDimensionValue": "Select a target",
+			"modelName": "e.g. gpt-4o"
 		},
 		"messages": {
 			"setDescription": "Set a token quota for a workspace, user, or API key over a time period. A child quota total may not exceed its parent.",
 			"empty": "No quota policies yet. Use \"Create\" to set one.",
 			"setSuccess": "Quota saved"
+		},
+		"dimensions": {
+			"none": "None (whole scope)",
+			"endpoint": "Endpoint",
+			"external_endpoint": "External endpoint",
+			"model": "Model"
 		}
 	}
 }
