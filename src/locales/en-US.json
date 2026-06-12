@@ -1352,5 +1352,39 @@
 			"line": "Line chart",
 			"bar": "Bar chart"
 		}
+	},
+	"quota": {
+		"title": "Quota & Usage",
+		"set": "Set Quota",
+		"levels": {
+			"workspace": "Workspace",
+			"user": "User",
+			"api_key": "API Key"
+		},
+		"periods": {
+			"daily": "Daily",
+			"weekly": "Weekly",
+			"monthly": "Monthly",
+			"yearly": "Yearly"
+		},
+		"fields": {
+			"level": "Level",
+			"target": "Target",
+			"user": "User",
+			"apiKey": "API Key",
+			"period": "Period",
+			"limitTokens": "Token Limit",
+			"currentUsage": "Used (this period)",
+			"remaining": "Remaining"
+		},
+		"placeholders": {
+			"selectUser": "Select a user",
+			"selectApiKey": "Select an API key"
+		},
+		"messages": {
+			"setDescription": "Set a token quota for a workspace, user, or API key over a time period. A child quota total may not exceed its parent.",
+			"empty": "No quota policies yet. Use \"Create\" to set one.",
+			"setSuccess": "Quota saved"
+		}
 	}
 }

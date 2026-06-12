@@ -26,6 +26,7 @@ import {
   Cpu,
   Database,
   FileText,
+  Gauge,
   Globe,
   HardDrive,
   Key,
@@ -67,6 +68,9 @@ const ModelUsageList = lazy(() =>
 );
 const ApiKeysShow = lazy(() =>
   import("./pages/api-keys/show").then((m) => ({ default: m.ApiKeysShow })),
+);
+const QuotaList = lazy(() =>
+  import("./pages/quota/list").then((m) => ({ default: m.QuotaList })),
 );
 
 const ClustersList = lazy(() =>
@@ -438,6 +442,15 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "quota",
+    list: "/:workspace/quota",
+    meta: {
+      icon: <Gauge />,
+      workspaced: true,
+      parent: "access_control",
+    },
+  },
+  {
     name: "settings",
   },
   // {
@@ -636,6 +649,9 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 </Route>
                 <Route path="/:workspace/model-usage">
                   <Route index element={<ModelUsageList />} />
+                </Route>
+                <Route path="/:workspace/quota">
+                  <Route index element={<QuotaList />} />
                 </Route>
                 <Route path="/oem-configs">
                   <Route index element={<OemConfigShow />} />
