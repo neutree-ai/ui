@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "a2ebabd7035347e83eb48536602b2fe1",
-  "src/App.tsx": "487a8ca2dbe83b128fd03a10ab0c6ee5",
+  "src/App.tsx": "8189345081fbaef22d0a59222c8534eb",
   "src/Root.tsx": "0bf1b5abed7cbc71c06832cc2de84f12",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",
@@ -156,10 +156,10 @@
   "src/domains/user/types.ts": "46f595f24d513d8484343153cf547ca1",
   "src/domains/role-assignment/types.ts": "ef54639c9b39af1db44d8956f4fc1759",
   "src/domains/role-assignment/components/UserCell.tsx": "ddabf86c8ea0897d69b22f9ac5b73f77",
-  "src/domains/role/types.ts": "d98296c8f3098507006978cc1ad78e24",
-  "src/domains/role/hooks/use-permission-dependencies.ts": "fdfc65ef00604ba7d4306eb37ecefe46",
+  "src/domains/role/types.ts": "f1deba5219d3585096cac00c81e20051",
+  "src/domains/role/hooks/use-permission-dependencies.ts": "a0ce8deadf5afb2c083b70ab50cf6f2c",
   "src/domains/role/components/PermissionsTree.tsx": "70d1f5fc23960b83cc1b4939f6052b36",
-  "src/domains/role/components/PermissionsTreeField.tsx": "86a3980c563433de3a8eca51a5cbbe6b",
+  "src/domains/role/components/PermissionsTreeField.tsx": "9771eb340eef413aafd9e1d56ca81da8",
   "src/domains/model-registry/types.ts": "f1af5141f8aee9c147932bdda6f34ca6",
   "src/domains/model-registry/components/ModelRegistryStatus.tsx": "2683d6d752fe80c13efa3583d4e1985f",
   "src/domains/model-registry/components/ModelRegistryType.tsx": "9585615662f17ec03ea42671bc52df5c",
@@ -295,8 +295,8 @@
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "72d803582532b53b21c0bce895d0142f",
   "src/foundation/lib/api/ai-traces.ts": "d989ddca41c00c96b1803f69be83c0fc",
   "src/foundation/components/DateRangePicker.tsx": "7db897cba5bece0433e75fcd91d305b1",
-  "src/pages/model-usage/list.tsx": "bd680f4817e9b80433c50e2b185affbd",
-  "src/domains/api-key/hooks/use-usage-by-dimension.ts": "180fbbc1c2b848f8b9d4172c85835344",
+  "src/pages/model-usage/list.tsx": "37ba9e5ad7b29a3a27f77c8084f100ba",
+  "src/domains/api-key/hooks/use-usage-by-dimension.ts": "b7e55f4a3573c6f2f2e51d8171cbf393",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "5f008c9efecb5f75398ae4fb67414d69",
   "src/components/ui/calendar.tsx": "67b3c096201e6f030437e9127db7c586"
 }

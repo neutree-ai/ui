@@ -117,6 +117,25 @@ describe("useApiKeyUsage", () => {
     expect(result.current.usageData).toEqual(usageRecords);
   });
 
+  it("drops previously loaded data when a later poll fails", async () => {
+    mockMutateAsync.mockResolvedValueOnce({ data: usageRecords });
+
+    const { result } = renderHook(() => useApiKeyUsage("abc"));
+
+    await act(async () => {});
+    expect(result.current.usageData).toEqual(usageRecords);
+
+    // A failed refresh/poll must not leave stale rows on screen.
+    mockMutateAsync.mockRejectedValueOnce(new Error("boom"));
+
+    await act(async () => {
+      vi.advanceTimersByTime(POLL_INTERVAL_MS);
+    });
+
+    expect(result.current.usageData).toEqual([]);
+    expect(result.current.error).toEqual(new Error("boom"));
+  });
+
   it("polls every 60 seconds", async () => {
     mockMutateAsync.mockResolvedValue({ data: [] });
 

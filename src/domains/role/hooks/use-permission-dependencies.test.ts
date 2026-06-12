@@ -34,6 +34,7 @@ const TEST_PERMISSIONS = [
   "model:pull",
   "model:delete",
   "workspace:read",
+  "workspace:usage-read",
   "workspace:create",
   "workspace:update",
   "workspace:delete",
@@ -729,6 +730,66 @@ describe("usePermissionDependencies", () => {
       expect(result.current.getActionDependents("workspace", "read")).toContain(
         "cluster:delete",
       );
+    });
+
+    it("workspace:usage-read should auto-select workspace:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("workspace", "usage-read");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("workspace:usage-read");
+      expect(called).toContain("workspace:read");
+    });
+
+    it("workspace:read should be locked while workspace:usage-read is selected", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["workspace:read", "workspace:usage-read"],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      // usage-read depends on read, so read is locked (a dependent is selected).
+      expect(
+        result.current.getActionDependents("workspace", "read"),
+      ).toContain("workspace:usage-read");
+
+      // Attempting to uncheck read is a no-op while usage-read is selected.
+      act(() => {
+        result.current.togglePermission("workspace", "read");
+      });
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("workspace:read alone should NOT auto-select workspace:usage-read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: [],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("workspace", "read");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).toContain("workspace:read");
+      expect(called).not.toContain("workspace:usage-read");
     });
 
     it("NEU-394: workspaced resource:read should NOT depend on workspace:read", () => {

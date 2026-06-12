@@ -28,6 +28,9 @@ export function useUsageByDimension(params: Record<string, unknown> | null) {
       setUsageData(res.data as ApiUsageRecord[]);
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
+      // Drop the previous rows on failure: a failed refresh/poll must not leave
+      // stale usage on screen masquerading as the current result.
+      setUsageData([]);
     } finally {
       setIsLoading(false);
     }

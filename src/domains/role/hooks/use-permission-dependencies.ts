@@ -30,6 +30,10 @@ const ALL_RULES: PermissionDependencyRule[] = [
   { action: "model:pull", deps: ["model_registry:read"] },
   // model:read depends on model_registry:read
   { action: "model:read", deps: ["model_registry:read"] },
+  // workspace:usage-read (read every API key's usage in a workspace) is a
+  // one-way extension of workspace:read: it is meaningless without the ability
+  // to see the workspace, so selecting it auto-selects and locks workspace:read.
+  { action: "workspace:usage-read", deps: ["workspace:read"] },
 ];
 
 type PermissionsTreeData = Record<

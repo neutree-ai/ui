@@ -10,6 +10,7 @@ import {
   Download,
   Eye,
   FileText,
+  Gauge,
   Globe,
   HardDrive,
   Layers,
@@ -44,6 +45,7 @@ const actionIcons: Record<string, React.ReactNode> = {
   push: <Upload className="h-4 w-4" />,
   pull: <Download className="h-4 w-4" />,
   "trace-read": <Activity className="h-4 w-4" />,
+  "usage-read": <Gauge className="h-4 w-4" />,
 };
 
 const resourceIcons: Record<string, React.ReactNode> = {
