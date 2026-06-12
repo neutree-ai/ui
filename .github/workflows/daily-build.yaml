@@ -1,4 +1,4 @@
-name: Create Nightly Tag
+name: create nightly tag
 
 on:
   schedule:
