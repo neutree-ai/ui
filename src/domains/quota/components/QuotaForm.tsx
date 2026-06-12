@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import type { ApiKey } from "@/domains/api-key/types";
-import type { RoleAssignment } from "@/domains/role-assignment/types";
-import type { UserProfile } from "@/domains/user/types";
 import {
   QUOTA_LEVELS,
   QUOTA_PERIODS,
+  type QuotaApiKeyLite,
   type QuotaLevel,
+  type QuotaMemberAssignmentLite,
   type QuotaPeriod,
+  type QuotaUserLite,
 } from "@/domains/quota/types";
 import type { SetQuotaParams } from "@/domains/quota/hooks/use-quota";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
@@ -57,16 +57,16 @@ export const QuotaForm = ({ workspace, onSubmit, onClose }: QuotaFormProps) => {
 
   // Workspace members: role_assignments scoped to this workspace, joined to
   // user_profiles for a readable label.
-  const { data: usersData } = useList<UserProfile>({
+  const { data: usersData } = useList<QuotaUserLite>({
     resource: "user_profiles",
     pagination: { mode: "off" },
   });
-  const { data: assignmentsData } = useList<RoleAssignment>({
+  const { data: assignmentsData } = useList<QuotaMemberAssignmentLite>({
     resource: "role_assignments",
     pagination: { mode: "off" },
     queryOptions: { enabled: level === "user" },
   });
-  const { data: keysData } = useList<ApiKey>({
+  const { data: keysData } = useList<QuotaApiKeyLite>({
     resource: "api_keys",
     pagination: { mode: "off" },
     meta: { workspace },

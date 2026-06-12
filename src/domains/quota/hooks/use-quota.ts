@@ -1,12 +1,12 @@
 import { useCustomMutation, useList } from "@refinedev/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ApiKey } from "@/domains/api-key/types";
-import type { UserProfile } from "@/domains/user/types";
 import type {
+  QuotaApiKeyLite,
   QuotaLevel,
   QuotaPeriod,
   QuotaPolicy,
   QuotaPolicyRow,
+  QuotaUserLite,
 } from "@/domains/quota/types";
 
 // Params accepted by /rpc/set_quota_policy (snake_case p_* mirror the SQL
@@ -30,11 +30,11 @@ export function useQuota(workspace: string | undefined) {
   const { mutateAsync } = useCustomMutation();
 
   // Lookups to resolve user_id / api_key_id -> display name.
-  const { data: usersData } = useList<UserProfile>({
+  const { data: usersData } = useList<QuotaUserLite>({
     resource: "user_profiles",
     pagination: { mode: "off" },
   });
-  const { data: keysData } = useList<ApiKey>({
+  const { data: keysData } = useList<QuotaApiKeyLite>({
     resource: "api_keys",
     pagination: { mode: "off" },
     meta: { workspace },

@@ -36,3 +36,22 @@ export type QuotaPolicyRow = QuotaPolicy & {
   remaining: number;
   targetName: string;
 };
+
+// Minimal local shapes for the cross-domain lookups the quota UI needs
+// (workspace members / api keys). Declared here rather than importing
+// user/api-key/role-assignment domain types, to respect the no-L2-cross-domain
+// architecture rule; only the fields the quota UI reads are modeled.
+export type QuotaUserLite = {
+  id: string;
+  metadata?: { name?: string };
+  spec?: { email?: string };
+};
+
+export type QuotaApiKeyLite = {
+  id: string;
+  metadata?: { name?: string };
+};
+
+export type QuotaMemberAssignmentLite = {
+  spec?: { user_id?: string; workspace?: string | null };
+};
