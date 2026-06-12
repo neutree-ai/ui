@@ -10,7 +10,7 @@ vi.mock("@/components/ui/progress", () => ({
 }));
 
 const labels = {
-  title: "Cluster Accelerator Resources",
+  title: "Cluster Resources",
   productCount: "Card Products",
   physicalGpu: "Full Cards",
   singleCardMemory: "Single-card Memory",
@@ -87,7 +87,7 @@ describe("GpuCardResourcesView", () => {
       />,
     );
 
-    expect(screen.getByText("Cluster Accelerator Resources")).toBeTruthy();
+    expect(screen.getByText("Cluster Resources")).toBeTruthy();
     expect(
       screen.getAllByText("Virtual Card Memory Usage").length,
     ).toBeGreaterThan(0);
@@ -108,7 +108,7 @@ describe("GpuCardResourcesView", () => {
       />,
     );
 
-    expect(screen.getByText("Cluster Accelerator Resources")).toBeTruthy();
+    expect(screen.getByText("Cluster Resources")).toBeTruthy();
     expect(screen.getAllByText("Full Cards").length).toBeGreaterThan(0);
     expect(screen.getByText("15360 MiB")).toBeTruthy();
     expect(screen.queryByText("Virtual Card Memory Usage")).toBeNull();
