@@ -1,6 +1,8 @@
+import { countFullCardAvailableDevicesByProduct } from "@/foundation/lib/gpu-device-resources";
 import type {
+  AcceleratorProductResources,
   ClusterResourceInfo,
-  ResourceStatus,
+  NodeResourceStatus,
 } from "@/foundation/types/resource-types";
 
 /**
@@ -46,6 +48,57 @@ type ParsedClusterResources = {
   acceleratorOptions: AcceleratorOption[];
 };
 
+const getProductDeviceMemoryTotalMiB = (
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  product: string,
+) => {
+  const memoryValues = Object.values(nodeResources ?? {})
+    .flatMap((nodeStatus) => nodeStatus.devices ?? [])
+    .filter((device) => device.product === product)
+    .map((device) => device.allocatable?.memory_mib)
+    .filter((memoryMiB): memoryMiB is number => Number.isFinite(memoryMiB));
+
+  if (memoryValues.length === 0) {
+    return undefined;
+  }
+
+  return Math.max(...memoryValues);
+};
+
+const getProductMemoryTotalMiB = (
+  resourceInfo: ClusterResourceInfo,
+  type: string,
+  product: string,
+  productResources?: AcceleratorProductResources,
+) => {
+  const metadataMemoryTotalMiB =
+    resourceInfo.accelerator_metadata?.[type]?.products?.[product]
+      ?.memory_total_mib;
+  if (Number.isFinite(metadataMemoryTotalMiB)) {
+    return metadataMemoryTotalMiB;
+  }
+
+  const deviceMemoryTotalMiB = getProductDeviceMemoryTotalMiB(
+    resourceInfo.node_resources,
+    product,
+  );
+  if (Number.isFinite(deviceMemoryTotalMiB)) {
+    return deviceMemoryTotalMiB;
+  }
+
+  const aggregateMemoryMiB = productResources?.virtualization?.memory_mib;
+  const quantity = productResources?.quantity;
+  if (
+    Number.isFinite(aggregateMemoryMiB) &&
+    Number.isFinite(quantity) &&
+    Number(quantity) > 0
+  ) {
+    return Math.ceil(Number(aggregateMemoryMiB) / Number(quantity));
+  }
+
+  return undefined;
+};
+
 /**
  * Parse cluster resource info into a summary and available accelerator options.
  */
@@ -88,9 +141,6 @@ export function parseClusterResources(
 
       const translatedType = translateAcceleratorType(type);
 
-      const metadataProducts =
-        resourceInfo.accelerator_metadata?.[type]?.products ?? {};
-
       if (allocatableGroup.products) {
         for (const [product, productResources] of Object.entries(
           allocatableGroup.products,
@@ -104,7 +154,12 @@ export function parseClusterResources(
             product,
             available: availableProduct?.quantity || 0,
             total: productResources.quantity || 0,
-            memoryTotalMiB: metadataProducts[product]?.memory_total_mib,
+            memoryTotalMiB: getProductMemoryTotalMiB(
+              resourceInfo,
+              type,
+              product,
+              productResources,
+            ),
             virtualizationMemoryMiB:
               availableProduct?.virtualization?.memory_mib,
             virtualizationCoreUnits:
@@ -126,7 +181,11 @@ export function parseClusterResources(
             product,
             available: productAvailable,
             total: productTotal,
-            memoryTotalMiB: metadataProducts[product]?.memory_total_mib,
+            memoryTotalMiB: getProductMemoryTotalMiB(
+              resourceInfo,
+              type,
+              product,
+            ),
           });
         }
       } else {
@@ -165,7 +224,7 @@ export function parseClusterResources(
  * so the max values should be based on a single node's capacity.
  */
 export function findBestNodeForAccelerator(
-  nodeResources: Record<string, ResourceStatus> | null | undefined,
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
   acceleratorType?: string,
   acceleratorProduct?: string,
 ): SingleNodeMax | null {
@@ -211,18 +270,34 @@ export function findBestNodeForAccelerator(
     let gpuAvailable = 0;
     let gpuTotal = 0;
     const product = acceleratorProduct || "";
+    const allocatableAccGroup =
+      allocatable?.accelerator_groups?.[acceleratorType];
+    const fullCardAvailableDevices = countFullCardAvailableDevicesByProduct({
+      [nodeName]: status,
+    }).get(product);
 
     if (product === "" || product === "generic") {
       // Generic accelerator (no product breakdown)
       gpuAvailable = accGroupAvailable.quantity || 0;
-      gpuTotal =
-        allocatable?.accelerator_groups?.[acceleratorType]?.quantity || 0;
-    } else if (accGroupAvailable.product_groups?.[product] !== undefined) {
-      gpuAvailable = accGroupAvailable.product_groups[product];
-      gpuTotal =
-        allocatable?.accelerator_groups?.[acceleratorType]?.product_groups?.[
-          product
-        ] || 0;
+      gpuTotal = allocatableAccGroup?.quantity || 0;
+    } else if (
+      accGroupAvailable.products?.[product] !== undefined ||
+      allocatableAccGroup?.products?.[product] !== undefined
+    ) {
+      gpuAvailable =
+        fullCardAvailableDevices ??
+        accGroupAvailable.products?.[product]?.quantity ??
+        0;
+      gpuTotal = allocatableAccGroup?.products?.[product]?.quantity ?? 0;
+    } else if (
+      accGroupAvailable.product_groups?.[product] !== undefined ||
+      allocatableAccGroup?.product_groups?.[product] !== undefined
+    ) {
+      gpuAvailable =
+        fullCardAvailableDevices ??
+        accGroupAvailable.product_groups?.[product] ??
+        0;
+      gpuTotal = allocatableAccGroup?.product_groups?.[product] ?? 0;
     } else {
       // This node doesn't have the specified product
       continue;

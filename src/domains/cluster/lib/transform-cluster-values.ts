@@ -1,4 +1,5 @@
 import type { Cluster } from "@/domains/cluster/types";
+import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualization";
 
 /**
  * Transform cluster form values before submission.
@@ -40,7 +41,10 @@ export function transformClusterValues(
     );
   }
 
-  if (values.spec.type !== "kubernetes") {
+  if (
+    values.spec.type !== "kubernetes" ||
+    !isAcceleratorVirtualizationSupported(values.spec.version)
+  ) {
     delete transformed.spec.accelerator_virtualization;
   }
 

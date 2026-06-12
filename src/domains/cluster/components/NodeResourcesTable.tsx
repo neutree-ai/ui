@@ -10,13 +10,12 @@ import {
   TableRow,
   Table as UITable,
 } from "@/components/ui/table";
+import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
 import { formatToDecimal } from "@/foundation/lib/unit";
+import { cn } from "@/foundation/lib/utils";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import { calcResourceUsage } from "../lib/calc-resource-usage";
-import {
-  getAcceleratorProductQuantities,
-  getNodeDeviceResourceRows,
-} from "../lib/resource-status";
+import { getAcceleratorProductQuantities } from "../lib/resource-status";
 import { ResourceProgressBar } from "./ResourceProgressBar";
 
 interface ProductGroupsBreakdownProps {
@@ -52,32 +51,20 @@ export const ProductGroupsBreakdown = ({
   );
 };
 
-const formatPoolRatio = (
-  available: number | null,
-  allocatable: number | null,
-  unit = "",
-) => {
-  if (available == null && allocatable == null) {
-    return "-";
-  }
-
-  const value = `${available == null ? "-" : formatToDecimal(available, 0)} / ${
-    allocatable == null ? "-" : formatToDecimal(allocatable, 0)
-  }`;
-
-  return unit ? `${value} ${unit}` : value;
-};
-
 interface NodeResourcesTableProps {
   nodeResources: Record<string, NodeResourceStatus>;
   acceleratorTypes: string[];
   t: (key: string, options?: { defaultValue?: string }) => string;
+  framed?: boolean;
+  className?: string;
 }
 
 export const NodeResourcesTable = ({
   nodeResources,
   acceleratorTypes,
   t,
+  framed = true,
+  className,
 }: NodeResourcesTableProps) => {
   const [expandedNodeNames, setExpandedNodeNames] = useState<Set<string>>(
     () => new Set(),
@@ -96,212 +83,196 @@ export const NodeResourcesTable = ({
     });
   };
 
+  const table = (
+    <div className={cn("overflow-x-auto", !framed && className)}>
+      <UITable>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-[180px]">
+              {t("clusters.fields.nodeName")}
+            </TableHead>
+            <TableHead className="min-w-[140px]">
+              {t("common.fields.cpu")}
+            </TableHead>
+            <TableHead className="min-w-[140px]">
+              {t("common.fields.memory")}
+            </TableHead>
+            {acceleratorTypes.map((accType) => (
+              <TableHead key={accType} className="min-w-[140px]">
+                {t(`clusters.acceleratorTypes.${accType}`, {
+                  defaultValue: accType,
+                })}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Object.entries(nodeResources).map(([nodeName, nodeStatus]) => {
+            const hasDevices = (nodeStatus.devices?.length ?? 0) > 0;
+            const isExpanded = expandedNodeNames.has(nodeName);
+            const cpu = calcResourceUsage(
+              nodeStatus.allocatable?.cpu || 0,
+              nodeStatus.available?.cpu,
+            );
+            const memory = calcResourceUsage(
+              nodeStatus.allocatable?.memory || 0,
+              nodeStatus.available?.memory,
+            );
+
+            return (
+              <Fragment key={nodeName}>
+                <TableRow>
+                  <TableCell className="font-medium align-top">
+                    <div className="flex items-start gap-2">
+                      {hasDevices ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0"
+                          aria-label={`${nodeName} devices`}
+                          aria-expanded={isExpanded}
+                          onClick={() => toggleNodeDevices(nodeName)}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      ) : (
+                        <span className="h-7 w-7 shrink-0" />
+                      )}
+                      <span className="min-w-0 break-all pt-1">{nodeName}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <ResourceProgressBar
+                      label=""
+                      used={cpu.used}
+                      total={nodeStatus.allocatable?.cpu || 0}
+                      compact
+                    />
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <ResourceProgressBar
+                      label=""
+                      used={memory.used}
+                      total={nodeStatus.allocatable?.memory || 0}
+                      unit="GiB"
+                      compact
+                    />
+                  </TableCell>
+                  {acceleratorTypes.map((accType) => {
+                    const accGroup =
+                      nodeStatus.allocatable?.accelerator_groups?.[accType];
+                    const availableAccGroup =
+                      nodeStatus.available?.accelerator_groups?.[accType];
+                    const accAllocatable = accGroup?.quantity || 0;
+                    const acc = calcResourceUsage(
+                      accAllocatable,
+                      availableAccGroup?.quantity,
+                    );
+
+                    return (
+                      <TableCell key={accType} className="align-top">
+                        {accAllocatable === 0 ? (
+                          <span className="text-muted-foreground">-</span>
+                        ) : (
+                          <div>
+                            <ResourceProgressBar
+                              label=""
+                              used={acc.used}
+                              total={accAllocatable}
+                              compact
+                            />
+                            <ProductGroupsBreakdown
+                              allocatableGroups={getAcceleratorProductQuantities(
+                                accGroup,
+                              )}
+                              availableGroups={getAcceleratorProductQuantities(
+                                availableAccGroup,
+                              )}
+                            />
+                          </div>
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+                {isExpanded && hasDevices && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={3 + acceleratorTypes.length}
+                      className="bg-muted/30"
+                    >
+                      <div className="py-3 pl-9">
+                        <GpuDeviceResourcesView
+                          nodeResources={{ [nodeName]: nodeStatus }}
+                          labels={{
+                            title: t("clusters.sections.nodeDevices"),
+                            deviceCount: t("clusters.fields.deviceCount"),
+                            healthyDevices: t("clusters.fields.healthyDevices"),
+                            memoryUsage: t("clusters.fields.memoryUsage"),
+                            coreUsage: t("clusters.fields.coreUsage"),
+                            allProducts: t("clusters.options.allGpuProducts"),
+                            allNodes: t("clusters.options.allNodes"),
+                            searchPlaceholder: t(
+                              "clusters.placeholders.searchGpuDevices",
+                            ),
+                            gpuNumber: t("clusters.fields.gpuNumber"),
+                            uuid: t("clusters.fields.deviceUuid"),
+                            status: t("common.fields.status"),
+                            healthy: t("clusters.options.healthy"),
+                            unhealthy: t("clusters.options.unhealthy"),
+                            node: t("clusters.fields.nodeName"),
+                            product: t("common.fields.acceleratorProduct"),
+                            selected: t("clusters.fields.selected"),
+                            usable: t("clusters.options.usable"),
+                            free: t("clusters.options.free"),
+                            allocated: t("clusters.options.allocated"),
+                            resourceScope: t("clusters.fields.resourceScope"),
+                            freeCards: t("clusters.options.freeCards"),
+                            usableForRequest: t(
+                              "clusters.options.usableForRequest",
+                            ),
+                            copyUuid: t("clusters.actions.copyUuid"),
+                            copyUuidSuccess: t(
+                              "clusters.messages.copyUuidSuccess",
+                            ),
+                            copyUuidFailed: t(
+                              "clusters.messages.copyUuidFailed",
+                            ),
+                            remaining: t("clusters.fields.remaining"),
+                            usedSlashTotal: t("clusters.fields.usedSlashTotal"),
+                            empty: t("clusters.messages.noGpuDevices"),
+                          }}
+                          showFilters={false}
+                          showSummary={false}
+                          className="bg-background"
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
+            );
+          })}
+        </TableBody>
+      </UITable>
+    </div>
+  );
+
+  if (!framed) {
+    return table;
+  }
+
   return (
-    <Card className="mt-4">
+    <Card className={cn("mt-4", className)}>
       <CardHeader>
         <CardTitle>{t("clusters.sections.nodes")}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <UITable>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10" />
-                <TableHead>{t("clusters.fields.nodeName")}</TableHead>
-                <TableHead className="min-w-[140px]">
-                  {t("common.fields.cpu")}
-                </TableHead>
-                <TableHead className="min-w-[140px]">
-                  {t("common.fields.memory")}
-                </TableHead>
-                {acceleratorTypes.map((accType) => (
-                  <TableHead key={accType} className="min-w-[140px]">
-                    {t(`clusters.acceleratorTypes.${accType}`, {
-                      defaultValue: accType,
-                    })}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(nodeResources).map(([nodeName, nodeStatus]) => {
-                const deviceRows = getNodeDeviceResourceRows({
-                  [nodeName]: nodeStatus,
-                });
-                const hasDevices = deviceRows.length > 0;
-                const isExpanded = expandedNodeNames.has(nodeName);
-                const cpu = calcResourceUsage(
-                  nodeStatus.allocatable?.cpu || 0,
-                  nodeStatus.available?.cpu,
-                );
-                const memory = calcResourceUsage(
-                  nodeStatus.allocatable?.memory || 0,
-                  nodeStatus.available?.memory,
-                );
-
-                return (
-                  <Fragment key={nodeName}>
-                    <TableRow>
-                      <TableCell className="align-top">
-                        {hasDevices ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            aria-label={`${nodeName} devices`}
-                            aria-expanded={isExpanded}
-                            onClick={() => toggleNodeDevices(nodeName)}
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="font-medium">{nodeName}</TableCell>
-                      <TableCell className="align-top">
-                        <ResourceProgressBar
-                          label=""
-                          used={cpu.used}
-                          total={nodeStatus.allocatable?.cpu || 0}
-                          compact
-                        />
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <ResourceProgressBar
-                          label=""
-                          used={memory.used}
-                          total={nodeStatus.allocatable?.memory || 0}
-                          unit="GiB"
-                          compact
-                        />
-                      </TableCell>
-                      {acceleratorTypes.map((accType) => {
-                        const accGroup =
-                          nodeStatus.allocatable?.accelerator_groups?.[accType];
-                        const availableAccGroup =
-                          nodeStatus.available?.accelerator_groups?.[accType];
-                        const accAllocatable = accGroup?.quantity || 0;
-                        const acc = calcResourceUsage(
-                          accAllocatable,
-                          availableAccGroup?.quantity,
-                        );
-
-                        return (
-                          <TableCell key={accType} className="align-top">
-                            {accAllocatable === 0 ? (
-                              <span className="text-muted-foreground">-</span>
-                            ) : (
-                              <div>
-                                <ResourceProgressBar
-                                  label=""
-                                  used={acc.used}
-                                  total={accAllocatable}
-                                  compact
-                                />
-                                <ProductGroupsBreakdown
-                                  allocatableGroups={getAcceleratorProductQuantities(
-                                    accGroup,
-                                  )}
-                                  availableGroups={getAcceleratorProductQuantities(
-                                    availableAccGroup,
-                                  )}
-                                />
-                              </div>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                    {isExpanded && hasDevices && (
-                      <TableRow>
-                        <TableCell />
-                        <TableCell
-                          colSpan={3 + acceleratorTypes.length}
-                          className="bg-muted/30"
-                        >
-                          <div className="py-3">
-                            <div className="mb-2 text-sm font-medium">
-                              {t("clusters.sections.nodeDevices")}
-                            </div>
-                            <div className="overflow-x-auto rounded-md border bg-background">
-                              <UITable>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>
-                                      {t("common.fields.acceleratorProduct")}
-                                    </TableHead>
-                                    <TableHead>
-                                      {t("clusters.fields.deviceUuid")}
-                                    </TableHead>
-                                    <TableHead>
-                                      {t("common.fields.status")}
-                                    </TableHead>
-                                    <TableHead>
-                                      {t("clusters.fields.vgpuMemoryPool")}
-                                    </TableHead>
-                                    <TableHead>
-                                      {t("clusters.fields.vgpuCorePool")}
-                                    </TableHead>
-                                    <TableHead>
-                                      {t("clusters.fields.vgpuSlotPool")}
-                                    </TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {deviceRows.map((row) => (
-                                    <TableRow key={row.uuid}>
-                                      <TableCell>
-                                        {row.product || "-"}
-                                      </TableCell>
-                                      <TableCell>
-                                        <code className="break-all text-xs">
-                                          {row.uuid}
-                                        </code>
-                                      </TableCell>
-                                      <TableCell>
-                                        {row.healthy
-                                          ? t("clusters.options.healthy")
-                                          : t("clusters.options.unhealthy")}
-                                      </TableCell>
-                                      <TableCell>
-                                        {formatPoolRatio(
-                                          row.availableMemoryMiB,
-                                          row.allocatableMemoryMiB,
-                                          "MiB",
-                                        )}
-                                      </TableCell>
-                                      <TableCell>
-                                        {formatPoolRatio(
-                                          row.availableCoreUnits,
-                                          row.allocatableCoreUnits,
-                                        )}
-                                      </TableCell>
-                                      <TableCell>
-                                        {formatPoolRatio(
-                                          row.availableSlots,
-                                          row.allocatableSlots,
-                                        )}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </UITable>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </TableBody>
-          </UITable>
-        </div>
-      </CardContent>
+      <CardContent>{table}</CardContent>
     </Card>
   );
 };

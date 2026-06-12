@@ -1,0 +1,476 @@
+import type {
+  ClusterResourceInfo,
+  DeviceResource,
+  NodeResourceStatus,
+  ResourceInfo,
+} from "@/foundation/types/resource-types";
+
+type SelectedAccelerator = {
+  type?: string | null;
+  product?: string | null;
+};
+
+type DevicePoolUsage = {
+  available: number | null;
+  total: number | null;
+  used: number | null;
+  percent: number;
+};
+
+export type GpuDeviceResourceRow = {
+  acceleratorType: string | null;
+  nodeName: string;
+  uuid: string;
+  shortUuid: string;
+  gpuNumber: number;
+  product: string;
+  healthy: boolean;
+  fullFree: boolean;
+  matchesSelectedAccelerator: boolean;
+  memory: DevicePoolUsage;
+  core: DevicePoolUsage;
+};
+
+export type GpuCardResourceRow = {
+  acceleratorType: string;
+  product: string;
+  matchesSelectedAccelerator: boolean;
+  memoryTotalMiB?: number | null;
+  quantity: DevicePoolUsage;
+  memory: DevicePoolUsage;
+  core: DevicePoolUsage;
+};
+
+type VgpuSliceCapacity = {
+  matchingDeviceCount: number;
+  totalSlices: number;
+};
+
+type GpuDeviceResourceFilters = {
+  nodeName?: string | null;
+  product?: string | null;
+  search?: string | null;
+};
+
+export const GPU_DEVICE_FILTER_ALL = "__all__";
+
+const buildPoolUsage = (
+  total: number | null | undefined,
+  available: number | null | undefined,
+): DevicePoolUsage => {
+  const normalizedTotal = total ?? null;
+  const normalizedAvailable = available ?? null;
+  const used =
+    normalizedTotal == null
+      ? null
+      : normalizedTotal - (normalizedAvailable ?? 0);
+  const percent =
+    normalizedTotal && normalizedTotal > 0 && used != null
+      ? Math.round((used / normalizedTotal) * 100)
+      : 0;
+
+  return {
+    available: normalizedAvailable,
+    total: normalizedTotal,
+    used,
+    percent,
+  };
+};
+
+const mergePoolTotals = (
+  current: { total: number | null; available: number | null },
+  nextTotal: number | null | undefined,
+  nextAvailable: number | null | undefined,
+) => ({
+  total:
+    current.total == null && nextTotal == null
+      ? null
+      : (current.total ?? 0) + (nextTotal ?? 0),
+  available:
+    current.available == null && nextAvailable == null
+      ? null
+      : (current.available ?? 0) + (nextAvailable ?? 0),
+});
+
+const sumDevicePoolsByProduct = (
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+) => {
+  const result = new Map<
+    string,
+    {
+      memory: { total: number | null; available: number | null };
+      core: { total: number | null; available: number | null };
+    }
+  >();
+
+  if (!nodeResources) {
+    return result;
+  }
+
+  for (const nodeStatus of Object.values(nodeResources)) {
+    for (const device of nodeStatus.devices ?? []) {
+      const current = result.get(device.product) ?? {
+        memory: { total: null, available: null },
+        core: { total: null, available: null },
+      };
+
+      result.set(device.product, {
+        memory: mergePoolTotals(
+          current.memory,
+          device.allocatable?.memory_mib,
+          device.available?.memory_mib,
+        ),
+        core: mergePoolTotals(
+          current.core,
+          device.allocatable?.core_units,
+          device.available?.core_units,
+        ),
+      });
+    }
+  }
+
+  return result;
+};
+
+const hasFullCardAvailabilitySignals = (device: DeviceResource) =>
+  typeof device.allocatable?.memory_mib === "number" &&
+  typeof device.available?.memory_mib === "number" &&
+  typeof device.allocatable?.core_units === "number" &&
+  typeof device.available?.core_units === "number";
+
+const isDeviceAvailableForFullCardAllocation = (device: DeviceResource) =>
+  Boolean(
+    device.health &&
+      hasFullCardAvailabilitySignals(device) &&
+      Number(device.available?.memory_mib) >=
+        Number(device.allocatable?.memory_mib) &&
+      Number(device.available?.core_units) >=
+        Number(device.allocatable?.core_units),
+  );
+
+export function countFullCardAvailableDevicesByProduct(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+) {
+  const result = new Map<string, number>();
+
+  if (!nodeResources) {
+    return result;
+  }
+
+  for (const nodeStatus of Object.values(nodeResources)) {
+    for (const device of nodeStatus.devices ?? []) {
+      if (!hasFullCardAvailabilitySignals(device)) {
+        continue;
+      }
+
+      const current = result.get(device.product) ?? 0;
+      result.set(
+        device.product,
+        current + (isDeviceAvailableForFullCardAllocation(device) ? 1 : 0),
+      );
+    }
+  }
+
+  return result;
+}
+
+const shortenUuid = (uuid: string) => {
+  if (uuid.length <= 18) {
+    return uuid;
+  }
+
+  return `${uuid.slice(0, 8)}...${uuid.slice(-6)}`;
+};
+
+const getProductAcceleratorType = (
+  resourceInfo: ResourceInfo | null | undefined,
+  product: string,
+): string | null => {
+  if (!resourceInfo?.accelerator_groups) {
+    return null;
+  }
+
+  for (const [type, group] of Object.entries(resourceInfo.accelerator_groups)) {
+    if (group.products?.[product] || group.product_groups?.[product] != null) {
+      return type;
+    }
+  }
+
+  return null;
+};
+
+const matchesSelectedAccelerator = (
+  row: Pick<GpuDeviceResourceRow, "acceleratorType" | "product">,
+  selectedAccelerator?: SelectedAccelerator | null,
+) => {
+  if (!selectedAccelerator?.product && !selectedAccelerator?.type) {
+    return false;
+  }
+
+  const productMatches =
+    !selectedAccelerator.product || row.product === selectedAccelerator.product;
+  const typeMatches =
+    !selectedAccelerator.type ||
+    row.acceleratorType == null ||
+    row.acceleratorType === selectedAccelerator.type;
+
+  return productMatches && typeMatches;
+};
+
+export function buildGpuCardResourceRows(
+  resourceInfo: ClusterResourceInfo | null | undefined,
+  selectedAccelerator?: SelectedAccelerator | null,
+): GpuCardResourceRow[] {
+  const allocatableGroups = resourceInfo?.allocatable?.accelerator_groups;
+  if (!allocatableGroups) {
+    return [];
+  }
+
+  const devicePoolsByProduct = sumDevicePoolsByProduct(
+    resourceInfo?.node_resources,
+  );
+  const fullCardAvailableDevicesByProduct =
+    countFullCardAvailableDevicesByProduct(resourceInfo?.node_resources);
+
+  return Object.entries(allocatableGroups).flatMap(
+    ([acceleratorType, allocatableGroup]) => {
+      const availableGroup =
+        resourceInfo?.available?.accelerator_groups?.[acceleratorType];
+      const metadataProducts =
+        resourceInfo?.accelerator_metadata?.[acceleratorType]?.products ?? {};
+
+      const products = allocatableGroup.products
+        ? Object.entries(allocatableGroup.products).map(
+            ([product, resources]) => ({
+              product,
+              quantity: resources.quantity ?? 0,
+              availableQuantity:
+                fullCardAvailableDevicesByProduct.get(product) ??
+                availableGroup?.products?.[product]?.quantity ??
+                0,
+              allocatableMemoryMiB: resources.virtualization?.memory_mib,
+              availableMemoryMiB:
+                availableGroup?.products?.[product]?.virtualization?.memory_mib,
+              allocatableCoreUnits: resources.virtualization?.core_units,
+              availableCoreUnits:
+                availableGroup?.products?.[product]?.virtualization?.core_units,
+            }),
+          )
+        : Object.entries(allocatableGroup.product_groups ?? {}).map(
+            ([product, quantity]) => ({
+              product,
+              quantity,
+              availableQuantity:
+                fullCardAvailableDevicesByProduct.get(product) ??
+                availableGroup?.product_groups?.[product] ??
+                0,
+              allocatableMemoryMiB: undefined,
+              availableMemoryMiB: undefined,
+              allocatableCoreUnits: undefined,
+              availableCoreUnits: undefined,
+            }),
+          );
+
+      return products.map((productRow) => {
+        const fallbackPools = devicePoolsByProduct.get(productRow.product);
+        const row = {
+          acceleratorType,
+          product: productRow.product,
+          matchesSelectedAccelerator: false,
+          memoryTotalMiB:
+            metadataProducts[productRow.product]?.memory_total_mib,
+          quantity: buildPoolUsage(
+            productRow.quantity,
+            productRow.availableQuantity,
+          ),
+          memory: buildPoolUsage(
+            productRow.allocatableMemoryMiB ?? fallbackPools?.memory.total,
+            productRow.availableMemoryMiB ?? fallbackPools?.memory.available,
+          ),
+          core: buildPoolUsage(
+            productRow.allocatableCoreUnits ?? fallbackPools?.core.total,
+            productRow.availableCoreUnits ?? fallbackPools?.core.available,
+          ),
+        };
+
+        return {
+          ...row,
+          matchesSelectedAccelerator: matchesSelectedAccelerator(
+            row,
+            selectedAccelerator,
+          ),
+        };
+      });
+    },
+  );
+}
+
+export function buildGpuDeviceResourceRows(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  selectedAccelerator?: SelectedAccelerator | null,
+): GpuDeviceResourceRow[] {
+  if (!nodeResources) {
+    return [];
+  }
+
+  const rows = Object.entries(nodeResources).flatMap(([nodeName, nodeStatus]) =>
+    (nodeStatus.devices ?? []).map((device) => {
+      const acceleratorType = getProductAcceleratorType(
+        nodeStatus.allocatable,
+        device.product,
+      );
+      const row = {
+        acceleratorType,
+        nodeName,
+        uuid: device.uuid,
+        shortUuid: shortenUuid(device.uuid),
+        gpuNumber: 0,
+        product: device.product,
+        healthy: device.health,
+        fullFree: isDeviceAvailableForFullCardAllocation(device),
+        matchesSelectedAccelerator: false,
+        memory: buildPoolUsage(
+          device.allocatable?.memory_mib,
+          device.available?.memory_mib,
+        ),
+        core: buildPoolUsage(
+          device.allocatable?.core_units,
+          device.available?.core_units,
+        ),
+      };
+
+      return {
+        ...row,
+        matchesSelectedAccelerator: matchesSelectedAccelerator(
+          row,
+          selectedAccelerator,
+        ),
+      };
+    }),
+  );
+
+  return [...rows]
+    .sort(
+      (a, b) =>
+        a.uuid.localeCompare(b.uuid) || a.nodeName.localeCompare(b.nodeName),
+    )
+    .map((row, index) => ({
+      ...row,
+      gpuNumber: index + 1,
+    }));
+}
+
+export function calculateVgpuSliceCapacity(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  options: {
+    selectedAccelerator?: SelectedAccelerator | null;
+    memoryMiBPerSlice?: number | null;
+    coreUnitsPerSlice?: number | null;
+  },
+): VgpuSliceCapacity {
+  const memoryMiBPerSlice = Number(options.memoryMiBPerSlice || 0);
+  const coreUnitsPerSlice = Number(options.coreUnitsPerSlice || 0);
+
+  if (
+    !nodeResources ||
+    !options.selectedAccelerator?.product ||
+    memoryMiBPerSlice <= 0
+  ) {
+    return {
+      matchingDeviceCount: 0,
+      totalSlices: 0,
+    };
+  }
+
+  let matchingDeviceCount = 0;
+  let totalSlices = 0;
+
+  for (const nodeStatus of Object.values(nodeResources)) {
+    for (const device of nodeStatus.devices ?? []) {
+      const acceleratorType = getProductAcceleratorType(
+        nodeStatus.allocatable,
+        device.product,
+      );
+      if (
+        !matchesSelectedAccelerator(
+          { acceleratorType, product: device.product },
+          options.selectedAccelerator,
+        )
+      ) {
+        continue;
+      }
+
+      matchingDeviceCount += 1;
+      const availableMemoryMiB = Number(device.available?.memory_mib || 0);
+      const availableCoreUnits = Number(device.available?.core_units || 0);
+      if (availableMemoryMiB <= 0 || availableCoreUnits <= 0) {
+        continue;
+      }
+
+      if (availableMemoryMiB < memoryMiBPerSlice) {
+        continue;
+      }
+
+      if (coreUnitsPerSlice > 0 && availableCoreUnits < coreUnitsPerSlice) {
+        continue;
+      }
+
+      totalSlices += 1;
+    }
+  }
+
+  return {
+    matchingDeviceCount,
+    totalSlices,
+  };
+}
+
+export function filterGpuDeviceResourceRows(
+  rows: GpuDeviceResourceRow[],
+  filters: GpuDeviceResourceFilters,
+): GpuDeviceResourceRow[] {
+  const nodeName =
+    filters.nodeName && filters.nodeName !== GPU_DEVICE_FILTER_ALL
+      ? filters.nodeName
+      : null;
+  const product =
+    filters.product && filters.product !== GPU_DEVICE_FILTER_ALL
+      ? filters.product
+      : null;
+  const search = filters.search?.trim().toLowerCase() || "";
+
+  return rows.filter((row) => {
+    if (nodeName && row.nodeName !== nodeName) {
+      return false;
+    }
+
+    if (product && row.product !== product) {
+      return false;
+    }
+
+    if (!search) {
+      return true;
+    }
+
+    return [
+      row.uuid,
+      row.shortUuid,
+      `${row.gpuNumber}`,
+      `gpu ${row.gpuNumber}`,
+      row.product,
+      row.nodeName,
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(search);
+  });
+}
+
+export function getGpuDeviceResourceFilterOptions(
+  rows: GpuDeviceResourceRow[],
+): { nodeNames: string[]; products: string[] } {
+  return {
+    nodeNames: Array.from(new Set(rows.map((row) => row.nodeName))).sort(),
+    products: Array.from(new Set(rows.map((row) => row.product))).sort(),
+  };
+}

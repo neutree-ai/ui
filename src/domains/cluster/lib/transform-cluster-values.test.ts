@@ -112,6 +112,7 @@ describe("transformClusterValues", () => {
       const cluster = makeCluster({
         spec: {
           type: "kubernetes",
+          version: "v1.1.0",
           accelerator_virtualization: { enabled: true },
           config: {
             kubernetes_config: {
@@ -127,6 +128,26 @@ describe("transformClusterValues", () => {
       expect(result.spec.accelerator_virtualization).toEqual({
         enabled: true,
       });
+    });
+
+    it("removes accelerator virtualization config for kubernetes clusters below v1.1.0", () => {
+      const cluster = makeCluster({
+        spec: {
+          type: "kubernetes",
+          version: "v1.0.9",
+          accelerator_virtualization: { enabled: true },
+          config: {
+            kubernetes_config: {
+              kubeconfig: "",
+              router: { replicas: "3" },
+            },
+          },
+        },
+      });
+
+      const result = transformClusterValues(cluster);
+
+      expect(result.spec.accelerator_virtualization).toBeUndefined();
     });
   });
 

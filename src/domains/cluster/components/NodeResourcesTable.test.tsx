@@ -11,6 +11,35 @@ vi.mock("@/components/ui/progress", () => ({
 const t = (key: string) => key;
 
 describe("NodeResourcesTable", () => {
+  it("keeps the node devices toggle aligned with the node name", () => {
+    render(
+      <NodeResourcesTable
+        nodeResources={{
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-1",
+                product: "Tesla-T4",
+                health: true,
+              },
+            ],
+          },
+        }}
+        acceleratorTypes={["nvidia_gpu"]}
+        t={t}
+      />,
+    );
+
+    const toggleCell = screen
+      .getByRole("button", { name: "node-a devices" })
+      .closest("td");
+    const nodeNameCell = screen.getByText("node-a").closest("td");
+
+    expect(toggleCell).toBe(nodeNameCell);
+  });
+
   it("shows node device resource pools under the expanded node", () => {
     render(
       <NodeResourcesTable
@@ -54,12 +83,10 @@ describe("NodeResourcesTable", () => {
                 allocatable: {
                   memory_mib: 15360,
                   core_units: 100,
-                  slots: 10,
                 },
                 available: {
                   memory_mib: 7680,
                   core_units: 50,
-                  slots: 5,
                 },
               },
             ],
@@ -88,11 +115,12 @@ describe("NodeResourcesTable", () => {
 
     expect(screen.getByText("clusters.sections.nodeDevices")).toBeTruthy();
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
-    expect(screen.getByText("GPU-1")).toBeTruthy();
-    expect(screen.getByText("clusters.options.healthy")).toBeTruthy();
+    expect(screen.getAllByText("GPU-1").length).toBeGreaterThan(0);
+    expect(screen.queryByText("clusters.options.healthy")).toBeNull();
+    expect(screen.queryByText("clusters.options.unhealthy")).toBeNull();
     expect(screen.getByText("7680 / 15360 MiB")).toBeTruthy();
     expect(screen.getByText("50 / 100")).toBeTruthy();
-    expect(screen.getByText("5 / 10")).toBeTruthy();
+    expect(screen.queryByText(/slot/i)).toBeNull();
     expect(screen.queryByText("GPU-2")).toBeNull();
   });
 });

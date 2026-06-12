@@ -383,7 +383,7 @@ describe("validateEndpointValues", () => {
     expect(errors["-model-catalog"]).toBeUndefined();
   });
 
-  it("returns error when scheduler type is empty", () => {
+  it("returns error when scheduler type is blank", () => {
     const errors = validateEndpointValues(
       {
         replicas: { num: 1 },
@@ -397,13 +397,13 @@ describe("validateEndpointValues", () => {
       },
       mockT,
     );
-    expect(errors["spec.deployment_options.scheduler.type"]).toBeDefined();
-    expect(errors["spec.deployment_options.scheduler.type"].message).toBe(
-      "endpoints.messages.schedulerTypeRequired",
-    );
+    expect(errors["spec.deployment_options.scheduler.type"]).toEqual({
+      type: "manual",
+      message: "endpoints.messages.schedulerTypeRequired",
+    });
   });
 
-  it("returns error when deployment_options is null", () => {
+  it("returns error when deployment_options are missing", () => {
     const errors = validateEndpointValues(
       {
         replicas: { num: 1 },
@@ -417,7 +417,10 @@ describe("validateEndpointValues", () => {
       },
       mockT,
     );
-    expect(errors["spec.deployment_options.scheduler.type"]).toBeDefined();
+    expect(errors["spec.deployment_options.scheduler.type"]).toEqual({
+      type: "manual",
+      message: "endpoints.messages.schedulerTypeRequired",
+    });
   });
 
   it("returns no error when scheduler type is set", () => {
@@ -496,6 +499,35 @@ describe("validateEndpointValues", () => {
     expect(errors).toEqual({});
   });
 
+  it("allows zero vGPU core percent as not configured", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_percent: 50,
+              core_percent: 0,
+            },
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(
+      errors["spec.resources.accelerator.virtualization.core_percent"],
+    ).toBeUndefined();
+  });
+
   it("returns error when vGPU percentages are out of range", () => {
     const errors = validateEndpointValues(
       {
@@ -506,7 +538,7 @@ describe("validateEndpointValues", () => {
             product: "Tesla-T4",
             virtualization: {
               memory_percent: 101,
-              core_percent: 0,
+              core_percent: -1,
             },
           },
         },

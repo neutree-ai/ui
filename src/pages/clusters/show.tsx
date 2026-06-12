@@ -25,7 +25,10 @@ import {
   type ClusterMonitorPanelType,
   useClusterMonitorPanels,
 } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
-import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
+import {
+  calcResourceUsage,
+  formatResourceUsageRatio,
+} from "@/domains/cluster/lib/calc-resource-usage";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
@@ -225,7 +228,6 @@ export const ClustersShow = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* CPU */}
                     {record.status.resource_info.allocatable && (
                       <ResourceProgressBar
                         label={t("common.fields.cpu")}
@@ -240,7 +242,6 @@ export const ClustersShow = () => {
                       />
                     )}
 
-                    {/* Memory */}
                     {record.status.resource_info.allocatable && (
                       <ResourceProgressBar
                         label={t("common.fields.memory")}
@@ -255,7 +256,6 @@ export const ClustersShow = () => {
                       />
                     )}
 
-                    {/* Accelerators */}
                     {record.status.resource_info.allocatable
                       ?.accelerator_groups &&
                       Object.entries(
@@ -315,7 +315,10 @@ export const ClustersShow = () => {
                             </span>
                             <span>{row.product}</span>
                             <span>
-                              {row.availableQuantity} / {row.quantity}
+                              {formatResourceUsageRatio(
+                                row.quantity,
+                                row.availableQuantity,
+                              )}
                             </span>
                             <span>
                               {row.memoryTotalMiB
@@ -323,13 +326,17 @@ export const ClustersShow = () => {
                                 : "-"}
                             </span>
                             <span>
-                              {row.availableVirtualizationMemoryMiB ?? "-"} /{" "}
-                              {row.allocatableVirtualizationMemoryMiB ?? "-"}{" "}
-                              MiB
+                              {formatResourceUsageRatio(
+                                row.allocatableVirtualizationMemoryMiB,
+                                row.availableVirtualizationMemoryMiB,
+                                "MiB",
+                              )}
                             </span>
                             <span>
-                              {row.availableCoreUnits ?? "-"} /{" "}
-                              {row.allocatableCoreUnits ?? "-"}
+                              {formatResourceUsageRatio(
+                                row.allocatableCoreUnits,
+                                row.availableCoreUnits,
+                              )}
                             </span>
                           </div>
                         ))}

@@ -1,8 +1,9 @@
+import { describe, expect, it } from "vitest";
 import type {
   ClusterResourceInfo,
+  NodeResourceStatus,
   ResourceStatus,
 } from "@/foundation/types/resource-types";
-import { describe, expect, it } from "vitest";
 import {
   findBestNodeForAccelerator,
   parseClusterResources,
@@ -99,6 +100,74 @@ describe("parseClusterResources", () => {
       available: 3,
       total: 4,
     });
+  });
+
+  it("should derive accelerator memory total from node devices when metadata is absent", () => {
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: {
+        cpu: 100,
+        memory: 256,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 2,
+                virtualization: {
+                  memory_mib: 30720,
+                  core_units: 200,
+                },
+              },
+            },
+          },
+        },
+      },
+      available: {
+        cpu: 80,
+        memory: 200,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        },
+      },
+      node_resources: {
+        "node-1": {
+          allocatable: null,
+          available: null,
+          devices: [
+            {
+              uuid: "GPU-1",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: {
+                memory_mib: 15360,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 7680,
+                core_units: 50,
+              },
+            },
+          ],
+        },
+      },
+    };
+
+    const result = parseClusterResources(resourceInfo, mockTranslate);
+
+    expect(result.acceleratorOptions[0].memoryTotalMiB).toBe(15360);
   });
 
   it("should handle accelerators without product groups", () => {
@@ -503,5 +572,87 @@ describe("findBestNodeForAccelerator", () => {
       "Tesla-T4",
     );
     expect(result?.nodeName).toBe("node-2");
+  });
+
+  it("should count only fully free devices as full-card available for virtualized products", () => {
+    const nodeResources: Record<string, NodeResourceStatus> = {
+      "node-1": {
+        allocatable: {
+          cpu: 32,
+          memory: 64,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 2,
+                  virtualization: {
+                    memory_mib: 30720,
+                    core_units: 200,
+                  },
+                },
+              },
+            },
+          },
+        },
+        available: {
+          cpu: 24,
+          memory: 48,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 2,
+                  virtualization: {
+                    memory_mib: 23040,
+                    core_units: 150,
+                  },
+                },
+              },
+            },
+          },
+        },
+        devices: [
+          {
+            uuid: "GPU-full",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: {
+              memory_mib: 15360,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 15360,
+              core_units: 100,
+            },
+          },
+          {
+            uuid: "GPU-vgpu-used",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: {
+              memory_mib: 15360,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 7680,
+              core_units: 50,
+            },
+          },
+        ],
+      },
+    };
+
+    expect(
+      findBestNodeForAccelerator(nodeResources, "nvidia_gpu", "Tesla-T4"),
+    ).toEqual({
+      nodeName: "node-1",
+      cpu: { available: 24, total: 32 },
+      memory: { available: 48, total: 64 },
+      gpu: { available: 1, total: 2 },
+    });
   });
 });

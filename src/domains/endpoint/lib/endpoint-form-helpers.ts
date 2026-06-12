@@ -480,7 +480,7 @@ export function validateEndpointValues(
 
   if (
     corePercent !== undefined &&
-    (!Number.isFinite(corePercent) || corePercent < 1 || corePercent > 100)
+    (!Number.isFinite(corePercent) || corePercent < 0 || corePercent > 100)
   ) {
     errors["spec.resources.accelerator.virtualization.core_percent"] = {
       type: "manual",

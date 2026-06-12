@@ -5,10 +5,7 @@ import {
   ClusterUpgradeProvider,
 } from "@/domains/cluster/components/ClusterUpgradeAction";
 import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
-import {
-  getHamiComponentStatus,
-  isAcceleratorVirtualizationEnabled,
-} from "@/domains/cluster/lib/hami";
+import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/hami";
 import type { Cluster } from "@/domains/cluster/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -97,15 +94,6 @@ export const ClustersList = () => {
               isAcceleratorVirtualizationEnabled(row.original as Cluster)
                 ? t("common.options.enabled")
                 : t("common.options.disabled")
-            }
-          />
-          <Table.Column
-            header={t("clusters.fields.hamiStatus")}
-            accessorKey="status.component_status.hami.phase"
-            id="hami_status"
-            enableHiding
-            cell={({ row }) =>
-              getHamiComponentStatus(row.original as Cluster)?.phase ?? "-"
             }
           />
           <Table.Column

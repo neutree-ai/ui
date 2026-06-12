@@ -28,7 +28,7 @@ export function normalizeVgpuVirtualization(
   } else if (memoryPercent !== undefined) {
     normalized.memory_percent = memoryPercent;
   }
-  if (corePercent !== undefined) {
+  if (corePercent !== undefined && corePercent > 0) {
     normalized.core_percent = corePercent;
   }
 

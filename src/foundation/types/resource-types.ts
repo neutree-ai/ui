@@ -91,7 +91,6 @@ export type ResourceStatus = {
 type DeviceResourcePool = {
   memory_mib: number;
   core_units: number;
-  slots: number;
 };
 
 export type DeviceResource = {

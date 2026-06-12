@@ -1,0 +1,1322 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Endpoint Resource Drawer Demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --panel-soft: #f8fafc;
+        --border: #d9e0ea;
+        --text: #17202a;
+        --muted: #5b667a;
+        --accent: #2563eb;
+        --accent-soft: #e9f1ff;
+        --ok: #15803d;
+        --ok-soft: #dcfce7;
+        --warn: #b45309;
+        --warn-soft: #fff7ed;
+        --danger: #b42318;
+        --danger-soft: #fff1f0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      main {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 26px 24px;
+      }
+
+      .page-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 750;
+        letter-spacing: 0;
+      }
+
+      .page-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 24px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 2px 10px;
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .pill.ok {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+
+      .pill.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+
+      .pill.danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 36px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        padding: 0 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .button:hover {
+        border-color: #b8c4d6;
+        background: #f8fafc;
+      }
+
+      .button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .button.icon {
+        width: 36px;
+        padding: 0;
+        font-size: 18px;
+      }
+
+      .section {
+        margin-bottom: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: 0 1px 2px rgb(16 24 40 / 5%);
+        overflow: hidden;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 15px;
+        font-weight: 750;
+      }
+
+      .step {
+        display: inline-grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .section-body {
+        padding: 16px;
+      }
+
+      .compact-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .resource-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 16px;
+        align-items: start;
+      }
+
+      .resource-form {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field.span-2 {
+        grid-column: span 2;
+      }
+
+      .field.span-4 {
+        grid-column: span 4;
+      }
+
+      label,
+      .label {
+        color: #344054;
+        font-weight: 650;
+      }
+
+      select,
+      input[type="number"],
+      input[type="text"] {
+        width: 100%;
+        height: 36px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        padding: 0 10px;
+      }
+
+      input[type="range"] {
+        width: 100%;
+      }
+
+      .row-input {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 96px;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .segmented {
+        display: inline-grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        width: min(100%, 280px);
+        padding: 4px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #f2f4f7;
+      }
+
+      .segment {
+        height: 34px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        font-weight: 750;
+        cursor: pointer;
+      }
+
+      .segment.active {
+        background: #fff;
+        color: var(--accent);
+        box-shadow: 0 1px 2px rgb(16 24 40 / 8%);
+      }
+
+      .inline-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #344054;
+        font-weight: 650;
+      }
+
+      .soft-panel {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel-soft);
+      }
+
+      .soft-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 14px;
+      }
+
+      .soft-panel-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 750;
+      }
+
+      .soft-panel-body {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .metric {
+        display: grid;
+        gap: 5px;
+        min-height: 76px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .metric-value {
+        font-size: 18px;
+        font-weight: 750;
+      }
+
+      .meter {
+        height: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e5eaf2;
+      }
+
+      .meter-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--accent);
+      }
+
+      .meter-fill.ok {
+        background: var(--ok);
+      }
+
+      .meter-fill.warn {
+        background: var(--warn);
+      }
+
+      .meter-fill.danger {
+        background: var(--danger);
+      }
+
+      .notice {
+        display: none;
+        grid-column: span 4;
+        border: 1px solid var(--danger);
+        border-radius: 8px;
+        background: var(--danger-soft);
+        color: var(--danger);
+        padding: 10px 12px;
+        font-weight: 650;
+      }
+
+      .notice.visible {
+        display: block;
+      }
+
+      .drawer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: none;
+        background: rgb(15 23 42 / 42%);
+      }
+
+      .drawer-overlay.open {
+        display: block;
+      }
+
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: 50;
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        width: min(840px, 94vw);
+        height: 100vh;
+        border-left: 1px solid var(--border);
+        background: #fff;
+        box-shadow: -12px 0 24px rgb(16 24 40 / 18%);
+        transform: translateX(100%);
+        transition: transform 180ms ease;
+      }
+
+      .drawer.open {
+        transform: translateX(0);
+      }
+
+      .drawer-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        border-bottom: 1px solid var(--border);
+        padding: 18px 20px 14px;
+      }
+
+      .drawer-title {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 750;
+      }
+
+      .drawer-subtitle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .drawer-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid var(--border);
+        padding: 10px 20px;
+      }
+
+      .tab-button {
+        height: 34px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        padding: 0 12px;
+        font-weight: 750;
+        cursor: pointer;
+      }
+
+      .tab-button.active {
+        border-color: var(--border);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .drawer-body {
+        min-height: 0;
+        overflow: auto;
+        padding: 16px 20px 22px;
+      }
+
+      .drawer-panel {
+        display: none;
+      }
+
+      .drawer-panel.active {
+        display: grid;
+        gap: 14px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .toolbar-left {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .search {
+        width: min(260px, 100%);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 750;
+        white-space: nowrap;
+      }
+
+      td {
+        font-size: 13px;
+      }
+
+      tbody tr.selected {
+        background: var(--accent-soft);
+      }
+
+      .resource-cell {
+        display: grid;
+        gap: 5px;
+        min-width: 150px;
+      }
+
+      .resource-cell-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 12px;
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+      }
+
+      .node-chip {
+        border-radius: 999px;
+        background: #eef2f7;
+        color: #344054;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      @media (max-width: 980px) {
+        main {
+          padding: 18px 14px;
+        }
+
+        .page-bar,
+        .section-header,
+        .soft-panel-header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .compact-grid,
+        .resource-layout,
+        .resource-form {
+          grid-template-columns: 1fr;
+        }
+
+        .field.span-2,
+        .field.span-4,
+        .notice {
+          grid-column: span 1;
+        }
+
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .row-input {
+          grid-template-columns: minmax(0, 1fr) 84px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="page-bar">
+        <div>
+          <h1 class="page-title">Endpoint Edit</h1>
+          <div class="page-meta">
+            <span class="pill">cluster hami-k8s-devices</span>
+            <span class="pill">accelerator Tesla-T4</span>
+            <span id="pageFitPill" class="pill ok">resource fit OK</span>
+          </div>
+        </div>
+        <button id="openDrawerTop" class="button primary" type="button">
+          Open Resources
+        </button>
+      </div>
+
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title"><span class="step">1</span>Cluster</h2>
+        </div>
+        <div class="section-body compact-grid">
+          <div class="field">
+            <label for="cluster">Cluster</label>
+            <select id="cluster">
+              <option>hami-k8s-devices</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="namespace">Workspace</label>
+            <input id="namespace" type="text" value="default" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title"><span class="step">2</span>Model</h2>
+        </div>
+        <div class="section-body compact-grid">
+          <div class="field">
+            <label for="catalog">Model Catalog</label>
+            <select id="catalog">
+              <option>None</option>
+              <option>llama3-t4-template</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="replicas">Replicas</label>
+            <input id="replicas" type="number" min="1" max="8" value="2" />
+          </div>
+          <div class="field">
+            <label for="model">Model</label>
+            <input id="model" type="text" value="llama-3-8b" />
+          </div>
+          <div class="field">
+            <label for="modelFile">Model File</label>
+            <input id="modelFile" type="text" value="model.safetensors" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title"><span class="step">3</span>Engine</h2>
+        </div>
+        <div class="section-body compact-grid">
+          <div class="field">
+            <label for="engine">Engine</label>
+            <select id="engine">
+              <option>vllm</option>
+              <option>sglang</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="engineVersion">Version</label>
+            <select id="engineVersion">
+              <option>0.8.5</option>
+              <option>0.9.0</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title"><span class="step">4</span>Resources</h2>
+          <span id="resourceState" class="pill ok">fits current cluster</span>
+        </div>
+        <div class="section-body resource-layout">
+          <div class="resource-form">
+            <div class="field span-2">
+              <label for="cpu">CPU</label>
+              <div class="row-input">
+                <input id="cpu" type="range" min="0" max="16" step="0.1" value="2" />
+                <input id="cpuInput" type="number" min="0" max="16" step="0.1" value="2" />
+              </div>
+              <div class="meta">
+                <span>Available 12 cores</span>
+                <span id="cpuHint">2 requested</span>
+              </div>
+            </div>
+
+            <div class="field span-2">
+              <label for="memory">Memory GiB</label>
+              <div class="row-input">
+                <input id="memory" type="range" min="0" max="64" step="0.5" value="8" />
+                <input id="memoryInput" type="number" min="0" max="64" step="0.5" value="8" />
+              </div>
+              <div class="meta">
+                <span>Available 48 GiB</span>
+                <span id="memoryHint">8 GiB requested</span>
+              </div>
+            </div>
+
+            <div class="field span-4">
+              <label for="accelerator">Accelerator</label>
+              <select id="accelerator">
+                <option value="Tesla-T4">NVIDIA GPU - Tesla-T4</option>
+                <option value="Tesla-A10">NVIDIA GPU - Tesla-A10</option>
+              </select>
+            </div>
+
+            <div class="field span-4">
+              <span class="label">Allocation Mode</span>
+              <div class="segmented" aria-label="Allocation Mode">
+                <button id="modeFull" class="segment" type="button">Full Card</button>
+                <button id="modeVirtual" class="segment active" type="button">Virtual Card</button>
+              </div>
+            </div>
+
+            <div id="fullFields" class="field span-4" hidden>
+              <label for="fullCards">Full Cards Per Replica</label>
+              <div class="row-input">
+                <input id="fullCards" type="range" min="0" max="4" step="1" value="1" />
+                <input id="fullCardsInput" type="number" min="0" max="4" step="1" value="1" />
+              </div>
+              <div class="meta">
+                <span>Only fully free physical cards are allocatable</span>
+                <span id="fullCardsHint">2 requested / 1 available</span>
+              </div>
+            </div>
+
+            <div id="virtualFields" class="field span-4">
+              <div class="compact-grid">
+                <div class="field">
+                  <label for="memoryMode">Virtual Card Memory Mode</label>
+                  <select id="memoryMode">
+                    <option value="mib">MiB</option>
+                    <option value="gib">GiB</option>
+                    <option value="percent">Percent</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label id="virtualMemoryLabel" for="virtualMemory">Virtual Card Memory</label>
+                  <input id="virtualMemory" type="number" min="1" value="4096" />
+                  <div id="singleCardHint" class="meta">Single-card memory: 15360 MiB</div>
+                </div>
+                <div class="field">
+                  <label for="virtualCards">Virtual Cards Per Replica</label>
+                  <input id="virtualCards" type="number" min="1" max="8" value="1" />
+                  <div id="virtualCardsHint" class="meta">2 slices requested</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="inline-check" for="coreLimitEnabled">
+                  <input id="coreLimitEnabled" type="checkbox" />
+                  Configure Core Limit
+                </label>
+              </div>
+
+              <div id="coreLimitRow" class="field" hidden>
+                <label for="corePercent">Virtual Card Core Percent</label>
+                <input id="corePercent" type="number" min="0" max="100" step="5" value="0" />
+                <div class="meta">
+                  <span>0 keeps core unconfigured</span>
+                  <span id="coreHint">shared remaining core pool</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="capacityNotice" class="notice"></div>
+          </div>
+
+          <aside class="soft-panel">
+            <div class="soft-panel-header">
+              <div>
+                <h3 class="soft-panel-title">Accelerator Resources</h3>
+                <div id="sideSubtitle" class="meta">Tesla-T4 selected</div>
+              </div>
+              <button id="openDrawerSide" class="button" type="button">Open</button>
+            </div>
+            <div class="soft-panel-body">
+              <div class="summary-grid">
+                <div class="metric">
+                  <div class="metric-label">Full Cards</div>
+                  <div id="sideFullMetric" class="metric-value">1 / 3</div>
+                  <div class="meter"><div id="sideFullMeter" class="meter-fill ok"></div></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Virtual Slices</div>
+                  <div id="sideSliceMetric" class="metric-value">5</div>
+                  <div class="meter"><div id="sideSliceMeter" class="meter-fill"></div></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Memory Used</div>
+                  <div id="sideMemoryMetric" class="metric-value">50%</div>
+                  <div class="meter"><div id="sideMemoryMeter" class="meter-fill warn"></div></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Core Used</div>
+                  <div id="sideCoreMetric" class="metric-value">25%</div>
+                  <div class="meter"><div id="sideCoreMeter" class="meter-fill ok"></div></div>
+                </div>
+              </div>
+              <div id="sideFitText" class="pill ok">current request fits</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title"><span class="step">5</span>Advanced</h2>
+        </div>
+        <div class="section-body compact-grid">
+          <div class="field">
+            <label for="scheduler">Request Scheduler</label>
+            <select id="scheduler">
+              <option>consistent_hash</option>
+              <option>roundrobin</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="drawerOverlay" class="drawer-overlay"></div>
+    <aside id="resourceDrawer" class="drawer" aria-label="Accelerator resource drawer">
+      <div class="drawer-header">
+        <div>
+          <h2 class="drawer-title">Accelerator Resources</h2>
+          <div class="drawer-subtitle">
+            <span id="drawerClusterPill" class="pill">hami-k8s-devices</span>
+            <span id="drawerAcceleratorPill" class="pill">Tesla-T4</span>
+            <span id="drawerModePill" class="pill">Virtual Card</span>
+          </div>
+        </div>
+        <button id="closeDrawer" class="button icon" type="button" aria-label="Close drawer">x</button>
+      </div>
+
+      <div class="drawer-tabs">
+        <button id="clusterTab" class="tab-button active" type="button">Cluster Resources</button>
+        <button id="nodeTab" class="tab-button" type="button">Node Resources</button>
+      </div>
+
+      <div class="drawer-body">
+        <section id="clusterPanel" class="drawer-panel active">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <input id="clusterSearch" class="search" type="text" placeholder="Filter product" />
+              <span id="clusterSelectedPill" class="pill">selected Tesla-T4</span>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Cards</th>
+                <th>Full Free</th>
+                <th>Memory</th>
+                <th>Core</th>
+                <th>Fit</th>
+              </tr>
+            </thead>
+            <tbody id="clusterRows"></tbody>
+          </table>
+        </section>
+
+        <section id="nodePanel" class="drawer-panel">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <select id="nodeFilter">
+                <option value="all">All nodes</option>
+              </select>
+              <input id="nodeSearch" class="search" type="text" placeholder="Filter product or UUID" />
+            </div>
+            <span id="nodeSelectedPill" class="pill">selected Tesla-T4</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Node</th>
+                <th>Device UUID</th>
+                <th>Product</th>
+                <th>Status</th>
+                <th>Memory</th>
+                <th>Core</th>
+              </tr>
+            </thead>
+            <tbody id="nodeRows"></tbody>
+          </table>
+        </section>
+      </div>
+    </aside>
+
+    <script>
+      const devices = [
+        {
+          node: "node-a",
+          uuid: "GPU-11111111-2222-3333-4444-555555555555",
+          product: "Tesla-T4",
+          memoryTotal: 15360,
+          memoryAvailable: 7680,
+          coreTotal: 100,
+          coreAvailable: 50,
+          healthy: true,
+        },
+        {
+          node: "node-a",
+          uuid: "GPU-22222222-3333-4444-5555-666666666666",
+          product: "Tesla-T4",
+          memoryTotal: 15360,
+          memoryAvailable: 15360,
+          coreTotal: 100,
+          coreAvailable: 100,
+          healthy: true,
+        },
+        {
+          node: "node-b",
+          uuid: "GPU-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          product: "Tesla-T4",
+          memoryTotal: 15360,
+          memoryAvailable: 0,
+          coreTotal: 100,
+          coreAvailable: 0,
+          healthy: true,
+        },
+        {
+          node: "node-c",
+          uuid: "GPU-33333333-4444-5555-6666-777777777777",
+          product: "Tesla-A10",
+          memoryTotal: 24576,
+          memoryAvailable: 24576,
+          coreTotal: 100,
+          coreAvailable: 100,
+          healthy: true,
+        },
+      ];
+
+      const ids = [
+        "accelerator",
+        "capacityNotice",
+        "clusterPanel",
+        "clusterRows",
+        "clusterSearch",
+        "clusterSelectedPill",
+        "clusterTab",
+        "coreHint",
+        "coreLimitEnabled",
+        "coreLimitRow",
+        "corePercent",
+        "cpu",
+        "cpuHint",
+        "cpuInput",
+        "drawerAcceleratorPill",
+        "drawerModePill",
+        "drawerOverlay",
+        "fullCards",
+        "fullCardsHint",
+        "fullCardsInput",
+        "fullFields",
+        "memory",
+        "memoryHint",
+        "memoryInput",
+        "memoryMode",
+        "modeFull",
+        "modeVirtual",
+        "nodeFilter",
+        "nodePanel",
+        "nodeRows",
+        "nodeSearch",
+        "nodeSelectedPill",
+        "nodeTab",
+        "pageFitPill",
+        "replicas",
+        "resourceDrawer",
+        "resourceState",
+        "sideCoreMeter",
+        "sideCoreMetric",
+        "sideFitText",
+        "sideFullMeter",
+        "sideFullMetric",
+        "sideMemoryMeter",
+        "sideMemoryMetric",
+        "sideSliceMeter",
+        "sideSliceMetric",
+        "sideSubtitle",
+        "singleCardHint",
+        "virtualCards",
+        "virtualCardsHint",
+        "virtualFields",
+        "virtualMemory",
+        "virtualMemoryLabel",
+      ];
+
+      const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
+      let allocationMode = "virtual";
+      let memoryMode = "mib";
+      let memoryMiB = 4096;
+
+      function maskUuid(uuid) {
+        return `${uuid.slice(0, 8)}...${uuid.slice(-6)}`;
+      }
+
+      function percent(used, total) {
+        if (!total) return 0;
+        return Math.round((used / total) * 100);
+      }
+
+      function meterClass(value) {
+        if (value >= 90) return "danger";
+        if (value >= 65) return "warn";
+        return "ok";
+      }
+
+      function setMeter(node, value) {
+        node.style.width = `${Math.min(100, Math.max(0, value))}%`;
+        node.className = `meter-fill ${meterClass(value)}`;
+      }
+
+      function selectedDevices() {
+        const product = el.accelerator.value;
+        return devices.filter((device) => device.product === product);
+      }
+
+      function selectedMemoryTotal() {
+        return selectedDevices()[0]?.memoryTotal || 0;
+      }
+
+      function getMemoryValueForMode(mode) {
+        if (mode === "mib") return memoryMiB;
+        if (mode === "gib") return Number((memoryMiB / 1024).toFixed(2));
+        const total = selectedMemoryTotal();
+        return total ? Math.min(100, Math.ceil((memoryMiB * 100) / total)) : 0;
+      }
+
+      function setMemoryFromInput(value, mode) {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric) || numeric <= 0) return;
+        if (mode === "mib") memoryMiB = Math.ceil(numeric);
+        if (mode === "gib") memoryMiB = Math.ceil(numeric * 1024);
+        if (mode === "percent") memoryMiB = Math.ceil((selectedMemoryTotal() * numeric) / 100);
+      }
+
+      function aggregateByProduct() {
+        const groups = new Map();
+        for (const device of devices) {
+          const row = groups.get(device.product) || {
+            product: device.product,
+            totalCards: 0,
+            fullFreeCards: 0,
+            memoryTotal: 0,
+            memoryAvailable: 0,
+            coreTotal: 0,
+            coreAvailable: 0,
+          };
+          row.totalCards += 1;
+          row.memoryTotal += device.memoryTotal;
+          row.memoryAvailable += device.memoryAvailable;
+          row.coreTotal += device.coreTotal;
+          row.coreAvailable += device.coreAvailable;
+          if (
+            device.memoryAvailable >= device.memoryTotal &&
+            device.coreAvailable >= device.coreTotal
+          ) {
+            row.fullFreeCards += 1;
+          }
+          groups.set(device.product, row);
+        }
+        return [...groups.values()];
+      }
+
+      function fitForProduct(product) {
+        const replicas = Number(el.replicas.value) || 1;
+        const selected = devices.filter((device) => device.product === product);
+        if (allocationMode === "full") {
+          const perReplica = Number(el.fullCardsInput.value) || 0;
+          const requested = replicas * perReplica;
+          const available = selected.filter(
+            (device) =>
+              device.memoryAvailable >= device.memoryTotal &&
+              device.coreAvailable >= device.coreTotal,
+          ).length;
+          return { requested, available, fits: requested <= available };
+        }
+
+        const perReplica = Number(el.virtualCards.value) || 1;
+        const requested = replicas * perReplica;
+        const core = el.coreLimitEnabled.checked ? Number(el.corePercent.value) || 0 : 0;
+        const available = selected.reduce((sum, device) => {
+          const memorySlices = Math.floor(device.memoryAvailable / memoryMiB);
+          const coreSlices = core > 0 ? Math.floor(device.coreAvailable / core) : memorySlices;
+          return sum + Math.min(memorySlices, coreSlices);
+        }, 0);
+        return { requested, available, fits: requested <= available };
+      }
+
+      function resourceCell(used, total, unit) {
+        const value = percent(used, total);
+        return `
+          <div class="resource-cell">
+            <div class="resource-cell-top">
+              <span>${used} / ${total} ${unit}</span>
+              <strong>${value}%</strong>
+            </div>
+            <div class="meter"><div class="meter-fill ${meterClass(value)}" style="width:${value}%"></div></div>
+          </div>
+        `;
+      }
+
+      function renderClusterRows() {
+        const query = el.clusterSearch.value.trim().toLowerCase();
+        const selectedProduct = el.accelerator.value;
+        el.clusterSelectedPill.textContent = `selected ${selectedProduct}`;
+        el.drawerAcceleratorPill.textContent = selectedProduct;
+
+        el.clusterRows.innerHTML = aggregateByProduct()
+          .filter((row) => row.product.toLowerCase().includes(query))
+          .map((row) => {
+            const memoryUsed = row.memoryTotal - row.memoryAvailable;
+            const coreUsed = row.coreTotal - row.coreAvailable;
+            const fit = fitForProduct(row.product);
+            return `
+              <tr class="${row.product === selectedProduct ? "selected" : ""}">
+                <td>
+                  <strong>${row.product}</strong>
+                  ${row.product === selectedProduct ? '<span class="pill">selected</span>' : ""}
+                </td>
+                <td>${row.totalCards}</td>
+                <td>${row.fullFreeCards}</td>
+                <td>${resourceCell(memoryUsed, row.memoryTotal, "MiB")}</td>
+                <td>${resourceCell(coreUsed, row.coreTotal, "%")}</td>
+                <td>
+                  <span class="pill ${fit.fits ? "ok" : "danger"}">
+                    ${fit.requested} / ${fit.available}
+                  </span>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderNodeRows() {
+        const product = el.accelerator.value;
+        const node = el.nodeFilter.value;
+        const query = el.nodeSearch.value.trim().toLowerCase();
+        el.nodeSelectedPill.textContent = `selected ${product}`;
+
+        el.nodeRows.innerHTML = devices
+          .filter((device) => node === "all" || device.node === node)
+          .filter((device) => {
+            const target = `${device.product} ${device.uuid}`.toLowerCase();
+            return target.includes(query);
+          })
+          .map((device) => {
+            const memoryUsed = device.memoryTotal - device.memoryAvailable;
+            const coreUsed = device.coreTotal - device.coreAvailable;
+            return `
+              <tr class="${device.product === product ? "selected" : ""}">
+                <td><span class="node-chip">${device.node}</span></td>
+                <td class="mono">${maskUuid(device.uuid)}</td>
+                <td>${device.product}</td>
+                <td><span class="pill ok">${device.healthy ? "OK" : "Error"}</span></td>
+                <td>${resourceCell(memoryUsed, device.memoryTotal, "MiB")}</td>
+                <td>${resourceCell(coreUsed, device.coreTotal, "%")}</td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderSideSummary() {
+        const product = el.accelerator.value;
+        const rows = aggregateByProduct();
+        const row = rows.find((item) => item.product === product);
+        const fit = fitForProduct(product);
+        if (!row) return;
+
+        const memoryUsed = row.memoryTotal - row.memoryAvailable;
+        const coreUsed = row.coreTotal - row.coreAvailable;
+        const memoryPercent = percent(memoryUsed, row.memoryTotal);
+        const corePercent = percent(coreUsed, row.coreTotal);
+        const slicePercent = fit.available
+          ? Math.round((fit.requested / fit.available) * 100)
+          : 100;
+
+        el.sideSubtitle.textContent = `${product} selected`;
+        el.sideFullMetric.textContent = `${row.fullFreeCards} / ${row.totalCards}`;
+        el.sideSliceMetric.textContent = `${fit.available}`;
+        el.sideMemoryMetric.textContent = `${memoryPercent}%`;
+        el.sideCoreMetric.textContent = `${corePercent}%`;
+        setMeter(el.sideFullMeter, percent(row.totalCards - row.fullFreeCards, row.totalCards));
+        setMeter(el.sideSliceMeter, slicePercent);
+        setMeter(el.sideMemoryMeter, memoryPercent);
+        setMeter(el.sideCoreMeter, corePercent);
+
+        el.sideFitText.textContent = fit.fits ? "current request fits" : "insufficient resources";
+        el.sideFitText.className = `pill ${fit.fits ? "ok" : "danger"}`;
+        el.resourceState.textContent = fit.fits ? "fits current cluster" : "insufficient resources";
+        el.resourceState.className = `pill ${fit.fits ? "ok" : "danger"}`;
+        el.pageFitPill.textContent = fit.fits ? "resource fit OK" : "resource insufficient";
+        el.pageFitPill.className = `pill ${fit.fits ? "ok" : "danger"}`;
+        el.capacityNotice.textContent = fit.fits
+          ? ""
+          : `${fit.requested} requested, ${fit.available} available for ${product}.`;
+        el.capacityNotice.className = `notice ${fit.fits ? "" : "visible"}`;
+      }
+
+      function syncMemoryMode(nextMode) {
+        setMemoryFromInput(el.virtualMemory.value, memoryMode);
+        memoryMode = nextMode;
+        el.virtualMemory.value = getMemoryValueForMode(nextMode);
+        el.virtualMemory.step = nextMode === "gib" ? "0.5" : "1";
+        el.virtualMemoryLabel.textContent =
+          nextMode === "percent" ? "Virtual Card Memory Percent" : "Virtual Card Memory";
+      }
+
+      function syncSingleCardHint() {
+        const total = selectedMemoryTotal();
+        el.singleCardHint.textContent = total
+          ? `Single-card memory: ${total} MiB`
+          : "Single-card memory: -";
+        if (memoryMiB > total && total > 0) {
+          memoryMiB = Math.min(4096, total);
+          el.virtualMemory.value = getMemoryValueForMode(memoryMode);
+        }
+      }
+
+      function renderAll() {
+        el.drawerModePill.textContent = allocationMode === "full" ? "Full Card" : "Virtual Card";
+        el.modeFull.classList.toggle("active", allocationMode === "full");
+        el.modeVirtual.classList.toggle("active", allocationMode === "virtual");
+        el.fullFields.hidden = allocationMode !== "full";
+        el.virtualFields.hidden = allocationMode !== "virtual";
+        el.coreLimitRow.hidden = !el.coreLimitEnabled.checked;
+        syncSingleCardHint();
+
+        const replicas = Number(el.replicas.value) || 1;
+        const virtualPerReplica = Number(el.virtualCards.value) || 1;
+        const fullPerReplica = Number(el.fullCardsInput.value) || 0;
+        el.virtualCardsHint.textContent = `${replicas * virtualPerReplica} slices requested`;
+        el.fullCardsHint.textContent = `${replicas * fullPerReplica} requested`;
+        el.cpuHint.textContent = `${el.cpuInput.value} requested`;
+        el.memoryHint.textContent = `${el.memoryInput.value} GiB requested`;
+        el.coreHint.textContent = el.coreLimitEnabled.checked
+          ? `${el.corePercent.value}% per virtual card`
+          : "shared remaining core pool";
+
+        renderSideSummary();
+        renderClusterRows();
+        renderNodeRows();
+      }
+
+      function setTab(tab) {
+        const clusterActive = tab === "cluster";
+        el.clusterTab.classList.toggle("active", clusterActive);
+        el.nodeTab.classList.toggle("active", !clusterActive);
+        el.clusterPanel.classList.toggle("active", clusterActive);
+        el.nodePanel.classList.toggle("active", !clusterActive);
+      }
+
+      function openDrawer() {
+        el.resourceDrawer.classList.add("open");
+        el.drawerOverlay.classList.add("open");
+      }
+
+      function closeDrawer() {
+        el.resourceDrawer.classList.remove("open");
+        el.drawerOverlay.classList.remove("open");
+      }
+
+      function bindPair(rangeId, inputId) {
+        const range = document.getElementById(rangeId);
+        const input = document.getElementById(inputId);
+        range.addEventListener("input", () => {
+          input.value = range.value;
+          renderAll();
+        });
+        input.addEventListener("input", () => {
+          range.value = input.value;
+          renderAll();
+        });
+      }
+
+      for (const node of [...new Set(devices.map((device) => device.node))]) {
+        const option = document.createElement("option");
+        option.value = node;
+        option.textContent = node;
+        el.nodeFilter.append(option);
+      }
+
+      bindPair("cpu", "cpuInput");
+      bindPair("memory", "memoryInput");
+      bindPair("fullCards", "fullCardsInput");
+
+      document.getElementById("openDrawerTop").addEventListener("click", openDrawer);
+      document.getElementById("openDrawerSide").addEventListener("click", openDrawer);
+      document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+      el.drawerOverlay.addEventListener("click", closeDrawer);
+      el.clusterTab.addEventListener("click", () => setTab("cluster"));
+      el.nodeTab.addEventListener("click", () => setTab("node"));
+      el.modeFull.addEventListener("click", () => {
+        allocationMode = "full";
+        renderAll();
+      });
+      el.modeVirtual.addEventListener("click", () => {
+        allocationMode = "virtual";
+        renderAll();
+      });
+      el.memoryMode.addEventListener("change", () => {
+        syncMemoryMode(el.memoryMode.value);
+        renderAll();
+      });
+      el.virtualMemory.addEventListener("input", () => {
+        setMemoryFromInput(el.virtualMemory.value, memoryMode);
+        renderAll();
+      });
+
+      [
+        "accelerator",
+        "clusterSearch",
+        "coreLimitEnabled",
+        "corePercent",
+        "nodeFilter",
+        "nodeSearch",
+        "replicas",
+        "virtualCards",
+      ].forEach((id) => {
+        el[id].addEventListener("input", renderAll);
+        el[id].addEventListener("change", renderAll);
+      });
+
+      renderAll();
+    </script>
+  </body>
+</html>

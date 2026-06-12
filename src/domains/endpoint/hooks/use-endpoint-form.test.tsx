@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
@@ -155,6 +156,160 @@ const hamiKubernetesCluster = {
   status: { resource_info: null },
 } satisfies EndpointClusterRef;
 
+const hamiKubernetesClusterWithDevices = {
+  metadata: metadata("hami-k8s-devices"),
+  spec: {
+    type: "kubernetes",
+    accelerator_virtualization: { enabled: true },
+  },
+  status: {
+    resource_info: {
+      allocatable: {
+        cpu: 16,
+        memory: 64,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 2,
+                virtualization: {
+                  memory_mib: 30720,
+                  core_units: 200,
+                },
+              },
+            },
+          },
+        },
+      },
+      available: {
+        cpu: 12,
+        memory: 48,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 15360,
+                  core_units: 150,
+                },
+              },
+            },
+          },
+        },
+      },
+      node_resources: {
+        "node-a": {
+          allocatable: {
+            cpu: 16,
+            memory: 64,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 2,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 2,
+                    virtualization: {
+                      memory_mib: 30720,
+                      core_units: 200,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          available: {
+            cpu: 12,
+            memory: 48,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 1,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 1,
+                    virtualization: {
+                      memory_mib: 15360,
+                      core_units: 150,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          devices: [
+            {
+              uuid: "GPU-11111111-2222-3333-4444-555555555555",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: {
+                memory_mib: 15360,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 7680,
+                core_units: 50,
+              },
+            },
+          ],
+        },
+        "node-b": {
+          allocatable: {
+            cpu: 16,
+            memory: 64,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 1,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 1,
+                  },
+                },
+              },
+            },
+          },
+          available: {
+            cpu: 12,
+            memory: 48,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 0,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 0,
+                  },
+                },
+              },
+            },
+          },
+          devices: [
+            {
+              uuid: "GPU-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: {
+                memory_mib: 15360,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 7680,
+                core_units: 100,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
+} satisfies EndpointClusterRef;
+
 const defaultSelectResult = {
   query: { data: { data: [] }, isLoading: false },
 };
@@ -223,6 +378,24 @@ function selectCatalog(label: string) {
   fireEvent.click(screen.getByRole("option", { name: label }));
 }
 
+function selectFieldOption(testId: string, label: string) {
+  const field = screen.getByTestId(testId);
+  const trigger = field.querySelector('button[role="combobox"]');
+  if (!trigger) throw new Error(`${testId} combobox trigger not found`);
+  fireEvent.click(trigger);
+  fireEvent.click(screen.getByRole("option", { name: label }));
+}
+
+function getAcceleratorCardText() {
+  return screen.getByTestId("endpoint-accelerator-resource-card").textContent;
+}
+
+function getResourcePanelRequestText() {
+  return within(screen.getByTestId("endpoint-resource-context")).getByTestId(
+    "endpoint-resource-panel-request",
+  ).textContent;
+}
+
 // --- Tests ---
 
 describe("useEndpointForm", () => {
@@ -233,6 +406,145 @@ describe("useEndpointForm", () => {
     useFormOptionsRef.current = null;
     queryDataRef.current = null;
     formInstance = null;
+  });
+
+  it("places cluster-only scheduling target inside resource selection", async () => {
+    setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+    const { container } = render(<CreateForm />);
+
+    await waitFor(() => expect(formInstance).not.toBeNull());
+
+    const text = container.textContent || "";
+    const indexOf = (value: string) => {
+      const index = text.indexOf(value);
+      expect(index, `${value} should be rendered`).toBeGreaterThanOrEqual(0);
+      return index;
+    };
+
+    const modelIndex = indexOf("endpoints.sections.modelAndReplicas");
+    const engineIndex = indexOf("endpoints.sections.engineSettings");
+    const resourceIndex = indexOf(
+      "endpoints.sections.schedulingTargetResources",
+    );
+    const advancedIndex = indexOf("endpoints.sections.advancedOptions");
+
+    expect(modelIndex).toBeLessThan(engineIndex);
+    expect(engineIndex).toBeLessThan(resourceIndex);
+    expect(resourceIndex).toBeLessThan(advancedIndex);
+    expect(screen.queryByText("endpoints.sections.clusterSettings")).toBeNull();
+
+    expect(indexOf("common.fields.cluster")).toBeGreaterThan(resourceIndex);
+    expect(indexOf("common.fields.cluster")).toBeLessThan(advancedIndex);
+
+    expect(indexOf("endpoints.fields.modelRegistry")).toBeGreaterThan(
+      modelIndex,
+    );
+    expect(indexOf("endpoints.fields.modelName")).toBeGreaterThan(modelIndex);
+    expect(indexOf("endpoints.fields.replicas")).toBeGreaterThan(modelIndex);
+    expect(indexOf("endpoints.fields.replicas")).toBeLessThan(engineIndex);
+
+    expect(indexOf("common.fields.engine")).toBeGreaterThan(engineIndex);
+    expect(indexOf("common.fields.engine")).toBeLessThan(resourceIndex);
+
+    expect(indexOf("common.fields.cpu")).toBeGreaterThan(resourceIndex);
+    expect(indexOf("common.fields.cpu")).toBeLessThan(advancedIndex);
+
+    const schedulingTarget = screen.getByTestId(
+      "endpoint-scheduling-target-card",
+    );
+    expect(
+      within(schedulingTarget).getByTestId("field-spec.cluster"),
+    ).toBeTruthy();
+    expect(
+      within(schedulingTarget).getByText("endpoints.fields.schedulingScope"),
+    ).toBeTruthy();
+    expect(
+      within(schedulingTarget).getByTestId("field--scheduling-scope"),
+    ).toBeTruthy();
+    expect(
+      within(schedulingTarget).getByText("endpoints.options.clusterScheduling"),
+    ).toBeTruthy();
+    expect(
+      within(schedulingTarget).getByText(
+        "endpoints.messages.clusterSchedulingOnly",
+      ),
+    ).toBeTruthy();
+
+    expect(indexOf("endpoints.fields.schedulerType")).toBeGreaterThan(
+      advancedIndex,
+    );
+    expect(
+      screen.queryByText("endpoints.sections.customizeSettings"),
+    ).toBeNull();
+    expect(
+      screen.queryByText("endpoints.sections.configurationDetails"),
+    ).toBeNull();
+  });
+
+  it("renders model catalog as a compact template row before model fields in create mode", async () => {
+    setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+    const { container } = render(<CreateForm />);
+
+    await waitFor(() => expect(formInstance).not.toBeNull());
+
+    const text = container.textContent || "";
+    const modelSectionIndex = text.indexOf(
+      "endpoints.sections.modelAndReplicas",
+    );
+    const catalogIndex = text.indexOf("endpoints.fields.modelCatalog");
+    const registryIndex = text.indexOf("endpoints.fields.modelRegistry");
+    const modelIndex = text.indexOf("endpoints.fields.modelName");
+
+    expect(modelSectionIndex).toBeGreaterThanOrEqual(0);
+    expect(catalogIndex).toBeGreaterThan(modelSectionIndex);
+    expect(catalogIndex).toBeLessThan(registryIndex);
+    expect(registryIndex).toBeLessThan(modelIndex);
+    expect(screen.getByTestId("model-catalog-row").className).toContain(
+      "col-span-4",
+    );
+    expect(screen.getByTestId("field--model-catalog").className).toContain(
+      "col-span-1",
+    );
+  });
+
+  it("adds extra spacing between allocation mode label and options", async () => {
+    setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+    render(<CreateForm />);
+
+    await waitFor(() => expect(formInstance).not.toBeNull());
+
+    act(() => {
+      formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+      formInstance?.setValue("spec.resources.accelerator", {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: {
+          memory_mib: 4096,
+          core_percent: 50,
+        },
+      });
+    });
+
+    expect(
+      (await screen.findByTestId("field--gpu-allocation-mode")).className,
+    ).toContain("space-y-3");
+  });
+
+  it("does not render cluster capability in cluster settings", async () => {
+    setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+    render(<CreateForm />);
+
+    await waitFor(() => expect(formInstance).not.toBeNull());
+
+    expect(screen.queryByText("endpoints.fields.clusterCapability")).toBeNull();
+    expect(
+      screen.queryByText("endpoints.messages.acceleratorVirtualizationEnabled"),
+    ).toBeNull();
+    expect(
+      screen.queryByText(
+        "endpoints.messages.acceleratorVirtualizationDisabled",
+      ),
+    ).toBeNull();
   });
 
   describe("create vs edit mode", () => {
@@ -316,7 +628,7 @@ describe("useEndpointForm", () => {
           },
         },
       };
-      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<EditForm />);
 
       await waitFor(() => {
@@ -328,7 +640,7 @@ describe("useEndpointForm", () => {
       });
 
       act(() => {
-        formInstance?.setValue("spec.cluster", "hami-k8s");
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
       });
 
       const input = await screen.findByRole("spinbutton", {
@@ -340,13 +652,18 @@ describe("useEndpointForm", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("endpoints.fields.requestedVgpuMemory: 4096 MiB"),
-        ).toBeTruthy();
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(4096);
       });
+      expect(
+        screen.queryByText(/endpoints\.fields\.requestedVgpuMemory/),
+      ).toBeNull();
     });
 
     it("normalizes backend query resources before editing an existing vGPU endpoint", async () => {
-      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<EditForm />);
 
       await waitFor(() => expect(formInstance).not.toBeNull());
@@ -423,13 +740,13 @@ describe("useEndpointForm", () => {
     });
 
     it("updates vGPU memory through the NumberInput parser", async () => {
-      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<EditForm />);
 
       await waitFor(() => expect(formInstance).not.toBeNull());
 
       act(() => {
-        formInstance?.setValue("spec.cluster", "hami-k8s");
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
         formInstance?.setValue("spec.resources", {
           cpu: 2,
           memory: 8,
@@ -457,21 +774,181 @@ describe("useEndpointForm", () => {
           "spec.resources.accelerator.virtualization.memory_mib",
         ),
       ).toBe(4096);
-      await waitFor(() => {
-        expect(
-          screen.getByText("endpoints.fields.requestedVgpuMemory: 4096 MiB"),
-        ).toBeTruthy();
-      });
+      expect(
+        screen.queryByText(/endpoints\.fields\.requestedVgpuMemory/),
+      ).toBeNull();
     });
 
-    it("validates vGPU memory input changes immediately", async () => {
-      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+    it("derives virtual card memory values when switching memory modes", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.resources.accelerator", {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+        });
+      });
+
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "endpoints.fields.vgpu",
+        }),
+      );
+
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBe(4096);
+
+      selectFieldOption("field--vgpu-memory-mode", "endpoints.options.percent");
+
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBeUndefined();
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_percent",
+        ),
+      ).toBe(27);
+
+      const percentInput = await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuMemoryPercent/i,
+      });
+      fireEvent.focus(percentInput);
+      fireEvent.change(percentInput, { target: { value: "50" } });
+
+      selectFieldOption("field--vgpu-memory-mode", "endpoints.options.gib");
+
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_percent",
+        ),
+      ).toBeUndefined();
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBe(7680);
+      expect(await screen.findByDisplayValue("7.5")).toBeTruthy();
+    });
+
+    it("de-emphasizes virtual card core limit by default", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.resources.accelerator", {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+        });
+      });
+
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "endpoints.fields.vgpu",
+        }),
+      );
+
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.core_percent",
+        ),
+      ).toBe(0);
+      expect(
+        screen.getByText("endpoints.descriptions.vgpuCorePercentZero"),
+      ).toBeTruthy();
+      expect(screen.getByTestId("vgpu-core-limit-field")).toBeTruthy();
+      expect(
+        screen.queryByRole("spinbutton", {
+          name: /endpoints.fields.vgpuCorePercent/i,
+        }),
+      ).toBeNull();
+      expect(
+        screen.queryByRole("checkbox", {
+          name: "endpoints.fields.vgpuCoreLimit",
+        }),
+      ).toBeNull();
+
+      const coreLimitTrigger = screen.getByRole("combobox", {
+        name: "endpoints.fields.vgpuCoreLimit",
+      });
+      expect(
+        within(screen.getByTestId("vgpu-core-limit-field")).getAllByText(
+          "common.options.disabled",
+        ).length,
+      ).toBeGreaterThan(0);
+
+      fireEvent.click(coreLimitTrigger);
+      fireEvent.click(
+        screen.getByRole("option", { name: "common.options.enabled" }),
+      );
+
+      const coreInput = await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCorePercent/i,
+      });
+      fireEvent.focus(coreInput);
+      fireEvent.change(coreInput, { target: { value: "25" } });
+
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.core_percent",
+        ),
+      ).toBe(25);
+    });
+
+    it("expands virtual card core limit when editing a configured core percent", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<EditForm />);
 
       await waitFor(() => expect(formInstance).not.toBeNull());
 
       act(() => {
-        formInstance?.setValue("spec.cluster", "hami-k8s");
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      expect(
+        await screen.findByRole("spinbutton", {
+          name: /endpoints.fields.vgpuCorePercent/i,
+        }),
+      ).toBeTruthy();
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.core_percent",
+        ),
+      ).toBe(50);
+    });
+
+    it("validates vGPU memory input changes immediately", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
         formInstance?.setValue("spec.resources", {
           cpu: 2,
           memory: 8,
@@ -499,6 +976,472 @@ describe("useEndpointForm", () => {
           screen.getByText("endpoints.messages.vgpuMemoryMiBPositive"),
         ).toBeTruthy();
       });
+    });
+
+    it("shows linked cluster and node GPU resources inline in the resource panel", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 0,
+            },
+          },
+        });
+      });
+
+      expect(
+        (await screen.findAllByText("endpoints.fields.accelerator")).length,
+      ).toBeGreaterThan(0);
+      expect(screen.queryByText("endpoints.actions.openResources")).toBeNull();
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.queryByRole("tab")).toBeNull();
+
+      const panel = within(screen.getByTestId("endpoint-resource-context"));
+      expect(panel.getByTestId("endpoint-resource-toolbar")).toBeTruthy();
+      expect(panel.queryByText("clusters.fields.cardProducts")).toBeNull();
+      expect(panel.getByText("endpoints.sections.currentRequest")).toBeTruthy();
+      expect(
+        panel.getByText("endpoints.fields.vgpuSlices: 2 / 2"),
+      ).toBeTruthy();
+      expect(panel.queryByRole("table")).toBeNull();
+      expect(panel.getAllByRole("combobox").length).toBe(1);
+      expect(panel.queryByText("clusters.options.summary")).toBeNull();
+      expect(panel.queryByText("clusters.options.nodes")).toBeNull();
+      expect(panel.queryByText("clusters.options.table")).toBeNull();
+      const clusterSection = panel.getByRole("heading", {
+        name: "clusters.sections.clusterResources",
+      });
+      const nodeSection = panel.getByRole("heading", {
+        name: "clusters.sections.nodeResources",
+      });
+      expect(
+        clusterSection.compareDocumentPosition(nodeSection) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
+      expect(screen.queryByText("clusters.fields.vgpuMemoryUsage")).toBeNull();
+
+      expect(await screen.findAllByText("15360 / 30720 MiB")).not.toHaveLength(
+        0,
+      );
+      expect(
+        screen.getAllByText((text) => text.includes("0 / 2")).length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText((text) => text.includes("50 / 200")).length,
+      ).toBeGreaterThan(0);
+      expect(
+        panel.getByRole("button", {
+          name: /clusters\.fields\.gpuNumber 1, clusters\.fields\.deviceUuid/,
+        }),
+      ).toBeTruthy();
+      expect(
+        panel.getByRole("button", {
+          name: /clusters\.fields\.gpuNumber 2, clusters\.fields\.deviceUuid/,
+        }),
+      ).toBeTruthy();
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "endpoints.fields.fullGpu",
+        }),
+      );
+
+      await waitFor(() => {
+        expect(getResourcePanelRequestText()).toContain(
+          "endpoints.fields.physicalGpu: 2 / 0",
+        );
+        expect(getResourcePanelRequestText()).toContain(
+          "endpoints.messages.fullGpuResourcesInsufficient",
+        );
+      });
+    });
+
+    it("uses the productized resource configuration layout", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 2,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 0,
+            },
+          },
+        });
+      });
+
+      expect(
+        await screen.findByRole("heading", {
+          name: "endpoints.sections.basicResources",
+        }),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole("heading", {
+          name: "endpoints.fields.accelerator",
+        }),
+      ).toBeTruthy();
+      const acceleratorCard = screen.getByTestId(
+        "endpoint-accelerator-resource-card",
+      );
+      const acceleratorMetrics = within(acceleratorCard).getByTestId(
+        "endpoint-accelerator-resource-metrics",
+      );
+      expect(
+        within(acceleratorMetrics).getByText("clusters.fields.physicalGpu"),
+      ).toBeTruthy();
+      expect(
+        within(acceleratorMetrics).getByText("clusters.fields.memoryUsage"),
+      ).toBeTruthy();
+      expect(
+        within(acceleratorMetrics).getByText("clusters.fields.coreUsage"),
+      ).toBeTruthy();
+      expect(screen.getByTestId("endpoint-resource-config-grid")).toBeTruthy();
+      expect(
+        screen.getByTestId("endpoint-resource-config-grid").className,
+      ).toContain("minmax(320px,360px)");
+      expect(screen.getByTestId("endpoint-resource-config-main")).toBeTruthy();
+      expect(screen.getByTestId("endpoint-resource-context")).toBeTruthy();
+      expect(
+        within(acceleratorCard).getByText("endpoints.sections.currentRequest"),
+      ).toBeTruthy();
+      expect(
+        screen.getByText("endpoints.fields.vgpuMemoryCapacity"),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole("button", {
+          name: "endpoints.fields.vgpu",
+        }),
+      ).toBeTruthy();
+      expect(
+        within(acceleratorCard).getByTestId(
+          "endpoint-accelerator-allocator-row",
+        ),
+      ).toBeTruthy();
+      expect(
+        within(acceleratorCard).getByTestId(
+          "endpoint-accelerator-allocator-row",
+        ).className,
+      ).toContain("minmax(220px,280px)");
+      const vgpuPrimaryRow = within(acceleratorCard).getByTestId(
+        "endpoint-vgpu-primary-row",
+      );
+      expect(
+        within(vgpuPrimaryRow).getByTestId("field--vgpu-memory-mode"),
+      ).toBeTruthy();
+      expect(
+        within(vgpuPrimaryRow).getByTestId(
+          "field-spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBeTruthy();
+      expect(
+        within(vgpuPrimaryRow).getByTestId("field-spec.resources.gpu"),
+      ).toBeTruthy();
+      const coreRow = within(acceleratorCard).getByTestId(
+        "endpoint-vgpu-core-row",
+      );
+      expect(within(coreRow).getByTestId("vgpu-core-limit-field")).toBeTruthy();
+      expect(within(coreRow).getByRole("combobox")).toBeTruthy();
+      expect(
+        screen.getByTestId("field-spec.resources.gpu").className,
+      ).toContain("space-y-2");
+    });
+
+    it("shows vGPU slice capacity warnings in the edit resource form", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 2,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 100,
+            },
+          },
+        });
+      });
+
+      expect(
+        await screen.findByText("endpoints.fields.vgpuCount"),
+      ).toBeTruthy();
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.fields.vgpuSlices: 4 / 1",
+      );
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.messages.vgpuResourcesInsufficient",
+      );
+    });
+
+    it("shows full-card capacity warnings when requested cards exceed availability", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.messages.fullGpuResourcesInsufficient",
+        );
+      });
+    });
+
+    it("checks only additional full cards while editing an existing endpoint", async () => {
+      queryDataRef.current = {
+        metadata: metadata("hami-existing-full-gpu"),
+        spec: {
+          cluster: "hami-k8s-devices",
+          replicas: { num: 1 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+            },
+          },
+        },
+        status: null,
+      };
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 2,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.messages.fullGpuResourcesInsufficient",
+        );
+      });
+    });
+
+    it("does not warn for unchanged full-card usage while editing", async () => {
+      queryDataRef.current = {
+        metadata: metadata("hami-existing-full-gpu"),
+        spec: {
+          cluster: "hami-k8s-devices",
+          replicas: { num: 1 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+            },
+          },
+        },
+        status: null,
+      };
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.fields.physicalGpu: 1 / 1",
+        );
+      });
+      expect(
+        screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("adds the current endpoint vGPU allocation back while editing", async () => {
+      queryDataRef.current = {
+        metadata: metadata("hami-existing-vgpu"),
+        spec: {
+          cluster: "hami-k8s-devices",
+          replicas: { num: 1 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "8192",
+              "virtualization.core_percent": "50",
+            },
+          },
+        },
+        status: {
+          resources: {
+            replicas: [
+              {
+                instance_id: "hami-existing-vgpu-abc",
+                replica_id: "hami-existing-vgpu-abc",
+                node_id: "node-a",
+                devices: [
+                  {
+                    uuid: "GPU-11111111-2222-3333-4444-555555555555",
+                    product: "Tesla-T4",
+                    memory_mib: 8192,
+                    core_units: 50,
+                    node_id: "node-a",
+                  },
+                ],
+              },
+            ],
+            summary: {
+              products: {
+                "Tesla-T4": {
+                  memory_mib: 8192,
+                  core_units: 50,
+                },
+              },
+            },
+          },
+        },
+      };
+      setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s-devices");
+        formInstance?.setValue("spec.replicas.num", 1);
+      });
+
+      expect(
+        await screen.findByText("endpoints.fields.vgpuCount"),
+      ).toBeTruthy();
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.fields.vgpuSlices: 1 / 1",
+      );
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("restores vGPU settings when toggling allocation modes", async () => {
+      setupMocks([catalogA, catalogB], [hamiKubernetesCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "hami-k8s");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      expect(
+        await screen.findByText("endpoints.fields.vgpuCount"),
+      ).toBeTruthy();
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBe(8192);
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "endpoints.fields.fullGpu" }),
+      );
+      await waitFor(() => {
+        expect(screen.queryByText("endpoints.fields.vgpuMemory")).toBeNull();
+        expect(screen.queryByText(/endpoints\.fields\.vgpuSlices/)).toBeNull();
+        expect(
+          screen.getByText("endpoints.fields.physicalGpu: 1 / 0"),
+        ).toBeTruthy();
+      });
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "endpoints.fields.vgpu" }),
+      );
+      expect(
+        await screen.findByText("endpoints.fields.vgpuMemory"),
+      ).toBeTruthy();
+      expect(
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.memory_mib",
+        ),
+      ).toBe(8192);
     });
   });
 
@@ -662,10 +1605,9 @@ describe("useEndpointForm", () => {
       ).toBe("consistent_hash");
     });
 
-    it("shows validation error when scheduler type is cleared", async () => {
+    it("blocks validation when scheduler type is cleared", async () => {
       render(<CreateForm />);
 
-      // Clear the scheduler type and trigger validation via resolver
       let valid: boolean | undefined;
       await act(async () => {
         formInstance?.setValue("spec.deployment_options.scheduler.type", "");
@@ -677,7 +1619,6 @@ describe("useEndpointForm", () => {
         formInstance?.formState.errors?.[
           "spec.deployment_options.scheduler.type"
         ];
-      expect(error).toBeTruthy();
       expect(error?.message).toBe("endpoints.messages.schedulerTypeRequired");
     });
   });

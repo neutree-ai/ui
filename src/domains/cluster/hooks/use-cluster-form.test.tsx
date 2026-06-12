@@ -1,7 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
@@ -65,7 +71,11 @@ vi.mock("@/domains/cluster/components/ModelCacheFields", () => ({
 
 import { useClusterForm } from "./use-cluster-form";
 
+let formInstance: ReturnType<typeof useClusterForm>["form"] | null = null;
+
 function CreateForm() {
+  const result = useClusterForm({ action: "create" });
+  formInstance = result.form;
   const {
     form,
     typeFields,
@@ -73,7 +83,7 @@ function CreateForm() {
     routerFields,
     acceleratorVirtualizationFields,
     authFields,
-  } = useClusterForm({ action: "create" });
+  } = result;
   return (
     <FormProvider {...form}>
       <form>
@@ -97,6 +107,8 @@ function VersionFieldsForm() {
 }
 
 function EditForm() {
+  const result = useClusterForm({ action: "edit" });
+  formInstance = result.form;
   const {
     form,
     typeFields,
@@ -104,7 +116,7 @@ function EditForm() {
     routerFields,
     acceleratorVirtualizationFields,
     authFields,
-  } = useClusterForm({ action: "edit" });
+  } = result;
   return (
     <FormProvider {...form}>
       <form>
@@ -127,6 +139,10 @@ function selectType(label: string) {
 }
 
 describe("useClusterForm", () => {
+  beforeEach(() => {
+    formInstance = null;
+  });
+
   it("labels the version section as cluster version", () => {
     render(<VersionFieldsForm />);
 
@@ -214,6 +230,36 @@ describe("useClusterForm", () => {
           screen.queryByTestId("field-spec.accelerator_virtualization.enabled"),
         ).toBeNull();
       });
+    });
+
+    it("disables accelerator virtualization for kubernetes clusters below v1.1.0", async () => {
+      render(<CreateForm />);
+
+      selectType("clusters.options.kubernetes");
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+      act(() => {
+        formInstance?.setValue("spec.version", "v1.0.9");
+      });
+
+      const field = await screen.findByTestId(
+        "field-spec.accelerator_virtualization.enabled",
+      );
+      const checkbox = field.querySelector('[role="checkbox"]');
+      if (!checkbox)
+        throw new Error("accelerator virtualization checkbox not found");
+
+      await waitFor(() => expect(checkbox.hasAttribute("disabled")).toBe(true));
+      fireEvent.click(checkbox);
+
+      expect(
+        formInstance?.getValues("spec.accelerator_virtualization.enabled"),
+      ).toBe(false);
+      expect(
+        screen.getByText(
+          "clusters.descriptions.acceleratorVirtualizationUnsupportedVersion",
+        ),
+      ).toBeTruthy();
     });
 
     it("restores SSH fields when switching back from kubernetes", async () => {
