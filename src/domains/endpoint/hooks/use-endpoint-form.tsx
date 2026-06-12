@@ -66,6 +66,12 @@ const formatOneDecimal = (value: number | null | undefined) => {
   return Number.isFinite(numberValue) ? numberValue.toFixed(1) : "0.0";
 };
 
+const formatInputNumber = (value: number | null | undefined) => {
+  if (value == null) return "";
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? String(numberValue) : "";
+};
+
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
@@ -254,9 +260,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   );
   const vgpuMemoryGiBInputValue =
     selectedVirtualization?.memory_mib !== undefined
-      ? formatOneDecimal(Number(selectedVirtualization.memory_mib) / 1024)
+      ? formatInputNumber(Number(selectedVirtualization.memory_mib) / 1024)
       : effectiveVgpuMemoryMiB
-        ? formatOneDecimal(effectiveVgpuMemoryMiB / 1024)
+        ? formatInputNumber(effectiveVgpuMemoryMiB / 1024)
         : "";
   const effectiveGpuAllocationMode: GpuAllocationMode =
     showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
@@ -427,15 +433,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const corePercent = rawValue.trim() ? Number.parseFloat(rawValue) : 0;
     if (Number.isNaN(corePercent)) return;
 
+    const currentMemoryMiB =
+      selectedVirtualization?.memory_mib ?? effectiveVgpuMemoryMiB;
+    const nextVirtualization: AcceleratorVirtualization = {
+      ...(selectedVirtualization ?? {}),
+      memory_percent: undefined,
+      core_percent: corePercent,
+    };
+    if (currentMemoryMiB) {
+      nextVirtualization.memory_mib = currentMemoryMiB;
+    }
+
     form.setValue(
       "spec.resources.accelerator.virtualization",
-      {
-        ...(selectedVirtualization ?? {}),
-        memory_mib:
-          selectedVirtualization?.memory_mib ?? effectiveVgpuMemoryMiB ?? 0,
-        memory_percent: undefined,
-        core_percent: corePercent,
-      },
+      nextVirtualization,
       userSetValueOptions,
     );
   };
@@ -834,6 +845,59 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   className="grid grid-cols-1 content-start items-start gap-4 self-start"
                 >
                   <div
+                    data-testid="endpoint-basic-resource-card"
+                    className="contents"
+                  >
+                    <FormFieldGroup
+                      {...form}
+                      name="spec.resources.cpu"
+                      label={t("common.fields.cpu")}
+                      className="col-span-1"
+                    >
+                      <NumberInput
+                        value={formatInputNumber(normalizedResources?.cpu ?? 0)}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            "spec.resources.cpu",
+                            value,
+                            userSetValueOptions,
+                          )
+                        }
+                        min={0}
+                        max={maxAvailable.cpu.available}
+                        step={0.1}
+                        disabled={!currentCluster}
+                        className="h-9"
+                      />
+                    </FormFieldGroup>
+
+                    <FormFieldGroup
+                      {...form}
+                      name="spec.resources.memory"
+                      label={t("endpoints.fields.memoryGb")}
+                      className="col-span-1"
+                    >
+                      <NumberInput
+                        value={formatInputNumber(
+                          normalizedResources?.memory ?? 0,
+                        )}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            "spec.resources.memory",
+                            value,
+                            userSetValueOptions,
+                          )
+                        }
+                        min={0}
+                        max={maxAvailable.memory.available}
+                        step={0.5}
+                        disabled={!currentCluster}
+                        className="h-9"
+                      />
+                    </FormFieldGroup>
+                  </div>
+
+                  <div
                     data-testid="endpoint-accelerator-resource-card"
                     className="contents"
                   >
@@ -905,7 +969,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       className="col-span-1"
                     >
                       <NumberInput
-                        value={formatOneDecimal(gpuUsage)}
+                        value={formatInputNumber(gpuUsage)}
                         onValueChange={(value) =>
                           form.setValue(
                             "spec.resources.gpu",
@@ -946,7 +1010,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         max={
                           selectedMemoryTotalMiB
                             ? Number(
-                                formatOneDecimal(selectedMemoryTotalMiB / 1024),
+                                formatInputNumber(
+                                  selectedMemoryTotalMiB / 1024,
+                                ),
                               )
                             : undefined
                         }
@@ -970,8 +1036,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         type="number"
                         aria-label={t("endpoints.fields.vgpuCoreLimit")}
                         value={
-                          isVgpuAllocationMode && vgpuCoreUnitsPerSlice > 0
-                            ? formatOneDecimal(vgpuCoreUnitsPerSlice)
+                          showVgpuFields && vgpuCoreUnitsPerSlice > 0
+                            ? formatInputNumber(vgpuCoreUnitsPerSlice)
                             : ""
                         }
                         onChange={(event) =>
@@ -980,61 +1046,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         min={0}
                         max={100}
                         step={1}
-                        disabled={!isVgpuAllocationMode}
-                        placeholder={t("common.options.disabled")}
-                        className="h-9"
-                      />
-                    </FormFieldGroup>
-                  </div>
-
-                  <div
-                    data-testid="endpoint-basic-resource-card"
-                    className="contents"
-                  >
-                    <FormFieldGroup
-                      {...form}
-                      name="spec.resources.cpu"
-                      label={t("common.fields.cpu")}
-                      className="col-span-1"
-                    >
-                      <NumberInput
-                        value={formatOneDecimal(normalizedResources?.cpu || 0)}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "spec.resources.cpu",
-                            value,
-                            userSetValueOptions,
-                          )
+                        disabled={!showVgpuFields}
+                        placeholder={
+                          showVgpuFields ? "0" : t("common.options.disabled")
                         }
-                        min={0}
-                        max={maxAvailable.cpu.available}
-                        step={0.1}
-                        disabled={!currentCluster}
-                        className="h-9"
-                      />
-                    </FormFieldGroup>
-
-                    <FormFieldGroup
-                      {...form}
-                      name="spec.resources.memory"
-                      label={t("endpoints.fields.memoryGb")}
-                      className="col-span-1"
-                    >
-                      <NumberInput
-                        value={formatOneDecimal(
-                          normalizedResources?.memory || 0,
-                        )}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "spec.resources.memory",
-                            value,
-                            userSetValueOptions,
-                          )
-                        }
-                        min={0}
-                        max={maxAvailable.memory.available}
-                        step={0.5}
-                        disabled={!currentCluster}
                         className="h-9"
                       />
                     </FormFieldGroup>

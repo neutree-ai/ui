@@ -502,6 +502,8 @@ describe("useEndpointForm", () => {
     );
     expect(requestGrid.className).toContain("grid-cols-1");
     const orderedFields = [
+      within(requestGrid).getByTestId("field-spec.resources.cpu"),
+      within(requestGrid).getByTestId("field-spec.resources.memory"),
       within(requestGrid).getByTestId("field-spec.resources.accelerator"),
       within(requestGrid).getByTestId("field-spec.resources.gpu"),
       within(requestGrid).getByTestId(
@@ -510,8 +512,6 @@ describe("useEndpointForm", () => {
       within(requestGrid).getByTestId(
         "field-spec.resources.accelerator.virtualization.core_percent",
       ),
-      within(requestGrid).getByTestId("field-spec.resources.cpu"),
-      within(requestGrid).getByTestId("field-spec.resources.memory"),
     ];
 
     for (let index = 0; index < orderedFields.length - 1; index += 1) {
@@ -816,7 +816,7 @@ describe("useEndpointForm", () => {
       ).toBe(8192);
     });
 
-    it("keeps core limit optional until single-card memory is configured", async () => {
+    it("keeps core limit editable before single-card memory is configured", async () => {
       setupMocks([catalogA, catalogB], [hamiKubernetesClusterWithDevices]);
       render(<CreateForm />);
 
@@ -833,13 +833,19 @@ describe("useEndpointForm", () => {
       expect(
         screen.getByText("endpoints.descriptions.vgpuCorePercentZero"),
       ).toBeTruthy();
+
+      const coreInput = screen.getByRole("spinbutton", {
+        name: "endpoints.fields.vgpuCoreLimit",
+      }) as HTMLInputElement;
+      expect(coreInput.disabled).toBe(false);
+      fireEvent.focus(coreInput);
+      fireEvent.change(coreInput, { target: { value: "25" } });
+
       expect(
-        (
-          screen.getByRole("spinbutton", {
-            name: "endpoints.fields.vgpuCoreLimit",
-          }) as HTMLInputElement
-        ).disabled,
-      ).toBe(true);
+        formInstance?.getValues(
+          "spec.resources.accelerator.virtualization.core_percent",
+        ),
+      ).toBe(25);
 
       const memoryInput = screen.getByRole("spinbutton", {
         name: /endpoints.fields.singleCardMemory/i,
@@ -852,19 +858,6 @@ describe("useEndpointForm", () => {
           "spec.resources.accelerator.virtualization.memory_mib",
         ),
       ).toBe(4096);
-      expect(
-        formInstance?.getValues(
-          "spec.resources.accelerator.virtualization.core_percent",
-        ),
-      ).toBe(0);
-
-      const coreInput = screen.getByRole("spinbutton", {
-        name: "endpoints.fields.vgpuCoreLimit",
-      }) as HTMLInputElement;
-      expect(coreInput.disabled).toBe(false);
-      fireEvent.focus(coreInput);
-      fireEvent.change(coreInput, { target: { value: "25" } });
-
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.core_percent",
@@ -898,7 +891,7 @@ describe("useEndpointForm", () => {
       const coreInput = (await screen.findByRole("spinbutton", {
         name: "endpoints.fields.vgpuCoreLimit",
       })) as HTMLInputElement;
-      expect(coreInput.value).toBe("50.0");
+      expect(coreInput.value).toBe("50");
       expect(
         formInstance?.getValues(
           "spec.resources.accelerator.virtualization.core_percent",
@@ -1128,6 +1121,8 @@ describe("useEndpointForm", () => {
       const requestGrid = screen.getByTestId("endpoint-resource-request-grid");
       expect(requestGrid.className).toContain("grid-cols-1");
       const orderedFields = [
+        within(requestGrid).getByTestId("field-spec.resources.cpu"),
+        within(requestGrid).getByTestId("field-spec.resources.memory"),
         within(requestGrid).getByTestId("field-spec.resources.accelerator"),
         within(requestGrid).getByTestId("field-spec.resources.gpu"),
         within(requestGrid).getByTestId(
@@ -1136,8 +1131,6 @@ describe("useEndpointForm", () => {
         within(requestGrid).getByTestId(
           "field-spec.resources.accelerator.virtualization.core_percent",
         ),
-        within(requestGrid).getByTestId("field-spec.resources.cpu"),
-        within(requestGrid).getByTestId("field-spec.resources.memory"),
       ];
       for (let index = 0; index < orderedFields.length - 1; index += 1) {
         expect(
@@ -1146,6 +1139,22 @@ describe("useEndpointForm", () => {
           ) & Node.DOCUMENT_POSITION_FOLLOWING,
         ).toBeTruthy();
       }
+      expect(
+        (within(orderedFields[0]).getByRole("spinbutton") as HTMLInputElement)
+          .value,
+      ).toBe("2");
+      expect(
+        (within(orderedFields[1]).getByRole("spinbutton") as HTMLInputElement)
+          .value,
+      ).toBe("8");
+      expect(
+        (within(orderedFields[3]).getByRole("spinbutton") as HTMLInputElement)
+          .value,
+      ).toBe("2");
+      expect(
+        (within(orderedFields[4]).getByRole("spinbutton") as HTMLInputElement)
+          .value,
+      ).toBe("4");
       expect(
         within(requestGrid).queryByTestId("field--gpu-allocation-mode"),
       ).toBeNull();
