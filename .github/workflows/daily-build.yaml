@@ -1,0 +1,28 @@
+name: create nightly tag
+
+on:
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create_daily_tag:
+    runs-on: ubuntu-latest
+    name: Create Nightly Tag
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Configure Git
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+      - name: Create Nightly Tag
+        run: |
+          DATE=$(date +'%Y%m%d')
+          TAG="v1.1.0-nightly-${DATE}"
+          git tag "${TAG}" -m "${TAG}"
+          git push origin "${TAG}"
