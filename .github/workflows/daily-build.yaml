@@ -2,7 +2,7 @@ name: Create Nightly Tag
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 22 * * *"
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
           git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
       - name: Create Nightly Tag
         run: |
-          DATE=$(date +'%Y%m%d')
+          DATE=$(TZ=Asia/Shanghai date +'%Y%m%d')
           TAG="v1.1.0-nightly-${DATE}"
           git tag "${TAG}" -m "${TAG}"
           git push origin "${TAG}"
