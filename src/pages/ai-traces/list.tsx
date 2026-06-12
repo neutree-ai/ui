@@ -29,6 +29,7 @@ import {
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { type AITrace, fetchAITraces } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
@@ -42,6 +43,10 @@ export const AITracesList = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
   const workspace = (params?.workspace as string) ?? "";
+  // "All workspaces" aggregates traces across workspaces, so show a workspace
+  // column to disambiguate rows (it is redundant on a single-workspace view).
+  const isAllWorkspaces = workspace === ALL_WORKSPACES;
+  const colSpan = isAllWorkspaces ? 11 : 10;
 
   const [endpointName, setEndpointName] = useState("");
   const [endpointType, setEndpointType] = useState<string>("");
@@ -248,6 +253,11 @@ export const AITracesList = () => {
               <TableHead className="w-[180px]">
                 {t("ai_traces.columns.time")}
               </TableHead>
+              {isAllWorkspaces && (
+                <TableHead className="w-[140px]">
+                  {t("ai_traces.columns.workspace")}
+                </TableHead>
+              )}
               <TableHead>{t("ai_traces.columns.endpoint")}</TableHead>
               <TableHead className="w-[120px]">
                 {t("ai_traces.columns.app")}
@@ -276,7 +286,7 @@ export const AITracesList = () => {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-12">
+                <TableCell colSpan={colSpan} className="text-center py-12">
                   <Loader className="mx-auto w-8 text-muted-foreground" />
                 </TableCell>
               </TableRow>
@@ -284,7 +294,7 @@ export const AITracesList = () => {
             {!isLoading && items.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={10}
+                  colSpan={colSpan}
                   className="text-center py-12 text-muted-foreground"
                 >
                   {t("ai_traces.empty")}
@@ -303,6 +313,13 @@ export const AITracesList = () => {
                     format="YYYY-MM-DD HH:mm:ss"
                   />
                 </TableCell>
+                {isAllWorkspaces && (
+                  <TableCell className="text-sm truncate max-w-[140px]">
+                    {row.workspace || (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className="text-sm">{row.endpoint_name || "-"}</div>
                   <div className="text-xs text-muted-foreground">
