@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "a2ebabd7035347e83eb48536602b2fe1",
-  "src/App.tsx": "487a8ca2dbe83b128fd03a10ab0c6ee5",
+  "src/App.tsx": "bd656c1850fb0cf6cb246fc6a78e15bf",
   "src/Root.tsx": "0bf1b5abed7cbc71c06832cc2de84f12",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",
@@ -298,5 +298,9 @@
   "src/pages/model-usage/list.tsx": "bd680f4817e9b80433c50e2b185affbd",
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "180fbbc1c2b848f8b9d4172c85835344",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "5f008c9efecb5f75398ae4fb67414d69",
-  "src/components/ui/calendar.tsx": "67b3c096201e6f030437e9127db7c586"
+  "src/components/ui/calendar.tsx": "67b3c096201e6f030437e9127db7c586",
+  "src/pages/quota/list.tsx": "f874a14119eb7a275059a7094d27de50",
+  "src/domains/quota/types.ts": "64985ce90b4fd8262405438d8788e49e",
+  "src/domains/quota/hooks/use-quota.ts": "c9ddbc50b7901b4b69c7e69576db8bd5",
+  "src/domains/quota/components/QuotaForm.tsx": "8c5f660e2fd52d346620d3fc99bf1b1a"
 }
