@@ -314,7 +314,7 @@ describe("gpu device resource helpers", () => {
         nodeName: "node-b",
         uuid: "GPU-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
         shortUuid: "GPU-aaaa...eeeeee",
-        gpuNumber: 2,
+        gpuNumber: 1,
         product: "Tesla-A10",
         healthy: false,
         fullFree: false,
@@ -331,6 +331,68 @@ describe("gpu device resource helpers", () => {
           used: 25,
           percent: 25,
         },
+      },
+    ]);
+  });
+
+  it("numbers GPU devices within each node by UUID order", () => {
+    const rows = buildGpuDeviceResourceRows({
+      "node-a": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-node-a-bbbbbbbb",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: { memory_mib: 15360, core_units: 100 },
+            available: { memory_mib: 15360, core_units: 100 },
+          },
+          {
+            uuid: "GPU-node-a-aaaaaaaa",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: { memory_mib: 15360, core_units: 100 },
+            available: { memory_mib: 15360, core_units: 100 },
+          },
+        ],
+      },
+      "node-b": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-node-b-cccccccc",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: { memory_mib: 15360, core_units: 100 },
+            available: { memory_mib: 15360, core_units: 100 },
+          },
+        ],
+      },
+    });
+
+    expect(
+      rows.map((row) => ({
+        gpuNumber: row.gpuNumber,
+        nodeName: row.nodeName,
+        uuid: row.uuid,
+      })),
+    ).toEqual([
+      {
+        gpuNumber: 1,
+        nodeName: "node-a",
+        uuid: "GPU-node-a-aaaaaaaa",
+      },
+      {
+        gpuNumber: 2,
+        nodeName: "node-a",
+        uuid: "GPU-node-a-bbbbbbbb",
+      },
+      {
+        gpuNumber: 1,
+        nodeName: "node-b",
+        uuid: "GPU-node-b-cccccccc",
       },
     ]);
   });

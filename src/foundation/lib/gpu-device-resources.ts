@@ -313,51 +313,48 @@ export function buildGpuDeviceResourceRows(
     return [];
   }
 
-  const rows = Object.entries(nodeResources).flatMap(([nodeName, nodeStatus]) =>
-    (nodeStatus.devices ?? []).map((device) => {
-      const acceleratorType = getProductAcceleratorType(
-        nodeStatus.allocatable,
-        device.product,
-      );
-      const row = {
-        acceleratorType,
-        nodeName,
-        uuid: device.uuid,
-        shortUuid: shortenUuid(device.uuid),
-        gpuNumber: 0,
-        product: device.product,
-        healthy: device.health,
-        fullFree: isDeviceAvailableForFullCardAllocation(device),
-        matchesSelectedAccelerator: false,
-        memory: buildPoolUsage(
-          device.allocatable?.memory_mib,
-          device.available?.memory_mib,
-        ),
-        core: buildPoolUsage(
-          device.allocatable?.core_units,
-          device.available?.core_units,
-        ),
-      };
+  return Object.entries(nodeResources)
+    .flatMap(([nodeName, nodeStatus]) =>
+      [...(nodeStatus.devices ?? [])]
+        .sort((a, b) => a.uuid.localeCompare(b.uuid))
+        .map((device, index) => {
+          const acceleratorType = getProductAcceleratorType(
+            nodeStatus.allocatable,
+            device.product,
+          );
+          const row = {
+            acceleratorType,
+            nodeName,
+            uuid: device.uuid,
+            shortUuid: shortenUuid(device.uuid),
+            gpuNumber: index + 1,
+            product: device.product,
+            healthy: device.health,
+            fullFree: isDeviceAvailableForFullCardAllocation(device),
+            matchesSelectedAccelerator: false,
+            memory: buildPoolUsage(
+              device.allocatable?.memory_mib,
+              device.available?.memory_mib,
+            ),
+            core: buildPoolUsage(
+              device.allocatable?.core_units,
+              device.available?.core_units,
+            ),
+          };
 
-      return {
-        ...row,
-        matchesSelectedAccelerator: matchesSelectedAccelerator(
-          row,
-          selectedAccelerator,
-        ),
-      };
-    }),
-  );
-
-  return [...rows]
+          return {
+            ...row,
+            matchesSelectedAccelerator: matchesSelectedAccelerator(
+              row,
+              selectedAccelerator,
+            ),
+          };
+        }),
+    )
     .sort(
       (a, b) =>
-        a.uuid.localeCompare(b.uuid) || a.nodeName.localeCompare(b.nodeName),
-    )
-    .map((row, index) => ({
-      ...row,
-      gpuNumber: index + 1,
-    }));
+        a.nodeName.localeCompare(b.nodeName) || a.uuid.localeCompare(b.uuid),
+    );
 }
 
 export function calculateVgpuSliceCapacity(

@@ -1022,15 +1022,15 @@ describe("useEndpointForm", () => {
           .length,
       ).toBeGreaterThan(0);
       expect(
-        panel.getByRole("button", {
+        panel.getAllByRole("button", {
           name: /clusters\.fields\.gpuNumber 1, clusters\.fields\.deviceUuid/,
         }),
-      ).toBeTruthy();
+      ).toHaveLength(2);
       expect(
-        panel.getByRole("button", {
+        panel.queryByRole("button", {
           name: /clusters\.fields\.gpuNumber 2, clusters\.fields\.deviceUuid/,
         }),
-      ).toBeTruthy();
+      ).toBeNull();
 
       const singleCardMemoryInput = screen.getByRole("spinbutton", {
         name: /endpoints.fields.singleCardMemory/i,

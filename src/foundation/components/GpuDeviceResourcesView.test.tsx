@@ -139,7 +139,7 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.queryByText(/slot/i)).toBeNull();
   });
 
-  it("keeps GPU number stable by UUID sort", () => {
+  it("keeps GPU number stable by UUID sort within each node", () => {
     render(
       <GpuDeviceResourcesView
         nodeResources={{
@@ -162,23 +162,35 @@ describe("GpuDeviceResourcesView", () => {
               },
             ],
           },
+          "node-b": {
+            ...nodeResources["node-b"],
+            devices: [
+              {
+                uuid: "GPU-cccccccc-2222-3333-4444-555555555555",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 15360, core_units: 100 },
+              },
+            ],
+          },
         }}
         labels={labels}
       />,
     );
 
-    expect(
-      screen.getByText("GPU 1").closest("button")?.getAttribute("title"),
-    ).toBe("GPU-aaaaaaaa-2222-3333-4444-555555555555");
-    expect(
-      screen.getByText("GPU 2").closest("button")?.getAttribute("title"),
-    ).toBe("GPU-bbbbbbbb-2222-3333-4444-555555555555");
     const gpuButtons = screen.getAllByRole("button", {
       name: /GPU \d, GPU UUID/,
     });
+    expect(gpuButtons.map((button) => button.getAttribute("title"))).toEqual([
+      "GPU-aaaaaaaa-2222-3333-4444-555555555555",
+      "GPU-bbbbbbbb-2222-3333-4444-555555555555",
+      "GPU-cccccccc-2222-3333-4444-555555555555",
+    ]);
     expect(gpuButtons.map((button) => button.textContent)).toEqual([
       "GPU 1Copy UUID",
       "GPU 2Copy UUID",
+      "GPU 1Copy UUID",
     ]);
   });
 
