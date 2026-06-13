@@ -992,6 +992,34 @@ describe("useEndpointForm", () => {
         "endpoint-cluster-resource-summary",
       );
       const nodeSection = panel.getByTestId("endpoint-compact-node-resources");
+      expect(clusterSection.className).toContain(
+        "grid-cols-[repeat(5,minmax(128px,1fr))]",
+      );
+      for (const nodeMetrics of panel.getAllByTestId(
+        "endpoint-node-resource-metrics",
+      )) {
+        expect(nodeMetrics.className).toContain(
+          "grid-cols-[repeat(4,minmax(128px,1fr))]",
+        );
+      }
+      const orderedClusterMetrics = [
+        within(clusterSection).getByText("common.fields.cpu"),
+        within(clusterSection).getByText("common.fields.memory"),
+        within(clusterSection).getByText("endpoints.fields.physicalGpu"),
+        within(clusterSection).getByText("clusters.fields.memoryUsage"),
+        within(clusterSection).getByText("clusters.fields.coreUsage"),
+      ];
+      for (
+        let index = 0;
+        index < orderedClusterMetrics.length - 1;
+        index += 1
+      ) {
+        expect(
+          orderedClusterMetrics[index].compareDocumentPosition(
+            orderedClusterMetrics[index + 1],
+          ) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+      }
       expect(
         clusterSection.compareDocumentPosition(nodeSection) &
           Node.DOCUMENT_POSITION_FOLLOWING,

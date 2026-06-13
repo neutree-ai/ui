@@ -224,8 +224,29 @@ function EndpointClusterResourceSummary({
   return (
     <div
       data-testid="endpoint-cluster-resource-summary"
-      className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-5"
+      className={cn(
+        "grid gap-2 overflow-x-auto pb-1",
+        virtualizationEnabled
+          ? "grid-cols-[repeat(5,minmax(128px,1fr))]"
+          : "grid-cols-[repeat(3,minmax(128px,1fr))]",
+      )}
     >
+      <ResourceMetricCard
+        label={t("common.fields.cpu")}
+        used={cpuSummary.used}
+        total={cpuSummary.total}
+        available={cpuSummary.available}
+        unit=" cores"
+        t={t}
+      />
+      <ResourceMetricCard
+        label={t("common.fields.memory")}
+        used={memorySummary.used}
+        total={memorySummary.total}
+        available={memorySummary.available}
+        unit=" GiB"
+        t={t}
+      />
       <ResourceMetricCard
         label={t("endpoints.fields.physicalGpu")}
         used={gpuSummary.used}
@@ -252,22 +273,6 @@ function EndpointClusterResourceSummary({
           />
         </>
       )}
-      <ResourceMetricCard
-        label={t("common.fields.cpu")}
-        used={cpuSummary.used}
-        total={cpuSummary.total}
-        available={cpuSummary.available}
-        unit=" cores"
-        t={t}
-      />
-      <ResourceMetricCard
-        label={t("common.fields.memory")}
-        used={memorySummary.used}
-        total={memorySummary.total}
-        available={memorySummary.available}
-        unit=" GiB"
-        t={t}
-      />
     </div>
   );
 }
@@ -426,7 +431,7 @@ function EndpointNodeGpuResources({
 
           <div
             data-testid="endpoint-node-resource-metrics"
-            className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-4"
+            className="mt-3 grid grid-cols-[repeat(4,minmax(128px,1fr))] gap-2 overflow-x-auto pb-1"
           >
             <ResourceMetricCard
               label={t("common.fields.cpu")}
