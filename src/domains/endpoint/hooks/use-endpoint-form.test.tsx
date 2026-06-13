@@ -374,6 +374,10 @@ function getAcceleratorCardText() {
   return screen.getByTestId("endpoint-resource-request-grid").textContent;
 }
 
+function getCurrentRequestText() {
+  return screen.getByTestId("endpoint-current-request-grid").textContent;
+}
+
 // --- Tests ---
 
 describe("useEndpointForm", () => {
@@ -974,8 +978,10 @@ describe("useEndpointForm", () => {
       expect(panel.getByTestId("endpoint-compact-node-resources")).toBeTruthy();
       expect(panel.getAllByTestId("endpoint-compact-node-card").length).toBe(2);
       expect(panel.queryByTestId("endpoint-resource-toolbar")).toBeNull();
-      expect(panel.getByText("common.fields.cpu")).toBeTruthy();
-      expect(panel.getByText("common.fields.memory")).toBeTruthy();
+      expect(panel.getAllByText("common.fields.cpu").length).toBeGreaterThan(0);
+      expect(panel.getAllByText("common.fields.memory").length).toBeGreaterThan(
+        0,
+      );
       expect(panel.queryByText("endpoints.sections.currentRequest")).toBeNull();
       expect(panel.queryByRole("table")).toBeNull();
       expect(panel.queryByRole("combobox")).toBeNull();
@@ -1000,20 +1006,16 @@ describe("useEndpointForm", () => {
         screen.getAllByText((text) => text.includes("50.0 / 200.0")).length,
       ).toBeGreaterThan(0);
       expect(
-        screen.getAllByText((text) =>
-          text.includes("common.fields.cpu 12.0 / 16.0 cores"),
-        ).length,
+        screen.getAllByText((text) => text.includes("12.0 / 16.0 cores"))
+          .length,
       ).toBeGreaterThan(0);
       expect(
-        screen.getAllByText((text) =>
-          text.includes("common.fields.memory 48.0 / 64.0 GiB"),
-        ).length,
+        screen.getAllByText((text) => text.includes("48.0 / 64.0 GiB")).length,
       ).toBeGreaterThan(0);
+      expect(screen.getAllByText("7680.0 MiB").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("15360.0 MiB").length).toBeGreaterThan(0);
       expect(
-        screen.getAllByText("7680.0 / 15360.0 MiB").length,
-      ).toBeGreaterThan(0);
-      expect(
-        screen.getAllByText((text) => text.includes("50.0 / 100.0")).length,
+        screen.getAllByText((text) => text.includes("50.0")).length,
       ).toBeGreaterThan(0);
       expect(
         panel.getAllByText((text) => text.includes("clusters.options.usable"))
@@ -1045,9 +1047,7 @@ describe("useEndpointForm", () => {
             "field-spec.resources.accelerator.virtualization.memory_mib",
           ),
         ).toBeTruthy();
-        expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.physicalGpu: 2.0 / 0.0",
-        );
+        expect(getCurrentRequestText()).toContain("2.0 / 0.0");
         expect(getAcceleratorCardText()).toContain(
           "endpoints.messages.fullGpuResourcesInsufficient",
         );
@@ -1110,10 +1110,12 @@ describe("useEndpointForm", () => {
       expect(
         resourceContextPanel.getAllByText("clusters.fields.coreUsage").length,
       ).toBeGreaterThan(0);
-      expect(resourceContextPanel.getByText("common.fields.cpu")).toBeTruthy();
       expect(
-        resourceContextPanel.getByText("common.fields.memory"),
-      ).toBeTruthy();
+        resourceContextPanel.getAllByText("common.fields.cpu").length,
+      ).toBeGreaterThan(0);
+      expect(
+        resourceContextPanel.getAllByText("common.fields.memory").length,
+      ).toBeGreaterThan(0);
       expect(
         resourceContextPanel.queryByTestId(
           "endpoint-accelerator-resource-metrics",
@@ -1125,13 +1127,27 @@ describe("useEndpointForm", () => {
       ).toContain("space-y-4");
       expect(
         screen.getByTestId("endpoint-resource-layout-grid").className,
-      ).toContain("xl:grid-cols-2");
+      ).toContain("xl:grid-cols-[minmax(360px,0.9fr)_minmax(480px,1.1fr)]");
       expect(screen.getByTestId("endpoint-resource-config-main")).toBeTruthy();
       expect(resourceContext).toBeTruthy();
       expect(
         screen.getByText("endpoints.sections.currentRequest"),
       ).toBeTruthy();
-      expect(getAcceleratorCardText()).toContain("endpoints.fields.vgpuSlices");
+      expect(
+        screen.getByTestId("endpoint-resource-summary-strip"),
+      ).toBeTruthy();
+      expect(
+        screen.getByTestId("endpoint-current-request-grid").className,
+      ).toContain("sm:grid-cols-2");
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.fields.schedulingScope",
+      );
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.messages.clusterSchedulingOnly",
+      );
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.fields.matchingGpuCards",
+      );
       expect(
         within(acceleratorCard).getByTestId(
           "endpoint-accelerator-allocator-row",
@@ -1139,6 +1155,7 @@ describe("useEndpointForm", () => {
       ).toBeTruthy();
       const requestGrid = screen.getByTestId("endpoint-resource-request-grid");
       expect(requestGrid.className).toContain("grid-cols-1");
+      expect(requestGrid.className).toContain("sm:grid-cols-2");
       const orderedFields = [
         within(requestGrid).getByTestId("field-spec.resources.cpu"),
         within(requestGrid).getByTestId("field-spec.resources.memory"),
@@ -1183,6 +1200,20 @@ describe("useEndpointForm", () => {
       expect(
         screen.getByTestId("field-spec.resources.gpu").className,
       ).toContain("col-span-1");
+      expect(
+        screen.getByTestId("field-spec.resources.accelerator").className,
+      ).toContain("sm:col-span-2");
+      expect(
+        screen.getByTestId("endpoint-virtual-card-split-group").className,
+      ).toContain("sm:col-span-2");
+      expect(
+        screen.getByTestId("endpoint-virtual-card-split-group").className,
+      ).toContain("sm:grid-cols-2");
+      expect(
+        screen.getByTestId(
+          "field-spec.resources.accelerator.virtualization.core_percent",
+        ).className,
+      ).toContain("col-span-1");
       expect(screen.queryByTestId("slider-input")).toBeNull();
     });
 
@@ -1211,13 +1242,11 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.vgpuSlices",
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.physicalGpu",
         );
       });
-      expect(getAcceleratorCardText()).toContain(
-        "endpoints.fields.vgpuSlices: 4.0 / 1.0",
-      );
+      expect(getCurrentRequestText()).toContain("4.0 / 1.0");
       expect(getAcceleratorCardText()).toContain(
         "endpoints.messages.vgpuResourcesInsufficient",
       );
@@ -1330,9 +1359,7 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.physicalGpu: 1.0 / 1.0",
-        );
+        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
       });
       expect(
         screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
@@ -1397,13 +1424,11 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.vgpuSlices",
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.physicalGpu",
         );
       });
-      expect(getAcceleratorCardText()).toContain(
-        "endpoints.fields.vgpuSlices: 1.0 / 1.0",
-      );
+      expect(getCurrentRequestText()).toContain("1.0 / 1.0");
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
       ).toBeNull();
@@ -1433,8 +1458,8 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.vgpuSlices",
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.physicalGpu",
         );
       });
       expect(
@@ -1450,10 +1475,7 @@ describe("useEndpointForm", () => {
       fireEvent.change(memoryInput, { target: { value: "" } });
 
       await waitFor(() => {
-        expect(screen.queryByText(/endpoints\.fields\.vgpuSlices/)).toBeNull();
-        expect(
-          screen.getByText("endpoints.fields.physicalGpu: 1.0 / 0.0"),
-        ).toBeTruthy();
+        expect(getCurrentRequestText()).toContain("1.0 / 0.0");
         expect(
           formInstance?.getValues("spec.resources.accelerator.virtualization"),
         ).toBeUndefined();
@@ -1463,8 +1485,8 @@ describe("useEndpointForm", () => {
       fireEvent.change(memoryInput, { target: { value: "8" } });
 
       await waitFor(() => {
-        expect(getAcceleratorCardText()).toContain(
-          "endpoints.fields.vgpuSlices",
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.physicalGpu",
         );
       });
       expect(

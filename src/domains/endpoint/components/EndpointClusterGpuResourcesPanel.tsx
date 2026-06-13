@@ -63,9 +63,6 @@ const formatUsage = (
   return `${formatCount(used)} / ${formatCount(total)}${unit}`;
 };
 
-const formatRemaining = (value: number | null | undefined, unit = "") =>
-  value == null ? "-" : `${formatCount(value)}${unit}`;
-
 const formatAvailableTotal = (
   available: number | null | undefined,
   total: number | null | undefined,
@@ -77,6 +74,9 @@ const formatAvailableTotal = (
 
   return `${formatCount(available)} / ${formatCount(total)}${unit}`;
 };
+
+const formatPoolValue = (value: number | null | undefined, unit = "") =>
+  value == null ? "-" : `${formatCount(value)}${unit}`;
 
 const toPercentValue = (
   used: number | null | undefined,
@@ -129,23 +129,27 @@ const summarizeRows = (
   };
 };
 
-function ClusterResourceRow({
+function ResourceMetricCard({
   label,
   used,
   total,
-  remaining,
+  available,
   unit,
+  showBreakdown = false,
+  t,
 }: {
   label: string;
   used: number | null | undefined;
   total: number | null | undefined;
-  remaining: number | null | undefined;
+  available: number | null | undefined;
   unit?: string;
+  showBreakdown?: boolean;
+  t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   const percent = toPercentValue(used, total);
 
   return (
-    <div className="space-y-1 rounded-md bg-muted/30 px-2.5 py-2">
+    <div className="space-y-1 rounded-md border bg-background px-2.5 py-2">
       <div className="flex items-center justify-between gap-2 text-xs">
         <span className="font-medium">{label}</span>
         <span className="tabular-nums text-muted-foreground">
@@ -153,14 +157,43 @@ function ClusterResourceRow({
         </span>
       </div>
       <Progress value={percent} className="h-1.5" />
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="tabular-nums text-muted-foreground">
-          {formatUsage(used, total, unit)}
-        </span>
-        <span className="font-medium tabular-nums">
-          {formatRemaining(remaining, unit)}
-        </span>
-      </div>
+      {showBreakdown ? (
+        <div className="grid grid-cols-3 gap-1.5 pt-1 text-[11px]">
+          <div className="min-w-0">
+            <span className="block truncate text-muted-foreground">
+              {t("clusters.options.used", { defaultValue: "Used" })}
+            </span>
+            <strong className="block truncate font-medium tabular-nums">
+              {formatPoolValue(used, unit)}
+            </strong>
+          </div>
+          <div className="min-w-0">
+            <span className="block truncate text-muted-foreground">
+              {t("clusters.options.free")}
+            </span>
+            <strong className="block truncate font-medium tabular-nums">
+              {formatPoolValue(available, unit)}
+            </strong>
+          </div>
+          <div className="min-w-0">
+            <span className="block truncate text-muted-foreground">
+              {t("clusters.options.total", { defaultValue: "Total" })}
+            </span>
+            <strong className="block truncate font-medium tabular-nums">
+              {formatPoolValue(total, unit)}
+            </strong>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="tabular-nums text-muted-foreground">
+            {formatUsage(used, total, unit)}
+          </span>
+          <span className="font-medium tabular-nums">
+            {formatAvailableTotal(available, total, unit)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -191,50 +224,50 @@ function EndpointClusterResourceSummary({
   return (
     <div
       data-testid="endpoint-cluster-resource-summary"
-      className="rounded-md border bg-background p-3"
+      className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-5"
     >
-      <div className="mb-2 text-sm font-medium">
-        {t("clusters.sections.clusterResources")}
-      </div>
-      <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-5">
-        <ClusterResourceRow
-          label={t("endpoints.fields.physicalGpu")}
-          used={gpuSummary.used}
-          total={gpuSummary.total}
-          remaining={gpuSummary.available}
-        />
-        {virtualizationEnabled && (
-          <>
-            <ClusterResourceRow
-              label={t("clusters.fields.memoryUsage")}
-              used={acceleratorMemorySummary.used}
-              total={acceleratorMemorySummary.total}
-              remaining={acceleratorMemorySummary.available}
-              unit=" MiB"
-            />
-            <ClusterResourceRow
-              label={t("clusters.fields.coreUsage")}
-              used={acceleratorCoreSummary.used}
-              total={acceleratorCoreSummary.total}
-              remaining={acceleratorCoreSummary.available}
-            />
-          </>
-        )}
-        <ClusterResourceRow
-          label={t("common.fields.cpu")}
-          used={cpuSummary.used}
-          total={cpuSummary.total}
-          remaining={cpuSummary.available}
-          unit=" cores"
-        />
-        <ClusterResourceRow
-          label={t("common.fields.memory")}
-          used={memorySummary.used}
-          total={memorySummary.total}
-          remaining={memorySummary.available}
-          unit=" GiB"
-        />
-      </div>
+      <ResourceMetricCard
+        label={t("endpoints.fields.physicalGpu")}
+        used={gpuSummary.used}
+        total={gpuSummary.total}
+        available={gpuSummary.available}
+        t={t}
+      />
+      {virtualizationEnabled && (
+        <>
+          <ResourceMetricCard
+            label={t("clusters.fields.memoryUsage")}
+            used={acceleratorMemorySummary.used}
+            total={acceleratorMemorySummary.total}
+            available={acceleratorMemorySummary.available}
+            unit=" MiB"
+            t={t}
+          />
+          <ResourceMetricCard
+            label={t("clusters.fields.coreUsage")}
+            used={acceleratorCoreSummary.used}
+            total={acceleratorCoreSummary.total}
+            available={acceleratorCoreSummary.available}
+            t={t}
+          />
+        </>
+      )}
+      <ResourceMetricCard
+        label={t("common.fields.cpu")}
+        used={cpuSummary.used}
+        total={cpuSummary.total}
+        available={cpuSummary.available}
+        unit=" cores"
+        t={t}
+      />
+      <ResourceMetricCard
+        label={t("common.fields.memory")}
+        used={memorySummary.used}
+        total={memorySummary.total}
+        available={memorySummary.available}
+        unit=" GiB"
+        t={t}
+      />
     </div>
   );
 }
@@ -377,20 +410,6 @@ function EndpointNodeGpuResources({
               <div className="truncate text-sm font-medium">
                 {group.nodeName}
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                {t("common.fields.cpu")}{" "}
-                {formatAvailableTotal(
-                  group.cpuSummary.available,
-                  group.cpuSummary.total,
-                  " cores",
-                )}{" "}
-                · {t("common.fields.memory")}{" "}
-                {formatAvailableTotal(
-                  group.memorySummary.available,
-                  group.memorySummary.total,
-                  " GiB",
-                )}
-              </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="font-normal">
                   {group.rows.length} {t("clusters.fields.gpuNumber")}
@@ -401,20 +420,49 @@ function EndpointNodeGpuResources({
                 >
                   {t("clusters.options.usable")} {group.usableCount}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {t("clusters.fields.memoryUsage")}{" "}
-                  {formatAvailableTotal(
-                    group.availableMemory,
-                    group.totalMemory,
-                    " MiB",
-                  )}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {t("clusters.fields.coreUsage")}{" "}
-                  {formatAvailableTotal(group.availableCore, group.totalCore)}
-                </span>
               </div>
             </div>
+          </div>
+
+          <div
+            data-testid="endpoint-node-resource-metrics"
+            className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-4"
+          >
+            <ResourceMetricCard
+              label={t("common.fields.cpu")}
+              used={group.cpuSummary.used}
+              total={group.cpuSummary.total}
+              available={group.cpuSummary.available}
+              unit=" cores"
+              showBreakdown
+              t={t}
+            />
+            <ResourceMetricCard
+              label={t("common.fields.memory")}
+              used={group.memorySummary.used}
+              total={group.memorySummary.total}
+              available={group.memorySummary.available}
+              unit=" GiB"
+              showBreakdown
+              t={t}
+            />
+            <ResourceMetricCard
+              label={t("clusters.fields.memoryUsage")}
+              used={Math.max(0, group.totalMemory - group.availableMemory)}
+              total={group.totalMemory}
+              available={group.availableMemory}
+              unit=" MiB"
+              showBreakdown
+              t={t}
+            />
+            <ResourceMetricCard
+              label={t("clusters.fields.coreUsage")}
+              used={Math.max(0, group.totalCore - group.availableCore)}
+              total={group.totalCore}
+              available={group.availableCore}
+              showBreakdown
+              t={t}
+            />
           </div>
 
           <div className="mt-3 grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
@@ -475,30 +523,24 @@ function EndpointNodeGpuResources({
                   <div className="mt-1 truncate text-xs text-muted-foreground">
                     {row.product || "-"}
                   </div>
-                  <div className="mt-2 grid gap-1 text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-muted-foreground">
-                        {t("clusters.fields.memoryUsage")}
-                      </span>
-                      <span className="font-medium tabular-nums">
-                        {formatAvailableTotal(
-                          row.memory.available,
-                          row.memory.total,
-                          " MiB",
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-muted-foreground">
-                        {t("clusters.fields.coreUsage")}
-                      </span>
-                      <span className="font-medium tabular-nums">
-                        {formatAvailableTotal(
-                          row.core.available,
-                          row.core.total,
-                        )}
-                      </span>
-                    </div>
+                  <div className="mt-2 grid gap-2">
+                    <ResourceMetricCard
+                      label={t("clusters.fields.memoryUsage")}
+                      used={row.memory.used}
+                      total={row.memory.total}
+                      available={row.memory.available}
+                      unit=" MiB"
+                      showBreakdown
+                      t={t}
+                    />
+                    <ResourceMetricCard
+                      label={t("clusters.fields.coreUsage")}
+                      used={row.core.used}
+                      total={row.core.total}
+                      available={row.core.available}
+                      showBreakdown
+                      t={t}
+                    />
                   </div>
                 </div>
               );
