@@ -304,7 +304,7 @@
   "src/domains/quota/hooks/use-quota.ts": "57198e9a066a400b3ca24a9bd8dbf6f8",
   "src/domains/quota/components/QuotaForm.tsx": "9c9d69f11d98f097cad74318a06a683b",
   "src/pages/access/list.tsx": "69dfaf05588412d7158607985aff79ef",
-  "src/domains/access/types.ts": "6b690dbb77acb496b16c1f2691600d9d",
+  "src/domains/access/types.ts": "9109788b4b4bd9e97a1c07e2d7d94367",
   "src/domains/access/hooks/use-access.ts": "e86d1e590c8af5ed3d0617486afedbed",
   "src/domains/access/components/AccessForm.tsx": "0449afa51b83a5275f8c1e09675170b1"
 }

@@ -15,7 +15,9 @@ export const ACCESS_RULE_TYPES: AccessRuleType[] = ["rate_limit", "concurrency"]
 
 export type AccessWindow = "second" | "minute" | "hour";
 
-export const ACCESS_WINDOWS: AccessWindow[] = ["second", "minute", "hour"];
+// Selectable windows in the UI. The type/backend still accept "hour", but the
+// per-hour option is intentionally not offered.
+export const ACCESS_WINDOWS: AccessWindow[] = ["second", "minute"];
 
 // rule_spec shape depends on rule_type:
 //   rate_limit  -> { limit, window }
