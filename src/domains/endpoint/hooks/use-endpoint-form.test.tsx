@@ -835,8 +835,8 @@ describe("useEndpointForm", () => {
       });
 
       expect(
-        screen.getByText("endpoints.descriptions.vgpuCorePercentZero"),
-      ).toBeTruthy();
+        screen.queryByText("endpoints.descriptions.vgpuCorePercentZero"),
+      ).toBeNull();
 
       const coreInput = screen.getByRole("spinbutton", {
         name: "endpoints.fields.vgpuCoreLimit",
@@ -1000,6 +1000,13 @@ describe("useEndpointForm", () => {
       )) {
         expect(nodeMetrics.className).toContain(
           "grid-cols-[repeat(4,minmax(128px,1fr))]",
+        );
+      }
+      for (const gpuGrid of panel.getAllByTestId(
+        "endpoint-node-gpu-card-grid",
+      )) {
+        expect(gpuGrid.className).toContain(
+          "grid-cols-[repeat(3,minmax(190px,1fr))]",
         );
       }
       const orderedClusterMetrics = [
@@ -1240,6 +1247,11 @@ describe("useEndpointForm", () => {
           "field-spec.resources.accelerator.virtualization.core_percent",
         ).className,
       ).toContain("col-span-1");
+      expect(
+        screen.getByTestId(
+          "field-spec.resources.accelerator.virtualization.core_percent",
+        ).className,
+      ).not.toContain("opacity-80");
       expect(screen.queryByTestId("slider-input")).toBeNull();
     });
 

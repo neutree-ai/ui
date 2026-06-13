@@ -1040,10 +1040,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         {...form}
                         name="spec.resources.accelerator.virtualization.core_percent"
                         label={t("endpoints.fields.vgpuCoreLimit")}
-                        className="col-span-1 opacity-80"
-                        description={t(
-                          "endpoints.descriptions.vgpuCorePercentZero",
-                        )}
+                        className="col-span-1"
                       >
                         <Input
                           type="number"

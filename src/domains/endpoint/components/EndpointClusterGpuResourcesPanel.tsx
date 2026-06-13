@@ -478,7 +478,10 @@ function EndpointNodeGpuResources({
             />
           </div>
 
-          <div className="mt-3 grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
+          <div
+            data-testid="endpoint-node-gpu-card-grid"
+            className="mt-3 grid grid-cols-[repeat(3,minmax(190px,1fr))] gap-2 overflow-x-auto pb-1"
+          >
             {group.rows.map((row) => {
               const usable = isDeviceUsableForRequest(row, request);
 
