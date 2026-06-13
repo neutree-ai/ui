@@ -2,7 +2,7 @@ name: create nightly tag
 
 on:
   schedule:
-    - cron: "0 22 * * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 permissions:
@@ -21,8 +21,14 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
       - name: Create Nightly Tag
+        shell: bash
         run: |
-          DATE=$(date +'%Y%m%d')
+          set -euo pipefail
+          DATE=$(date -u +'%Y%m%d')
           TAG="v1.1.0-nightly-${DATE}"
-          git tag "${TAG}" -m "${TAG}"
-          git push origin "${TAG}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Nightly tag already exists: ${TAG}"
+          else
+            git tag "${TAG}" -m "${TAG}"
+            git push origin "refs/tags/${TAG}"
+          fi
