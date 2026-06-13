@@ -51,32 +51,36 @@ const formatCount = (value: number | null | undefined) => {
   return Number.isFinite(numericValue) ? numericValue.toFixed(1) : "-";
 };
 
+const scaleMetricValue = (
+  value: number | null | undefined,
+  valueScale: number,
+) => {
+  if (value == null) return null;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue * valueScale : null;
+};
+
 const formatUsage = (
   used: number | null | undefined,
   total: number | null | undefined,
   unit = "",
+  valueScale = 1,
 ) => {
   if (used == null || total == null) {
     return "-";
   }
 
-  return `${formatCount(used)} / ${formatCount(total)}${unit}`;
+  return `${formatCount(scaleMetricValue(used, valueScale))} / ${formatCount(scaleMetricValue(total, valueScale))}${unit}`;
 };
 
-const formatAvailableTotal = (
-  available: number | null | undefined,
-  total: number | null | undefined,
+const formatPoolValue = (
+  value: number | null | undefined,
   unit = "",
-) => {
-  if (available == null || total == null) {
-    return "-";
-  }
-
-  return `${formatCount(available)} / ${formatCount(total)}${unit}`;
-};
-
-const formatPoolValue = (value: number | null | undefined, unit = "") =>
-  value == null ? "-" : `${formatCount(value)}${unit}`;
+  valueScale = 1,
+) =>
+  value == null
+    ? "-"
+    : `${formatCount(scaleMetricValue(value, valueScale))}${unit}`;
 
 const toPercentValue = (
   used: number | null | undefined,
@@ -135,6 +139,7 @@ function ResourceMetricCard({
   total,
   available,
   unit,
+  valueScale = 1,
   showBreakdown = false,
   t,
 }: {
@@ -143,6 +148,7 @@ function ResourceMetricCard({
   total: number | null | undefined;
   available: number | null | undefined;
   unit?: string;
+  valueScale?: number;
   showBreakdown?: boolean;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
@@ -164,7 +170,7 @@ function ResourceMetricCard({
               {t("clusters.options.used", { defaultValue: "Used" })}
             </span>
             <strong className="block truncate font-medium tabular-nums">
-              {formatPoolValue(used, unit)}
+              {formatPoolValue(used, unit, valueScale)}
             </strong>
           </div>
           <div className="min-w-0">
@@ -172,7 +178,7 @@ function ResourceMetricCard({
               {t("clusters.options.free")}
             </span>
             <strong className="block truncate font-medium tabular-nums">
-              {formatPoolValue(available, unit)}
+              {formatPoolValue(available, unit, valueScale)}
             </strong>
           </div>
           <div className="min-w-0">
@@ -180,17 +186,17 @@ function ResourceMetricCard({
               {t("clusters.options.total", { defaultValue: "Total" })}
             </span>
             <strong className="block truncate font-medium tabular-nums">
-              {formatPoolValue(total, unit)}
+              {formatPoolValue(total, unit, valueScale)}
             </strong>
           </div>
         </div>
       ) : (
         <div className="flex items-center justify-between gap-2 text-xs">
           <span className="tabular-nums text-muted-foreground">
-            {formatUsage(used, total, unit)}
+            {formatUsage(used, total, unit, valueScale)}
           </span>
           <span className="font-medium tabular-nums">
-            {formatAvailableTotal(available, total, unit)}
+            {formatPoolValue(available, unit, valueScale)}
           </span>
         </div>
       )}
@@ -261,7 +267,8 @@ function EndpointClusterResourceSummary({
             used={acceleratorMemorySummary.used}
             total={acceleratorMemorySummary.total}
             available={acceleratorMemorySummary.available}
-            unit=" MiB"
+            unit=" GiB"
+            valueScale={1 / 1024}
             t={t}
           />
           <ResourceMetricCard
@@ -456,7 +463,8 @@ function EndpointNodeGpuResources({
               used={Math.max(0, group.totalMemory - group.availableMemory)}
               total={group.totalMemory}
               available={group.availableMemory}
-              unit=" MiB"
+              unit=" GiB"
+              valueScale={1 / 1024}
               showBreakdown
               t={t}
             />
@@ -534,7 +542,8 @@ function EndpointNodeGpuResources({
                       used={row.memory.used}
                       total={row.memory.total}
                       available={row.memory.available}
-                      unit=" MiB"
+                      unit=" GiB"
+                      valueScale={1 / 1024}
                       showBreakdown
                       t={t}
                     />

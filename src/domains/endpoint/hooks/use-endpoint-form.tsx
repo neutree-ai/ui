@@ -1153,10 +1153,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                 <div className="mt-1 text-xs tabular-nums text-muted-foreground">
                                   {availableVgpuMemoryMiB
                                     ? `${formatOneDecimal(
-                                        requestedVgpuMemoryMiB,
+                                        requestedVgpuMemoryMiB / 1024,
                                       )} / ${formatOneDecimal(
-                                        availableVgpuMemoryMiB,
-                                      )} MiB`
+                                        availableVgpuMemoryMiB / 1024,
+                                      )} GiB`
                                     : "-"}
                                 </div>
                               </div>

@@ -1027,21 +1027,19 @@ describe("useEndpointForm", () => {
       expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
       expect(screen.queryByText("clusters.fields.vgpuMemoryUsage")).toBeNull();
 
+      expect(within(clusterSection).getByText("12.0 cores")).toBeTruthy();
+      expect(within(clusterSection).getByText("48.0 GiB")).toBeTruthy();
+      expect(within(clusterSection).getByText("15.0 GiB")).toBeTruthy();
       expect(
-        await screen.findAllByText("15360.0 / 30720.0 MiB"),
-      ).not.toHaveLength(0);
+        within(clusterSection).queryByText("12.0 / 16.0 cores"),
+      ).toBeNull();
+      expect(within(clusterSection).queryByText("48.0 / 64.0 GiB")).toBeNull();
+      expect(await screen.findAllByText("15.0 / 30.0 GiB")).not.toHaveLength(0);
       expect(
         screen.getAllByText((text) => text.includes("50.0 / 200.0")).length,
       ).toBeGreaterThan(0);
-      expect(
-        screen.getAllByText((text) => text.includes("12.0 / 16.0 cores"))
-          .length,
-      ).toBeGreaterThan(0);
-      expect(
-        screen.getAllByText((text) => text.includes("48.0 / 64.0 GiB")).length,
-      ).toBeGreaterThan(0);
-      expect(screen.getAllByText("7680.0 MiB").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("15360.0 MiB").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("7.5 GiB").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("15.0 GiB").length).toBeGreaterThan(0);
       expect(
         screen.getAllByText((text) => text.includes("50.0")).length,
       ).toBeGreaterThan(0);
