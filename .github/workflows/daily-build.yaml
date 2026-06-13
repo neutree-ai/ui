@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ui-nightly-tag
+  cancel-in-progress: false
+
 jobs:
   create_daily_tag:
     runs-on: ubuntu-latest
@@ -16,6 +20,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
       - name: Configure Git
         run: |
           git config user.name "${{ github.actor }}"
@@ -30,5 +37,12 @@ jobs:
             echo "Nightly tag already exists: ${TAG}"
           else
             git tag "${TAG}" -m "${TAG}"
-            git push origin "refs/tags/${TAG}"
+            if git push origin "refs/tags/${TAG}"; then
+              echo "Created nightly tag: ${TAG}"
+            elif git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+              echo "Nightly tag was created by another run: ${TAG}"
+            else
+              echo "Failed to create nightly tag: ${TAG}" >&2
+              exit 1
+            fi
           fi
