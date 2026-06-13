@@ -1409,5 +1409,47 @@
 			"add": "Add sub-quota",
 			"empty": "No sub-quotas. Add one to cap a specific endpoint or model."
 		}
+	},
+	"access": {
+		"title": "Rate Limiting",
+		"set": "Add Rule",
+		"levels": {
+			"workspace": "Workspace",
+			"user": "User",
+			"api_key": "API Key"
+		},
+		"ruleTypes": {
+			"rate_limit": "Rate limit",
+			"concurrency": "Concurrency"
+		},
+		"windows": {
+			"second": "per second",
+			"minute": "per minute",
+			"hour": "per hour"
+		},
+		"fields": {
+			"level": "Level",
+			"target": "Target",
+			"user": "User",
+			"apiKey": "API Key",
+			"ruleType": "Rule type",
+			"window": "Window",
+			"limit": "Limit (requests)",
+			"max": "Max concurrent"
+		},
+		"placeholders": {
+			"selectWorkspace": "Select a workspace",
+			"selectUser": "Select a user",
+			"selectApiKey": "Select an API key"
+		},
+		"messages": {
+			"setDescription": "Add a rate limit or concurrency cap for a workspace, user, or API key. The gateway applies the most restrictive matching rule.",
+			"empty": "No access rules yet. Use \"Create\" to add one.",
+			"needValue": "Enter a value greater than 0."
+		},
+		"summary": {
+			"rate": "{{limit}} requests {{window}}",
+			"concurrency": "max {{max}} concurrent requests"
+		}
 	}
 }

@@ -35,6 +35,7 @@ import {
   LayoutTemplate,
   Server,
   Settings,
+  Timer,
   User,
   UserCheck,
 } from "lucide-react";
@@ -71,6 +72,9 @@ const ApiKeysShow = lazy(() =>
 );
 const QuotaList = lazy(() =>
   import("./pages/quota/list").then((m) => ({ default: m.QuotaList })),
+);
+const AccessList = lazy(() =>
+  import("./pages/access/list").then((m) => ({ default: m.AccessList })),
 );
 
 const ClustersList = lazy(() =>
@@ -452,6 +456,15 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "access",
+    list: "/:workspace/access",
+    meta: {
+      icon: <Timer />,
+      workspaced: true,
+      parent: "access_control",
+    },
+  },
+  {
     name: "settings",
   },
   // {
@@ -653,6 +666,9 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 </Route>
                 <Route path="/:workspace/quota">
                   <Route index element={<QuotaList />} />
+                </Route>
+                <Route path="/:workspace/access">
+                  <Route index element={<AccessList />} />
                 </Route>
                 <Route path="/oem-configs">
                   <Route index element={<OemConfigShow />} />

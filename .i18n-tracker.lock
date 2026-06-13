@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "a2ebabd7035347e83eb48536602b2fe1",
-  "src/App.tsx": "2d60f389abd3b10c6be7e5508135db50",
+  "src/App.tsx": "ea8de2ccbb505e605fb350e4395567ca",
   "src/Root.tsx": "0bf1b5abed7cbc71c06832cc2de84f12",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",
@@ -302,5 +302,9 @@
   "src/pages/quota/list.tsx": "04595c232ac5071ae6164b1652f207bf",
   "src/domains/quota/types.ts": "5ec5e021c054cb64ab2f82ad0bf81add",
   "src/domains/quota/hooks/use-quota.ts": "57198e9a066a400b3ca24a9bd8dbf6f8",
-  "src/domains/quota/components/QuotaForm.tsx": "9c9d69f11d98f097cad74318a06a683b"
+  "src/domains/quota/components/QuotaForm.tsx": "9c9d69f11d98f097cad74318a06a683b",
+  "src/pages/access/list.tsx": "69dfaf05588412d7158607985aff79ef",
+  "src/domains/access/types.ts": "6b690dbb77acb496b16c1f2691600d9d",
+  "src/domains/access/hooks/use-access.ts": "e86d1e590c8af5ed3d0617486afedbed",
+  "src/domains/access/components/AccessForm.tsx": "0449afa51b83a5275f8c1e09675170b1"
 }
