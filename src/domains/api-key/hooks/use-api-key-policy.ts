@@ -42,13 +42,13 @@ export const apiKeyPolicyDefaults = (): ApiKeyPolicyFormValues => ({
   endpoints: [],
 });
 
-export type QuotaCall = {
+type QuotaCall = {
   p_level: "api_key";
   p_api_key_id: string;
   p_period: QuotaPeriod;
   p_limit_tokens: number;
 };
-export type AccessCall = {
+type AccessCall = {
   p_level: "api_key";
   p_api_key_id: string;
   p_rule_type: "rate_limit" | "concurrency" | "model_allowlist" | "endpoint_allowlist";
