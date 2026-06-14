@@ -155,10 +155,12 @@ export const ApiKeysShow = () => {
             </Table>
           </CardContent>
         </Card>
-        <ApiKeyLimitsCard
-          apiKeyId={record.id}
-          workspace={record.metadata.workspace}
-        />
+        {record.id && (
+          <ApiKeyLimitsCard
+            apiKeyId={String(record.id)}
+            workspace={record.metadata.workspace}
+          />
+        )}
       </ShowPage>
     </div>
   );
