@@ -1,5 +1,6 @@
 import { useList } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FieldValues } from "react-hook-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -9,11 +10,14 @@ import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import type { SetAccessParams } from "@/domains/access/hooks/use-access";
 import {
+  ACCESS_ENDPOINT_TYPES,
   ACCESS_LEVELS,
   ACCESS_RULE_TYPES,
   ACCESS_WINDOWS,
   type AccessApiKeyLite,
+  type AccessEndpointType,
   type AccessLevel,
+  type AccessNamedLite,
   type AccessRuleType,
   type AccessUserLite,
   type AccessWindow,
@@ -21,19 +25,27 @@ import {
 } from "@/domains/access/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+
+type ModelRow = { value: string };
+type EndpointRow = { type: AccessEndpointType; name: string };
 
 type FormValues = {
   level: AccessLevel;
   workspace: string;
   target: string;
   rule_type: AccessRuleType;
-  // rate_limit fields
+  // rate_limit
   window: AccessWindow;
   limit: string;
-  // concurrency field
+  // concurrency
   max: string;
+  // model_allowlist
+  models: ModelRow[];
+  // endpoint_allowlist
+  endpoints: EndpointRow[];
 };
 
 type AccessFormProps = {
@@ -61,12 +73,23 @@ export const AccessForm = ({
       window: "minute",
       limit: "",
       max: "",
+      models: [],
+      endpoints: [],
     },
+  });
+  const modelsArray = useRefineFieldArray({
+    control: form.control,
+    name: "models",
+  });
+  const endpointsArray = useRefineFieldArray({
+    control: form.control,
+    name: "endpoints",
   });
 
   const level = form.watch("level");
   const selectedWorkspace = form.watch("workspace");
   const ruleType = form.watch("rule_type");
+  const endpoints = form.watch("endpoints");
 
   // Reset target when the scope (level or workspace) actually changes — members
   // and keys are scope-specific. Ref-guarded so unrelated re-renders (e.g.
@@ -95,13 +118,32 @@ export const AccessForm = ({
     meta: { workspace: selectedWorkspace },
     queryOptions: { enabled: level === "api_key" && !!selectedWorkspace },
   });
+  // Endpoint name options for the endpoint_allowlist rows.
+  const { data: endpointsData } = useList<AccessNamedLite>({
+    resource: "endpoints",
+    pagination: { mode: "off" },
+    meta: { workspace: selectedWorkspace },
+    queryOptions: {
+      enabled: ruleType === "endpoint_allowlist" && !!selectedWorkspace,
+    },
+  });
+  const { data: extEndpointsData } = useList<AccessNamedLite>({
+    resource: "external_endpoints",
+    pagination: { mode: "off" },
+    meta: { workspace: selectedWorkspace },
+    queryOptions: {
+      enabled: ruleType === "endpoint_allowlist" && !!selectedWorkspace,
+    },
+  });
+
+  const toNameOptions = (data?: { data?: AccessNamedLite[] }) =>
+    (data?.data ?? [])
+      .map((d) => d.metadata?.name)
+      .filter((n): n is string => !!n)
+      .map((n) => ({ label: n, value: n }));
 
   const workspaceOptions = useMemo(
-    () =>
-      (workspacesData?.data ?? [])
-        .map((d) => d.metadata?.name)
-        .filter((n): n is string => !!n)
-        .map((n) => ({ label: n, value: n })),
+    () => toNameOptions(workspacesData),
     [workspacesData],
   );
   const userOptions = useMemo(
@@ -120,6 +162,16 @@ export const AccessForm = ({
       })),
     [keysData],
   );
+  const endpointOptions = useMemo(
+    () => toNameOptions(endpointsData),
+    [endpointsData],
+  );
+  const extEndpointOptions = useMemo(
+    () => toNameOptions(extEndpointsData),
+    [extEndpointsData],
+  );
+  const epNameOptions = (et: AccessEndpointType | undefined) =>
+    et === "external_endpoint" ? extEndpointOptions : endpointOptions;
 
   const scopeParams = (): Pick<
     SetAccessParams,
@@ -139,16 +191,39 @@ export const AccessForm = ({
     setSubmitError(null);
     const base = scopeParams();
     let params: SetAccessParams;
+
     if (values.rule_type === "concurrency") {
       const max = String(values.max ?? "").trim();
       if (max === "" || Number(max) <= 0) {
         setSubmitError(t("access.messages.needValue"));
         return;
       }
+      params = { ...base, p_rule_type: "concurrency", p_rule_spec: { max: Number(max) } };
+    } else if (values.rule_type === "model_allowlist") {
+      const models = ((values.models ?? []) as ModelRow[])
+        .map((m) => String(m.value ?? "").trim())
+        .filter((m) => m !== "");
+      if (models.length === 0) {
+        setSubmitError(t("access.messages.needModel"));
+        return;
+      }
       params = {
         ...base,
-        p_rule_type: "concurrency",
-        p_rule_spec: { max: Number(max) },
+        p_rule_type: "model_allowlist",
+        p_rule_spec: { models },
+      };
+    } else if (values.rule_type === "endpoint_allowlist") {
+      const eps = ((values.endpoints ?? []) as EndpointRow[]).filter(
+        (e) => e.type && e.name,
+      );
+      if (eps.length === 0) {
+        setSubmitError(t("access.messages.needEndpoint"));
+        return;
+      }
+      params = {
+        ...base,
+        p_rule_type: "endpoint_allowlist",
+        p_rule_spec: { endpoints: eps },
       };
     } else {
       const limit = String(values.limit ?? "").trim();
@@ -162,6 +237,7 @@ export const AccessForm = ({
         p_rule_spec: { limit: Number(limit), window: values.window },
       };
     }
+
     try {
       await onSubmit(params);
       onClose?.();
@@ -248,7 +324,7 @@ export const AccessForm = ({
           />
         </FormFieldGroup>
 
-        {ruleType === "rate_limit" ? (
+        {ruleType === "rate_limit" && (
           <div className="flex items-end gap-2">
             <div className="w-32">
               <FormFieldGroup
@@ -275,7 +351,9 @@ export const AccessForm = ({
               </FormFieldGroup>
             </div>
           </div>
-        ) : (
+        )}
+
+        {ruleType === "concurrency" && (
           <FormFieldGroup
             {...form}
             name="max"
@@ -284,6 +362,127 @@ export const AccessForm = ({
           >
             <Input type="number" min={1} />
           </FormFieldGroup>
+        )}
+
+        {ruleType === "model_allowlist" && (
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {t("access.fields.allowedModels")}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => modelsArray.append({ value: "" })}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                {t("access.actions.addModel")}
+              </Button>
+            </div>
+            {modelsArray.fields.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                {t("access.messages.needModel")}
+              </p>
+            )}
+            {modelsArray.fields.map((field, index) => (
+              <div key={field.id} className="flex items-end gap-2">
+                <div className="flex-1">
+                  <FormFieldGroup
+                    {...form}
+                    name={`models.${index}.value`}
+                    label={t("access.fields.modelName")}
+                    rules={{ required: true }}
+                  >
+                    <Input placeholder={t("access.placeholders.modelName")} />
+                  </FormFieldGroup>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="mb-1"
+                  title={t("buttons.delete")}
+                  onClick={() => modelsArray.remove(index)}
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {ruleType === "endpoint_allowlist" && (
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {t("access.fields.allowedEndpoints")}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  endpointsArray.append({ type: "endpoint", name: "" })
+                }
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                {t("access.actions.addEndpoint")}
+              </Button>
+            </div>
+            {endpointsArray.fields.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                {t("access.messages.needEndpoint")}
+              </p>
+            )}
+            {endpointsArray.fields.map((field, index) => {
+              const et = (endpoints?.[index]?.type ??
+                (field as unknown as EndpointRow).type) as
+                | AccessEndpointType
+                | undefined;
+              return (
+                <div key={field.id} className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <FormFieldGroup
+                      {...form}
+                      name={`endpoints.${index}.type`}
+                      label={t("access.fields.endpointType")}
+                    >
+                      <FormCombobox
+                        options={ACCESS_ENDPOINT_TYPES.map((e) => ({
+                          label: t(`access.endpointTypes.${e}`),
+                          value: e,
+                        }))}
+                      />
+                    </FormFieldGroup>
+                  </div>
+                  <div className="flex-1">
+                    <FormFieldGroup
+                      {...form}
+                      name={`endpoints.${index}.name`}
+                      label={t("access.fields.endpointName")}
+                      rules={{ required: true }}
+                    >
+                      <FormCombobox
+                        placeholder={t("access.placeholders.selectEndpoint")}
+                        options={epNameOptions(et)}
+                      />
+                    </FormFieldGroup>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="mb-1"
+                    title={t("buttons.delete")}
+                    onClick={() => endpointsArray.remove(index)}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {submitError && (

@@ -2,30 +2,58 @@
 //
 // A sibling of quota: access rules are per-request gating / short-window rate
 // limits (no period, no cumulative usage). Mirrors api.access_policies on the
-// management plane. This UI exposes the short-window rule types the gateway
-// enforces today: rate_limit and concurrency.
+// management plane. This UI exposes: rate_limit, concurrency, and the
+// model/endpoint allowlists (restrict which models/endpoints a scope may use).
 
 export type AccessLevel = "workspace" | "user" | "api_key";
 
 export const ACCESS_LEVELS: AccessLevel[] = ["workspace", "user", "api_key"];
 
-export type AccessRuleType = "rate_limit" | "concurrency";
+export type AccessRuleType =
+  | "rate_limit"
+  | "concurrency"
+  | "model_allowlist"
+  | "endpoint_allowlist";
 
-export const ACCESS_RULE_TYPES: AccessRuleType[] = ["rate_limit", "concurrency"];
+export const ACCESS_RULE_TYPES: AccessRuleType[] = [
+  "rate_limit",
+  "concurrency",
+  "model_allowlist",
+  "endpoint_allowlist",
+];
 
-export type AccessWindow = "second" | "minute" | "hour";
+export type AccessWindow = "second" | "minute" | "hour" | "day";
 
-// Selectable windows in the UI. The type/backend still accept "hour", but the
-// per-hour option is intentionally not offered.
-export const ACCESS_WINDOWS: AccessWindow[] = ["second", "minute"];
+export const ACCESS_WINDOWS: AccessWindow[] = [
+  "second",
+  "minute",
+  "hour",
+  "day",
+];
+
+export type AccessEndpointType = "endpoint" | "external_endpoint";
+
+export const ACCESS_ENDPOINT_TYPES: AccessEndpointType[] = [
+  "endpoint",
+  "external_endpoint",
+];
+
+export type AccessEndpointRef = {
+  type: AccessEndpointType;
+  name: string;
+};
 
 // rule_spec shape depends on rule_type:
-//   rate_limit  -> { limit, window }
-//   concurrency -> { max }
+//   rate_limit         -> { limit, window }
+//   concurrency        -> { max }
+//   model_allowlist    -> { models: string[] }
+//   endpoint_allowlist -> { endpoints: AccessEndpointRef[] }
 export type AccessRuleSpec = {
   limit?: number;
   window?: AccessWindow;
   max?: number;
+  models?: string[];
+  endpoints?: AccessEndpointRef[];
 };
 
 // One row of api.access_policies, as returned by /rpc/get_access_policies.
@@ -47,8 +75,8 @@ export type AccessPolicyRow = AccessPolicy & {
 };
 
 // Minimal local shapes for the cross-domain lookups (workspace members / api
-// keys), declared here rather than importing other domains' types to respect
-// the no-L2-cross-domain rule.
+// keys / endpoints), declared here rather than importing other domains' types to
+// respect the no-L2-cross-domain rule.
 export type AccessUserLite = {
   id: string;
   metadata?: { name?: string };
@@ -62,5 +90,10 @@ export type AccessApiKeyLite = {
 
 export type AccessWorkspaceLite = {
   id: number;
+  metadata?: { name?: string };
+};
+
+export type AccessNamedLite = {
+  id: string | number;
   metadata?: { name?: string };
 };

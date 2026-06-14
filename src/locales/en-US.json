@@ -1420,12 +1420,15 @@
 		},
 		"ruleTypes": {
 			"rate_limit": "Rate limit",
-			"concurrency": "Concurrency"
+			"concurrency": "Concurrency",
+			"model_allowlist": "Allowed models",
+			"endpoint_allowlist": "Allowed endpoints"
 		},
 		"windows": {
 			"second": "per second",
 			"minute": "per minute",
-			"hour": "per hour"
+			"hour": "per hour",
+			"day": "per day"
 		},
 		"fields": {
 			"level": "Level",
@@ -1435,21 +1438,40 @@
 			"ruleType": "Rule type",
 			"window": "Window",
 			"limit": "Limit (requests)",
-			"max": "Max concurrent"
+			"max": "Max concurrent",
+			"allowedModels": "Allowed models",
+			"allowedEndpoints": "Allowed endpoints",
+			"modelName": "Model name",
+			"endpointType": "Type",
+			"endpointName": "Name"
 		},
 		"placeholders": {
 			"selectWorkspace": "Select a workspace",
 			"selectUser": "Select a user",
-			"selectApiKey": "Select an API key"
+			"selectApiKey": "Select an API key",
+			"modelName": "e.g. gpt-4o",
+			"selectEndpoint": "Select an endpoint"
 		},
 		"messages": {
 			"setDescription": "Add a rate limit or concurrency cap for a workspace, user, or API key. The gateway applies the most restrictive matching rule.",
 			"empty": "No access rules yet. Use \"Create\" to add one.",
-			"needValue": "Enter a value greater than 0."
+			"needValue": "Enter a value greater than 0.",
+			"needModel": "Add at least one model.",
+			"needEndpoint": "Add at least one endpoint."
 		},
 		"summary": {
 			"rate": "{{limit}} requests {{window}}",
-			"concurrency": "max {{max}} concurrent requests"
+			"concurrency": "max {{max}} concurrent requests",
+			"models": "models: {{models}}",
+			"endpoints": "endpoints: {{endpoints}}"
+		},
+		"endpointTypes": {
+			"endpoint": "Endpoint",
+			"external_endpoint": "External endpoint"
+		},
+		"actions": {
+			"addModel": "Add model",
+			"addEndpoint": "Add endpoint"
 		}
 	}
 }

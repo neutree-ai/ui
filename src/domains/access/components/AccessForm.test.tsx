@@ -139,4 +139,29 @@ describe("AccessForm", () => {
       p_rule_spec: { max: 8 },
     });
   });
+
+  it("model allowlist submits a models array", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<AccessForm workspace="default" onSubmit={onSubmit} />);
+
+    selectOption("rule_type", "access.ruleTypes.model_allowlist");
+    fireEvent.click(
+      screen.getByRole("button", { name: "access.actions.addModel" }),
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("field-models.0.value")).toBeTruthy();
+    });
+    setInput("models.0.value", "gpt-4o");
+
+    fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      p_level: "workspace",
+      p_workspace: "default",
+      p_rule_type: "model_allowlist",
+      p_rule_spec: { models: ["gpt-4o"] },
+    });
+  });
 });

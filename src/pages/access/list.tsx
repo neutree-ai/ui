@@ -57,6 +57,19 @@ export const AccessList = () => {
     if (row.rule_type === "concurrency") {
       return t("access.summary.concurrency", { max: row.rule_spec?.max ?? "-" });
     }
+    if (row.rule_type === "model_allowlist") {
+      return t("access.summary.models", {
+        models: (row.rule_spec?.models ?? []).join(", ") || "-",
+      });
+    }
+    if (row.rule_type === "endpoint_allowlist") {
+      return t("access.summary.endpoints", {
+        endpoints:
+          (row.rule_spec?.endpoints ?? [])
+            .map((e) => `${e.type}:${e.name}`)
+            .join(", ") || "-",
+      });
+    }
     return t("access.summary.rate", {
       limit: row.rule_spec?.limit ?? "-",
       window: t(`access.windows.${row.rule_spec?.window ?? "minute"}`),
