@@ -796,6 +796,57 @@
 				"endpoint": "Internal",
 				"external-endpoint": "External"
 			}
+		},
+		"limits": {
+			"sectionTitle": "Limits (optional)",
+			"quotaTitle": "Token quota",
+			"quotaHint": "Cap token usage for this key over a period. Leave empty for no quota.",
+			"accessTitle": "Access control",
+			"tokenLimit": "Token limit",
+			"period": "Period",
+			"periods": {
+				"daily": "Daily",
+				"weekly": "Weekly",
+				"monthly": "Monthly",
+				"yearly": "Yearly"
+			},
+			"optional": "Optional",
+			"rateLimit": "Rate limit (requests)",
+			"window": "Window",
+			"windows": {
+				"second": "per second",
+				"minute": "per minute",
+				"hour": "per hour",
+				"day": "per day"
+			},
+			"concurrency": "Max concurrent",
+			"allowedModels": "Allowed models",
+			"addModel": "Add model",
+			"modelName": "Model name",
+			"allowedEndpoints": "Allowed endpoints",
+			"addEndpoint": "Add endpoint",
+			"endpointTypes": {
+				"endpoint": "Endpoint",
+				"external_endpoint": "External endpoint"
+			},
+			"selectEndpoint": "Select an endpoint",
+			"ruleTypes": {
+				"rate_limit": "Rate limit",
+				"concurrency": "Concurrency",
+				"model_allowlist": "Allowed models",
+				"endpoint_allowlist": "Allowed endpoints"
+			},
+			"summary": {
+				"rate": "{{limit}} requests {{window}}",
+				"concurrency": "max {{max}} concurrent requests",
+				"models": "models: {{models}}",
+				"endpoints": "endpoints: {{endpoints}}"
+			},
+			"quotaTag": "Quota",
+			"tokensUnit": "tokens",
+			"none": "No limits set for this key.",
+			"addTitle": "Add a limit",
+			"add": "Add"
 		}
 	},
 	"infrastructure": {

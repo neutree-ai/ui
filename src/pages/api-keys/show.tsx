@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard";
 import { useApiKeyUsage } from "@/domains/api-key/hooks/use-api-key-usage";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -154,6 +155,10 @@ export const ApiKeysShow = () => {
             </Table>
           </CardContent>
         </Card>
+        <ApiKeyLimitsCard
+          apiKeyId={record.id}
+          workspace={record.metadata.workspace}
+        />
       </ShowPage>
     </div>
   );
