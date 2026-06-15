@@ -9,12 +9,12 @@ on:
         description: "Keep nightly tags for N days"
         required: false
         default: "7"
-        type: number
+        type: string
       dry_run:
         description: "Only print what would be deleted"
         required: false
         default: "false"
-        type: boolean
+        type: string
 
 permissions:
   contents: write
@@ -37,14 +37,6 @@ jobs:
           set -euo pipefail
           RETENTION_DAYS="${RETENTION_DAYS:-7}"
           DRY_RUN="${DRY_RUN:-false}"
-          if ! [[ "${RETENTION_DAYS}" =~ ^[0-9]+$ ]] || [[ "${RETENTION_DAYS}" -lt 1 ]]; then
-            echo "retention_days must be a positive integer; got '${RETENTION_DAYS}'" >&2
-            exit 1
-          fi
-          if [[ "${DRY_RUN}" != "true" && "${DRY_RUN}" != "false" ]]; then
-            echo "dry_run must be true or false; got '${DRY_RUN}'" >&2
-            exit 1
-          fi
           CUTOFF_DATE=$(date -u -d "${RETENTION_DAYS} days ago" +%Y%m%d)
           echo "Cutoff date: ${CUTOFF_DATE} (keep last ${RETENTION_DAYS} days)"
           git fetch --tags --prune

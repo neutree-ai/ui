@@ -1172,6 +1172,7 @@
 		},
 		"columns": {
 			"time": "Time",
+			"workspace": "Workspace",
 			"endpoint": "Endpoint",
 			"app": "App",
 			"model": "Model",
