@@ -1,67 +1,27 @@
-import { useList } from "@refinedev/core";
 import { Plus, Trash2 } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  ENDPOINT_TYPES,
-  type EndpointType,
-  QUOTA_PERIODS,
-  RATE_WINDOWS,
-} from "@/domains/api-key/hooks/use-api-key-policy";
+import { QUOTA_PERIODS } from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
-
-type NamedLite = { id: string | number; metadata?: { name?: string } };
 
 type ApiKeyPolicyFieldsProps = {
   // The react-hook-form instance whose values include the policy fields.
   // biome-ignore lint/suspicious/noExplicitAny: shared across forms with extra fields.
   form: UseFormReturn<any>;
-  // Workspace whose endpoints populate the endpoint-allowlist name options.
-  workspace: string;
 };
 
-// Two collapsible-free sections (Quota + Access) embedded in the API key
-// create/edit flow. Every limit is optional.
-export const ApiKeyPolicyFields = ({
-  form,
-  workspace,
-}: ApiKeyPolicyFieldsProps) => {
+// API-key limits editor: Token quota, RPS, concurrency, allowed models. Every
+// limit is optional. Embedded in API key create + edit.
+export const ApiKeyPolicyFields = ({ form }: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
   const modelsArray = useRefineFieldArray({
     control: form.control,
     name: "models",
   });
-  const endpointsArray = useRefineFieldArray({
-    control: form.control,
-    name: "endpoints",
-  });
-  const endpoints = form.watch("endpoints");
-
-  const { data: endpointsData } = useList<NamedLite>({
-    resource: "endpoints",
-    pagination: { mode: "off" },
-    meta: { workspace },
-    queryOptions: { enabled: !!workspace },
-  });
-  const { data: extEndpointsData } = useList<NamedLite>({
-    resource: "external_endpoints",
-    pagination: { mode: "off" },
-    meta: { workspace },
-    queryOptions: { enabled: !!workspace },
-  });
-  const toNameOptions = (data?: { data?: NamedLite[] }) =>
-    (data?.data ?? [])
-      .map((d) => d.metadata?.name)
-      .filter((n): n is string => !!n)
-      .map((n) => ({ label: n, value: n }));
-  const epNameOptions = (et: EndpointType | undefined) =>
-    et === "external_endpoint"
-      ? toNameOptions(extEndpointsData)
-      : toNameOptions(endpointsData);
 
   return (
     <div className="space-y-3">
@@ -114,8 +74,8 @@ export const ApiKeyPolicyFields = ({
           <div className="flex-1">
             <FormFieldGroup
               {...form}
-              name="rate_limit"
-              label={t("api_keys.limits.rateLimit")}
+              name="rps"
+              label={t("api_keys.limits.rps")}
             >
               <Input
                 type="number"
@@ -124,33 +84,20 @@ export const ApiKeyPolicyFields = ({
               />
             </FormFieldGroup>
           </div>
-          <div className="w-36">
+          <div className="flex-1">
             <FormFieldGroup
               {...form}
-              name="rate_window"
-              label={t("api_keys.limits.window")}
+              name="concurrency"
+              label={t("api_keys.limits.concurrency")}
             >
-              <FormCombobox
-                options={RATE_WINDOWS.map((w) => ({
-                  label: t(`api_keys.limits.windows.${w}`),
-                  value: w,
-                }))}
+              <Input
+                type="number"
+                min={0}
+                placeholder={t("api_keys.limits.optional")}
               />
             </FormFieldGroup>
           </div>
         </div>
-
-        <FormFieldGroup
-          {...form}
-          name="concurrency"
-          label={t("api_keys.limits.concurrency")}
-        >
-          <Input
-            type="number"
-            min={0}
-            placeholder={t("api_keys.limits.optional")}
-          />
-        </FormFieldGroup>
 
         {/* Allowed models */}
         <div className="space-y-2">
@@ -166,6 +113,9 @@ export const ApiKeyPolicyFields = ({
               {t("api_keys.limits.addModel")}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {t("api_keys.limits.allowedModelsHint")}
+          </p>
           {modelsArray.fields.map((field, index) => (
             <div key={field.id} className="flex items-end gap-2">
               <div className="flex-1">
@@ -189,68 +139,6 @@ export const ApiKeyPolicyFields = ({
               </Button>
             </div>
           ))}
-        </div>
-
-        {/* Allowed endpoints */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">
-              {t("api_keys.limits.allowedEndpoints")}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                endpointsArray.append({ type: "endpoint", name: "" })
-              }
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              {t("api_keys.limits.addEndpoint")}
-            </Button>
-          </div>
-          {endpointsArray.fields.map((field, index) => {
-            const et = (endpoints?.[index]?.type ??
-              (field as unknown as { type?: EndpointType }).type) as
-              | EndpointType
-              | undefined;
-            return (
-              <div key={field.id} className="flex items-end gap-2">
-                <div className="w-40">
-                  <FormFieldGroup {...form} name={`endpoints.${index}.type`}>
-                    <FormCombobox
-                      options={ENDPOINT_TYPES.map((e) => ({
-                        label: t(`api_keys.limits.endpointTypes.${e}`),
-                        value: e,
-                      }))}
-                    />
-                  </FormFieldGroup>
-                </div>
-                <div className="flex-1">
-                  <FormFieldGroup
-                    {...form}
-                    name={`endpoints.${index}.name`}
-                    rules={{ required: true }}
-                  >
-                    <FormCombobox
-                      placeholder={t("api_keys.limits.selectEndpoint")}
-                      options={epNameOptions(et)}
-                    />
-                  </FormFieldGroup>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="mb-1"
-                  title={t("buttons.delete")}
-                  onClick={() => endpointsArray.remove(index)}
-                >
-                  <Trash2 size={16} />
-                </Button>
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>

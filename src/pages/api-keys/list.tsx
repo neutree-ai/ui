@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
+import { useAllApiKeyLimits } from "@/domains/api-key/hooks/use-api-key-policy";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
@@ -41,6 +42,25 @@ export const ApiKeysList = () => {
   const [open, setOpen] = useState(false);
   const metadataColumns = useMetadataColumns();
   const apiKeyColumns = useApiKeyColumns();
+  const limitsByKey = useAllApiKeyLimits();
+
+  const limitsColumn = (
+    <Table.Column
+      accessorKey="id"
+      id="limits"
+      header={t("api_keys.limits.columnTitle")}
+      cell={({ row: { original } }) => {
+        const parts = limitsByKey.get(String(original.id)) ?? [];
+        return parts.length > 0 ? (
+          <span className="text-xs text-muted-foreground">
+            {parts.join(" · ")}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      }}
+    />
+  );
 
   return (
     <ListPage
@@ -73,6 +93,7 @@ export const ApiKeysList = () => {
       >
         {metadataColumns.name}
         {metadataColumns.workspace}
+        {limitsColumn}
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
         {apiKeyColumns.action}

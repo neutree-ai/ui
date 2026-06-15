@@ -846,7 +846,10 @@
 			"tokensUnit": "tokens",
 			"none": "No limits set for this key.",
 			"addTitle": "Add a limit",
-			"add": "Add"
+			"add": "Add",
+			"rps": "Requests per second (RPS)",
+			"columnTitle": "Limits",
+			"allowedModelsHint": "Leave empty to allow all models. Names must match the served model."
 		}
 	},
 	"infrastructure": {
