@@ -2,7 +2,7 @@ import { useCustomMutation } from "@refinedev/core";
 import { useCallback, useEffect, useState } from "react";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
 
-export const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_MS = 60_000;
 
 // useUsageByDimension polls the get_usage_by_dimension RPC and returns the rows.
 // Pass null to disable fetching (before a required id/workspace is known).
