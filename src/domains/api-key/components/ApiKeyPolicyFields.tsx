@@ -3,7 +3,10 @@ import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { QUOTA_PERIODS } from "@/domains/api-key/hooks/use-api-key-policy";
+import {
+  QUOTA_PERIODS,
+  useWorkspaceModels,
+} from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
@@ -12,16 +15,22 @@ type ApiKeyPolicyFieldsProps = {
   // The react-hook-form instance whose values include the policy fields.
   // biome-ignore lint/suspicious/noExplicitAny: shared across forms with extra fields.
   form: UseFormReturn<any>;
+  // Workspace whose available models populate the allowed-models dropdown.
+  workspace: string;
 };
 
-// API-key limits editor: Token quota, RPS, concurrency, allowed models. Every
-// limit is optional. Embedded in API key create + edit.
-export const ApiKeyPolicyFields = ({ form }: ApiKeyPolicyFieldsProps) => {
+// API-key limits editor: Token quota, RPS, RPM, concurrency, allowed models.
+// Every limit is optional. Embedded in API key create + edit.
+export const ApiKeyPolicyFields = ({
+  form,
+  workspace,
+}: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
   const modelsArray = useRefineFieldArray({
     control: form.control,
     name: "models",
   });
+  const modelOptions = useWorkspaceModels(workspace);
 
   return (
     <div className="space-y-3">
@@ -72,11 +81,16 @@ export const ApiKeyPolicyFields = ({ form }: ApiKeyPolicyFieldsProps) => {
 
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <FormFieldGroup
-              {...form}
-              name="rps"
-              label={t("api_keys.limits.rps")}
-            >
+            <FormFieldGroup {...form} name="rps" label={t("api_keys.limits.rps")}>
+              <Input
+                type="number"
+                min={0}
+                placeholder={t("api_keys.limits.optional")}
+              />
+            </FormFieldGroup>
+          </div>
+          <div className="flex-1">
+            <FormFieldGroup {...form} name="rpm" label={t("api_keys.limits.rpm")}>
               <Input
                 type="number"
                 min={0}
@@ -124,7 +138,10 @@ export const ApiKeyPolicyFields = ({ form }: ApiKeyPolicyFieldsProps) => {
                   name={`models.${index}.value`}
                   rules={{ required: true }}
                 >
-                  <Input placeholder={t("api_keys.limits.modelName")} />
+                  <FormCombobox
+                    placeholder={t("api_keys.limits.selectModel")}
+                    options={modelOptions}
+                  />
                 </FormFieldGroup>
               </div>
               <Button

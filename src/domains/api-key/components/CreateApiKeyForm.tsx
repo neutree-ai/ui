@@ -33,6 +33,7 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     },
   });
   const applyPolicy = useApplyApiKeyPolicy();
+  const selectedWorkspace = form.watch("workspace");
   const workspaces = useSelect({
     resource: "workspaces",
   });
@@ -150,7 +151,7 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         <div className="pt-1 text-sm font-medium">
           {t("api_keys.limits.sectionTitle")}
         </div>
-        <ApiKeyPolicyFields form={form} />
+        <ApiKeyPolicyFields form={form} workspace={selectedWorkspace} />
 
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={onClose}>

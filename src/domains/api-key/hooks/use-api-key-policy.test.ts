@@ -33,6 +33,7 @@ describe("buildApiKeyPolicyParams", () => {
     const v = {
       ...apiKeyPolicyDefaults(),
       rps: "10",
+      rpm: "600",
       concurrency: "8",
       models: [{ value: "gpt-4o" }, { value: " " }, { value: "claude" }],
     };
@@ -42,6 +43,12 @@ describe("buildApiKeyPolicyParams", () => {
       p_api_key_id: "k1",
       p_rule_type: "rate_limit",
       p_rule_spec: { limit: 10, window: "second" },
+    });
+    expect(access).toContainEqual({
+      p_level: "api_key",
+      p_api_key_id: "k1",
+      p_rule_type: "rate_limit",
+      p_rule_spec: { limit: 600, window: "minute" },
     });
     expect(access).toContainEqual({
       p_level: "api_key",

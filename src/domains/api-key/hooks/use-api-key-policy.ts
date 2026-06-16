@@ -15,7 +15,8 @@ export type PolicyModelRow = { value: string };
 export type ApiKeyPolicyFormValues = {
   quota_period: QuotaPeriod;
   quota_limit: string; // tokens; empty = no quota
-  rps: string; // requests/second; empty = no rate limit
+  rps: string; // requests/second; empty = no per-second rate limit
+  rpm: string; // requests/minute; empty = no per-minute rate limit
   concurrency: string; // max in-flight; empty = no limit
   models: PolicyModelRow[]; // allowed models; empty = unrestricted
 };
@@ -24,6 +25,7 @@ export const apiKeyPolicyDefaults = (): ApiKeyPolicyFormValues => ({
   quota_period: "monthly",
   quota_limit: "",
   rps: "",
+  rpm: "",
   concurrency: "",
   models: [],
 });
@@ -68,6 +70,16 @@ export function buildApiKeyPolicyParams(
       p_api_key_id: apiKeyId,
       p_rule_type: "rate_limit",
       p_rule_spec: { limit: Number(rps), window: "second" },
+    });
+  }
+
+  const rpm = String(values.rpm ?? "").trim();
+  if (rpm !== "" && Number(rpm) > 0) {
+    access.push({
+      p_level: "api_key",
+      p_api_key_id: apiKeyId,
+      p_rule_type: "rate_limit",
+      p_rule_spec: { limit: Number(rpm), window: "minute" },
     });
   }
 
@@ -157,7 +169,13 @@ export function summarizeApiKeyLimits(
   for (const a of accessRows) {
     if (a.rule_type === "rate_limit") {
       const w = a.rule_spec?.window;
-      out.push(w === "second" ? `${a.rule_spec?.limit} RPS` : `${a.rule_spec?.limit}/${w}`);
+      out.push(
+        w === "second"
+          ? `${a.rule_spec?.limit} RPS`
+          : w === "minute"
+            ? `${a.rule_spec?.limit} RPM`
+            : `${a.rule_spec?.limit}/${w}`,
+      );
     } else if (a.rule_type === "concurrency") {
       out.push(`${a.rule_spec?.max} concurrent`);
     } else if (a.rule_type === "model_allowlist") {
@@ -187,6 +205,10 @@ export function policyRowsToForm(
     (a) => a.rule_type === "rate_limit" && a.rule_spec?.window === "second",
   );
   if (rps) v.rps = String(rps.rule_spec?.limit ?? "");
+  const rpm = accessRows.find(
+    (a) => a.rule_type === "rate_limit" && a.rule_spec?.window === "minute",
+  );
+  if (rpm) v.rpm = String(rpm.rule_spec?.limit ?? "");
   const cc = accessRows.find((a) => a.rule_type === "concurrency");
   if (cc) v.concurrency = String(cc.rule_spec?.max ?? "");
   const models = accessRows.find((a) => a.rule_type === "model_allowlist");
@@ -195,40 +217,65 @@ export function policyRowsToForm(
   return v;
 }
 
-// Bulk: all api_key-level limits the caller can see, grouped by api_key_id, as
-// compact summary parts. Used by the API key list to show limits per row.
-export function useAllApiKeyLimits(): Map<string, string[]> {
+export type ApiKeyLimitsRow = {
+  // rate/concurrency summary parts (RPS / RPM / concurrent) — excludes quota and
+  // models, which have their own list columns.
+  rate: string[];
+  // allowed model names (empty = all models allowed).
+  models: string[];
+};
+
+// rate/concurrency summary parts for a key's access rows.
+function rateSummary(accessRows: AccessRow[]): string[] {
+  const out: string[] = [];
+  for (const a of accessRows) {
+    if (a.rule_type === "rate_limit") {
+      const w = a.rule_spec?.window;
+      out.push(
+        w === "second"
+          ? `${a.rule_spec?.limit} RPS`
+          : w === "minute"
+            ? `${a.rule_spec?.limit} RPM`
+            : `${a.rule_spec?.limit}/${w}`,
+      );
+    } else if (a.rule_type === "concurrency") {
+      out.push(`${a.rule_spec?.max} concurrent`);
+    }
+  }
+  return out;
+}
+
+// Bulk: all api_key-level rate limits + allowed models the caller can see,
+// grouped by api_key_id. Used by the API key list columns (one fetch each).
+export function useAllApiKeyLimits(): Map<string, ApiKeyLimitsRow> {
   const { mutateAsync } = useCustomMutation();
-  const [byKey, setByKey] = useState<Map<string, string[]>>(new Map());
+  const [byKey, setByKey] = useState<Map<string, ApiKeyLimitsRow>>(new Map());
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [q, a] = await Promise.all([
-          mutateAsync({ url: "/rpc/get_quota_policies", method: "post", values: {} }),
-          mutateAsync({ url: "/rpc/get_access_policies", method: "post", values: {} }),
-        ]);
-        const quotaByKey = new Map<string, QuotaRow[]>();
-        for (const r of (q.data as (QuotaRow & { level: string; api_key_id: string | null })[]) ?? []) {
-          if (r.level !== "api_key" || !r.api_key_id) continue;
-          const list = quotaByKey.get(r.api_key_id) ?? [];
-          list.push(r);
-          quotaByKey.set(r.api_key_id, list);
-        }
+        const a = await mutateAsync({
+          url: "/rpc/get_access_policies",
+          method: "post",
+          values: {},
+        });
         const accessByKey = new Map<string, AccessRow[]>();
-        for (const r of (a.data as (AccessRow & { level: string; api_key_id: string | null })[]) ?? []) {
+        for (const r of (a.data as (AccessRow & {
+          level: string;
+          api_key_id: string | null;
+        })[]) ?? []) {
           if (r.level !== "api_key" || !r.api_key_id) continue;
           const list = accessByKey.get(r.api_key_id) ?? [];
           list.push(r);
           accessByKey.set(r.api_key_id, list);
         }
-        const out = new Map<string, string[]>();
-        const ids = new Set([...quotaByKey.keys(), ...accessByKey.keys()]);
-        for (const id of ids) {
-          out.set(
-            id,
-            summarizeApiKeyLimits(quotaByKey.get(id) ?? [], accessByKey.get(id) ?? []),
-          );
+        const out = new Map<string, ApiKeyLimitsRow>();
+        for (const [id, rows] of accessByKey.entries()) {
+          const models = rows.find((r) => r.rule_type === "model_allowlist");
+          out.set(id, {
+            rate: rateSummary(rows),
+            models: (models?.rule_spec?.models ?? []) as string[],
+          });
         }
         if (!cancelled) setByKey(out);
       } catch {
@@ -300,20 +347,27 @@ export function useApiKeyLimits() {
         await delQuota(curQuota.id);
       }
 
-      // Access rules by type: upsert provided, delete cleared.
-      const want = new Map(access.map((a) => [a.p_rule_type, a]));
-      const types: AccessCall["p_rule_type"][] = [
-        "rate_limit",
+      // Access rules: upsert provided, delete cleared. rate_limit is identified
+      // per window (RPS=second, RPM=minute) so RPS and RPM are independent.
+      const ruleKey = (rt: string, win?: string) =>
+        rt === "rate_limit" ? `rate_limit:${win}` : rt;
+      const want = new Map(
+        access.map((a) => [ruleKey(a.p_rule_type, a.p_rule_spec.window as string), a]),
+      );
+      for (const a of want.values()) {
+        await setAccess(a);
+      }
+      // Only reconcile the identities this editor controls.
+      const managed = new Set([
+        "rate_limit:second",
+        "rate_limit:minute",
         "concurrency",
         "model_allowlist",
-      ];
-      for (const ty of types) {
-        const w = want.get(ty);
-        if (w) {
-          await setAccess(w);
-        } else {
-          const cur = loaded.accessRows.find((r) => r.rule_type === ty);
-          if (cur) await delAccess(cur.id);
+      ]);
+      for (const r of loaded.accessRows) {
+        const key = ruleKey(r.rule_type, r.rule_spec?.window);
+        if (managed.has(key) && !want.has(key)) {
+          await delAccess(r.id);
         }
       }
     },
@@ -323,4 +377,99 @@ export function useApiKeyLimits() {
   );
 
   return { load, save };
+}
+
+// Available client-facing models in a workspace (for the allowed-models
+// dropdown). Tags EE-only models with "(EE)". Backed by get_workspace_models.
+export function useWorkspaceModels(
+  workspace: string | undefined,
+): { value: string; label: string }[] {
+  const { mutateAsync } = useCustomMutation();
+  const [opts, setOpts] = useState<{ value: string; label: string }[]>([]);
+  useEffect(() => {
+    if (!workspace) {
+      setOpts([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await mutateAsync({
+          url: "/rpc/get_workspace_models",
+          method: "post",
+          values: { p_workspace: workspace },
+        });
+        const rows = (res.data as { model: string; source: string }[]) ?? [];
+        const bySrc = new Map<string, Set<string>>();
+        for (const r of rows) {
+          const s = bySrc.get(r.model) ?? new Set<string>();
+          s.add(r.source);
+          bySrc.set(r.model, s);
+        }
+        const out = [...bySrc.entries()]
+          .map(([model, srcs]) => {
+            const isEE = srcs.has("external_endpoint") && !srcs.has("endpoint");
+            return { value: model, label: isEE ? `${model} (EE)` : model };
+          })
+          .sort((a, b) => a.label.localeCompare(b.label));
+        if (!cancelled) setOpts(out);
+      } catch {
+        if (!cancelled) setOpts([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mutateAsync, workspace]);
+  return opts;
+}
+
+export type ApiKeyUsage = {
+  period: string;
+  token_limit: number;
+  used: number;
+  remaining: number;
+};
+
+// Bulk per-API-key overall quota usage for a workspace, keyed by api_key_id.
+// Backed by get_api_keys_usage_summary (one call). Powers the list usage columns.
+export function useAllApiKeyUsage(
+  workspace: string | undefined,
+): Map<string, ApiKeyUsage> {
+  const { mutateAsync } = useCustomMutation();
+  const [byKey, setByKey] = useState<Map<string, ApiKeyUsage>>(new Map());
+  useEffect(() => {
+    if (!workspace) {
+      setByKey(new Map());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await mutateAsync({
+          url: "/rpc/get_api_keys_usage_summary",
+          method: "post",
+          values: { p_workspace: workspace },
+        });
+        const rows =
+          (res.data as ({ api_key_id: string } & ApiKeyUsage)[]) ?? [];
+        const m = new Map<string, ApiKeyUsage>();
+        for (const r of rows) {
+          m.set(r.api_key_id, {
+            period: r.period,
+            token_limit: Number(r.token_limit),
+            used: Number(r.used),
+            remaining: Number(r.remaining),
+          });
+        }
+        if (!cancelled) setByKey(m);
+      } catch {
+        if (!cancelled) setByKey(new Map());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mutateAsync, workspace]);
+  return byKey;
 }

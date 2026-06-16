@@ -23,7 +23,12 @@ export const ApiKeysShow = () => {
     <div className="w-full h-full">
       <ShowPage record={record} canEdit={false}>
         <MetadataCard metadata={record.metadata} />
-        {record.id && <ApiKeyLimitsCard apiKeyId={String(record.id)} />}
+        {record.id && (
+          <ApiKeyLimitsCard
+            apiKeyId={String(record.id)}
+            workspace={record.metadata.workspace}
+          />
+        )}
       </ShowPage>
     </div>
   );
