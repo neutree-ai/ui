@@ -75,6 +75,75 @@ interface MaxAvailableResources {
   gpu: ResourcePool;
 }
 
+type MutableEndpointRoleSpec = {
+  name?: string;
+  replicas?: { num?: unknown } | null;
+  resources?: Record<string, unknown> | null;
+  variables?: Record<string, unknown> | null;
+  env?: Record<string, string> | null;
+};
+
+type MutableEndpointSpec = {
+  strategy?: string | null;
+  placement?: { roles?: string | null; replicas?: string | null } | null;
+  resources?: Record<string, unknown> | null;
+  replicas?: { num?: unknown } | null;
+  deployment_options?: { scheduler?: { type?: string } | null } | null;
+  variables?: Record<string, unknown> | null;
+  env?: Record<string, string> | null;
+  roles?: MutableEndpointRoleSpec[] | null;
+  kv?: {
+    transfer?: {
+      connector?: string | null;
+      extra?: Record<string, unknown> | null;
+    } | null;
+  } | null;
+};
+
+const isPdStrategy = (strategy?: string | null) => strategy === "pd";
+
+const roleDefaults = [
+  {
+    name: "prefill",
+    replicas: { num: 1 },
+    resources: {
+      cpu: "0",
+      memory: "0",
+      gpu: "0",
+      accelerator: null,
+    },
+    variables: {
+      engine_args: {},
+    },
+    env: {},
+  },
+  {
+    name: "decode",
+    replicas: { num: 1 },
+    resources: {
+      cpu: "0",
+      memory: "0",
+      gpu: "0",
+      accelerator: null,
+    },
+    variables: {
+      engine_args: {},
+    },
+    env: {},
+  },
+] as const;
+
+function convertResourceFields(resources?: Record<string, unknown> | null) {
+  if (!resources) return;
+
+  for (const field of ["cpu", "memory", "gpu"]) {
+    const value = resources[field];
+    if (value != null) {
+      resources[field] = String(value);
+    }
+  }
+}
+
 /**
  * Compute maximum available resources for the endpoint form sliders.
  *
@@ -184,17 +253,68 @@ export function transformEndpointValues(spec: {
   resources?: Record<string, unknown> | null;
   replicas?: { num?: unknown } | null;
 }): void {
-  if (spec.resources) {
-    for (const field of ["cpu", "memory", "gpu"]) {
-      const value = (spec.resources as Record<string, unknown>)[field];
-      if (value != null) {
-        (spec.resources as Record<string, unknown>)[field] = String(value);
-      }
+  const endpointSpec = spec as MutableEndpointSpec;
+
+  if (!isPdStrategy(endpointSpec.strategy)) {
+    convertResourceFields(endpointSpec.resources);
+    if (endpointSpec.replicas?.num != null) {
+      endpointSpec.replicas.num = Number(endpointSpec.replicas.num);
     }
+
+    delete endpointSpec.strategy;
+    delete endpointSpec.placement;
+    delete endpointSpec.roles;
+    delete endpointSpec.kv;
+    return;
   }
-  if (spec.replicas?.num != null) {
-    spec.replicas.num = Number(spec.replicas.num);
-  }
+
+  endpointSpec.strategy = "pd";
+  endpointSpec.placement = { roles: "same-host" };
+  endpointSpec.resources = null;
+  endpointSpec.replicas = {
+    num: Number(endpointSpec.replicas?.num ?? defaultEndpointSpec.replicas.num),
+  };
+  endpointSpec.deployment_options = null;
+
+  const sourceRoles = endpointSpec.roles ?? [];
+  endpointSpec.roles = roleDefaults.map((roleDefault, index) => {
+    const role = sourceRoles[index] ?? {};
+    const resources =
+      role.resources != null
+        ? { ...role.resources }
+        : { ...roleDefault.resources };
+    convertResourceFields(resources);
+
+    return {
+      name: role.name ?? roleDefault.name,
+      replicas: {
+        num: Number(role.replicas?.num ?? roleDefault.replicas.num),
+      },
+      resources,
+      variables: role.variables ?? { ...roleDefault.variables },
+      env: role.env ?? {},
+    };
+  });
+
+  delete endpointSpec.kv;
+}
+
+function validatePdRoleReplicas(
+  spec: MutableEndpointSpec,
+  errors: Record<string, { type: string; message: string }>,
+  t: (key: string) => string,
+) {
+  const roles = spec.roles ?? [];
+  roles.forEach((role, index) => {
+    const value = Number(role.replicas?.num ?? 0);
+
+    if (value < 1) {
+      errors[`spec.roles.${index}.replicas.num`] = {
+        type: "manual",
+        message: t("endpoints.messages.replicasMustBeAtLeastOne"),
+      };
+    }
+  });
 }
 
 /**
@@ -202,8 +322,10 @@ export function transformEndpointValues(spec: {
  */
 export function validateEndpointValues(
   spec: {
+    strategy?: string | null;
     replicas?: { num?: number } | null;
     deployment_options?: { scheduler?: { type?: string } | null } | null;
+    roles?: MutableEndpointRoleSpec[] | null;
   },
   context: {
     action: "create" | "edit";
@@ -215,6 +337,8 @@ export function validateEndpointValues(
 ): Record<string, { type: string; message: string }> {
   const errors: Record<string, { type: string; message: string }> = {};
 
+  const isPd = isPdStrategy(spec.strategy);
+
   if (spec.replicas?.num != null && spec.replicas.num < 1) {
     errors["spec.replicas.num"] = {
       type: "manual",
@@ -222,7 +346,11 @@ export function validateEndpointValues(
     };
   }
 
-  if (!spec.deployment_options?.scheduler?.type) {
+  if (isPd) {
+    validatePdRoleReplicas(spec, errors, t);
+  }
+
+  if (!isPd && !spec.deployment_options?.scheduler?.type) {
     errors["spec.deployment_options.scheduler.type"] = {
       type: "manual",
       message: t("endpoints.messages.schedulerTypeRequired"),
@@ -253,18 +381,22 @@ export function validateEndpointValues(
  */
 export function buildCatalogMergedSpec(
   catalogSpec: Record<string, unknown> | null,
-): Record<string, Record<string, unknown>> {
-  const result: Record<string, Record<string, unknown>> = {};
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   for (const [key, defaultValue] of Object.entries(defaultEndpointSpec)) {
     if (key === "cluster") continue;
     const catalogValue = catalogSpec?.[key];
     result[key] =
-      catalogValue != null
+      catalogValue != null &&
+      typeof catalogValue === "object" &&
+      !Array.isArray(catalogValue) &&
+      typeof defaultValue === "object" &&
+      !Array.isArray(defaultValue)
         ? deepMerge(
             defaultValue as Record<string, unknown>,
             catalogValue as Record<string, unknown>,
           )
-        : (defaultValue as Record<string, unknown>);
+        : (catalogValue ?? defaultValue);
   }
   return result;
 }
@@ -301,4 +433,9 @@ export const defaultEndpointSpec = {
     engine_args: {},
   },
   env: {},
+  strategy: "",
+  placement: {
+    roles: "",
+  },
+  roles: roleDefaults,
 } as const;

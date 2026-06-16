@@ -6,7 +6,12 @@ export const EndpointsEdit = () => {
     form,
     metadataFields,
     templateFields,
+    modelFields,
+    engineFields,
+    deploymentModeFields,
+    replicaFields,
     resourceFields,
+    roleFields,
     customizeFields,
   } = useEndpointForm({
     action: "edit",
@@ -16,7 +21,12 @@ export const EndpointsEdit = () => {
     <ResourceForm {...form}>
       {metadataFields}
       {templateFields}
+      {modelFields}
+      {engineFields}
+      {replicaFields}
+      {deploymentModeFields}
       {resourceFields}
+      {roleFields}
       {customizeFields}
     </ResourceForm>
   );

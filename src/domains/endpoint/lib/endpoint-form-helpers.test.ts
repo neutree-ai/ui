@@ -194,6 +194,132 @@ describe("transformEndpointValues", () => {
     const spec = { resources: { cpu: 1 }, replicas: null };
     expect(() => transformEndpointValues(spec)).not.toThrow();
   });
+
+  it("maps prefill/decode mode to the phase 1 endpoint payload", () => {
+    const spec = {
+      strategy: "pd",
+      placement: null,
+      resources: { cpu: 4, memory: 8, gpu: 1 },
+      replicas: { num: "3" as unknown },
+      deployment_options: { scheduler: { type: "roundrobin" } },
+      roles: [
+        {
+          name: "prefill",
+          replicas: { num: "2" as unknown },
+          resources: {
+            cpu: 8,
+            memory: 32,
+            gpu: 1,
+            accelerator: { type: "nvidia_gpu", product: "H100" },
+          },
+          variables: { engine_args: { tensor_parallel_size: 1 } },
+          env: { PREFILL_ONLY: "true" },
+        },
+        {
+          name: "decode",
+          replicas: { num: "4" as unknown },
+          resources: {
+            cpu: 12,
+            memory: 48,
+            gpu: 2,
+            accelerator: { type: "nvidia_gpu", product: "H100" },
+          },
+          variables: { engine_args: { gpu_memory_utilization: 0.9 } },
+          env: { DECODE_ONLY: "true" },
+        },
+      ],
+      kv: {
+        transfer: {
+          connector: "nixl",
+          extra: { buffer_size: "1073741824" },
+        },
+      },
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec).toEqual({
+      strategy: "pd",
+      placement: { roles: "same-host" },
+      resources: null,
+      replicas: { num: 3 },
+      deployment_options: null,
+      roles: [
+        {
+          name: "prefill",
+          replicas: { num: 2 },
+          resources: {
+            cpu: "8",
+            memory: "32",
+            gpu: "1",
+            accelerator: { type: "nvidia_gpu", product: "H100" },
+          },
+          variables: { engine_args: { tensor_parallel_size: 1 } },
+          env: { PREFILL_ONLY: "true" },
+        },
+        {
+          name: "decode",
+          replicas: { num: 4 },
+          resources: {
+            cpu: "12",
+            memory: "48",
+            gpu: "2",
+            accelerator: { type: "nvidia_gpu", product: "H100" },
+          },
+          variables: { engine_args: { gpu_memory_utilization: 0.9 } },
+          env: { DECODE_ONLY: "true" },
+        },
+      ],
+      kv: undefined,
+    });
+  });
+
+  it("removes KV settings from prefill/decode payloads", () => {
+    const spec = {
+      strategy: "pd",
+      resources: null,
+      replicas: null,
+      roles: [],
+      kv: {
+        transfer: {
+          connector: "nixl",
+          extra: {},
+        },
+      },
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.kv).toBeUndefined();
+  });
+
+  it("removes prefill/decode-only fields from standard payloads", () => {
+    const spec = {
+      strategy: "",
+      placement: { roles: "same-host" },
+      resources: { cpu: 4, memory: 8, gpu: 0 },
+      replicas: { num: "2" as unknown },
+      deployment_options: { scheduler: { type: "consistent_hash" } },
+      roles: [
+        {
+          name: "prefill",
+          replicas: { num: 1 },
+          resources: { cpu: 1, memory: 1, gpu: 0, accelerator: null },
+          variables: { engine_args: {} },
+          env: {},
+        },
+      ],
+      kv: { transfer: { connector: "nixl", extra: {} } },
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec).toEqual({
+      resources: { cpu: "4", memory: "8", gpu: "0" },
+      replicas: { num: 2 },
+      deployment_options: { scheduler: { type: "consistent_hash" } },
+    });
+  });
 });
 
 describe("validateEndpointValues", () => {
@@ -326,6 +452,60 @@ describe("validateEndpointValues", () => {
     );
     expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
   });
+
+  it("validates prefill/decode replicas instead of global scheduler", () => {
+    const errors = validateEndpointValues(
+      {
+        strategy: "pd",
+        replicas: { num: 1 },
+        deployment_options: null,
+        roles: [
+          { name: "prefill", replicas: { num: 0 } },
+          { name: "decode", replicas: { num: 0 } },
+        ],
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
+    expect(errors["spec.roles.0.replicas.num"]?.message).toBe(
+      "endpoints.messages.replicasMustBeAtLeastOne",
+    );
+    expect(errors["spec.roles.1.replicas.num"]?.message).toBe(
+      "endpoints.messages.replicasMustBeAtLeastOne",
+    );
+  });
+
+  it("validates prefill/decode global replicas", () => {
+    const errors = validateEndpointValues(
+      {
+        strategy: "pd",
+        replicas: { num: 0 },
+        deployment_options: null,
+        roles: [
+          { name: "prefill", replicas: { num: 1 } },
+          { name: "decode", replicas: { num: 1 } },
+        ],
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(errors["spec.replicas.num"]?.message).toBe(
+      "endpoints.messages.replicasMustBeAtLeastOne",
+    );
+  });
 });
 
 describe("buildCatalogMergedSpec", () => {
@@ -342,12 +522,18 @@ describe("buildCatalogMergedSpec", () => {
     );
     expect(result.variables).toEqual(defaultEndpointSpec.variables);
     expect(result.env).toEqual(defaultEndpointSpec.env);
+    expect(result.strategy).toBe(defaultEndpointSpec.strategy);
+    expect(result.placement).toEqual(defaultEndpointSpec.placement);
+    expect(result.roles).toEqual(defaultEndpointSpec.roles);
+    expect(result.kv).toBeUndefined();
   });
 
   it("merges catalog values onto defaults", () => {
     const catalogSpec = {
       model: { name: "llama-3", registry: "hf" },
       engine: { engine: "vllm", version: "0.6.0" },
+      strategy: "pd",
+      placement: { roles: "same-host" },
     };
 
     const result = buildCatalogMergedSpec(catalogSpec);
@@ -364,6 +550,8 @@ describe("buildCatalogMergedSpec", () => {
     // Sections not in catalog fall back to defaults
     expect(result.resources).toEqual(defaultEndpointSpec.resources);
     expect(result.replicas).toEqual(defaultEndpointSpec.replicas);
+    expect(result.strategy).toBe("pd");
+    expect(result.placement).toEqual({ roles: "same-host" });
   });
 
   it("falls back to defaults for null catalog sections", () => {

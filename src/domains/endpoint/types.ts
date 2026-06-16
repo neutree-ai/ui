@@ -3,17 +3,23 @@ import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import type {
   DeploymentOptions,
   EndpointEngineSpec,
+  EndpointPlacementSpec,
+  EndpointRoleSpec,
+  KVSpec,
   ModelSpec,
   ReplicaSpec,
   ResourceSpec,
 } from "@/foundation/types/serving-types";
 
 export type {
-  ModelSpec,
-  EndpointEngineSpec,
-  ResourceSpec,
-  ReplicaSpec,
   DeploymentOptions,
+  EndpointEngineSpec,
+  EndpointPlacementSpec,
+  EndpointRoleSpec,
+  KVSpec,
+  ModelSpec,
+  ReplicaSpec,
+  ResourceSpec,
 } from "@/foundation/types/serving-types";
 
 enum EndpointPhase {
@@ -30,15 +36,27 @@ export type EndpointSpec = {
   cluster: string;
   model: ModelSpec;
   engine: EndpointEngineSpec;
+  strategy?: string | null;
+  placement?: EndpointPlacementSpec | null;
   resources: ResourceSpec | null;
   replicas: ReplicaSpec | null;
   deployment_options: DeploymentOptions | null;
-  variables: Record<string, any> | null;
+  variables: Record<string, unknown> | null;
   env: Record<string, string> | null;
+  roles?: EndpointRoleSpec[] | null;
+  kv?: KVSpec | null;
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
+  replicas?: EndpointReplicaStatus[] | null;
+};
+
+export type EndpointReplicaStatus = {
+  id?: string | null;
+  role?: string | null;
+  node_name?: string | null;
+  phase?: string | null;
 };
 
 export type Endpoint = {
@@ -87,6 +105,8 @@ export type EndpointModelCatalogRef = {
     replicas: ReplicaSpec | null;
     deployment_options: DeploymentOptions | null;
     variables: Record<string, unknown> | null;
+    roles?: EndpointRoleSpec[] | null;
+    kv?: KVSpec | null;
   };
 };
 

@@ -1,3 +1,5 @@
+import { Check, Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Tooltip,
   TooltipContent,
@@ -6,13 +8,12 @@ import {
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { cn } from "@/foundation/lib/utils";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
-import { Check, Copy } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import Timestamp from "./Timestamp";
 
 type BaseStatusProps = BaseStatusType & {
   className?: string;
   translatedPhase: string;
+  children?: React.ReactNode;
 };
 
 export default function BaseStatus({
@@ -21,6 +22,7 @@ export default function BaseStatus({
   className,
   translatedPhase,
   last_transition_time,
+  children,
 }: BaseStatusProps) {
   const { t } = useTranslation();
   const { copy, copied } = useCopyToClipboard();
@@ -77,6 +79,7 @@ export default function BaseStatus({
               <Timestamp timestamp={last_transition_time} />
             </div>
           )}
+          {children}
         </div>
       </TooltipContent>
     </Tooltip>

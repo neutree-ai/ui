@@ -573,11 +573,14 @@
 			"templateSelection": "Template Selection",
 			"configuration": "Configuration",
 			"resourceSettings": "Resource Settings",
+			"deploymentMode": "Deployment Mode",
+			"roleSettings": "Role Settings",
 			"customizeSettings": "Customize Settings",
 			"configurationDetails": "Configuration Details",
 			"modelSettings": "Model Settings",
 			"engineSettings": "Engine Settings",
 			"replicaSettings": "Replica Settings",
+			"schedulerSettings": "Scheduler Settings",
 			"advancedOptions": "Advanced Options",
 			"environmentVariables": "Environment Variables"
 		},
@@ -597,6 +600,19 @@
 		},
 		"options": {
 			"generic": "Generic"
+		},
+		"deploymentModes": {
+			"standard": "Standard",
+			"prefillDecode": "Prefill / Decode"
+		},
+		"roles": {
+			"prefill": "Prefill",
+			"decode": "Decode"
+		},
+		"status": {
+			"replicaStatus": "Replica status",
+			"node": "Node",
+			"phase": "Phase"
 		},
 		"actions": {
 			"pause": "Pause",
