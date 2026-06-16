@@ -1150,8 +1150,8 @@
 		"title": "Observability"
 	},
 	"ai_traces": {
-		"title": "Inference Trace",
-		"empty": "No traces in the selected window.",
+		"title": "Access Log",
+		"empty": "No access logs in the selected window.",
 		"refresh": "Refresh",
 		"stats": {
 			"title": "Requests (last 7 days)",
@@ -1184,7 +1184,7 @@
 			"finishReason": "Finish"
 		},
 		"detail": {
-			"title": "Trace detail",
+			"title": "Access log detail",
 			"time": "Time",
 			"status": "Status",
 			"endpoint": "Endpoint",
@@ -1243,7 +1243,7 @@
 		"pull": "Pull",
 		"system_admin": "System Admin",
 		"read-credentials": "Read Credentials",
-		"trace-read": "Trace Read",
+		"trace-read": "Access Log Read",
 		"usage-read": "Usage Read",
 		"requiredBy": "Required by: {{actions}}"
 	},
