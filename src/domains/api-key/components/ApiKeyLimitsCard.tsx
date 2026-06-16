@@ -31,11 +31,16 @@ export const ApiKeyLimitsCard = ({ apiKeyId }: { apiKeyId: string }) => {
     defaultValues: apiKeyPolicyDefaults(),
   });
 
+  // Load (and re-load after save) the key's current limits. Keyed only on
+  // apiKeyId: load() and the RHF form's methods are stable, but refine's useForm
+  // returns a new wrapper object each render, so depending on `form` here would
+  // re-run the effect every render and loop the get-policy requests.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run once per key.
   const refresh = useCallback(async () => {
     const rows = await load(apiKeyId);
     setLoaded(rows);
     form.reset(policyRowsToForm(rows.quotaRows, rows.accessRows));
-  }, [load, apiKeyId, form]);
+  }, [apiKeyId]);
 
   useEffect(() => {
     refresh();
