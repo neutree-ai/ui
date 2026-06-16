@@ -380,7 +380,10 @@ export function useApiKeyLimits() {
 }
 
 // Available client-facing models in a workspace (for the allowed-models
-// dropdown). Tags EE-only models with "(EE)". Backed by get_workspace_models.
+// dropdown). The label shows the serving endpoint name(s) — for both regular
+// endpoints (IE) and external endpoints (EE) — so the user picks by where the
+// model is actually served, e.g. `gpt-4 (openrouter-free)`. A model served by
+// several endpoints lists all their names. Backed by get_workspace_models.
 export function useWorkspaceModels(
   workspace: string | undefined,
 ): { value: string; label: string }[] {
@@ -399,17 +402,27 @@ export function useWorkspaceModels(
           method: "post",
           values: { p_workspace: workspace },
         });
-        const rows = (res.data as { model: string; source: string }[]) ?? [];
-        const bySrc = new Map<string, Set<string>>();
+        const rows =
+          (res.data as {
+            model: string;
+            source: string;
+            endpoint_name: string | null;
+          }[]) ?? [];
+        // Collect the serving endpoint name(s) per model (deduped, sorted).
+        const byModel = new Map<string, Set<string>>();
         for (const r of rows) {
-          const s = bySrc.get(r.model) ?? new Set<string>();
-          s.add(r.source);
-          bySrc.set(r.model, s);
+          const names = byModel.get(r.model) ?? new Set<string>();
+          const name = String(r.endpoint_name ?? "").trim();
+          if (name !== "") names.add(name);
+          byModel.set(r.model, names);
         }
-        const out = [...bySrc.entries()]
-          .map(([model, srcs]) => {
-            const isEE = srcs.has("external_endpoint") && !srcs.has("endpoint");
-            return { value: model, label: isEE ? `${model} (EE)` : model };
+        const out = [...byModel.entries()]
+          .map(([model, names]) => {
+            const list = [...names].sort((a, b) => a.localeCompare(b));
+            return {
+              value: model,
+              label: list.length > 0 ? `${model} (${list.join(", ")})` : model,
+            };
           })
           .sort((a, b) => a.label.localeCompare(b.label));
         if (!cancelled) setOpts(out);
