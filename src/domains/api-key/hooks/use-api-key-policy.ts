@@ -217,7 +217,7 @@ export function policyRowsToForm(
   return v;
 }
 
-export type ApiKeyLimitsRow = {
+type ApiKeyLimitsRow = {
   // rate/concurrency summary parts (RPS / RPM / concurrent) — excludes quota and
   // models, which have their own list columns.
   rate: string[];
@@ -424,7 +424,7 @@ export function useWorkspaceModels(
   return opts;
 }
 
-export type ApiKeyUsage = {
+type ApiKeyUsage = {
   period: string;
   token_limit: number;
   used: number;
