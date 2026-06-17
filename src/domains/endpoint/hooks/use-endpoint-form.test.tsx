@@ -1265,6 +1265,8 @@ describe("useEndpointForm", () => {
         "endpoint-node-resource-metrics",
       )) {
         expect(nodeMetrics.className).toContain("flex");
+        expect(nodeMetrics.className).toContain("justify-start");
+        expect(nodeMetrics.className).not.toContain("justify-end");
         expect(nodeMetrics.className).not.toContain("max-w");
         const pills = within(nodeMetrics).getAllByTestId(
           "endpoint-node-resource-pill",

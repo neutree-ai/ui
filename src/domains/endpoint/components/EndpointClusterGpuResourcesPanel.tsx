@@ -346,7 +346,7 @@ function NodeResourcePillGrid({
   return (
     <div
       data-testid="endpoint-node-resource-metrics"
-      className="flex min-w-0 flex-wrap justify-start gap-1.5 lg:justify-end"
+      className="flex min-w-0 flex-wrap justify-start gap-1.5"
     >
       {items.map((metric) => (
         <NodeResourcePill
