@@ -217,6 +217,7 @@ export const NodeResourcesTable = ({
                             coreUsage: t("clusters.fields.coreUsage"),
                             allProducts: t("clusters.options.allGpuProducts"),
                             allNodes: t("clusters.options.allNodes"),
+                            allDevices: t("clusters.options.allDevices"),
                             searchPlaceholder: t(
                               "clusters.placeholders.searchGpuDevices",
                             ),

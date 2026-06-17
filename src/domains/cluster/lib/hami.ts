@@ -38,8 +38,10 @@ export function getVgpuProductRows(
       const metadataProducts =
         resourceInfo?.accelerator_metadata?.[acceleratorType]?.products ?? {};
 
-      if (allocatableGroup.products) {
-        return Object.entries(allocatableGroup.products).map(
+      const allocatableProducts = allocatableGroup.products;
+
+      if (allocatableProducts && Object.keys(allocatableProducts).length > 0) {
+        return Object.entries(allocatableProducts).map(
           ([product, allocatableProduct]) => {
             const availableProduct = availableGroup?.products?.[product];
             return {

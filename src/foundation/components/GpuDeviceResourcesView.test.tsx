@@ -26,6 +26,7 @@ const labels = {
   coreUsage: "Core Usage",
   allProducts: "All Products",
   allNodes: "All Nodes",
+  allDevices: "All Devices",
   searchPlaceholder: "Search devices",
   gpuNumber: "GPU",
   uuid: "GPU UUID",
@@ -163,7 +164,8 @@ describe("GpuDeviceResourcesView", () => {
             ],
           },
           "node-b": {
-            ...nodeResources["node-b"],
+            allocatable: null,
+            available: null,
             devices: [
               {
                 uuid: "GPU-cccccccc-2222-3333-4444-555555555555",
@@ -271,7 +273,7 @@ describe("GpuDeviceResourcesView", () => {
 
     expect(screen.getByTestId("gpu-device-resource-toolbar")).toBeTruthy();
     expect(screen.getAllByRole("combobox")).toHaveLength(1);
-    expect(screen.getByText("All Nodes")).toBeTruthy();
+    expect(screen.getByText("All Devices")).toBeTruthy();
     expect(screen.queryByText("Summary")).toBeNull();
     expect(screen.queryByText("Nodes")).toBeNull();
     expect(screen.queryByText("Table")).toBeNull();

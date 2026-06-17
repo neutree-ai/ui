@@ -141,9 +141,11 @@ export function parseClusterResources(
 
       const translatedType = translateAcceleratorType(type);
 
-      if (allocatableGroup.products) {
+      const allocatableProducts = allocatableGroup.products;
+
+      if (allocatableProducts && Object.keys(allocatableProducts).length > 0) {
         for (const [product, productResources] of Object.entries(
-          allocatableGroup.products,
+          allocatableProducts,
         )) {
           const availableProduct = availableGroup?.products?.[product];
 

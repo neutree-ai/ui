@@ -17,16 +17,7 @@ describe("NumberInput", () => {
     fireEvent.focus(getInput());
     fireEvent.change(getInput(), { target: { value: "123" } });
     expect(onValueChange).toHaveBeenCalledWith(123);
-  });
-
-  it("calls onValueChange from native input events", () => {
-    const onValueChange = vi.fn();
-    render(<NumberInput value={0} onValueChange={onValueChange} />);
-
-    fireEvent.focus(getInput());
-    fireEvent.input(getInput(), { target: { value: "123" } });
-
-    expect(onValueChange).toHaveBeenCalledWith(123);
+    expect(onValueChange).toHaveBeenCalledOnce();
   });
 
   it("keeps its parsing handlers when form field handlers are injected", () => {

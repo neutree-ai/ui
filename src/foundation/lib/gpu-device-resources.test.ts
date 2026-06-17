@@ -188,6 +188,88 @@ describe("gpu device resource helpers", () => {
     ]);
   });
 
+  it("falls back to product groups when card-level products is empty", () => {
+    expect(
+      buildGpuCardResourceRows({
+        accelerator_metadata: {
+          nvidia_gpu: {
+            products: {
+              "Tesla-T4": { memory_total_mib: 15360 },
+            },
+          },
+        },
+        allocatable: {
+          cpu: 32,
+          memory: 128,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: { "Tesla-T4": 2 },
+              products: {},
+            },
+          },
+        },
+        available: {
+          cpu: 24,
+          memory: 96,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 1,
+              product_groups: { "Tesla-T4": 1 },
+              products: {},
+            },
+          },
+        },
+        node_resources: {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-free",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toEqual([
+      {
+        acceleratorType: "nvidia_gpu",
+        product: "Tesla-T4",
+        matchesSelectedAccelerator: true,
+        memoryTotalMiB: 15360,
+        quantity: {
+          available: 1,
+          total: 2,
+          used: 1,
+          percent: 50,
+        },
+        memory: {
+          available: 15360,
+          total: 15360,
+          used: 0,
+          percent: 0,
+        },
+        core: {
+          available: 100,
+          total: 100,
+          used: 0,
+          percent: 0,
+        },
+      },
+    ]);
+  });
+
   it("counts only devices with no vGPU allocation as full-card available", () => {
     expect(
       buildGpuCardResourceRows({

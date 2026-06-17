@@ -170,8 +170,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const engineSpec = form.watch("spec.engine");
 
   const selectedAccelerator = normalizedResources?.accelerator;
-  const cpuUsage = normalizedResources?.cpu || 0;
-  const memoryUsage = normalizedResources?.memory || 0;
   const gpuUsage = normalizedResources?.gpu || 0;
   const replicaCount = Math.max(1, Number(formValues.spec?.replicas?.num || 1));
 
@@ -247,8 +245,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     currentCluster,
     clustersData: clusters.query.data?.data,
     selectedAccelerator,
-    cpuUsage,
-    memoryUsage,
     currentUsage,
     t,
   });

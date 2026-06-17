@@ -39,6 +39,7 @@ type GpuDeviceResourcesViewLabels = {
   coreUsage: string;
   allProducts: string;
   allNodes: string;
+  allDevices: string;
   searchPlaceholder: string;
   gpuNumber: string;
   uuid: string;
@@ -423,7 +424,7 @@ export function GpuDeviceResourcesView({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{labels.allNodes}</SelectItem>
+              <SelectItem value="all">{labels.allDevices}</SelectItem>
               <SelectItem value="free">{labels.freeCards}</SelectItem>
               <SelectItem value="usable">{labels.usableForRequest}</SelectItem>
             </SelectContent>

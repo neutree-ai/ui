@@ -4,7 +4,15 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -189,7 +197,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     useState<string>(GRAFANA_VAR_ALL);
 
   // Reset selection when the selected replica no longer exists
-  useMemo(() => {
+  useEffect(() => {
     if (
       selectedReplica !== GRAFANA_VAR_ALL &&
       !monitorReplicas.some((r) => r.replica_id === selectedReplica)
@@ -200,6 +208,39 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const replicaParam =
     selectedReplica !== GRAFANA_VAR_ALL ? selectedReplica : undefined;
+  const endpointVgpuDashboardProps = useMemo(() => {
+    if (!record || !grafanaUrl) {
+      return null;
+    }
+
+    const legacyContext = vgpuMonitorContextData?.data;
+    return getEndpointVgpuDashboardProps(grafanaUrl, {
+      cluster:
+        vgpuDashboardContext?.cluster ??
+        legacyContext?.cluster ??
+        record.spec.cluster ??
+        "",
+      workspace:
+        vgpuDashboardContext?.workspace ??
+        legacyContext?.workspace ??
+        record.metadata.workspace ??
+        "",
+      endpoint:
+        vgpuDashboardContext?.endpoint ??
+        legacyContext?.endpoint ??
+        record.metadata.name ??
+        "",
+      namespace:
+        vgpuDashboardContext?.namespace ?? legacyContext?.namespace ?? ".*",
+      pod: replicaParam,
+    });
+  }, [
+    grafanaUrl,
+    record,
+    replicaParam,
+    vgpuDashboardContext,
+    vgpuMonitorContextData?.data,
+  ]);
 
   const url = record?.status?.service_url ?? "";
 
@@ -455,40 +496,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   className="flex-1"
                   hideVariables
                 />
-              ) : selectedPanel === "vgpu" ? (
-                (() => {
-                  const legacyContext = vgpuMonitorContextData?.data;
-                  const namespace =
-                    vgpuDashboardContext?.namespace ??
-                    legacyContext?.namespace ??
-                    ".*";
-                  const clusterName =
-                    vgpuDashboardContext?.cluster ??
-                    legacyContext?.cluster ??
-                    record.spec.cluster;
-                  const workspaceName =
-                    vgpuDashboardContext?.workspace ??
-                    legacyContext?.workspace ??
-                    record.metadata.workspace ??
-                    "";
-                  const endpointName =
-                    vgpuDashboardContext?.endpoint ??
-                    legacyContext?.endpoint ??
-                    record.metadata.name;
-                  return (
-                    <GrafanaDashboard
-                      {...getEndpointVgpuDashboardProps(grafanaUrl, {
-                        cluster: clusterName,
-                        workspace: workspaceName,
-                        endpoint: endpointName,
-                        namespace,
-                        pod: replicaParam,
-                      })}
-                      className="flex-1"
-                      hideVariables
-                    />
-                  );
-                })()
+              ) : selectedPanel === "vgpu" && endpointVgpuDashboardProps ? (
+                <GrafanaDashboard
+                  {...endpointVgpuDashboardProps}
+                  className="flex-1"
+                  hideVariables
+                />
               ) : null}
             </div>
           ) : (

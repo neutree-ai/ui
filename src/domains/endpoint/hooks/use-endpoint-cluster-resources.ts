@@ -10,8 +10,6 @@ interface UseEndpointClusterResourcesProps {
   currentCluster: string;
   clustersData: EndpointClusterRef[] | undefined;
   selectedAccelerator: { type: string; product: string } | null | undefined;
-  cpuUsage: number;
-  memoryUsage: number;
   currentUsage: { cpu: number; memory: number; gpu: number };
   t: (key: string, options?: Record<string, unknown>) => string;
 }
@@ -20,8 +18,6 @@ export function useEndpointClusterResources({
   currentCluster,
   clustersData,
   selectedAccelerator,
-  cpuUsage,
-  memoryUsage,
   currentUsage,
   t,
 }: UseEndpointClusterResourcesProps) {
@@ -66,15 +62,6 @@ export function useEndpointClusterResources({
     [singleNodeMax, clusterResources, currentUsage],
   );
 
-  const dynamicAvailability = useMemo(() => {
-    const currentCpu = cpuUsage || 0;
-    const currentMemory = memoryUsage || 0;
-    return {
-      cpu: maxAvailable.cpu.available - currentCpu,
-      memory: maxAvailable.memory.available - currentMemory,
-    };
-  }, [maxAvailable, cpuUsage, memoryUsage]);
-
   const gpuStep = useMemo(() => {
     const clusterType = selectedCluster?.spec?.type;
     return clusterType === "ssh" ? 0.1 : 1;
@@ -86,7 +73,6 @@ export function useEndpointClusterResources({
     acceleratorOptions,
     selectedAcceleratorOption,
     maxAvailable,
-    dynamicAvailability,
     gpuStep,
   };
 }

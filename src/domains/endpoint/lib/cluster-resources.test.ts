@@ -102,6 +102,51 @@ describe("parseClusterResources", () => {
     });
   });
 
+  it("should parse product groups when products is empty", () => {
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: {
+        cpu: 100,
+        memory: 256,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 4,
+            product_groups: {
+              "Tesla-T4": 4,
+            },
+            products: {},
+          },
+        },
+      },
+      available: {
+        cpu: 80,
+        memory: 200,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: {
+              "Tesla-T4": 2,
+            },
+            products: {},
+          },
+        },
+      },
+      node_resources: null,
+    };
+
+    const result = parseClusterResources(resourceInfo, mockTranslate);
+
+    expect(result.acceleratorOptions).toEqual([
+      {
+        label: "NVIDIA GPU - Tesla-T4",
+        value: "nvidia_gpu:Tesla-T4",
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        available: 2,
+        total: 4,
+      },
+    ]);
+  });
+
   it("should derive accelerator memory total from node devices when metadata is absent", () => {
     const resourceInfo: ClusterResourceInfo = {
       allocatable: {

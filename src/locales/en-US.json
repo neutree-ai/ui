@@ -475,6 +475,7 @@
 			"unhealthy": "Unhealthy",
 			"allGpuProducts": "All Card Products",
 			"allNodes": "All Nodes",
+			"allDevices": "All Devices",
 			"used": "Used",
 			"usable": "Usable",
 			"free": "Free",

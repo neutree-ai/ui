@@ -318,9 +318,10 @@ export function buildGpuCardResourceRows(
       const metadataProducts =
         resourceInfo?.accelerator_metadata?.[acceleratorType]?.products ?? {};
 
-      const products = allocatableGroup.products
-        ? Object.entries(allocatableGroup.products).map(
-            ([product, resources]) => ({
+      const allocatableProducts = allocatableGroup.products;
+      const products =
+        allocatableProducts && Object.keys(allocatableProducts).length > 0
+          ? Object.entries(allocatableProducts).map(([product, resources]) => ({
               product,
               quantity: resources.quantity ?? 0,
               availableQuantity:
@@ -333,22 +334,21 @@ export function buildGpuCardResourceRows(
               allocatableCoreUnits: resources.virtualization?.core_units,
               availableCoreUnits:
                 availableGroup?.products?.[product]?.virtualization?.core_units,
-            }),
-          )
-        : Object.entries(allocatableGroup.product_groups ?? {}).map(
-            ([product, quantity]) => ({
-              product,
-              quantity,
-              availableQuantity:
-                fullCardAvailableDevicesByProduct.get(product) ??
-                availableGroup?.product_groups?.[product] ??
-                0,
-              allocatableMemoryMiB: undefined,
-              availableMemoryMiB: undefined,
-              allocatableCoreUnits: undefined,
-              availableCoreUnits: undefined,
-            }),
-          );
+            }))
+          : Object.entries(allocatableGroup.product_groups ?? {}).map(
+              ([product, quantity]) => ({
+                product,
+                quantity,
+                availableQuantity:
+                  fullCardAvailableDevicesByProduct.get(product) ??
+                  availableGroup?.product_groups?.[product] ??
+                  0,
+                allocatableMemoryMiB: undefined,
+                availableMemoryMiB: undefined,
+                allocatableCoreUnits: undefined,
+                availableCoreUnits: undefined,
+              }),
+            );
 
       return products.map((productRow) => {
         const fallbackPools = devicePoolsByProduct.get(productRow.product);

@@ -66,6 +66,11 @@ describe("cluster hami helpers", () => {
     });
   });
 
+  it("returns null when HAMi component status is absent", () => {
+    expect(getHamiComponentStatus(null)).toBeNull();
+    expect(getHamiComponentStatus(makeCluster())).toBeNull();
+  });
+
   it("builds vGPU product rows from products and accelerator metadata", () => {
     const resourceInfo = {
       accelerator_metadata: {
@@ -127,6 +132,51 @@ describe("cluster hami helpers", () => {
         availableVirtualizationMemoryMiB: 33792,
         allocatableCoreUnits: 300,
         availableCoreUnits: 240,
+      },
+    ]);
+  });
+
+  it("falls back to product groups when products is empty", () => {
+    const resourceInfo = {
+      accelerator_metadata: {
+        nvidia_gpu: {
+          products: {
+            "Tesla-T4": { memory_total_mib: 15360 },
+          },
+        },
+      },
+      allocatable: {
+        cpu: 16,
+        memory: 64,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 3,
+            product_groups: { "Tesla-T4": 3 },
+            products: {},
+          },
+        },
+      },
+      available: {
+        cpu: 12,
+        memory: 48,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: { "Tesla-T4": 2 },
+            products: {},
+          },
+        },
+      },
+      node_resources: null,
+    } as ClusterResourceInfo;
+
+    expect(getVgpuProductRows(resourceInfo)).toEqual([
+      {
+        acceleratorType: "nvidia_gpu",
+        product: "Tesla-T4",
+        quantity: 3,
+        availableQuantity: 2,
+        memoryTotalMiB: 15360,
       },
     ]);
   });
