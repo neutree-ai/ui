@@ -44,7 +44,6 @@ export type EndpointSpec = {
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
   resources?: EndpointResourceStatus | null;
-  model_download_completed?: boolean | null;
   model_download_completed_hash?: string | null;
 };
 
