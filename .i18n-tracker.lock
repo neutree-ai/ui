@@ -173,7 +173,7 @@
   "src/domains/engine/components/EngineVersions.tsx": "46eb6987394db5f7c5cf8fed3204e074",
   "src/domains/engine/components/JsonSchemaValueVisualizer.tsx": "69fffc767795ca888e2b3a313734535f",
   "src/domains/engine/components/JsonSchemaVisualizer.tsx": "6fae73d6b346017cdcb9978a01e14e2b",
-  "src/domains/endpoint/types.ts": "f300d27b0477ad18d0ddcd8eddb79d71",
+  "src/domains/endpoint/types.ts": "6240ebf91ff669c02e1a5ede6218ae48",
   "src/domains/endpoint/hooks/use-chat-state.ts": "094d9c572609338e647b6b020234e0d5",
   "src/domains/endpoint/hooks/use-endpoint-log-sources.ts": "db5f58fbfdf90e73192f68cd4c29b7da",
   "src/domains/endpoint/hooks/use-endpoint-monitor-panels.ts": "c295d5f0c580d5bbb327b3fc6daa3505",
