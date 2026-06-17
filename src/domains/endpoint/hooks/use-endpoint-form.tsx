@@ -816,7 +816,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <section
             data-testid="endpoint-scheduling-target-card"
-            className="w-full max-w-full rounded-md border bg-background px-3 py-2.5 sm:w-fit"
+            className="w-full rounded-md border bg-background px-3 py-2.5"
           >
             <div className="flex flex-wrap items-end justify-start gap-x-3 gap-y-2">
               <div className="flex min-h-9 min-w-0 items-center">
