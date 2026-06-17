@@ -577,6 +577,8 @@ describe("useEndpointForm", () => {
     const schedulingTarget = screen.getByTestId(
       "endpoint-scheduling-target-card",
     );
+    expect(schedulingTarget.className).toContain("w-full");
+    expect(schedulingTarget.className).toContain("sm:w-fit");
     expect(schedulingTarget.className).toContain("px-3");
     expect(schedulingTarget.className).toContain("py-2.5");
     const clusterField =
