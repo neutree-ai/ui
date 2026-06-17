@@ -194,7 +194,7 @@
   "src/domains/endpoint/components/ModelTask.tsx": "e77e0354587affc9ca0713bd186dfb4b",
   "src/domains/endpoint/components/ModelTaskFilter.tsx": "da8acdefa5bd22960ea8274953f6f3c6",
   "src/domains/endpoint/components/RerankPlayground.tsx": "a4409b6861a882c89aecb9aec8c878e3",
-  "src/domains/endpoint/components/ResourcesCard.tsx": "de243cb3d9fb88b2e01bcc77d4dcc88a",
+  "src/domains/endpoint/components/ResourcesCard.tsx": "367ce4f960a848d614f781a3b9bccf44",
   "src/domains/endpoint/components/SliderWithInput.tsx": "79e861ce4a0846107bdad89c93389131",
   "src/domains/endpoint/components/VirtualLog.tsx": "27086754a748869249911de248b3536f",
   "src/domains/cluster/types.ts": "b194e1c40c021e3536e0d3ed6f4aae60",
@@ -308,7 +308,7 @@
   "src/domains/cluster/components/ClusterComponentStatusList.tsx": "ce0c4c64a4117c0a97e5079f0a1be77d",
   "src/foundation/lib/gpu-device-resources.ts": "7a76def59c4335ad7aa6209d795e17d2",
   "src/foundation/components/GpuCardResourcesView.tsx": "50ba937b1da58944e8ff0dbb5e9c8fc8",
-  "src/foundation/components/GpuDeviceResourcesView.tsx": "6742a4f6347b08536da6c22fc6f7caf5",
+  "src/foundation/components/GpuDeviceResourcesView.tsx": "1c4ea6dd11b6d32d32cb88babbd9d757",
   "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "e284d7eb0e24154b2cfabc2f557b2b86",
   "src/domains/cluster/lib/accelerator-virtualization.ts": "2350401008bc7675166cc80f2dbaee1b"
 }

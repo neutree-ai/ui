@@ -198,7 +198,7 @@ const isDeviceUsableForRequest = (
   request: GpuDeviceRequestFitContext | undefined,
 ) => {
   if (!request) {
-    return row.matchesSelectedAccelerator || row.fullFree;
+    return false;
   }
 
   if (!row.healthy || !row.matchesSelectedAccelerator) {

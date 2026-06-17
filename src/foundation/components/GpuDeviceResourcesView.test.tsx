@@ -233,6 +233,23 @@ describe("GpuDeviceResourcesView", () => {
     expect(usageRow.className).toContain("grid-cols-2");
   });
 
+  it("uses free and allocated labels when no request fit context is provided", () => {
+    render(
+      <GpuDeviceResourcesView
+        nodeResources={nodeResources}
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        labels={labels}
+        variant="cards"
+        showHeader={false}
+        showFilters={false}
+        showSummary={false}
+      />,
+    );
+
+    expect(screen.getByText("Allocated")).toBeTruthy();
+    expect(screen.queryByText("Usable")).toBeNull();
+  });
+
   it("keeps compact card resource controls scoped to filtering only", () => {
     render(
       <GpuDeviceResourcesView

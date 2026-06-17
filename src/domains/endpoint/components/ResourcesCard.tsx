@@ -39,6 +39,10 @@ export default function ResourcesCard({
   );
   const isVgpu = hasVgpuResources(displayResources);
   const vgpuMemory = getVgpuMemoryDisplay(vgpuVirtualization, undefined);
+  const vgpuCorePercent =
+    vgpuVirtualization?.core_percent !== undefined
+      ? `${vgpuVirtualization.core_percent}%`
+      : "-";
 
   return (
     <Card className="mt-4">
@@ -79,7 +83,7 @@ export default function ResourcesCard({
                   {vgpuMemory ?? "-"}
                 </ShowPage.Row>
                 <ShowPage.Row title={t("endpoints.fields.vgpuCorePercent")}>
-                  {vgpuVirtualization?.core_percent ?? "-"}%
+                  {vgpuCorePercent}
                 </ShowPage.Row>
               </>
             )}
