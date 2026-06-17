@@ -3,9 +3,16 @@ import { useForm } from "@refinedev/react-hook-form";
 import { useCallback, useEffect, useState } from "react";
 import type { FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Form } from "@/components/ui/form";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
 import {
@@ -135,17 +142,31 @@ export const ApiKeyLimitsCard = ({
                 {t("api_keys.limits.statusActive")}
               </Badge>
             )}
-            <Button
-              type="button"
-              variant={disabled ? "default" : "outline"}
-              size="sm"
-              disabled={toggling}
-              onClick={toggleDisabled}
-            >
-              {disabled
-                ? t("api_keys.limits.enable")
-                : t("api_keys.limits.disable")}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("api_keys.limits.actions")}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  disabled={toggling}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    toggleDisabled();
+                  }}
+                >
+                  {disabled
+                    ? t("api_keys.limits.enable")
+                    : t("api_keys.limits.disable")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>

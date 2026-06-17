@@ -861,8 +861,12 @@
 			"statusColumn": "Status",
 			"statusActive": "Active",
 			"statusDisabled": "Disabled",
+			"statusQuotaExceeded": "Quota exceeded",
 			"disable": "Disable",
-			"enable": "Enable"
+			"enable": "Enable",
+			"actions": "Actions",
+			"modelsSelected": "{{count}} model(s) selected",
+			"noModels": "No models available"
 		}
 	},
 	"infrastructure": {

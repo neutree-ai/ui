@@ -1,4 +1,5 @@
-import { Power, PowerOff, Trash2 } from "lucide-react";
+import { useNavigation } from "@refinedev/core";
+import { Pencil, Power, PowerOff, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,11 +20,13 @@ import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, RowAction, Table } from "@/foundation/components/Table";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
 
 const fmt = (n: number) => Number(n).toLocaleString();
 
 export const ApiKeysList = () => {
   const { t } = useTranslation();
+  const { show } = useNavigation();
   const [open, setOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
   const metadataColumns = useMetadataColumns();
@@ -35,7 +38,7 @@ export const ApiKeysList = () => {
 
   const dash = <span className="text-muted-foreground">—</span>;
 
-  // Token quota usage: used / limit (remaining).
+  // Token quota usage: used / limit with a progress bar (amber ≥80%, red over).
   const usageColumn = (
     <Table.Column
       accessorKey="id"
@@ -43,13 +46,29 @@ export const ApiKeysList = () => {
       header={t("api_keys.limits.usageColumn")}
       cell={({ row: { original } }) => {
         const u = usageByKey.get(String(original.id));
-        if (!u) return dash;
-        const remaining = Math.max(0, u.token_limit - u.used);
+        if (!u || u.token_limit <= 0) return dash;
+        const ratio = u.used / u.token_limit;
+        const pct = Math.max(0, Math.min(100, ratio * 100));
+        const over = u.used >= u.token_limit;
+        const warn = !over && ratio >= 0.8;
         return (
-          <span className="text-xs text-muted-foreground">
-            {fmt(u.used)} / {fmt(u.token_limit)} (
-            {t("api_keys.limits.remainingLabel")} {fmt(remaining)})
-          </span>
+          <div className="flex w-40 flex-col gap-1">
+            <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+              <span>
+                {fmt(u.used)} / {fmt(u.token_limit)}
+              </span>
+              <span>{Math.round(pct)}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+              <div
+                className={cn(
+                  "h-full",
+                  over ? "bg-destructive" : warn ? "bg-amber-500" : "bg-primary",
+                )}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
         );
       }}
     />
@@ -82,33 +101,51 @@ export const ApiKeysList = () => {
       header={t("api_keys.limits.modelsColumn")}
       cell={({ row: { original } }) => {
         const models = limitsByKey.get(String(original.id))?.models ?? [];
-        return (
+        return models.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {models.map((m) => (
+              <Badge key={m} variant="secondary" className="font-normal">
+                {m}
+              </Badge>
+            ))}
+          </div>
+        ) : (
           <span className="text-xs text-muted-foreground">
-            {models.length > 0
-              ? models.join(", ")
-              : t("api_keys.limits.allModels")}
+            {t("api_keys.limits.allModels")}
           </span>
         );
       }}
     />
   );
 
-  // Status: Disabled (a 'disabled' access rule blocks the key at the gateway) or
-  // Active.
+  // Status: Disabled (a 'disabled' access rule blocks the key) > Quota exceeded
+  // (current-period usage at/over the limit) > Active.
   const statusColumn = (
     <Table.Column
       accessorKey="id"
       id="status"
       header={t("api_keys.limits.statusColumn")}
-      cell={({ row: { original } }) =>
-        limitsByKey.get(String(original.id))?.disabled ? (
-          <Badge variant="destructive">
-            {t("api_keys.limits.statusDisabled")}
-          </Badge>
-        ) : (
+      cell={({ row: { original } }) => {
+        const id = String(original.id);
+        if (limitsByKey.get(id)?.disabled) {
+          return (
+            <Badge variant="destructive">
+              {t("api_keys.limits.statusDisabled")}
+            </Badge>
+          );
+        }
+        const u = usageByKey.get(id);
+        if (u && u.token_limit > 0 && u.used >= u.token_limit) {
+          return (
+            <Badge variant="destructive">
+              {t("api_keys.limits.statusQuotaExceeded")}
+            </Badge>
+          );
+        }
+        return (
           <Badge variant="outline">{t("api_keys.limits.statusActive")}</Badge>
-        )
-      }
+        );
+      }}
     />
   );
 
@@ -120,6 +157,11 @@ export const ApiKeysList = () => {
         const isDisabled = limitsByKey.get(String(original.id))?.disabled;
         return (
           <Table.Actions>
+            <RowAction
+              title={t("buttons.edit")}
+              icon={<Pencil size={16} />}
+              onClick={() => show("api_keys", original.id)}
+            />
             <RowAction
               title={
                 isDisabled
