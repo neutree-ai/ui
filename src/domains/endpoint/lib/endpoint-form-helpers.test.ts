@@ -225,6 +225,31 @@ describe("transformEndpointValues", () => {
       "virtualization.core_percent": "30",
     });
   });
+
+  it("drops core-only virtualization before submission", () => {
+    const spec = {
+      resources: {
+        cpu: 4,
+        memory: 8,
+        gpu: 1,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            core_percent: 25,
+          },
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.accelerator).toEqual({
+      type: "nvidia_gpu",
+      product: "Tesla-T4",
+    });
+  });
 });
 
 describe("normalizeEndpointResourcesForForm", () => {

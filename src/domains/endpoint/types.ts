@@ -66,7 +66,11 @@ export type EndpointClusterRef = {
     type: string;
     accelerator_virtualization?: { enabled?: boolean } | null;
   };
-  status: { resource_info?: ClusterResourceInfo | null } | null;
+  status: {
+    ready_nodes?: number;
+    desired_nodes?: number;
+    resource_info?: ClusterResourceInfo | null;
+  } | null;
 };
 
 /** Minimal engine shape needed by endpoint form */

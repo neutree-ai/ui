@@ -10,7 +10,7 @@ type SelectedAccelerator = {
   product?: string | null;
 };
 
-type DevicePoolUsage = {
+export type DevicePoolUsage = {
   available: number | null;
   total: number | null;
   used: number | null;
@@ -41,6 +41,13 @@ export type GpuCardResourceRow = {
   core: DevicePoolUsage;
 };
 
+type NodePhysicalGpuResourceRow = {
+  nodeName: string;
+  quantity: DevicePoolUsage;
+  cpu: DevicePoolUsage;
+  memory: DevicePoolUsage;
+};
+
 type VgpuSliceCapacity = {
   matchingDeviceCount: number;
   totalSlices: number;
@@ -53,6 +60,9 @@ type GpuDeviceResourceFilters = {
 };
 
 export const GPU_DEVICE_FILTER_ALL = "__all__";
+
+type AcceleratorGroups = NonNullable<ResourceInfo["accelerator_groups"]>;
+type AcceleratorGroupResource = AcceleratorGroups[string];
 
 const buildPoolUsage = (
   total: number | null | undefined,
@@ -109,6 +119,10 @@ const sumDevicePoolsByProduct = (
 
   for (const nodeStatus of Object.values(nodeResources)) {
     for (const device of nodeStatus.devices ?? []) {
+      if (!device.health) {
+        continue;
+      }
+
       const current = result.get(device.product) ?? {
         memory: { total: null, available: null },
         core: { total: null, available: null },
@@ -199,12 +213,24 @@ const getProductAcceleratorType = (
   return null;
 };
 
+const getAcceleratorGroupQuantity = (
+  group: AcceleratorGroupResource | undefined,
+  product?: string | null,
+) => {
+  if (!group) return 0;
+  if (!product) return Number(group.quantity ?? 0);
+
+  return Number(
+    group.products?.[product]?.quantity ?? group.product_groups?.[product] ?? 0,
+  );
+};
+
 const matchesSelectedAccelerator = (
   row: Pick<GpuDeviceResourceRow, "acceleratorType" | "product">,
   selectedAccelerator?: SelectedAccelerator | null,
 ) => {
   if (!selectedAccelerator?.product && !selectedAccelerator?.type) {
-    return false;
+    return true;
   }
 
   const productMatches =
@@ -216,6 +242,59 @@ const matchesSelectedAccelerator = (
 
   return productMatches && typeMatches;
 };
+
+export function buildNodePhysicalGpuResourceRows(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  selectedAccelerator?: SelectedAccelerator | null,
+): NodePhysicalGpuResourceRow[] {
+  return Object.entries(nodeResources ?? {})
+    .map(([nodeName, nodeStatus]) => {
+      const allocatableGroups =
+        nodeStatus.allocatable?.accelerator_groups ?? {};
+      const availableGroups = nodeStatus.available?.accelerator_groups ?? {};
+      const selectedType = selectedAccelerator?.type || undefined;
+      const selectedProduct = selectedAccelerator?.product || undefined;
+      const acceleratorTypes = selectedType
+        ? [selectedType]
+        : Array.from(
+            new Set([
+              ...Object.keys(allocatableGroups),
+              ...Object.keys(availableGroups),
+            ]),
+          );
+      const quantity = acceleratorTypes.reduce(
+        (acc, acceleratorType) => ({
+          total:
+            acc.total +
+            getAcceleratorGroupQuantity(
+              allocatableGroups[acceleratorType],
+              selectedProduct,
+            ),
+          available:
+            acc.available +
+            getAcceleratorGroupQuantity(
+              availableGroups[acceleratorType],
+              selectedProduct,
+            ),
+        }),
+        { total: 0, available: 0 },
+      );
+
+      return {
+        cpu: buildPoolUsage(
+          nodeStatus.allocatable?.cpu,
+          nodeStatus.available?.cpu,
+        ),
+        memory: buildPoolUsage(
+          nodeStatus.allocatable?.memory,
+          nodeStatus.available?.memory,
+        ),
+        nodeName,
+        quantity: buildPoolUsage(quantity.total, quantity.available),
+      };
+    })
+    .sort((first, second) => first.nodeName.localeCompare(second.nodeName));
+}
 
 export function buildGpuCardResourceRows(
   resourceInfo: ClusterResourceInfo | null | undefined,
@@ -384,6 +463,10 @@ export function calculateVgpuSliceCapacity(
 
   for (const nodeStatus of Object.values(nodeResources)) {
     for (const device of nodeStatus.devices ?? []) {
+      if (!device.health) {
+        continue;
+      }
+
       const acceleratorType = getProductAcceleratorType(
         nodeStatus.allocatable,
         device.product,

@@ -1,11 +1,19 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
+import { CircleHelp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
@@ -40,6 +48,7 @@ import {
   calculateVgpuSliceCapacity,
   countFullCardAvailableDevicesByProduct,
 } from "@/foundation/lib/gpu-device-resources";
+import { cn } from "@/foundation/lib/utils";
 
 type AcceleratorVirtualization = NonNullable<
   ResourceSpec["accelerator"]
@@ -71,6 +80,11 @@ const formatInputNumber = (value: number | null | undefined) => {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? String(numberValue) : "";
 };
+
+const getCapacityBadgeClassName = (exceeded: boolean) =>
+  exceeded
+    ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-50"
+    : "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-50";
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -253,6 +267,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       selectedAccelerator?.type &&
       selectedAccelerator?.product,
   );
+  const selectedClusterNodeCount = useMemo(() => {
+    const nodeResources =
+      selectedCluster?.status?.resource_info?.node_resources;
+    if (nodeResources) {
+      return Object.keys(nodeResources).length;
+    }
+
+    return selectedCluster?.status?.ready_nodes ?? null;
+  }, [
+    selectedCluster?.status?.ready_nodes,
+    selectedCluster?.status?.resource_info?.node_resources,
+  ]);
+  const selectedClusterNodeCountText =
+    selectedClusterNodeCount === null ? "-" : String(selectedClusterNodeCount);
   const selectedMemoryTotalMiB = selectedAcceleratorOption?.memoryTotalMiB;
   const effectiveVgpuMemoryMiB = getEffectiveVgpuMemoryMiB(
     selectedVirtualization,
@@ -564,7 +592,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
-  const clusterGpuResourcesPanel = (
+  const clusterGpuResourcesPanel = currentCluster ? (
     <EndpointClusterGpuResourcesPanel
       resourceInfo={selectedCluster?.status?.resource_info}
       currentCluster={currentCluster}
@@ -587,7 +615,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       }}
       t={t}
     />
-  );
+  ) : null;
 
   return {
     form,
@@ -792,40 +820,82 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <section
             data-testid="endpoint-scheduling-target-card"
-            className="rounded-md border bg-background p-4"
+            className="rounded-md border bg-background px-3 py-2.5"
           >
-            <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <div className="min-w-0">
-                <h3 className="text-base font-semibold">
-                  {t("endpoints.sections.schedulingTarget")}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t("endpoints.descriptions.clusterSchedulingTarget")}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm font-semibold">
+                    {t("endpoints.sections.schedulingTarget")}
+                  </h3>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          aria-label={t(
+                            "endpoints.descriptions.clusterSchedulingTarget",
+                          )}
+                          title={t(
+                            "endpoints.descriptions.clusterSchedulingTarget",
+                          )}
+                        >
+                          <CircleHelp className="size-3.5" aria-hidden="true" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        align="start"
+                        className="max-w-xs leading-5"
+                      >
+                        {t("endpoints.descriptions.clusterSchedulingTarget")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
-              <FormFieldGroup
-                {...form}
-                name="spec.cluster"
-                label={t("common.fields.cluster")}
-                className="w-full sm:max-w-[260px]"
-              >
-                <FormCombobox
-                  disabled={clusters.query.isLoading}
-                  placeholder={t("endpoints.placeholders.selectCluster")}
-                  options={(clusters.query?.data?.data || []).map((e) => {
-                    return {
-                      label: e.metadata.name,
-                      value: e.metadata.name,
-                    };
-                  })}
-                />
-              </FormFieldGroup>
+              <div className="flex w-full flex-wrap items-end justify-end gap-3 sm:w-auto">
+                <FormFieldGroup
+                  {...form}
+                  name="spec.cluster"
+                  label={t("common.fields.cluster")}
+                  className="w-full sm:w-[240px]"
+                >
+                  <FormCombobox
+                    disabled={clusters.query.isLoading}
+                    placeholder={t("endpoints.placeholders.selectCluster")}
+                    options={(clusters.query?.data?.data || []).map((e) => {
+                      return {
+                        label: e.metadata.name,
+                        value: e.metadata.name,
+                      };
+                    })}
+                  />
+                </FormFieldGroup>
+                <div
+                  data-testid="endpoint-scheduling-target-node-count"
+                  className="flex h-9 min-w-[108px] items-center justify-between gap-2 rounded-md border bg-muted/20 px-3"
+                >
+                  <span className="text-[11px] font-medium leading-4 text-muted-foreground">
+                    {t("endpoints.fields.nodeCount")}
+                  </span>
+                  <span className="text-sm font-semibold leading-5 text-foreground">
+                    {selectedClusterNodeCountText}
+                  </span>
+                </div>
+              </div>
             </div>
           </section>
 
           <div
             data-testid="endpoint-resource-layout-grid"
-            className="grid gap-4 xl:grid-cols-[minmax(360px,0.9fr)_minmax(480px,1.1fr)]"
+            className={cn(
+              "grid gap-3",
+              currentCluster
+                ? "xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]"
+                : "xl:grid-cols-[minmax(360px,420px)]",
+            )}
           >
             <div
               data-testid="endpoint-resource-config-main"
@@ -833,19 +903,45 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             >
               <section
                 data-testid="endpoint-resource-plan-card"
-                className="rounded-md border bg-background p-4"
+                className="grid overflow-hidden rounded-xl border bg-background shadow-sm"
               >
-                <div className="mb-4">
-                  <h3 className="text-base font-semibold">
-                    {t("endpoints.sections.resourcePlan")}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {t("endpoints.descriptions.basicResources")}
-                  </p>
+                <div className="flex items-start justify-between gap-3 border-b p-4">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold">
+                      {t("endpoints.sections.resourcePlan")}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {t("endpoints.descriptions.basicResources")}
+                    </p>
+                  </div>
+                  {selectedAccelerator?.type &&
+                    selectedAccelerator?.product && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 font-normal",
+                          getCapacityBadgeClassName(
+                            isVgpuAllocationMode
+                              ? isVgpuCapacityExceeded
+                              : isFullGpuCapacityExceeded,
+                          ),
+                        )}
+                      >
+                        {isVgpuAllocationMode
+                          ? isVgpuCapacityExceeded
+                            ? t("endpoints.messages.vgpuResourcesInsufficient")
+                            : t("endpoints.fields.matchingGpuCards")
+                          : isFullGpuCapacityExceeded
+                            ? t(
+                                "endpoints.messages.fullGpuResourcesInsufficient",
+                              )
+                            : t("endpoints.fields.matchingGpuCards")}
+                      </Badge>
+                    )}
                 </div>
                 <div
                   data-testid="endpoint-resource-request-grid"
-                  className="grid grid-cols-1 content-start items-start gap-4 self-start sm:grid-cols-2"
+                  className="grid grid-cols-1 content-start items-start gap-3 self-start p-4 sm:grid-cols-2"
                 >
                   <div
                     data-testid="endpoint-basic-resource-card"
@@ -998,13 +1094,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
                     <div
                       data-testid="endpoint-virtual-card-split-group"
-                      className="col-span-1 grid gap-4 rounded-md border border-dashed bg-muted/10 p-3 sm:col-span-2 sm:grid-cols-2"
+                      className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
                     >
-                      <div className="col-span-1 flex items-center justify-between gap-3 text-xs font-medium text-muted-foreground sm:col-span-2">
-                        <span>
+                      <div className="col-span-1 flex items-center justify-between gap-3 text-xs font-medium sm:col-span-2">
+                        <span className="text-foreground">
                           {t("endpoints.sections.virtualCardSplitResources")}
                         </span>
-                        <span>{t("endpoints.fields.perCard")}</span>
+                        <Badge variant="outline" className="font-normal">
+                          {t("endpoints.fields.perCard")}
+                        </Badge>
                       </div>
                       <FormFieldGroup
                         {...form}
@@ -1069,46 +1167,38 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   {selectedAccelerator?.type &&
                     selectedAccelerator?.product && (
                       <div
-                        data-testid="endpoint-resource-summary-strip"
-                        className="col-span-1 grid gap-2 rounded-md border bg-muted/20 p-2 text-sm sm:col-span-2 sm:grid-cols-2"
+                        data-testid="endpoint-current-request-panel"
+                        className="col-span-1 border-t bg-muted/40 p-3 text-sm sm:col-span-2"
                       >
-                        <div className="rounded-md bg-background px-3 py-2">
-                          <div className="text-xs font-medium text-muted-foreground">
-                            {t("endpoints.fields.schedulingScope")}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="font-medium">
+                            {t("endpoints.sections.currentRequest")}
                           </div>
-                          <div className="mt-1 font-semibold">
-                            {t("endpoints.messages.clusterSchedulingOnly")}
-                          </div>
-                        </div>
-                        <div className="rounded-md bg-background px-3 py-2">
-                          <div className="text-xs font-medium text-muted-foreground">
-                            {t("endpoints.fields.matchingGpuCards")}
-                          </div>
-                          <div className="mt-1 font-semibold tabular-nums">
-                            {formatOneDecimal(
-                              isVgpuAllocationMode
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "font-normal",
+                              getCapacityBadgeClassName(
+                                isVgpuAllocationMode
+                                  ? isVgpuCapacityExceeded
+                                  : isFullGpuCapacityExceeded,
+                              ),
+                            )}
+                          >
+                            {t("endpoints.messages.cardsAvailable", {
+                              count: isVgpuAllocationMode
                                 ? totalVgpuSliceCapacity
                                 : fullGpuCardCapacity,
-                            )}{" "}
-                            {t("endpoints.fields.physicalGpu")}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                  {selectedAccelerator?.type &&
-                    selectedAccelerator?.product && (
-                      <div className="col-span-1 rounded-md border bg-muted/20 p-2 text-sm sm:col-span-2">
-                        <div className="mb-2 font-medium">
-                          {t("endpoints.sections.currentRequest")}
+                            })}
+                          </Badge>
                         </div>
                         <div
                           data-testid="endpoint-current-request-grid"
-                          className="grid gap-2 sm:grid-cols-2"
+                          className="mt-2 grid gap-2 sm:grid-cols-4"
                         >
-                          <div className="rounded-md bg-background px-3 py-2">
+                          <div className="rounded-lg border bg-background px-3 py-2">
                             <div className="text-xs font-medium text-muted-foreground">
-                              {t("endpoints.fields.physicalGpu")}
+                              {t("endpoints.fields.vgpuSlices")}
                             </div>
                             <div className="mt-1 font-semibold tabular-nums">
                               {isVgpuAllocationMode
@@ -1124,58 +1214,44 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                   )}`}
                             </div>
                           </div>
-                          <div className="rounded-md bg-background px-3 py-2">
+                          <div className="rounded-lg border bg-background px-3 py-2">
                             <div className="text-xs font-medium text-muted-foreground">
-                              {t("endpoints.fields.replicas")} /{" "}
-                              {t("endpoints.fields.perReplica")}
+                              {t("endpoints.fields.vgpuMemoryCapacity")}
                             </div>
                             <div className="mt-1 font-semibold tabular-nums">
-                              {formatOneDecimal(replicaCount)} /{" "}
-                              {formatOneDecimal(gpuUsage)}
+                              {isVgpuAllocationMode
+                                ? `${formatOneDecimal(
+                                    requestedVgpuMemoryMiB / 1024,
+                                  )} / ${formatOneDecimal(
+                                    availableVgpuMemoryMiB / 1024,
+                                  )} GiB`
+                                : "-"}
                             </div>
                           </div>
-                          {isVgpuAllocationMode && (
-                            <>
-                              <div className="rounded-md bg-background px-3 py-2">
-                                <div className="text-xs font-medium text-muted-foreground">
-                                  {t("endpoints.fields.vgpuMemoryCapacity")}
-                                </div>
-                                <div className="mt-1 font-semibold tabular-nums">
-                                  {effectiveVgpuMemoryMiB
-                                    ? `${formatOneDecimal(
-                                        effectiveVgpuMemoryMiB / 1024,
-                                      )} GiB`
-                                    : "-"}
-                                </div>
-                                <div className="mt-1 text-xs tabular-nums text-muted-foreground">
-                                  {availableVgpuMemoryMiB
-                                    ? `${formatOneDecimal(
-                                        requestedVgpuMemoryMiB / 1024,
-                                      )} / ${formatOneDecimal(
-                                        availableVgpuMemoryMiB / 1024,
-                                      )} GiB`
-                                    : "-"}
-                                </div>
-                              </div>
-                              <div className="rounded-md bg-background px-3 py-2">
-                                <div className="text-xs font-medium text-muted-foreground">
-                                  {t("endpoints.fields.vgpuCoreCapacity")}
-                                </div>
-                                <div className="mt-1 font-semibold tabular-nums">
-                                  {formatOneDecimal(vgpuCoreUnitsPerSlice)}
-                                </div>
-                                <div className="mt-1 text-xs tabular-nums text-muted-foreground">
-                                  {availableVgpuCoreUnits
-                                    ? `${formatOneDecimal(
-                                        requestedVgpuCoreUnits,
-                                      )} / ${formatOneDecimal(
-                                        availableVgpuCoreUnits,
-                                      )}`
-                                    : "-"}
-                                </div>
-                              </div>
-                            </>
-                          )}
+                          <div className="rounded-lg border bg-background px-3 py-2">
+                            <div className="text-xs font-medium text-muted-foreground">
+                              {t("endpoints.fields.vgpuCoreCapacity")}
+                            </div>
+                            <div className="mt-1 font-semibold tabular-nums">
+                              {isVgpuAllocationMode
+                                ? vgpuCoreUnitsPerSlice > 0
+                                  ? `${formatOneDecimal(
+                                      requestedVgpuCoreUnits,
+                                    )} / ${formatOneDecimal(
+                                      availableVgpuCoreUnits,
+                                    )}`
+                                  : t("endpoints.options.shared")
+                                : "-"}
+                            </div>
+                          </div>
+                          <div className="rounded-lg border bg-background px-3 py-2">
+                            <div className="text-xs font-medium text-muted-foreground">
+                              {t("endpoints.fields.scheduling")}
+                            </div>
+                            <div className="mt-1 font-semibold">
+                              {t("common.fields.cluster")}
+                            </div>
+                          </div>
                         </div>
                         {isVgpuAllocationMode
                           ? isVgpuCapacityExceeded && (
@@ -1197,12 +1273,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
               </section>
             </div>
-            <div
-              data-testid="endpoint-resource-context"
-              className="min-w-0 rounded-md border bg-background p-3"
-            >
-              {clusterGpuResourcesPanel}
-            </div>
+            {clusterGpuResourcesPanel && (
+              <div
+                data-testid="endpoint-resource-context"
+                className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm"
+              >
+                {clusterGpuResourcesPanel}
+              </div>
+            )}
           </div>
         </div>
 

@@ -359,7 +359,11 @@ export function transformEndpointValues(spec: {
       delete accelerator[VGPU_MEMORY_PERCENT_KEY];
       delete accelerator[VGPU_CORE_PERCENT_KEY];
 
-      if (normalized) {
+      const hasVirtualMemory =
+        normalized?.memory_mib !== undefined ||
+        normalized?.memory_percent !== undefined;
+
+      if (normalized && hasVirtualMemory) {
         setFlatVgpuValue(
           accelerator,
           VGPU_MEMORY_MIB_KEY,

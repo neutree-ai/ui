@@ -393,6 +393,7 @@
 			"vgpuMemoryUsage": "VRAM",
 			"vgpuCoreUsage": "Core",
 			"gpuNumber": "GPU",
+			"gpuType": "GPU Type",
 			"deviceUuid": "Device UUID",
 			"deviceCount": "Devices",
 			"healthyDevices": "Healthy Devices",
@@ -623,6 +624,7 @@
 			"taskType": "Task Type",
 			"replicas": "Replicas",
 			"schedulingScope": "Scheduling Scope",
+			"scheduling": "Scheduling",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
 			"remaining": "Remaining",
@@ -642,7 +644,8 @@
 			"vgpuMemoryCapacity": "VRAM",
 			"vgpuCoreCapacity": "Core",
 			"matchingGpuCards": "Matching Cards",
-			"instance": "Instance"
+			"instance": "Instance",
+			"nodeCount": "Node Count"
 		},
 		"sections": {
 			"clusterSettings": "Cluster",
@@ -688,7 +691,8 @@
 			"clusterScheduling": "Cluster Scheduling",
 			"mib": "MiB",
 			"gib": "GiB",
-			"percent": "%"
+			"percent": "%",
+			"shared": "Shared"
 		},
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
@@ -715,13 +719,13 @@
 			"resumeFailed": "Failed to resume endpoint",
 			"noAcceleratorsAvailable": "No accelerators available in this cluster",
 			"noAcceleratorSelected": "No accelerator selected",
-			"clusterSchedulingOnly": "Cluster Scheduling",
 			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
 			"schedulerTypeRequired": "Scheduler type is required",
 			"vgpuMemoryMutuallyExclusive": "Use either virtual card memory amount or memory percent, not both",
 			"vgpuMemoryMiBPositive": "Virtual card memory must be greater than 0",
 			"vgpuMemoryPercentRange": "Virtual card memory percent must be between 1 and 100",
 			"vgpuCorePercentRange": "Virtual card core percent must be between 0 and 100",
+			"cardsAvailable": "{{count}} cards available",
 			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
 			"vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
 			"vgpuMonitorContextFailed": "Failed to load virtual accelerator monitor context",

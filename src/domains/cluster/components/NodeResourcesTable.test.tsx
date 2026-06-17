@@ -115,7 +115,11 @@ describe("NodeResourcesTable", () => {
 
     expect(screen.getByText("clusters.sections.nodeDevices")).toBeTruthy();
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("GPU-1").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", {
+        name: "clusters.fields.gpuNumber 1, clusters.fields.deviceUuid GPU-1",
+      }),
+    ).toBeTruthy();
     expect(screen.queryByText("clusters.options.healthy")).toBeNull();
     expect(screen.queryByText("clusters.options.unhealthy")).toBeNull();
     expect(screen.getByText("7680 / 15360 MiB")).toBeTruthy();
