@@ -160,7 +160,9 @@ export const ApiKeysList = () => {
             <RowAction
               title={t("buttons.edit")}
               icon={<Pencil size={16} />}
-              onClick={() => show("api_keys", original.id)}
+              onClick={() => {
+                if (original.id) show("api_keys", original.id);
+              }}
             />
             <RowAction
               title={
