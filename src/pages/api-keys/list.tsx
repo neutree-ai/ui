@@ -1,5 +1,6 @@
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Power, PowerOff, Trash2 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -11,46 +12,26 @@ import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm"
 import {
   useAllApiKeyLimits,
   useAllApiKeyUsage,
+  useApiKeyDisable,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { defaultSorters, Table } from "@/foundation/components/Table";
+import { defaultSorters, RowAction, Table } from "@/foundation/components/Table";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const fmt = (n: number) => Number(n).toLocaleString();
 
-const useApiKeyColumns = () => {
-  const { t } = useTranslation();
-
-  return {
-    action: (
-      <Table.Column
-        accessorKey={"id"}
-        id={"actions"}
-        cell={({ row: { original } }) => (
-          <Table.Actions>
-            <Table.DeleteAction
-              title={t("buttons.delete")}
-              row={original}
-              resource="api_keys"
-              icon={<Trash2 size={16} />}
-            />
-          </Table.Actions>
-        )}
-      />
-    ),
-  };
-};
-
 export const ApiKeysList = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
   const metadataColumns = useMetadataColumns();
-  const apiKeyColumns = useApiKeyColumns();
   const { current: workspace } = useWorkspace();
-  const limitsByKey = useAllApiKeyLimits();
+  const limitsByKey = useAllApiKeyLimits(refreshToken);
   const usageByKey = useAllApiKeyUsage(workspace);
+  const { disable, enable } = useApiKeyDisable();
+  const refresh = useCallback(() => setRefreshToken((n) => n + 1), []);
 
   const dash = <span className="text-muted-foreground">—</span>;
 
@@ -66,8 +47,8 @@ export const ApiKeysList = () => {
         const remaining = Math.max(0, u.token_limit - u.used);
         return (
           <span className="text-xs text-muted-foreground">
-            {fmt(u.used)} / {fmt(u.token_limit)} ({t("api_keys.limits.remainingLabel")}{" "}
-            {fmt(remaining)})
+            {fmt(u.used)} / {fmt(u.token_limit)} (
+            {t("api_keys.limits.remainingLabel")} {fmt(remaining)})
           </span>
         );
       }}
@@ -83,7 +64,9 @@ export const ApiKeysList = () => {
       cell={({ row: { original } }) => {
         const rate = limitsByKey.get(String(original.id))?.rate ?? [];
         return rate.length > 0 ? (
-          <span className="text-xs text-muted-foreground">{rate.join(" · ")}</span>
+          <span className="text-xs text-muted-foreground">
+            {rate.join(" · ")}
+          </span>
         ) : (
           dash
         );
@@ -101,8 +84,62 @@ export const ApiKeysList = () => {
         const models = limitsByKey.get(String(original.id))?.models ?? [];
         return (
           <span className="text-xs text-muted-foreground">
-            {models.length > 0 ? models.join(", ") : t("api_keys.limits.allModels")}
+            {models.length > 0
+              ? models.join(", ")
+              : t("api_keys.limits.allModels")}
           </span>
+        );
+      }}
+    />
+  );
+
+  // Status: Disabled (a 'disabled' access rule blocks the key at the gateway) or
+  // Active.
+  const statusColumn = (
+    <Table.Column
+      accessorKey="id"
+      id="status"
+      header={t("api_keys.limits.statusColumn")}
+      cell={({ row: { original } }) =>
+        limitsByKey.get(String(original.id))?.disabled ? (
+          <Badge variant="destructive">
+            {t("api_keys.limits.statusDisabled")}
+          </Badge>
+        ) : (
+          <Badge variant="outline">{t("api_keys.limits.statusActive")}</Badge>
+        )
+      }
+    />
+  );
+
+  const actionColumn = (
+    <Table.Column
+      accessorKey={"id"}
+      id={"actions"}
+      cell={({ row: { original } }) => {
+        const isDisabled = limitsByKey.get(String(original.id))?.disabled;
+        return (
+          <Table.Actions>
+            <RowAction
+              title={
+                isDisabled
+                  ? t("api_keys.limits.enable")
+                  : t("api_keys.limits.disable")
+              }
+              icon={isDisabled ? <Power size={16} /> : <PowerOff size={16} />}
+              onClick={async () => {
+                if (isDisabled) await enable(String(original.id));
+                else await disable(String(original.id));
+                refresh();
+              }}
+            />
+            <Table.DeleteAction
+              title={t("buttons.delete")}
+              row={original}
+              resource="api_keys"
+              icon={<Trash2 size={16} />}
+            />
+          </Table.Actions>
         );
       }}
     />
@@ -139,11 +176,12 @@ export const ApiKeysList = () => {
       >
         {metadataColumns.name}
         {metadataColumns.workspace}
+        {statusColumn}
         {usageColumn}
         {rateColumn}
         {modelsColumn}
         {metadataColumns.creation_timestamp}
-        {apiKeyColumns.action}
+        {actionColumn}
       </Table>
     </ListPage>
   );

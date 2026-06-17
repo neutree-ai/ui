@@ -857,7 +857,12 @@
 			"usageColumn": "Usage",
 			"rateColumn": "Rate limits",
 			"modelsColumn": "Supported models",
-			"allModels": "All"
+			"allModels": "All",
+			"statusColumn": "Status",
+			"statusActive": "Active",
+			"statusDisabled": "Disabled",
+			"disable": "Disable",
+			"enable": "Enable"
 		}
 	},
 	"infrastructure": {

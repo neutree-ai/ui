@@ -223,6 +223,8 @@ type ApiKeyLimitsRow = {
   rate: string[];
   // allowed model names (empty = all models allowed).
   models: string[];
+  // true when the key carries a 'disabled' access rule (gateway returns 403).
+  disabled: boolean;
 };
 
 // rate/concurrency summary parts for a key's access rows.
@@ -245,9 +247,12 @@ function rateSummary(accessRows: AccessRow[]): string[] {
   return out;
 }
 
-// Bulk: all api_key-level rate limits + allowed models the caller can see,
-// grouped by api_key_id. Used by the API key list columns (one fetch each).
-export function useAllApiKeyLimits(): Map<string, ApiKeyLimitsRow> {
+// Bulk: all api_key-level rate limits + allowed models + disabled flag the caller
+// can see, grouped by api_key_id. Used by the API key list columns (one fetch).
+// `refreshToken` re-runs the fetch when it changes (e.g. after a disable toggle).
+export function useAllApiKeyLimits(
+  refreshToken?: number,
+): Map<string, ApiKeyLimitsRow> {
   const { mutateAsync } = useCustomMutation();
   const [byKey, setByKey] = useState<Map<string, ApiKeyLimitsRow>>(new Map());
   useEffect(() => {
@@ -275,6 +280,7 @@ export function useAllApiKeyLimits(): Map<string, ApiKeyLimitsRow> {
           out.set(id, {
             rate: rateSummary(rows),
             models: (models?.rule_spec?.models ?? []) as string[],
+            disabled: rows.some((r) => r.rule_type === "disabled"),
           });
         }
         if (!cancelled) setByKey(out);
@@ -285,8 +291,50 @@ export function useAllApiKeyLimits(): Map<string, ApiKeyLimitsRow> {
     return () => {
       cancelled = true;
     };
-  }, [mutateAsync]);
+  }, [mutateAsync, refreshToken]);
   return byKey;
+}
+
+// Toggle a key's disabled state. Disable inserts an api_key-level 'disabled'
+// access rule (the gateway then rejects every request with 403 key_disabled);
+// enable deletes it. Reuses set/get/delete_access_policy — no extra RPC.
+export function useApiKeyDisable() {
+  const { mutateAsync } = useCustomMutation();
+  const disable = useCallback(
+    async (apiKeyId: string) => {
+      await mutateAsync({
+        url: "/rpc/set_access_policy",
+        method: "post",
+        values: {
+          p_level: "api_key",
+          p_api_key_id: apiKeyId,
+          p_rule_type: "disabled",
+          p_rule_spec: {},
+        },
+      });
+    },
+    [mutateAsync],
+  );
+  const enable = useCallback(
+    async (apiKeyId: string) => {
+      const a = await mutateAsync({
+        url: "/rpc/get_access_policies",
+        method: "post",
+        values: { p_api_key_id: apiKeyId },
+      });
+      for (const r of (a.data as { id: number; rule_type: string }[]) ?? []) {
+        if (r.rule_type === "disabled") {
+          await mutateAsync({
+            url: "/rpc/delete_access_policy",
+            method: "post",
+            values: { p_id: r.id },
+          });
+        }
+      }
+    },
+    [mutateAsync],
+  );
+  return { disable, enable };
 }
 
 // Load + save a single API key's limits (edit). save() upserts the provided
@@ -380,10 +428,11 @@ export function useApiKeyLimits() {
 }
 
 // Available client-facing models in a workspace (for the allowed-models
-// dropdown). The label shows the serving endpoint name(s) — for both regular
-// endpoints (IE) and external endpoints (EE) — so the user picks by where the
-// model is actually served, e.g. `gpt-4 (openrouter-free)`. A model served by
-// several endpoints lists all their names. Backed by get_workspace_models.
+// dropdown). The label shows the serving endpoint name(s) annotated with type —
+// internal (regular endpoint) / external (external endpoint) — so the user picks
+// by where the model is actually served, e.g. `gpt-4 (openrouter-free [external])`.
+// A model served by several endpoints lists all of them. Backed by
+// get_workspace_models.
 export function useWorkspaceModels(
   workspace: string | undefined,
 ): { value: string; label: string }[] {
@@ -408,17 +457,21 @@ export function useWorkspaceModels(
             source: string;
             endpoint_name: string | null;
           }[]) ?? [];
-        // Collect the serving endpoint name(s) per model (deduped, sorted).
+        // Collect the serving endpoint name(s) per model, each annotated with its
+        // type (internal = regular endpoint, external = external endpoint).
+        // Deduped and sorted, e.g. `gpt-4 (openrouter-free [external])`.
         const byModel = new Map<string, Set<string>>();
         for (const r of rows) {
-          const names = byModel.get(r.model) ?? new Set<string>();
+          const entries = byModel.get(r.model) ?? new Set<string>();
           const name = String(r.endpoint_name ?? "").trim();
-          if (name !== "") names.add(name);
-          byModel.set(r.model, names);
+          const type =
+            r.source === "external_endpoint" ? "external" : "internal";
+          if (name !== "") entries.add(`${name} [${type}]`);
+          byModel.set(r.model, entries);
         }
         const out = [...byModel.entries()]
-          .map(([model, names]) => {
-            const list = [...names].sort((a, b) => a.localeCompare(b));
+          .map(([model, entries]) => {
+            const list = [...entries].sort((a, b) => a.localeCompare(b));
             return {
               value: model,
               label: list.length > 0 ? `${model} (${list.join(", ")})` : model,

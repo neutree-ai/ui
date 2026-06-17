@@ -3,6 +3,7 @@ import { useForm } from "@refinedev/react-hook-form";
 import { useCallback, useEffect, useState } from "react";
 import type { FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -14,6 +15,7 @@ import {
   policyRowsToForm,
   type QuotaRow,
   summarizeApiKeyLimits,
+  useApiKeyDisable,
   useApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { cn } from "@/foundation/lib/utils";
@@ -34,6 +36,7 @@ export const ApiKeyLimitsCard = ({
 }) => {
   const { t } = useTranslation();
   const { load, save } = useApiKeyLimits();
+  const { disable, enable } = useApiKeyDisable();
   const { mutateAsync } = useCustomMutation();
   const [loaded, setLoaded] = useState<{
     quotaRows: QuotaRow[];
@@ -88,10 +91,23 @@ export const ApiKeyLimitsCard = ({
   }, [refresh]);
 
   const summary = summarizeApiKeyLimits(loaded.quotaRows, loaded.accessRows);
+  const disabled = loaded.accessRows.some((r) => r.rule_type === "disabled");
+  const [toggling, setToggling] = useState(false);
 
   const onSave = async (values: FieldValues) => {
     await save(apiKeyId, values as ApiKeyPolicyFormValues, loaded);
     await refresh();
+  };
+
+  const toggleDisabled = async () => {
+    setToggling(true);
+    try {
+      if (disabled) await enable(apiKeyId);
+      else await disable(apiKeyId);
+      await refresh();
+    } finally {
+      setToggling(false);
+    }
   };
 
   const ratio =
@@ -105,9 +121,33 @@ export const ApiKeyLimitsCard = ({
   return (
     <Card className="mt-4">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-semibold">
-          {t("api_keys.limits.sectionTitle")}
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-xl font-semibold">
+            {t("api_keys.limits.sectionTitle")}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {disabled ? (
+              <Badge variant="destructive">
+                {t("api_keys.limits.statusDisabled")}
+              </Badge>
+            ) : (
+              <Badge variant="outline">
+                {t("api_keys.limits.statusActive")}
+              </Badge>
+            )}
+            <Button
+              type="button"
+              variant={disabled ? "default" : "outline"}
+              size="sm"
+              disabled={toggling}
+              onClick={toggleDisabled}
+            >
+              {disabled
+                ? t("api_keys.limits.enable")
+                : t("api_keys.limits.disable")}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Resource consumption */}
