@@ -22,6 +22,7 @@ export type {
 enum EndpointPhase {
   PENDING = "Pending",
   DEPLOYING = "Deploying",
+  MODELDOWNLOADING = "ModelDownloading",
   RUNNING = "Running",
   PAUSED = "Paused",
   DELETING = "Deleting",
@@ -43,6 +44,8 @@ export type EndpointSpec = {
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
   resources?: EndpointResourceStatus | null;
+  model_download_completed?: boolean | null;
+  model_download_completed_hash?: string | null;
 };
 
 export type Endpoint = {

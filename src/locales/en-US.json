@@ -1204,6 +1204,7 @@
 			"endpoint": {
 				"Pending": "Pending",
 				"Deploying": "Deploying",
+				"ModelDownloading": "Model Downloading",
 				"Running": "Running",
 				"Paused": "Paused",
 				"Deleting": "Deleting",
