@@ -917,6 +917,44 @@
 				"endpoint": "Internal",
 				"external-endpoint": "External"
 			}
+		},
+		"limits": {
+			"sectionTitle": "Limits (optional)",
+			"quotaTitle": "Token quota",
+			"quotaHint": "Cap token usage for this key over a period. Leave empty for no quota.",
+			"accessTitle": "Access control",
+			"tokenLimit": "Token limit",
+			"period": "Period",
+			"periods": {
+				"daily": "Daily",
+				"weekly": "Weekly",
+				"monthly": "Monthly",
+				"yearly": "Yearly"
+			},
+			"optional": "Optional",
+			"concurrency": "Max concurrent",
+			"allowedModels": "Allowed models",
+			"allowedModelsHint": "Leave empty to allow all models. Names must match the served model.",
+			"rps": "Requests per second (RPS)",
+			"rpm": "Requests per minute (RPM)",
+			"selectModel": "Select a model",
+			"modelsSelected": "{{count}} model(s) selected",
+			"noModels": "No models available",
+			"tokensUnit": "tokens",
+			"none": "No limits set for this key.",
+			"consumptionTitle": "Resource consumption",
+			"remainingLabel": "remaining",
+			"usageColumn": "Usage",
+			"rateColumn": "Rate limits",
+			"modelsColumn": "Supported models",
+			"allModels": "All",
+			"statusColumn": "Status",
+			"statusActive": "Active",
+			"statusDisabled": "Disabled",
+			"statusQuotaExceeded": "Quota exceeded",
+			"disable": "Disable",
+			"enable": "Enable",
+			"actions": "Actions"
 		}
 	},
 	"infrastructure": {

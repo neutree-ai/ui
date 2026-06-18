@@ -1,4 +1,5 @@
 import type { Metadata } from "@/foundation/types/basic-types";
+import type { ApiKeyLimits } from "@/domains/api-key/hooks/use-api-key-policy";
 
 export type ApiKey = {
   id: string;
@@ -11,6 +12,9 @@ export type ApiKey = {
 
 export type ApiKeySpec = {
   quota: number;
+  // Converged quota + access limits (NEUTREE-GENERAL-9). Optional: keys created
+  // before the converge, or with no limits, have none.
+  limits?: ApiKeyLimits | null;
 };
 
 export type ApiKeyStatus = {
