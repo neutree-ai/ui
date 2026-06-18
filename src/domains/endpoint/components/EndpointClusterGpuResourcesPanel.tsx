@@ -297,7 +297,7 @@ function NodeResourcePill({
     <div
       data-testid="endpoint-node-resource-pill"
       className={cn(
-        "w-[168px] shrink-0 rounded-lg border px-2 py-1.5",
+        "min-w-0 rounded-lg border px-2 py-1.5",
         isAccelerator
           ? "border-primary/30 bg-primary/5"
           : "border-border bg-muted/20",
@@ -346,7 +346,7 @@ function NodeResourcePillGrid({
   return (
     <div
       data-testid="endpoint-node-resource-metrics"
-      className="flex min-w-0 flex-wrap justify-start gap-1.5"
+      className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(160px,200px))] justify-start gap-2"
     >
       {items.map((metric) => (
         <NodeResourcePill

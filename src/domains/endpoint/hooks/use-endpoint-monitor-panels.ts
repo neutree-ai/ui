@@ -19,7 +19,7 @@ export const useEndpointMonitorPanels = ({
 }: UseEndpointMonitorPanelsProps) => {
   const panels = useMemo(() => {
     const list: EndpointMonitorPanelType[] = [];
-    // Rule 0: Kubernetes endpoints with vGPU resources expose the HAMi vGPU panel.
+    // Rule 0: Kubernetes endpoints with vGPU resources expose the accelerator virtualization panel.
     if (clusterType === "kubernetes" && hasVgpuResources) {
       list.push("vgpu");
     }

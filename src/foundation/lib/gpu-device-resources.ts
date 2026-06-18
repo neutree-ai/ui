@@ -31,7 +31,7 @@ export type GpuDeviceResourceRow = {
   core: DevicePoolUsage;
 };
 
-export type GpuCardResourceRow = {
+type GpuCardResourceRow = {
   acceleratorType: string;
   product: string;
   matchesSelectedAccelerator: boolean;

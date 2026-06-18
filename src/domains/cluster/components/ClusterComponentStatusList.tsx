@@ -22,6 +22,19 @@ const formatManaged = (
   return managed ? t("common.options.enabled") : t("common.options.disabled");
 };
 
+const formatComponentName = (
+  componentName: string,
+  t: ClusterComponentStatusListProps["t"],
+) => {
+  if (componentName === "accelerator_virtualization") {
+    return t("clusters.componentNames.acceleratorVirtualization", {
+      defaultValue: "Accelerator Virtualization",
+    });
+  }
+
+  return componentName;
+};
+
 export const ClusterComponentStatusList = ({
   componentStatus,
   t,
@@ -55,7 +68,9 @@ export const ClusterComponentStatusList = ({
         <TableBody>
           {rows.map(([componentName, status]) => (
             <TableRow key={componentName}>
-              <TableCell className="font-medium">{componentName}</TableCell>
+              <TableCell className="font-medium">
+                {formatComponentName(componentName, t)}
+              </TableCell>
               <TableCell>{status.phase ?? "-"}</TableCell>
               <TableCell>{status.version ?? "-"}</TableCell>
               <TableCell>{formatManaged(status.managed, t)}</TableCell>

@@ -816,10 +816,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <section
             data-testid="endpoint-scheduling-target-card"
-            className="w-full rounded-md border bg-background px-3 py-2.5"
+            className="w-full rounded-md border bg-background px-3 py-2"
           >
-            <div className="flex flex-wrap items-end justify-start gap-x-3 gap-y-2">
-              <div className="flex min-h-9 min-w-0 items-center">
+            <div className="grid gap-3 xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] xl:items-center">
+              <div className="flex h-9 min-w-0 items-center">
                 <div className="flex items-center gap-1.5">
                   <h3 className="text-sm font-semibold">
                     {t("endpoints.sections.schedulingTarget")}
@@ -851,12 +851,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   </TooltipProvider>
                 </div>
               </div>
-              <div className="flex w-full flex-wrap items-end justify-start gap-3 sm:w-auto">
+              <div className="grid min-w-0 grid-cols-1 items-end justify-start gap-3 sm:grid-cols-[minmax(220px,280px)_max-content]">
                 <FormFieldGroup
                   {...form}
                   name="spec.cluster"
                   label={t("common.fields.cluster")}
-                  className="w-full sm:w-[240px]"
+                  className="w-full max-w-[280px]"
                 >
                   <FormCombobox
                     disabled={clusters.query.isLoading}

@@ -26,16 +26,16 @@ import {
   useClusterMonitorPanels,
 } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
 import {
+  getVgpuProductRows,
+  isAcceleratorVirtualizationEnabled,
+} from "@/domains/cluster/lib/accelerator-virtualization";
+import {
   calcResourceUsage,
   formatResourceUsageRatio,
 } from "@/domains/cluster/lib/calc-resource-usage";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import {
-  getVgpuProductRows,
-  isAcceleratorVirtualizationEnabled,
-} from "@/domains/cluster/lib/hami";
 import { getAcceleratorProductQuantities } from "@/domains/cluster/lib/resource-status";
 import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";

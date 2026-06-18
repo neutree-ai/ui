@@ -5,7 +5,7 @@ import {
   ClusterUpgradeProvider,
 } from "@/domains/cluster/components/ClusterUpgradeAction";
 import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
-import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/hami";
+import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import type { Cluster } from "@/domains/cluster/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";

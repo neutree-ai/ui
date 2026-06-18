@@ -10,12 +10,12 @@ describe("ClusterComponentStatusList", () => {
     render(
       <ClusterComponentStatusList
         componentStatus={{
-          hami: {
+          accelerator_virtualization: {
             phase: "Ready",
             managed: true,
             version: "v2.9.0",
             reason: "Ready",
-            message: "HAMi component is ready",
+            message: "accelerator virtualization component is ready",
           },
           router: {
             phase: "Pending",
@@ -30,13 +30,16 @@ describe("ClusterComponentStatusList", () => {
     );
 
     expect(screen.getByText("clusters.sections.componentStatus")).toBeTruthy();
-    expect(screen.getByText("hami")).toBeTruthy();
+    expect(screen.queryByText("accelerator_virtualization")).toBeNull();
+    expect(screen.getByText("Accelerator Virtualization")).toBeTruthy();
     expect(screen.getByText("router")).toBeTruthy();
     expect(screen.getAllByText("Ready").length).toBeGreaterThan(0);
     expect(screen.getByText("Pending")).toBeTruthy();
     expect(screen.getByText("v2.9.0")).toBeTruthy();
     expect(screen.getByText("v1.0.1")).toBeTruthy();
-    expect(screen.getByText("HAMi component is ready")).toBeTruthy();
+    expect(
+      screen.getByText("accelerator virtualization component is ready"),
+    ).toBeTruthy();
     expect(screen.getByText("Router deployment is progressing")).toBeTruthy();
   });
 });

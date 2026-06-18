@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { Cluster } from "@/domains/cluster/types";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import {
-  getHamiComponentStatus,
   getVgpuProductRows,
   isAcceleratorVirtualizationEnabled,
-} from "./hami";
+  isAcceleratorVirtualizationSupported,
+} from "./accelerator-virtualization";
 
 const makeCluster = (overrides: Partial<Cluster> = {}): Cluster =>
   ({
@@ -21,7 +21,7 @@ const makeCluster = (overrides: Partial<Cluster> = {}): Cluster =>
     ...overrides,
   }) as Cluster;
 
-describe("cluster hami helpers", () => {
+describe("cluster accelerator virtualization helpers", () => {
   it("treats missing accelerator virtualization as disabled", () => {
     expect(isAcceleratorVirtualizationEnabled(makeCluster())).toBe(false);
   });
@@ -41,34 +41,11 @@ describe("cluster hami helpers", () => {
     ).toBe(true);
   });
 
-  it("returns HAMi component status from cluster status", () => {
-    const cluster = makeCluster({
-      status: {
-        phase: "Running",
-        reason: "",
-        message: "",
-        image: null,
-        dashboard_url: null,
-        component_status: {
-          hami: {
-            phase: "NotReady",
-            reason: "DevicePluginConflict",
-            message: "official device plugin is still enabled",
-          },
-        },
-      } as Partial<Cluster>["status"],
-    });
-
-    expect(getHamiComponentStatus(cluster)).toEqual({
-      phase: "NotReady",
-      reason: "DevicePluginConflict",
-      message: "official device plugin is still enabled",
-    });
-  });
-
-  it("returns null when HAMi component status is absent", () => {
-    expect(getHamiComponentStatus(null)).toBeNull();
-    expect(getHamiComponentStatus(makeCluster())).toBeNull();
+  it("checks accelerator virtualization support by cluster version", () => {
+    expect(isAcceleratorVirtualizationSupported("v1.0.9")).toBe(false);
+    expect(isAcceleratorVirtualizationSupported("v1.1.0")).toBe(true);
+    expect(isAcceleratorVirtualizationSupported("v1.2.0")).toBe(true);
+    expect(isAcceleratorVirtualizationSupported(null)).toBe(false);
   });
 
   it("builds vGPU product rows from products and accelerator metadata", () => {

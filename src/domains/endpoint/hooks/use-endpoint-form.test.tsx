@@ -577,13 +577,34 @@ describe("useEndpointForm", () => {
     const schedulingTarget = screen.getByTestId(
       "endpoint-scheduling-target-card",
     );
+    const resourceConfigGrid = screen.getByTestId(
+      "endpoint-resource-config-grid",
+    );
+    const layoutGrid = screen.getByTestId("endpoint-resource-layout-grid");
+    expect(resourceConfigGrid.firstElementChild).toBe(schedulingTarget);
+    expect(schedulingTarget.nextElementSibling).toBe(layoutGrid);
+
     expect(schedulingTarget.className).toContain("w-full");
     expect(schedulingTarget.className).not.toContain("sm:w-fit");
     expect(schedulingTarget.className).toContain("px-3");
-    expect(schedulingTarget.className).toContain("py-2.5");
+    expect(schedulingTarget.className).toContain("py-2");
+    expect(schedulingTarget.className).not.toContain("py-2.5");
+    expect(schedulingTarget.firstElementChild?.className).toContain(
+      "xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]",
+    );
+    expect(schedulingTarget.firstElementChild?.className).toContain(
+      "xl:items-center",
+    );
+    expect(schedulingTarget.firstElementChild?.className).not.toContain(
+      "xl:items-end",
+    );
+    expect(
+      schedulingTarget.firstElementChild?.lastElementChild?.className,
+    ).toContain("sm:grid-cols-[minmax(220px,280px)_max-content]");
     const clusterField =
       within(schedulingTarget).getByTestId("field-spec.cluster");
     expect(clusterField).toBeTruthy();
+    expect(clusterField.className).toContain("max-w-[280px]");
     expect(
       within(schedulingTarget).queryByTestId("field--scheduling-scope"),
     ).toBeNull();
@@ -608,9 +629,9 @@ describe("useEndpointForm", () => {
     expect(nodeCount.className).not.toContain("flex-col");
     expect(nodeCount.textContent).toContain("-");
     expect(screen.queryByTestId("endpoint-resource-context")).toBeNull();
-    expect(
-      screen.getByTestId("endpoint-resource-layout-grid").className,
-    ).toContain("xl:grid-cols-[minmax(360px,420px)]");
+    expect(layoutGrid.className).toContain(
+      "xl:grid-cols-[minmax(360px,420px)]",
+    );
 
     act(() => {
       formInstance?.setValue("spec.cluster", "hami-k8s-devices");
@@ -618,6 +639,9 @@ describe("useEndpointForm", () => {
     await waitFor(() => expect(nodeCount.textContent).toContain("3"));
     await waitFor(() =>
       expect(screen.getByTestId("endpoint-resource-context")).toBeTruthy(),
+    );
+    expect(screen.getByTestId("endpoint-resource-context").parentElement).toBe(
+      layoutGrid,
     );
 
     expect(indexOf("endpoints.fields.schedulerType")).toBeGreaterThan(
@@ -1266,7 +1290,10 @@ describe("useEndpointForm", () => {
       for (const nodeMetrics of panel.getAllByTestId(
         "endpoint-node-resource-metrics",
       )) {
-        expect(nodeMetrics.className).toContain("flex");
+        expect(nodeMetrics.className).toContain("grid");
+        expect(nodeMetrics.className).toContain(
+          "grid-cols-[repeat(auto-fill,minmax(160px,200px))]",
+        );
         expect(nodeMetrics.className).toContain("justify-start");
         expect(nodeMetrics.className).not.toContain("justify-end");
         expect(nodeMetrics.className).not.toContain("max-w");
@@ -1275,7 +1302,7 @@ describe("useEndpointForm", () => {
         );
         expect(pills.length).toBeGreaterThan(0);
         for (const pill of pills) {
-          expect(pill.className).toContain("w-[168px]");
+          expect(pill.className).not.toContain("w-[168px]");
           expect(pill.className).toContain("rounded");
           expect(pill.className).toContain("border");
           for (const value of within(pill).getAllByTestId(
@@ -1537,13 +1564,16 @@ describe("useEndpointForm", () => {
         for (const nodeMetrics of panel.getAllByTestId(
           "endpoint-node-resource-metrics",
         )) {
-          expect(nodeMetrics.className).toContain("flex");
+          expect(nodeMetrics.className).toContain("grid");
+          expect(nodeMetrics.className).toContain(
+            "grid-cols-[repeat(auto-fill,minmax(160px,200px))]",
+          );
           const pills = within(nodeMetrics).getAllByTestId(
             "endpoint-node-resource-pill",
           );
           expect(pills.length).toBe(3);
           for (const pill of pills) {
-            expect(pill.className).toContain("w-[168px]");
+            expect(pill.className).not.toContain("w-[168px]");
             expect(pill.className).toContain("rounded");
             expect(pill.className).toContain("border");
             for (const value of within(pill).getAllByTestId(
@@ -1653,13 +1683,16 @@ describe("useEndpointForm", () => {
       for (const nodeMetrics of panel.getAllByTestId(
         "endpoint-node-resource-metrics",
       )) {
-        expect(nodeMetrics.className).toContain("flex");
+        expect(nodeMetrics.className).toContain("grid");
+        expect(nodeMetrics.className).toContain(
+          "grid-cols-[repeat(auto-fill,minmax(160px,200px))]",
+        );
         const pills = within(nodeMetrics).getAllByTestId(
           "endpoint-node-resource-pill",
         );
         expect(pills.length).toBe(2);
         for (const pill of pills) {
-          expect(pill.className).toContain("w-[168px]");
+          expect(pill.className).not.toContain("w-[168px]");
           for (const value of within(pill).getAllByTestId(
             "endpoint-node-resource-pill-value",
           )) {
