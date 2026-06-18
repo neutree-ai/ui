@@ -183,23 +183,6 @@ export function useApiKeyLimits() {
   return { load, save };
 }
 
-// Apply limits to a freshly created key. create_api_key already accepts p_limits
-// (atomic), so this is only the standalone setter used where a key already
-// exists; the create form passes p_limits directly.
-export function useApplyApiKeyPolicy() {
-  const { mutateAsync } = useCustomMutation();
-  return useCallback(
-    async (apiKeyId: string, values: ApiKeyPolicyFormValues) => {
-      await mutateAsync({
-        url: "/rpc/set_api_key_limits",
-        method: "post",
-        values: { p_id: apiKeyId, p_limits: buildApiKeyLimits(values) },
-      });
-    },
-    [mutateAsync],
-  );
-}
-
 // Toggle a key's disabled state by rewriting its limits object (preserving the
 // rest of the config). Disable sets limits.disabled=true (gateway then rejects
 // every request with 403 key_disabled); enable removes the flag.
@@ -292,7 +275,7 @@ export function useWorkspaceModels(
   return opts;
 }
 
-export type ApiKeyUsage = {
+type ApiKeyUsage = {
   period: string;
   token_limit: number;
   used: number;
