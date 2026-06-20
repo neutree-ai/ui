@@ -488,6 +488,7 @@
 		"actions": {
 			"addModelCache": "Add Model Cache",
 			"copyUuid": "Copy UUID",
+			"toggleNodeDevices": "{{nodeName}} devices",
 			"upgrade": "Upgrade",
 			"upgradeTitle": "Upgrade Cluster"
 		},

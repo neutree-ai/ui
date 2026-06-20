@@ -54,7 +54,7 @@ export const ProductGroupsBreakdown = ({
 interface NodeResourcesTableProps {
   nodeResources: Record<string, NodeResourceStatus>;
   acceleratorTypes: string[];
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
   framed?: boolean;
   className?: string;
 }
@@ -130,7 +130,9 @@ export const NodeResourcesTable = ({
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 shrink-0"
-                          aria-label={`${nodeName} devices`}
+                          aria-label={t("clusters.actions.toggleNodeDevices", {
+                            nodeName,
+                          })}
                           aria-expanded={isExpanded}
                           onClick={() => toggleNodeDevices(nodeName)}
                         >

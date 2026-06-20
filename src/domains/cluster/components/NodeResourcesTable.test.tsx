@@ -8,7 +8,10 @@ vi.mock("@/components/ui/progress", () => ({
   ),
 }));
 
-const t = (key: string) => key;
+const t = (key: string, options?: Record<string, unknown>) =>
+  key === "clusters.actions.toggleNodeDevices"
+    ? `${options?.nodeName} localized devices`
+    : key;
 
 describe("NodeResourcesTable", () => {
   it("keeps the node devices toggle aligned with the node name", () => {
@@ -33,7 +36,7 @@ describe("NodeResourcesTable", () => {
     );
 
     const toggleCell = screen
-      .getByRole("button", { name: "node-a devices" })
+      .getByRole("button", { name: "node-a localized devices" })
       .closest("td");
     const nodeNameCell = screen.getByText("node-a").closest("td");
 
@@ -111,7 +114,9 @@ describe("NodeResourcesTable", () => {
     expect(screen.queryByText("GPU-1")).toBeNull();
     expect(screen.queryByText("GPU-2")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "node-a devices" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "node-a localized devices" }),
+    );
 
     expect(screen.getByText("clusters.sections.nodeDevices")).toBeTruthy();
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);

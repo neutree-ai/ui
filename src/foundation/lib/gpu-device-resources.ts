@@ -328,20 +328,32 @@ export function buildGpuCardResourceRows(
               allocatableCoreUnits: undefined,
               availableCoreUnits: undefined,
             }))
-          : Object.entries(allocatableGroup.product_groups ?? {}).map(
-              ([product, quantity]) => ({
-                product,
-                quantity,
-                availableQuantity:
-                  fullCardAvailableDevicesByProduct.get(product) ??
-                  availableGroup?.product_groups?.[product] ??
-                  0,
-                allocatableMemoryMiB: undefined,
-                availableMemoryMiB: undefined,
-                allocatableCoreUnits: undefined,
-                availableCoreUnits: undefined,
-              }),
-            );
+          : Object.keys(allocatableGroup.product_groups ?? {}).length > 0
+            ? Object.entries(allocatableGroup.product_groups ?? {}).map(
+                ([product, quantity]) => ({
+                  product,
+                  quantity,
+                  availableQuantity:
+                    fullCardAvailableDevicesByProduct.get(product) ??
+                    availableGroup?.product_groups?.[product] ??
+                    0,
+                  allocatableMemoryMiB: undefined,
+                  availableMemoryMiB: undefined,
+                  allocatableCoreUnits: undefined,
+                  availableCoreUnits: undefined,
+                }),
+              )
+            : [
+                {
+                  product: "",
+                  quantity: allocatableGroup.quantity ?? 0,
+                  availableQuantity: availableGroup?.quantity ?? 0,
+                  allocatableMemoryMiB: undefined,
+                  availableMemoryMiB: undefined,
+                  allocatableCoreUnits: undefined,
+                  availableCoreUnits: undefined,
+                },
+              ];
 
       return products.map((productRow) => {
         const fallbackPools = devicePoolsByProduct.get(productRow.product);

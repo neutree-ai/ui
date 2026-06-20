@@ -253,6 +253,61 @@ describe("gpu device resource helpers", () => {
     ]);
   });
 
+  it("builds a generic card row when product breakdown is missing", () => {
+    expect(
+      buildGpuCardResourceRows({
+        allocatable: {
+          cpu: 32,
+          memory: 128,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: null,
+              products: null,
+            },
+          },
+        },
+        available: {
+          cpu: 24,
+          memory: 96,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 1,
+              product_groups: null,
+              products: null,
+            },
+          },
+        },
+        node_resources: null,
+      }),
+    ).toEqual([
+      {
+        acceleratorType: "nvidia_gpu",
+        product: "",
+        matchesSelectedAccelerator: true,
+        memoryTotalMiB: undefined,
+        quantity: {
+          available: 1,
+          total: 2,
+          used: 1,
+          percent: 50,
+        },
+        memory: {
+          available: null,
+          total: null,
+          used: null,
+          percent: 0,
+        },
+        core: {
+          available: null,
+          total: null,
+          used: null,
+          percent: 0,
+        },
+      },
+    ]);
+  });
+
   it("counts only devices with no partial allocation as full-card available", () => {
     expect(
       buildGpuCardResourceRows({
