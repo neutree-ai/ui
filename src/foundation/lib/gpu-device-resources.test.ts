@@ -486,6 +486,72 @@ describe("gpu device resource helpers", () => {
     });
   });
 
+  it("clamps out-of-range device resource pools and treats non-finite values as unknown", () => {
+    const rows = buildGpuDeviceResourceRows({
+      "node-a": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-over-available",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: {
+              memory_mib: 15360,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 20000,
+              core_units: -10,
+            },
+          },
+          {
+            uuid: "GPU-non-finite",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: {
+              memory_mib: Number.NaN,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 4096,
+              core_units: Number.POSITIVE_INFINITY,
+            },
+          },
+        ],
+      },
+    });
+
+    expect(
+      rows.find((row) => row.uuid === "GPU-over-available")?.memory,
+    ).toEqual({
+      available: 15360,
+      total: 15360,
+      used: 0,
+      percent: 0,
+    });
+    expect(rows.find((row) => row.uuid === "GPU-over-available")?.core).toEqual(
+      {
+        available: 0,
+        total: 100,
+        used: 100,
+        percent: 100,
+      },
+    );
+    expect(rows.find((row) => row.uuid === "GPU-non-finite")?.memory).toEqual({
+      available: 4096,
+      total: null,
+      used: null,
+      percent: 0,
+    });
+    expect(rows.find((row) => row.uuid === "GPU-non-finite")?.core).toEqual({
+      available: null,
+      total: 100,
+      used: null,
+      percent: 0,
+    });
+  });
+
   it("excludes unhealthy devices from device-level accelerator pools", () => {
     const rows = buildGpuCardResourceRows({
       allocatable: {

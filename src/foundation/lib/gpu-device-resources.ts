@@ -63,15 +63,25 @@ const buildPoolUsage = (
   total: number | null | undefined,
   available: number | null | undefined,
 ): DevicePoolUsage => {
-  const normalizedTotal = total ?? null;
-  const normalizedAvailable = available ?? null;
+  const normalizedTotal =
+    typeof total === "number" && Number.isFinite(total) ? total : null;
+  const finiteAvailable =
+    typeof available === "number" && Number.isFinite(available)
+      ? available
+      : null;
+  const normalizedAvailable =
+    finiteAvailable == null
+      ? null
+      : normalizedTotal == null
+        ? finiteAvailable
+        : Math.min(Math.max(finiteAvailable, 0), normalizedTotal);
   const used =
     normalizedTotal == null || normalizedAvailable == null
       ? null
-      : normalizedTotal - normalizedAvailable;
+      : Math.max(normalizedTotal - normalizedAvailable, 0);
   const percent =
     normalizedTotal && normalizedTotal > 0 && used != null
-      ? Math.round((used / normalizedTotal) * 100)
+      ? Math.min(Math.max(Math.round((used / normalizedTotal) * 100), 0), 100)
       : 0;
 
   return {

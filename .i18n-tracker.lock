@@ -300,7 +300,7 @@
   "src/domains/api-key/hooks/use-workspace-usage.ts": "5f008c9efecb5f75398ae4fb67414d69",
   "src/components/ui/calendar.tsx": "dfedaf90a75014faab50dfb32b28c5b2",
   "src/domains/cluster/lib/resource-status.ts": "9e759f014c4589740efe23ebdaf8bf74",
-  "src/foundation/lib/gpu-device-resources.ts": "cdd945f6155208e8adc60073fd4fa656",
+  "src/foundation/lib/gpu-device-resources.ts": "8fb83639a2253190e499e9a9d5065ef7",
   "src/foundation/components/GpuDeviceResourcesView.tsx": "f19ac740cbf93b0da8cc58ecb19ea4c1",
   "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "267c9ccaba665339dec7cabd8a82dedb"
 }
