@@ -279,8 +279,8 @@ export function useWorkspaceModels(
 // Per-model serving info: whether the model is served internally / externally
 // and the endpoint(s) that serve it. Powers the list Models column and the
 // detail Model access section (aligning name + Internal/External + endpoint).
-export type ModelEndpoint = { name: string; type: "internal" | "external" };
-export type ModelInfo = {
+type ModelEndpoint = { name: string; type: "internal" | "external" };
+type ModelInfo = {
   internal: boolean;
   external: boolean;
   endpoints: ModelEndpoint[];

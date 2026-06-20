@@ -5,7 +5,7 @@ import type { ApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 // Per-key reference (id + display name) for attributing ranking entries.
-export type RankingKeyRef = { id: string; name: string };
+type RankingKeyRef = { id: string; name: string };
 
 // Top-3 + "others" donut slice colors (blue / green / amber / muted-gray).
 const SLICE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#cbd5e1"];

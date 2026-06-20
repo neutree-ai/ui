@@ -105,7 +105,7 @@ export async function fetchAITrace(
 
 // One API key's aggregated traffic over the requested window (backend computes
 // requests / tokens / success / avg latency; success_rate is derived here).
-export type AITraceKeyStat = {
+type AITraceKeyStat = {
   api_key_id: string;
   requests: number;
   tokens: number;
