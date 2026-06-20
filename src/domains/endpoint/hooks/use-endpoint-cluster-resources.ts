@@ -1,17 +1,15 @@
+import { useMemo } from "react";
 import {
   findBestNodeForAccelerator,
   parseClusterResources,
 } from "@/domains/endpoint/lib/cluster-resources";
 import { computeMaxAvailable } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
-import { useMemo } from "react";
 
 interface UseEndpointClusterResourcesProps {
   currentCluster: string;
   clustersData: EndpointClusterRef[] | undefined;
   selectedAccelerator: { type: string; product: string } | null | undefined;
-  cpuUsage: number;
-  memoryUsage: number;
   currentUsage: { cpu: number; memory: number; gpu: number };
   t: (key: string, options?: Record<string, unknown>) => string;
 }
@@ -20,8 +18,6 @@ export function useEndpointClusterResources({
   currentCluster,
   clustersData,
   selectedAccelerator,
-  cpuUsage,
-  memoryUsage,
   currentUsage,
   t,
 }: UseEndpointClusterResourcesProps) {
@@ -52,19 +48,19 @@ export function useEndpointClusterResources({
     );
   }, [selectedAccelerator, selectedCluster]);
 
+  const selectedAcceleratorOption = useMemo(() => {
+    if (!selectedAccelerator) return undefined;
+    return acceleratorOptions.find(
+      (option) =>
+        option.type === selectedAccelerator.type &&
+        option.product === selectedAccelerator.product,
+    );
+  }, [acceleratorOptions, selectedAccelerator]);
+
   const maxAvailable = useMemo(
     () => computeMaxAvailable(singleNodeMax, clusterResources, currentUsage),
     [singleNodeMax, clusterResources, currentUsage],
   );
-
-  const dynamicAvailability = useMemo(() => {
-    const currentCpu = cpuUsage || 0;
-    const currentMemory = memoryUsage || 0;
-    return {
-      cpu: maxAvailable.cpu.available - currentCpu,
-      memory: maxAvailable.memory.available - currentMemory,
-    };
-  }, [maxAvailable, cpuUsage, memoryUsage]);
 
   const gpuStep = useMemo(() => {
     const clusterType = selectedCluster?.spec?.type;
@@ -75,8 +71,8 @@ export function useEndpointClusterResources({
     selectedCluster,
     clusterResources,
     acceleratorOptions,
+    selectedAcceleratorOption,
     maxAvailable,
-    dynamicAvailability,
     gpuStep,
   };
 }

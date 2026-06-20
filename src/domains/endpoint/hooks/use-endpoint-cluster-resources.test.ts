@@ -1,7 +1,7 @@
-import type { EndpointClusterRef } from "@/domains/endpoint/types";
-import type { ResourceStatus } from "@/foundation/types/resource-types";
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { EndpointClusterRef } from "@/domains/endpoint/types";
+import type { ResourceStatus } from "@/foundation/types/resource-types";
 import { useEndpointClusterResources } from "./use-endpoint-cluster-resources";
 
 const mockT = (key: string) => key;
@@ -52,8 +52,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "",
         clustersData: [],
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -74,8 +72,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "my-cluster",
         clustersData: undefined,
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -98,8 +94,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "cluster-b",
         clustersData: clusters,
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -135,8 +129,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "gpu-cluster",
         clustersData: clusters,
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -186,8 +178,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "gpu-cluster",
         clustersData: clusters,
         selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -217,8 +207,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "cpu-cluster",
         clustersData: clusters,
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -234,32 +222,6 @@ describe("useEndpointClusterResources", () => {
     });
   });
 
-  it("computes dynamicAvailability by subtracting current form values", () => {
-    const clusters = [
-      makeCluster("cluster-a", "k8s", {
-        allocatable: { cpu: 100, memory: 256 },
-        available: { cpu: 80, memory: 200 },
-      }),
-    ];
-
-    const { result } = renderHook(() =>
-      useEndpointClusterResources({
-        currentCluster: "cluster-a",
-        clustersData: clusters,
-        selectedAccelerator: null,
-        cpuUsage: 10,
-        memoryUsage: 50,
-        currentUsage: zeroUsage,
-        t: mockT,
-      }),
-    );
-
-    expect(result.current.dynamicAvailability).toEqual({
-      cpu: 70, // 80 - 10
-      memory: 150, // 200 - 50
-    });
-  });
-
   it("returns gpuStep 0.1 for ssh cluster", () => {
     const clusters = [makeCluster("ssh-cluster", "ssh")];
 
@@ -268,8 +230,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "ssh-cluster",
         clustersData: clusters,
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -286,8 +246,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "k8s-cluster",
         clustersData: clusters,
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: zeroUsage,
         t: mockT,
       }),
@@ -309,8 +267,6 @@ describe("useEndpointClusterResources", () => {
         currentCluster: "cluster-a",
         clustersData: clusters,
         selectedAccelerator: null,
-        cpuUsage: 0,
-        memoryUsage: 0,
         currentUsage: { cpu: 4, memory: 8, gpu: 0 },
         t: mockT,
       }),

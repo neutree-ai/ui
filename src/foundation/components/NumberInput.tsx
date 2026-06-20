@@ -1,5 +1,5 @@
-import { Input } from "@/components/ui/input";
 import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
+import { Input } from "@/components/ui/input";
 
 type NumberInputProps = Omit<
   ComponentPropsWithoutRef<typeof Input>,
@@ -21,12 +21,16 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       setDraft(displayValue);
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setDraft(e.target.value);
-      const num = Number.parseFloat(e.target.value);
+    const handleInputValue = (nextDraft: string) => {
+      setDraft(nextDraft);
+      const num = Number.parseFloat(nextDraft);
       if (!Number.isNaN(num)) {
         onValueChange?.(num);
       }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleInputValue(e.target.value);
     };
 
     const handleBlur = () => {
@@ -41,11 +45,11 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       <Input
         ref={ref}
         type="number"
+        {...rest}
         value={draft ?? displayValue}
         onFocus={handleFocus}
         onChange={handleChange}
         onBlur={handleBlur}
-        {...rest}
       />
     );
   },

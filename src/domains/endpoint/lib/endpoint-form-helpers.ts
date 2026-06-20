@@ -1,3 +1,5 @@
+import type { ResourceSpec } from "@/foundation/types/serving-types";
+
 /**
  * Validate current usage against total capacity.
  * Current usage is the endpoint's existing allocation, so it must not exceed total capacity.
@@ -73,6 +75,111 @@ interface MaxAvailableResources {
   cpu: ResourcePool;
   memory: ResourcePool;
   gpu: ResourcePool;
+}
+
+const parseNumberForForm = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string") return null;
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseMemoryGiBForForm = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  const direct = Number(trimmed);
+  if (Number.isFinite(direct)) return direct;
+
+  const match = trimmed.match(
+    /^([0-9]+(?:\.[0-9]+)?)\s*(Ki|KiB|Mi|MiB|Gi|GiB|Ti|TiB)$/i,
+  );
+  if (!match) return null;
+
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount)) return null;
+
+  switch (match[2].toLowerCase()) {
+    case "ki":
+    case "kib":
+      return amount / 1024 / 1024;
+    case "mi":
+    case "mib":
+      return amount / 1024;
+    case "gi":
+    case "gib":
+      return amount;
+    case "ti":
+    case "tib":
+      return amount * 1024;
+    default:
+      return null;
+  }
+};
+
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const setParsedResourceField = (
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+  key: "cpu" | "gpu" | "memory",
+) => {
+  if (!(key in source)) return;
+  target[key] =
+    key === "memory"
+      ? parseMemoryGiBForForm(source[key])
+      : parseNumberForForm(source[key]);
+};
+
+function normalizeEndpointAcceleratorForForm(
+  accelerator: unknown,
+): ResourceSpec["accelerator"] {
+  if (accelerator === null || accelerator === undefined) return null;
+  if (!isPlainRecord(accelerator)) return null;
+
+  const normalized = {
+    type: accelerator.type == null ? "" : String(accelerator.type),
+    product: accelerator.product == null ? "" : String(accelerator.product),
+  };
+
+  if (!normalized.type && !normalized.product) return null;
+
+  return normalized as ResourceSpec["accelerator"];
+}
+
+export function normalizeEndpointResourcesForForm(
+  resources: Record<string, unknown> | ResourceSpec | null | undefined,
+): ResourceSpec | null {
+  if (!resources) return null;
+
+  const source = resources as Record<string, unknown>;
+  const normalized = { ...source };
+  setParsedResourceField(normalized, source, "cpu");
+  setParsedResourceField(normalized, source, "memory");
+  setParsedResourceField(normalized, source, "gpu");
+  normalized.accelerator = normalizeEndpointAcceleratorForForm(
+    source.accelerator,
+  );
+
+  return normalized as ResourceSpec;
+}
+
+export function normalizeEndpointRecordForForm<
+  T extends { spec?: { resources?: Record<string, unknown> | null } | null },
+>(record: T): T {
+  if (!record.spec) return record;
+
+  return {
+    ...record,
+    spec: {
+      ...record.spec,
+      resources: normalizeEndpointResourcesForForm(record.spec.resources),
+    },
+  };
 }
 
 /**
@@ -189,6 +296,25 @@ export function transformEndpointValues(spec: {
       const value = (spec.resources as Record<string, unknown>)[field];
       if (value != null) {
         (spec.resources as Record<string, unknown>)[field] = String(value);
+      }
+    }
+
+    const accelerator = spec.resources.accelerator as
+      | Record<string, unknown>
+      | null
+      | undefined;
+    if (accelerator) {
+      for (const [key, value] of Object.entries(accelerator)) {
+        if (
+          (key !== "type" && key !== "product") ||
+          value === null ||
+          value === undefined ||
+          value === ""
+        ) {
+          delete accelerator[key];
+        } else if (typeof value !== "string") {
+          accelerator[key] = String(value);
+        }
       }
     }
   }
