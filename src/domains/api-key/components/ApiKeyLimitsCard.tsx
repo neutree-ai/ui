@@ -22,6 +22,7 @@ import {
   summarizeApiKeyLimits,
   useApiKeyDisable,
   useApiKeyLimits,
+  useWorkspaceModelMap,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { cn } from "@/foundation/lib/utils";
 
@@ -41,6 +42,7 @@ export const ApiKeyLimitsCard = ({
   const { t } = useTranslation();
   const { load, save } = useApiKeyLimits();
   const { disable, enable } = useApiKeyDisable();
+  const modelMap = useWorkspaceModelMap(workspace);
   const [limits, setLimits] = useState<ApiKeyLimits>({});
   const form = useForm<ApiKeyPolicyFormValues>({
     mode: "all",
@@ -167,6 +169,54 @@ export const ApiKeyLimitsCard = ({
         <p className="text-sm text-muted-foreground">
           {summary.length > 0 ? summary.join(" · ") : t("api_keys.limits.none")}
         </p>
+
+        {/* Model access (read): each allowed model with its Internal/External
+            tag and serving endpoint(s), aligned to the design mockup. */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">
+            {t("api_keys.modelAccess.title")}
+          </div>
+          {(limits.allowed_models ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("api_keys.modelAccess.all")}
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {(limits.allowed_models ?? []).map((m) => {
+                const info = modelMap.get(m);
+                return (
+                  <li
+                    key={m}
+                    className="flex flex-wrap items-center gap-2 text-sm"
+                  >
+                    <span className="font-medium">{m}</span>
+                    {info?.internal && (
+                      <Badge variant="outline" className="font-normal">
+                        {t("api_keys.models.internal")}
+                      </Badge>
+                    )}
+                    {info?.external && (
+                      <Badge variant="outline" className="font-normal">
+                        {t("api_keys.models.external")}
+                      </Badge>
+                    )}
+                    {info && info.endpoints.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {info.endpoints.map((e) => e.name).join(", ")}
+                      </span>
+                    )}
+                    {!info && (
+                      <span className="text-xs text-muted-foreground">
+                        {t("api_keys.modelAccess.unavailable")}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-3">
             <ApiKeyPolicyFields form={form} workspace={workspace} />

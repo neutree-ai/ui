@@ -955,6 +955,31 @@
 			"disable": "Disable",
 			"enable": "Enable",
 			"actions": "Actions"
+		},
+		"ranking": {
+			"title": "API key ranking overview",
+			"subtitle": "By the last 24 hours, split into request count and token dimensions.",
+			"window": "24h",
+			"requests": "Request count",
+			"tokens": "Tokens",
+			"empty": "No data"
+		},
+		"models": {
+			"internal": "Internal",
+			"external": "External"
+		},
+		"performance": {
+			"title": "Last 24h request performance",
+			"subtitle": "Call volume, response latency and success rate.",
+			"viewLogs": "View call logs",
+			"requests": "Requests",
+			"avgLatency": "Avg latency",
+			"successRate": "Success rate"
+		},
+		"modelAccess": {
+			"title": "Model access",
+			"all": "All models allowed",
+			"unavailable": "Endpoint unavailable"
 		}
 	},
 	"infrastructure": {

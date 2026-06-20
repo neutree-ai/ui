@@ -1,5 +1,6 @@
 import { useCustomMutation } from "@refinedev/core";
 import { useCallback, useEffect, useState } from "react";
+import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 
 // API-key limits, converged onto the key itself (NEUTREE-GENERAL-9). Quota +
 // access are a single object stored at api_key.spec.limits and read/written via
@@ -275,6 +276,70 @@ export function useWorkspaceModels(
   return opts;
 }
 
+// Per-model serving info: whether the model is served internally / externally
+// and the endpoint(s) that serve it. Powers the list Models column and the
+// detail Model access section (aligning name + Internal/External + endpoint).
+export type ModelEndpoint = { name: string; type: "internal" | "external" };
+export type ModelInfo = {
+  internal: boolean;
+  external: boolean;
+  endpoints: ModelEndpoint[];
+};
+
+// Map of model name -> serving info for a workspace, from get_workspace_models.
+export function useWorkspaceModelMap(
+  workspace: string | undefined,
+): Map<string, ModelInfo> {
+  const { mutateAsync } = useCustomMutation();
+  const [map, setMap] = useState<Map<string, ModelInfo>>(new Map());
+  useEffect(() => {
+    if (!workspace) {
+      setMap(new Map());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await mutateAsync({
+          url: "/rpc/get_workspace_models",
+          method: "post",
+          values: { p_workspace: workspace },
+        });
+        const rows =
+          (res.data as {
+            model: string;
+            source: string;
+            endpoint_name: string | null;
+          }[]) ?? [];
+        const m = new Map<string, ModelInfo>();
+        for (const r of rows) {
+          const type: "internal" | "external" =
+            r.source === "external_endpoint" ? "external" : "internal";
+          const info = m.get(r.model) ?? {
+            internal: false,
+            external: false,
+            endpoints: [],
+          };
+          if (type === "external") info.external = true;
+          else info.internal = true;
+          const name = String(r.endpoint_name ?? "").trim();
+          if (name && !info.endpoints.some((e) => e.name === name && e.type === type)) {
+            info.endpoints.push({ name, type });
+          }
+          m.set(r.model, info);
+        }
+        if (!cancelled) setMap(m);
+      } catch {
+        if (!cancelled) setMap(new Map());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mutateAsync, workspace]);
+  return map;
+}
+
 type ApiKeyUsage = {
   period: string;
   token_limit: number;
@@ -322,5 +387,62 @@ export function useAllApiKeyUsage(
       cancelled = true;
     };
   }, [mutateAsync, workspace]);
+  return byKey;
+}
+
+// One API key's aggregated 24h traffic, derived from inference traces.
+export type ApiKeyTraffic = {
+  requests: number;
+  tokens: number;
+  success: number;
+  avgDurationMs: number;
+  // success / requests in [0,1]; null when there were no requests.
+  successRate: number | null;
+};
+
+// Bulk per-API-key 24h traffic for a workspace, keyed by api_key_id. Backed by
+// the trace store (fetchAITraceKeyStats, one call). Powers the list ranking
+// overview and the detail "request performance" card. Returns an empty map when
+// the trace store is unavailable or there is no traffic — callers render an
+// empty state, never an error.
+export function useAllApiKeyTraffic(
+  workspace: string | undefined,
+  windowHours = 24,
+): Map<string, ApiKeyTraffic> {
+  const [byKey, setByKey] = useState<Map<string, ApiKeyTraffic>>(new Map());
+  useEffect(() => {
+    if (!workspace) {
+      setByKey(new Map());
+      return;
+    }
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetchAITraceKeyStats(
+          workspace,
+          windowHours,
+          controller.signal,
+        );
+        const m = new Map<string, ApiKeyTraffic>();
+        for (const k of res.keys ?? []) {
+          const requests = Number(k.requests) || 0;
+          const success = Number(k.success) || 0;
+          m.set(k.api_key_id, {
+            requests,
+            tokens: Number(k.tokens) || 0,
+            success,
+            avgDurationMs: Number(k.avg_duration_ms) || 0,
+            successRate: requests > 0 ? success / requests : null,
+          });
+        }
+        setByKey(m);
+      } catch {
+        setByKey(new Map());
+      }
+    })();
+    return () => {
+      controller.abort();
+    };
+  }, [workspace, windowHours]);
   return byKey;
 }

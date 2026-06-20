@@ -1,6 +1,6 @@
-import { useInvalidate, useNavigation } from "@refinedev/core";
+import { useInvalidate, useList, useNavigation } from "@refinedev/core";
 import { Pencil, Power, PowerOff, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -9,18 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ApiKeyRankingOverview } from "@/domains/api-key/components/ApiKeyRankingOverview";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
 import type { ApiKeyLimits } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
   rateSummary,
+  useAllApiKeyTraffic,
   useAllApiKeyUsage,
   useApiKeyDisable,
+  useWorkspaceModelMap,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKey } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, RowAction, Table } from "@/foundation/components/Table";
-import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
@@ -33,12 +36,30 @@ export const ApiKeysList = () => {
   const metadataColumns = useMetadataColumns();
   const { current: workspace } = useWorkspace();
   const usageByKey = useAllApiKeyUsage(workspace);
+  const trafficByKey = useAllApiKeyTraffic(workspace);
+  const modelMap = useWorkspaceModelMap(workspace);
   const { disable, enable } = useApiKeyDisable();
   const invalidate = useInvalidate();
   const refresh = useCallback(
     () => invalidate({ resource: "api_keys", invalidates: ["list"] }),
     [invalidate],
   );
+
+  // Keys (id -> name) for the ranking overview. One lightweight fetch; the table
+  // does its own paginated/filtered fetch separately.
+  const { data: keysData } = useList<ApiKey>({
+    resource: "api_keys",
+    pagination: { pageSize: 500, mode: "server" },
+  });
+  const rankingKeys = useMemo(() => {
+    const rows = keysData?.data ?? [];
+    return rows
+      .filter(
+        (k) =>
+          workspace === ALL_WORKSPACES || k.metadata?.workspace === workspace,
+      )
+      .map((k) => ({ id: String(k.id), name: k.metadata?.name ?? String(k.id) }));
+  }, [keysData, workspace]);
 
   // Limits are converged onto the key itself (spec.limits) — read straight off
   // each row, no separate fetch.
@@ -110,18 +131,36 @@ export const ApiKeysList = () => {
       header={t("api_keys.limits.modelsColumn")}
       cell={({ row: { original } }) => {
         const models = limitsOf(original as ApiKey).allowed_models ?? [];
-        return models.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {models.map((m) => (
-              <Badge key={m} variant="secondary" className="font-normal">
-                {m}
-              </Badge>
-            ))}
+        if (models.length === 0) {
+          return (
+            <span className="text-xs text-muted-foreground">
+              {t("api_keys.limits.allModels")}
+            </span>
+          );
+        }
+        // Mockup: model name (bold) + Internal/External tag from its serving
+        // endpoint(s). A model served both ways shows both tags.
+        return (
+          <div className="flex flex-col gap-1.5">
+            {models.map((m) => {
+              const info = modelMap.get(m);
+              return (
+                <div key={m} className="flex items-center gap-1.5">
+                  <span className="text-sm font-medium">{m}</span>
+                  {info?.internal && (
+                    <Badge variant="outline" className="font-normal">
+                      {t("api_keys.models.internal")}
+                    </Badge>
+                  )}
+                  {info?.external && (
+                    <Badge variant="outline" className="font-normal">
+                      {t("api_keys.models.external")}
+                    </Badge>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">
-            {t("api_keys.limits.allModels")}
-          </span>
         );
       }}
     />
@@ -217,6 +256,10 @@ export const ApiKeysList = () => {
           <CreateApiKeyForm onClose={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      <div className="mb-4">
+        <ApiKeyRankingOverview keys={rankingKeys} traffic={trafficByKey} />
+      </div>
 
       <Table
         enableSorting

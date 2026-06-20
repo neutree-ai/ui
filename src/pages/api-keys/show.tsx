@@ -1,6 +1,7 @@
 import { useShow } from "@refinedev/core";
 import { useTranslation } from "react-i18next";
 import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard";
+import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 
@@ -24,10 +25,16 @@ export const ApiKeysShow = () => {
       <ShowPage record={record} canEdit={false}>
         <MetadataCard metadata={record.metadata} />
         {record.id && (
-          <ApiKeyLimitsCard
-            apiKeyId={String(record.id)}
-            workspace={record.metadata.workspace}
-          />
+          <>
+            <ApiKeyPerformanceCard
+              apiKeyId={String(record.id)}
+              workspace={record.metadata.workspace}
+            />
+            <ApiKeyLimitsCard
+              apiKeyId={String(record.id)}
+              workspace={record.metadata.workspace}
+            />
+          </>
         )}
       </ShowPage>
     </div>

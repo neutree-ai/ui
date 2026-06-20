@@ -103,6 +103,34 @@ export async function fetchAITrace(
   return apiGet<AITrace>(url, signal);
 }
 
+// One API key's aggregated traffic over the requested window (backend computes
+// requests / tokens / success / avg latency; success_rate is derived here).
+export type AITraceKeyStat = {
+  api_key_id: string;
+  requests: number;
+  tokens: number;
+  success: number;
+  avg_duration_ms: number;
+};
+
+type AITraceKeyStatsResponse = {
+  window_hours: number;
+  keys: AITraceKeyStat[];
+};
+
+// fetchAITraceKeyStats returns per-API-key request/token/success/latency
+// aggregates over a trailing window (default 24h) — powers the API-key list
+// ranking overview and the detail "request performance" card.
+export async function fetchAITraceKeyStats(
+  workspace: string,
+  windowHours?: number,
+  signal?: AbortSignal,
+): Promise<AITraceKeyStatsResponse> {
+  const qs = windowHours != null ? `?window_hours=${windowHours}` : "";
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/key-stats${qs}`;
+  return apiGet<AITraceKeyStatsResponse>(url, signal);
+}
+
 // fetchAITraceStats returns per-day request counts for the activity chart.
 export async function fetchAITraceStats(
   workspace: string,
