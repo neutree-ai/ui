@@ -590,7 +590,7 @@ const isDeviceUsableForRequest = (
   request: EndpointResourceRequestContext | undefined,
 ) => {
   if (!request) {
-    return row.matchesSelectedAccelerator || row.fullFree;
+    return row.healthy && row.matchesSelectedAccelerator && row.fullFree;
   }
 
   if (!row.healthy || !row.matchesSelectedAccelerator) {

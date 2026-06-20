@@ -385,7 +385,7 @@ export function GpuDeviceResourcesView({
       {showFilters && (
         <div className="grid gap-2 md:grid-cols-[minmax(140px,220px)_minmax(140px,220px)_minmax(180px,1fr)]">
           <Select value={productFilter} onValueChange={setProductFilter}>
-            <SelectTrigger>
+            <SelectTrigger aria-label={labels.product}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -400,7 +400,7 @@ export function GpuDeviceResourcesView({
             </SelectContent>
           </Select>
           <Select value={nodeFilter} onValueChange={setNodeFilter}>
-            <SelectTrigger>
+            <SelectTrigger aria-label={labels.node}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

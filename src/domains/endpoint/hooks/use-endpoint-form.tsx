@@ -118,9 +118,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const syncedQueryResourcesKeyRef = useRef<string | null>(null);
 
-  const watchedFormValues = form.watch();
-  const formValues = watchedFormValues ?? form.getValues();
-  const watchedResources = formValues.spec?.resources;
+  const watchedResources = form.watch("spec.resources");
+  const watchedReplicaCount = form.watch("spec.replicas.num");
   const normalizedResources = normalizeEndpointResourcesForForm(
     watchedResources as unknown as Record<string, unknown> | null | undefined,
   );
@@ -144,7 +143,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const selectedAccelerator = normalizedResources?.accelerator;
   const gpuUsage = normalizedResources?.gpu || 0;
-  const replicaCount = Math.max(1, Number(formValues.spec?.replicas?.num || 1));
+  const replicaCount = Math.max(1, Number(watchedReplicaCount || 1));
 
   const currentEndpointAccelerator = normalizedQueryResources?.accelerator;
   const currentEndpointReplicaCount =

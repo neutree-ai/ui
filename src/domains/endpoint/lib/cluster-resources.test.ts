@@ -147,6 +147,40 @@ describe("parseClusterResources", () => {
     ]);
   });
 
+  it("omits unknown accelerator memory totals instead of setting undefined", () => {
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: {
+        cpu: 100,
+        memory: 256,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 4,
+            product_groups: {
+              "Tesla-T4": 4,
+            },
+          },
+        },
+      },
+      available: {
+        cpu: 80,
+        memory: 200,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: {
+              "Tesla-T4": 2,
+            },
+          },
+        },
+      },
+      node_resources: null,
+    };
+
+    const result = parseClusterResources(resourceInfo, mockTranslate);
+
+    expect(result.acceleratorOptions[0]).not.toHaveProperty("memoryTotalMiB");
+  });
+
   it("should derive accelerator memory total from node devices when metadata is absent", () => {
     const resourceInfo: ClusterResourceInfo = {
       allocatable: {

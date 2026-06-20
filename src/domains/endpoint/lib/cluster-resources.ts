@@ -45,6 +45,14 @@ type ParsedClusterResources = {
   acceleratorOptions: AcceleratorOption[];
 };
 
+const withMemoryTotalMiB = (
+  option: Omit<AcceleratorOption, "memoryTotalMiB">,
+  memoryTotalMiB: number | null | undefined,
+): AcceleratorOption =>
+  Number.isFinite(memoryTotalMiB)
+    ? { ...option, memoryTotalMiB: memoryTotalMiB as number }
+    : option;
+
 const getProductDeviceMemoryTotalMiB = (
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
   product: string,
@@ -135,19 +143,23 @@ export function parseClusterResources(
         )) {
           const availableProduct = availableGroup?.products?.[product];
 
-          acceleratorOptions.push({
-            label: `${translatedType} - ${product}`,
-            value: `${type}:${product}`,
-            type,
-            product,
-            available: availableProduct?.quantity || 0,
-            total: productResources.quantity || 0,
-            memoryTotalMiB: getProductMemoryTotalMiB(
-              resourceInfo,
-              type,
-              product,
+          acceleratorOptions.push(
+            withMemoryTotalMiB(
+              {
+                label: `${translatedType} - ${product}`,
+                value: `${type}:${product}`,
+                type,
+                product,
+                available: availableProduct?.quantity || 0,
+                total: productResources.quantity || 0,
+              },
+              getProductMemoryTotalMiB(
+                resourceInfo,
+                type,
+                product,
+              ),
             ),
-          });
+          );
         }
       } else if (allocatableGroup.product_groups) {
         // Create an option for each product
@@ -157,19 +169,23 @@ export function parseClusterResources(
           const productAvailable =
             availableGroup?.product_groups?.[product] || 0;
 
-          acceleratorOptions.push({
-            label: `${translatedType} - ${product}`,
-            value: `${type}:${product}`,
-            type,
-            product,
-            available: productAvailable,
-            total: productTotal,
-            memoryTotalMiB: getProductMemoryTotalMiB(
-              resourceInfo,
-              type,
-              product,
+          acceleratorOptions.push(
+            withMemoryTotalMiB(
+              {
+                label: `${translatedType} - ${product}`,
+                value: `${type}:${product}`,
+                type,
+                product,
+                available: productAvailable,
+                total: productTotal,
+              },
+              getProductMemoryTotalMiB(
+                resourceInfo,
+                type,
+                product,
+              ),
             ),
-          });
+          );
         }
       } else {
         // No product breakdown, create a generic option

@@ -194,6 +194,23 @@ describe("transformEndpointValues", () => {
     const spec = { resources: { cpu: 1 }, replicas: null };
     expect(() => transformEndpointValues(spec)).not.toThrow();
   });
+
+  it("normalizes empty accelerator resources to null", () => {
+    const spec = {
+      resources: {
+        accelerator: {
+          type: "",
+          product: "",
+          ignored: "value",
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.accelerator).toBeNull();
+  });
 });
 
 describe("validateEndpointValues", () => {

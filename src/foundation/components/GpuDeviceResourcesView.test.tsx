@@ -149,6 +149,15 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.queryByText("Selected")).toBeNull();
   });
 
+  it("labels product and node filters for assistive technology", () => {
+    render(
+      <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
+    );
+
+    expect(screen.getByRole("combobox", { name: "Product" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Node" })).toBeTruthy();
+  });
+
   it("keeps GPU number stable by UUID sort within each node", () => {
     render(
       <GpuDeviceResourcesView

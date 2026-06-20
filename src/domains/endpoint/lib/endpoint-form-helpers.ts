@@ -316,6 +316,9 @@ export function transformEndpointValues(spec: {
           accelerator[key] = String(value);
         }
       }
+      if (Object.keys(accelerator).length === 0) {
+        spec.resources.accelerator = null;
+      }
     }
   }
   if (spec.replicas?.num != null) {
