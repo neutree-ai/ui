@@ -128,10 +128,7 @@ export const ModelCatalogsEdit = () => {
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => goToShow()}
-              >
+              <Button variant="outline" onClick={() => goToShow()}>
                 {t("buttons.cancel", "Cancel")}
               </Button>
               <Button onClick={handleSave} disabled={isSaving}>

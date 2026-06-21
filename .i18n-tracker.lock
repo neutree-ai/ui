@@ -314,5 +314,5 @@
   "src/domains/endpoint/components/FeaturePicker.tsx": "1d66ae8f41b907041582c807731d8790",
   "src/domains/endpoint/components/VRAMCheckBadge.tsx": "d6bcfb3fe865b8df9e7d893c0a9273e2",
   "src/domains/endpoint/components/VariantPicker.tsx": "2582841e414bd06b48cbe4b1fba92ced",
-  "src/pages/model-catalogs/edit.tsx": "d506ad0e36321c62dc19ebf92f23ace2"
+  "src/pages/model-catalogs/edit.tsx": "ba228a0c7d6f59d0a4b25cb9e5963c75"
 }
