@@ -98,7 +98,7 @@ export const ModelCatalogsShow = () => {
     .filter(Boolean);
 
   return (
-    <ShowPage record={record} canEdit={false}>
+    <ShowPage record={record}>
       <div className="overflow-auto h-full">
         <MetadataCard metadata={record.metadata} />
 

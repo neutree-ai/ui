@@ -580,6 +580,13 @@
 			"successAll": "Imported {{count}} catalogs",
 			"failedAll": "All {{count}} imports failed",
 			"partial": "{{ok}} imported, {{failed}} failed"
+		},
+		"edit": {
+			"title": "Edit model catalog",
+			"specLabel": "Spec (YAML)",
+			"specHint": "Edit the catalog spec — e.g. point the model at a locally-imported registry. Invalid recipes surface as a Failed status after saving.",
+			"saved": "Catalog updated",
+			"invalidSpec": "Spec must be a mapping"
 		}
 	},
 	"image_registries": {

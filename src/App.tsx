@@ -157,6 +157,11 @@ const ModelCatalogsList = lazy(() =>
     default: m.ModelCatalogsList,
   })),
 );
+const ModelCatalogsEdit = lazy(() =>
+  import("./pages/model-catalogs/edit").then((m) => ({
+    default: m.ModelCatalogsEdit,
+  })),
+);
 const ModelCatalogsShow = lazy(() =>
   import("./pages/model-catalogs/show").then((m) => ({
     default: m.ModelCatalogsShow,
@@ -308,6 +313,7 @@ const resources: ResourceProps[] = [
     name: "model_catalogs",
     list: "/:workspace/model-catalogs",
     show: "/:workspace/model-catalogs/show/:id",
+    edit: "/:workspace/model-catalogs/edit/:id",
     meta: {
       icon: <BookOpen />,
       workspaced: true,
@@ -587,6 +593,7 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route path="/:workspace/model-catalogs">
                   <Route index element={<ModelCatalogsList />} />
                   <Route path="show/:id" element={<ModelCatalogsShow />} />
+                  <Route path="edit/:id" element={<ModelCatalogsEdit />} />
                 </Route>
                 <Route path="/:workspace/image-registries">
                   <Route index element={<ImageRegistriesList />} />
