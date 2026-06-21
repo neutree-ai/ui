@@ -38,15 +38,10 @@ function pickRepresentativeModel(spec: ModelCatalog["spec"]): ModelSpec | null {
 
 type Props = {
   catalog: ModelCatalog;
-  workspace: string;
   showWorkspace?: boolean;
 };
 
-export const ModelCatalogCard = ({
-  catalog,
-  workspace,
-  showWorkspace,
-}: Props) => {
+export const ModelCatalogCard = ({ catalog, showWorkspace }: Props) => {
   const { t } = useTranslation();
   const go = useGo();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -55,22 +50,29 @@ export const ModelCatalogCard = ({
   const model = pickRepresentativeModel(catalog.spec);
   const name = catalog.metadata.name;
   const variantCount = Object.keys(catalog.spec.variants ?? {}).length;
+  // Navigate with the record's own workspace, not the current list filter:
+  // under the "All workspaces" view the filter is `_all_`, which is not a
+  // routable workspace and 404s the show/deploy pages.
+  const recordWorkspace = catalog.metadata.workspace;
 
   const { mutate: deleteCatalog, isLoading: isDeleting } = useDeleteHelper(
     "model_catalogs",
     id,
-    { workspace: catalog.metadata.workspace },
+    { workspace: recordWorkspace },
   );
 
+  // The model_catalogs resource is keyed by metadata->name (idColumnName), so
+  // show/edit routes take the catalog name. The deploy form, however, matches
+  // its `?model_catalog=` param against the numeric catalog.id — keep both.
   const goShow = () =>
     go({
-      to: `/${workspace}/model-catalogs/show/${id}`,
+      to: `/${recordWorkspace}/model-catalogs/show/${name}`,
       type: "push",
     });
 
   const goDeploy = () =>
     go({
-      to: `/${workspace}/endpoints/create`,
+      to: `/${recordWorkspace}/endpoints/create`,
       query: { model_catalog: id },
       type: "push",
     });

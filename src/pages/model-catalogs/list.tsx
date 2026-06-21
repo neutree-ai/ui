@@ -83,7 +83,6 @@ export const ModelCatalogsList = () => {
             <ModelCatalogCard
               key={catalog.id}
               catalog={catalog}
-              workspace={workspace}
               showWorkspace={isAllWorkspaces}
             />
           ))}
