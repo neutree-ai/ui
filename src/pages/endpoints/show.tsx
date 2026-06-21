@@ -4,7 +4,15 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,6 +28,7 @@ import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfig
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
+import EndpointRuntimeResourcesCard from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
@@ -31,6 +40,9 @@ import {
   type EndpointMonitorPanelType,
   useEndpointMonitorPanels,
 } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
+import { useEndpointVgpuMonitorContext } from "@/domains/endpoint/hooks/use-endpoint-vgpu-monitor-context";
+import { getEndpointVgpuDashboardContext } from "@/domains/endpoint/lib/resource-status";
+import { hasVgpuResources } from "@/domains/endpoint/lib/vgpu";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
 import type { Engine } from "@/domains/engine/types";
@@ -44,6 +56,7 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   GRAFANA_VAR_ALL,
   getEndpointDashboardProps,
+  getEndpointVgpuDashboardProps,
   getSglangDashboardProps,
   getVllmDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
@@ -146,6 +159,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const clusterType = clusterData?.data?.[0]?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
+  const endpointHasVgpuResources = hasVgpuResources(record?.spec.resources);
 
   const {
     panels,
@@ -156,7 +170,23 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   } = useEndpointMonitorPanels({
     clusterType,
     engineType: record?.spec.engine.engine,
+    hasVgpuResources: endpointHasVgpuResources,
   });
+
+  const vgpuDashboardContext = useMemo(() => {
+    if (!record) return null;
+    return getEndpointVgpuDashboardContext({
+      resourceStatus: record.status?.resources,
+      cluster: record.spec.cluster,
+      workspace: record.metadata.workspace || "",
+      endpoint: record.metadata.name,
+    });
+  }, [record]);
+
+  const { data: vgpuMonitorContextData } = useEndpointVgpuMonitorContext(
+    record,
+    endpointHasVgpuResources && !vgpuDashboardContext,
+  );
 
   const { deployments } = useEndpointLogSources(record ?? null);
   const monitorReplicas = useMemo(
@@ -167,7 +197,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     useState<string>(GRAFANA_VAR_ALL);
 
   // Reset selection when the selected replica no longer exists
-  useMemo(() => {
+  useEffect(() => {
     if (
       selectedReplica !== GRAFANA_VAR_ALL &&
       !monitorReplicas.some((r) => r.replica_id === selectedReplica)
@@ -178,6 +208,39 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const replicaParam =
     selectedReplica !== GRAFANA_VAR_ALL ? selectedReplica : undefined;
+  const endpointVgpuDashboardProps = useMemo(() => {
+    if (!record || !grafanaUrl) {
+      return null;
+    }
+
+    const legacyContext = vgpuMonitorContextData?.data;
+    return getEndpointVgpuDashboardProps(grafanaUrl, {
+      cluster:
+        vgpuDashboardContext?.cluster ??
+        legacyContext?.cluster ??
+        record.spec.cluster ??
+        "",
+      workspace:
+        vgpuDashboardContext?.workspace ??
+        legacyContext?.workspace ??
+        record.metadata.workspace ??
+        "",
+      endpoint:
+        vgpuDashboardContext?.endpoint ??
+        legacyContext?.endpoint ??
+        record.metadata.name ??
+        "",
+      namespace:
+        vgpuDashboardContext?.namespace ?? legacyContext?.namespace ?? ".*",
+      pod: replicaParam,
+    });
+  }, [
+    grafanaUrl,
+    record,
+    replicaParam,
+    vgpuDashboardContext,
+    vgpuMonitorContextData?.data,
+  ]);
 
   const url = record?.status?.service_url ?? "";
 
@@ -267,12 +330,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   {record.spec.model.file}
                 </ShowPage.Row>
               </div>
+              <EndpointRuntimeResourcesCard
+                requestedResources={record.spec.resources}
+                resources={record.status?.resources}
+              />
             </CardContent>
           </Card>
           <ResourcesCard
             resources={record.spec.resources}
             showGpuConditionally={true}
-            titleTranslationKey="common.fields.resources"
+            titleTranslationKey="endpoints.sections.requestedResources"
           />
           <DeploymentConfigCard
             replicas={record.spec.replicas}
@@ -336,6 +403,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                                 {t("endpoints.monitor.endpointMetrics")}
                               </SelectItem>
                             )}
+                            {panels.includes("vgpu") && (
+                              <SelectItem value="vgpu">
+                                {t("endpoints.monitor.vgpuMetrics")}
+                              </SelectItem>
+                            )}
                             {panels.includes("vllm") && (
                               <SelectItem value="vllm">
                                 {t("endpoints.monitor.vllmMetrics")}
@@ -351,9 +423,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                         <p className="text-sm text-muted-foreground">
                           {selectedPanel === "endpoint"
                             ? t("endpoints.monitor.endpointDescription")
-                            : selectedPanel === "sglang"
-                              ? t("endpoints.monitor.sglangDescription")
-                              : t("endpoints.monitor.vllmDescription")}
+                            : selectedPanel === "vgpu"
+                              ? t("endpoints.monitor.vgpuDescription")
+                              : selectedPanel === "sglang"
+                                ? t("endpoints.monitor.sglangDescription")
+                                : t("endpoints.monitor.vllmDescription")}
                         </p>
                       </>
                     )}
@@ -420,6 +494,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     record.spec.cluster,
                     replicaParam,
                   )}
+                  className="flex-1"
+                  hideVariables
+                />
+              ) : selectedPanel === "vgpu" && endpointVgpuDashboardProps ? (
+                <GrafanaDashboard
+                  {...endpointVgpuDashboardProps}
                   className="flex-1"
                   hideVariables
                 />

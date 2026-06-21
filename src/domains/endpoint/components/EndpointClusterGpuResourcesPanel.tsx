@@ -25,14 +25,25 @@ type EndpointClusterGpuResourcesPanelProps = {
   resourceInfo: ClusterResourceInfo | null | undefined;
   currentCluster?: string | null;
   selectedAccelerator?: SelectedAccelerator | null;
+  virtualizationEnabled: boolean;
   request?: EndpointResourceRequestContext;
   t: (key: string, options?: { defaultValue?: string }) => string;
 };
 
 type EndpointResourceRequestContext = {
+  allocationMode: "full" | "vgpu";
   requestedFullGpuCards: number;
   fullGpuCardCapacity: number;
   fullGpuCapacityExceeded: boolean;
+  requestedVirtualCards: number;
+  totalVirtualCardCapacity: number;
+  requestedVgpuMemoryMiB: number;
+  availableVgpuMemoryMiB: number;
+  requestedVgpuCoreUnits: number;
+  availableVgpuCoreUnits: number;
+  memoryMiBPerCard?: number | null;
+  coreUnitsPerCard?: number | null;
+  vgpuCapacityExceeded: boolean;
 };
 
 const VRAM_VALUE_SCALE = 1 / 1024;
@@ -526,11 +537,13 @@ function EndpointClusterResourceSummary({
   resourceInfo,
   summaryRows,
   hasGpuResources,
+  virtualizationEnabled,
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
   hasGpuResources: boolean;
+  virtualizationEnabled: boolean;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   const cpuSummary = summarizeResourcePool(
@@ -542,6 +555,8 @@ function EndpointClusterResourceSummary({
     resourceInfo.available?.memory,
   );
   const gpuSummary = summarizeRows(summaryRows, "quantity");
+  const acceleratorMemorySummary = summarizeRows(summaryRows, "memory");
+  const acceleratorCoreSummary = summarizeRows(summaryRows, "core");
   const items: ResourceSummaryMetric[] = [];
 
   if (hasGpuResources) {
@@ -552,6 +567,27 @@ function EndpointClusterResourceSummary({
       available: gpuSummary.available,
       variant: "accelerator",
     });
+  }
+
+  if (hasGpuResources && virtualizationEnabled) {
+    items.push(
+      {
+        label: t("clusters.fields.memoryUsage"),
+        used: acceleratorMemorySummary.used,
+        total: acceleratorMemorySummary.total,
+        available: acceleratorMemorySummary.available,
+        unit: " GiB",
+        valueScale: VRAM_VALUE_SCALE,
+        variant: "accelerator",
+      },
+      {
+        label: t("clusters.fields.coreUsage"),
+        used: acceleratorCoreSummary.used,
+        total: acceleratorCoreSummary.total,
+        available: acceleratorCoreSummary.available,
+        variant: "accelerator",
+      },
+    );
   }
 
   items.push(
@@ -597,7 +633,24 @@ const isDeviceUsableForRequest = (
     return false;
   }
 
-  return row.fullFree;
+  if (request.allocationMode === "full") {
+    return row.fullFree;
+  }
+
+  const memoryMiBPerCard = Number(request.memoryMiBPerCard || 0);
+  const coreUnitsPerCard = Number(request.coreUnitsPerCard || 0);
+  const availableMemory = Number(row.memory.available || 0);
+  const availableCore = Number(row.core.available || 0);
+
+  if (memoryMiBPerCard > 0 && availableMemory < memoryMiBPerCard) {
+    return false;
+  }
+
+  if (coreUnitsPerCard > 0 && availableCore < coreUnitsPerCard) {
+    return false;
+  }
+
+  return availableMemory > 0 && availableCore > 0;
 };
 
 const groupNodesWithGpuRows = (
@@ -683,21 +736,18 @@ function EndpointNodeResources({
   nodeResources,
   selectedAccelerator,
   hasGpuResources,
+  virtualizationEnabled,
   request,
   t,
 }: {
   nodeResources: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   hasGpuResources: boolean;
+  virtualizationEnabled: boolean;
   request?: EndpointResourceRequestContext;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
-  const deviceRows = useMemo(
-    () => buildGpuDeviceResourceRows(nodeResources, selectedAccelerator),
-    [nodeResources, selectedAccelerator],
-  );
-
-  if (!hasGpuResources || deviceRows.length === 0) {
+  if (!virtualizationEnabled || !hasGpuResources) {
     return (
       <EndpointNodeResourceSummaries
         nodeResources={nodeResources}
@@ -709,9 +759,9 @@ function EndpointNodeResources({
   }
 
   return (
-    <EndpointNodeGpuResources
+    <EndpointVirtualizedNodeGpuResources
       nodeResources={nodeResources}
-      rows={deviceRows}
+      selectedAccelerator={selectedAccelerator}
       request={request}
       t={t}
     />
@@ -795,14 +845,14 @@ function EndpointNodeResourceSummaries({
   );
 }
 
-function EndpointNodeGpuResources({
+function EndpointVirtualizedNodeGpuResources({
   nodeResources,
-  rows,
+  selectedAccelerator,
   request,
   t,
 }: {
   nodeResources: ClusterResourceInfo["node_resources"];
-  rows: GpuDeviceResourceRow[];
+  selectedAccelerator?: SelectedAccelerator | null;
   request?: EndpointResourceRequestContext;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
@@ -812,13 +862,21 @@ function EndpointNodeGpuResources({
       successMessage: t("clusters.messages.copyUuidSuccess"),
       errorMessage: t("clusters.messages.copyUuidFailed"),
     });
+  const rows = useMemo(
+    () => buildGpuDeviceResourceRows(nodeResources, selectedAccelerator),
+    [nodeResources, selectedAccelerator],
+  );
   const nodeGroups = useMemo(
     () => groupNodesWithGpuRows(rows, nodeResources, request),
     [nodeResources, request, rows],
   );
 
   if (nodeGroups.length === 0) {
-    return null;
+    return (
+      <div className="rounded-md border bg-background p-3 text-sm text-muted-foreground">
+        {t("clusters.messages.noGpuDevices")}
+      </div>
+    );
   }
 
   return (
@@ -937,6 +995,7 @@ export function EndpointClusterGpuResourcesPanel({
   resourceInfo,
   currentCluster,
   selectedAccelerator,
+  virtualizationEnabled,
   request,
   t,
 }: EndpointClusterGpuResourcesPanelProps) {
@@ -1004,6 +1063,7 @@ export function EndpointClusterGpuResourcesPanel({
         resourceInfo={resourceInfo}
         selectedAccelerator={selectedAccelerator}
         hasGpuResources={hasGpuResources}
+        virtualizationEnabled={virtualizationEnabled}
         summaryRows={summaryRows}
         request={request}
         t={t}
@@ -1077,6 +1137,7 @@ function EndpointClusterGpuResourcesInlineContent({
   resourceInfo,
   selectedAccelerator,
   hasGpuResources,
+  virtualizationEnabled,
   summaryRows,
   request,
   t,
@@ -1084,6 +1145,7 @@ function EndpointClusterGpuResourcesInlineContent({
   resourceInfo: ClusterResourceInfo;
   selectedAccelerator?: SelectedAccelerator | null;
   hasGpuResources: boolean;
+  virtualizationEnabled: boolean;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
   request?: EndpointResourceRequestContext;
   t: (key: string, options?: { defaultValue?: string }) => string;
@@ -1098,12 +1160,14 @@ function EndpointClusterGpuResourcesInlineContent({
           resourceInfo={resourceInfo}
           summaryRows={summaryRows}
           hasGpuResources={hasGpuResources}
+          virtualizationEnabled={virtualizationEnabled}
           t={t}
         />
         <EndpointNodeResources
           nodeResources={resourceInfo.node_resources}
           selectedAccelerator={selectedAccelerator}
           hasGpuResources={hasGpuResources}
+          virtualizationEnabled={virtualizationEnabled}
           request={request}
           t={t}
         />

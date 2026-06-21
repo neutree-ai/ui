@@ -50,6 +50,19 @@ describe("useEndpointMonitorPanels", () => {
     expect(result.current.showSelector).toBe(false);
   });
 
+  it("should return vGPU panel for kubernetes endpoint with vGPU resources", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({
+        clusterType: "kubernetes",
+        hasVgpuResources: true,
+      }),
+    );
+
+    expect(result.current.panels).toEqual(["vgpu"]);
+    expect(result.current.selectedPanel).toBe("vgpu");
+    expect(result.current.showMonitorTab).toBe(true);
+  });
+
   it("should return both panels for ssh cluster with vllm engine", () => {
     const { result } = renderHook(() =>
       useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),

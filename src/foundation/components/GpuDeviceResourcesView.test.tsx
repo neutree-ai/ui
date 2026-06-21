@@ -149,6 +149,53 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.queryByText("Selected")).toBeNull();
   });
 
+  it("orders device table resources as VRAM before core", () => {
+    render(
+      <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
+    );
+
+    expect(
+      screen
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "GPU",
+      "Status",
+      "Node",
+      "Product",
+      "Memory Usage",
+      "Core Usage",
+    ]);
+  });
+
+  it("does not append a VRAM unit when summary remaining memory is unknown", () => {
+    render(
+      <GpuDeviceResourcesView
+        nodeResources={{
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-unknown",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: null,
+              },
+            ],
+          },
+        }}
+        labels={labels}
+      />,
+    );
+
+    expect(screen.queryByText("- GiB")).toBeNull();
+  });
+
   it("labels product and node filters for assistive technology", () => {
     render(
       <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
@@ -224,6 +271,11 @@ describe("GpuDeviceResourcesView", () => {
         showHeader={false}
         showFilters={false}
         showSummary={false}
+        request={{
+          allocationMode: "vgpu",
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 0,
+        }}
       />,
     );
 
@@ -243,7 +295,7 @@ describe("GpuDeviceResourcesView", () => {
       "GPU-11111111-2222-3333-4444-555555555555",
       expect.any(Object),
     );
-    expect(screen.getByText("Allocated")).toBeTruthy();
+    expect(screen.getByText("Usable")).toBeTruthy();
     const usageRow = screen.getByTestId("gpu-device-resource-usage-row");
     expect(usageRow.className).toContain("grid-cols-2");
   });
@@ -276,6 +328,11 @@ describe("GpuDeviceResourcesView", () => {
         showFilters={false}
         showSummary={false}
         showResourceControls={true}
+        request={{
+          allocationMode: "vgpu",
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 0,
+        }}
       />,
     );
 

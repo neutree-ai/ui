@@ -39,6 +39,11 @@ type KubernetesClusterConfig = {
   router?: RouterSpec;
 };
 
+type AcceleratorVirtualizationSpec = {
+  enabled?: boolean;
+  config_patch?: Record<string, unknown> | null;
+};
+
 // ClusterConfig is the unified configuration for all cluster types
 export type ClusterConfig = {
   ssh_config?: RaySSHProvisionClusterConfig;
@@ -93,6 +98,7 @@ export type ClusterSpec = {
    * The cluster image version.
    */
   version?: string;
+  accelerator_virtualization?: AcceleratorVirtualizationSpec;
 };
 
 const NodeProvisionStatus = {
@@ -134,7 +140,21 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
    * Accelerator type (e.g. nvidia_gpu, amd_gpu)
    */
   accelerator_type?: string | null;
+  component_status?: ClusterComponentStatusMap | null;
 };
+
+export type ClusterComponentStatus = {
+  phase?: string | null;
+  managed?: boolean | null;
+  version?: string | null;
+  reason?: string | null;
+  message?: string | null;
+};
+
+export type ClusterComponentStatusMap = Record<
+  string,
+  ClusterComponentStatus | null
+>;
 
 enum ClusterPhase {
   PENDING = "Pending",

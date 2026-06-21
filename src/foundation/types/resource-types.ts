@@ -10,6 +10,10 @@ export type AcceleratorProduct = string;
 
 export type AcceleratorProductResources = {
   quantity: number;
+  virtualization?: {
+    memory_mib?: number | null;
+    core_units?: number | null;
+  } | null;
 };
 
 export type AcceleratorProductMetadata = {
@@ -36,7 +40,8 @@ export type AcceleratorGroup = {
   product_groups: Record<AcceleratorProduct, number> | null;
 
   /**
-   * Products contains product-level accelerator resources.
+   * Products contains product-level accelerator resources. New code should prefer
+   * this over product_groups because it can carry virtualization pools.
    */
   products?: Record<AcceleratorProduct, AcceleratorProductResources> | null;
 };
@@ -117,4 +122,33 @@ export type ClusterResourceInfo = ResourceStatus & {
    * Value: NodeResourceStatus for that node.
    */
   node_resources: Record<string, NodeResourceStatus> | null;
+};
+
+type DeviceAllocation = {
+  uuid: string;
+  product: string;
+  memory_mib: number;
+  core_units: number;
+  node_id: string;
+};
+
+export type ReplicaDeviceAllocation = {
+  instance_id: string;
+  replica_id?: string | null;
+  node_id?: string | null;
+  devices?: DeviceAllocation[] | null;
+};
+
+type ProductUsage = {
+  memory_mib: number;
+  core_units: number;
+};
+
+export type EndpointResourceSummary = {
+  products?: Record<AcceleratorProduct, ProductUsage> | null;
+};
+
+export type EndpointResourceStatus = {
+  replicas?: ReplicaDeviceAllocation[] | null;
+  summary?: EndpointResourceSummary | null;
 };

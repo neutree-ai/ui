@@ -1,4 +1,5 @@
 import type { Cluster } from "@/domains/cluster/types";
+import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualization";
 
 /**
  * Transform cluster form values before submission.
@@ -38,6 +39,13 @@ export function transformClusterValues(
     config.kubernetes_config.router.replicas = Number(
       config.kubernetes_config.router.replicas,
     );
+  }
+
+  if (
+    values.spec.type !== "kubernetes" ||
+    !isAcceleratorVirtualizationSupported(values.spec.version)
+  ) {
+    delete transformed.spec.accelerator_virtualization;
   }
 
   // In edit mode, remove empty sensitive fields to avoid overwriting backend config

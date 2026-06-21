@@ -79,6 +79,13 @@ type GpuDeviceResourcesViewProps = {
   showSummary?: boolean;
   showResourceControls?: boolean;
   resourceControlsTestId?: string;
+  request?: GpuDeviceRequestFitContext;
+};
+
+type GpuDeviceRequestFitContext = {
+  allocationMode: "full" | "vgpu";
+  memoryMiBPerCard?: number | null;
+  coreUnitsPerCard?: number | null;
 };
 
 type ResourceScope = "all" | "free" | "usable";
@@ -232,14 +239,44 @@ const ResourceUsageCard = ({
   </div>
 );
 
-const isDeviceUsable = (row: GpuDeviceResourceRow) =>
-  row.healthy && row.matchesSelectedAccelerator && row.fullFree;
+const isDeviceUsableForRequest = (
+  row: GpuDeviceResourceRow,
+  request: GpuDeviceRequestFitContext | undefined,
+) => {
+  if (!request) {
+    return false;
+  }
+
+  if (!row.healthy || !row.matchesSelectedAccelerator) {
+    return false;
+  }
+
+  if (request.allocationMode === "full") {
+    return row.fullFree;
+  }
+
+  const memoryMiBPerCard = Number(request.memoryMiBPerCard || 0);
+  const coreUnitsPerCard = Number(request.coreUnitsPerCard || 0);
+  const availableMemory = Number(row.memory.available || 0);
+  const availableCore = Number(row.core.available || 0);
+
+  if (memoryMiBPerCard > 0 && availableMemory < memoryMiBPerCard) {
+    return false;
+  }
+
+  if (coreUnitsPerCard > 0 && availableCore < coreUnitsPerCard) {
+    return false;
+  }
+
+  return availableMemory > 0 && availableCore > 0;
+};
 
 const getDeviceStatusLabel = (
   row: GpuDeviceResourceRow,
+  request: GpuDeviceRequestFitContext | undefined,
   labels: GpuDeviceResourcesViewLabels,
 ) => {
-  if (isDeviceUsable(row)) {
+  if (isDeviceUsableForRequest(row, request)) {
     return labels.usable;
   }
 
@@ -261,6 +298,7 @@ export function GpuDeviceResourcesView({
   showSummary = true,
   showResourceControls = false,
   resourceControlsTestId = "gpu-device-resource-toolbar",
+  request,
 }: GpuDeviceResourcesViewProps) {
   const [productFilter, setProductFilter] = useState(GPU_DEVICE_FILTER_ALL);
   const [nodeFilter, setNodeFilter] = useState(GPU_DEVICE_FILTER_ALL);
@@ -288,11 +326,13 @@ export function GpuDeviceResourcesView({
     }
 
     if (resourceScope === "usable") {
-      return filteredRows.filter(isDeviceUsable);
+      return filteredRows.filter((row) =>
+        isDeviceUsableForRequest(row, request),
+      );
     }
 
     return filteredRows;
-  }, [nodeFilter, productFilter, resourceScope, rows, search]);
+  }, [nodeFilter, productFilter, request, resourceScope, rows, search]);
   const memorySummary = useMemo(
     () => summarizePool(visibleRows, "memory"),
     [visibleRows],
@@ -351,6 +391,24 @@ export function GpuDeviceResourcesView({
           </div>
           <div className="rounded-md bg-muted/40 px-3 py-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{labels.memoryUsage}</span>
+              <span className="tabular-nums">{memorySummary.percent}%</span>
+            </div>
+            <Progress value={memorySummary.percent} className="mt-2 h-2" />
+            <div className="mt-1 flex items-center justify-between gap-2 text-xs">
+              <span className="text-muted-foreground">{labels.remaining}</span>
+              <span className="tabular-nums">
+                {formatAvailable(
+                  { available: memorySummary.available },
+                  "GiB",
+                  VRAM_VALUE_SCALE,
+                  VRAM_VALUE_PRECISION,
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="rounded-md bg-muted/40 px-3 py-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{labels.coreUsage}</span>
               <span className="tabular-nums">{coreSummary.percent}%</span>
             </div>
@@ -359,23 +417,6 @@ export function GpuDeviceResourcesView({
               <span className="text-muted-foreground">{labels.remaining}</span>
               <span className="tabular-nums">
                 {formatNumber(coreSummary.available)}
-              </span>
-            </div>
-          </div>
-          <div className="rounded-md bg-muted/40 px-3 py-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{labels.memoryUsage}</span>
-              <span className="tabular-nums">{memorySummary.percent}%</span>
-            </div>
-            <Progress value={memorySummary.percent} className="mt-2 h-2" />
-            <div className="mt-1 flex items-center justify-between gap-2 text-xs">
-              <span className="text-muted-foreground">{labels.remaining}</span>
-              <span className="tabular-nums">
-                {formatNumber(
-                  scaleMetricValue(memorySummary.available, VRAM_VALUE_SCALE),
-                  VRAM_VALUE_PRECISION,
-                )}{" "}
-                GiB
               </span>
             </div>
           </div>
@@ -451,7 +492,8 @@ export function GpuDeviceResourcesView({
               key={`${row.nodeName}:${row.uuid}`}
               className={cn(
                 "rounded-md border bg-background p-2.5",
-                isDeviceUsable(row) && "border-primary/40 bg-primary/5",
+                isDeviceUsableForRequest(row, request) &&
+                  "border-primary/40 bg-primary/5",
               )}
             >
               <div className="flex items-start justify-between gap-2">
@@ -478,10 +520,14 @@ export function GpuDeviceResourcesView({
                 </Button>
                 <div className="flex items-center gap-2">
                   <Badge
-                    variant={isDeviceUsable(row) ? "secondary" : "outline"}
+                    variant={
+                      isDeviceUsableForRequest(row, request)
+                        ? "secondary"
+                        : "outline"
+                    }
                     className="font-normal"
                   >
-                    {getDeviceStatusLabel(row, labels)}
+                    {getDeviceStatusLabel(row, request, labels)}
                   </Badge>
                   <span
                     className="flex items-center justify-center"
@@ -516,17 +562,17 @@ export function GpuDeviceResourcesView({
                 className="mt-2.5 grid grid-cols-2 gap-2"
               >
                 <ResourceUsageCard
-                  label={labels.coreUsage}
-                  remainingLabel={labels.remaining}
-                  pool={row.core}
-                />
-                <ResourceUsageCard
                   label={labels.memoryUsage}
                   remainingLabel={labels.remaining}
                   pool={row.memory}
                   unit="GiB"
                   valueScale={VRAM_VALUE_SCALE}
                   precision={VRAM_VALUE_PRECISION}
+                />
+                <ResourceUsageCard
+                  label={labels.coreUsage}
+                  remainingLabel={labels.remaining}
+                  pool={row.core}
                 />
               </div>
             </div>
@@ -546,10 +592,10 @@ export function GpuDeviceResourcesView({
                   {labels.product}
                 </TableHead>
                 <TableHead className="min-w-[170px]">
-                  {labels.coreUsage}
+                  {labels.memoryUsage}
                 </TableHead>
                 <TableHead className="min-w-[170px]">
-                  {labels.memoryUsage}
+                  {labels.coreUsage}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -620,17 +666,17 @@ export function GpuDeviceResourcesView({
                     <ResourceUsageCell
                       label={labels.usedSlashTotal}
                       remainingLabel={labels.remaining}
-                      pool={row.core}
+                      pool={row.memory}
+                      unit="GiB"
+                      valueScale={VRAM_VALUE_SCALE}
+                      precision={VRAM_VALUE_PRECISION}
                     />
                   </TableCell>
                   <TableCell>
                     <ResourceUsageCell
                       label={labels.usedSlashTotal}
                       remainingLabel={labels.remaining}
-                      pool={row.memory}
-                      unit="GiB"
-                      valueScale={VRAM_VALUE_SCALE}
-                      precision={VRAM_VALUE_PRECISION}
+                      pool={row.core}
                     />
                   </TableCell>
                 </TableRow>

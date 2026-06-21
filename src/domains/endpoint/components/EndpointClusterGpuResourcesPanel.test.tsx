@@ -112,6 +112,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
         selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={true}
         t={t}
       />,
     );

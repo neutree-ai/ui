@@ -1,4 +1,16 @@
+import { normalizeVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
+
+const VGPU_MEMORY_MIB_KEY = "virtualization.memory_mib";
+const VGPU_MEMORY_PERCENT_KEY = "virtualization.memory_percent";
+const VGPU_CORE_PERCENT_KEY = "virtualization.core_percent";
+const ALLOWED_ACCELERATOR_KEYS = new Set([
+  "type",
+  "product",
+  VGPU_MEMORY_MIB_KEY,
+  VGPU_MEMORY_PERCENT_KEY,
+  VGPU_CORE_PERCENT_KEY,
+]);
 
 /**
  * Validate current usage against total capacity.
@@ -141,12 +153,26 @@ function normalizeEndpointAcceleratorForForm(
   if (accelerator === null || accelerator === undefined) return null;
   if (!isPlainRecord(accelerator)) return null;
 
-  const normalized = {
-    type: accelerator.type == null ? "" : String(accelerator.type),
-    product: accelerator.product == null ? "" : String(accelerator.product),
-  };
+  const normalized = { ...accelerator };
+  const nestedVirtualization = isPlainRecord(normalized.virtualization)
+    ? normalized.virtualization
+    : {};
+  const virtualization = normalizeVgpuVirtualization({
+    memory_mib: normalized[VGPU_MEMORY_MIB_KEY],
+    memory_percent: normalized[VGPU_MEMORY_PERCENT_KEY],
+    core_percent: normalized[VGPU_CORE_PERCENT_KEY],
+    ...nestedVirtualization,
+  } as NonNullable<NonNullable<ResourceSpec["accelerator"]>["virtualization"]>);
 
-  if (!normalized.type && !normalized.product) return null;
+  delete normalized[VGPU_MEMORY_MIB_KEY];
+  delete normalized[VGPU_MEMORY_PERCENT_KEY];
+  delete normalized[VGPU_CORE_PERCENT_KEY];
+
+  if (virtualization) {
+    normalized.virtualization = virtualization;
+  } else {
+    delete normalized.virtualization;
+  }
 
   return normalized as ResourceSpec["accelerator"];
 }
@@ -181,6 +207,23 @@ export function normalizeEndpointRecordForForm<
     },
   };
 }
+
+const setFlatVgpuValue = (
+  accelerator: Record<string, unknown>,
+  key: string,
+  value: unknown,
+) => {
+  if (value === null || value === undefined || value === "") return;
+  accelerator[key] = String(value);
+};
+
+const parseOptionalValidationNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === "") {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+};
 
 /**
  * Compute maximum available resources for the endpoint form sliders.
@@ -300,13 +343,54 @@ export function transformEndpointValues(spec: {
     }
 
     const accelerator = spec.resources.accelerator as
-      | Record<string, unknown>
+      | (Record<string, unknown> & {
+          virtualization?: Record<string, unknown> | null;
+        })
       | null
       | undefined;
     if (accelerator) {
+      const nestedVirtualization = isPlainRecord(accelerator.virtualization)
+        ? accelerator.virtualization
+        : {};
+      const normalized = normalizeVgpuVirtualization({
+        memory_mib: accelerator[VGPU_MEMORY_MIB_KEY],
+        memory_percent: accelerator[VGPU_MEMORY_PERCENT_KEY],
+        core_percent: accelerator[VGPU_CORE_PERCENT_KEY],
+        ...nestedVirtualization,
+      } as NonNullable<
+        NonNullable<ResourceSpec["accelerator"]>["virtualization"]
+      >);
+
+      delete accelerator.virtualization;
+      delete accelerator[VGPU_MEMORY_MIB_KEY];
+      delete accelerator[VGPU_MEMORY_PERCENT_KEY];
+      delete accelerator[VGPU_CORE_PERCENT_KEY];
+
+      const hasVirtualMemory =
+        normalized?.memory_mib !== undefined ||
+        normalized?.memory_percent !== undefined;
+
+      if (normalized && hasVirtualMemory) {
+        setFlatVgpuValue(
+          accelerator,
+          VGPU_MEMORY_MIB_KEY,
+          normalized.memory_mib,
+        );
+        setFlatVgpuValue(
+          accelerator,
+          VGPU_MEMORY_PERCENT_KEY,
+          normalized.memory_percent,
+        );
+        setFlatVgpuValue(
+          accelerator,
+          VGPU_CORE_PERCENT_KEY,
+          normalized.core_percent,
+        );
+      }
+
       for (const [key, value] of Object.entries(accelerator)) {
         if (
-          (key !== "type" && key !== "product") ||
+          !ALLOWED_ACCELERATOR_KEYS.has(key) ||
           value === null ||
           value === undefined ||
           value === ""
@@ -333,6 +417,17 @@ export function validateEndpointValues(
   spec: {
     replicas?: { num?: number } | null;
     deployment_options?: { scheduler?: { type?: string } | null } | null;
+    resources?: {
+      accelerator?: {
+        type?: string;
+        product?: string;
+        virtualization?: {
+          memory_mib?: number | null;
+          memory_percent?: number | null;
+          core_percent?: number | null;
+        } | null;
+      } | null;
+    } | null;
   },
   context: {
     action: "create" | "edit";
@@ -355,6 +450,60 @@ export function validateEndpointValues(
     errors["spec.deployment_options.scheduler.type"] = {
       type: "manual",
       message: t("endpoints.messages.schedulerTypeRequired"),
+    };
+  }
+
+  const virtualization = spec.resources?.accelerator?.virtualization;
+  const memoryMiB = parseOptionalValidationNumber(virtualization?.memory_mib);
+  const memoryPercent = parseOptionalValidationNumber(
+    virtualization?.memory_percent,
+  );
+  const corePercent = parseOptionalValidationNumber(
+    virtualization?.core_percent,
+  );
+  const hasMemoryMiB =
+    memoryMiB !== undefined && Number.isFinite(memoryMiB) && memoryMiB > 0;
+  const hasMemoryPercent =
+    memoryPercent !== undefined &&
+    Number.isFinite(memoryPercent) &&
+    memoryPercent > 0;
+
+  if (hasMemoryMiB && hasMemoryPercent) {
+    errors["spec.resources.accelerator.virtualization.memory_percent"] = {
+      type: "manual",
+      message: t("endpoints.messages.vgpuMemoryMutuallyExclusive"),
+    };
+  }
+
+  if (
+    memoryMiB !== undefined &&
+    (!Number.isFinite(memoryMiB) || memoryMiB <= 0)
+  ) {
+    errors["spec.resources.accelerator.virtualization.memory_mib"] = {
+      type: "manual",
+      message: t("endpoints.messages.vgpuMemoryMiBPositive"),
+    };
+  }
+
+  if (
+    memoryPercent !== undefined &&
+    (!Number.isFinite(memoryPercent) ||
+      memoryPercent < 1 ||
+      memoryPercent > 100)
+  ) {
+    errors["spec.resources.accelerator.virtualization.memory_percent"] = {
+      type: "manual",
+      message: t("endpoints.messages.vgpuMemoryPercentRange"),
+    };
+  }
+
+  if (
+    corePercent !== undefined &&
+    (!Number.isFinite(corePercent) || corePercent < 0 || corePercent > 100)
+  ) {
+    errors["spec.resources.accelerator.virtualization.core_percent"] = {
+      type: "manual",
+      message: t("endpoints.messages.vgpuCorePercentRange"),
     };
   }
 

@@ -2,10 +2,12 @@ import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelCacheFields } from "@/domains/cluster/components/ModelCacheFields";
 import NodeIPsField from "@/domains/cluster/components/NodeIPsField";
+import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/accelerator-virtualization";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import type { Cluster } from "@/domains/cluster/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
@@ -87,6 +89,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const availableVersions = versionsData?.data?.available_versions ?? [];
 
   const specVersion = form.watch("spec.version");
+  const acceleratorVirtualizationSupported =
+    isKubernetes && isAcceleratorVirtualizationSupported(specVersion);
 
   // In edit mode, ensure the current version appears in the options list
   // even if the API doesn't return it (it only returns upgrade targets).
@@ -120,6 +124,19 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       );
     }
   }, [isEdit, availableVersions, form]);
+
+  useEffect(() => {
+    if (
+      isKubernetes &&
+      !acceleratorVirtualizationSupported &&
+      form.getValues("spec.accelerator_virtualization.enabled") === true
+    ) {
+      form.setValue("spec.accelerator_virtualization.enabled", false, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [acceleratorVirtualizationSupported, form, isKubernetes]);
 
   return {
     form,
@@ -211,6 +228,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   },
                   model_caches: [],
                 });
+                form.setValue("spec.accelerator_virtualization", undefined);
               } else if (value === "kubernetes") {
                 form.setValue("spec.config", {
                   kubernetes_config: {
@@ -227,6 +245,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   },
                   model_caches: [],
                 });
+                form.setValue("spec.accelerator_virtualization.enabled", false);
               }
             }}
             disabled={isEdit}
@@ -303,6 +322,37 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label={t("common.fields.memory")}
         >
           <Input />
+        </FormFieldGroup>
+      </FormCardGrid>
+    ) : null,
+    acceleratorVirtualizationFields: isKubernetes ? (
+      <FormCardGrid title={t("clusters.sections.acceleratorVirtualization")}>
+        <FormFieldGroup
+          {...form}
+          name="spec.accelerator_virtualization.enabled"
+          label={t("clusters.fields.acceleratorVirtualization")}
+          description={
+            acceleratorVirtualizationSupported
+              ? t("clusters.descriptions.acceleratorVirtualization")
+              : t(
+                  "clusters.descriptions.acceleratorVirtualizationUnsupportedVersion",
+                )
+          }
+          isCheckbox
+          className="col-span-4"
+        >
+          <Checkbox
+            disabled={!acceleratorVirtualizationSupported}
+            checked={
+              form.watch("spec.accelerator_virtualization.enabled") === true
+            }
+            onCheckedChange={(checked) =>
+              form.setValue(
+                "spec.accelerator_virtualization.enabled",
+                acceleratorVirtualizationSupported && checked === true,
+              )
+            }
+          />
         </FormFieldGroup>
       </FormCardGrid>
     ) : null,

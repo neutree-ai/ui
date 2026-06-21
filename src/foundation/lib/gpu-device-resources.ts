@@ -48,6 +48,11 @@ type NodePhysicalGpuResourceRow = {
   memory: DevicePoolUsage;
 };
 
+type VgpuCardCapacity = {
+  matchingDeviceCount: number;
+  totalCards: number;
+};
+
 type GpuDeviceResourceFilters = {
   nodeName?: string | null;
   product?: string | null;
@@ -179,13 +184,14 @@ export function countFullCardAvailableDevicesByProduct(
   for (const nodeStatus of Object.values(nodeResources)) {
     for (const device of nodeStatus.devices ?? []) {
       const current = result.get(device.product) ?? 0;
+      if (!hasFullCardAvailabilitySignals(device)) {
+        result.set(device.product, current);
+        continue;
+      }
+
       result.set(
         device.product,
-        current +
-          (hasFullCardAvailabilitySignals(device) &&
-          isDeviceAvailableForFullCardAllocation(device)
-            ? 1
-            : 0),
+        current + (isDeviceAvailableForFullCardAllocation(device) ? 1 : 0),
       );
     }
   }
@@ -333,10 +339,12 @@ export function buildGpuCardResourceRows(
                 fullCardAvailableDevicesByProduct.get(product) ??
                 availableGroup?.products?.[product]?.quantity ??
                 0,
-              allocatableMemoryMiB: undefined,
-              availableMemoryMiB: undefined,
-              allocatableCoreUnits: undefined,
-              availableCoreUnits: undefined,
+              allocatableMemoryMiB: resources.virtualization?.memory_mib,
+              availableMemoryMiB:
+                availableGroup?.products?.[product]?.virtualization?.memory_mib,
+              allocatableCoreUnits: resources.virtualization?.core_units,
+              availableCoreUnits:
+                availableGroup?.products?.[product]?.virtualization?.core_units,
             }))
           : Object.keys(allocatableGroup.product_groups ?? {}).length > 0
             ? Object.entries(allocatableGroup.product_groups ?? {}).map(
@@ -449,6 +457,75 @@ export function buildGpuDeviceResourceRows(
       (a, b) =>
         a.nodeName.localeCompare(b.nodeName) || a.uuid.localeCompare(b.uuid),
     );
+}
+
+export function calculateVgpuCardCapacity(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  options: {
+    selectedAccelerator?: SelectedAccelerator | null;
+    memoryMiBPerCard?: number | null;
+    coreUnitsPerCard?: number | null;
+  },
+): VgpuCardCapacity {
+  const memoryMiBPerCard = Number(options.memoryMiBPerCard || 0);
+  const coreUnitsPerCard = Number(options.coreUnitsPerCard || 0);
+
+  if (
+    !nodeResources ||
+    !options.selectedAccelerator?.product ||
+    memoryMiBPerCard <= 0
+  ) {
+    return {
+      matchingDeviceCount: 0,
+      totalCards: 0,
+    };
+  }
+
+  let matchingDeviceCount = 0;
+  let totalCards = 0;
+
+  for (const nodeStatus of Object.values(nodeResources)) {
+    for (const device of nodeStatus.devices ?? []) {
+      if (!device.health) {
+        continue;
+      }
+
+      const acceleratorType = getProductAcceleratorType(
+        nodeStatus.allocatable,
+        device.product,
+      );
+      if (
+        !matchesSelectedAccelerator(
+          { acceleratorType, product: device.product },
+          options.selectedAccelerator,
+        )
+      ) {
+        continue;
+      }
+
+      matchingDeviceCount += 1;
+      const availableMemoryMiB = Number(device.available?.memory_mib || 0);
+      const availableCoreUnits = Number(device.available?.core_units || 0);
+      if (availableMemoryMiB <= 0 || availableCoreUnits <= 0) {
+        continue;
+      }
+
+      if (availableMemoryMiB < memoryMiBPerCard) {
+        continue;
+      }
+
+      if (coreUnitsPerCard > 0 && availableCoreUnits < coreUnitsPerCard) {
+        continue;
+      }
+
+      totalCards += 1;
+    }
+  }
+
+  return {
+    matchingDeviceCount,
+    totalCards,
+  };
 }
 
 export function filterGpuDeviceResourceRows(

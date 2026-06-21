@@ -1,5 +1,8 @@
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
-import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
+import type {
+  ClusterResourceInfo,
+  EndpointResourceStatus,
+} from "@/foundation/types/resource-types";
 import type {
   DeploymentOptions,
   EndpointEngineSpec,
@@ -39,6 +42,7 @@ export type EndpointSpec = {
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
+  resources?: EndpointResourceStatus | null;
 };
 
 export type Endpoint = {
@@ -58,7 +62,10 @@ export type Endpoint = {
 /** Minimal cluster shape needed by endpoint form */
 export type EndpointClusterRef = {
   metadata: Metadata;
-  spec: { type: string };
+  spec: {
+    type: string;
+    accelerator_virtualization?: { enabled?: boolean } | null;
+  };
   status: {
     ready_nodes?: number;
     desired_nodes?: number;

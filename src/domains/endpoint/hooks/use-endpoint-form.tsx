@@ -27,6 +27,7 @@ import {
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
+import { getEffectiveVgpuMemoryMiB } from "@/domains/endpoint/lib/vgpu";
 import type {
   Endpoint,
   EndpointClusterRef,
@@ -43,8 +44,25 @@ import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
-import { countFullCardAvailableDevicesByProduct } from "@/foundation/lib/gpu-device-resources";
+import {
+  calculateVgpuCardCapacity,
+  countFullCardAvailableDevicesByProduct,
+} from "@/foundation/lib/gpu-device-resources";
 import { cn } from "@/foundation/lib/utils";
+
+type AcceleratorVirtualization = NonNullable<
+  ResourceSpec["accelerator"]
+>["virtualization"];
+type GpuAllocationMode = "full" | "vgpu";
+
+const hasVgpuVirtualizationValues = (
+  virtualization: AcceleratorVirtualization | undefined,
+) =>
+  Boolean(
+    virtualization?.memory_mib ||
+      virtualization?.memory_percent ||
+      virtualization?.core_percent,
+  );
 
 const userSetValueOptions = {
   shouldDirty: true,
@@ -162,6 +180,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       currentEndpointAccelerator?.type === selectedAccelerator.type &&
       currentEndpointAccelerator?.product === selectedAccelerator.product,
   );
+  const isCurrentEndpointVgpuAllocation = hasVgpuVirtualizationValues(
+    currentEndpointAccelerator?.virtualization,
+  );
   const originalEndpointUsage = useEndpointResources(
     action === "edit" ? (normalizedQueryResources ?? undefined) : undefined,
     action === "edit" ? queryEndpoint?.metadata : undefined,
@@ -169,7 +190,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentUsage = {
     cpu: canReuseCurrentEndpointResources ? originalEndpointUsage.cpu : 0,
     memory: canReuseCurrentEndpointResources ? originalEndpointUsage.memory : 0,
-    gpu: canReuseCurrentEndpointAccelerator ? originalEndpointUsage.gpu : 0,
+    gpu:
+      canReuseCurrentEndpointAccelerator && !isCurrentEndpointVgpuAllocation
+        ? originalEndpointUsage.gpu
+        : 0,
   };
 
   const meta = useMemo(
@@ -217,6 +241,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const isEdit = action === "edit";
 
+  const selectedVirtualization = selectedAccelerator?.virtualization;
+  const isSelectedClusterVgpuEnabled =
+    selectedCluster?.spec.type === "kubernetes" &&
+    selectedCluster.spec.accelerator_virtualization?.enabled === true;
+  const hasResolvedClusterSelection = Boolean(
+    currentCluster && selectedCluster,
+  );
+  const showVgpuFields = Boolean(
+    isSelectedClusterVgpuEnabled &&
+      selectedAccelerator?.type &&
+      selectedAccelerator?.product,
+  );
   const selectedClusterNodeCount = useMemo(() => {
     const nodeResources =
       selectedCluster?.status?.resource_info?.node_resources;
@@ -231,7 +267,48 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   ]);
   const selectedClusterNodeCountText =
     selectedClusterNodeCount === null ? "-" : String(selectedClusterNodeCount);
+  const selectedMemoryTotalMiB = selectedAcceleratorOption?.memoryTotalMiB;
+  const effectiveVgpuMemoryMiB = getEffectiveVgpuMemoryMiB(
+    selectedVirtualization,
+    selectedMemoryTotalMiB,
+  );
+  const vgpuMemoryGiBInputValue =
+    selectedVirtualization?.memory_mib !== undefined
+      ? formatInputNumber(Number(selectedVirtualization.memory_mib) / 1024)
+      : effectiveVgpuMemoryMiB
+        ? formatInputNumber(effectiveVgpuMemoryMiB / 1024)
+        : "";
+  const effectiveGpuAllocationMode: GpuAllocationMode =
+    showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
+  const isVgpuAllocationMode = effectiveGpuAllocationMode === "vgpu";
+  const vgpuCoreUnitsPerCard = Number(
+    selectedVirtualization?.core_percent || 0,
+  );
+  const vgpuCardCapacity = useMemo(
+    () =>
+      calculateVgpuCardCapacity(
+        selectedCluster?.status?.resource_info?.node_resources,
+        {
+          selectedAccelerator,
+          memoryMiBPerCard: effectiveVgpuMemoryMiB,
+          coreUnitsPerCard: vgpuCoreUnitsPerCard,
+        },
+      ),
+    [
+      selectedCluster?.status?.resource_info?.node_resources,
+      selectedAccelerator,
+      effectiveVgpuMemoryMiB,
+      vgpuCoreUnitsPerCard,
+    ],
+  );
+  const requestedVirtualCards = gpuUsage * replicaCount;
   const requestedFullGpuCards = gpuUsage * replicaCount;
+  const requestedVgpuMemoryMiB = effectiveVgpuMemoryMiB
+    ? requestedVirtualCards * effectiveVgpuMemoryMiB
+    : 0;
+  const requestedVgpuCoreUnits = vgpuCoreUnitsPerCard
+    ? requestedVirtualCards * vgpuCoreUnitsPerCard
+    : 0;
   const availableFullGpuCards = useMemo(() => {
     if (!selectedAccelerator?.product) {
       return 0;
@@ -252,19 +329,155 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedAcceleratorOption?.available,
     selectedCluster?.status?.resource_info?.node_resources,
   ]);
-  const reusableFullGpuCards = canReuseCurrentEndpointAccelerator
-    ? Number(normalizedQueryResources?.gpu || 0) * currentEndpointReplicaCount
-    : 0;
+  const reusableFullGpuCards =
+    canReuseCurrentEndpointAccelerator && !isCurrentEndpointVgpuAllocation
+      ? Number(normalizedQueryResources?.gpu || 0) * currentEndpointReplicaCount
+      : 0;
   const fullGpuCardCapacity = availableFullGpuCards + reusableFullGpuCards;
   const additionalFullGpuCards = Math.max(
     0,
     requestedFullGpuCards - reusableFullGpuCards,
   );
+  const currentEndpointProductUsage =
+    canReuseCurrentEndpointAccelerator &&
+    isCurrentEndpointVgpuAllocation &&
+    selectedAccelerator?.product
+      ? form.refineCore.query?.data?.data?.status?.resources?.summary
+          ?.products?.[selectedAccelerator.product]
+      : undefined;
+  const reusableVgpuMemoryMiB = Number(
+    currentEndpointProductUsage?.memory_mib || 0,
+  );
+  const reusableVgpuCoreUnits = Number(
+    currentEndpointProductUsage?.core_units || 0,
+  );
+  const reusableVirtualCards = effectiveVgpuMemoryMiB
+    ? vgpuCoreUnitsPerCard > 0
+      ? Math.min(
+          Math.floor(reusableVgpuMemoryMiB / effectiveVgpuMemoryMiB),
+          Math.floor(reusableVgpuCoreUnits / vgpuCoreUnitsPerCard),
+        )
+      : Math.floor(reusableVgpuMemoryMiB / effectiveVgpuMemoryMiB)
+    : 0;
+  const rawAvailableVgpuMemoryMiB = Number(
+    selectedAcceleratorOption?.virtualizationMemoryMiB || 0,
+  );
+  const rawAvailableVgpuCoreUnits = Number(
+    selectedAcceleratorOption?.virtualizationCoreUnits || 0,
+  );
+  const availableVgpuMemoryMiB =
+    rawAvailableVgpuMemoryMiB + reusableVgpuMemoryMiB;
+  const availableVgpuCoreUnits =
+    rawAvailableVgpuCoreUnits + reusableVgpuCoreUnits;
+  const totalVirtualCardCapacity =
+    vgpuCardCapacity.totalCards + reusableVirtualCards;
+  const maxVirtualCardsPerReplica = Math.floor(
+    totalVirtualCardCapacity / replicaCount,
+  );
+  const additionalVirtualCards = Math.max(
+    0,
+    requestedVirtualCards - reusableVirtualCards,
+  );
+  const additionalVgpuMemoryMiB = Math.max(
+    0,
+    requestedVgpuMemoryMiB - reusableVgpuMemoryMiB,
+  );
+  const additionalVgpuCoreUnits = Math.max(
+    0,
+    requestedVgpuCoreUnits - reusableVgpuCoreUnits,
+  );
+  const isVgpuCapacityExceeded = Boolean(
+    isVgpuAllocationMode &&
+      selectedAccelerator?.product &&
+      (additionalVirtualCards > vgpuCardCapacity.totalCards ||
+        ((rawAvailableVgpuMemoryMiB > 0 || reusableVgpuMemoryMiB > 0) &&
+          additionalVgpuMemoryMiB > rawAvailableVgpuMemoryMiB) ||
+        ((rawAvailableVgpuCoreUnits > 0 || reusableVgpuCoreUnits > 0) &&
+          additionalVgpuCoreUnits > rawAvailableVgpuCoreUnits)),
+  );
   const isFullGpuCapacityExceeded = Boolean(
-    selectedAccelerator?.type &&
+    !isVgpuAllocationMode &&
+      selectedAccelerator?.type &&
       selectedAccelerator?.product &&
       additionalFullGpuCards > availableFullGpuCards,
   );
+
+  useEffect(() => {
+    if (
+      hasResolvedClusterSelection &&
+      !isSelectedClusterVgpuEnabled &&
+      selectedVirtualization
+    ) {
+      form.setValue("spec.resources.accelerator.virtualization", undefined, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [
+    form,
+    hasResolvedClusterSelection,
+    isSelectedClusterVgpuEnabled,
+    selectedVirtualization,
+  ]);
+
+  const setSingleCardMemoryGiB = (rawValue: string) => {
+    const currentCorePercent = Number(selectedVirtualization?.core_percent);
+    const coreOnlyVirtualization =
+      Number.isFinite(currentCorePercent) && currentCorePercent > 0
+        ? { core_percent: currentCorePercent }
+        : undefined;
+
+    if (!rawValue.trim()) {
+      form.setValue(
+        "spec.resources.accelerator.virtualization",
+        coreOnlyVirtualization,
+        userSetValueOptions,
+      );
+      return;
+    }
+
+    const memoryGiB = Number.parseFloat(rawValue);
+    if (Number.isNaN(memoryGiB)) return;
+    if (memoryGiB <= 0) {
+      form.setValue(
+        "spec.resources.accelerator.virtualization",
+        coreOnlyVirtualization,
+        userSetValueOptions,
+      );
+      return;
+    }
+
+    form.setValue(
+      "spec.resources.accelerator.virtualization",
+      {
+        ...(coreOnlyVirtualization ?? {}),
+        memory_mib: Math.ceil(memoryGiB * 1024),
+      },
+      userSetValueOptions,
+    );
+  };
+
+  const setCoreLimitPercent = (rawValue: string) => {
+    const corePercent = rawValue.trim() ? Number.parseFloat(rawValue) : 0;
+    if (Number.isNaN(corePercent)) return;
+
+    const nextVirtualization: AcceleratorVirtualization = {
+      ...(selectedVirtualization ?? {}),
+    };
+    if (corePercent > 0) {
+      nextVirtualization.core_percent = corePercent;
+    } else {
+      delete nextVirtualization.core_percent;
+    }
+
+    form.setValue(
+      "spec.resources.accelerator.virtualization",
+      Object.keys(nextVirtualization).length > 0
+        ? nextVirtualization
+        : undefined,
+      userSetValueOptions,
+    );
+  };
 
   const effectiveModelSearch = modelSearch || "";
 
@@ -384,14 +597,26 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       resourceInfo={selectedCluster?.status?.resource_info}
       currentCluster={currentCluster}
       selectedAccelerator={selectedAccelerator}
+      virtualizationEnabled={isSelectedClusterVgpuEnabled}
       request={{
+        allocationMode: effectiveGpuAllocationMode,
         requestedFullGpuCards,
         fullGpuCardCapacity,
         fullGpuCapacityExceeded: isFullGpuCapacityExceeded,
+        requestedVirtualCards,
+        totalVirtualCardCapacity,
+        requestedVgpuMemoryMiB,
+        availableVgpuMemoryMiB,
+        requestedVgpuCoreUnits,
+        availableVgpuCoreUnits,
+        memoryMiBPerCard: effectiveVgpuMemoryMiB,
+        coreUnitsPerCard: vgpuCoreUnitsPerCard,
+        vgpuCapacityExceeded: isVgpuCapacityExceeded,
       }}
       t={t}
     />
   ) : null;
+
   const formWithTransformedOnFinish = {
     ...form,
     refineCore: {
@@ -712,12 +937,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         variant="outline"
                         className={cn(
                           "shrink-0 font-normal",
-                          getCapacityBadgeClassName(isFullGpuCapacityExceeded),
+                          getCapacityBadgeClassName(
+                            isVgpuAllocationMode
+                              ? isVgpuCapacityExceeded
+                              : isFullGpuCapacityExceeded,
+                          ),
                         )}
                       >
-                        {isFullGpuCapacityExceeded
-                          ? t("endpoints.messages.fullGpuResourcesInsufficient")
-                          : t("endpoints.fields.matchingGpuCards")}
+                        {isVgpuAllocationMode
+                          ? isVgpuCapacityExceeded
+                            ? t("endpoints.messages.vgpuResourcesInsufficient")
+                            : t("endpoints.fields.matchingGpuCards")
+                          : isFullGpuCapacityExceeded
+                            ? t(
+                                "endpoints.messages.fullGpuResourcesInsufficient",
+                              )
+                            : t("endpoints.fields.matchingGpuCards")}
                       </Badge>
                     )}
                 </div>
@@ -809,9 +1044,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               (opt) => opt.value === value,
                             );
                             if (selectedOption) {
+                              const currentVirtualization = form.getValues(
+                                "spec.resources.accelerator.virtualization",
+                              );
                               form.setValue("spec.resources.accelerator", {
                                 type: selectedOption.type,
                                 product: selectedOption.product,
+                                ...(isSelectedClusterVgpuEnabled
+                                  ? {
+                                      virtualization:
+                                        currentVirtualization || {},
+                                    }
+                                  : {}),
                               } satisfies ResourceSpec["accelerator"]);
                             } else {
                               form.setValue("spec.resources.accelerator", null);
@@ -833,7 +1077,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     <FormFieldGroup
                       {...form}
                       name="spec.resources.gpu"
-                      label={t("endpoints.fields.physicalGpuCount")}
+                      label={t(
+                        isVgpuAllocationMode
+                          ? "endpoints.fields.vgpuCount"
+                          : "endpoints.fields.physicalGpuCount",
+                      )}
                       className="col-span-1"
                     >
                       <NumberInput
@@ -846,8 +1094,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           )
                         }
                         min={0}
-                        max={Math.max(maxAvailable.gpu.available, gpuUsage)}
-                        step={gpuStep}
+                        max={
+                          isVgpuAllocationMode
+                            ? Math.max(maxVirtualCardsPerReplica, gpuUsage)
+                            : Math.max(maxAvailable.gpu.available, gpuUsage)
+                        }
+                        step={isVgpuAllocationMode ? 1 : gpuStep}
                         disabled={
                           !currentCluster ||
                           !selectedAccelerator?.type ||
@@ -856,6 +1108,77 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         className="h-9"
                       />
                     </FormFieldGroup>
+
+                    <div
+                      data-testid="endpoint-virtual-card-split-group"
+                      className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
+                    >
+                      <div className="col-span-1 flex items-center justify-between gap-3 text-xs font-medium sm:col-span-2">
+                        <span className="text-foreground">
+                          {t("endpoints.sections.virtualCardSplitResources")}
+                        </span>
+                        <Badge variant="outline" className="font-normal">
+                          {t("endpoints.fields.perCard")}
+                        </Badge>
+                      </div>
+                      <FormFieldGroup
+                        {...form}
+                        name="spec.resources.accelerator.virtualization.memory_mib"
+                        label={t("endpoints.fields.singleCardMemory")}
+                        className="col-span-1"
+                      >
+                        <Input
+                          type="number"
+                          aria-label={t("endpoints.fields.singleCardMemory")}
+                          value={vgpuMemoryGiBInputValue}
+                          onChange={(event) =>
+                            setSingleCardMemoryGiB(event.target.value)
+                          }
+                          min={0}
+                          max={
+                            selectedMemoryTotalMiB
+                              ? Number(
+                                  formatInputNumber(
+                                    selectedMemoryTotalMiB / 1024,
+                                  ),
+                                )
+                              : undefined
+                          }
+                          step={0.5}
+                          disabled={!showVgpuFields}
+                          placeholder="GiB"
+                          className="h-9"
+                        />
+                      </FormFieldGroup>
+
+                      <FormFieldGroup
+                        {...form}
+                        name="spec.resources.accelerator.virtualization.core_percent"
+                        label={t("endpoints.fields.vgpuCoreLimit")}
+                        className="col-span-1"
+                      >
+                        <Input
+                          type="number"
+                          aria-label={t("endpoints.fields.vgpuCoreLimit")}
+                          value={
+                            showVgpuFields && vgpuCoreUnitsPerCard > 0
+                              ? formatInputNumber(vgpuCoreUnitsPerCard)
+                              : ""
+                          }
+                          onChange={(event) =>
+                            setCoreLimitPercent(event.target.value)
+                          }
+                          min={0}
+                          max={100}
+                          step={1}
+                          disabled={!showVgpuFields}
+                          placeholder={
+                            showVgpuFields ? "0" : t("common.options.disabled")
+                          }
+                          className="h-9"
+                        />
+                      </FormFieldGroup>
+                    </div>
                   </div>
 
                   {selectedAccelerator?.type &&
@@ -873,27 +1196,69 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             className={cn(
                               "font-normal",
                               getCapacityBadgeClassName(
-                                isFullGpuCapacityExceeded,
+                                isVgpuAllocationMode
+                                  ? isVgpuCapacityExceeded
+                                  : isFullGpuCapacityExceeded,
                               ),
                             )}
                           >
                             {t("endpoints.messages.cardsAvailable", {
-                              count: fullGpuCardCapacity,
+                              count: isVgpuAllocationMode
+                                ? totalVirtualCardCapacity
+                                : fullGpuCardCapacity,
                             })}
                           </Badge>
                         </div>
                         <div
                           data-testid="endpoint-current-request-grid"
-                          className="mt-2 grid gap-2 sm:grid-cols-2"
+                          className="mt-2 grid gap-2 sm:grid-cols-4"
                         >
                           <div className="rounded-lg border bg-background px-3 py-2">
                             <div className="text-xs font-medium text-muted-foreground">
-                              {t("endpoints.fields.physicalGpuCount")}
+                              {t("endpoints.fields.virtualCardCount")}
                             </div>
                             <div className="mt-1 font-semibold tabular-nums">
-                              {`${formatOneDecimal(
-                                requestedFullGpuCards,
-                              )} / ${formatOneDecimal(fullGpuCardCapacity)}`}
+                              {isVgpuAllocationMode
+                                ? `${formatOneDecimal(
+                                    requestedVirtualCards,
+                                  )} / ${formatOneDecimal(
+                                    totalVirtualCardCapacity,
+                                  )}`
+                                : `${formatOneDecimal(
+                                    requestedFullGpuCards,
+                                  )} / ${formatOneDecimal(
+                                    fullGpuCardCapacity,
+                                  )}`}
+                            </div>
+                          </div>
+                          <div className="rounded-lg border bg-background px-3 py-2">
+                            <div className="text-xs font-medium text-muted-foreground">
+                              {t("endpoints.fields.vgpuMemoryCapacity")}
+                            </div>
+                            <div className="mt-1 font-semibold tabular-nums">
+                              {isVgpuAllocationMode
+                                ? `${formatOneDecimal(
+                                    requestedVgpuMemoryMiB / 1024,
+                                  )} / ${formatOneDecimal(
+                                    availableVgpuMemoryMiB / 1024,
+                                  )} GiB`
+                                : "-"}
+                            </div>
+                          </div>
+                          <div className="rounded-lg border bg-background px-3 py-2">
+                            <div className="text-xs font-medium text-muted-foreground">
+                              {t("endpoints.fields.vgpuCoreCapacity")}
+                            </div>
+                            <div className="mt-1 font-semibold tabular-nums">
+                              {isVgpuAllocationMode
+                                ? vgpuCoreUnitsPerCard > 0
+                                  ? `${formatOneDecimal(
+                                      requestedVgpuCoreUnits,
+                                    )} / ${formatOneDecimal(
+                                      availableVgpuCoreUnits,
+                                    )}`
+                                  : t("endpoints.options.shared")
+                                : "-"}
                             </div>
                           </div>
                           <div className="rounded-lg border bg-background px-3 py-2">
@@ -905,13 +1270,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             </div>
                           </div>
                         </div>
-                        {isFullGpuCapacityExceeded && (
-                          <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                            {t(
-                              "endpoints.messages.fullGpuResourcesInsufficient",
+                        {isVgpuAllocationMode
+                          ? isVgpuCapacityExceeded && (
+                              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
+                                {t(
+                                  "endpoints.messages.vgpuResourcesInsufficient",
+                                )}
+                              </div>
+                            )
+                          : isFullGpuCapacityExceeded && (
+                              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
+                                {t(
+                                  "endpoints.messages.fullGpuResourcesInsufficient",
+                                )}
+                              </div>
                             )}
-                          </div>
-                        )}
                       </div>
                     )}
                 </div>

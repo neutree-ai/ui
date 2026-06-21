@@ -1,5 +1,6 @@
 import { countFullCardAvailableDevicesByProduct } from "@/foundation/lib/gpu-device-resources";
 import type {
+  AcceleratorProductResources,
   ClusterResourceInfo,
   NodeResourceStatus,
 } from "@/foundation/types/resource-types";
@@ -23,6 +24,8 @@ type AcceleratorOption = {
   available: number; // Cluster-level available (for reference)
   total: number; // Cluster-level total (for reference)
   memoryTotalMiB?: number | null;
+  virtualizationMemoryMiB?: number | null;
+  virtualizationCoreUnits?: number | null;
 };
 
 /**
@@ -45,13 +48,33 @@ type ParsedClusterResources = {
   acceleratorOptions: AcceleratorOption[];
 };
 
-const withMemoryTotalMiB = (
-  option: Omit<AcceleratorOption, "memoryTotalMiB">,
-  memoryTotalMiB: number | null | undefined,
-): AcceleratorOption =>
-  Number.isFinite(memoryTotalMiB)
-    ? { ...option, memoryTotalMiB: memoryTotalMiB as number }
-    : option;
+const isFiniteNumber = (value: number | null | undefined): value is number =>
+  Number.isFinite(value);
+
+const withAcceleratorMetrics = (
+  option: Omit<
+    AcceleratorOption,
+    "memoryTotalMiB" | "virtualizationMemoryMiB" | "virtualizationCoreUnits"
+  >,
+  metrics: Pick<
+    AcceleratorOption,
+    "memoryTotalMiB" | "virtualizationMemoryMiB" | "virtualizationCoreUnits"
+  >,
+): AcceleratorOption => {
+  const next: AcceleratorOption = { ...option };
+
+  if (isFiniteNumber(metrics.memoryTotalMiB)) {
+    next.memoryTotalMiB = metrics.memoryTotalMiB;
+  }
+  if (isFiniteNumber(metrics.virtualizationMemoryMiB)) {
+    next.virtualizationMemoryMiB = metrics.virtualizationMemoryMiB;
+  }
+  if (isFiniteNumber(metrics.virtualizationCoreUnits)) {
+    next.virtualizationCoreUnits = metrics.virtualizationCoreUnits;
+  }
+
+  return next;
+};
 
 const getProductDeviceMemoryTotalMiB = (
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
@@ -74,6 +97,7 @@ const getProductMemoryTotalMiB = (
   resourceInfo: ClusterResourceInfo,
   type: string,
   product: string,
+  productResources?: AcceleratorProductResources,
 ) => {
   const metadataMemoryTotalMiB =
     resourceInfo.accelerator_metadata?.[type]?.products?.[product]
@@ -88,6 +112,16 @@ const getProductMemoryTotalMiB = (
   );
   if (Number.isFinite(deviceMemoryTotalMiB)) {
     return deviceMemoryTotalMiB;
+  }
+
+  const aggregateMemoryMiB = productResources?.virtualization?.memory_mib;
+  const quantity = productResources?.quantity;
+  if (
+    Number.isFinite(aggregateMemoryMiB) &&
+    Number.isFinite(quantity) &&
+    Number(quantity) > 0
+  ) {
+    return Math.ceil(Number(aggregateMemoryMiB) / Number(quantity));
   }
 
   return undefined;
@@ -144,7 +178,7 @@ export function parseClusterResources(
           const availableProduct = availableGroup?.products?.[product];
 
           acceleratorOptions.push(
-            withMemoryTotalMiB(
+            withAcceleratorMetrics(
               {
                 label: `${translatedType} - ${product}`,
                 value: `${type}:${product}`,
@@ -153,11 +187,18 @@ export function parseClusterResources(
                 available: availableProduct?.quantity || 0,
                 total: productResources.quantity || 0,
               },
-              getProductMemoryTotalMiB(
-                resourceInfo,
-                type,
-                product,
-              ),
+              {
+                memoryTotalMiB: getProductMemoryTotalMiB(
+                  resourceInfo,
+                  type,
+                  product,
+                  productResources,
+                ),
+                virtualizationMemoryMiB:
+                  availableProduct?.virtualization?.memory_mib,
+                virtualizationCoreUnits:
+                  availableProduct?.virtualization?.core_units,
+              },
             ),
           );
         }
@@ -170,7 +211,7 @@ export function parseClusterResources(
             availableGroup?.product_groups?.[product] || 0;
 
           acceleratorOptions.push(
-            withMemoryTotalMiB(
+            withAcceleratorMetrics(
               {
                 label: `${translatedType} - ${product}`,
                 value: `${type}:${product}`,
@@ -179,11 +220,13 @@ export function parseClusterResources(
                 available: productAvailable,
                 total: productTotal,
               },
-              getProductMemoryTotalMiB(
-                resourceInfo,
-                type,
-                product,
-              ),
+              {
+                memoryTotalMiB: getProductMemoryTotalMiB(
+                  resourceInfo,
+                  type,
+                  product,
+                ),
+              },
             ),
           );
         }
