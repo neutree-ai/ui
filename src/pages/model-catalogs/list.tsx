@@ -3,13 +3,13 @@ import { Download, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { ModelCatalog } from "@/domains/model-catalog/types";
-import { ModelCatalogCard } from "./components/ModelCatalogCard";
 import { ImportDialog } from "./components/ImportDialog";
+import { ModelCatalogCard } from "./components/ModelCatalogCard";
 
 // Catalog is now a card-first surface (design §3.7): each card summarizes a
 // model and offers a one-click Deploy entry, replacing the long parameter
@@ -59,7 +59,10 @@ export const ModelCatalogsList = () => {
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
           className="pl-8"
-          placeholder={t("model_catalogs.card.searchPlaceholder", "Search by name")}
+          placeholder={t(
+            "model_catalogs.card.searchPlaceholder",
+            "Search by name",
+          )}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -69,7 +72,10 @@ export const ModelCatalogsList = () => {
         <Loader className="h-4 text-primary" />
       ) : catalogs.length === 0 ? (
         <div className="text-sm text-muted-foreground py-12 text-center">
-          {t("model_catalogs.card.empty", "No model catalogs yet. Import one to get started.")}
+          {t(
+            "model_catalogs.card.empty",
+            "No model catalogs yet. Import one to get started.",
+          )}
         </div>
       ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

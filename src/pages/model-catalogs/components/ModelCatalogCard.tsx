@@ -153,7 +153,9 @@ export const ModelCatalogCard = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("buttons.cancel", "Cancel")}</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t("buttons.cancel", "Cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeleting}
               onClick={() => {
