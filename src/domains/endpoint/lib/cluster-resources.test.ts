@@ -193,6 +193,10 @@ describe("parseClusterResources", () => {
             products: {
               "Tesla-T4": {
                 quantity: 2,
+                virtualization: {
+                  memory_mib: 30720,
+                  core_units: 200,
+                },
               },
             },
           },
@@ -208,6 +212,10 @@ describe("parseClusterResources", () => {
             products: {
               "Tesla-T4": {
                 quantity: 1,
+                virtualization: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
               },
             },
           },
@@ -645,7 +653,7 @@ describe("findBestNodeForAccelerator", () => {
     expect(result?.nodeName).toBe("node-2");
   });
 
-  it("should count only fully free devices as full-card available for product resources", () => {
+  it("should count only fully free devices as full-card available for virtualized products", () => {
     const nodeResources: Record<string, NodeResourceStatus> = {
       "node-1": {
         allocatable: {
@@ -658,6 +666,10 @@ describe("findBestNodeForAccelerator", () => {
               products: {
                 "Tesla-T4": {
                   quantity: 2,
+                  virtualization: {
+                    memory_mib: 30720,
+                    core_units: 200,
+                  },
                 },
               },
             },
@@ -673,6 +685,10 @@ describe("findBestNodeForAccelerator", () => {
               products: {
                 "Tesla-T4": {
                   quantity: 2,
+                  virtualization: {
+                    memory_mib: 23040,
+                    core_units: 150,
+                  },
                 },
               },
             },
@@ -693,7 +709,7 @@ describe("findBestNodeForAccelerator", () => {
             },
           },
           {
-            uuid: "GPU-partial-used",
+            uuid: "GPU-vgpu-used",
             product: "Tesla-T4",
             health: true,
             allocatable: {

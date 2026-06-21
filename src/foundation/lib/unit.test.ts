@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatToDecimal, formatTokens } from "./unit";
+import {
+  formatMiBAsGiB,
+  formatMiBAsGiBValue,
+  formatToDecimal,
+  formatTokens,
+} from "./unit";
 
 describe("formatToDecimal", () => {
   it("formats a number", () => {
@@ -55,5 +60,22 @@ describe("formatTokens", () => {
   it("formats billions with B suffix", () => {
     expect(formatTokens(1_000_000_000)).toBe("1B");
     expect(formatTokens(2_500_000_000)).toBe("2.5B");
+  });
+});
+
+describe("formatMiBAsGiB", () => {
+  it("formats MiB values as GiB with one decimal by default", () => {
+    expect(formatMiBAsGiB(8192)).toBe("8.0 GiB");
+    expect(formatMiBAsGiBValue(15360)).toBe("15.0");
+  });
+
+  it("respects custom precision", () => {
+    expect(formatMiBAsGiB(8192, 0)).toBe("8 GiB");
+  });
+
+  it("returns null for empty values", () => {
+    expect(formatMiBAsGiB(null)).toBeNull();
+    expect(formatMiBAsGiB(undefined)).toBeNull();
+    expect(formatMiBAsGiB("")).toBeNull();
   });
 });

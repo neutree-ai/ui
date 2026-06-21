@@ -192,6 +192,11 @@ describe("formatTimestamp", () => {
   });
 
   describe("error handling", () => {
+    it("should return an empty value for nullish timestamps", () => {
+      expect(formatTimestamp(null, "YYYY-MM-DD HH:mm", "UTC")).toBe("");
+      expect(formatTimestamp(undefined, "YYYY-MM-DD HH:mm", "UTC")).toBe("");
+    });
+
     it("should return 'Invalid date' for invalid timestamp string", () => {
       const result = formatTimestamp("invalid-date", "YYYY-MM-DD HH:mm", "UTC");
       expect(result).toBe("Invalid date");

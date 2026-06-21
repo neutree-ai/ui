@@ -34,7 +34,9 @@
 			"openaiUrl": "OpenAI Compatible URL",
 			"anthropicUrl": "Anthropic Compatible URL",
 			"allReplicas": "All Replicas",
-			"version": "Version"
+			"version": "Version",
+			"reason": "Reason",
+			"message": "Message"
 		},
 		"sections": {
 			"basicInformation": "Basic Information"
@@ -50,7 +52,9 @@
 			"rayDashboard": "Ray Dashboard"
 		},
 		"options": {
-			"none": "None"
+			"none": "None",
+			"enabled": "Enabled",
+			"disabled": "Disabled"
 		},
 		"resourceResult": {
 			"created": "Successfully created",
@@ -377,13 +381,23 @@
 			"usedSlashTotal": "used / total",
 			"kubeconfig": "Kubeconfig",
 			"acceleratorCount": "Accelerator Count",
+			"acceleratorVirtualization": "Accelerator Virtualization",
+			"componentName": "Component",
+			"managed": "Managed",
+			"physicalGpu": "Card Count",
+			"singleCardVram": "Single-card VRAM",
 			"memoryUsage": "VRAM",
 			"coreUsage": "Core",
+			"acceleratorMemoryPool": "Total VRAM",
+			"acceleratorCorePool": "Core",
+			"vgpuMemoryUsage": "VRAM",
+			"vgpuCoreUsage": "Core",
 			"gpuNumber": "GPU",
 			"gpuType": "GPU Type",
 			"deviceUuid": "Device UUID",
 			"deviceCount": "Devices",
 			"healthyDevices": "Healthy Devices",
+			"cardProducts": "Card Products",
 			"remaining": "Remaining",
 			"selected": "Selected",
 			"resourceScope": "Resource Scope",
@@ -413,6 +427,9 @@
 			"nvidia_gpu": "NVIDIA GPU",
 			"amd_gpu": "AMD GPU"
 		},
+		"componentNames": {
+			"acceleratorVirtualization": "Accelerator Virtualization"
+		},
 		"sections": {
 			"clusterVersion": "Cluster Version",
 			"clusterType": "Cluster Type",
@@ -420,9 +437,13 @@
 			"headNode": "Head Node",
 			"workerNode": "Worker Node",
 			"router": "Router",
+			"acceleratorVirtualization": "Accelerator Virtualization",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
 			"nodes": "Nodes",
+			"clusterResources": "Cluster Resources",
+			"nodeResources": "Node Resources",
+			"componentStatus": "Component Status",
 			"nodeDevices": "Node Devices"
 		},
 		"placeholders": {
@@ -437,7 +458,8 @@
 			"cachePath": "/path/to/cache",
 			"storage": "10Gi",
 			"storageClassName": "e.g standard, fast",
-			"searchGpuDevices": "Search card UUID, product, or node"
+			"searchGpuDevices": "Search card UUID, product, or node",
+			"searchGpuCards": "Search card product or type"
 		},
 		"labels": {
 			"nodes": "nodes"
@@ -477,13 +499,19 @@
 			"newVersionAvailable": "New version available",
 			"copyUuidSuccess": "GPU UUID copied",
 			"copyUuidFailed": "Failed to copy GPU UUID",
-			"noGpuDevices": "No accelerator cards found"
+			"noGpuDevices": "No accelerator cards found",
+			"noNodeResources": "No node resources found"
+		},
+		"descriptions": {
+			"acceleratorVirtualization": "Enable accelerator virtualization for Kubernetes clusters.",
+			"acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
 		},
 		"monitor": {
 			"rayMetrics": "Ray Metrics",
 			"routerMetrics": "Router Metrics",
 			"nodeMetrics": "Node Metrics",
-			"gpuMetrics": "GPU Metrics"
+			"gpuMetrics": "Accelerator Metrics",
+			"vgpuMetrics": "Virtual Accelerator Metrics"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
@@ -585,8 +613,14 @@
 			"modelCatalog": "Model Catalog (Template)",
 			"memoryGb": "Memory (GB)",
 			"acceleratorCount": "Accelerator Count",
+			"allocationMode": "Allocation Mode",
+			"fullGpu": "Full Card",
+			"vgpu": "Virtual Card",
 			"physicalGpuCount": "Card Count",
 			"physicalGpu": "Card Count",
+			"perReplica": "Per Replica",
+			"perCard": "per card",
+			"vgpuCount": "Card Count",
 			"npuCount": "NPU Count",
 			"modelName": "Model Name",
 			"modelVersion": "Model Version",
@@ -594,16 +628,32 @@
 			"engineVersion": "Engine Version",
 			"taskType": "Task Type",
 			"replicas": "Replicas",
+			"schedulingScope": "Scheduling Scope",
 			"scheduling": "Scheduling",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"accelerator": "Accelerator",
+			"clusterCapability": "Cluster Capability",
+			"vgpuMemoryMode": "VRAM Mode",
+			"vgpuMemory": "VRAM",
+			"vgpuMemoryPercent": "VRAM Percent",
+			"vgpuCoreLimit": "Core Limit",
+			"vgpuCorePercent": "Core Percent",
+			"vgpuCoreUnits": "Core Units",
+			"singleCardMemory": "VRAM",
+			"requestedVgpuMemory": "Requested VRAM",
+			"effectiveVgpuMemory": "Effective VRAM",
+			"virtualCardCount": "Card Count",
+			"vgpuMemoryCapacity": "VRAM",
+			"vgpuCoreCapacity": "Core",
 			"matchingGpuCards": "Matching Cards",
+			"instance": "Instance",
 			"nodeCount": "Node Count"
 		},
 		"sections": {
+			"clusterSettings": "Cluster",
 			"modelAndReplicas": "Model & Replicas",
 			"templateSelection": "Template Selection",
 			"configuration": "Configuration",
@@ -613,20 +663,26 @@
 			"customizeSettings": "Customize Settings",
 			"configurationDetails": "Configuration Details",
 			"modelSettings": "Model Settings",
-			"engineSettings": "Engine Settings",
+			"engineSettings": "Engine",
 			"replicaSettings": "Replica Settings",
+			"basicResources": "Basic Resources",
 			"advancedOptions": "Advanced Options",
 			"environmentVariables": "Environment Variables",
 			"currentRequest": "Current Request",
 			"resourcePlan": "Resource Plan",
-			"clusterDeviceResources": "Cluster Resources"
+			"virtualCardSplitResources": "Virtual card split resources",
+			"requestedResources": "Requested Resources",
+			"allocatedResources": "Allocated Resources",
+			"clusterDeviceResources": "Cluster Resources",
+			"resourceSummary": "Resource Summary",
+			"replicaResources": "Replica Resources"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
 			"selectCluster": "Select A Cluster",
 			"selectModelRegistry": "Select A Model Registry",
 			"selectModelCatalog": "Select A Model Catalog",
-			"selectGpuType": "Select GPU Type",
+			"selectGpuType": "Select Accelerator Type",
 			"selectNpuType": "Select NPU Type",
 			"selectModel": "Select A Model",
 			"selectEngine": "Select An Engine",
@@ -636,13 +692,20 @@
 			"selectSchedulerType": "Select Scheduler Type"
 		},
 		"options": {
-			"generic": "Generic"
+			"generic": "Generic",
+			"clusterScheduling": "Cluster Scheduling",
+			"mib": "MiB",
+			"gib": "GiB",
+			"percent": "%",
+			"shared": "Shared"
 		},
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
-			"basicResources": "Capacity shared with the selected cluster."
+			"basicResources": "Capacity shared with the selected cluster.",
+			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card."
 		},
 		"actions": {
+			"openResources": "Open Resources",
 			"pause": "Pause",
 			"resume": "Resume"
 		},
@@ -653,15 +716,25 @@
 			"fetchingClusterResources": "Fetching cluster resources",
 			"failedToFetchClusterResources": "Failed to fetch cluster resources",
 			"clusterResourcesUnavailable": "Cluster resources unavailable",
+			"acceleratorVirtualizationEnabled": "Accelerator virtualization enabled",
+			"acceleratorVirtualizationDisabled": "No accelerator virtualization",
 			"pauseSuccess": "Endpoint paused successfully",
 			"pauseFailed": "Failed to pause endpoint",
 			"resumeSuccess": "Endpoint resumed successfully",
 			"resumeFailed": "Failed to resume endpoint",
 			"noAcceleratorsAvailable": "No accelerators available in this cluster",
+			"noAcceleratorSelected": "No accelerator selected",
 			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
 			"schedulerTypeRequired": "Scheduler type is required",
+			"vgpuMemoryMutuallyExclusive": "Use either virtual card memory amount or memory percent, not both",
+			"vgpuMemoryMiBPositive": "Virtual card memory must be greater than 0",
+			"vgpuMemoryPercentRange": "Virtual card memory percent must be between 1 and 100",
+			"vgpuCorePercentRange": "Virtual card core percent must be between 0 and 100",
 			"cardsAvailable": "{{count}} cards available",
-			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster."
+			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
+			"vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
+			"vgpuMonitorContextFailed": "Failed to load virtual accelerator monitor context",
+			"noRunningVgpuPods": "No running virtual accelerator pods"
 		},
 		"tabs": {
 			"playground": "Playground"
@@ -670,7 +743,9 @@
 			"endpointMetrics": "Ray Metrics",
 			"vllmMetrics": "vLLM Engine Metrics",
 			"sglangMetrics": "SGLang Engine Metrics",
+			"vgpuMetrics": "Virtual Accelerator Metrics",
 			"endpointDescription": "Ray Serve deployment metrics including requests, latency, and replica status",
+			"vgpuDescription": "Virtual accelerator allocation and runtime metrics scoped to this endpoint",
 			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization",
 			"sglangDescription": "SGLang engine specific metrics including TTFT, cache hit rate, queue depth, and throughput"
 		},

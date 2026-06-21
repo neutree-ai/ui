@@ -34,6 +34,18 @@ describe("useClusterMonitorPanels", () => {
     expect(result.current.showSelector).toBe(true);
   });
 
+  it("should include vGPU panel for kubernetes cluster with accelerator virtualization enabled", () => {
+    const { result } = renderHook(() =>
+      useClusterMonitorPanels({
+        clusterType: "kubernetes",
+        acceleratorVirtualizationEnabled: true,
+      }),
+    );
+
+    expect(result.current.panels).toEqual(["vgpu", "gpu", "router", "node"]);
+    expect(result.current.selectedPanel).toBe("vgpu");
+  });
+
   it("should allow user to select panel for kubernetes cluster", () => {
     const { result } = renderHook(() =>
       useClusterMonitorPanels({ clusterType: "kubernetes" }),

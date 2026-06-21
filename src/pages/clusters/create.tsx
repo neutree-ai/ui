@@ -12,6 +12,7 @@ export const ClustersCreate = () => {
     typeFields,
     providerFields,
     routerFields,
+    acceleratorVirtualizationFields,
     modelCacheFields,
     authFields,
   } = useClusterForm({ action: "create" });
@@ -23,6 +24,7 @@ export const ClustersCreate = () => {
       {versionFields}
       {providerFields}
       {routerFields}
+      {acceleratorVirtualizationFields}
       {authFields}
       {modelCacheFields}
     </ResourceForm>

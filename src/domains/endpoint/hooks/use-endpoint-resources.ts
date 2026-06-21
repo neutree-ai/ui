@@ -29,7 +29,7 @@ const useEndpointResources = (
       cpu: 0,
       memory: 0,
       gpu: 0,
-      accelerator: null,
+      accelerator: {},
     };
   }, [metadata?.name, resources]);
 };

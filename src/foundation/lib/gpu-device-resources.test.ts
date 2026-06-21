@@ -4,6 +4,7 @@ import {
   buildGpuCardResourceRows,
   buildGpuDeviceResourceRows,
   buildNodePhysicalGpuResourceRows,
+  calculateVgpuCardCapacity,
   filterGpuDeviceResourceRows,
 } from "./gpu-device-resources";
 
@@ -19,6 +20,10 @@ const nodeResources: Record<string, NodeResourceStatus> = {
           products: {
             "Tesla-T4": {
               quantity: 1,
+              virtualization: {
+                memory_mib: 15360,
+                core_units: 100,
+              },
             },
           },
         },
@@ -34,6 +39,10 @@ const nodeResources: Record<string, NodeResourceStatus> = {
           products: {
             "Tesla-T4": {
               quantity: 1,
+              virtualization: {
+                memory_mib: 7680,
+                core_units: 50,
+              },
             },
           },
         },
@@ -116,6 +125,10 @@ describe("gpu device resource helpers", () => {
                 products: {
                   "Tesla-T4": {
                     quantity: 2,
+                    virtualization: {
+                      memory_mib: 30720,
+                      core_units: 200,
+                    },
                   },
                 },
               },
@@ -131,6 +144,10 @@ describe("gpu device resource helpers", () => {
                 products: {
                   "Tesla-T4": {
                     quantity: 1,
+                    virtualization: {
+                      memory_mib: 15360,
+                      core_units: 150,
+                    },
                   },
                 },
               },
@@ -156,16 +173,16 @@ describe("gpu device resource helpers", () => {
           percent: 100,
         },
         memory: {
-          available: 7680,
-          total: 15360,
-          used: 7680,
+          available: 15360,
+          total: 30720,
+          used: 15360,
           percent: 50,
         },
         core: {
-          available: 50,
-          total: 100,
+          available: 150,
+          total: 200,
           used: 50,
-          percent: 50,
+          percent: 25,
         },
       },
     ]);
@@ -308,7 +325,7 @@ describe("gpu device resource helpers", () => {
     ]);
   });
 
-  it("counts only devices with no partial allocation as full-card available", () => {
+  it("counts only devices with no vGPU allocation as full-card available", () => {
     expect(
       buildGpuCardResourceRows({
         allocatable: {
@@ -321,6 +338,10 @@ describe("gpu device resource helpers", () => {
               products: {
                 "Tesla-T4": {
                   quantity: 2,
+                  virtualization: {
+                    memory_mib: 30720,
+                    core_units: 200,
+                  },
                 },
               },
             },
@@ -336,6 +357,10 @@ describe("gpu device resource helpers", () => {
               products: {
                 "Tesla-T4": {
                   quantity: 2,
+                  virtualization: {
+                    memory_mib: 23040,
+                    core_units: 150,
+                  },
                 },
               },
             },
@@ -368,7 +393,7 @@ describe("gpu device resource helpers", () => {
                 },
               },
               {
-                uuid: "GPU-partial-used",
+                uuid: "GPU-vgpu-used",
                 product: "Tesla-T4",
                 health: true,
                 allocatable: {
@@ -479,72 +504,6 @@ describe("gpu device resource helpers", () => {
       percent: 0,
     });
     expect(row.core).toEqual({
-      available: null,
-      total: 100,
-      used: null,
-      percent: 0,
-    });
-  });
-
-  it("clamps out-of-range device resource pools and treats non-finite values as unknown", () => {
-    const rows = buildGpuDeviceResourceRows({
-      "node-a": {
-        allocatable: null,
-        available: null,
-        devices: [
-          {
-            uuid: "GPU-over-available",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: {
-              memory_mib: 15360,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 20000,
-              core_units: -10,
-            },
-          },
-          {
-            uuid: "GPU-non-finite",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: {
-              memory_mib: Number.NaN,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 4096,
-              core_units: Number.POSITIVE_INFINITY,
-            },
-          },
-        ],
-      },
-    });
-
-    expect(
-      rows.find((row) => row.uuid === "GPU-over-available")?.memory,
-    ).toEqual({
-      available: 15360,
-      total: 15360,
-      used: 0,
-      percent: 0,
-    });
-    expect(rows.find((row) => row.uuid === "GPU-over-available")?.core).toEqual(
-      {
-        available: 0,
-        total: 100,
-        used: 100,
-        percent: 100,
-      },
-    );
-    expect(rows.find((row) => row.uuid === "GPU-non-finite")?.memory).toEqual({
-      available: 4096,
-      total: null,
-      used: null,
-      percent: 0,
-    });
-    expect(rows.find((row) => row.uuid === "GPU-non-finite")?.core).toEqual({
       available: null,
       total: 100,
       used: null,
@@ -868,11 +827,302 @@ describe("gpu device resource helpers", () => {
     ).toEqual(["GPU-11111111-2222-3333-4444-555555555555"]);
   });
 
-  it("does not expose slot fields in the device view model", () => {
+  it("does not expose vGPU slot fields in the device view model", () => {
     const row = buildGpuDeviceResourceRows(nodeResources)[0];
 
     expect(
       Object.keys(row).some((key) => key.toLowerCase().includes("slot")),
     ).toBe(false);
+  });
+
+  it("clamps out-of-range device resource pools and treats non-finite values as unknown", () => {
+    const rows = buildGpuDeviceResourceRows({
+      "node-a": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-over-available",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: {
+              memory_mib: 15360,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 20000,
+              core_units: -10,
+            },
+          },
+          {
+            uuid: "GPU-non-finite",
+            product: "Tesla-T4",
+            health: true,
+            allocatable: {
+              memory_mib: Number.NaN,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 1000,
+              core_units: Number.POSITIVE_INFINITY,
+            },
+          },
+        ],
+      },
+    });
+
+    const overAvailableRow = rows.find(
+      (row) => row.uuid === "GPU-over-available",
+    );
+    const nonFiniteRow = rows.find((row) => row.uuid === "GPU-non-finite");
+
+    expect(overAvailableRow?.memory).toEqual({
+      available: 15360,
+      total: 15360,
+      used: 0,
+      percent: 0,
+    });
+    expect(overAvailableRow?.core).toEqual({
+      available: 0,
+      total: 100,
+      used: 100,
+      percent: 100,
+    });
+    expect(nonFiniteRow?.memory).toEqual({
+      available: 1000,
+      total: null,
+      used: null,
+      percent: 0,
+    });
+    expect(nonFiniteRow?.core).toEqual({
+      available: null,
+      total: 100,
+      used: null,
+      percent: 0,
+    });
+  });
+
+  it("calculates virtual card capacity from device-level available pools", () => {
+    expect(
+      calculateVgpuCardCapacity(nodeResources, {
+        selectedAccelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+        },
+        memoryMiBPerCard: 4096,
+        coreUnitsPerCard: 50,
+      }),
+    ).toEqual({
+      matchingDeviceCount: 1,
+      totalCards: 1,
+    });
+  });
+
+  it("caps vGPU capacity at usable physical card count", () => {
+    expect(
+      calculateVgpuCardCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-free",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 10,
+        },
+      ),
+    ).toEqual({
+      matchingDeviceCount: 1,
+      totalCards: 1,
+    });
+  });
+
+  it("excludes cards whose memory or core pool is fully allocated from vGPU capacity", () => {
+    expect(
+      calculateVgpuCardCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-usable",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 4096,
+                  core_units: 10,
+                },
+              },
+              {
+                uuid: "GPU-memory-full",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 0,
+                  core_units: 100,
+                },
+              },
+              {
+                uuid: "GPU-core-full",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 0,
+                },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 10,
+        },
+      ),
+    ).toEqual({
+      matchingDeviceCount: 3,
+      totalCards: 1,
+    });
+  });
+
+  it("excludes unhealthy cards from vGPU capacity", () => {
+    expect(
+      calculateVgpuCardCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-healthy",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 4096,
+                  core_units: 10,
+                },
+              },
+              {
+                uuid: "GPU-unhealthy",
+                product: "Tesla-T4",
+                health: false,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 10,
+        },
+      ),
+    ).toEqual({
+      matchingDeviceCount: 1,
+      totalCards: 1,
+    });
+  });
+
+  it("treats zero vGPU core percent as unconfigured while still requiring remaining core on the card", () => {
+    expect(
+      calculateVgpuCardCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-shared-core",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 10,
+                },
+              },
+              {
+                uuid: "GPU-core-full",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 0,
+                },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 0,
+        },
+      ),
+    ).toEqual({
+      matchingDeviceCount: 2,
+      totalCards: 1,
+    });
   });
 });

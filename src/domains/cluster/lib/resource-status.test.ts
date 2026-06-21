@@ -10,6 +10,10 @@ describe("cluster resource status helpers", () => {
         products: {
           "Tesla-T4": {
             quantity: 2,
+            virtualization: {
+              memory_mib: 30720,
+              core_units: 200,
+            },
           },
         },
       }),
