@@ -542,8 +542,6 @@
 			"defaultOn": "default on",
 			"optIn": "opt-in",
 			"conflictsWith": "conflicts with",
-			"variantLabel": "Variant",
-			"variantHint": "Engine, model, resources below reflect this variant",
 			"verifiedHardware": "Verified hardware",
 			"performanceTuning": "Performance tuning",
 			"vramMin": "Min VRAM"

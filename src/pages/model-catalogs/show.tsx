@@ -71,6 +71,14 @@ export const ModelCatalogsShow = () => {
       variantEntries[0]?.[1]?.resources ??
       record.spec.resources)
     : record.spec.resources;
+  // The variant the page currently reflects (selected, or the first one).
+  const activeVariantKey =
+    variantEntries.find(([k]) => k === selectedVariant)?.[0] ??
+    variantEntries[0]?.[0] ??
+    "";
+  const activeVariant = variantEntries.find(
+    ([k]) => k === activeVariantKey,
+  )?.[1];
   // Advanced section for Recipe MC: union of base.engine_args + every
   // variant.engine_args + every feature.engine_args (presentation only).
   const buildRecipeAdvancedView = (): Record<string, unknown> | null => {
@@ -133,28 +141,24 @@ export const ModelCatalogsShow = () => {
         <Card className="mt-4">
           <CardContent>
             {isRecipe && variantEntries.length > 0 && (
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {t("model_catalogs.recipe.variantLabel", "Variant")}
-                </span>
+              <div className="mb-5">
                 <Tabs
-                  value={selectedVariant || variantEntries[0][0]}
+                  value={activeVariantKey}
                   onValueChange={setSelectedVariant}
                 >
-                  <TabsList>
+                  <TabsList className="h-9">
                     {variantEntries.map(([key]) => (
-                      <TabsTrigger key={key} value={key}>
+                      <TabsTrigger key={key} value={key} className="px-4">
                         {key}
                       </TabsTrigger>
                     ))}
                   </TabsList>
                 </Tabs>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  {t(
-                    "model_catalogs.recipe.variantHint",
-                    "Engine, model, resources below reflect this variant",
-                  )}
-                </span>
+                {activeVariant?.description && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {activeVariant.description}
+                  </p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-4 gap-8">
