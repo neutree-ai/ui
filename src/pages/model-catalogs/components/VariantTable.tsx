@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ModelInfoBadges } from "@/domains/model-catalog/components/ModelInfoBadges";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { RecipeBase, RecipeVariant } from "@/foundation/recipe/types";
 
@@ -77,6 +78,9 @@ export const VariantTable = ({ variants, base }: Props) => {
                   {t("common.fields.model", "Model")}
                 </th>
                 <th className="py-2 pr-4 font-medium">
+                  {t("model_catalogs.modelInfo.title", "Model info")}
+                </th>
+                <th className="py-2 pr-4 font-medium">
                   {t("common.fields.resources", "Resources")}
                 </th>
                 <th className="py-2 pr-4 font-medium">
@@ -105,6 +109,13 @@ export const VariantTable = ({ variants, base }: Props) => {
                     </td>
                     <td className="py-2 pr-4 font-mono text-xs break-all">
                       {v.model?.name || "—"}
+                    </td>
+                    <td className="py-2 pr-4">
+                      {v.model?.info ? (
+                        <ModelInfoBadges info={v.model.info} variant="inline" />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-2 pr-4">
                       {resourceSummary(v.resources)}

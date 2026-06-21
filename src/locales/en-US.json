@@ -548,6 +548,13 @@
 			"performanceTuning": "Performance tuning",
 			"vramMin": "Min VRAM"
 		},
+		"modelInfo": {
+			"title": "Model info",
+			"parameterCount": "Parameters",
+			"quantization": "Quantization",
+			"contextLength": "Context",
+			"architecture": "Architecture"
+		},
 		"import": {
 			"button": "Import",
 			"title": "Import model catalogs",
