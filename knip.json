@@ -5,8 +5,7 @@
 	},
 	"ignoreDependencies": [
 		"@tanstack/react-table",
-		"@tanstack/react-query",
-		"@vitest/coverage-v8"
+		"@tanstack/react-query"
 	],
 	"ignoreExportsUsedInFile": false,
 	"project": ["src/**/*.{ts,tsx}"],

@@ -27,6 +27,7 @@ import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
+import { getAcceleratorProductQuantities } from "@/domains/cluster/lib/resource-status";
 import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -252,8 +253,12 @@ export const ClustersShow = () => {
                             total={allocatableGroup.quantity}
                           />
                           <ProductGroupsBreakdown
-                            allocatableGroups={allocatableGroup.product_groups}
-                            availableGroups={availableGroup?.product_groups}
+                            allocatableGroups={getAcceleratorProductQuantities(
+                              allocatableGroup,
+                            )}
+                            availableGroups={getAcceleratorProductQuantities(
+                              availableGroup,
+                            )}
                           />
                         </div>
                       );

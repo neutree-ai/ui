@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { calcResourceUsage } from "./calc-resource-usage";
+import {
+  calcResourceUsage,
+  formatResourceUsageRatio,
+} from "./calc-resource-usage";
 
 describe("calcResourceUsage", () => {
   it("calculates used and percent", () => {
@@ -21,5 +24,17 @@ describe("calcResourceUsage", () => {
 
   it("handles full usage", () => {
     expect(calcResourceUsage(64, 0)).toEqual({ used: 64, percent: 100 });
+  });
+});
+
+describe("formatResourceUsageRatio", () => {
+  it("formats used over total from allocatable and available values", () => {
+    expect(formatResourceUsageRatio(46080, 33792, "MiB")).toBe(
+      "12288 / 46080 MiB",
+    );
+  });
+
+  it("returns dash when total capacity is not known", () => {
+    expect(formatResourceUsageRatio(null, 33792, "MiB")).toBe("-");
   });
 });

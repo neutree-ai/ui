@@ -9,11 +9,11 @@ import type {
 } from "@/foundation/types/serving-types";
 
 export type {
-  ModelSpec,
-  EndpointEngineSpec,
-  ResourceSpec,
-  ReplicaSpec,
   DeploymentOptions,
+  EndpointEngineSpec,
+  ModelSpec,
+  ReplicaSpec,
+  ResourceSpec,
 } from "@/foundation/types/serving-types";
 
 enum EndpointPhase {
@@ -33,7 +33,7 @@ export type EndpointSpec = {
   resources: ResourceSpec | null;
   replicas: ReplicaSpec | null;
   deployment_options: DeploymentOptions | null;
-  variables: Record<string, any> | null;
+  variables: Record<string, unknown> | null;
   env: Record<string, string> | null;
 };
 
@@ -59,7 +59,11 @@ export type Endpoint = {
 export type EndpointClusterRef = {
   metadata: Metadata;
   spec: { type: string };
-  status: { resource_info?: ClusterResourceInfo | null } | null;
+  status: {
+    ready_nodes?: number;
+    desired_nodes?: number;
+    resource_info?: ClusterResourceInfo | null;
+  } | null;
 };
 
 /** Minimal engine shape needed by endpoint form */

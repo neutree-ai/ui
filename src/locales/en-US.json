@@ -377,6 +377,16 @@
 			"usedSlashTotal": "used / total",
 			"kubeconfig": "Kubeconfig",
 			"acceleratorCount": "Accelerator Count",
+			"memoryUsage": "VRAM",
+			"coreUsage": "Core",
+			"gpuNumber": "GPU",
+			"gpuType": "GPU Type",
+			"deviceUuid": "Device UUID",
+			"deviceCount": "Devices",
+			"healthyDevices": "Healthy Devices",
+			"remaining": "Remaining",
+			"selected": "Selected",
+			"resourceScope": "Resource Scope",
 			"replicas": "Replicas",
 			"currentVersion": "Current Version",
 			"targetVersion": "Target Version",
@@ -412,7 +422,8 @@
 			"router": "Router",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
-			"nodes": "Nodes"
+			"nodes": "Nodes",
+			"nodeDevices": "Node Devices"
 		},
 		"placeholders": {
 			"clusterName": "Cluster Name",
@@ -425,7 +436,8 @@
 			"modelCacheName": "Model Cache Name",
 			"cachePath": "/path/to/cache",
 			"storage": "10Gi",
-			"storageClassName": "e.g standard, fast"
+			"storageClassName": "e.g standard, fast",
+			"searchGpuDevices": "Search card UUID, product, or node"
 		},
 		"labels": {
 			"nodes": "nodes"
@@ -439,7 +451,19 @@
 			"none": "None",
 			"hostPath": "Host Path",
 			"nfs": "NFS",
-			"pvc": "PVC"
+			"pvc": "PVC",
+			"healthy": "Healthy",
+			"unhealthy": "Unhealthy",
+			"allGpuProducts": "All Card Products",
+			"allNodes": "All Nodes",
+			"allDevices": "All Devices",
+			"used": "Used",
+			"usable": "Usable",
+			"free": "Free",
+			"total": "Total",
+			"allocated": "Allocated",
+			"freeCards": "Free Cards",
+			"usableForRequest": "Usable For Request"
 		},
 		"messages": {
 			"notFound": "404 not found",
@@ -450,7 +474,10 @@
 			"noUpgradeVersions": "No upgrade versions available",
 			"upgradeWarningSSH": "SSH clusters will experience downtime during upgrade. All running endpoints will be temporarily interrupted.",
 			"upgradeWarningK8s": "Kubernetes clusters use rolling updates with zero downtime.",
-			"newVersionAvailable": "New version available"
+			"newVersionAvailable": "New version available",
+			"copyUuidSuccess": "GPU UUID copied",
+			"copyUuidFailed": "Failed to copy GPU UUID",
+			"noGpuDevices": "No accelerator cards found"
 		},
 		"monitor": {
 			"rayMetrics": "Ray Metrics",
@@ -460,6 +487,8 @@
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
+			"copyUuid": "Copy UUID",
+			"toggleNodeDevices": "{{nodeName}} devices",
 			"upgrade": "Upgrade",
 			"upgradeTitle": "Upgrade Cluster"
 		},
@@ -556,6 +585,8 @@
 			"modelCatalog": "Model Catalog (Template)",
 			"memoryGb": "Memory (GB)",
 			"acceleratorCount": "Accelerator Count",
+			"physicalGpuCount": "Card Count",
+			"physicalGpu": "Card Count",
 			"npuCount": "NPU Count",
 			"modelName": "Model Name",
 			"modelVersion": "Model Version",
@@ -563,23 +594,32 @@
 			"engineVersion": "Engine Version",
 			"taskType": "Task Type",
 			"replicas": "Replicas",
+			"scheduling": "Scheduling",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
-			"accelerator": "Accelerator"
+			"accelerator": "Accelerator",
+			"matchingGpuCards": "Matching Cards",
+			"nodeCount": "Node Count"
 		},
 		"sections": {
+			"modelAndReplicas": "Model & Replicas",
 			"templateSelection": "Template Selection",
 			"configuration": "Configuration",
-			"resourceSettings": "Resource Settings",
+			"resourceSettings": "Resources",
+			"schedulingTargetResources": "Scheduling Target and Resource Selection",
+			"schedulingTarget": "Scheduling Target",
 			"customizeSettings": "Customize Settings",
 			"configurationDetails": "Configuration Details",
 			"modelSettings": "Model Settings",
 			"engineSettings": "Engine Settings",
 			"replicaSettings": "Replica Settings",
 			"advancedOptions": "Advanced Options",
-			"environmentVariables": "Environment Variables"
+			"environmentVariables": "Environment Variables",
+			"currentRequest": "Current Request",
+			"resourcePlan": "Resource Plan",
+			"clusterDeviceResources": "Cluster Resources"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
@@ -598,6 +638,10 @@
 		"options": {
 			"generic": "Generic"
 		},
+		"descriptions": {
+			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
+			"basicResources": "Capacity shared with the selected cluster."
+		},
 		"actions": {
 			"pause": "Pause",
 			"resume": "Resume"
@@ -615,7 +659,9 @@
 			"resumeFailed": "Failed to resume endpoint",
 			"noAcceleratorsAvailable": "No accelerators available in this cluster",
 			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
-			"schedulerTypeRequired": "Scheduler type is required"
+			"schedulerTypeRequired": "Scheduler type is required",
+			"cardsAvailable": "{{count}} cards available",
+			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster."
 		},
 		"tabs": {
 			"playground": "Playground"

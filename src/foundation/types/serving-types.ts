@@ -14,7 +14,10 @@ export type EndpointEngineSpec = {
 export type ResourceSpec = {
   cpu: number | null;
   gpu: number | null;
-  accelerator: { type: string; product: string } | null;
+  accelerator: {
+    type: string;
+    product: string;
+  } | null;
   memory: number | null;
 };
 

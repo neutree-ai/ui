@@ -17,6 +17,32 @@ describe("NumberInput", () => {
     fireEvent.focus(getInput());
     fireEvent.change(getInput(), { target: { value: "123" } });
     expect(onValueChange).toHaveBeenCalledWith(123);
+    expect(onValueChange).toHaveBeenCalledOnce();
+  });
+
+  it("keeps its parsing handlers when form field handlers are injected", () => {
+    const onValueChange = vi.fn();
+    const injectedOnChange = vi.fn();
+    const injectedOnBlur = vi.fn();
+
+    render(
+      <NumberInput
+        {...({
+          onChange: injectedOnChange,
+          onBlur: injectedOnBlur,
+        } as unknown as Record<string, unknown>)}
+        value={0}
+        onValueChange={onValueChange}
+      />,
+    );
+
+    fireEvent.focus(getInput());
+    fireEvent.change(getInput(), { target: { value: "123" } });
+    fireEvent.blur(getInput());
+
+    expect(onValueChange).toHaveBeenCalledWith(123);
+    expect(injectedOnChange).not.toHaveBeenCalled();
+    expect(injectedOnBlur).not.toHaveBeenCalled();
   });
 
   it("allows clearing the input to empty without calling onValueChange", () => {

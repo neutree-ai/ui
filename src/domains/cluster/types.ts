@@ -1,8 +1,6 @@
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 
-export type { ResourceStatus } from "@/foundation/types/resource-types";
-
 type Provider = {
   type: string;
   head_ip: string;
