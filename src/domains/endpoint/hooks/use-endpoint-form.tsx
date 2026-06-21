@@ -1,4 +1,4 @@
-import { useCustom, useParsed, useSelect } from "@refinedev/core";
+import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -48,6 +48,18 @@ import {
 } from "@/foundation/recipe/compose";
 import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
 import type { ComposedSpec, RecipeInputSpec } from "@/foundation/recipe/types";
+
+// Reads `?model_catalog=<id>` off the current URL. The app uses a HashRouter so
+// the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
+// Returns "" when absent or outside a browser (e.g. unit tests), so callers can
+// treat it as "no preselection".
+function readModelCatalogQueryParam(): string {
+  if (typeof window === "undefined") return "";
+  const hash = window.location.hash ?? "";
+  const q = hash.indexOf("?");
+  if (q === -1) return "";
+  return new URLSearchParams(hash.slice(q + 1)).get("model_catalog") ?? "";
+}
 
 export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -314,12 +326,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Deploy-from-catalog-card: the catalog list page links here with
   // `?model_catalog=<id>` to preselect that catalog (lightweight deploy entry —
   // no backend change, the create form just opens with the catalog chosen).
-  // Apply once, after the catalog list has loaded and contains the id.
-  const { params: parsedParams } = useParsed();
-  const preselectCatalogId =
-    action === "create"
-      ? ((parsedParams?.model_catalog as string | undefined) ?? "")
-      : "";
+  // Read the id straight off the HashRouter URL (no refine router hook, so this
+  // stays inert in unit tests that mount the hook without a router) and apply
+  // once, after the catalog list has loaded and contains the id.
+  const [preselectCatalogId] = useState(() =>
+    action === "create" ? readModelCatalogQueryParam() : "",
+  );
   const preselectAppliedRef = useRef(false);
   useEffect(() => {
     if (preselectAppliedRef.current || !preselectCatalogId) return;
