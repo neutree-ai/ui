@@ -1,37 +1,49 @@
-import { Download, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useList, useParsed } from "@refinedev/core";
+import { Download, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
-import EndpointModel from "@/domains/endpoint/components/EndpointModel";
-import ModelTask from "@/domains/endpoint/components/ModelTask";
-import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
-import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
+import { Input } from "@/components/ui/input";
 import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { defaultSorters, Table } from "@/foundation/components/Table";
+import { Loader } from "@/foundation/components/Loader";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { BaseStatus } from "@/foundation/types/basic-types";
-import type { ModelSpec } from "@/foundation/types/serving-types";
+import type { ModelCatalog } from "@/domains/model-catalog/types";
+import { ModelCatalogCard } from "./components/ModelCatalogCard";
 import { ImportDialog } from "./components/ImportDialog";
 
-// pickRepresentativeModel returns the model for the list row's Model/Task
-// columns. For a recipe MC (no top-level spec.model) it falls back to the
-// first variant's model — list display only needs *a* representative entry.
-function pickRepresentativeModel(spec: {
-  model?: ModelSpec | null;
-  variants?: Record<string, { model?: ModelSpec | null } | null> | null;
-}): ModelSpec | null {
-  if (spec.model) return spec.model;
-  for (const v of Object.values(spec.variants ?? {})) {
-    if (v?.model) return v.model;
-  }
-  return null;
-}
-
+// Catalog is now a card-first surface (design §3.7): each card summarizes a
+// model and offers a one-click Deploy entry, replacing the long parameter
+// table. Catalog supports import only, so the list keeps a single Import entry.
 export const ModelCatalogsList = () => {
   const { t } = useTranslation();
-  const metadataColumns = useMetadataColumns();
+  const { params } = useParsed();
+  const workspace = (params?.workspace as string) ?? "";
+  const isAllWorkspaces = workspace === ALL_WORKSPACES;
+
   const [importOpen, setImportOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const { data, isLoading } = useList<ModelCatalog>({
+    resource: "model_catalogs",
+    pagination: { mode: "off" },
+    meta: { workspace },
+    queryOptions: { enabled: Boolean(workspace) },
+  });
+
+  const catalogs = useMemo(() => {
+    const all = data?.data ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter((c) => {
+      const name = c.metadata.name?.toLowerCase() ?? "";
+      const modelName = (
+        c.spec.model?.name ??
+        Object.values(c.spec.variants ?? {})[0]?.model?.name ??
+        ""
+      ).toLowerCase();
+      return name.includes(q) || modelName.includes(q);
+    });
+  }, [data?.data, search]);
 
   return (
     <ListPage
@@ -43,86 +55,35 @@ export const ModelCatalogsList = () => {
         </Button>
       }
     >
-      <Table
-        enableSorting
-        enableFilters
-        enableBatchDelete
-        searchField="metadata->>name"
-        refineCoreProps={{
-          sorters: defaultSorters,
-        }}
-        filters={({ filters, setFilters }) => (
-          <ModelTaskFilter filters={filters} setFilters={setFilters} />
-        )}
-      >
-        {metadataColumns.name}
-        {metadataColumns.workspace}
-        <Table.Column
-          header={t("common.fields.model")}
-          accessorKey="spec.model.name"
-          id="model"
-          enableHiding
-          cell={({ row }) => {
-            const model = pickRepresentativeModel(row.original.spec);
-            return model ? (
-              <EndpointModel model={model} />
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            );
-          }}
+      <div className="relative max-w-sm mb-4">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <Input
+          className="pl-8"
+          placeholder={t("model_catalogs.card.searchPlaceholder", "Search by name")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-        <Table.Column
-          header={t("common.fields.task")}
-          accessorKey="spec.model.task"
-          id="task"
-          enableHiding
-          cell={({ row }) => {
-            const model = pickRepresentativeModel(row.original.spec);
-            return model ? (
-              <ModelTask task={model.task} />
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            );
-          }}
-        />
-        <Table.Column
-          header={t("common.fields.engine")}
-          accessorKey="spec.engine.engine"
-          id="engine"
-          enableHiding
-          cell={({ row }) => {
-            const { spec, metadata } = row.original;
-            return <EndpointEngine spec={spec} metadata={metadata} />;
-          }}
-        />
-        <Table.Column
-          header={t("common.fields.status")}
-          accessorKey="status"
-          id="status"
-          enableHiding
-          cell={({ getValue }) => {
-            return (
-              <ModelCatalogStatus {...(getValue() as unknown as BaseStatus)} />
-            );
-          }}
-        />
-        {metadataColumns.update_timestamp}
-        {metadataColumns.creation_timestamp}
-        <Table.Column
-          accessorKey={"id"}
-          id={"actions"}
-          cell={({ row: { original } }) => (
-            <Table.Actions>
-              <Table.DeleteAction
-                title={t("buttons.delete")}
-                row={original}
-                resource="model_catalogs"
-                icon={<Trash2 size={16} />}
-              />
-            </Table.Actions>
-          )}
-        />
-      </Table>
+      </div>
+
+      {isLoading ? (
+        <Loader className="h-4 text-primary" />
+      ) : catalogs.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-12 text-center">
+          {t("model_catalogs.card.empty", "No model catalogs yet. Import one to get started.")}
+        </div>
+      ) : (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {catalogs.map((catalog) => (
+            <ModelCatalogCard
+              key={catalog.id}
+              catalog={catalog}
+              workspace={workspace}
+              showWorkspace={isAllWorkspaces}
+            />
+          ))}
+        </div>
+      )}
+
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </ListPage>
   );

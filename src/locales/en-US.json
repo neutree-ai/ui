@@ -555,6 +555,15 @@
 			"contextLength": "Context",
 			"architecture": "Architecture"
 		},
+		"card": {
+			"deploy": "Deploy",
+			"details": "Details",
+			"variantCount": "{{count}} variants",
+			"searchPlaceholder": "Search by name",
+			"empty": "No model catalogs yet. Import one to get started.",
+			"deleteTitle": "Delete model catalog",
+			"deleteDescription": "Delete \"{{name}}\"? This cannot be undone."
+		},
 		"import": {
 			"button": "Import",
 			"title": "Import model catalogs",

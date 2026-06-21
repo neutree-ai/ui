@@ -1,7 +1,7 @@
-import { useCustom, useSelect } from "@refinedev/core";
+import { useCustom, useParsed, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -310,6 +310,26 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       setEnabledFeatures([]);
     }
   };
+
+  // Deploy-from-catalog-card: the catalog list page links here with
+  // `?model_catalog=<id>` to preselect that catalog (lightweight deploy entry —
+  // no backend change, the create form just opens with the catalog chosen).
+  // Apply once, after the catalog list has loaded and contains the id.
+  const { params: parsedParams } = useParsed();
+  const preselectCatalogId =
+    action === "create"
+      ? ((parsedParams?.model_catalog as string | undefined) ?? "")
+      : "";
+  const preselectAppliedRef = useRef(false);
+  useEffect(() => {
+    if (preselectAppliedRef.current || !preselectCatalogId) return;
+    const list = modelCatalogs.query.data?.data;
+    if (!list?.some((c) => c.id.toString() === preselectCatalogId)) return;
+    preselectAppliedRef.current = true;
+    handleModelCatalogSelect(preselectCatalogId);
+    // handleModelCatalogSelect is stable enough for a one-shot guarded apply.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselectCatalogId, modelCatalogs.query.data]);
 
   // When user changes variant or features, re-apply the composed result.
   const handleVariantChange = (v: string) => {
