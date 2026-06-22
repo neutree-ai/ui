@@ -61,8 +61,8 @@ export const ApiKeysList = () => {
       .map((k) => ({ id: String(k.id), name: k.metadata?.name ?? String(k.id) }));
   }, [keysData, workspace]);
 
-  // Limits are converged onto the key itself (spec.limits) — read straight off
-  // each row, no separate fetch.
+  // Limits live on the key itself (spec.limits) — read straight off each row,
+  // no separate fetch.
   const limitsOf = (original: ApiKey): ApiKeyLimits =>
     (original.spec?.limits as ApiKeyLimits | undefined) ?? {};
 
@@ -138,10 +138,9 @@ export const ApiKeysList = () => {
             </span>
           );
         }
-        // Mockup: model name (bold) + Internal/External tag from its serving
-        // endpoint(s). A model served both ways shows both tags.
-        // Mockup .model-stack/.model-chip-line: each model on its own line,
-        // name (bold, truncated) with its Internal/External tag(s) stacked below.
+        // Each allowed model on its own line: name (bold, truncated) with its
+        // Internal/External tag(s) — from the serving endpoint(s) — stacked
+        // below. A model served both ways shows both tags.
         return (
           <div className="flex flex-col gap-2">
             {models.map((m) => {

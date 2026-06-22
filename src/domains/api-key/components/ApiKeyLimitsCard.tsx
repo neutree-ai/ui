@@ -29,7 +29,7 @@ import { cn } from "@/foundation/lib/utils";
 const fmt = (n: number) => Number(n).toLocaleString();
 
 // Editable Limits panel on the API key detail page: shows the key's current
-// limits (a single converged object at spec.limits), its token-quota consumption
+// limits (a single object at spec.limits), its token-quota consumption
 // (used / limit / remaining for the current period), and lets you edit the limits
 // in place. Save replaces the whole limits object (disabled is preserved).
 export const ApiKeyLimitsCard = ({
@@ -171,7 +171,7 @@ export const ApiKeyLimitsCard = ({
         </p>
 
         {/* Model access (read): each allowed model with its Internal/External
-            tag and serving endpoint(s), aligned to the design mockup. */}
+            tag and serving endpoint(s). */}
         <div className="space-y-2">
           <div className="text-sm font-medium">
             {t("api_keys.modelAccess.title")}
@@ -181,9 +181,9 @@ export const ApiKeyLimitsCard = ({
               {t("api_keys.modelAccess.all")}
             </p>
           ) : (
-            // Mockup .model-list/.model-item: one bordered card per allowed
-            // model — name (bold) over a meta line with its Internal/External
-            // tag and serving endpoint label (instance vs external endpoint).
+            // One bordered card per allowed model — name (bold) over a meta line
+            // with its Internal/External tag and serving endpoint label
+            // (instance vs external endpoint).
             <div className="space-y-2">
               {(limits.allowed_models ?? []).map((m) => {
                 const info = modelMap.get(m);

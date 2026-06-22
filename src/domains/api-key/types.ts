@@ -12,8 +12,7 @@ export type ApiKey = {
 
 export type ApiKeySpec = {
   quota: number;
-  // Converged quota + access limits (NEUTREE-GENERAL-9). Optional: keys created
-  // before the converge, or with no limits, have none.
+  // Quota + access limits for the key. Optional: keys with no limits have none.
   limits?: ApiKeyLimits | null;
 };
 

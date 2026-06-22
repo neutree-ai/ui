@@ -50,8 +50,8 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     });
 
   const onSubmit = async (formValue: FieldValues) => {
-    // Create with limits in one atomic call — quota + access are converged onto
-    // the key's spec.limits, so create_api_key takes the whole limits object.
+    // Create with limits in one atomic call — quota + access live on the key's
+    // spec.limits, so create_api_key takes the whole limits object.
     const { data } = await mutateAsync({
       url: "/rpc/create_api_key",
       method: "post",

@@ -2,8 +2,8 @@ import { useCustomMutation } from "@refinedev/core";
 import { useCallback, useEffect, useState } from "react";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 
-// API-key limits, converged onto the key itself (NEUTREE-GENERAL-9). Quota +
-// access are a single object stored at api_key.spec.limits and read/written via
+// API-key limits live on the key itself: quota + access are a single object
+// stored at api_key.spec.limits and read/written via
 // three RPCs:
 //   create_api_key(..., p_limits)      - create with limits (atomic)
 //   get_api_key_limits(p_id)           - config + current-period used/remaining
