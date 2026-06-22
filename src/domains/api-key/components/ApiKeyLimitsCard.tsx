@@ -181,39 +181,57 @@ export const ApiKeyLimitsCard = ({
               {t("api_keys.modelAccess.all")}
             </p>
           ) : (
-            <ul className="space-y-1.5">
+            // Mockup .model-list/.model-item: one bordered card per allowed
+            // model — name (bold) over a meta line with its Internal/External
+            // tag and serving endpoint label (instance vs external endpoint).
+            <div className="space-y-2">
               {(limits.allowed_models ?? []).map((m) => {
                 const info = modelMap.get(m);
                 return (
-                  <li
+                  <div
                     key={m}
-                    className="flex flex-wrap items-center gap-2 text-sm"
+                    className="flex min-h-[58px] items-center gap-2 rounded-md border px-2.5 py-2"
                   >
-                    <span className="font-medium">{m}</span>
-                    {info?.internal && (
-                      <Badge variant="outline" className="font-normal">
-                        {t("api_keys.models.internal")}
-                      </Badge>
-                    )}
-                    {info?.external && (
-                      <Badge variant="outline" className="font-normal">
-                        {t("api_keys.models.external")}
-                      </Badge>
-                    )}
-                    {info && info.endpoints.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {info.endpoints.map((e) => e.name).join(", ")}
-                      </span>
-                    )}
-                    {!info && (
-                      <span className="text-xs text-muted-foreground">
-                        {t("api_keys.modelAccess.unavailable")}
-                      </span>
-                    )}
-                  </li>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div
+                        className="truncate text-sm font-semibold"
+                        title={m}
+                      >
+                        {m}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {info?.internal && (
+                          <Badge variant="outline" className="font-normal">
+                            {t("api_keys.models.internal")}
+                          </Badge>
+                        )}
+                        {info?.external && (
+                          <Badge variant="outline" className="font-normal">
+                            {t("api_keys.models.external")}
+                          </Badge>
+                        )}
+                        {info && info.endpoints.length > 0
+                          ? info.endpoints.map((e) => (
+                              <span key={`${e.type}:${e.name}`}>
+                                {t(
+                                  e.type === "external"
+                                    ? "api_keys.modelAccess.endpointLabel"
+                                    : "api_keys.modelAccess.instanceLabel",
+                                  { name: e.name },
+                                )}
+                              </span>
+                            ))
+                          : !info && (
+                              <span>
+                                {t("api_keys.modelAccess.unavailable")}
+                              </span>
+                            )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           )}
         </div>
 

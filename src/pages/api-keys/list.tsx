@@ -140,23 +140,29 @@ export const ApiKeysList = () => {
         }
         // Mockup: model name (bold) + Internal/External tag from its serving
         // endpoint(s). A model served both ways shows both tags.
+        // Mockup .model-stack/.model-chip-line: each model on its own line,
+        // name (bold, truncated) with its Internal/External tag(s) stacked below.
         return (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {models.map((m) => {
               const info = modelMap.get(m);
               return (
-                <div key={m} className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium">{m}</span>
-                  {info?.internal && (
-                    <Badge variant="outline" className="font-normal">
-                      {t("api_keys.models.internal")}
-                    </Badge>
-                  )}
-                  {info?.external && (
-                    <Badge variant="outline" className="font-normal">
-                      {t("api_keys.models.external")}
-                    </Badge>
-                  )}
+                <div key={m} className="flex min-w-0 flex-col gap-1">
+                  <span className="truncate text-sm font-semibold" title={m}>
+                    {m}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {info?.internal && (
+                      <Badge variant="outline" className="font-normal">
+                        {t("api_keys.models.internal")}
+                      </Badge>
+                    )}
+                    {info?.external && (
+                      <Badge variant="outline" className="font-normal">
+                        {t("api_keys.models.external")}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               );
             })}

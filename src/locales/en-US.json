@@ -979,7 +979,9 @@
 		"modelAccess": {
 			"title": "Model access",
 			"all": "All models allowed",
-			"unavailable": "Endpoint unavailable"
+			"unavailable": "Endpoint unavailable",
+			"instanceLabel": "Inference instance: {{name}}",
+			"endpointLabel": "Endpoint: {{name}}"
 		}
 	},
 	"infrastructure": {
