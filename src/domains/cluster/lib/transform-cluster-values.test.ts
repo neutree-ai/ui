@@ -1,5 +1,5 @@
-import type { Cluster } from "@/domains/cluster/types";
 import { describe, expect, it } from "vitest";
+import type { Cluster } from "@/domains/cluster/types";
 import { transformClusterValues } from "./transform-cluster-values";
 
 const makeCluster = (overrides: Record<string, unknown> = {}): Cluster =>
@@ -107,6 +107,48 @@ describe("transformClusterValues", () => {
       const result = transformClusterValues(cluster, true);
       expect(result.spec.config.kubernetes_config?.kubeconfig).toBeUndefined();
     });
+
+    it("keeps accelerator virtualization config for kubernetes clusters", () => {
+      const cluster = makeCluster({
+        spec: {
+          type: "kubernetes",
+          version: "v1.1.0",
+          accelerator_virtualization: { enabled: true },
+          config: {
+            kubernetes_config: {
+              kubeconfig: "",
+              router: { replicas: "3" },
+            },
+          },
+        },
+      });
+
+      const result = transformClusterValues(cluster);
+
+      expect(result.spec.accelerator_virtualization).toEqual({
+        enabled: true,
+      });
+    });
+
+    it("removes accelerator virtualization config for kubernetes clusters below v1.1.0", () => {
+      const cluster = makeCluster({
+        spec: {
+          type: "kubernetes",
+          version: "v1.0.9",
+          accelerator_virtualization: { enabled: true },
+          config: {
+            kubernetes_config: {
+              kubeconfig: "",
+              router: { replicas: "3" },
+            },
+          },
+        },
+      });
+
+      const result = transformClusterValues(cluster);
+
+      expect(result.spec.accelerator_virtualization).toBeUndefined();
+    });
   });
 
   it("does not encode ssh key for kubernetes type", () => {
@@ -124,5 +166,24 @@ describe("transformClusterValues", () => {
     expect(result.spec.config.ssh_config?.auth?.ssh_private_key).toBe(
       "should-not-encode",
     );
+  });
+
+  it("removes stale accelerator virtualization config for SSH clusters", () => {
+    const cluster = makeCluster({
+      spec: {
+        type: "ssh",
+        accelerator_virtualization: { enabled: true },
+        config: {
+          ssh_config: {
+            provider: { head_ip: "1.2.3.4" },
+            auth: { ssh_user: "root", ssh_private_key: "" },
+          },
+        },
+      },
+    });
+
+    const result = transformClusterValues(cluster);
+
+    expect(result.spec.accelerator_virtualization).toBeUndefined();
   });
 });

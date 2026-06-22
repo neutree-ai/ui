@@ -4,6 +4,8 @@ import {
   computeMaxAvailable,
   deepMerge,
   defaultEndpointSpec,
+  normalizeEndpointRecordForForm,
+  normalizeEndpointResourcesForForm,
   transformEndpointValues,
   validateCurrentUsage,
   validateEndpointValues,
@@ -194,6 +196,156 @@ describe("transformEndpointValues", () => {
     const spec = { resources: { cpu: 1 }, replicas: null };
     expect(() => transformEndpointValues(spec)).not.toThrow();
   });
+
+  it("normalizes empty accelerator resources to null", () => {
+    const spec = {
+      resources: {
+        accelerator: {
+          type: "",
+          product: "",
+          ignored: "value",
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.accelerator).toBeNull();
+  });
+
+  it("normalizes vGPU virtualization before submission", () => {
+    const spec = {
+      resources: {
+        cpu: 4,
+        memory: 8,
+        gpu: 1,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            memory_mib: "10240",
+            memory_percent: "",
+            core_percent: "30",
+          },
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.accelerator).toEqual({
+      type: "nvidia_gpu",
+      product: "Tesla-T4",
+      "virtualization.memory_mib": "10240",
+      "virtualization.core_percent": "30",
+    });
+  });
+
+  it("drops core-only virtualization before submission", () => {
+    const spec = {
+      resources: {
+        cpu: 4,
+        memory: 8,
+        gpu: 1,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            core_percent: 25,
+          },
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.accelerator).toEqual({
+      type: "nvidia_gpu",
+      product: "Tesla-T4",
+    });
+  });
+});
+
+describe("normalizeEndpointResourcesForForm", () => {
+  it("normalizes backend resource strings and flat vGPU keys for form editing", () => {
+    expect(
+      normalizeEndpointResourcesForForm({
+        cpu: "2",
+        memory: "8Gi",
+        gpu: "1",
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          "virtualization.memory_mib": "8192",
+          "virtualization.core_percent": "50",
+        },
+      }),
+    ).toEqual({
+      cpu: 2,
+      memory: 8,
+      gpu: 1,
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: {
+          memory_mib: 8192,
+          core_percent: 50,
+        },
+      },
+    });
+  });
+
+  it("normalizes MiB memory quantities to GiB values for the form", () => {
+    expect(
+      normalizeEndpointResourcesForForm({
+        cpu: "2",
+        memory: "8192Mi",
+        gpu: "1",
+        accelerator: null,
+      }),
+    ).toMatchObject({
+      cpu: 2,
+      memory: 8,
+      gpu: 1,
+      accelerator: null,
+    });
+  });
+
+  it("normalizes endpoint records before refine writes query data into the form", () => {
+    const record = {
+      id: 1,
+      spec: {
+        resources: {
+          cpu: "2",
+          memory: "8Gi",
+          gpu: "1",
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            "virtualization.memory_mib": "8192",
+            "virtualization.core_percent": "50",
+          },
+        },
+      },
+    };
+
+    expect(normalizeEndpointRecordForForm(record).spec.resources).toEqual({
+      cpu: 2,
+      memory: 8,
+      gpu: 1,
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: {
+          memory_mib: 8192,
+          core_percent: 50,
+        },
+      },
+    });
+  });
 });
 
 describe("validateEndpointValues", () => {
@@ -273,7 +425,7 @@ describe("validateEndpointValues", () => {
     expect(errors["-model-catalog"]).toBeUndefined();
   });
 
-  it("returns error when scheduler type is empty", () => {
+  it("returns error when scheduler type is blank", () => {
     const errors = validateEndpointValues(
       {
         replicas: { num: 1 },
@@ -287,13 +439,13 @@ describe("validateEndpointValues", () => {
       },
       mockT,
     );
-    expect(errors["spec.deployment_options.scheduler.type"]).toBeDefined();
-    expect(errors["spec.deployment_options.scheduler.type"].message).toBe(
-      "endpoints.messages.schedulerTypeRequired",
-    );
+    expect(errors["spec.deployment_options.scheduler.type"]).toEqual({
+      type: "manual",
+      message: "endpoints.messages.schedulerTypeRequired",
+    });
   });
 
-  it("returns error when deployment_options is null", () => {
+  it("returns error when deployment_options are missing", () => {
     const errors = validateEndpointValues(
       {
         replicas: { num: 1 },
@@ -307,7 +459,10 @@ describe("validateEndpointValues", () => {
       },
       mockT,
     );
-    expect(errors["spec.deployment_options.scheduler.type"]).toBeDefined();
+    expect(errors["spec.deployment_options.scheduler.type"]).toEqual({
+      type: "manual",
+      message: "endpoints.messages.schedulerTypeRequired",
+    });
   });
 
   it("returns no error when scheduler type is set", () => {
@@ -325,6 +480,127 @@ describe("validateEndpointValues", () => {
       mockT,
     );
     expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
+  });
+
+  it("returns error when vGPU memory_mib and memory_percent are both set", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 10240,
+              memory_percent: 50,
+              core_percent: 30,
+            },
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(
+      errors["spec.resources.accelerator.virtualization.memory_percent"]
+        ?.message,
+    ).toBe("endpoints.messages.vgpuMemoryMutuallyExclusive");
+  });
+
+  it("treats blank optional vGPU fields as not configured", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: "" as unknown as number,
+              memory_percent: "" as unknown as number,
+              core_percent: "" as unknown as number,
+            },
+          },
+        },
+      },
+      {
+        action: "edit",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(errors).toEqual({});
+  });
+
+  it("allows zero vGPU core percent as not configured", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_percent: 50,
+              core_percent: 0,
+            },
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(
+      errors["spec.resources.accelerator.virtualization.core_percent"],
+    ).toBeUndefined();
+  });
+
+  it("returns error when vGPU percentages are out of range", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_percent: 101,
+              core_percent: -1,
+            },
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(
+      errors["spec.resources.accelerator.virtualization.memory_percent"]
+        ?.message,
+    ).toBe("endpoints.messages.vgpuMemoryPercentRange");
+    expect(
+      errors["spec.resources.accelerator.virtualization.core_percent"]?.message,
+    ).toBe("endpoints.messages.vgpuCorePercentRange");
   });
 });
 

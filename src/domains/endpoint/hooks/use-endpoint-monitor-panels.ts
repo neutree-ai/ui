@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 
 // Endpoint monitor panel types
-export type EndpointMonitorPanelType = "endpoint" | "vllm" | "sglang";
+export type EndpointMonitorPanelType = "endpoint" | "vllm" | "sglang" | "vgpu";
 
 interface UseEndpointMonitorPanelsProps {
   clusterType?: string;
   engineType?: string;
+  hasVgpuResources?: boolean;
 }
 
 /**
@@ -14,9 +15,14 @@ interface UseEndpointMonitorPanelsProps {
 export const useEndpointMonitorPanels = ({
   clusterType,
   engineType,
+  hasVgpuResources = false,
 }: UseEndpointMonitorPanelsProps) => {
   const panels = useMemo(() => {
     const list: EndpointMonitorPanelType[] = [];
+    // Rule 0: Kubernetes endpoints with vGPU resources expose the accelerator virtualization panel.
+    if (clusterType === "kubernetes" && hasVgpuResources) {
+      list.push("vgpu");
+    }
     // Rule 1: If engine is vllm, always have vllm related panels (default for SSH)
     if (engineType === "vllm") {
       list.push("vllm");
@@ -30,7 +36,7 @@ export const useEndpointMonitorPanels = ({
       list.push("endpoint");
     }
     return list;
-  }, [clusterType, engineType]);
+  }, [clusterType, engineType, hasVgpuResources]);
 
   const [userSelectedPanel, setUserSelectedPanel] =
     useState<EndpointMonitorPanelType | null>(null);

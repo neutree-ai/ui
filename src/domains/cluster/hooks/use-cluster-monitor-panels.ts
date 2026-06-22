@@ -1,10 +1,16 @@
 import { useMemo, useState } from "react";
 
 // Cluster monitor panel types
-export type ClusterMonitorPanelType = "ray" | "router" | "node" | "gpu";
+export type ClusterMonitorPanelType =
+  | "ray"
+  | "router"
+  | "node"
+  | "gpu"
+  | "vgpu";
 
 interface UseClusterMonitorPanelsProps {
   clusterType?: string;
+  acceleratorVirtualizationEnabled?: boolean;
 }
 
 /**
@@ -12,6 +18,7 @@ interface UseClusterMonitorPanelsProps {
  */
 export const useClusterMonitorPanels = ({
   clusterType,
+  acceleratorVirtualizationEnabled = false,
 }: UseClusterMonitorPanelsProps) => {
   const panels = useMemo(() => {
     const list: ClusterMonitorPanelType[] = [];
@@ -21,13 +28,16 @@ export const useClusterMonitorPanels = ({
       list.push("ray");
     } else if (clusterType === "kubernetes") {
       // Kubernetes clusters have GPU, router, and node exporter monitoring
+      if (acceleratorVirtualizationEnabled) {
+        list.push("vgpu");
+      }
       list.push("gpu");
       list.push("router");
       list.push("node");
     }
 
     return list;
-  }, [clusterType]);
+  }, [acceleratorVirtualizationEnabled, clusterType]);
 
   const [userSelectedPanel, setUserSelectedPanel] =
     useState<ClusterMonitorPanelType | null>(null);

@@ -1,5 +1,8 @@
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
-import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
+import type {
+  ClusterResourceInfo,
+  EndpointResourceStatus,
+} from "@/foundation/types/resource-types";
 import type {
   DeploymentOptions,
   EndpointEngineSpec,
@@ -33,7 +36,7 @@ export type EndpointSpec = {
   resources: ResourceSpec | null;
   replicas: ReplicaSpec | null;
   deployment_options: DeploymentOptions | null;
-  variables: Record<string, any> | null;
+  variables: Record<string, unknown> | null;
   env: Record<string, string> | null;
   // Recipe extension — filled in when the endpoint was created from a
   // Recipe MC. The frontend currently double-writes both these refs AND the
@@ -45,6 +48,7 @@ export type EndpointSpec = {
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   service_url: string | null;
+  resources?: EndpointResourceStatus | null;
 };
 
 export type Endpoint = {
@@ -64,8 +68,15 @@ export type Endpoint = {
 /** Minimal cluster shape needed by endpoint form */
 export type EndpointClusterRef = {
   metadata: Metadata;
-  spec: { type: string };
-  status: { resource_info?: ClusterResourceInfo | null } | null;
+  spec: {
+    type: string;
+    accelerator_virtualization?: { enabled?: boolean } | null;
+  };
+  status: {
+    ready_nodes?: number;
+    desired_nodes?: number;
+    resource_info?: ClusterResourceInfo | null;
+  } | null;
 };
 
 /** Minimal engine shape needed by endpoint form */

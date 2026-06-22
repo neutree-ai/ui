@@ -9,7 +9,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface TimestampProps {
-  timestamp: number | string; // Unix timestamp (seconds or milliseconds) or ISO string
+  timestamp: number | string | null | undefined; // Unix timestamp (seconds or milliseconds) or ISO string
   format?: string; // Optional custom format
   className?: string; // Optional CSS class
 }
@@ -40,10 +40,14 @@ export const normalizeTimestampString = (timestamp: string): string => {
  * @returns Formatted timestamp string or "Invalid date" on error
  */
 export const formatTimestamp = (
-  timestamp: number | string,
+  timestamp: number | string | null | undefined,
   format = "YYYY-MM-DD HH:mm",
   targetTimezone?: string,
 ): string => {
+  if (timestamp == null) {
+    return "";
+  }
+
   try {
     let date: Dayjs;
 

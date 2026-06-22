@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClusterComponentStatusList } from "@/domains/cluster/components/ClusterComponentStatusList";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
@@ -23,10 +24,18 @@ import {
   type ClusterMonitorPanelType,
   useClusterMonitorPanels,
 } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
-import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
+import {
+  getAcceleratorProductResourceRows,
+  isAcceleratorVirtualizationEnabled,
+} from "@/domains/cluster/lib/accelerator-virtualization";
+import {
+  calcResourceUsage,
+  formatResourceUsageRatio,
+} from "@/domains/cluster/lib/calc-resource-usage";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
+import { getAcceleratorProductQuantities } from "@/domains/cluster/lib/resource-status";
 import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -43,12 +52,28 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   getClusterRayDashboardProps,
   getClusterRouterDashboardProps,
+  getClusterVgpuDashboardProps,
   getGpuDcgmDashboardProps,
   getNodeExporterDashboardProps,
 } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
+import { formatMiBAsGiB, formatMiBAsGiBValue } from "@/foundation/lib/unit";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 import { useShow, useTranslation } from "@refinedev/core";
+
+const formatVramUsageRatio = (
+  allocatable: number | null | undefined,
+  available?: number | null,
+) => {
+  if (allocatable == null) {
+    return "-";
+  }
+
+  const { used } = calcResourceUsage(allocatable, available ?? undefined);
+  const usedGiB = formatMiBAsGiBValue(used);
+  const totalGiB = formatMiBAsGiBValue(allocatable);
+  return usedGiB && totalGiB ? `${usedGiB} / ${totalGiB} GiB` : "-";
+};
 
 export const ClustersShow = () => {
   const {
@@ -70,6 +95,8 @@ export const ClustersShow = () => {
     showSelector,
   } = useClusterMonitorPanels({
     clusterType: record?.spec.type,
+    acceleratorVirtualizationEnabled:
+      isAcceleratorVirtualizationEnabled(record),
   });
 
   if (isLoading) {
@@ -81,6 +108,11 @@ export const ClustersShow = () => {
   }
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
+  const acceleratorVirtualizationEnabled =
+    isAcceleratorVirtualizationEnabled(record);
+  const acceleratorProductResourceRows = getAcceleratorProductResourceRows(
+    record.status?.resource_info,
+  );
 
   return (
     <ClusterUpgradeProvider>
@@ -130,6 +162,15 @@ export const ClustersShow = () => {
                 <ShowPage.Row title={t("common.fields.type")}>
                   <ClusterType type={record.spec.type} />
                 </ShowPage.Row>
+                {record.spec.type === "kubernetes" && (
+                  <ShowPage.Row
+                    title={t("clusters.fields.acceleratorVirtualization")}
+                  >
+                    {acceleratorVirtualizationEnabled
+                      ? t("common.options.enabled")
+                      : t("common.options.disabled")}
+                  </ShowPage.Row>
+                )}
                 <ShowPage.Row title={t("common.fields.imageRegistry")}>
                   <ShowButton
                     recordItemId={record.spec.image_registry}
@@ -188,6 +229,10 @@ export const ClustersShow = () => {
                   </CardContent>
                 </Card>
               )}
+              <ClusterComponentStatusList
+                componentStatus={record.status?.component_status}
+                t={t}
+              />
             </CardContent>
           </Card>
           {record.status?.resource_info && (
@@ -252,12 +297,65 @@ export const ClustersShow = () => {
                             total={allocatableGroup.quantity}
                           />
                           <ProductGroupsBreakdown
-                            allocatableGroups={allocatableGroup.product_groups}
-                            availableGroups={availableGroup?.product_groups}
+                            allocatableGroups={getAcceleratorProductQuantities(
+                              allocatableGroup,
+                            )}
+                            availableGroups={getAcceleratorProductQuantities(
+                              availableGroup,
+                            )}
                           />
                         </div>
                       );
                     })}
+                  {acceleratorProductResourceRows.length > 0 && (
+                    <div className="rounded-md border">
+                      <div className="grid grid-cols-6 gap-4 border-b px-3 py-2 text-sm font-medium">
+                        <span>{t("common.fields.acceleratorType")}</span>
+                        <span>{t("common.fields.acceleratorProduct")}</span>
+                        <span>{t("clusters.fields.physicalGpu")}</span>
+                        <span>{t("clusters.fields.singleCardVram")}</span>
+                        <span>{t("clusters.fields.acceleratorMemoryPool")}</span>
+                        <span>{t("clusters.fields.acceleratorCorePool")}</span>
+                      </div>
+                      {acceleratorProductResourceRows.map((row) => (
+                        <div
+                          key={`${row.acceleratorType}:${row.product}`}
+                          className="grid grid-cols-6 gap-4 px-3 py-2 text-sm"
+                        >
+                          <span>
+                            {t(
+                              `clusters.acceleratorTypes.${row.acceleratorType}`,
+                              {
+                                defaultValue: row.acceleratorType,
+                              },
+                            )}
+                          </span>
+                          <span>{row.product}</span>
+                          <span>
+                            {formatResourceUsageRatio(
+                              row.quantity,
+                              row.availableQuantity,
+                            )}
+                          </span>
+                          <span>
+                            {formatMiBAsGiB(row.memoryTotalMiB) ?? "-"}
+                          </span>
+                          <span>
+                            {formatVramUsageRatio(
+                              row.allocatableMemoryMiB,
+                              row.availableMemoryMiB,
+                            )}
+                          </span>
+                          <span>
+                            {formatResourceUsageRatio(
+                              row.allocatableCoreUnits,
+                              row.availableCoreUnits,
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -486,6 +584,11 @@ export const ClustersShow = () => {
                               {t("clusters.monitor.gpuMetrics")}
                             </SelectItem>
                           )}
+                          {monitorPanels.includes("vgpu") && (
+                            <SelectItem value="vgpu">
+                              {t("clusters.monitor.vgpuMetrics")}
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -525,6 +628,16 @@ export const ClustersShow = () => {
                 {selectedPanel === "gpu" && (
                   <GrafanaDashboard
                     {...getGpuDcgmDashboardProps(
+                      grafanaUrl,
+                      record.metadata.name,
+                    )}
+                    className="flex-1"
+                    hideVariables
+                  />
+                )}
+                {selectedPanel === "vgpu" && (
+                  <GrafanaDashboard
+                    {...getClusterVgpuDashboardProps(
                       grafanaUrl,
                       record.metadata.name,
                     )}

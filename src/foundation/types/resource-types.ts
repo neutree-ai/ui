@@ -1,18 +1,30 @@
 /**
  * AcceleratorType represents the type of accelerator (e.g., "nvidia_gpu", "amd_gpu", "neuron")
  */
-type AcceleratorType = string;
+export type AcceleratorType = string;
 
 /**
  * AcceleratorProduct represents the product model name (e.g., "Tesla-V100", "Tesla-T4", "MI100")
  */
-type AcceleratorProduct = string;
+export type AcceleratorProduct = string;
+
+export type AcceleratorProductResources = {
+  quantity: number;
+  virtualization?: {
+    memory_mib?: number | null;
+    core_units?: number | null;
+  } | null;
+};
+
+export type AcceleratorProductMetadata = {
+  memory_total_mib?: number | null;
+};
 
 /**
  * AcceleratorGroup represents accelerator resources grouped by type.
  * It supports heterogeneous clusters where multiple accelerator types can coexist.
  */
-type AcceleratorGroup = {
+export type AcceleratorGroup = {
   /**
    * Quantity is the total number of accelerators of this type.
    * Unit: count (e.g., 8.0 means 8 accelerators)
@@ -26,6 +38,12 @@ type AcceleratorGroup = {
    * Value: number of accelerators of that product model
    */
   product_groups: Record<AcceleratorProduct, number> | null;
+
+  /**
+   * Products contains product-level accelerator resources. New code should prefer
+   * this over product_groups because it can carry virtualization pools.
+   */
+  products?: Record<AcceleratorProduct, AcceleratorProductResources> | null;
 };
 
 /**
@@ -70,16 +88,67 @@ export type ResourceStatus = {
   available: ResourceInfo | null;
 };
 
+type DeviceResourcePool = {
+  memory_mib: number;
+  core_units: number;
+};
+
+export type DeviceResource = {
+  uuid: string;
+  product: string;
+  health: boolean;
+  allocatable?: DeviceResourcePool | null;
+  available?: DeviceResourcePool | null;
+};
+
+export type NodeResourceStatus = ResourceStatus & {
+  devices?: DeviceResource[] | null;
+};
+
 /**
  * ClusterResourceInfo represents the complete resource information of a cluster,
  * organized by dimensions (Allocatable and Available).
  * This follows Kubernetes Node Status pattern for consistency and clarity.
  */
 export type ClusterResourceInfo = ResourceStatus & {
+  accelerator_metadata?: Record<
+    AcceleratorType,
+    { products?: Record<AcceleratorProduct, AcceleratorProductMetadata> | null }
+  > | null;
+
   /**
    * NodeResources contains per-node resource information.
    * Key: node identifier (IP address for SSH clusters, node name for Kubernetes clusters).
-   * Value: ResourceStatus for that node.
+   * Value: NodeResourceStatus for that node.
    */
-  node_resources: Record<string, ResourceStatus> | null;
+  node_resources: Record<string, NodeResourceStatus> | null;
+};
+
+type DeviceAllocation = {
+  uuid: string;
+  product: string;
+  memory_mib: number;
+  core_units: number;
+  node_id: string;
+};
+
+export type ReplicaDeviceAllocation = {
+  instance_id: string;
+  replica_id?: string | null;
+  node_id?: string | null;
+  devices?: DeviceAllocation[] | null;
+};
+
+type ProductUsage = {
+  memory_mib: number;
+  core_units: number;
+};
+
+export type EndpointResourceSummary = {
+  products?: Record<AcceleratorProduct, ProductUsage> | null;
+};
+
+export type EndpointResourceStatus = {
+  replicas?: ReplicaDeviceAllocation[] | null;
+  summary?: EndpointResourceSummary | null;
 };
