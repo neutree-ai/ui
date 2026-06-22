@@ -1,4 +1,4 @@
-import { type Page, expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { ASYNC_UI_TIMEOUT, BULK_TIMEOUT } from "./constants";
 
 export class YamlExportHelper {
@@ -38,11 +38,16 @@ export class YamlExportHelper {
     await this.dialog.getByRole("button", { name: /deselect all/i }).click();
   }
 
+  /** Build a row locator that matches exactly the given label text */
+  private resourceRow(label: string) {
+    return this.dialog.locator(".border.rounded-lg").filter({
+      has: this.page.getByText(label, { exact: true }),
+    });
+  }
+
   /** Expand a resource type by clicking the chevron button */
   async expandResource(label: string): Promise<void> {
-    const row = this.dialog.locator(".border.rounded-lg", {
-      hasText: label,
-    });
+    const row = this.resourceRow(label);
     // Click the chevron expand button (ghost button with w-8)
     await row.locator("button.h-8.w-8").click();
     // Wait for content to load (either entities or "No entities found")
@@ -55,9 +60,7 @@ export class YamlExportHelper {
 
   /** Toggle a resource type checkbox (select/deselect) */
   async toggleResource(label: string): Promise<void> {
-    const row = this.dialog.locator(".border.rounded-lg", {
-      hasText: label,
-    });
+    const row = this.resourceRow(label);
     await row.locator('button[role="checkbox"]').click();
     // Wait for entities to load if selecting
     await this.page.waitForTimeout(500);
@@ -141,9 +144,7 @@ export class YamlExportHelper {
 
   /** Check if a resource row has entities listed (expanded state) */
   async getEntityNames(label: string): Promise<string[]> {
-    const row = this.dialog.locator(".border.rounded-lg", {
-      hasText: label,
-    });
+    const row = this.resourceRow(label);
     const labels = row.locator(".pl-4 label.text-sm");
     const count = await labels.count();
     const names: string[] = [];
@@ -156,9 +157,7 @@ export class YamlExportHelper {
 
   /** Check if a resource type shows "No entities found" */
   async hasNoEntities(label: string): Promise<boolean> {
-    const row = this.dialog.locator(".border.rounded-lg", {
-      hasText: label,
-    });
+    const row = this.resourceRow(label);
     return (await row.getByText(/no entities found/i).count()) > 0;
   }
 }

@@ -9,12 +9,26 @@ const DASHBOARD_CARD_TESTID: Record<string, string> = {
   Endpoints: "dashboard-endpoint-count",
 };
 
-/** Read the count number from a dashboard card by data-testid */
+/** Read the count number from a dashboard card by data-testid.
+ *  When endpoint count is 0, the dashboard shows a Quick Start card instead
+ *  of the endpoint count card — treat that as count=0. */
 async function getDashboardCount(page: Page, title: string): Promise<number> {
   const testId = DASHBOARD_CARD_TESTID[title];
   const card = page.locator(`[data-testid="${testId}"]`);
-  await expect(card.getByText(/\d+/)).toBeVisible({ timeout: 10000 });
-  // The count is rendered directly as text content inside CardContent
+
+  // Endpoint card may be replaced by Quick Start when count is 0
+  if (title === "Endpoints") {
+    const quickStart = page.locator('[data-testid="dashboard-quick-start"]');
+    // Wait for either the count card or Quick Start to appear
+    await expect(card.getByText(/\d+/).or(quickStart)).toBeVisible({
+      timeout: 10000,
+    });
+    const hasCount = await card.getByText(/\d+/).isVisible();
+    if (!hasCount) return 0;
+  } else {
+    await expect(card.getByText(/\d+/)).toBeVisible({ timeout: 10000 });
+  }
+
   const text = await card.getByText(/\d+/).textContent();
   return Number(text);
 }
@@ -26,7 +40,6 @@ async function waitForDashboardCount(
   expected: number,
   timeout = DELETE_TIMEOUT,
 ): Promise<void> {
-  const testId = DASHBOARD_CARD_TESTID[title];
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     await page.reload();
@@ -35,9 +48,9 @@ async function waitForDashboardCount(
     if (count === expected) return;
     await page.waitForTimeout(2000);
   }
-  // Final assertion to generate a proper error message
-  const card = page.locator(`[data-testid="${testId}"]`);
-  await expect(card.getByText(String(expected))).toBeVisible({ timeout: 5000 });
+  // Final assertion — getDashboardCount handles Quick Start fallback
+  const count = await getDashboardCount(page, title);
+  expect(count).toBe(expected);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -404,16 +417,18 @@ test.describe("ui layout", () => {
       });
     });
 
-    test("endpoint count card shows a number", { tag: "@C2611921" }, async ({
-      page,
-    }) => {
+    test("endpoint count card shows a number or Quick Start", {
+      tag: "@C2611921",
+    }, async ({ page }) => {
       await page.goto("/#/dashboard");
       await expect(page.getByText("Dashboard").first()).toBeVisible();
 
+      // When no endpoints exist the dashboard shows Quick Start instead
       const endpointsCard = page.locator(
         '[data-testid="dashboard-endpoint-count"]',
       );
-      await expect(endpointsCard.getByText(/\d+/)).toBeVisible({
+      const quickStart = page.locator('[data-testid="dashboard-quick-start"]');
+      await expect(endpointsCard.getByText(/\d+/).or(quickStart)).toBeVisible({
         timeout: 10000,
       });
     });
@@ -586,11 +601,15 @@ test.describe("ui layout", () => {
           testUser.page.getByText("Dashboard").first(),
         ).toBeVisible();
 
-        // User without endpoint:read should see 0 endpoints
+        // User without endpoint:read should see 0 endpoints (or Quick Start)
         const endpointsCard = testUser.page.locator(
           '[data-testid="dashboard-endpoint-count"]',
         );
-        await expect(endpointsCard.getByText("0")).toBeVisible({
+        const quickStart = testUser.page.locator(
+          '[data-testid="dashboard-quick-start"]',
+        );
+        // Either the count card shows "0" or Quick Start is displayed (implicit 0)
+        await expect(endpointsCard.getByText("0").or(quickStart)).toBeVisible({
           timeout: 10000,
         });
       },

@@ -27,6 +27,9 @@ kubernetes:
   kubeconfig: ""
   router_access_mode: "LoadBalancer"
 
+cluster:
+  version: "v1.0.0"
+
 engine:
   name: "vllm"
   version: "v0.8.5"

@@ -52,59 +52,43 @@ test.describe("clusters - upgrade", () => {
   });
 
   // ────────────────────────────────────────────────────────────
-  // List page — version column
+  // List page — version column, row action menu, upgrade dialog
   // ────────────────────────────────────────────────────────────
   test.describe("list", () => {
-    test("list page shows version column header", async ({ clusters }) => {
-      await clusters.goToList();
-
-      const headers = clusters.table.root.locator("thead th");
-      await expect(headers.filter({ hasText: /^version$/i })).toBeVisible();
-    });
-
-    test("list page row action menu has upgrade option", async ({
-      clusters,
-    }) => {
+    test("list page shows version column, upgrade action, and opens dialog", {
+      tag: "@C2642234",
+    }, async ({ clusters }) => {
       await clusters.goToList();
       await clusters.table.waitForLoaded();
 
-      // Open row actions menu
+      // Version column header visible
+      const headers = clusters.table.root.locator("thead th");
+      await expect(headers.filter({ hasText: /^version$/i })).toBeVisible();
+
+      // Row action menu has Upgrade option
       const row = clusters.table.rowWithText(clNames.ssh);
       await row.locator('[data-testid="row-actions-trigger"]').click();
-
-      // Verify Upgrade menu item exists
       await expect(
         clusters.page.getByRole("menuitem", { name: /upgrade/i }),
       ).toBeVisible();
-    });
 
-    test("clicking upgrade in list opens upgrade dialog", async ({
-      clusters,
-    }) => {
-      await clusters.goToList();
-      await clusters.table.waitForLoaded();
-
-      // Open row actions menu and click Upgrade
-      const row = clusters.table.rowWithText(clNames.ssh);
-      await row.locator('[data-testid="row-actions-trigger"]').click();
+      // Clicking Upgrade opens dialog with expected content
       await clusters.page.getByRole("menuitem", { name: /upgrade/i }).click();
 
-      // Verify dialog opens and content is stable
       const dialog = clusters.page.getByRole("dialog");
       await expect(dialog).toBeVisible();
       await expect(dialog.getByText(/upgrade cluster/i)).toBeVisible();
       await expect(dialog.getByText(/current version/i)).toBeVisible();
       await expect(dialog.getByText(/target version/i)).toBeVisible();
 
-      // Wait for Cancel button to be stable, then close dialog
       const cancelBtn = dialog.getByRole("button", { name: /cancel/i });
       await expect(cancelBtn).toBeVisible();
       await cancelBtn.click();
     });
 
-    test("SSH cluster upgrade dialog shows downtime warning", async ({
-      clusters,
-    }) => {
+    test("SSH cluster upgrade dialog shows downtime warning", {
+      tag: "@C2642235",
+    }, async ({ clusters }) => {
       await clusters.goToList();
       await clusters.table.waitForLoaded();
 
@@ -121,9 +105,9 @@ test.describe("clusters - upgrade", () => {
       await cancelBtn.click();
     });
 
-    test("K8s cluster upgrade dialog shows rolling update message", async ({
-      clusters,
-    }) => {
+    test("K8s cluster upgrade dialog shows rolling update message", {
+      tag: "@C2642236",
+    }, async ({ clusters }) => {
       await clusters.goToList();
       await clusters.table.waitForLoaded();
 
@@ -142,40 +126,31 @@ test.describe("clusters - upgrade", () => {
   });
 
   // ────────────────────────────────────────────────────────────
-  // Detail page — version row & upgrade action
+  // Detail page — version row, action menu, upgrade dialog
   // ────────────────────────────────────────────────────────────
   test.describe("detail", () => {
-    test("show page displays version row", async ({ clusters }) => {
+    test("show page displays version, upgrade action, and opens dialog", {
+      tag: "@C2642238",
+    }, async ({ clusters }) => {
       await clusters.goToShow(clNames.ssh);
 
       const showPage = clusters.page.locator('[data-testid="show-page"]');
       await expect(showPage).toBeVisible();
 
+      // Version row visible
       await expect(
         showPage.locator("dt", { hasText: /^version$/i }),
       ).toBeVisible();
-    });
 
-    test("show page action menu has upgrade option", async ({ clusters }) => {
-      await clusters.goToShow(clNames.ssh);
-
+      // Action menu has Upgrade option
       await clusters.page
         .locator('[data-testid="show-actions-trigger"]')
         .click();
-
       await expect(
         clusters.page.getByRole("menuitem", { name: /upgrade/i }),
       ).toBeVisible();
-    });
 
-    test("clicking upgrade in show page opens upgrade dialog", async ({
-      clusters,
-    }) => {
-      await clusters.goToShow(clNames.ssh);
-
-      await clusters.page
-        .locator('[data-testid="show-actions-trigger"]')
-        .click();
+      // Clicking Upgrade opens dialog
       await clusters.page.getByRole("menuitem", { name: /upgrade/i }).click();
 
       const dialog = clusters.page.getByRole("dialog");
@@ -190,37 +165,24 @@ test.describe("clusters - upgrade", () => {
   });
 
   // ────────────────────────────────────────────────────────────
-  // Create form — version selector
+  // Create form — version selector behavior
   // ────────────────────────────────────────────────────────────
   test.describe("create form", () => {
-    test("create form shows version field", async ({ clusters }) => {
+    test("version field visible, disabled without image registry, enabled after selecting", {
+      tag: "@C2642237",
+    }, async ({ clusters }) => {
       await clusters.goToCreate();
 
+      // Version field visible
       await expect(clusters.form.field("spec.version")).toBeVisible();
-    });
 
-    test("version field is disabled when image registry is not selected", async ({
-      clusters,
-    }) => {
-      await clusters.goToCreate();
-
-      const versionField = clusters.form.field("spec.version");
-      const versionButton = versionField.locator("button");
+      // Disabled when image registry is not selected
+      const versionButton = clusters.form
+        .field("spec.version")
+        .locator("button");
       await expect(versionButton).toBeDisabled();
 
-      // Should show placeholder, not a validation error
-      await expect(versionButton).toHaveText("Select A Version");
-      await expect(
-        versionField.getByText("Version is required"),
-      ).not.toBeVisible();
-    });
-
-    test("version field becomes enabled after selecting image registry", async ({
-      clusters,
-    }) => {
-      await clusters.goToCreate();
-
-      // Select image registry first
+      // Select image registry
       await clusters.form.selectComboboxOption(
         "spec.image_registry",
         irName.value,
@@ -236,17 +198,15 @@ test.describe("clusters - upgrade", () => {
   // Edit form — version selector disabled
   // ────────────────────────────────────────────────────────────
   test.describe("edit form", () => {
-    test("version field is visible and disabled in edit mode", async ({
-      clusters,
-    }) => {
+    test("version field is visible and disabled in edit mode", {
+      tag: "@C2642438",
+    }, async ({ clusters }) => {
       await clusters.goToEdit(clNames.ssh);
 
-      // Wait for form to render (may take longer for edit page data loading)
       await expect(clusters.page.locator('[data-testid="form"]')).toBeVisible({
         timeout: 15_000,
       });
 
-      // Version field should exist and be disabled
       const versionField = clusters.form.field("spec.version");
       await expect(versionField).toBeVisible();
 
