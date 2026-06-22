@@ -49,16 +49,16 @@ import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import {
+  calculateVgpuCardCapacity,
+  countFullCardAvailableDevicesByProduct,
+} from "@/foundation/lib/gpu-device-resources";
+import { cn } from "@/foundation/lib/utils";
+import {
   composeEndpointSpec,
   defaultEnabledFeatures,
 } from "@/foundation/recipe/compose";
 import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
 import type { ComposedSpec, RecipeInputSpec } from "@/foundation/recipe/types";
-import {
-  calculateVgpuCardCapacity,
-  countFullCardAvailableDevicesByProduct,
-} from "@/foundation/lib/gpu-device-resources";
-import { cn } from "@/foundation/lib/utils";
 
 // Reads `?model_catalog=<id>` off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
