@@ -96,6 +96,7 @@ export const ClustersList = () => {
                   ))}
               </span>
             )}
+            viewOptionsLabel={t("clusters.fields.acceleratorVirtualization")}
             accessorKey="spec.accelerator_virtualization"
             id="accelerator_virtualization"
             enableHiding

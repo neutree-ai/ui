@@ -40,7 +40,6 @@ import {
   type PropsWithChildren,
   type ReactElement,
   type ReactNode,
-  useCallback,
   useContext,
   useMemo,
 } from "react";
@@ -107,6 +106,7 @@ type ColumnProps<
   accessorKey: string;
   enableSorting?: boolean;
   enableHiding?: boolean;
+  viewOptionsLabel?: string;
   header?:
     | string
     | FC<{
@@ -117,10 +117,44 @@ type ColumnProps<
   filter?: FC<TableFilterProps<TData>>;
 };
 
-type CustomColumnDef<
+type CustomColumnDef<TData extends BaseRecord = BaseRecord> = ColumnDef<TData> &
+  Pick<ColumnProps<TData>, "filter">;
+
+type ColumnViewOptionsMeta = {
+  viewOptionsLabel?: string;
+};
+
+export const mapTableColumn = <
   TData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
-> = ColumnDef<TData, TError> & Pick<ColumnProps<TData, TError>, "filter">;
+>({
+  id,
+  accessorKey,
+  header,
+  enableSorting,
+  enableHiding,
+  viewOptionsLabel,
+  filter,
+  cell,
+}: ColumnProps<TData, unknown, TError>): CustomColumnDef<TData> => {
+  const column: CustomColumnDef<TData> = {
+    id,
+    header,
+    accessorKey,
+    enableSorting: enableSorting ?? false,
+    enableHiding: enableHiding ?? false,
+    enableColumnFilter: true,
+    enableResizing: true,
+    ...(viewOptionsLabel && { meta: { viewOptionsLabel } }),
+    ...((filter as FC<TableFilterProps<TData>>) && { filter }),
+  } as ColumnDef<TData>;
+
+  if (cell) {
+    column.cell = cell;
+  }
+
+  return column;
+};
 
 type TableProps<
   TData extends BaseRecord = BaseRecord,
@@ -398,6 +432,26 @@ EditAction.displayName = "EditAction";
 // DataTableViewOptions (internal)
 // ============================================================================
 
+export const getColumnViewOptionsLabel = <TData,>(
+  column: Column<TData>,
+  t: (key: string) => string,
+) => {
+  const meta = column.columnDef.meta as ColumnViewOptionsMeta | undefined;
+  if (meta?.viewOptionsLabel) {
+    return meta.viewOptionsLabel;
+  }
+
+  const header = column.columnDef.header;
+  if (typeof header === "string") {
+    return header;
+  }
+
+  const translatedLabel = t(column.id);
+  return translatedLabel === column.id
+    ? column.id.replace(/[_>-]+/g, " ").trim()
+    : translatedLabel;
+};
+
 const DataTableViewOptions = <TData,>({
   table,
 }: {
@@ -436,7 +490,7 @@ const DataTableViewOptions = <TData,>({
               checked={column.getIsVisible()}
               onCheckedChange={(value) => column.toggleVisibility(value)}
             >
-              {column?.columnDef?.header?.toString() || t(column.id)}
+              {getColumnViewOptionsLabel(column, t)}
             </DropdownMenuCheckboxItem>
           );
         })}
@@ -507,36 +561,6 @@ export function Table<
     isLoaded,
   } = useColumnVisibility(resource?.name || "");
 
-  const mapColumn = useCallback(
-    ({
-      id,
-      accessorKey,
-      header,
-      enableSorting,
-      enableHiding,
-      filter,
-      cell,
-    }: ColumnProps<TData, TError>): ColumnDef<TData> => {
-      const column: ColumnDef<TData> = {
-        id,
-        header,
-        accessorKey,
-        enableSorting: enableSorting ?? false,
-        enableHiding: enableHiding ?? false,
-        enableColumnFilter: true,
-        enableResizing: true,
-        ...((filter as FC<TableFilterProps<TData>>) && { filter }),
-      } as ColumnDef<TData>;
-
-      if (cell) {
-        column.cell = cell;
-      }
-
-      return column;
-    },
-    [],
-  );
-
   columns = useMemo<ColumnDef<TData>[]>(() => {
     const cols: ColumnDef<TData>[] = [];
 
@@ -572,12 +596,12 @@ export function Table<
       cols.push(
         ...(children as ReactElement[])
           .map((value: ReactElement) => value.props)
-          .map(mapColumn),
+          .map((props) => mapTableColumn<TData, TError>(props)),
       );
     }
 
     return cols;
-  }, [children, mapColumn, enableBatchDelete, t]);
+  }, [children, enableBatchDelete, t]);
 
   // Extract valid column IDs for cleanup
   const validColumnIds = useMemo(
@@ -653,7 +677,7 @@ export function Table<
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
                       const columnDef = header.column
-                        .columnDef as CustomColumnDef<TData, TError>;
+                        .columnDef as CustomColumnDef<TData>;
                       return (
                         <TableHead key={header.id}>
                           <div className="inline-flex flex-row items-center gap-x-2.5">
