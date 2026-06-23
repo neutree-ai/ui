@@ -152,10 +152,7 @@ function validateSelections(
 }
 
 /** Validates a raw input value; returns an error string or null. */
-export function validateInputValue(
-  f: RecipeFeature,
-  val: string,
-): string | null {
+function validateInputValue(f: RecipeFeature, val: string): string | null {
   if (val === "") {
     return inputRequired(f) ? "input is required" : null;
   }

@@ -240,7 +240,11 @@ function mkTypedRecipe(): RecipeInputSpec {
     deployment_options: null,
     variables: null,
     env: null,
-    variants: { default: { model: { registry: "hf", name: "m" } } },
+    variants: {
+      default: {
+        model: { registry: "hf", name: "m", file: "", version: "", task: "chat" },
+      },
+    },
     features: {
       attention: {
         type: "select",
