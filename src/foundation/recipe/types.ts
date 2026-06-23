@@ -25,15 +25,54 @@ export type RecipeVariant = {
   vram_minimum_gb?: number | null;
 };
 
+/** How a feature is selected and composed. Empty/undefined == "boolean". */
+export type RecipeFeatureType = "boolean" | "select" | "input";
+
+/** One choice of a select feature. Its engine_args/env merge on top of the
+ * feature's shared engine_args/env when chosen. */
+export type RecipeFeatureOption = {
+  description?: string;
+  engine_args?: Record<string, unknown> | null;
+  env?: Record<string, string> | null;
+};
+
+/** Free-input feature config: the user value replaces "${value}" inside the
+ * feature's engine_args/env (coerced to value_type). */
+export type RecipeFeatureInput = {
+  value_type?: "string" | "int" | "number" | "bool";
+  default?: string;
+  required?: boolean;
+  min?: number | null;
+  max?: number | null;
+  pattern?: string;
+  enum?: string[] | null;
+};
+
 export type RecipeFeature = {
   description?: string;
-  default?: boolean;
   /** Free-form grouping hint for the UI; "tuning" goes under a separate
    * "Performance tuning" section. No effect on composition. */
   category?: string;
+  conflicts_with?: string[] | null;
+  /** Feature shape; empty/undefined == "boolean". */
+  type?: RecipeFeatureType;
+  // boolean
+  default?: boolean;
   engine_args?: Record<string, unknown> | null;
   env?: Record<string, string> | null;
-  conflicts_with?: string[] | null;
+  // select
+  options?: Record<string, RecipeFeatureOption> | null;
+  default_option?: string;
+  // input
+  input?: RecipeFeatureInput | null;
+};
+
+/** One entry in an endpoint's ordered recipe feature selection. Value
+ * semantics depend on the feature's type: boolean ignores it; select stores
+ * the chosen option key; input stores the raw user value. */
+export type FeatureSelection = {
+  name: string;
+  value?: string;
 };
 
 /**

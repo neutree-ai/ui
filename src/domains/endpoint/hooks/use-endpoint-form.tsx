@@ -56,10 +56,14 @@ import {
 import { cn } from "@/foundation/lib/utils";
 import {
   composeEndpointSpec,
-  defaultEnabledFeatures,
+  defaultFeatureSelections,
 } from "@/foundation/recipe/compose";
 import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
-import type { ComposedSpec, RecipeInputSpec } from "@/foundation/recipe/types";
+import type {
+  ComposedSpec,
+  FeatureSelection,
+  RecipeInputSpec,
+} from "@/foundation/recipe/types";
 
 // Reads `?model_catalog=<id>` off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
@@ -116,7 +120,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [modelSearch, setModelSearch] = useState("");
   // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
   const [selectedVariant, setSelectedVariant] = useState<string>("");
-  const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
+  const [featureSelections, setFeatureSelections] = useState<FeatureSelection[]>([]);
   // Simplified-mode disclosure: when deploying from a Recipe catalog card the
   // model/engine/resources are auto-configured from the chosen variant, so the
   // raw fields and advanced resource controls start collapsed behind this toggle.
@@ -626,17 +630,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     return composeEndpointSpec(
       selectedCatalog.spec as RecipeInputSpec,
       selectedVariant,
-      enabledFeatures,
+      featureSelections,
     );
-  }, [selectedCatalog, isRecipeCatalog, selectedVariant, enabledFeatures]);
+  }, [selectedCatalog, isRecipeCatalog, selectedVariant, featureSelections]);
 
   // Apply a composed Recipe spec onto the form. Mirrors `applyCatalogSpec`'s
   // semantics (deep-merge over defaults) but uses the ComposedSpec fields and
-  // additionally writes the new ref fields (model_catalog/variant/enabled_features).
+  // additionally writes the new ref fields (model_catalog/variant/feature_selections).
   const applyComposedToForm = (
     catalogName: string,
     variant: string,
-    features: string[],
+    selections: FeatureSelection[],
     composed: ComposedSpec,
   ) => {
     // Build a pseudo catalog spec containing only the kernel fields so we can
@@ -656,7 +660,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // recomposing in the future without losing the user's selection.
     form.setValue("spec.model_catalog" as any, catalogName);
     form.setValue("spec.variant" as any, variant || DEFAULT_VARIANT);
-    form.setValue("spec.enabled_features" as any, features);
+    form.setValue("spec.feature_selections" as any, selections);
   };
 
   // Handle model catalog selection with merge logic. Trivial MCs go through
@@ -669,9 +673,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       // Clear recipe ref fields when going back to "none"
       form.setValue("spec.model_catalog" as any, "");
       form.setValue("spec.variant" as any, "");
-      form.setValue("spec.enabled_features" as any, []);
+      form.setValue("spec.feature_selections" as any, []);
       setSelectedVariant("");
-      setEnabledFeatures([]);
+      setFeatureSelections([]);
       return;
     }
 
@@ -686,11 +690,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       const initialVariant = variants.includes(DEFAULT_VARIANT)
         ? DEFAULT_VARIANT
         : (variants[0] ?? DEFAULT_VARIANT);
-      const initialFeatures = defaultEnabledFeatures(
+      const initialFeatures = defaultFeatureSelections(
         catalog.spec as RecipeInputSpec,
       );
       setSelectedVariant(initialVariant);
-      setEnabledFeatures(initialFeatures);
+      setFeatureSelections(initialFeatures);
       const result = composeEndpointSpec(
         catalog.spec as RecipeInputSpec,
         initialVariant,
@@ -709,9 +713,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       applyCatalogSpec(catalog.spec as Record<string, unknown>);
       form.setValue("spec.model_catalog" as any, "");
       form.setValue("spec.variant" as any, "");
-      form.setValue("spec.enabled_features" as any, []);
+      form.setValue("spec.feature_selections" as any, []);
       setSelectedVariant("");
-      setEnabledFeatures([]);
+      setFeatureSelections([]);
     }
   };
 
@@ -742,20 +746,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const result = composeEndpointSpec(
       selectedCatalog.spec as RecipeInputSpec,
       v,
-      enabledFeatures,
+      featureSelections,
     );
     if (result.ok) {
       applyComposedToForm(
         selectedCatalog.metadata.name,
         v,
-        enabledFeatures,
+        featureSelections,
         result.spec,
       );
     }
   };
 
-  const handleFeaturesChange = (next: string[]) => {
-    setEnabledFeatures(next);
+  const handleFeaturesChange = (next: FeatureSelection[]) => {
+    setFeatureSelections(next);
     if (!selectedCatalog) return;
     const result = composeEndpointSpec(
       selectedCatalog.spec as RecipeInputSpec,
@@ -1166,13 +1170,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             Object.keys(selectedCatalog.spec.features).length > 0 && (
               <FormFieldGroup
                 {...form}
-                name="spec.enabled_features"
+                name="spec.feature_selections"
                 label={t("endpoints.recipe.features", "Features")}
                 className="col-span-4"
               >
                 <FeaturePicker
                   features={selectedCatalog.spec.features ?? {}}
-                  value={enabledFeatures}
+                  value={featureSelections}
                   onChange={handleFeaturesChange}
                 />
               </FormFieldGroup>

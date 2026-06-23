@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { composeEndpointSpec, defaultEnabledFeatures } from "./compose";
+import { composeEndpointSpec, defaultFeatureSelections } from "./compose";
 import { DEFAULT_VARIANT, normalizeRecipe } from "./normalize";
-import type { RecipeInputSpec } from "./types";
+import type { FeatureSelection, RecipeInputSpec } from "./types";
+
+// fsel builds an ordered boolean-feature selection from feature names.
+function fsel(...names: string[]): FeatureSelection[] {
+  return names.map((name) => ({ name }));
+}
 
 // Helper: build a minimal RecipeInputSpec.
 function mkTrivial(overrides: Partial<RecipeInputSpec> = {}): RecipeInputSpec {
@@ -151,7 +156,7 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 
   it("features layer over variant in enabled order", () => {
-    const r = composeEndpointSpec(mkRecipe(), "bf16", ["reasoning", "tooling"]);
+    const r = composeEndpointSpec(mkRecipe(), "bf16", fsel("reasoning", "tooling"));
     expect(r.ok).toBe(true);
     if (!r.ok) throw new Error(r.error);
     expect(r.spec.engine_args.reasoning_parser).toBe("deepseek_r1");
@@ -159,15 +164,12 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 
   it("later features override earlier features (order matters)", () => {
-    const r1 = composeEndpointSpec(mkRecipe(), "bf16", [
-      "tooling",
-      "legacy_tooling",
-    ]);
+    const r1 = composeEndpointSpec(mkRecipe(), "bf16", fsel("tooling", "legacy_tooling"));
     // conflict, should error
     expect(r1.ok).toBe(false);
 
     // remove conflict by only enabling one tooling feature, then verify env
-    const r2 = composeEndpointSpec(mkRecipe(), "bf16", ["prefix_cache"]);
+    const r2 = composeEndpointSpec(mkRecipe(), "bf16", fsel("prefix_cache"));
     expect(r2.ok).toBe(true);
     if (!r2.ok) throw new Error(r2.error);
     expect(r2.spec.env.VLLM_USE_V1).toBe("1");
@@ -175,10 +177,7 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 
   it("reports conflicts_with errors with both feature names", () => {
-    const r = composeEndpointSpec(mkRecipe(), "bf16", [
-      "tooling",
-      "legacy_tooling",
-    ]);
+    const r = composeEndpointSpec(mkRecipe(), "bf16", fsel("tooling", "legacy_tooling"));
     expect(r.ok).toBe(false);
     if (r.ok) throw new Error("should fail");
     expect(r.error).toContain("tooling");
@@ -193,7 +192,7 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 
   it("rejects unknown feature", () => {
-    const r = composeEndpointSpec(mkRecipe(), "bf16", ["nonexistent"]);
+    const r = composeEndpointSpec(mkRecipe(), "bf16", fsel("nonexistent"));
     expect(r.ok).toBe(false);
     if (r.ok) throw new Error("should fail");
     expect(r.error).toMatch(/unknown feature/);
@@ -217,9 +216,92 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 });
 
-describe("defaultEnabledFeatures", () => {
-  it("returns feature keys whose default is true", () => {
-    const defs = defaultEnabledFeatures(mkRecipe());
-    expect(defs).toEqual(["reasoning"]);
+describe("defaultFeatureSelections", () => {
+  it("returns selections for features whose default is true", () => {
+    const defs = defaultFeatureSelections(mkRecipe());
+    expect(defs).toEqual([{ name: "reasoning" }]);
+  });
+
+  it("seeds select default_option and input default", () => {
+    const defs = defaultFeatureSelections(mkTypedRecipe());
+    expect(defs).toEqual([
+      { name: "attention", value: "flash_attn" },
+      { name: "max-len", value: "32768" },
+    ]);
+  });
+});
+
+function mkTypedRecipe(): RecipeInputSpec {
+  return {
+    model: null,
+    engine: { engine: "vllm", version: "0.7.0" },
+    resources: null,
+    replicas: null,
+    deployment_options: null,
+    variables: null,
+    env: null,
+    variants: { default: { model: { registry: "hf", name: "m" } } },
+    features: {
+      attention: {
+        type: "select",
+        options: {
+          flash_attn: { engine_args: { attention_backend: "FLASH_ATTN" } },
+          xformers: { engine_args: { attention_backend: "XFORMERS" } },
+        },
+        default_option: "flash_attn",
+      },
+      "max-len": {
+        type: "input",
+        input: { value_type: "int", default: "32768", min: 1, max: 262144 },
+        engine_args: { max_model_len: "${value}" },
+      },
+    },
+  };
+}
+
+describe("composeEndpointSpec — typed features", () => {
+  it("select merges the chosen option", () => {
+    const r = composeEndpointSpec(mkTypedRecipe(), "default", [
+      { name: "attention", value: "xformers" },
+    ]);
+    expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.spec.engine_args.attention_backend).toBe("XFORMERS");
+  });
+
+  it("input coerces int and substitutes ${value}", () => {
+    const r = composeEndpointSpec(mkTypedRecipe(), "default", [
+      { name: "max-len", value: "65536" },
+    ]);
+    expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.spec.engine_args.max_model_len).toBe(65536);
+  });
+
+  it("input falls back to default when value omitted", () => {
+    const r = composeEndpointSpec(mkTypedRecipe(), "default", [
+      { name: "max-len" },
+    ]);
+    expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.spec.engine_args.max_model_len).toBe(32768);
+  });
+
+  it("rejects an out-of-range input", () => {
+    const r = composeEndpointSpec(mkTypedRecipe(), "default", [
+      { name: "max-len", value: "999999999" },
+    ]);
+    expect(r.ok).toBe(false);
+    if (r.ok) throw new Error("should fail");
+    expect(r.error).toMatch(/maximum/);
+  });
+
+  it("rejects an unknown select option", () => {
+    const r = composeEndpointSpec(mkTypedRecipe(), "default", [
+      { name: "attention", value: "ghost" },
+    ]);
+    expect(r.ok).toBe(false);
+    if (r.ok) throw new Error("should fail");
+    expect(r.error).toMatch(/no option/);
   });
 });

@@ -4,6 +4,10 @@ import type {
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
 import type {
+  FeatureSelection,
+  RecipeFeature,
+} from "@/foundation/recipe/types";
+import type {
   DeploymentOptions,
   EndpointEngineSpec,
   ModelSpec,
@@ -43,7 +47,7 @@ export type EndpointSpec = {
   // expanded model/resources/variables/env so existing backends keep working.
   model_catalog?: string;
   variant?: string;
-  enabled_features?: string[];
+  feature_selections?: FeatureSelection[];
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
@@ -121,17 +125,7 @@ export type EndpointModelCatalogRef = {
         vram_minimum_gb?: number | null;
       }
     > | null;
-    features?: Record<
-      string,
-      {
-        description?: string;
-        default?: boolean;
-        category?: string;
-        engine_args?: Record<string, unknown> | null;
-        env?: Record<string, string> | null;
-        conflicts_with?: string[] | null;
-      }
-    > | null;
+    features?: Record<string, RecipeFeature> | null;
   };
 };
 
