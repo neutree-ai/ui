@@ -1,3 +1,4 @@
+import { useForm } from "@refinedev/react-hook-form";
 import { Input } from "@/components/ui/input";
 import { transformModelRegistryValues } from "@/domains/model-registry/lib/transform-model-registry-values";
 import type { ModelRegistry } from "@/domains/model-registry/types";
@@ -9,7 +10,6 @@ import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { isNfsProtocol } from "@/foundation/lib/validate";
-import { useForm } from "@refinedev/react-hook-form";
 
 export const useModelRegistryForm = ({
   action,
@@ -46,6 +46,7 @@ export const useModelRegistryForm = ({
     const transformedValues = transformModelRegistryValues(
       values as ModelRegistry,
       isEdit,
+      form.formState.dirtyFields,
     );
 
     return originalOnFinish(transformedValues);

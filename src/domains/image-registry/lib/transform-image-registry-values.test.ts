@@ -1,5 +1,5 @@
-import type { ImageRegistry } from "@/domains/image-registry/types";
 import { describe, expect, it } from "vitest";
+import type { ImageRegistry } from "@/domains/image-registry/types";
 import { transformImageRegistryValues } from "./transform-image-registry-values";
 
 const makeRegistry = (
@@ -34,12 +34,21 @@ describe("transformImageRegistryValues", () => {
     expect(result.spec.authconfig.password).toBe("pass");
   });
 
-  it("removes empty username and password in edit mode", () => {
+  it("removes unchanged empty username and password in edit mode", () => {
     const result = transformImageRegistryValues(
       makeRegistry({ username: "", password: "" }),
       true,
     );
     expect(result.spec.authconfig.username).toBeUndefined();
     expect(result.spec.authconfig.password).toBeUndefined();
+  });
+  it("preserves dirty empty username and password in edit mode", () => {
+    const result = transformImageRegistryValues(
+      makeRegistry({ username: "", password: "" }),
+      true,
+      { spec: { authconfig: { username: true, password: true } } },
+    );
+    expect(result.spec.authconfig.username).toBe("");
+    expect(result.spec.authconfig.password).toBe("");
   });
 });

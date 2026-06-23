@@ -1,5 +1,5 @@
-import type { UpstreamSpec } from "@/domains/external-endpoint/types";
 import { describe, expect, it } from "vitest";
+import type { UpstreamSpec } from "@/domains/external-endpoint/types";
 import { cleanUpstreamsForSubmit } from "./clean-upstreams-for-submit";
 
 describe("cleanUpstreamsForSubmit", () => {
@@ -27,10 +27,16 @@ describe("cleanUpstreamsForSubmit", () => {
   });
 
   describe("edit mode (isEdit=true)", () => {
-    it("removes empty credential so backend retains existing value", () => {
+    it("removes unchanged empty credential so backend retains existing value", () => {
       const result = cleanUpstreamsForSubmit([baseUpstream], true);
       expect(result[0].auth).toEqual({ type: "bearer" });
       expect("credential" in (result[0].auth ?? {})).toBe(false);
+    });
+    it("preserves dirty empty credential", () => {
+      const result = cleanUpstreamsForSubmit([baseUpstream], true, [
+        { auth: { credential: true } },
+      ]);
+      expect(result[0].auth).toEqual({ type: "bearer", credential: "" });
     });
 
     it("preserves non-empty credential", () => {

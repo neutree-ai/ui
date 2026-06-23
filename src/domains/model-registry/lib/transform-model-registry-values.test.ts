@@ -1,5 +1,5 @@
-import type { ModelRegistry } from "@/domains/model-registry/types";
 import { describe, expect, it } from "vitest";
+import type { ModelRegistry } from "@/domains/model-registry/types";
 import { transformModelRegistryValues } from "./transform-model-registry-values";
 
 const makeRegistry = (credentials?: string): ModelRegistry =>
@@ -24,8 +24,14 @@ describe("transformModelRegistryValues", () => {
     expect(result.spec.credentials).toBe("token-123");
   });
 
-  it("removes empty credentials in edit mode", () => {
+  it("removes unchanged empty credentials in edit mode", () => {
     const result = transformModelRegistryValues(makeRegistry(""), true);
     expect(result.spec.credentials).toBeUndefined();
+  });
+  it("preserves dirty empty credentials in edit mode", () => {
+    const result = transformModelRegistryValues(makeRegistry(""), true, {
+      spec: { credentials: true },
+    });
+    expect(result.spec.credentials).toBe("");
   });
 });
