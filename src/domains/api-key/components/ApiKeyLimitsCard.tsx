@@ -16,8 +16,10 @@ import { Form } from "@/components/ui/form";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
 import {
   type ApiKeyPolicyFormValues,
+  type QuotaPeriod,
   apiKeyPolicyDefaults,
   limitsToForm,
+  QUOTA_PERIODS,
   summarizeApiKeyLimits,
   useApiKeyDisable,
   useApiKeyLimits,
@@ -61,7 +63,9 @@ export const ApiKeyLimitsCard = ({
   }, [apiKeyId]);
 
   useEffect(() => {
-    refresh();
+    // Load failures (network/auth) just leave the default empty state; swallow
+    // so they don't surface as an unhandled promise rejection.
+    refresh().catch(() => {});
   }, [refresh]);
 
   const summary = summarizeApiKeyLimits(limits);
@@ -93,6 +97,11 @@ export const ApiKeyLimitsCard = ({
   // convey overage); fall back to limit - used when it isn't provided.
   const remaining =
     typeof quota?.remaining === "number" ? quota.remaining : limit - used;
+  // Clamp the period to a known value so the i18n lookup never renders the raw
+  // key when the backend returns an unexpected period.
+  const period: QuotaPeriod = QUOTA_PERIODS.includes(quota?.period as QuotaPeriod)
+    ? (quota?.period as QuotaPeriod)
+    : "monthly";
   const ratio = hasQuota ? used / limit : 0;
   const pct = Math.max(0, Math.min(100, ratio * 100));
   const over = hasQuota && used >= limit;
@@ -163,9 +172,7 @@ export const ApiKeyLimitsCard = ({
               {fmt(used)} / {fmt(limit)} {t("api_keys.limits.tokensUnit")} ·{" "}
               {t("api_keys.limits.remainingLabel")}:{" "}
               {fmt(remaining)} ·{" "}
-              {t(
-                `api_keys.limits.periods.${quota?.period ?? "monthly"}`,
-              )}
+              {t(`api_keys.limits.periods.${period}`)}
             </div>
           </div>
         )}

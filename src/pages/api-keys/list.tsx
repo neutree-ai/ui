@@ -55,7 +55,9 @@ export const ApiKeysList = () => {
   const { data: keysData } = useList<ApiKey>({
     resource: "api_keys",
     pagination: { mode: "off" },
-    meta: { workspace },
+    // workspaced: true is what the data provider checks to apply the
+    // metadata->workspace filter (resource meta isn't merged here).
+    meta: { workspace, workspaced: true },
     queryOptions: { enabled: Boolean(workspace) },
   });
   const rankingKeys = useMemo(() => {
