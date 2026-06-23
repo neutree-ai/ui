@@ -34,9 +34,14 @@ export const ApiKeysList = () => {
   const [open, setOpen] = useState(false);
   const metadataColumns = useMetadataColumns();
   const { current: workspace } = useWorkspace();
-  const usageByKey = useAllApiKeyUsage(workspace);
-  const trafficByKey = useAllApiKeyTraffic(workspace);
-  const modelMap = useWorkspaceModelMap(workspace);
+  // These aggregates are per-workspace RPCs; ALL_WORKSPACES (`_all_`) is a
+  // UI-only sentinel, not a real workspace, so gate them to a concrete value
+  // (the hooks no-op on undefined) instead of firing p_workspace="_all_".
+  const scopedWorkspace =
+    workspace === ALL_WORKSPACES ? undefined : workspace;
+  const usageByKey = useAllApiKeyUsage(scopedWorkspace);
+  const trafficByKey = useAllApiKeyTraffic(scopedWorkspace);
+  const modelMap = useWorkspaceModelMap(scopedWorkspace);
   const { disable, enable } = useApiKeyDisable();
   const invalidate = useInvalidate();
   const refresh = useCallback(

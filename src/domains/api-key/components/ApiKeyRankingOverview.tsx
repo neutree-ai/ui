@@ -31,7 +31,11 @@ const RankingPanel = ({
 }) => {
   const { t } = useTranslation();
   const total = entries.reduce((s, e) => s + e.value, 0);
-  const top = entries.filter((e) => e.value > 0).slice(0, 3);
+  // Rank by value descending before taking the top 3 (input is unsorted).
+  const top = entries
+    .filter((e) => e.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3);
   const others = total - top.reduce((s, e) => s + e.value, 0);
   const pie = [
     ...top.map((e) => ({ name: e.name, value: e.value })),

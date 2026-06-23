@@ -9,7 +9,8 @@ import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 //   create_api_key(..., p_limits)      - create with limits (atomic)
 //   get_api_key_limits(p_id)           - config + current-period used/remaining
 //   set_api_key_limits(p_id, p_limits) - replace the limits object
-// Types/constants are declared locally (no cross-domain import).
+// Form types/constants live here; the shared ApiKeyLimits type comes from the
+// domain's types.ts and trace stats from the foundation API layer.
 
 export const QUOTA_PERIODS = ["daily", "weekly", "monthly", "yearly"] as const;
 export type QuotaPeriod = (typeof QUOTA_PERIODS)[number];
