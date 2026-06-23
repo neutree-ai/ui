@@ -827,7 +827,10 @@
 			"performanceTuning": "Performance tuning",
 			"verifiedOn": "Verified on:",
 			"vramOk": "Sufficient VRAM",
-			"vramLow": "Insufficient VRAM"
+			"vramLow": "Insufficient VRAM",
+			"resourceEstimate": "Resource estimate",
+			"estimatedVram": "Estimated VRAM",
+			"replicasCount": "{{count}} replica"
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",
@@ -850,6 +853,11 @@
 			"stdoutLogsNotAvailable": "Stdout logs not available",
 			"failedToLoadRayApplication": "Failed to load Ray application information. Please check if the cluster is accessible.",
 			"noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
+		},
+		"simplified": {
+			"autoConfigured": "Model, engine and resources are auto-configured from the selected variant.",
+			"showAdvanced": "Show all options",
+			"hideAdvanced": "Hide advanced options"
 		}
 	},
 	"external_endpoints": {

@@ -1,10 +1,11 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { CircleHelp } from "lucide-react";
+import { ChevronDown, CircleHelp, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
@@ -116,6 +117,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
   const [selectedVariant, setSelectedVariant] = useState<string>("");
   const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
+  // Simplified-mode disclosure: when deploying from a Recipe catalog card the
+  // model/engine/resources are auto-configured from the chosen variant, so the
+  // raw fields and advanced resource controls start collapsed behind this toggle.
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm<Endpoint>({
     mode: "all",
@@ -792,6 +797,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     />
   ) : null;
 
+  // Simplified mode applies only to creating an endpoint from a Recipe catalog
+  // (the "deploy from card" entry). In that flow model/engine/resources are
+  // already composed from the variant, so we hide the raw fields by default and
+  // surface only the essentials (variant, replicas, cluster, accelerator) plus a
+  // lightweight resource estimate. `showFull` re-reveals every advanced control.
+  const simplified = !isEdit && isRecipeCatalog && Boolean(selectedCatalog);
+  const showFull = !simplified || showAdvanced;
+
+  // Active variant + its display metadata, used for the estimate summary.
+  const activeVariant =
+    selectedCatalog?.spec.variants?.[selectedVariant] ??
+    selectedCatalog?.spec.variants?.["default"];
+  const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
+  const estimatedTotalVramGb =
+    activeVariantVram != null ? activeVariantVram * replicaCount : null;
+  const activeModelInfo = activeVariant?.model?.info ?? null;
+
   const formWithTransformedOnFinish = {
     ...form,
     refineCore: {
@@ -865,6 +887,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </FormFieldGroup>
             </div>
           )}
+          {showFull && (
+            <>
           <FormFieldGroup
             {...form}
             name="spec.model.registry"
@@ -933,6 +957,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           >
             <Input />
           </FormFieldGroup>
+            </>
+          )}
           <FormFieldGroup
             {...form}
             name="spec.replicas.num"
@@ -942,6 +968,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           </FormFieldGroup>
         </FormCardGrid>
 
+        {showFull && (
         <FormCardGrid title={t("endpoints.sections.engineSettings")}>
           <FormFieldGroup
             {...form}
@@ -1001,6 +1028,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             />
           </FormFieldGroup>
         </FormCardGrid>
+        )}
       </>
     ),
     // Recipe selection section — shown only when the selected MC is a Recipe MC.
@@ -1066,6 +1094,76 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </div>
             );
           })()}
+          {(estimatedTotalVramGb != null || activeModelInfo) && (
+            <div className="col-span-4 rounded-lg border bg-muted/20 p-3">
+              <div className="mb-2 text-sm font-medium">
+                {t("endpoints.recipe.resourceEstimate", "Resource estimate")}
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                {estimatedTotalVramGb != null && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("endpoints.recipe.estimatedVram", "Estimated VRAM")}
+                    </div>
+                    <div className="mt-1 font-semibold tabular-nums">
+                      ≈ {estimatedTotalVramGb} GB
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {activeVariantVram} GB ×{" "}
+                      {t("endpoints.recipe.replicasCount", "{{count}} replica", {
+                        count: replicaCount,
+                      })}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.parameter_count && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("model_catalogs.modelInfo.parameterCount", "Parameters")}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.parameter_count}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.quantization && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("model_catalogs.modelInfo.quantization", "Quantization")}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.quantization}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.context_length && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t(
+                        "model_catalogs.modelInfo.contextLength",
+                        "Context length",
+                      )}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.context_length}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.architecture && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("model_catalogs.modelInfo.architecture", "Architecture")}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.architecture}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {showFull && (
+            <>
           {selectedCatalog.spec.features &&
             Object.keys(selectedCatalog.spec.features).length > 0 && (
               <FormFieldGroup
@@ -1091,6 +1189,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               }
             />
           </div>
+            </>
+          )}
         </FormCardGrid>
       ) : null,
     // Scheduling target and resource selection section - always visible.
@@ -1174,7 +1274,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             data-testid="endpoint-resource-layout-grid"
             className={cn(
               "grid gap-3",
-              currentCluster
+              showFull && currentCluster
                 ? "xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]"
                 : "xl:grid-cols-[minmax(360px,420px)]",
             )}
@@ -1374,6 +1474,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       />
                     </FormFieldGroup>
 
+                    {showFull && (
                     <div
                       data-testid="endpoint-virtual-card-split-group"
                       className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
@@ -1444,9 +1545,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         />
                       </FormFieldGroup>
                     </div>
+                    )}
                   </div>
 
-                  {selectedAccelerator?.type &&
+                  {showFull &&
+                    selectedAccelerator?.type &&
                     selectedAccelerator?.product && (
                       <div
                         data-testid="endpoint-current-request-panel"
@@ -1555,7 +1658,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
               </section>
             </div>
-            {clusterGpuResourcesPanel && (
+            {showFull && clusterGpuResourcesPanel && (
               <div
                 data-testid="endpoint-resource-context"
                 className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm"
@@ -1577,7 +1680,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     // Advanced settings keep endpoint deployment controls and runtime details.
-    customizeFields: (
+    // Hidden in simplified mode until the user expands the advanced disclosure.
+    customizeFields: showFull ? (
       <FormCardGrid title={t("endpoints.sections.advancedOptions")}>
         <FormFieldGroup
           {...form}
@@ -1619,6 +1723,35 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           <VariablesInput schema={{}} />
         </FormFieldGroup>
       </FormCardGrid>
-    ),
+    ) : null,
+    // Simplified-mode banner + disclosure toggle. Null outside simplified mode so
+    // the standard create/edit layouts are unaffected.
+    advancedToggle: simplified ? (
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2.5">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Sparkles className="size-4 text-primary" />
+          {t(
+            "endpoints.simplified.autoConfigured",
+            "Model, engine and resources are auto-configured from the selected variant.",
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAdvanced((v) => !v)}
+        >
+          {showAdvanced
+            ? t("endpoints.simplified.hideAdvanced", "Hide advanced options")
+            : t("endpoints.simplified.showAdvanced", "Show all options")}
+          <ChevronDown
+            className={cn(
+              "ml-1 size-4 transition-transform",
+              showAdvanced && "rotate-180",
+            )}
+          />
+        </Button>
+      </div>
+    ) : null,
   };
 };
