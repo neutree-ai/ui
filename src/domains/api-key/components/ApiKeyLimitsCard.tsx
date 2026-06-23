@@ -140,7 +140,7 @@ export const ApiKeyLimitsCard = ({
                   disabled={toggling}
                   onSelect={(e) => {
                     e.preventDefault();
-                    toggleDisabled();
+                    void toggleDisabled().catch(() => {});
                   }}
                 >
                   {disabled

@@ -223,7 +223,15 @@ export const ApiKeysList = () => {
               title={t("buttons.edit")}
               icon={<Pencil size={16} />}
               onClick={() => {
-                if (original.id) show("api_keys", original.id);
+                const k = original as ApiKey;
+                // The api_keys show route is keyed by metadata.name (not the raw
+                // key id), and in the ALL_WORKSPACES view the row's own
+                // workspace must fill the :workspace route param.
+                if (k.metadata?.name) {
+                  show("api_keys", k.metadata.name, "push", {
+                    workspace: k.metadata.workspace,
+                  });
+                }
               }}
             />
             <RowAction
@@ -233,10 +241,11 @@ export const ApiKeysList = () => {
                   : t("api_keys.limits.disable")
               }
               icon={isDisabled ? <Power size={16} /> : <PowerOff size={16} />}
-              onClick={async () => {
-                if (isDisabled) await enable(String(original.id));
-                else await disable(String(original.id));
-                refresh();
+              onClick={() => {
+                const id = String(original.id);
+                void (isDisabled ? enable(id) : disable(id))
+                  .then(() => refresh())
+                  .catch(() => {});
               }}
             />
             <Table.DeleteAction
