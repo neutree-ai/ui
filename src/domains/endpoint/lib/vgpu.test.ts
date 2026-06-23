@@ -125,15 +125,12 @@ describe("endpoint vgpu helpers", () => {
     );
   });
 
-  it("shows endpoint vGPU dashboard only for virtualized Kubernetes clusters with vGPU resources", () => {
+  it("shows endpoint vGPU dashboard for virtualized Kubernetes clusters with GPU resources", () => {
     const resources = {
       gpu: 1,
       accelerator: {
         type: "nvidia_gpu",
         product: "Tesla-T4",
-        virtualization: {
-          memory_mib: 10240,
-        },
       },
     } as ResourceSpec;
 
@@ -146,15 +143,28 @@ describe("endpoint vgpu helpers", () => {
     ).toBe(true);
   });
 
+  it("hides endpoint vGPU dashboard for virtualized Kubernetes clusters without GPU resources", () => {
+    expect(
+      shouldShowEndpointVgpuDashboard({
+        clusterType: "kubernetes",
+        acceleratorVirtualizationEnabled: true,
+        resources: {
+          gpu: 0,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        } as ResourceSpec,
+      }),
+    ).toBe(false);
+  });
+
   it("hides endpoint vGPU dashboard for static or non-virtualized clusters", () => {
     const resources = {
       gpu: 1,
       accelerator: {
         type: "nvidia_gpu",
         product: "Tesla-T4",
-        virtualization: {
-          memory_mib: 10240,
-        },
       },
     } as ResourceSpec;
 

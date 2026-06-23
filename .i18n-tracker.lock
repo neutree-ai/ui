@@ -299,7 +299,7 @@
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "b7e55f4a3573c6f2f2e51d8171cbf393",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "5f008c9efecb5f75398ae4fb67414d69",
   "src/components/ui/calendar.tsx": "dfedaf90a75014faab50dfb32b28c5b2",
-  "src/domains/endpoint/lib/vgpu.ts": "f9e3b91420367baf5242c24f5a34c9db",
+  "src/domains/endpoint/lib/vgpu.ts": "5890ccbb5dbd6a09f2148b49aa0c5843",
   "src/domains/endpoint/hooks/use-endpoint-vgpu-monitor-context.ts": "2b46ebf04e431b64cec084e639a1ca36",
   "src/domains/endpoint/lib/resource-status.ts": "1d669dc5739659417edd30ac0dd50836",
   "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "222507fc00e591f68443d5f3a6b7925f",

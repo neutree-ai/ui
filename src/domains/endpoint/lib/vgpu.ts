@@ -67,6 +67,11 @@ export function hasVgpuResources(
   return Boolean(resources?.accelerator?.type && hasVirtualMemory);
 }
 
+function hasGpuResources(resources: ResourceSpec | null | undefined): boolean {
+  const gpu = toOptionalNumber(resources?.gpu);
+  return gpu !== undefined && gpu > 0;
+}
+
 export function shouldShowEndpointVgpuDashboard({
   clusterType,
   acceleratorVirtualizationEnabled,
@@ -79,7 +84,7 @@ export function shouldShowEndpointVgpuDashboard({
   return (
     clusterType === "kubernetes" &&
     acceleratorVirtualizationEnabled === true &&
-    hasVgpuResources(resources)
+    hasGpuResources(resources)
   );
 }
 
