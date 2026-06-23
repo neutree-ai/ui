@@ -407,6 +407,7 @@ export function useAllApiKeyTraffic(
       return;
     }
     const controller = new AbortController();
+    let cancelled = false;
     (async () => {
       try {
         const res = await fetchAITraceKeyStats(
@@ -426,12 +427,13 @@ export function useAllApiKeyTraffic(
             successRate: requests > 0 ? success / requests : null,
           });
         }
-        setByKey(m);
+        if (!cancelled) setByKey(m);
       } catch {
-        setByKey(new Map());
+        if (!cancelled) setByKey(new Map());
       }
     })();
     return () => {
+      cancelled = true;
       controller.abort();
     };
   }, [workspace, windowHours]);
