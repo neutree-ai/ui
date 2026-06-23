@@ -5,14 +5,11 @@ import {
   getEndpointReplicaResourceGroups,
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
-import { hasVgpuResources } from "@/domains/endpoint/lib/vgpu";
 import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
-import type { ResourceSpec } from "@/foundation/types/serving-types";
 
 type EndpointRuntimeResourcesCardProps = {
-  requestedResources: ResourceSpec | null | undefined;
   resources: EndpointResourceStatus | null | undefined;
 };
 
@@ -49,14 +46,9 @@ const ResourceValue = ({
 );
 
 export default function EndpointRuntimeResourcesCard({
-  requestedResources,
   resources,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
-
-  if (!hasVgpuResources(requestedResources)) {
-    return null;
-  }
 
   const summaryRows = getEndpointResourceSummaryRows(resources);
   const replicaGroups = getEndpointReplicaResourceGroups(resources);

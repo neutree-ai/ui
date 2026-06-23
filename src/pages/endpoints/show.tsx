@@ -331,7 +331,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Row>
               </div>
               <EndpointRuntimeResourcesCard
-                requestedResources={record.spec.resources}
                 resources={record.status?.resources}
               />
             </CardContent>

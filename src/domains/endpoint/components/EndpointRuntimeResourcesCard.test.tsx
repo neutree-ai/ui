@@ -6,25 +6,10 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-const vgpuRequestedResources = {
-  cpu: 2,
-  memory: 8,
-  gpu: null,
-  accelerator: {
-    type: "nvidia_gpu",
-    product: "Tesla-T4",
-    virtualization: {
-      memory_mib: 8192,
-      core_percent: 0,
-    },
-  },
-};
-
 describe("EndpointRuntimeResourcesCard", () => {
   it("renders virtual allocated resource summary and replica groups", () => {
     const { container } = render(
       <EndpointRuntimeResourcesCard
-        requestedResources={vgpuRequestedResources}
         resources={{
           summary: {
             products: {
@@ -109,26 +94,14 @@ describe("EndpointRuntimeResourcesCard", () => {
 
   it("renders nothing when runtime resources are empty", () => {
     const { container } = render(
-      <EndpointRuntimeResourcesCard
-        requestedResources={vgpuRequestedResources}
-        resources={null}
-      />,
+      <EndpointRuntimeResourcesCard resources={null} />,
     );
     expect(container.childElementCount).toBe(0);
   });
 
-  it("renders nothing for full-card resources", () => {
+  it("renders allocated resources when status resources are present", () => {
     const { container } = render(
       <EndpointRuntimeResourcesCard
-        requestedResources={{
-          cpu: 2,
-          memory: 8,
-          gpu: null,
-          accelerator: {
-            type: "nvidia_gpu",
-            product: "Tesla-T4",
-          },
-        }}
         resources={{
           summary: {
             products: {
@@ -157,6 +130,10 @@ describe("EndpointRuntimeResourcesCard", () => {
         }}
       />,
     );
-    expect(container.childElementCount).toBe(0);
+    expect(container.firstElementChild?.className).toContain("border-t");
+    expect(
+      screen.getByText("endpoints.sections.allocatedResources"),
+    ).toBeTruthy();
+    expect(screen.getByText("1 replica / 1 allocated card")).toBeTruthy();
   });
 });
