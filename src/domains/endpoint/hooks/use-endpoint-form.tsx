@@ -1162,8 +1162,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </div>
             </div>
           )}
-          {showFull && (
-            <>
           {selectedCatalog.spec.features &&
             Object.keys(selectedCatalog.spec.features).length > 0 && (
               <FormFieldGroup
@@ -1179,17 +1177,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 />
               </FormFieldGroup>
             )}
-          <div className="col-span-4">
-            <ComposePreview
-              composed={
-                composeResult && composeResult.ok ? composeResult.spec : null
-              }
-              error={
-                composeResult && !composeResult.ok ? composeResult.error : null
-              }
-            />
-          </div>
-            </>
+          {showFull && (
+            <div className="col-span-4">
+              <ComposePreview
+                composed={
+                  composeResult && composeResult.ok ? composeResult.spec : null
+                }
+                error={
+                  composeResult && !composeResult.ok ? composeResult.error : null
+                }
+              />
+            </div>
           )}
         </FormCardGrid>
       ) : null,

@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { RecipeFeature } from "@/foundation/recipe/types";
 
@@ -12,7 +12,7 @@ type Props = {
 };
 
 /**
- * FeaturePicker renders one checkbox per recipe feature. A feature is shown as
+ * FeaturePicker renders one switch per recipe feature. A feature is shown as
  * disabled when toggling it on would conflict with another already-enabled
  * feature (based on `conflicts_with` declared on either side).
  */
@@ -62,15 +62,8 @@ export const FeaturePicker = ({
     const conflict = !isChecked ? conflictingWithSelection(key) : null;
     const itemDisabled = disabled || (!isChecked && conflict !== null);
     return (
-      <div key={key} className="flex items-start gap-3">
-        <Checkbox
-          id={`feature-${key}`}
-          checked={isChecked}
-          disabled={itemDisabled}
-          onCheckedChange={(checked) => toggle(key, checked === true)}
-          className="mt-1"
-        />
-        <label htmlFor={`feature-${key}`} className="flex-1 cursor-pointer">
+      <div key={key} className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-sm">{key}</span>
             {f.default && (
@@ -88,7 +81,14 @@ export const FeaturePicker = ({
           {f.description && (
             <div className="text-xs text-muted-foreground">{f.description}</div>
           )}
-        </label>
+        </div>
+        <Switch
+          aria-label={key}
+          checked={isChecked}
+          disabled={itemDisabled}
+          onCheckedChange={(checked) => toggle(key, checked)}
+          className="mt-0.5 shrink-0"
+        />
       </div>
     );
   };
