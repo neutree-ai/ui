@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { ApiKeyRankingOverview } from "@/domains/api-key/components/ApiKeyRankingOverview";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
-import type { ApiKeyLimits } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
   rateSummary,
   useAllApiKeyTraffic,
@@ -19,7 +18,7 @@ import {
   useApiKeyDisable,
   useWorkspaceModelMap,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import type { ApiKey } from "@/domains/api-key/types";
+import type { ApiKey, ApiKeyLimits } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, RowAction, Table } from "@/foundation/components/Table";
@@ -45,11 +44,14 @@ export const ApiKeysList = () => {
     [invalidate],
   );
 
-  // Keys (id -> name) for the ranking overview. One lightweight fetch; the table
-  // does its own paginated/filtered fetch separately.
+  // Keys (id -> name) for the ranking overview. Workspace-scoped via resource
+  // meta (matches the table query, no cross-workspace over-fetch) and
+  // unpaginated so no key is dropped from the ranking inputs.
   const { data: keysData } = useList<ApiKey>({
     resource: "api_keys",
-    pagination: { pageSize: 500, mode: "server" },
+    pagination: { mode: "off" },
+    meta: { workspace },
+    queryOptions: { enabled: Boolean(workspace) },
   });
   const rankingKeys = useMemo(() => {
     const rows = keysData?.data ?? [];

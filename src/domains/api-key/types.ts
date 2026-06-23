@@ -1,5 +1,20 @@
 import type { Metadata } from "@/foundation/types/basic-types";
-import type { ApiKeyLimits } from "@/domains/api-key/hooks/use-api-key-policy";
+
+// The limits object stored at api_key.spec.limits. get_api_key_limits also
+// returns token_quota.used / token_quota.remaining (read-only, computed).
+export type ApiKeyLimits = {
+  token_quota?: {
+    limit?: number;
+    period?: string;
+    used?: number;
+    remaining?: number;
+  };
+  rps?: number;
+  rpm?: number;
+  concurrency?: number;
+  allowed_models?: string[];
+  disabled?: boolean;
+};
 
 export type ApiKey = {
   id: string;

@@ -1,5 +1,6 @@
 import { useCustomMutation } from "@refinedev/core";
 import { useCallback, useEffect, useState } from "react";
+import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 
 // API-key limits live on the key itself: quota + access are a single object
@@ -32,22 +33,6 @@ export const apiKeyPolicyDefaults = (): ApiKeyPolicyFormValues => ({
   concurrency: "",
   models: [],
 });
-
-// The limits object stored at api_key.spec.limits. get_api_key_limits also
-// returns token_quota.used / token_quota.remaining (read-only, computed).
-export type ApiKeyLimits = {
-  token_quota?: {
-    limit?: number;
-    period?: string;
-    used?: number;
-    remaining?: number;
-  };
-  rps?: number;
-  rpm?: number;
-  concurrency?: number;
-  allowed_models?: string[];
-  disabled?: boolean;
-};
 
 const num = (s: string): number | undefined => {
   const v = String(s ?? "").trim();
@@ -88,7 +73,12 @@ export function limitsToForm(
   if (!limits) return v;
   if (limits.token_quota?.limit && limits.token_quota.limit > 0) {
     v.quota_limit = String(limits.token_quota.limit);
-    v.quota_period = (limits.token_quota.period as QuotaPeriod) ?? "monthly";
+    // Only accept a known period; an unexpected/empty value from the backend
+    // would not match the combobox options, so fall back to the default.
+    const period = limits.token_quota.period;
+    v.quota_period = QUOTA_PERIODS.includes(period as QuotaPeriod)
+      ? (period as QuotaPeriod)
+      : "monthly";
   }
   if (limits.rps) v.rps = String(limits.rps);
   if (limits.rpm) v.rpm = String(limits.rpm);

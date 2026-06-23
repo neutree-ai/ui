@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { ApiKeyLimits } from "@/domains/api-key/types";
 import {
-  type ApiKeyLimits,
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
   limitsToForm,
@@ -85,6 +85,16 @@ describe("limitsToForm", () => {
     expect(limitsToForm({ token_quota: { limit: 0, period: "daily" } }).quota_limit).toBe(
       "",
     );
+  });
+
+  it("falls back to the default period for an unknown / empty period", () => {
+    expect(
+      limitsToForm({ token_quota: { limit: 100, period: "fortnightly" } })
+        .quota_period,
+    ).toBe("monthly");
+    expect(
+      limitsToForm({ token_quota: { limit: 100, period: "" } }).quota_period,
+    ).toBe("monthly");
   });
 });
 

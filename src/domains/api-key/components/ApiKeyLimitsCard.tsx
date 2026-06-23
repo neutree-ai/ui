@@ -15,7 +15,6 @@ import {
 import { Form } from "@/components/ui/form";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
 import {
-  type ApiKeyLimits,
   type ApiKeyPolicyFormValues,
   apiKeyPolicyDefaults,
   limitsToForm,
@@ -24,6 +23,7 @@ import {
   useApiKeyLimits,
   useWorkspaceModelMap,
 } from "@/domains/api-key/hooks/use-api-key-policy";
+import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { cn } from "@/foundation/lib/utils";
 
 const fmt = (n: number) => Number(n).toLocaleString();
@@ -89,6 +89,10 @@ export const ApiKeyLimitsCard = ({
   const hasQuota = !!quota?.limit && quota.limit > 0;
   const used = Number(quota?.used ?? 0) || 0;
   const limit = Number(quota?.limit ?? 0) || 0;
+  // Prefer the backend-computed remaining (source of truth; may be negative to
+  // convey overage); fall back to limit - used when it isn't provided.
+  const remaining =
+    typeof quota?.remaining === "number" ? quota.remaining : limit - used;
   const ratio = hasQuota ? used / limit : 0;
   const pct = Math.max(0, Math.min(100, ratio * 100));
   const over = hasQuota && used >= limit;
@@ -158,7 +162,7 @@ export const ApiKeyLimitsCard = ({
             <div className="text-xs text-muted-foreground">
               {fmt(used)} / {fmt(limit)} {t("api_keys.limits.tokensUnit")} ·{" "}
               {t("api_keys.limits.remainingLabel")}:{" "}
-              {fmt(Math.max(0, limit - used))} ·{" "}
+              {fmt(remaining)} ·{" "}
               {t(
                 `api_keys.limits.periods.${quota?.period ?? "monthly"}`,
               )}
