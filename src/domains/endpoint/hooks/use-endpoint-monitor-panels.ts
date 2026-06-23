@@ -6,6 +6,7 @@ export type EndpointMonitorPanelType = "endpoint" | "vllm" | "sglang";
 interface UseEndpointMonitorPanelsProps {
   clusterType?: string;
   engineType?: string;
+  hasGpuResources?: boolean;
 }
 
 /**
@@ -14,8 +15,13 @@ interface UseEndpointMonitorPanelsProps {
 export const useEndpointMonitorPanels = ({
   clusterType,
   engineType,
+  hasGpuResources,
 }: UseEndpointMonitorPanelsProps) => {
   const panels = useMemo(() => {
+    if (!hasGpuResources) {
+      return [];
+    }
+
     const list: EndpointMonitorPanelType[] = [];
     // Rule 1: If engine is vllm, always have vllm related panels (default for SSH)
     if (engineType === "vllm") {
@@ -30,7 +36,7 @@ export const useEndpointMonitorPanels = ({
       list.push("endpoint");
     }
     return list;
-  }, [clusterType, engineType]);
+  }, [clusterType, engineType, hasGpuResources]);
 
   const [userSelectedPanel, setUserSelectedPanel] =
     useState<EndpointMonitorPanelType | null>(null);

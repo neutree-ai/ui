@@ -146,6 +146,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const clusterType = clusterData?.data?.[0]?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
+  const hasGpuResources = Boolean(record?.spec.resources?.gpu);
 
   const {
     panels,
@@ -156,6 +157,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   } = useEndpointMonitorPanels({
     clusterType,
     engineType: record?.spec.engine.engine,
+    hasGpuResources,
   });
 
   const { deployments } = useEndpointLogSources(record ?? null);

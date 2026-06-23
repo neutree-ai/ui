@@ -5,6 +5,7 @@ import { useEndpointMonitorPanels } from "./use-endpoint-monitor-panels";
 type UseHookArgs = {
   clusterType?: string;
   engineType?: string;
+  hasGpuResources?: boolean;
 };
 
 describe("useEndpointMonitorPanels", () => {
@@ -19,7 +20,7 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should return endpoint panel for ssh cluster", () => {
     const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ clusterType: "ssh" }),
+      useEndpointMonitorPanels({ clusterType: "ssh", hasGpuResources: true }),
     );
 
     expect(result.current.panels).toEqual(["endpoint"]);
@@ -30,7 +31,7 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should return vllm panel for vllm engine", () => {
     const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ engineType: "vllm" }),
+      useEndpointMonitorPanels({ engineType: "vllm", hasGpuResources: true }),
     );
 
     expect(result.current.panels).toEqual(["vllm"]);
@@ -41,7 +42,7 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should return sglang panel for sglang engine", () => {
     const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ engineType: "sglang" }),
+      useEndpointMonitorPanels({ engineType: "sglang", hasGpuResources: true }),
     );
 
     expect(result.current.panels).toEqual(["sglang"]);
@@ -52,7 +53,11 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should return both panels for ssh cluster with vllm engine", () => {
     const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
+      useEndpointMonitorPanels({
+        clusterType: "ssh",
+        engineType: "vllm",
+        hasGpuResources: true,
+      }),
     );
 
     expect(result.current.panels).toEqual(["vllm", "endpoint"]);
@@ -63,7 +68,11 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should return both panels for ssh cluster with sglang engine", () => {
     const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "sglang" }),
+      useEndpointMonitorPanels({
+        clusterType: "ssh",
+        engineType: "sglang",
+        hasGpuResources: true,
+      }),
     );
 
     expect(result.current.panels).toEqual(["sglang", "endpoint"]);
@@ -74,7 +83,11 @@ describe("useEndpointMonitorPanels", () => {
 
   it("should allow user to select panel", () => {
     const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ clusterType: "ssh", engineType: "vllm" }),
+      useEndpointMonitorPanels({
+        clusterType: "ssh",
+        engineType: "vllm",
+        hasGpuResources: true,
+      }),
     );
 
     expect(result.current.selectedPanel).toBe("vllm");
@@ -89,7 +102,11 @@ describe("useEndpointMonitorPanels", () => {
   it("should fallback to first panel if selected panel is invalid", () => {
     const { result, rerender } = renderHook(
       ({ clusterType, engineType }: UseHookArgs) =>
-        useEndpointMonitorPanels({ clusterType, engineType }),
+        useEndpointMonitorPanels({
+          clusterType,
+          engineType,
+          hasGpuResources: true,
+        }),
       {
         initialProps: { clusterType: "ssh", engineType: "vllm" } as UseHookArgs,
       },
@@ -110,7 +127,11 @@ describe("useEndpointMonitorPanels", () => {
   it("should fallback to first panel when sglang panel is no longer available", () => {
     const { result, rerender } = renderHook(
       ({ clusterType, engineType }: UseHookArgs) =>
-        useEndpointMonitorPanels({ clusterType, engineType }),
+        useEndpointMonitorPanels({
+          clusterType,
+          engineType,
+          hasGpuResources: true,
+        }),
       {
         initialProps: {
           clusterType: "ssh",
@@ -129,5 +150,20 @@ describe("useEndpointMonitorPanels", () => {
 
     // Should fallback to first available panel
     expect(result.current.selectedPanel).toBe("endpoint");
+  });
+
+  it("should hide monitor panels when endpoint does not request GPU resources", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({
+        clusterType: "ssh",
+        engineType: "vllm",
+        hasGpuResources: false,
+      }),
+    );
+
+    expect(result.current.panels).toEqual([]);
+    expect(result.current.selectedPanel).toBeNull();
+    expect(result.current.showMonitorTab).toBe(false);
+    expect(result.current.showSelector).toBe(false);
   });
 });
