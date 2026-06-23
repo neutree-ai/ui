@@ -42,7 +42,7 @@ import {
 } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { useEndpointVgpuMonitorContext } from "@/domains/endpoint/hooks/use-endpoint-vgpu-monitor-context";
 import { getEndpointVgpuDashboardContext } from "@/domains/endpoint/lib/resource-status";
-import { hasVgpuResources } from "@/domains/endpoint/lib/vgpu";
+import { shouldShowEndpointVgpuDashboard } from "@/domains/endpoint/lib/vgpu";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
 import type { Engine } from "@/domains/engine/types";
@@ -157,9 +157,15 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   });
 
   const clusterType = clusterData?.data?.[0]?.spec?.type;
+  const acceleratorVirtualizationEnabled =
+    clusterData?.data?.[0]?.spec?.accelerator_virtualization?.enabled;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
-  const endpointHasVgpuResources = hasVgpuResources(record?.spec.resources);
+  const shouldShowVgpuDashboard = shouldShowEndpointVgpuDashboard({
+    clusterType,
+    acceleratorVirtualizationEnabled,
+    resources: record?.spec.resources,
+  });
 
   const {
     panels,
@@ -170,7 +176,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   } = useEndpointMonitorPanels({
     clusterType,
     engineType: record?.spec.engine.engine,
-    hasVgpuResources: endpointHasVgpuResources,
+    hasVgpuResources: shouldShowVgpuDashboard,
   });
 
   const vgpuDashboardContext = useMemo(() => {
@@ -185,7 +191,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const { data: vgpuMonitorContextData } = useEndpointVgpuMonitorContext(
     record,
-    endpointHasVgpuResources && !vgpuDashboardContext,
+    shouldShowVgpuDashboard && !vgpuDashboardContext,
   );
 
   const { deployments } = useEndpointLogSources(record ?? null);

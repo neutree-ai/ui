@@ -67,6 +67,22 @@ export function hasVgpuResources(
   return Boolean(resources?.accelerator?.type && hasVirtualMemory);
 }
 
+export function shouldShowEndpointVgpuDashboard({
+  clusterType,
+  acceleratorVirtualizationEnabled,
+  resources,
+}: {
+  clusterType?: string;
+  acceleratorVirtualizationEnabled?: boolean;
+  resources: ResourceSpec | null | undefined;
+}): boolean {
+  return (
+    clusterType === "kubernetes" &&
+    acceleratorVirtualizationEnabled === true &&
+    hasVgpuResources(resources)
+  );
+}
+
 export function getEffectiveVgpuMemoryMiB(
   virtualization: VgpuVirtualization | null | undefined,
   memoryTotalMiB: number | null | undefined,

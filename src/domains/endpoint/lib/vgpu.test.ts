@@ -6,6 +6,7 @@ import {
   getVgpuVirtualization,
   hasVgpuResources,
   normalizeVgpuVirtualization,
+  shouldShowEndpointVgpuDashboard,
 } from "./vgpu";
 
 describe("endpoint vgpu helpers", () => {
@@ -118,11 +119,65 @@ describe("endpoint vgpu helpers", () => {
   });
 
   it("formats memory display in GiB and percentage modes", () => {
-    expect(getVgpuMemoryDisplay({ memory_mib: 10240 }, 15360)).toBe(
-      "10.0 GiB",
-    );
+    expect(getVgpuMemoryDisplay({ memory_mib: 10240 }, 15360)).toBe("10.0 GiB");
     expect(getVgpuMemoryDisplay({ memory_percent: 50 }, 15360)).toBe(
       "50% (7.5 GiB)",
     );
+  });
+
+  it("shows endpoint vGPU dashboard only for virtualized Kubernetes clusters with vGPU resources", () => {
+    const resources = {
+      gpu: 1,
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: {
+          memory_mib: 10240,
+        },
+      },
+    } as ResourceSpec;
+
+    expect(
+      shouldShowEndpointVgpuDashboard({
+        clusterType: "kubernetes",
+        acceleratorVirtualizationEnabled: true,
+        resources,
+      }),
+    ).toBe(true);
+  });
+
+  it("hides endpoint vGPU dashboard for static or non-virtualized clusters", () => {
+    const resources = {
+      gpu: 1,
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: {
+          memory_mib: 10240,
+        },
+      },
+    } as ResourceSpec;
+
+    expect(
+      shouldShowEndpointVgpuDashboard({
+        clusterType: "ssh",
+        acceleratorVirtualizationEnabled: true,
+        resources,
+      }),
+    ).toBe(false);
+    expect(
+      shouldShowEndpointVgpuDashboard({
+        clusterType: "kubernetes",
+        acceleratorVirtualizationEnabled: false,
+        resources,
+      }),
+    ).toBe(false);
+    expect(
+      shouldShowEndpointVgpuDashboard({
+        clusterType: "kubernetes",
+        acceleratorVirtualizationEnabled: undefined,
+        resources,
+      }),
+    ).toBe(false);
   });
 });
