@@ -941,6 +941,7 @@
 			"modelsSelected": "{{count}} model(s) selected",
 			"noModels": "No models available",
 			"tokensUnit": "tokens",
+			"invalidPositiveInt": "Must be a positive integer",
 			"none": "No limits set for this key.",
 			"consumptionTitle": "Resource consumption",
 			"remainingLabel": "remaining",
