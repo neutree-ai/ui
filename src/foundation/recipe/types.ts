@@ -46,9 +46,14 @@ export type RecipeFeatureInput = {
   max?: number | null;
   pattern?: string;
   enum?: string[] | null;
+  /** Preset values for a "pick or type" combobox (select + free input). UI
+   * hint only — any value satisfying the constraints is still accepted. */
+  suggestions?: string[] | null;
 };
 
 export type RecipeFeature = {
+  /** Optional human-facing label; falls back to the feature key when empty. */
+  display_name?: string;
   description?: string;
   /** Free-form grouping hint for the UI; "tuning" goes under a separate
    * "Performance tuning" section. No effect on composition. */

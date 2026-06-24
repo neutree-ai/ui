@@ -1,5 +1,20 @@
+import { Check, ChevronsUpDown } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type {
@@ -18,6 +33,104 @@ type Props = {
 
 function featureType(f: RecipeFeature): "boolean" | "select" | "input" {
   return f.type && f.type !== "boolean" ? f.type : "boolean";
+}
+
+/**
+ * SuggestInput is a compact "pick a preset or type your own" combobox for input
+ * features that declare `suggestions` — a shadcn-style Popover + Command where
+ * the search box doubles as the free-input (Enter / "Use …" commits a custom
+ * value), and the list offers the presets.
+ */
+function SuggestInput({
+  value,
+  suggestions,
+  numeric,
+  placeholder,
+  disabled,
+  ariaLabel,
+  onCommit,
+}: {
+  value: string;
+  suggestions: string[];
+  numeric: boolean;
+  placeholder?: string;
+  disabled?: boolean;
+  ariaLabel: string;
+  onCommit: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const trimmed = draft.trim();
+  const matches = trimmed
+    ? suggestions.filter((s) => s.includes(trimmed))
+    : suggestions;
+  const showCustom = trimmed !== "" && !suggestions.includes(trimmed);
+
+  const commit = (v: string) => {
+    onCommit(v);
+    setOpen(false);
+    setDraft("");
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setDraft("");
+      }}
+    >
+      <PopoverTrigger asChild disabled={disabled}>
+        <Button
+          type="button"
+          variant="outline"
+          // biome-ignore lint/a11y/useSemanticElements: shadcn combobox pattern
+          role="combobox"
+          aria-label={ariaLabel}
+          aria-expanded={open}
+          className="h-9 w-44 shrink-0 justify-between font-normal"
+        >
+          <span className={cn("truncate", !value && "text-muted-foreground")}>
+            {value || placeholder || ""}
+          </span>
+          <ChevronsUpDown className="ml-2 size-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-0" align="end">
+        <Command shouldFilter={false}>
+          <CommandInput
+            value={draft}
+            onValueChange={setDraft}
+            inputMode={numeric ? "numeric" : "text"}
+            placeholder={placeholder ?? "Type or pick…"}
+            className="h-9"
+          />
+          <CommandList>
+            {showCustom && (
+              <CommandGroup>
+                <CommandItem value={`__use__${trimmed}`} onSelect={() => commit(trimmed)}>
+                  Use “{trimmed}”
+                </CommandItem>
+              </CommandGroup>
+            )}
+            <CommandGroup>
+              {matches.map((s) => (
+                <CommandItem key={s} value={s} onSelect={() => commit(s)}>
+                  {s}
+                  <Check
+                    className={cn(
+                      "ml-auto size-4",
+                      value === s ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 /**
@@ -82,7 +195,16 @@ export const FeaturePicker = ({
   ) => (
     <div className="min-w-0 flex-1">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-sm">{key}</span>
+        {f.display_name ? (
+          <>
+            <span className="text-sm font-medium">{f.display_name}</span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {key}
+            </span>
+          </>
+        ) : (
+          <span className="font-mono text-sm">{key}</span>
+        )}
         {f.default && featureType(f) === "boolean" && (
           <Badge variant="outline" className="text-xs">
             {t("endpoints.recipe.defaultOn", "default on")}
@@ -157,28 +279,41 @@ export const FeaturePicker = ({
 
     if (type === "input") {
       const vt = f.input?.value_type ?? "string";
+      const numeric = vt === "int" || vt === "number";
       const required = Boolean(f.input?.required);
       const current = byName.get(key)?.value ?? "";
+      const suggestions = (f.input?.suggestions ?? []).filter(Boolean);
+      const commitValue = (val: string) =>
+        setSel(
+          key,
+          val === "" && !required ? undefined : { name: key, value: val },
+        );
       return (
         <div key={key} className="flex items-start justify-between gap-3">
           {renderHeader(key, f, conflict)}
-          <Input
-            aria-label={key}
-            type={vt === "int" || vt === "number" ? "number" : "text"}
-            value={current}
-            placeholder={f.input?.default ?? ""}
-            disabled={itemDisabled}
-            min={f.input?.min ?? undefined}
-            max={f.input?.max ?? undefined}
-            onChange={(event) => {
-              const val = event.target.value;
-              setSel(
-                key,
-                val === "" && !required ? undefined : { name: key, value: val },
-              );
-            }}
-            className="h-9 w-44 shrink-0"
-          />
+          {suggestions.length > 0 ? (
+            <SuggestInput
+              ariaLabel={key}
+              value={current}
+              suggestions={suggestions}
+              numeric={numeric}
+              placeholder={f.input?.default ?? ""}
+              disabled={itemDisabled}
+              onCommit={commitValue}
+            />
+          ) : (
+            <Input
+              aria-label={key}
+              type={numeric ? "number" : "text"}
+              value={current}
+              placeholder={f.input?.default ?? ""}
+              disabled={itemDisabled}
+              min={f.input?.min ?? undefined}
+              max={f.input?.max ?? undefined}
+              onChange={(event) => commitValue(event.target.value)}
+              className="h-9 w-44 shrink-0"
+            />
+          )}
         </div>
       );
     }
