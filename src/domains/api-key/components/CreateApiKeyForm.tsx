@@ -3,6 +3,12 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
+import {
+  type ApiKeyPolicyFormValues,
+  apiKeyPolicyDefaults,
+  buildApiKeyLimits,
+} from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -14,7 +20,7 @@ import { useState } from "react";
 import type { FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-type FormValues = { name: string; workspace: string };
+type FormValues = { name: string; workspace: string } & ApiKeyPolicyFormValues;
 
 export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   const { t } = useTranslation();
@@ -23,8 +29,10 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     defaultValues: {
       name: "",
       workspace: "",
+      ...apiKeyPolicyDefaults(),
     },
   });
+  const selectedWorkspace = form.watch("workspace");
   const workspaces = useSelect({
     resource: "workspaces",
   });
@@ -42,6 +50,8 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     });
 
   const onSubmit = async (formValue: FieldValues) => {
+    // Create with limits in one atomic call — quota + access live on the key's
+    // spec.limits, so create_api_key takes the whole limits object.
     const { data } = await mutateAsync({
       url: "/rpc/create_api_key",
       method: "post",
@@ -49,6 +59,7 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         p_workspace: formValue.workspace,
         p_name: formValue.name,
         p_quota: 0,
+        p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
       },
     });
     invalidate({
@@ -133,6 +144,12 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         <FormFieldGroup {...form} name="name" label={t("common.fields.name")}>
           <Input />
         </FormFieldGroup>
+
+        <div className="pt-1 text-sm font-medium">
+          {t("api_keys.limits.sectionTitle")}
+        </div>
+        <ApiKeyPolicyFields form={form} workspace={selectedWorkspace} />
+
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={onClose}>
             {t("buttons.cancel")}
