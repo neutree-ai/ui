@@ -43,7 +43,10 @@ import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
-import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  isValidWorkspace,
+  useWorkspace,
+} from "@/foundation/hooks/use-workspace";
 import {
   calculateVgpuCardCapacity,
   countFullCardAvailableDevicesByProduct,
@@ -99,7 +102,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       kind: "Endpoint",
       metadata: {
         name: "",
-        workspace: currentWorkspace,
+        workspace: isValidWorkspace(currentWorkspace) ? currentWorkspace : "",
       },
       spec: defaultEndpointSpec,
     },
@@ -652,6 +655,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
+          rules={{
+            required: t("common.validation.workspaceRequired"),
+            validate: (value: string) =>
+              isValidWorkspace(value) ||
+              t("common.validation.workspaceRequired"),
+          }}
         >
           <WorkspaceField disabled={isEdit} />
         </FormFieldGroup>

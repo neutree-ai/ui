@@ -5,6 +5,12 @@ import { useLocalStorage } from "react-use";
 const WORKSPACE_STORAGE_KEY = "__workspace__";
 export const ALL_WORKSPACES = "_all_";
 
+export const isValidWorkspace = (
+  workspace: string | undefined | null,
+): boolean => {
+  return !!workspace && workspace !== ALL_WORKSPACES;
+};
+
 export const useWorkspace = () => {
   const { params } = useParsed();
   const { action } = useResourceParams();

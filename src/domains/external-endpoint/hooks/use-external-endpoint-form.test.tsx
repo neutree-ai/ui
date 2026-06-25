@@ -30,6 +30,7 @@ vi.mock("@refinedev/core", () => ({
 
 vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "default" }),
+  isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
