@@ -1,7 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 // Define schema types
-type SchemaPropertyType = "string" | "number" | "boolean" | "integer" | "float";
+type SchemaPropertyType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "integer"
+  | "float"
+  | "object"
+  | "array";
 
 export interface SchemaProperty {
   type: SchemaPropertyType;
@@ -19,9 +26,60 @@ export interface EditingRow {
   value: string;
 }
 
+export const INVALID_JSON_ERROR = "components.variablesInput.invalidJsonValue";
+
+let nextEditingRowId = 0;
+
+const createEditingRow = (): EditingRow => ({
+  id: `editing-row-${nextEditingRowId++}`,
+  key: "",
+  value: "",
+});
+
+const getDefaultValueForType = (type: SchemaPropertyType): string => {
+  switch (type) {
+    case "boolean":
+      return "false";
+    case "number":
+    case "float":
+    case "integer":
+      return "0";
+    case "object":
+      return "{}";
+    case "array":
+      return "[]";
+    default:
+      return "";
+  }
+};
+
+const parseJsonValue = (
+  rawValue: string,
+  type: "object" | "array",
+): { ok: true; value: Record<string, unknown> | unknown[] } | { ok: false } => {
+  try {
+    const parsed = JSON.parse(rawValue);
+    if (type === "array") {
+      return Array.isArray(parsed)
+        ? { ok: true, value: parsed }
+        : { ok: false };
+    }
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      return { ok: true, value: parsed as Record<string, unknown> };
+    }
+    return { ok: false };
+  } catch {
+    return { ok: false };
+  }
+};
+
 interface UseVariablesInputProps {
-  value?: Record<string, any>;
-  onChange?: (value: Record<string, any>) => void;
+  value?: Record<string, unknown>;
+  onChange?: (value: Record<string, unknown>) => void;
   schema?: Schema;
 }
 
@@ -30,9 +88,23 @@ export function useVariablesInput({
   onChange = () => {},
   schema = {},
 }: UseVariablesInputProps) {
-  const [editingRows, setEditingRows] = useState<EditingRow[]>([
-    { id: Date.now().toString(), key: "", value: "" },
+  const [editingRows, setEditingRows] = useState<EditingRow[]>(() => [
+    createEditingRow(),
   ]);
+  const editingRowsRef = useRef(editingRows);
+  const [editingRowErrors, setEditingRowErrors] = useState<
+    Record<string, string>
+  >({});
+
+  const updateEditingRows = (
+    updater: EditingRow[] | ((prev: EditingRow[]) => EditingRow[]),
+  ) => {
+    setEditingRows((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      editingRowsRef.current = next;
+      return next;
+    });
+  };
 
   const availableSchemaKeys = useMemo(() => {
     const usedKeys = Object.keys(value);
@@ -48,34 +120,23 @@ export function useVariablesInput({
   }, [availableSchemaKeys, schema]);
 
   const handleAddNewRow = () => {
-    setEditingRows([
-      ...editingRows,
-      { id: Date.now().toString(), key: "", value: "" },
-    ]);
+    updateEditingRows((prev) => [...prev, createEditingRow()]);
   };
 
   const handleEditingKeyChange = (id: string, newKey: string) => {
-    setEditingRows((prev) =>
+    setEditingRowErrors((prev) => {
+      if (!prev[id]) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    updateEditingRows((prev) =>
       prev.map((row) => {
         if (row.id !== id) return row;
 
         // If the new key exists in schema, auto-fill default value based on type
         if (schema[newKey]) {
-          const { type } = schema[newKey];
-          let defaultValue = "";
-
-          switch (type) {
-            case "boolean":
-              defaultValue = "false";
-              break;
-            case "number":
-            case "float":
-            case "integer":
-              defaultValue = "0";
-              break;
-            default:
-              defaultValue = "";
-          }
+          const defaultValue = getDefaultValueForType(schema[newKey].type);
 
           return { ...row, key: newKey, value: defaultValue };
         }
@@ -86,7 +147,13 @@ export function useVariablesInput({
   };
 
   const handleEditingValueChange = (id: string, newValue: string) => {
-    setEditingRows((prev) =>
+    setEditingRowErrors((prev) => {
+      if (!prev[id]) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    updateEditingRows((prev) =>
       prev.map((row) => (row.id === id ? { ...row, value: newValue } : row)),
     );
   };
@@ -104,34 +171,73 @@ export function useVariablesInput({
     if (type === "boolean") {
       return rawValue === "true";
     }
+    if (type === "object" || type === "array") {
+      return parseJsonValue(rawValue, type);
+    }
     return rawValue;
   };
 
-  const saveEditingRow = (id: string) => {
-    setEditingRows((prev) => {
-      const row = prev.find((r) => r.id === id);
-      // Don't save if key or value is empty
-      if (!row || !row.key.trim() || !row.value.trim()) return prev;
+  const saveEditingRows = (ids: string[]): boolean => {
+    const rowsById = new Map(
+      editingRowsRef.current.map((row) => [row.id, row]),
+    );
+    const nextValue = { ...value };
+    const savedIds = new Set<string>();
+    const nextErrors: Record<string, string> = {};
+    let changed = false;
 
-      // Check if key already exists
-      if (value[row.key]) return prev;
+    for (const id of ids) {
+      const row = rowsById.get(id);
+      // Don't save if key or value is empty
+      if (!row || !row.key.trim() || !row.value.trim()) continue;
+
+      // Check if key already exists, including keys saved earlier in this batch.
+      if (Object.hasOwn(nextValue, row.key)) continue;
 
       const processedValue = processValue(row.key, row.value);
-
-      const updatedVariables = {
-        ...value,
-        [row.key]: processedValue,
-      };
-
-      onChange(updatedVariables);
-
-      // Remove editing row and add a new empty one if this was the last row
-      const remainingRows = prev.filter((r) => r.id !== id);
-      if (remainingRows.length === 0) {
-        return [{ id: Date.now().toString(), key: "", value: "" }];
+      if (
+        typeof processedValue === "object" &&
+        processedValue !== null &&
+        "ok" in processedValue
+      ) {
+        if (!processedValue.ok) {
+          nextErrors[id] = INVALID_JSON_ERROR;
+          continue;
+        }
+        nextValue[row.key] = processedValue.value;
+      } else {
+        nextValue[row.key] = processedValue;
       }
-      return remainingRows;
-    });
+      savedIds.add(id);
+      changed = true;
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setEditingRowErrors((errors) => ({
+        ...errors,
+        ...nextErrors,
+      }));
+    }
+
+    if (changed) {
+      onChange(nextValue);
+    }
+
+    if (savedIds.size > 0) {
+      updateEditingRows((prev) => {
+        const remainingRows = prev.filter((row) => !savedIds.has(row.id));
+        if (remainingRows.length === 0) {
+          return [createEditingRow()];
+        }
+        return remainingRows;
+      });
+    }
+
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const saveEditingRow = (id: string): boolean => {
+    return saveEditingRows([id]);
   };
 
   const handleEditingRowBlur = (id: string) => {
@@ -142,11 +248,17 @@ export function useVariablesInput({
   };
 
   const handleRemoveEditingRow = (id: string) => {
-    setEditingRows((prev) => {
+    updateEditingRows((prev) => {
       const remainingRows = prev.filter((r) => r.id !== id);
+      setEditingRowErrors((errors) => {
+        if (!errors[id]) return errors;
+        const next = { ...errors };
+        delete next[id];
+        return next;
+      });
       // Always keep at least one empty editing row
       if (remainingRows.length === 0) {
-        return [{ id: Date.now().toString(), key: "", value: "" }];
+        return [createEditingRow()];
       }
       return remainingRows;
     });
@@ -158,7 +270,7 @@ export function useVariablesInput({
     onChange(updatedVariables);
   };
 
-  const handleUpdateValue = (key: string, newVal: any) => {
+  const handleUpdateValue = (key: string, newVal: unknown) => {
     onChange({
       ...value,
       [key]: newVal,
@@ -168,6 +280,7 @@ export function useVariablesInput({
   return {
     // State
     editingRows,
+    editingRowErrors,
     availableSchemaKeys,
     schemaKeyOptions,
 
@@ -180,5 +293,6 @@ export function useVariablesInput({
     handleRemoveVariable,
     handleUpdateValue,
     saveEditingRow,
+    saveEditingRows,
   };
 }

@@ -2462,6 +2462,33 @@ describe("useEndpointForm", () => {
         undefined,
       );
     });
+
+    it("submits JSON object engine_args as structured values", async () => {
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("metadata.name", "json-engine-args-endpoint");
+        formInstance?.setValue("spec.variables.engine_args", {
+          speculative_config: '{"method":"mtp","nested":{"enabled":true}}',
+          max_model_len: "4096",
+        });
+      });
+
+      await act(async () => {
+        await formInstance?.refineCore.onFinish(formInstance.getValues());
+      });
+
+      const submitted = refineCoreOnFinishMock.mock.calls[0]?.[0];
+      expect(submitted?.spec.variables.engine_args).toEqual({
+        speculative_config: {
+          method: "mtp",
+          nested: { enabled: true },
+        },
+        max_model_len: "4096",
+      });
+    });
   });
 
   describe("handleModelCatalogSelect", () => {
