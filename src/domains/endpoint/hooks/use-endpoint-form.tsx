@@ -133,6 +133,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         },
         t,
       );
+      if (!isValidWorkspace(values.metadata?.workspace)) {
+        errors["metadata.workspace"] = {
+          type: "manual",
+          message: t("common.validation.workspaceRequired"),
+        };
+      }
       return { values, errors };
     },
   });
