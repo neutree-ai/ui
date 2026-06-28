@@ -661,13 +661,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
-          rules={{
-            required: t("common.validation.workspaceRequired"),
-            validate: (value: string) =>
-              isValidWorkspace(value) ||
-              t("common.validation.workspaceRequired"),
-          }}
         >
+          {/*
+            Validation is handled in the custom resolver above;
+            rules are intentionally omitted here.
+          */}
           <WorkspaceField disabled={isEdit} />
         </FormFieldGroup>
       </FormCardGrid>
