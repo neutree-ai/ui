@@ -1,3 +1,9 @@
+import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
+import { useForm } from "@refinedev/react-hook-form";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import type { FieldValues } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
@@ -13,12 +19,6 @@ import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
-import { useForm } from "@refinedev/react-hook-form";
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
-import type { FieldValues } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
 type FormValues = { name: string; workspace: string } & ApiKeyPolicyFormValues;
 
@@ -131,6 +131,7 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
           {...form}
           name="workspace"
           label={t("common.fields.workspace")}
+          rules={{ required: t("common.validation.workspaceRequired") }}
         >
           <FormCombobox
             placeholder={t("api_keys.placeholders.selectWorkspace")}
