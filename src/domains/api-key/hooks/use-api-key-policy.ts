@@ -41,6 +41,18 @@ const num = (s: string): number | undefined => {
   return Number(v);
 };
 
+// Validate an optional positive-integer limit field. Empty = unset (valid); any
+// provided value must be a positive integer, so 0 / negatives / decimals /
+// non-numeric input are rejected at the form rather than silently dropped (which
+// would turn an intended "0 = disable" into "no limit"). Mirrors the backend
+// validate_api_key_limits RPC guard.
+export const isPositiveIntLimit = (s: string): boolean => {
+  const v = String(s ?? "").trim();
+  if (v === "") return true;
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0;
+};
+
 // Build the limits object from the form. `disabled` is preserved separately (it
 // is toggled via its own action, not this form), so callers pass it through.
 export function buildApiKeyLimits(

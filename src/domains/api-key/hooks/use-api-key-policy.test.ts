@@ -3,10 +3,30 @@ import type { ApiKeyLimits } from "@/domains/api-key/types";
 import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
+  isPositiveIntLimit,
   limitsToForm,
   rateSummary,
   summarizeApiKeyLimits,
 } from "./use-api-key-policy";
+
+describe("isPositiveIntLimit", () => {
+  it("treats empty / whitespace as valid (optional, unset)", () => {
+    expect(isPositiveIntLimit("")).toBe(true);
+    expect(isPositiveIntLimit("   ")).toBe(true);
+  });
+
+  it("accepts positive integers", () => {
+    expect(isPositiveIntLimit("1")).toBe(true);
+    expect(isPositiveIntLimit("500000")).toBe(true);
+  });
+
+  it("rejects zero, negatives, decimals and non-numeric input", () => {
+    expect(isPositiveIntLimit("0")).toBe(false);
+    expect(isPositiveIntLimit("-1")).toBe(false);
+    expect(isPositiveIntLimit("1.5")).toBe(false);
+    expect(isPositiveIntLimit("abc")).toBe(false);
+  });
+});
 
 describe("buildApiKeyLimits", () => {
   it("emits an empty object when all limits are empty", () => {

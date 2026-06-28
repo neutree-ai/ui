@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { ModelMultiSelect } from "@/domains/api-key/components/ModelMultiSelect";
 import {
+  isPositiveIntLimit,
   QUOTA_PERIODS,
   useWorkspaceModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
@@ -28,6 +29,12 @@ export const ApiKeyPolicyFields = ({
   const selectedModels = ((form.watch("models") as { value: string }[]) ?? [])
     .map((m) => m.value)
     .filter(Boolean);
+  // Each numeric limit is optional, but a provided value must be a positive
+  // integer (rejects 0 / negatives / decimals) so it can't be silently dropped.
+  const positiveIntRule = {
+    validate: (v: string) =>
+      isPositiveIntLimit(v) || t("api_keys.limits.invalidPositiveInt"),
+  };
 
   return (
     <div className="space-y-3">
@@ -45,10 +52,11 @@ export const ApiKeyPolicyFields = ({
               {...form}
               name="quota_limit"
               label={t("api_keys.limits.tokenLimit")}
+              rules={positiveIntRule}
             >
               <Input
                 type="number"
-                min={0}
+                min={1}
                 placeholder={t("api_keys.limits.optional")}
               />
             </FormFieldGroup>
@@ -78,19 +86,29 @@ export const ApiKeyPolicyFields = ({
 
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <FormFieldGroup {...form} name="rps" label={t("api_keys.limits.rps")}>
+            <FormFieldGroup
+              {...form}
+              name="rps"
+              label={t("api_keys.limits.rps")}
+              rules={positiveIntRule}
+            >
               <Input
                 type="number"
-                min={0}
+                min={1}
                 placeholder={t("api_keys.limits.optional")}
               />
             </FormFieldGroup>
           </div>
           <div className="flex-1">
-            <FormFieldGroup {...form} name="rpm" label={t("api_keys.limits.rpm")}>
+            <FormFieldGroup
+              {...form}
+              name="rpm"
+              label={t("api_keys.limits.rpm")}
+              rules={positiveIntRule}
+            >
               <Input
                 type="number"
-                min={0}
+                min={1}
                 placeholder={t("api_keys.limits.optional")}
               />
             </FormFieldGroup>
@@ -100,10 +118,11 @@ export const ApiKeyPolicyFields = ({
               {...form}
               name="concurrency"
               label={t("api_keys.limits.concurrency")}
+              rules={positiveIntRule}
             >
               <Input
                 type="number"
-                min={0}
+                min={1}
                 placeholder={t("api_keys.limits.optional")}
               />
             </FormFieldGroup>
