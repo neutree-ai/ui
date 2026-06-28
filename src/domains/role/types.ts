@@ -68,4 +68,6 @@ export const ALL_PERMISSIONS = [
   "user_profile:create",
   "user_profile:update",
   "user_profile:delete",
+  "api_key:read",
+  "api_key:update",
 ];

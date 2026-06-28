@@ -11,6 +11,7 @@ import {
   Eye,
   FileText,
   HardDrive,
+  KeyRound,
   Layers,
   LayoutTemplate,
   Pencil,
@@ -40,6 +41,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   engine: <Cpu className="h-5 w-5" />,
   cluster: <HardDrive className="h-5 w-5" />,
   model_catalog: <BookOpen className="h-5 w-5" />,
+  api_key: <KeyRound className="h-5 w-5" />,
 };
 
 const parsePermissionsToTree = (permissions: string[]) => {

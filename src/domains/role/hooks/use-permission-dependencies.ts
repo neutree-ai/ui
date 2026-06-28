@@ -18,6 +18,7 @@ export const WORKSPACED_RESOURCES = new Set([
   "model_registry",
   "model_catalog",
   "engine",
+  "api_key",
 ]);
 
 const ALL_RULES: PermissionDependencyRule[] = [

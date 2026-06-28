@@ -13,6 +13,7 @@ import {
   Gauge,
   Globe,
   HardDrive,
+  KeyRound,
   Layers,
   Lock,
   Package,
@@ -62,6 +63,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   model_catalog: <BookOpen className="h-5 w-5" />,
   system: <Settings className="h-5 w-5" />,
   user_profile: <Users className="h-5 w-5" />,
+  api_key: <KeyRound className="h-5 w-5" />,
 };
 
 type PermissionsTreeFieldProps = {
