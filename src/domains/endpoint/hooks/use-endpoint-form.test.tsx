@@ -63,8 +63,11 @@ vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
+const mockUseWorkspace = vi.fn(() => ({ current: "default" }));
+
 vi.mock("@/foundation/hooks/use-workspace", () => ({
-  useWorkspace: () => ({ current: "default" }),
+  useWorkspace: () => mockUseWorkspace(),
+  isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
 vi.mock("@/foundation/components/VariablesInput", () => ({
@@ -2594,6 +2597,41 @@ describe("useEndpointForm", () => {
           "spec.deployment_options.scheduler.type"
         ];
       expect(error?.message).toBe("endpoints.messages.schedulerTypeRequired");
+    });
+  });
+
+  describe("workspace validation (resolver)", () => {
+    beforeEach(() => {
+      setupMocks();
+      mockUseWorkspace.mockReset();
+    });
+
+    it("shows validation error when workspace is _all_ (resolver path)", async () => {
+      mockUseWorkspace.mockReturnValue({ current: "_all_" });
+
+      render(<CreateForm />);
+
+      await act(async () => {
+        await formInstance!.trigger("metadata.workspace");
+      });
+
+      expect(
+        screen.getByText("common.validation.workspaceRequired"),
+      ).toBeTruthy();
+    });
+
+    it("does not show error when workspace is valid (resolver path)", async () => {
+      mockUseWorkspace.mockReturnValue({ current: "ws-alpha" });
+
+      render(<CreateForm />);
+
+      await act(async () => {
+        await formInstance!.trigger("metadata.workspace");
+      });
+
+      expect(
+        screen.queryByText("common.validation.workspaceRequired"),
+      ).toBeNull();
     });
   });
 });
