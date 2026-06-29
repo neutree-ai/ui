@@ -43,7 +43,10 @@ import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
-import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  isValidWorkspace,
+  useWorkspace,
+} from "@/foundation/hooks/use-workspace";
 import {
   calculateVgpuCardCapacity,
   countFullCardAvailableDevicesByProduct,
@@ -99,7 +102,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       kind: "Endpoint",
       metadata: {
         name: "",
-        workspace: currentWorkspace,
+        workspace: isValidWorkspace(currentWorkspace) ? currentWorkspace : "",
       },
       spec: defaultEndpointSpec,
     },
@@ -130,6 +133,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         },
         t,
       );
+      if (!isValidWorkspace(values.metadata?.workspace)) {
+        errors["metadata.workspace"] = {
+          type: "manual",
+          message: t("common.validation.workspaceRequired"),
+        };
+      }
       return { values, errors };
     },
   });
@@ -653,6 +662,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           name="metadata.workspace"
           label={t("common.fields.workspace")}
         >
+          {/*
+            Validation is handled in the custom resolver above;
+            rules are intentionally omitted here.
+          */}
           <WorkspaceField disabled={isEdit} />
         </FormFieldGroup>
       </FormCardGrid>

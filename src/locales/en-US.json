@@ -66,6 +66,9 @@
 			"lastDays": "Last {{days}} days",
 			"from": "From",
 			"to": "To"
+		},
+		"validation": {
+			"workspaceRequired": "Please select a workspace before creating the resource"
 		}
 	},
 	"appearance": {
