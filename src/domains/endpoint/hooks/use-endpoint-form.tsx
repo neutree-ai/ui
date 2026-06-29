@@ -845,6 +845,36 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     activeVariantVram != null ? activeVariantVram * replicaCount : null;
   const activeModelInfo = activeVariant?.model?.info ?? null;
 
+  // GPU products this recipe MC declares as validated (annotation
+  // `recipe.vllm.ai/hardware-verified`, e.g. "H200,H100,L40S"); empty for
+  // non-recipe / un-annotated catalogs.
+  const verifiedProducts = useMemo(() => {
+    const raw =
+      selectedCatalog?.metadata.annotations?.[
+        "recipe.vllm.ai/hardware-verified"
+      ] ?? "";
+    return new Set(
+      raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+  }, [selectedCatalog]);
+  // Simplified recipe deploy only offers GPU products that are both validated
+  // (verifiedProducts) and present in the selected cluster (acceleratorOptions);
+  // "Show all options" reveals every available product.
+  const restrictAcceleratorToVerified = !showFull && verifiedProducts.size > 0;
+  const displayedAcceleratorOptions = restrictAcceleratorToVerified
+    ? acceleratorOptions.filter((opt) => verifiedProducts.has(opt.product))
+    : acceleratorOptions;
+  // No validated + available GPU in this cluster → hide the product picker and
+  // just surface the required VRAM (the user can still expand "Show all
+  // options" to pick any available accelerator).
+  const noVerifiedAcceleratorAvailable =
+    restrictAcceleratorToVerified &&
+    Boolean(currentCluster) &&
+    displayedAcceleratorOptions.length === 0;
+
   const formWithTransformedOnFinish = {
     ...form,
     refineCore: {
@@ -932,8 +962,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </FormFieldGroup>
             </div>
           )}
-          {showFull && (
-            <>
+          {/* Model registry + name are shown by default (so a recipe deploy
+              surfaces which model/registry it resolves to); version + file are
+              advanced and stay under "Show all options". */}
           <FormFieldGroup
             {...form}
             name="spec.model.registry"
@@ -988,20 +1019,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               />
             </div>
           </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.model.version"
-            label={t("endpoints.fields.modelVersion")}
-          >
-            <Input />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.model.file"
-            label={t("endpoints.fields.modelFile")}
-          >
-            <Input />
-          </FormFieldGroup>
+          {showFull && (
+            <>
+              <FormFieldGroup
+                {...form}
+                name="spec.model.version"
+                label={t("endpoints.fields.modelVersion")}
+              >
+                <Input />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.model.file"
+                label={t("endpoints.fields.modelFile")}
+              >
+                <Input />
+              </FormFieldGroup>
             </>
           )}
           {/* Edit mode has no catalog row, so Replicas renders here instead. */}
@@ -1445,57 +1478,87 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       data-testid="endpoint-accelerator-allocator-row"
                       className="contents"
                     >
-                      <FormFieldGroup
-                        {...form}
-                        name="spec.resources.accelerator"
-                        label={t("endpoints.fields.accelerator")}
-                        className="col-span-1 min-w-0 sm:col-span-2"
-                      >
-                        <FormCombobox
-                          options={acceleratorOptions.map((opt) => ({
-                            label: opt.label,
-                            value: opt.value,
-                          }))}
-                          value={
-                            selectedAccelerator?.type &&
-                            selectedAccelerator?.product
-                              ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
-                              : ""
-                          }
-                          onChange={(value) => {
-                            // Parse "type:product" format
-                            const selectedOption = acceleratorOptions.find(
-                              (opt) => opt.value === value,
-                            );
-                            if (selectedOption) {
-                              const currentVirtualization = form.getValues(
-                                "spec.resources.accelerator.virtualization",
-                              );
-                              form.setValue("spec.resources.accelerator", {
-                                type: selectedOption.type,
-                                product: selectedOption.product,
-                                ...(isSelectedClusterVgpuEnabled
-                                  ? {
-                                      virtualization:
-                                        currentVirtualization || {},
-                                    }
-                                  : {}),
-                              } satisfies ResourceSpec["accelerator"]);
-                            } else {
-                              form.setValue("spec.resources.accelerator", null);
+                      {noVerifiedAcceleratorAvailable ? (
+                        // No validated GPU exists in this cluster — don't offer
+                        // a product, just state the VRAM requirement.
+                        <div className="col-span-1 min-w-0 space-y-1 sm:col-span-2">
+                          <div className="text-sm font-medium">
+                            {t("endpoints.fields.accelerator")}
+                          </div>
+                          <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                            {t(
+                              "endpoints.recipe.noVerifiedAccelerator",
+                              "No validated GPU available in this cluster.",
+                            )}
+                            {activeVariantVram != null && (
+                              <span className="ml-1">
+                                {t(
+                                  "endpoints.recipe.requiredVram",
+                                  "Requires ≥ {{gb}} GB VRAM.",
+                                  { gb: activeVariantVram },
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <FormFieldGroup
+                          {...form}
+                          name="spec.resources.accelerator"
+                          label={t("endpoints.fields.accelerator")}
+                          className="col-span-1 min-w-0 sm:col-span-2"
+                        >
+                          <FormCombobox
+                            options={displayedAcceleratorOptions.map((opt) => ({
+                              label: opt.label,
+                              value: opt.value,
+                            }))}
+                            value={
+                              selectedAccelerator?.type &&
+                              selectedAccelerator?.product
+                                ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
+                                : ""
                             }
-                          }}
-                          placeholder={t(
-                            "endpoints.placeholders.selectAccelerator",
-                          )}
-                          disabled={
-                            !currentCluster || acceleratorOptions.length === 0
-                          }
-                          emptyMessage={t(
-                            "endpoints.messages.noAcceleratorsAvailable",
-                          )}
-                        />
-                      </FormFieldGroup>
+                            onChange={(value) => {
+                              // Parse "type:product" format
+                              const selectedOption =
+                                displayedAcceleratorOptions.find(
+                                  (opt) => opt.value === value,
+                                );
+                              if (selectedOption) {
+                                const currentVirtualization = form.getValues(
+                                  "spec.resources.accelerator.virtualization",
+                                );
+                                form.setValue("spec.resources.accelerator", {
+                                  type: selectedOption.type,
+                                  product: selectedOption.product,
+                                  ...(isSelectedClusterVgpuEnabled
+                                    ? {
+                                        virtualization:
+                                          currentVirtualization || {},
+                                      }
+                                    : {}),
+                                } satisfies ResourceSpec["accelerator"]);
+                              } else {
+                                form.setValue(
+                                  "spec.resources.accelerator",
+                                  null,
+                                );
+                              }
+                            }}
+                            placeholder={t(
+                              "endpoints.placeholders.selectAccelerator",
+                            )}
+                            disabled={
+                              !currentCluster ||
+                              displayedAcceleratorOptions.length === 0
+                            }
+                            emptyMessage={t(
+                              "endpoints.messages.noAcceleratorsAvailable",
+                            )}
+                          />
+                        </FormFieldGroup>
+                      )}
                     </div>
 
                     <FormFieldGroup
