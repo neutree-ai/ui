@@ -137,7 +137,7 @@
   "src/foundation/components/MetadataCard.tsx": "de241749c7fc2d28bcae5fc524052e2c",
   "src/foundation/components/ModeToggle.tsx": "0edf6268fba37710f867eae927598277",
   "src/foundation/components/PageHeader.tsx": "648f80aa5b4c6eb2f1d899be609e72c0",
-  "src/foundation/components/ResourceForm.tsx": "c99578dfa73fb2d2a84bc45508329f20",
+  "src/foundation/components/ResourceForm.tsx": "f1f1c5629c60ca2978ced0948c92ffcd",
   "src/foundation/components/SaveButton.tsx": "ea4fd9a4181a12263bd5d48d8b1657d0",
   "src/foundation/components/ShowButton.tsx": "7ed3be7d36dbb8cf474279167ee047fc",
   "src/foundation/components/ShowPage.tsx": "c0a2aa72aa853e1e8adcce1eedfc7aa7",
@@ -235,10 +235,10 @@
   "src/domains/image-registry/hooks/use-image-registry-form.tsx": "68110b83ec3a777db2dd7571b8d83c44",
   "src/domains/cluster/hooks/use-cluster-form.tsx": "99361911329d096f0fe16a8012cde1d6",
   "src/foundation/types/resource-types.ts": "35e5676ea62d78f48a7b6f63509c03d5",
-  "src/foundation/hooks/use-variables-input.ts": "4b89bf232a2e5ae081417eb32cd07b27",
-  "src/foundation/components/VariablesInput.tsx": "322ef95b0efb9795b935e37ab3b79ead",
+  "src/foundation/hooks/use-variables-input.ts": "4e7645dd01994e5fd252bc3e2ad7676f",
+  "src/foundation/components/VariablesInput.tsx": "24057e155ee2272d6ba949b42639d752",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
-  "src/domains/endpoint/lib/endpoint-form-helpers.ts": "acfc0c8d66e233652ca41954199bb0b0",
+  "src/domains/endpoint/lib/endpoint-form-helpers.ts": "1d23880bb99098fadec0cc37dbc0e947",
   "src/domains/endpoint/hooks/use-endpoint-form.tsx": "1fbcace2caf7b431c0b95451a60eedd8",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "1e1cfe7ad811875f9a8b101c39edb45b",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "b2466d871f8436202bb1e6011ec61ecd",
@@ -314,5 +314,6 @@
   "src/domains/api-key/components/ApiKeyPolicyFields.tsx": "567c9e880ab320747a52f36f0e07e245",
   "src/domains/api-key/components/ApiKeyRankingOverview.tsx": "195d9f1d66efb631da3a763c2ad8da61",
   "src/domains/api-key/components/ModelMultiSelect.tsx": "7cc524720fdcadde0d72f3cd49afe1bb",
-  "src/domains/api-key/hooks/use-api-key-policy.ts": "3ad79a753e3852f99adc69e13891ccf1"
+  "src/domains/api-key/hooks/use-api-key-policy.ts": "3ad79a753e3852f99adc69e13891ccf1",
+  "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8"
 }

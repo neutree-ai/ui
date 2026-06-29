@@ -1117,7 +1117,8 @@
 			"newKey": "New key",
 			"addVariable": "Add Variable",
 			"selectOrTypeKey": "Select from schema or type custom key",
-			"noSchemaKeys": "No schema keys available"
+			"noSchemaKeys": "No schema keys available",
+			"invalidJsonValue": "Enter a valid JSON object or array"
 		},
 		"playground": {
 			"chat": {
