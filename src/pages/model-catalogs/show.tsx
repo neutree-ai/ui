@@ -8,12 +8,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
+import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import JSONSchemaValueVisualizer from "@/domains/engine/components/JsonSchemaValueVisualizer";
 import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
@@ -76,9 +76,6 @@ export const ModelCatalogsShow = () => {
     variantEntries.find(([k]) => k === selectedVariant)?.[0] ??
     variantEntries[0]?.[0] ??
     "";
-  const activeVariant = variantEntries.find(
-    ([k]) => k === activeVariantKey,
-  )?.[1];
   // Advanced section for Recipe MC: union of base.engine_args + every
   // variant.engine_args + every feature.engine_args (presentation only).
   const buildRecipeAdvancedView = (): Record<string, unknown> | null => {
@@ -88,7 +85,7 @@ export const ModelCatalogsShow = () => {
     for (const v of Object.values(record.spec.variants ?? {})) {
       Object.assign(acc, v?.engine_args ?? {});
     }
-    for (const f of Object.values(record.spec.features ?? {})) {
+    for (const f of record.spec.features ?? []) {
       Object.assign(acc, f?.engine_args ?? {});
     }
     return { engine_args: acc };
@@ -142,23 +139,11 @@ export const ModelCatalogsShow = () => {
           <CardContent>
             {isRecipe && variantEntries.length > 0 && (
               <div className="mb-5">
-                <Tabs
+                <VariantPicker
+                  variants={record.spec.variants ?? {}}
                   value={activeVariantKey}
-                  onValueChange={setSelectedVariant}
-                >
-                  <TabsList className="h-9">
-                    {variantEntries.map(([key]) => (
-                      <TabsTrigger key={key} value={key} className="px-4">
-                        {key}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-                {activeVariant?.description && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {activeVariant.description}
-                  </p>
-                )}
+                  onChange={setSelectedVariant}
+                />
               </div>
             )}
             <div className="grid grid-cols-4 gap-8">
@@ -203,7 +188,7 @@ export const ModelCatalogsShow = () => {
               variants={record.spec.variants ?? {}}
               base={record.spec.base ?? {}}
             />
-            <FeaturesList features={record.spec.features ?? {}} />
+            <FeaturesList features={record.spec.features ?? []} />
           </>
         ) : (
           <>

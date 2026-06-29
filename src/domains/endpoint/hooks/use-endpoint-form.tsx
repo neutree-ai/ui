@@ -623,6 +623,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     [selectedCatalog],
   );
 
+  // Distinct feature group labels in first-seen order. The first *named* group
+  // is treated as the "core" group and promoted into the main form grid (like
+  // the deploy mockup's 上下文窗口 / 并发数 fields); the rest render in the
+  // Features section below. All driven by the same selection state.
+  const featureGroups = useMemo(() => {
+    const gs: string[] = [];
+    for (const f of selectedCatalog?.spec.features ?? []) {
+      const g = f.group ?? "";
+      if (!gs.includes(g)) gs.push(g);
+    }
+    return gs;
+  }, [selectedCatalog]);
+  const coreFeatureGroup = featureGroups[0] ?? "";
+  const promoteCoreFeatures = Boolean(coreFeatureGroup);
+  const bottomFeatureGroups = promoteCoreFeatures
+    ? featureGroups.slice(1)
+    : featureGroups;
+
   // Live composition for Recipe MCs — used for preview and for populating the
   // legacy form fields on selection / when the user toggles features/variant.
   const composeResult = useMemo(() => {
@@ -871,7 +889,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {...form}
                 name="-model-catalog"
                 label={t("endpoints.fields.modelCatalog")}
-                className="col-span-1"
+                className="col-span-2"
               >
                 <FormCombobox
                   placeholder={t("endpoints.placeholders.selectModelCatalog")}
@@ -888,6 +906,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     handleModelCatalogSelect(value as string)
                   }
                 />
+              </FormFieldGroup>
+              {/* Replicas sits beside the catalog to use the otherwise-empty
+                  right half of this row (create mode; edit renders it below). */}
+              <FormFieldGroup
+                {...form}
+                name="spec.replicas.num"
+                label={t("endpoints.fields.replicas")}
+                className="col-span-2"
+              >
+                <Input type="number" min={1} />
               </FormFieldGroup>
             </div>
           )}
@@ -963,13 +991,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           </FormFieldGroup>
             </>
           )}
-          <FormFieldGroup
-            {...form}
-            name="spec.replicas.num"
-            label={t("endpoints.fields.replicas")}
-          >
-            <Input type="number" min={1} />
-          </FormFieldGroup>
+          {/* Edit mode has no catalog row, so Replicas renders here instead. */}
+          {isEdit && (
+            <FormFieldGroup
+              {...form}
+              name="spec.replicas.num"
+              label={t("endpoints.fields.replicas")}
+            >
+              <Input type="number" min={1} />
+            </FormFieldGroup>
+          )}
         </FormCardGrid>
 
         {showFull && (
@@ -1072,7 +1103,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             {...form}
             name="spec.variant"
             label={t("endpoints.recipe.variant", "Variant")}
-            className="col-span-2"
+            className="col-span-4"
           >
             <VariantPicker
               variants={selectedCatalog.spec.variants ?? {}}
@@ -1080,6 +1111,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               onChange={handleVariantChange}
             />
           </FormFieldGroup>
+          {promoteCoreFeatures && (
+            <div className="col-span-4">
+              <FeaturePicker
+                features={selectedCatalog.spec.features ?? []}
+                value={featureSelections}
+                onChange={handleFeaturesChange}
+                renderGroups={[coreFeatureGroup]}
+                layout="grid"
+              />
+            </div>
+          )}
           {(() => {
             const v =
               selectedCatalog.spec.variants?.[selectedVariant] ??
@@ -1167,7 +1209,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </div>
           )}
           {selectedCatalog.spec.features &&
-            Object.keys(selectedCatalog.spec.features).length > 0 && (
+            selectedCatalog.spec.features.length > 0 &&
+            bottomFeatureGroups.length > 0 && (
               <FormFieldGroup
                 {...form}
                 name="spec.feature_selections"
@@ -1175,9 +1218,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 className="col-span-4"
               >
                 <FeaturePicker
-                  features={selectedCatalog.spec.features ?? {}}
+                  features={selectedCatalog.spec.features ?? []}
                   value={featureSelections}
                   onChange={handleFeaturesChange}
+                  renderGroups={bottomFeatureGroups}
                 />
               </FormFieldGroup>
             )}

@@ -17,18 +17,30 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
 import type {
   FeatureSelection,
   RecipeFeature,
 } from "@/foundation/recipe/types";
-import { cn } from "@/foundation/lib/utils";
 
 type Props = {
-  features: Record<string, RecipeFeature>;
+  /** Ordered feature list; list position is the display order and items are
+   * grouped into sections by `group` (sections in first-seen order). Always
+   * pass the FULL list so conflict checks and the ordered commit stay correct
+   * even when `renderGroups` shows only a subset. */
+  features: RecipeFeature[];
   /** Currently selected features, in order (order matters for compose). */
   value: FeatureSelection[];
   onChange: (next: FeatureSelection[]) => void;
   disabled?: boolean;
+  /** If set, only render these group labels (others are hidden but still
+   * considered for conflicts/commit). Lets the same selection state drive a
+   * promoted "core" group up in the form grid and the rest below. */
+  renderGroups?: string[] | null;
+  /** "stack" (default) renders label-beside-control rows under a heading;
+   * "grid" renders heading-less label-above-control cells in a 2-col grid, so a
+   * promoted group reads like ordinary form fields (matches the deploy mockup). */
+  layout?: "stack" | "grid";
 };
 
 function featureType(f: RecipeFeature): "boolean" | "select" | "input" {
@@ -49,22 +61,35 @@ function SuggestInput({
   disabled,
   ariaLabel,
   onCommit,
+  widthClass = "w-44",
 }: {
   value: string;
-  suggestions: string[];
+  /** Presets with a raw `value` (what gets composed) and a display `label`
+   * (e.g. "8K" for "8192"). */
+  suggestions: { value: string; label: string }[];
   numeric: boolean;
   placeholder?: string;
   disabled?: boolean;
   ariaLabel: string;
   onCommit: (value: string) => void;
+  widthClass?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const trimmed = draft.trim();
+  // Match the typed text against either the raw value or the friendly label.
   const matches = trimmed
-    ? suggestions.filter((s) => s.includes(trimmed))
+    ? suggestions.filter(
+        (s) => s.value.includes(trimmed) || s.label.includes(trimmed),
+      )
     : suggestions;
-  const showCustom = trimmed !== "" && !suggestions.includes(trimmed);
+  const exact = suggestions.find(
+    (s) => s.value === trimmed || s.label === trimmed,
+  );
+  const showCustom = trimmed !== "" && !exact;
+  // Show the preset's label when the current value matches one; else the raw
+  // value (a freely-typed custom number).
+  const display = suggestions.find((s) => s.value === value)?.label ?? value;
 
   const commit = (v: string) => {
     onCommit(v);
@@ -88,15 +113,15 @@ function SuggestInput({
           role="combobox"
           aria-label={ariaLabel}
           aria-expanded={open}
-          className="h-9 w-44 shrink-0 justify-between font-normal"
+          className={cn("h-9 shrink-0 justify-between font-normal", widthClass)}
         >
           <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || placeholder || ""}
+            {display || placeholder || ""}
           </span>
           <ChevronsUpDown className="ml-2 size-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-44 p-0" align="end">
+      <PopoverContent className={cn("p-0", widthClass)} align="end">
         <Command shouldFilter={false}>
           <CommandInput
             value={draft}
@@ -108,19 +133,31 @@ function SuggestInput({
           <CommandList>
             {showCustom && (
               <CommandGroup>
-                <CommandItem value={`__use__${trimmed}`} onSelect={() => commit(trimmed)}>
+                <CommandItem
+                  value={`__use__${trimmed}`}
+                  onSelect={() => commit(trimmed)}
+                >
                   Use “{trimmed}”
                 </CommandItem>
               </CommandGroup>
             )}
             <CommandGroup>
               {matches.map((s) => (
-                <CommandItem key={s} value={s} onSelect={() => commit(s)}>
-                  {s}
+                <CommandItem
+                  key={s.value}
+                  value={s.value}
+                  onSelect={() => commit(s.value)}
+                >
+                  {s.label}
+                  {s.label !== s.value && (
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">
+                      {s.value}
+                    </span>
+                  )}
                   <Check
                     className={cn(
                       "ml-auto size-4",
-                      value === s ? "opacity-100" : "opacity-0",
+                      value === s.value ? "opacity-100" : "opacity-0",
                     )}
                   />
                 </CommandItem>
@@ -150,11 +187,17 @@ export const FeaturePicker = ({
   value,
   onChange,
   disabled,
+  renderGroups,
+  layout = "stack",
 }: Props) => {
+  const grid = layout === "grid";
   const { t } = useTranslation();
-  const entries = Object.entries(features);
+  const entries: [string, RecipeFeature][] = features
+    .filter((f) => f?.name)
+    .map((f) => [f.name, f]);
   if (entries.length === 0) return null;
 
+  const byKey = new Map(entries);
   const byName = new Map(value.map((s) => [s.name, s] as const));
   const active = new Set(byName.keys());
 
@@ -177,12 +220,12 @@ export const FeaturePicker = ({
   };
 
   const conflictingWithSelection = (key: string): string | null => {
-    const f = features[key];
+    const f = byKey.get(key);
     const fc = new Set(f?.conflicts_with ?? []);
     for (const other of active) {
       if (other === key) continue;
       if (fc.has(other)) return other;
-      const oc = new Set(features[other]?.conflicts_with ?? []);
+      const oc = new Set(byKey.get(other)?.conflicts_with ?? []);
       if (oc.has(key)) return other;
     }
     return null;
@@ -282,14 +325,25 @@ export const FeaturePicker = ({
       const numeric = vt === "int" || vt === "number";
       const required = Boolean(f.input?.required);
       const current = byName.get(key)?.value ?? "";
-      const suggestions = (f.input?.suggestions ?? []).filter(Boolean);
+      const suggestions = (f.input?.suggestions ?? [])
+        .map((s) =>
+          typeof s === "string"
+            ? { value: s, label: s }
+            : { value: s.value, label: s.label || s.value },
+        )
+        .filter((s) => s.value);
       const commitValue = (val: string) =>
         setSel(
           key,
           val === "" && !required ? undefined : { name: key, value: val },
         );
       return (
-        <div key={key} className="flex items-start justify-between gap-3">
+        <div
+          key={key}
+          className={
+            grid ? "space-y-1.5" : "flex items-start justify-between gap-3"
+          }
+        >
           {renderHeader(key, f, conflict)}
           {suggestions.length > 0 ? (
             <SuggestInput
@@ -300,6 +354,7 @@ export const FeaturePicker = ({
               placeholder={f.input?.default ?? ""}
               disabled={itemDisabled}
               onCommit={commitValue}
+              widthClass={grid ? "w-full" : "w-44"}
             />
           ) : (
             <Input
@@ -311,7 +366,7 @@ export const FeaturePicker = ({
               min={f.input?.min ?? undefined}
               max={f.input?.max ?? undefined}
               onChange={(event) => commitValue(event.target.value)}
-              className="h-9 w-44 shrink-0"
+              className={cn("h-9", grid ? "w-full" : "w-44 shrink-0")}
             />
           )}
         </div>
@@ -319,35 +374,73 @@ export const FeaturePicker = ({
     }
 
     return (
-      <div key={key} className="flex items-start justify-between gap-3">
+      <div
+        key={key}
+        className={
+          grid ? "space-y-1.5" : "flex items-start justify-between gap-3"
+        }
+      >
         {renderHeader(key, f, conflict)}
         <Switch
           aria-label={key}
           checked={isActive}
           disabled={itemDisabled}
           onCheckedChange={(on) => setSel(key, on ? { name: key } : undefined)}
-          className="mt-0.5 shrink-0"
+          className={grid ? "" : "mt-0.5 shrink-0"}
         />
       </div>
     );
   };
 
-  const behaviorEntries = entries.filter(([, f]) => f?.category !== "tuning");
-  const tuningEntries = entries.filter(([, f]) => f?.category === "tuning");
+  // Group features into sections by `group` (first-seen order; items keep list
+  // order). Ungrouped features share an implicit default section that carries
+  // no heading, rendered at its first-seen position.
+  const groupOrder: string[] = [];
+  const grouped = new Map<string, [string, RecipeFeature][]>();
+  for (const entry of entries) {
+    const g = entry[1].group ?? "";
+    if (!grouped.has(g)) {
+      grouped.set(g, []);
+      groupOrder.push(g);
+    }
+    grouped.get(g)?.push(entry);
+  }
+
+  // Optionally restrict which groups this instance displays (conflicts/commit
+  // still consider every feature above). Bail out if nothing is left to show.
+  const visibleGroups = renderGroups
+    ? groupOrder.filter((g) => renderGroups.includes(g))
+    : groupOrder;
+  if (visibleGroups.length === 0) return null;
+
+  // Grid layout: heading-less 2-col cells so a promoted group reads like form
+  // fields (matches the mockup). Stack layout: the sectioned list with headings.
+  if (grid) {
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {visibleGroups.flatMap((g) => grouped.get(g) ?? []).map(renderItem)}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
-      {behaviorEntries.length > 0 && (
-        <div className="space-y-4">{behaviorEntries.map(renderItem)}</div>
-      )}
-      {tuningEntries.length > 0 && (
-        <div className="space-y-4 pt-4 border-t">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("endpoints.recipe.performanceTuning", "Performance tuning")}
+      {visibleGroups.map((g, i) => {
+        const items = grouped.get(g) ?? [];
+        return (
+          <div
+            key={g || "__default__"}
+            className={cn("space-y-4", i > 0 && "pt-4 border-t")}
+          >
+            {g && (
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {g}
+              </div>
+            )}
+            {items.map(renderItem)}
           </div>
-          {tuningEntries.map(renderItem)}
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 };

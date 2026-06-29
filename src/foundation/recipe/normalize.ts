@@ -31,8 +31,8 @@ export function normalizeRecipe(spec: RecipeInputSpec): NormalizedRecipe {
       variants[k] = v ?? {};
     }
     const features: Record<string, RecipeFeature> = {};
-    for (const [k, v] of Object.entries(spec.features ?? {})) {
-      features[k] = v ?? {};
+    for (const f of spec.features ?? []) {
+      if (f?.name) features[f.name] = f;
     }
     return {
       base: {

@@ -47,17 +47,29 @@ export type RecipeFeatureInput = {
   pattern?: string;
   enum?: string[] | null;
   /** Preset values for a "pick or type" combobox (select + free input). UI
-   * hint only — any value satisfying the constraints is still accepted. */
-  suggestions?: string[] | null;
+   * hint only — any value satisfying the constraints is still accepted. Each
+   * entry is a bare value string, or `{ value, label }` to show a friendly
+   * label (e.g. "8K") while still composing the raw `value` ("8192"). */
+  suggestions?: Array<string | RecipeInputSuggestion> | null;
+};
+
+type RecipeInputSuggestion = {
+  value: string;
+  label?: string;
 };
 
 export type RecipeFeature = {
-  /** Optional human-facing label; falls back to the feature key when empty. */
+  /** Stable identifier (referenced by FeatureSelection and conflicts_with).
+   * Was the map key before features became an ordered list. */
+  name: string;
+  /** UI section label this feature renders under (e.g. "核心参数" /
+   * "Performance tuning"); empty means the default section. Features sharing a
+   * group render together; sections appear in first-seen order. No effect on
+   * composition. Supersedes the former free-form `category` hint. */
+  group?: string;
+  /** Optional human-facing label; falls back to `name` when empty. */
   display_name?: string;
   description?: string;
-  /** Free-form grouping hint for the UI; "tuning" goes under a separate
-   * "Performance tuning" section. No effect on composition. */
-  category?: string;
   conflicts_with?: string[] | null;
   /** Feature shape; empty/undefined == "boolean". */
   type?: RecipeFeatureType;
@@ -125,5 +137,5 @@ export type RecipeInputSpec = {
   env?: Record<string, string> | null;
   base?: RecipeBase | null;
   variants?: Record<string, RecipeVariant> | null;
-  features?: Record<string, RecipeFeature> | null;
+  features?: RecipeFeature[] | null;
 };

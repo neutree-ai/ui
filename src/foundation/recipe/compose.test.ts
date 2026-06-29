@@ -67,28 +67,32 @@ function mkRecipe(): RecipeInputSpec {
         engine_args: { quantization: "fp8" },
       },
     },
-    features: {
-      reasoning: {
+    features: [
+      {
+        name: "reasoning",
         description: "Enable reasoning parser",
         default: true,
         engine_args: { reasoning_parser: "deepseek_r1" },
       },
-      tooling: {
+      {
+        name: "tooling",
         description: "Enable tool-call parser",
         engine_args: { tool_call_parser: "hermes" },
       },
       // Two parsers conflict if both want to own the tool-call channel
-      legacy_tooling: {
+      {
+        name: "legacy_tooling",
         description: "Legacy tooling",
         engine_args: { tool_call_parser: "legacy" },
         conflicts_with: ["tooling"],
       },
-      prefix_cache: {
+      {
+        name: "prefix_cache",
         description: "Enable prefix caching",
         engine_args: { enable_prefix_caching: true },
         env: { VLLM_USE_V1: "1" },
       },
-    },
+    ],
   };
 }
 
@@ -156,7 +160,11 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 
   it("features layer over variant in enabled order", () => {
-    const r = composeEndpointSpec(mkRecipe(), "bf16", fsel("reasoning", "tooling"));
+    const r = composeEndpointSpec(
+      mkRecipe(),
+      "bf16",
+      fsel("reasoning", "tooling"),
+    );
     expect(r.ok).toBe(true);
     if (!r.ok) throw new Error(r.error);
     expect(r.spec.engine_args.reasoning_parser).toBe("deepseek_r1");
@@ -164,7 +172,11 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 
   it("later features override earlier features (order matters)", () => {
-    const r1 = composeEndpointSpec(mkRecipe(), "bf16", fsel("tooling", "legacy_tooling"));
+    const r1 = composeEndpointSpec(
+      mkRecipe(),
+      "bf16",
+      fsel("tooling", "legacy_tooling"),
+    );
     // conflict, should error
     expect(r1.ok).toBe(false);
 
@@ -177,7 +189,11 @@ describe("composeEndpointSpec — recipe MC", () => {
   });
 
   it("reports conflicts_with errors with both feature names", () => {
-    const r = composeEndpointSpec(mkRecipe(), "bf16", fsel("tooling", "legacy_tooling"));
+    const r = composeEndpointSpec(
+      mkRecipe(),
+      "bf16",
+      fsel("tooling", "legacy_tooling"),
+    );
     expect(r.ok).toBe(false);
     if (r.ok) throw new Error("should fail");
     expect(r.error).toContain("tooling");
@@ -242,11 +258,18 @@ function mkTypedRecipe(): RecipeInputSpec {
     env: null,
     variants: {
       default: {
-        model: { registry: "hf", name: "m", file: "", version: "", task: "chat" },
+        model: {
+          registry: "hf",
+          name: "m",
+          file: "",
+          version: "",
+          task: "chat",
+        },
       },
     },
-    features: {
-      attention: {
+    features: [
+      {
+        name: "attention",
         type: "select",
         options: {
           flash_attn: { engine_args: { attention_backend: "FLASH_ATTN" } },
@@ -254,12 +277,13 @@ function mkTypedRecipe(): RecipeInputSpec {
         },
         default_option: "flash_attn",
       },
-      "max-len": {
+      {
+        name: "max-len",
         type: "input",
         input: { value_type: "int", default: "32768", min: 1, max: 262144 },
         engine_args: { max_model_len: "${value}" },
       },
-    },
+    ],
   };
 }
 

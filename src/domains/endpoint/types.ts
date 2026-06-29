@@ -1,12 +1,12 @@
+import type {
+  FeatureSelection,
+  RecipeFeature,
+} from "@/foundation/recipe/types";
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 import type {
   ClusterResourceInfo,
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
-import type {
-  FeatureSelection,
-  RecipeFeature,
-} from "@/foundation/recipe/types";
 import type {
   DeploymentOptions,
   EndpointEngineSpec,
@@ -125,7 +125,7 @@ export type EndpointModelCatalogRef = {
         vram_minimum_gb?: number | null;
       }
     > | null;
-    features?: Record<string, RecipeFeature> | null;
+    features?: RecipeFeature[] | null;
   };
 };
 

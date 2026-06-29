@@ -4,7 +4,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import type { RecipeFeature } from "@/foundation/recipe/types";
 
 type Props = {
-  features: Record<string, RecipeFeature>;
+  /** Ordered feature list; grouped into cards by `group` (first-seen order). */
+  features: RecipeFeature[];
 };
 
 const fmt = (v: unknown): string => {
@@ -26,18 +27,18 @@ const summarize = (m: Record<string, unknown> | null | undefined): string => {
     .join(", ");
 };
 
-const renderItem = (
-  [key, f]: [string, RecipeFeature],
-  t: (k: string, d: string) => string,
-) => {
+const renderItem = (f: RecipeFeature, t: (k: string, d: string) => string) => {
   const argsSummary = summarize(f.engine_args);
   const envSummary = summarize(f.env);
   const conflicts = f.conflicts_with ?? [];
   return (
-    <li key={key} className="border-b last:border-b-0 pb-3">
+    <li key={f.name} className="border-b last:border-b-0 pb-3">
       <div className="flex items-center gap-2 flex-wrap">
+        {f.display_name && (
+          <span className="text-sm font-medium">{f.display_name}</span>
+        )}
         <Badge variant="secondary" className="font-mono">
-          {key}
+          {f.name}
         </Badge>
         {f.default ? (
           <Badge variant="default">
@@ -77,45 +78,38 @@ const renderItem = (
 
 export const FeaturesList = ({ features }: Props) => {
   const { t } = useTranslation();
-  const entries = Object.entries(features);
-  if (entries.length === 0) return null;
+  const items = (features ?? []).filter((f) => f?.name);
+  if (items.length === 0) return null;
 
-  const behaviorEntries = entries.filter(([, f]) => f?.category !== "tuning");
-  const tuningEntries = entries.filter(([, f]) => f?.category === "tuning");
+  // Group into one card per `group` (first-seen order; items keep list order).
+  // Ungrouped features fall under the default "Features" card.
+  const groupOrder: string[] = [];
+  const grouped = new Map<string, RecipeFeature[]>();
+  for (const f of items) {
+    const g = f.group ?? "";
+    if (!grouped.has(g)) {
+      grouped.set(g, []);
+      groupOrder.push(g);
+    }
+    grouped.get(g)?.push(f);
+  }
 
   return (
     <>
-      {behaviorEntries.length > 0 && (
-        <Card className="mt-4">
+      {groupOrder.map((g) => (
+        <Card key={g || "__default__"} className="mt-4">
           <CardHeader>
             <CardTitle>
-              {t("model_catalogs.recipe.features", "Features")}
+              {g || t("model_catalogs.recipe.features", "Features")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
-              {behaviorEntries.map((e) => renderItem(e, t))}
+              {(grouped.get(g) ?? []).map((f) => renderItem(f, t))}
             </ul>
           </CardContent>
         </Card>
-      )}
-      {tuningEntries.length > 0 && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>
-              {t(
-                "model_catalogs.recipe.performanceTuning",
-                "Performance tuning",
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {tuningEntries.map((e) => renderItem(e, t))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+      ))}
     </>
   );
 };

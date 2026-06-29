@@ -1,4 +1,3 @@
-import { Check } from "lucide-react";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import type { RecipeVariant } from "@/foundation/recipe/types";
@@ -10,9 +9,10 @@ type Props = {
   disabled?: boolean;
 };
 
-// VariantPicker renders one button per variant in a horizontal row — matches
-// the pattern on recipes.vllm.ai (Hardware/Variant rows use button groups,
-// not dropdowns) and the show page's variant tab strip.
+// VariantPicker renders variants as a horizontal segmented tab strip (each tab
+// = variant key + its min-VRAM badge), with the selected variant's description
+// shown below. This uses horizontal space far better than stacked full-width
+// cards and mirrors the show page's variant tab strip.
 export const VariantPicker = ({
   variants,
   value,
@@ -23,48 +23,53 @@ export const VariantPicker = ({
   const entries = Object.entries(variants);
   if (entries.length === 0) return null;
 
+  const selected = variants[value] ?? entries[0]?.[1];
+
   return (
-    <div
-      role="radiogroup"
-      aria-label={t("endpoints.recipe.selectVariant", "Select a variant")}
-      className="flex flex-wrap gap-2"
-    >
-      {entries.map(([key, v]) => {
-        const selected = value === key;
-        return (
-          <button
-            key={key}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            disabled={disabled}
-            onClick={() => onChange(key)}
-            className={cn(
-              "group flex flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left transition-colors",
-              "min-w-[180px] max-w-sm",
-              selected
-                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                : "border-input hover:bg-accent/40",
-              disabled && "opacity-50 cursor-not-allowed",
-            )}
-          >
-            <div className="flex items-center gap-2 w-full">
-              <span className="font-mono text-sm">{key}</span>
+    <div className="space-y-2">
+      <div
+        role="radiogroup"
+        aria-label={t("endpoints.recipe.selectVariant", "Select a variant")}
+        className="inline-flex flex-wrap gap-1 rounded-lg border bg-muted/30 p-1"
+      >
+        {entries.map(([key, v]) => {
+          const isSelected = value === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              disabled={disabled}
+              onClick={() => onChange(key)}
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
+                isSelected
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-primary"
+                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+                disabled && "cursor-not-allowed opacity-50",
+              )}
+            >
+              <span className="font-mono">{key}</span>
               {v.vram_minimum_gb != null && (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-muted text-muted-foreground">
+                <span
+                  className={cn(
+                    "rounded border px-1.5 py-0.5 text-[10px] font-medium",
+                    isSelected
+                      ? "border-primary/30 text-muted-foreground"
+                      : "border-muted text-muted-foreground",
+                  )}
+                >
                   ≥{v.vram_minimum_gb} GB
                 </span>
               )}
-              {selected && <Check className="size-4 text-primary ml-auto" />}
-            </div>
-            {v.description && (
-              <span className="text-xs text-muted-foreground">
-                {v.description}
-              </span>
-            )}
-          </button>
-        );
-      })}
+            </button>
+          );
+        })}
+      </div>
+      {selected?.description && (
+        <p className="text-xs text-muted-foreground">{selected.description}</p>
+      )}
     </div>
   );
 };

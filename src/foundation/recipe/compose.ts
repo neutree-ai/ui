@@ -276,10 +276,13 @@ function assignStringMap(
  * inputs with a default (or required). This order is the compose override
  * order, so it must match between the form and the backend.
  */
-export function defaultFeatureSelections(mc: RecipeInputSpec): FeatureSelection[] {
+export function defaultFeatureSelections(
+  mc: RecipeInputSpec,
+): FeatureSelection[] {
   const out: FeatureSelection[] = [];
-  for (const [name, f] of Object.entries(mc.features ?? {})) {
-    if (!f) continue;
+  for (const f of mc.features ?? []) {
+    if (!f?.name) continue;
+    const name = f.name;
     const type = featureType(f);
     if (type === "select") {
       if (f.default_option) out.push({ name, value: f.default_option });

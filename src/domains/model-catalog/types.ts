@@ -38,7 +38,7 @@ export type ModelCatalogSpec = {
   // Recipe extension (all optional)
   base?: RecipeBase | null;
   variants?: Record<string, RecipeVariant> | null;
-  features?: Record<string, RecipeFeature> | null;
+  features?: RecipeFeature[] | null;
 };
 
 export type ModelCatalogStatus = BaseStatus<ModelCatalogPhase>;
