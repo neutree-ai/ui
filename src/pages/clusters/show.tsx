@@ -253,7 +253,7 @@ export const ClustersShow = () => {
                         ).used
                       }
                       total={record.status.resource_info.allocatable.cpu}
-                      unit="cores"
+                      unit="c"
                     />
                   )}
 

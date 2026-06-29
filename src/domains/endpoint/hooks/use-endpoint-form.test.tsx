@@ -1485,16 +1485,16 @@ describe("useEndpointForm", () => {
       expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
       expect(screen.queryByText("clusters.fields.vgpuMemoryUsage")).toBeNull();
 
-      for (const expectedFreeValue of ["12.0 cores", "48.0 GiB", "15.0 GiB"]) {
+      for (const expectedFreeValue of ["12.0 c", "48.0 GiB", "15.0 GiB"]) {
         expect(
           within(clusterSection)
             .getAllByTestId("endpoint-resource-summary-free-value")
-            .some((value) => value.textContent?.includes(expectedFreeValue)),
+            .some((value) => value.textContent?.endsWith(expectedFreeValue)),
         ).toBe(true);
       }
       expect(
         within(clusterSection).getAllByText((text) =>
-          text.includes("4.0 / 16.0 cores"),
+          /4\.0 \/ 16\.0 c$/.test(text),
         ).length,
       ).toBeGreaterThan(0);
       expect(

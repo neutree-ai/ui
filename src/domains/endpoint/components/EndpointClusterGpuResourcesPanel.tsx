@@ -596,7 +596,7 @@ function EndpointClusterResourceSummary({
       used: cpuSummary.used,
       total: cpuSummary.total,
       available: cpuSummary.available,
-      unit: " cores",
+      unit: " c",
     },
     {
       label: t("common.fields.memory"),
@@ -809,7 +809,7 @@ function EndpointNodeResourceSummaries({
             used: group.cpu.used,
             total: group.cpu.total,
             available: group.cpu.available,
-            unit: " cores",
+            unit: " c",
           },
           {
             label: t("common.fields.memory"),
@@ -911,7 +911,7 @@ function EndpointVirtualizedNodeGpuResources({
             used: group.cpuSummary.used,
             total: group.cpuSummary.total,
             available: group.cpuSummary.available,
-            unit: " cores",
+            unit: " c",
           },
           {
             label: t("common.fields.memory"),

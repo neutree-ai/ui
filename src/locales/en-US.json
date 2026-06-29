@@ -182,7 +182,7 @@
 				"generationSpeed": "Generation Speed",
 				"totalThroughput": "Total Throughput",
 				"recommendedMemory": "Recommended Memory",
-				"recommendedCores": "Recommended Cores",
+				"recommendedCores": "Recommended c",
 				"totalVram": "Total VRAM",
 				"vramUsage": "VRAM",
 				"parameters": "Parameters",
@@ -192,7 +192,7 @@
 				"mode": "Mode",
 				"batch": "Batch",
 				"users": "Users",
-				"cores": "cores",
+				"cores": "c",
 				"inference": "Inference"
 			},
 			"memoryTypes": {
