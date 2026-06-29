@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import { EndpointClusterGpuResourcesPanel } from "./EndpointClusterGpuResourcesPanel";
@@ -23,12 +23,24 @@ const translations: Record<string, string> = {
   "clusters.messages.copyUuidSuccess": "GPU UUID copied",
   "clusters.options.allocated": "Allocated",
   "clusters.options.allGpuProducts": "All GPU Products",
+  "clusters.options.free": "Free",
+  "clusters.options.total": "Total",
   "clusters.options.unhealthy": "Unhealthy",
   "clusters.options.usable": "Usable",
+  "clusters.options.used": "Used",
+  "endpoints.fields.physicalGpu": "Card Count",
   "endpoints.sections.clusterDeviceResources": "Cluster Resources",
 };
 
 const t = (key: string) => translations[key] ?? key;
+
+const findByExactLabel = (cards: HTMLElement[], label: string) => {
+  const card = cards.find((item) => within(item).queryByText(label));
+
+  expect(card).toBeTruthy();
+
+  return card as HTMLElement;
+};
 
 const resourceInfo: ClusterResourceInfo = {
   allocatable: {
@@ -122,5 +134,49 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toBeTruthy();
     expect(screen.getAllByLabelText("Usable")).toHaveLength(1);
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
+  });
+
+  it("shows resource units in card titles instead of appending them to every value", () => {
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={true}
+        t={t}
+      />,
+    );
+
+    const nodeCards = screen.getAllByTestId("endpoint-node-resource-pill");
+    const cpuCard = findByExactLabel(nodeCards, "CPU");
+    const memoryCard = findByExactLabel(nodeCards, "Memory");
+    const summaryCards = screen.getAllByTestId(
+      "endpoint-resource-summary-card",
+    );
+    const cardCountCard = findByExactLabel(summaryCards, "Card Count");
+    const vramCard = findByExactLabel(summaryCards, "Memory Usage");
+    const coreCard = findByExactLabel(summaryCards, "Core Usage");
+
+    expect(within(cpuCard).getByText("cores")).toBeTruthy();
+    expect(within(memoryCard).getByText("GiB")).toBeTruthy();
+    expect(within(vramCard).getByText("GiB")).toBeTruthy();
+    expect(within(cardCountCard).queryByText("cores")).toBeNull();
+    expect(within(cardCountCard).queryByText("GiB")).toBeNull();
+    expect(within(coreCard).queryByText("cores")).toBeNull();
+    expect(within(coreCard).queryByText("GiB")).toBeNull();
+
+    expect(within(cpuCard).queryByText("32.0 cores")).toBeNull();
+    expect(within(memoryCard).queryByText("128.0 GiB")).toBeNull();
+    expect(within(cpuCard).getByText("32.0")).toBeTruthy();
+    expect(within(memoryCard).getByText("128.0")).toBeTruthy();
+    expect(vramCard.textContent).not.toContain("7.5 / 30.0 GiB");
+    expect(
+      within(vramCard).getByText((text) => text.includes("7.5 / 30.0")),
+    ).toBeTruthy();
+    expect(coreCard.textContent).not.toContain("cores");
+    expect(coreCard.textContent).not.toContain("GiB");
+    expect(
+      within(coreCard).getByText((text) => text.includes("50.0 / 200.0")),
+    ).toBeTruthy();
   });
 });

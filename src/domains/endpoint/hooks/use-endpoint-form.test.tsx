@@ -1485,7 +1485,20 @@ describe("useEndpointForm", () => {
       expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
       expect(screen.queryByText("clusters.fields.vgpuMemoryUsage")).toBeNull();
 
-      for (const expectedFreeValue of ["12.0 cores", "48.0 GiB", "15.0 GiB"]) {
+      expect(
+        within(clusterSection).getAllByText("cores").length,
+      ).toBeGreaterThan(0);
+      expect(within(clusterSection).getAllByText("GiB").length).toBeGreaterThan(
+        0,
+      );
+      expect(
+        within(clusterSection).queryByText((text) =>
+          ["12.0 cores", "48.0 GiB", "15.0 GiB"].some((value) =>
+            text.includes(value),
+          ),
+        ),
+      ).toBeNull();
+      for (const expectedFreeValue of ["12.0", "48.0", "15.0"]) {
         expect(
           within(clusterSection)
             .getAllByTestId("endpoint-resource-summary-free-value")
@@ -1494,27 +1507,27 @@ describe("useEndpointForm", () => {
       }
       expect(
         within(clusterSection).getAllByText((text) =>
-          text.includes("4.0 / 16.0 cores"),
+          text.includes("4.0 / 16.0"),
         ).length,
       ).toBeGreaterThan(0);
       expect(
         within(clusterSection).getAllByText((text) =>
-          text.includes("16.0 / 64.0 GiB"),
+          text.includes("16.0 / 64.0"),
         ).length,
       ).toBeGreaterThan(0);
       expect(
         within(clusterSection).getAllByText((text) =>
-          text.includes("15.0 / 30.0 GiB"),
+          text.includes("15.0 / 30.0"),
         ).length,
       ).toBeTruthy();
       expect(
-        screen.getAllByText((text) => text.includes("15.0 / 30.0 GiB")).length,
+        screen.getAllByText((text) => text.includes("15.0 / 30.0")).length,
       ).toBeGreaterThan(0);
       expect(
         screen.getAllByText((text) => text.includes("50.0 / 200.0")).length,
       ).toBeGreaterThan(0);
-      expect(screen.getAllByText("7.5 GiB").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("15.0 GiB").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("7.5").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("15.0").length).toBeGreaterThan(0);
       expect(
         screen.getAllByText((text) => text.includes("50.0")).length,
       ).toBeGreaterThan(0);
