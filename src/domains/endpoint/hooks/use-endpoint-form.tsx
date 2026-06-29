@@ -947,21 +947,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       {t("endpoints.descriptions.basicResources")}
                     </p>
                   </div>
-                  {selectedAccelerator?.type &&
-                    selectedAccelerator?.product &&
-                    !(isVgpuAllocationMode
-                      ? isVgpuCapacityExceeded
-                      : isFullGpuCapacityExceeded) && (
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "shrink-0 font-normal",
-                          getCapacityBadgeClassName(false),
-                        )}
-                      >
-                        {t("endpoints.fields.matchingGpuCards")}
-                      </Badge>
-                    )}
                 </div>
                 <div
                   data-testid="endpoint-resource-request-grid"

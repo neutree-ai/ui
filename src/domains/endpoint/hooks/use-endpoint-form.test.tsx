@@ -1961,6 +1961,11 @@ describe("useEndpointForm", () => {
       expect(
         screen.queryByTestId("endpoint-resource-summary-strip"),
       ).toBeNull();
+      expect(
+        within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
+          "endpoints.fields.matchingGpuCards",
+        ),
+      ).toBeNull();
       expect(screen.getByTestId("endpoint-current-request-panel")).toBeTruthy();
       expect(
         screen.getByTestId("endpoint-current-request-grid").className,
