@@ -1,5 +1,21 @@
 import type { Metadata } from "@/foundation/types/basic-types";
 
+// The limits object stored at api_key.spec.limits. get_api_key_limits also
+// returns token_quota.used / token_quota.remaining (read-only, computed).
+export type ApiKeyLimits = {
+  token_quota?: {
+    limit?: number;
+    period?: string;
+    used?: number;
+    remaining?: number;
+  };
+  rps?: number;
+  rpm?: number;
+  concurrency?: number;
+  allowed_models?: string[];
+  disabled?: boolean;
+};
+
 export type ApiKey = {
   id: string;
   api_version: "v1";
@@ -11,6 +27,8 @@ export type ApiKey = {
 
 export type ApiKeySpec = {
   quota: number;
+  // Quota + access limits for the key. Optional: keys with no limits have none.
+  limits?: ApiKeyLimits | null;
 };
 
 export type ApiKeyStatus = {

@@ -67,6 +67,9 @@
 			"lastDays": "Last {{days}} days",
 			"from": "From",
 			"to": "To"
+		},
+		"validation": {
+			"workspaceRequired": "Please select a workspace before creating the resource"
 		}
 	},
 	"appearance": {
@@ -1015,6 +1018,72 @@
 				"endpoint": "Internal",
 				"external-endpoint": "External"
 			}
+		},
+		"limits": {
+			"sectionTitle": "Limits (optional)",
+			"quotaTitle": "Token quota",
+			"quotaHint": "Cap token usage for this key over a period. Leave empty for no quota.",
+			"accessTitle": "Access control",
+			"tokenLimit": "Token limit",
+			"period": "Period",
+			"periods": {
+				"daily": "Daily",
+				"weekly": "Weekly",
+				"monthly": "Monthly",
+				"yearly": "Yearly"
+			},
+			"optional": "Optional",
+			"concurrency": "Max concurrent",
+			"allowedModels": "Allowed models",
+			"allowedModelsHint": "Leave empty to allow all models. Names must match the served model.",
+			"rps": "Requests per second (RPS)",
+			"rpm": "Requests per minute (RPM)",
+			"selectModel": "Select a model",
+			"modelsSelected": "{{count}} model(s) selected",
+			"noModels": "No models available",
+			"tokensUnit": "tokens",
+			"invalidPositiveInt": "Must be a positive integer",
+			"none": "No limits set for this key.",
+			"consumptionTitle": "Resource consumption",
+			"remainingLabel": "remaining",
+			"usageColumn": "Usage",
+			"rateColumn": "Rate limits",
+			"modelsColumn": "Supported models",
+			"allModels": "All",
+			"statusColumn": "Status",
+			"statusActive": "Active",
+			"statusDisabled": "Disabled",
+			"statusQuotaExceeded": "Quota exceeded",
+			"disable": "Disable",
+			"enable": "Enable",
+			"actions": "Actions"
+		},
+		"ranking": {
+			"title": "API key ranking overview",
+			"subtitle": "By the last 24 hours, split into request count and token dimensions.",
+			"window": "24h",
+			"requests": "Request count",
+			"tokens": "Tokens",
+			"empty": "No data"
+		},
+		"models": {
+			"internal": "Internal",
+			"external": "External"
+		},
+		"performance": {
+			"title": "Last 24h request performance",
+			"subtitle": "Call volume, response latency and success rate.",
+			"viewLogs": "View call logs",
+			"requests": "Requests",
+			"avgLatency": "Avg latency",
+			"successRate": "Success rate"
+		},
+		"modelAccess": {
+			"title": "Model access",
+			"all": "All models allowed",
+			"unavailable": "Endpoint unavailable",
+			"instanceLabel": "Inference instance: {{name}}",
+			"endpointLabel": "Endpoint: {{name}}"
 		}
 	},
 	"infrastructure": {
@@ -1146,7 +1215,8 @@
 			"newKey": "New key",
 			"addVariable": "Add Variable",
 			"selectOrTypeKey": "Select from schema or type custom key",
-			"noSchemaKeys": "No schema keys available"
+			"noSchemaKeys": "No schema keys available",
+			"invalidJsonValue": "Enter a valid JSON object or array"
 		},
 		"playground": {
 			"chat": {
@@ -1302,6 +1372,7 @@
 			"endpoint": {
 				"Pending": "Pending",
 				"Deploying": "Deploying",
+				"ModelDownloading": "Model Downloading",
 				"Running": "Running",
 				"Paused": "Paused",
 				"Deleting": "Deleting",

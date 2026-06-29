@@ -333,6 +333,7 @@ export function computeMaxAvailable(
 export function transformEndpointValues(spec: {
   resources?: Record<string, unknown> | null;
   replicas?: { num?: unknown } | null;
+  variables?: { engine_args?: Record<string, unknown> | null } | null;
 }): void {
   if (spec.resources) {
     for (const field of ["cpu", "memory", "gpu"]) {
@@ -407,6 +408,29 @@ export function transformEndpointValues(spec: {
   }
   if (spec.replicas?.num != null) {
     spec.replicas.num = Number(spec.replicas.num);
+  }
+  const engineArgs = spec.variables?.engine_args;
+  if (
+    engineArgs &&
+    typeof engineArgs === "object" &&
+    !Array.isArray(engineArgs)
+  ) {
+    for (const [key, value] of Object.entries(engineArgs)) {
+      if (typeof value !== "string") continue;
+      const trimmed = value.trim();
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) continue;
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (
+          (typeof parsed === "object" && parsed !== null) ||
+          Array.isArray(parsed)
+        ) {
+          engineArgs[key] = parsed;
+        }
+      } catch {
+        // Preserve invalid JSON strings so custom no-schema args keep old behavior.
+      }
+    }
   }
 }
 

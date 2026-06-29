@@ -6,7 +6,7 @@ import { ALL_WORKSPACES } from "./use-workspace";
 
 let mockParams: Record<string, unknown> = {};
 let mockAction = "list";
-let mockStorageValue: string | undefined = undefined;
+let mockStorageValue: string | undefined;
 const mockSetValue = vi.fn();
 
 const mockWorkspaces = [
@@ -132,5 +132,32 @@ describe("useWorkspace", () => {
       expect(result.current.data).toEqual(mockWorkspaces);
       expect(result.current.isLoading).toBe(false);
     });
+  });
+});
+
+describe("isValidWorkspace", () => {
+  it("returns true for a real workspace name", async () => {
+    const { isValidWorkspace } = await import("./use-workspace");
+    expect(isValidWorkspace("ws-alpha")).toBe(true);
+  });
+
+  it("returns false for ALL_WORKSPACES sentinel", async () => {
+    const { isValidWorkspace } = await import("./use-workspace");
+    expect(isValidWorkspace(ALL_WORKSPACES)).toBe(false);
+  });
+
+  it("returns false for empty string", async () => {
+    const { isValidWorkspace } = await import("./use-workspace");
+    expect(isValidWorkspace("")).toBe(false);
+  });
+
+  it("returns false for undefined", async () => {
+    const { isValidWorkspace } = await import("./use-workspace");
+    expect(isValidWorkspace(undefined)).toBe(false);
+  });
+
+  it("returns false for null", async () => {
+    const { isValidWorkspace } = await import("./use-workspace");
+    expect(isValidWorkspace(null)).toBe(false);
   });
 });

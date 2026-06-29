@@ -53,8 +53,11 @@ vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
+const mockUseWorkspace = vi.fn(() => ({ current: "default" }));
+
 vi.mock("@/foundation/hooks/use-workspace", () => ({
-  useWorkspace: () => ({ current: "default" }),
+  useWorkspace: () => mockUseWorkspace(),
+  isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
 const nodeIPsFieldProps = vi.fn();
@@ -126,6 +129,16 @@ function EditForm() {
         {acceleratorVirtualizationFields}
         {authFields}
       </form>
+    </FormProvider>
+  );
+}
+
+function MetadataForm() {
+  const { form, metadataFields } = useClusterForm({ action: "create" });
+  formInstance = form;
+  return (
+    <FormProvider {...form}>
+      <form data-testid="metadata-form">{metadataFields}</form>
     </FormProvider>
   );
 }
@@ -284,6 +297,51 @@ describe("useClusterForm", () => {
 
       expect(
         screen.queryByTestId("field-spec.config.kubernetes_config.kubeconfig"),
+      ).toBeNull();
+    });
+  });
+
+  describe("workspace validation", () => {
+    beforeEach(() => {
+      mockUseWorkspace.mockReset();
+    });
+
+    it("defaults to empty string when current workspace is _all_", () => {
+      mockUseWorkspace.mockReturnValue({ current: "_all_" });
+
+      render(<MetadataForm />);
+      const field = screen.getByTestId("field-metadata.workspace");
+
+      expect(field).toBeTruthy();
+    });
+
+    it("shows validation error on submit when workspace is _all_", async () => {
+      mockUseWorkspace.mockReturnValue({ current: "_all_" });
+
+      render(<MetadataForm />);
+
+      await act(async () => {
+        await formInstance!.trigger("metadata.workspace");
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("common.validation.workspaceRequired"),
+        ).toBeTruthy();
+      });
+    });
+
+    it("does not show validation error when workspace is valid", async () => {
+      mockUseWorkspace.mockReturnValue({ current: "ws-alpha" });
+
+      render(<MetadataForm />);
+
+      await act(async () => {
+        await formInstance!.trigger("metadata.workspace");
+      });
+
+      expect(
+        screen.queryByText("common.validation.workspaceRequired"),
       ).toBeNull();
     });
   });

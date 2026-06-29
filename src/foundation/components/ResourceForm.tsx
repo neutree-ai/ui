@@ -1,17 +1,20 @@
+import type { BaseRecord, HttpError } from "@refinedev/core";
+import type { UseFormReturnType } from "@refinedev/react-hook-form";
+import {
+  type DetailedHTMLProps,
+  type FormEventHandler,
+  type FormHTMLAttributes,
+  type PropsWithChildren,
+  useMemo,
+  useRef,
+} from "react";
+import type { FieldValues } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form as FormUI } from "@/components/ui/form";
 import { SaveButton } from "@/foundation/components/SaveButton";
 import { useOnBack } from "@/foundation/hooks/use-on-back";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { BaseRecord, HttpError } from "@refinedev/core";
-import type { UseFormReturnType } from "@refinedev/react-hook-form";
-import {
-  type DetailedHTMLProps,
-  type FormHTMLAttributes,
-  type PropsWithChildren,
-  useRef,
-} from "react";
-import type { FieldValues } from "react-hook-form";
+import { ResourceFormSubmitContext } from "./resource-form-submit-context";
 
 type NativeFormProps = Omit<
   DetailedHTMLProps<FormHTMLAttributes<HTMLFormElement>, HTMLFormElement>,
@@ -66,6 +69,7 @@ export const ResourceForm = <
   TResponseError
 >) => {
   const watchable = useRef<boolean>(false);
+  const beforeSubmitHandlers = useRef(new Set<() => boolean | undefined>());
   const onBack = useOnBack();
   const { t } = useTranslation();
 
@@ -74,43 +78,65 @@ export const ResourceForm = <
     props.watch();
   }
 
-  const onSubmit = props.handleSubmit((_data: TVariables) => {
-    props.refineCore.onFinish(props.getValues()).then();
-  });
+  const submitContext = useMemo(
+    () => ({
+      registerBeforeSubmit: (handler: () => boolean | undefined) => {
+        beforeSubmitHandlers.current.add(handler);
+        return () => {
+          beforeSubmitHandlers.current.delete(handler);
+        };
+      },
+    }),
+    [],
+  );
+
+  const onSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+    for (const handler of beforeSubmitHandlers.current) {
+      if (handler() === false) {
+        event.preventDefault();
+        return;
+      }
+    }
+    props.handleSubmit((data: TVariables) => {
+      props.refineCore.onFinish(data).then();
+    })(event);
+  };
 
   return (
     <FormUI {...props}>
-      <form {...formProps} onSubmit={onSubmit} data-testid="form">
-        <div>
-          {title && (
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {title}
-            </h2>
-          )}
-
-          <div className="pt-6 space-y-4">{props.children}</div>
-
-          <div className="flex justify-end gap-x-4 mt-4">
-            {!props.hideCancel && (
-              <Button
-                type="button"
-                onClick={onBack}
-                disabled={props.refineCore.formLoading}
-                variant="outline"
-                data-testid="form-cancel"
-              >
-                {t("buttons.cancel")}
-              </Button>
+      <ResourceFormSubmitContext.Provider value={submitContext}>
+        <form {...formProps} onSubmit={onSubmit} data-testid="form">
+          <div>
+            {title && (
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {title}
+              </h2>
             )}
 
-            <SaveButton
-              type="submit"
-              loading={props.refineCore.formLoading}
-              data-testid="form-submit"
-            />
+            <div className="pt-6 space-y-4">{props.children}</div>
+
+            <div className="flex justify-end gap-x-4 mt-4">
+              {!props.hideCancel && (
+                <Button
+                  type="button"
+                  onClick={onBack}
+                  disabled={props.refineCore.formLoading}
+                  variant="outline"
+                  data-testid="form-cancel"
+                >
+                  {t("buttons.cancel")}
+                </Button>
+              )}
+
+              <SaveButton
+                type="submit"
+                loading={props.refineCore.formLoading}
+                data-testid="form-submit"
+              />
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </ResourceFormSubmitContext.Provider>
     </FormUI>
   );
 };

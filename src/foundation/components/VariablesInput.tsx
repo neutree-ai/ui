@@ -1,6 +1,18 @@
 import { Plus, Trash } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal, flushSync } from "react-dom";
+import {
+  type FieldPath,
+  type FieldValues,
+  useFormContext,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,13 +26,6 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -31,26 +36,31 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   type EditingRow,
+  INVALID_JSON_ERROR,
   type Schema,
   useVariablesInput,
 } from "@/foundation/hooks/use-variables-input";
+import { ResourceFormSubmitContext } from "./resource-form-submit-context";
 
 interface VariablesInputProps {
-  value?: Record<string, any>;
-  onChange?: (value: Record<string, any>) => void;
+  name?: string;
+  value?: Record<string, unknown>;
+  onChange?: (value: Record<string, unknown>) => void;
   title?: string;
   schema?: Schema;
   field?: {
-    value?: Record<string, any>;
-    onChange?: (value: Record<string, any>) => void;
+    value?: Record<string, unknown>;
+    onChange?: (value: Record<string, unknown>) => void;
   };
 }
 
 export const VariablesInput = React.forwardRef<
   HTMLTableElement,
   VariablesInputProps
->(({ value, onChange, schema = {}, field }, ref) => {
+>(({ name, value, onChange, schema = {}, field }, ref) => {
   const { t } = useTranslation();
+  const form = useFormContext<FieldValues>();
+  const submitContext = useContext(ResourceFormSubmitContext);
 
   // Handle both direct props and field props
   // Ensure we always have a valid object, even if the field value is null
@@ -60,14 +70,16 @@ export const VariablesInput = React.forwardRef<
 
   const {
     editingRows,
+    editingRowErrors,
     schemaKeyOptions,
     handleAddNewRow,
     handleEditingKeyChange,
     handleEditingValueChange,
-    handleEditingRowBlur,
     handleRemoveEditingRow,
     handleRemoveVariable,
     handleUpdateValue,
+    saveEditingRow,
+    saveEditingRows,
   } = useVariablesInput({
     value: actualValue,
     onChange: actualOnChange,
@@ -79,11 +91,164 @@ export const VariablesInput = React.forwardRef<
 
   // Track input refs and dropdown position for portal
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const hasManagedJsonErrorRef = useRef(false);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
     left: number;
     width: number;
   } | null>(null);
+  const [jsonValueDrafts, setJsonValueDrafts] = useState<
+    Record<string, string>
+  >({});
+  const [jsonValueErrors, setJsonValueErrors] = useState<
+    Record<string, string>
+  >({});
+
+  const setFormJsonError = useCallback(() => {
+    if (!name || !form) return;
+    hasManagedJsonErrorRef.current = true;
+    form.setError(name as FieldPath<FieldValues>, {
+      type: "manual",
+      message: t(INVALID_JSON_ERROR),
+    });
+  }, [form, name, t]);
+
+  const saveEditingRowNow = (id: string) => {
+    flushSync(() => {
+      saveEditingRow(id);
+    });
+  };
+
+  useEffect(() => {
+    if (!name || !form) return;
+    const hasJsonError =
+      Object.keys(jsonValueErrors).length > 0 ||
+      Object.keys(editingRowErrors).length > 0;
+    if (hasJsonError) {
+      hasManagedJsonErrorRef.current = true;
+      form.setError(name as FieldPath<FieldValues>, {
+        type: "manual",
+        message: t(INVALID_JSON_ERROR),
+      });
+      return;
+    }
+    if (!hasManagedJsonErrorRef.current) return;
+    hasManagedJsonErrorRef.current = false;
+    form.clearErrors(name as FieldPath<FieldValues>);
+  }, [editingRowErrors, form, jsonValueErrors, name, t]);
+
+  const handleRemoveJsonVariable = (key: string) => {
+    setJsonValueDrafts((prev) => {
+      if (!Object.hasOwn(prev, key)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setJsonValueErrors((prev) => {
+      if (!Object.hasOwn(prev, key)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    handleRemoveVariable(key);
+  };
+
+  useLayoutEffect(() => {
+    return submitContext?.registerBeforeSubmit(() => {
+      let isValid = true;
+      flushSync(() => {
+        isValid = saveEditingRows(editingRows.map((row) => row.id));
+      });
+      if (!isValid) {
+        setFormJsonError();
+        return false;
+      }
+      return true;
+    });
+  }, [editingRows, saveEditingRows, setFormJsonError, submitContext]);
+
+  const formatJsonValue = (val: unknown) =>
+    typeof val === "string" ? val : JSON.stringify(val, null, 2);
+
+  const formatPrimitiveValue = (val: unknown) => {
+    if (typeof val === "string" || typeof val === "number") return val;
+    return val == null ? "" : String(val);
+  };
+
+  const handleExistingJsonValueChange = (key: string, rawValue: string) => {
+    const type = schema[key]?.type;
+    if (type !== "object" && type !== "array") return;
+
+    setJsonValueDrafts((prev) => ({ ...prev, [key]: rawValue }));
+    try {
+      const parsed = JSON.parse(rawValue);
+      const matchesType =
+        type === "array"
+          ? Array.isArray(parsed)
+          : typeof parsed === "object" &&
+            parsed !== null &&
+            !Array.isArray(parsed);
+      if (matchesType) {
+        setJsonValueErrors((prev) => {
+          if (!prev[key]) return prev;
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        flushSync(() => {
+          handleUpdateValue(key, parsed);
+        });
+      } else {
+        setJsonValueErrors((prev) => ({
+          ...prev,
+          [key]: INVALID_JSON_ERROR,
+        }));
+        setFormJsonError();
+      }
+    } catch {
+      setJsonValueErrors((prev) => ({
+        ...prev,
+        [key]: INVALID_JSON_ERROR,
+      }));
+      setFormJsonError();
+    }
+  };
+
+  useEffect(() => {
+    setJsonValueErrors((prev) => {
+      const nextErrors: Record<string, string> = {};
+      for (const [key, val] of Object.entries(actualValue)) {
+        if (Object.hasOwn(jsonValueDrafts, key)) {
+          if (prev[key]) nextErrors[key] = prev[key];
+          continue;
+        }
+        const type = schema[key]?.type;
+        if (type !== "object" && type !== "array") continue;
+        if (typeof val !== "string") continue;
+        try {
+          const parsed = JSON.parse(val);
+          const matchesType =
+            type === "array"
+              ? Array.isArray(parsed)
+              : typeof parsed === "object" &&
+                parsed !== null &&
+                !Array.isArray(parsed);
+          if (!matchesType) {
+            nextErrors[key] = INVALID_JSON_ERROR;
+          }
+        } catch {
+          nextErrors[key] = INVALID_JSON_ERROR;
+        }
+      }
+      if (
+        Object.keys(prev).length === Object.keys(nextErrors).length &&
+        Object.entries(nextErrors).every(([key, error]) => prev[key] === error)
+      ) {
+        return prev;
+      }
+      return nextErrors;
+    });
+  }, [actualValue, jsonValueDrafts, schema]);
 
   // Calculate dropdown position when focused row changes
   useEffect(() => {
@@ -102,73 +267,12 @@ export const VariablesInput = React.forwardRef<
     }
   }, [focusedRowId]);
 
-  // JsonValueInput is a textarea bound to a JSON-encoded view of the value.
-  // We buffer the raw text so the user can type intermediate invalid JSON
-  // (e.g. half-typed quotes) without losing it; on blur we try to parse and
-  // commit. Border turns destructive while the buffer is unparseable.
-  const JsonValueInput: React.FC<{
-    value: unknown;
-    onChange: (next: unknown) => void;
-  }> = ({ value, onChange }) => {
-    const initial = React.useMemo(() => {
-      try {
-        return JSON.stringify(value ?? null, null, 2);
-      } catch {
-        return "";
-      }
-    }, [value]);
-    const [draft, setDraft] = useState(initial);
-    const [hasError, setHasError] = useState(false);
-    useEffect(() => {
-      setDraft(initial);
-    }, [initial]);
-    const commit = () => {
-      try {
-        const parsed = JSON.parse(draft);
-        setHasError(false);
-        onChange(parsed);
-      } catch {
-        setHasError(true);
-      }
-    };
-    return (
-      <Textarea
-        value={draft}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          if (hasError) setHasError(false);
-        }}
-        onBlur={commit}
-        className={`font-mono text-xs min-h-[80px] w-full ${hasError ? "border-destructive" : ""}`}
-        placeholder='{ "key": "value" }'
-      />
-    );
-  };
-
-  // Render appropriate input based on schema type for existing variables.
-  // Falls back to a JSON textarea when the value (or its declared schema type)
-  // is non-primitive — avoids the `[object Object]` placeholder for fields
-  // like vllm's `speculative_config` and `hf_overrides`.
-  const renderValueInput = (key: string, val: any) => {
-    const schemaType = schema[key]?.type as string | undefined;
-    const isComplexValue =
-      val !== null && typeof val === "object" && val !== undefined;
-
-    if (
-      schemaType === "object" ||
-      schemaType === "array" ||
-      (schemaType === undefined && isComplexValue)
-    ) {
-      return (
-        <JsonValueInput
-          value={val}
-          onChange={(next) => handleUpdateValue(key, next)}
-        />
-      );
-    }
-
+  // Render appropriate input based on schema type for existing variables
+  const renderValueInput = (key: string, val: unknown) => {
     if (schema[key]) {
-      switch (schemaType) {
+      const { type } = schema[key];
+
+      switch (type) {
         case "boolean":
           return (
             <Checkbox
@@ -181,7 +285,7 @@ export const VariablesInput = React.forwardRef<
           return (
             <Input
               type="number"
-              value={val}
+              value={formatPrimitiveValue(val)}
               step="any"
               onChange={(e) =>
                 handleUpdateValue(key, Number.parseFloat(e.target.value))
@@ -193,7 +297,7 @@ export const VariablesInput = React.forwardRef<
           return (
             <Input
               type="number"
-              value={val}
+              value={formatPrimitiveValue(val)}
               step="1"
               onChange={(e) =>
                 handleUpdateValue(key, Number.parseInt(e.target.value, 10))
@@ -201,10 +305,28 @@ export const VariablesInput = React.forwardRef<
               className="w-full"
             />
           );
+        case "object":
+        case "array":
+          return (
+            <div className="space-y-1">
+              <Textarea
+                value={jsonValueDrafts[key] ?? formatJsonValue(val)}
+                onChange={(e) =>
+                  handleExistingJsonValueChange(key, e.target.value)
+                }
+                className="min-h-24 w-full font-mono text-sm"
+              />
+              {jsonValueErrors[key] && (
+                <p className="text-xs text-destructive">
+                  {t(jsonValueErrors[key])}
+                </p>
+              )}
+            </div>
+          );
         default:
           return (
             <Input
-              value={val}
+              value={formatPrimitiveValue(val)}
               onChange={(e) => handleUpdateValue(key, e.target.value)}
               className="w-full"
             />
@@ -212,9 +334,10 @@ export const VariablesInput = React.forwardRef<
       }
     }
 
+    // Default to string input for unknown types
     return (
       <Input
-        value={val}
+        value={formatPrimitiveValue(val)}
         onChange={(e) => handleUpdateValue(key, e.target.value)}
         className="w-full"
       />
@@ -229,24 +352,18 @@ export const VariablesInput = React.forwardRef<
       switch (type) {
         case "boolean":
           return (
-            <Select
-              value={row.value}
-              onValueChange={(value) => handleEditingValueChange(row.id, value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={t("components.variablesInput.selectValue")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="true">
-                  {t("components.variablesInput.true")}
-                </SelectItem>
-                <SelectItem value="false">
-                  {t("components.variablesInput.false")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <Checkbox
+              checked={row.value === "true"}
+              onCheckedChange={(checked) => {
+                flushSync(() => {
+                  handleEditingValueChange(
+                    row.id,
+                    checked === true ? "true" : "false",
+                  );
+                });
+                saveEditingRowNow(row.id);
+              }}
+            />
           );
         case "number":
         case "float":
@@ -257,7 +374,7 @@ export const VariablesInput = React.forwardRef<
               value={row.value}
               step="any"
               onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
-              onBlur={() => handleEditingRowBlur(row.id)}
+              onBlur={() => saveEditingRowNow(row.id)}
               className="w-full"
             />
           );
@@ -269,9 +386,29 @@ export const VariablesInput = React.forwardRef<
               value={row.value}
               step="1"
               onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
-              onBlur={() => handleEditingRowBlur(row.id)}
+              onBlur={() => saveEditingRowNow(row.id)}
               className="w-full"
             />
+          );
+        case "object":
+        case "array":
+          return (
+            <div className="space-y-1">
+              <Textarea
+                placeholder={t("components.variablesInput.newValue")}
+                value={row.value}
+                onChange={(e) =>
+                  handleEditingValueChange(row.id, e.target.value)
+                }
+                onBlur={() => saveEditingRowNow(row.id)}
+                className="min-h-24 w-full font-mono text-sm"
+              />
+              {editingRowErrors[row.id] && (
+                <p className="text-xs text-destructive">
+                  {t(editingRowErrors[row.id])}
+                </p>
+              )}
+            </div>
           );
       }
     }
@@ -282,7 +419,7 @@ export const VariablesInput = React.forwardRef<
         placeholder={t("components.variablesInput.newValue")}
         value={row.value}
         onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
-        onBlur={() => handleEditingRowBlur(row.id)}
+        onBlur={() => saveEditingRowNow(row.id)}
         className="w-full"
       />
     );
@@ -318,7 +455,7 @@ export const VariablesInput = React.forwardRef<
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleRemoveVariable(key)}
+                    onClick={() => handleRemoveJsonVariable(key)}
                   >
                     <Trash className="h-4 w-4" />
                   </Button>
@@ -359,7 +496,6 @@ export const VariablesInput = React.forwardRef<
                       onFocus={() => setFocusedRowId(row.id)}
                       onBlur={() => {
                         setTimeout(() => setFocusedRowId(null), 200);
-                        handleEditingRowBlur(row.id);
                       }}
                       placeholder={
                         schemaKeyOptions.length > 0
