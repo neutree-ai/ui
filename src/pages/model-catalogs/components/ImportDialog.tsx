@@ -1,3 +1,4 @@
+import { useCreate } from "@refinedev/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, FileText, Link as LinkIcon, Loader2 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
@@ -16,13 +17,22 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
-import {
-  importModelCatalogs,
-  type ModelCatalogImportItem,
-} from "@/foundation/lib/api/model-catalogs";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  isValidYamlResource,
+  parseYamlDocuments,
+  transformResourceForImport,
+} from "@/foundation/lib/yaml-transform";
 
 type Source = "yaml" | "url" | "file";
+
+// Per-document result of a client-side import, shown in the results table.
+type ModelCatalogImportItem = {
+  index: number;
+  name?: string;
+  ok: boolean;
+  error?: string;
+};
 
 interface ImportDialogProps {
   open: boolean;
@@ -45,6 +55,7 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
   const [fileName, setFileName] = useState("");
   const [results, setResults] = useState<ModelCatalogImportItem[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { mutateAsync: createResource } = useCreate();
 
   const reset = useCallback(() => {
     setYamlText("");
@@ -62,17 +73,106 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
   };
 
   const mutation = useMutation({
-    mutationFn: async () => {
-      const payload =
-        source === "url"
-          ? { url, workspace: workspace || undefined }
-          : { yaml: yamlText, workspace: workspace || undefined };
-      return importModelCatalogs(payload);
+    mutationFn: async (): Promise<ModelCatalogImportItem[]> => {
+      // Resolve the raw YAML text. URL imports are fetched in the browser (the
+      // URL must be CORS-accessible) — there is no server-side fetch.
+      let content = yamlText;
+      if (source === "url") {
+        let normalizedUrl = url.trim();
+        if (
+          !normalizedUrl.startsWith("http://") &&
+          !normalizedUrl.startsWith("https://")
+        ) {
+          normalizedUrl = `https://${normalizedUrl}`;
+        }
+        const res = await fetch(normalizedUrl, {
+          method: "GET",
+          headers: { Accept: "application/x-yaml, text/yaml, text/plain, */*" },
+        });
+        if (!res.ok) {
+          throw new Error(
+            t(
+              "model_catalogs.import.fetchFailed",
+              "Failed to fetch URL: {{status}} {{statusText}}",
+              { status: res.status, statusText: res.statusText },
+            ),
+          );
+        }
+        content = await res.text();
+      }
+
+      const docs = parseYamlDocuments(content);
+      if (docs.length === 0) {
+        throw new Error(
+          t(
+            "model_catalogs.import.noDocuments",
+            "No model catalog documents found in the input.",
+          ),
+        );
+      }
+
+      // Parse client-side and create each document through the normal,
+      // RLS-scoped create flow — same path as the global YAML import.
+      const items: ModelCatalogImportItem[] = [];
+      for (let index = 0; index < docs.length; index++) {
+        const doc = docs[index];
+        const item: ModelCatalogImportItem = {
+          index,
+          name: doc.metadata?.name,
+          ok: false,
+        };
+
+        if (doc.kind && doc.kind !== "ModelCatalog") {
+          item.error = t(
+            "model_catalogs.import.wrongKind",
+            'Expected kind ModelCatalog, got "{{kind}}"',
+            { kind: doc.kind },
+          );
+          items.push(item);
+          continue;
+        }
+
+        if (!isValidYamlResource(doc)) {
+          item.error = t(
+            "model_catalogs.import.invalidResource",
+            "Missing apiVersion, kind, or metadata.name.",
+          );
+          items.push(item);
+          continue;
+        }
+
+        try {
+          const values = transformResourceForImport(
+            doc,
+            workspace || defaultWorkspace,
+          );
+          await createResource({
+            resource: "model_catalogs",
+            values,
+            meta: {
+              idColumnName: "metadata->name",
+              workspace: (values.metadata as { workspace?: string }).workspace,
+              workspaced: true,
+            },
+            successNotification: false,
+            errorNotification: false,
+          });
+          item.ok = true;
+        } catch (err) {
+          item.error =
+            err instanceof Error
+              ? err.message
+              : t("model_catalogs.import.unknownError", "Unknown error");
+        }
+        items.push(item);
+      }
+
+      return items;
     },
-    onSuccess: (data) => {
-      setResults(data.items);
-      const ok = data.items.filter((r) => r.ok).length;
-      const failed = data.items.length - ok;
+    onSuccess: (items) => {
+      setResults(items);
+      const ok = items.filter((r) => r.ok).length;
+      const failed = items.length - ok;
       if (failed === 0) {
         toast.success(
           t("model_catalogs.import.successAll", "Imported {{count}} catalogs", {
@@ -205,7 +305,7 @@ spec:
             <p className="text-xs text-muted-foreground mt-2">
               {t(
                 "model_catalogs.import.urlHint",
-                "Backend fetches the URL (1 MiB / 10 s limit). Use a raw YAML link.",
+                "Fetched in your browser — the URL must allow cross-origin (CORS) access. Use a raw YAML link.",
               )}
             </p>
           </TabsContent>
@@ -262,7 +362,10 @@ spec:
                       </span>
                     </td>
                     <td className="px-2 py-1 text-muted-foreground">
-                      {r.error || (r.ok ? `id=${r.id}` : "-")}
+                      {r.error ||
+                        (r.ok
+                          ? t("model_catalogs.import.created", "Created")
+                          : "-")}
                     </td>
                   </tr>
                 ))}

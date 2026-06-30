@@ -332,4 +332,31 @@ describe("composeEndpointSpec — typed features", () => {
     if (r.ok) throw new Error("should fail");
     expect(r.error).toMatch(/no option/);
   });
+
+  it("substitutes ${value} nested in maps and lists", () => {
+    const mc = mkTypedRecipe();
+    mc.features = [
+      {
+        name: "max-len",
+        type: "input",
+        input: { value_type: "int", default: "4096" },
+        engine_args: {
+          chat_template_kwargs: {
+            max_len: "${value}",
+            presets: ["len-${value}"],
+          },
+        },
+      },
+    ];
+
+    const r = composeEndpointSpec(mc, "default", [
+      { name: "max-len", value: "8192" },
+    ]);
+    expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.spec.engine_args.chat_template_kwargs).toEqual({
+      max_len: 8192,
+      presets: ["len-8192"],
+    });
+  });
 });

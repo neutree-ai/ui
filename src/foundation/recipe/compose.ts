@@ -213,10 +213,25 @@ function substituteArgs(
   return out;
 }
 
+// Recurses into nested maps and lists so a "${value}" buried under e.g.
+// chat_template_kwargs is substituted too — must match the Go implementation
+// in internal/recipe/compose.go.
 function substituteValue(v: unknown, val: string, valueType: string): unknown {
-  if (typeof v !== "string") return v;
-  if (v === PLACEHOLDER) return coerce(val, valueType);
-  if (v.includes(PLACEHOLDER)) return v.split(PLACEHOLDER).join(val);
+  if (typeof v === "string") {
+    if (v === PLACEHOLDER) return coerce(val, valueType);
+    if (v.includes(PLACEHOLDER)) return v.split(PLACEHOLDER).join(val);
+    return v;
+  }
+  if (Array.isArray(v)) {
+    return v.map((item) => substituteValue(item, val, valueType));
+  }
+  if (v && typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, vv] of Object.entries(v as Record<string, unknown>)) {
+      out[k] = substituteValue(vv, val, valueType);
+    }
+    return out;
+  }
   return v;
 }
 
