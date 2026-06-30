@@ -833,7 +833,9 @@
 			"vramLow": "Insufficient VRAM",
 			"resourceEstimate": "Resource estimate",
 			"estimatedVram": "Estimated VRAM",
-			"replicasCount": "{{count}} replica"
+			"replicasCount": "{{count}} replica",
+			"noVerifiedAccelerator": "No validated GPU available in this cluster.",
+			"requiredVram": "Requires ≥ {{gb}} GB VRAM."
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",
