@@ -47,7 +47,7 @@ describe("transformClusterValues", () => {
       );
     });
 
-    it("removes empty ssh_private_key in edit mode", () => {
+    it("removes unchanged empty ssh_private_key in edit mode", () => {
       const cluster = makeCluster({
         spec: {
           type: "ssh",
@@ -63,6 +63,27 @@ describe("transformClusterValues", () => {
       expect(
         result.spec.config.ssh_config?.auth?.ssh_private_key,
       ).toBeUndefined();
+    });
+    it("preserves touched empty ssh_private_key in edit mode", () => {
+      const cluster = makeCluster({
+        spec: {
+          type: "ssh",
+          config: {
+            ssh_config: {
+              provider: { head_ip: "1.2.3.4" },
+              auth: { ssh_user: "root", ssh_private_key: "" },
+            },
+          },
+        },
+      });
+      const result = transformClusterValues(cluster, true, {
+        spec: {
+          config: {
+            ssh_config: { auth: { ssh_private_key: true } },
+          },
+        },
+      });
+      expect(result.spec.config.ssh_config?.auth?.ssh_private_key).toBe("");
     });
   });
 
@@ -92,7 +113,7 @@ describe("transformClusterValues", () => {
       expect(result.spec.config.kubernetes_config?.router?.replicas).toBe(3);
     });
 
-    it("removes empty kubeconfig in edit mode", () => {
+    it("removes unchanged empty kubeconfig in edit mode", () => {
       const cluster = makeCluster({
         spec: {
           type: "kubernetes",
@@ -106,6 +127,23 @@ describe("transformClusterValues", () => {
       });
       const result = transformClusterValues(cluster, true);
       expect(result.spec.config.kubernetes_config?.kubeconfig).toBeUndefined();
+    });
+    it("preserves touched empty kubeconfig in edit mode", () => {
+      const cluster = makeCluster({
+        spec: {
+          type: "kubernetes",
+          config: {
+            kubernetes_config: {
+              kubeconfig: "",
+              router: { replicas: "3" },
+            },
+          },
+        },
+      });
+      const result = transformClusterValues(cluster, true, {
+        spec: { config: { kubernetes_config: { kubeconfig: true } } },
+      });
+      expect(result.spec.config.kubernetes_config?.kubeconfig).toBe("");
     });
 
     it("keeps accelerator virtualization config for kubernetes clusters", () => {

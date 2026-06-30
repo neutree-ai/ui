@@ -26,9 +26,24 @@ export const ApiKeyPolicyFields = ({
 }: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
   const modelOptions = useWorkspaceModels(workspace);
-  const selectedModels = ((form.watch("models") as { value: string }[]) ?? [])
-    .map((m) => m.value)
-    .filter(Boolean);
+  const selectedModels = [
+    ...new Set(
+      ((form.watch("models") as { value: string }[]) ?? [])
+        .flatMap((m) => {
+          const value = String(m.value ?? "").trim();
+          if (!value) return [];
+          if (modelOptions.length === 0) return [value];
+          if (modelOptions.some((option) => option.value === value)) {
+            return [value];
+          }
+          const optionValues = modelOptions
+            .filter((option) => option.model === value)
+            .map((option) => option.value);
+          return optionValues.length > 0 ? optionValues : [value];
+        })
+        .filter(Boolean),
+    ),
+  ];
   // Each numeric limit is optional, but a provided value must be a positive
   // integer (rejects 0 / negatives / decimals) so it can't be silently dropped.
   const positiveIntRule = {
@@ -138,10 +153,13 @@ export const ApiKeyPolicyFields = ({
           <ModelMultiSelect
             options={modelOptions}
             value={selectedModels}
-            onChange={(vals) =>
+            onChange={(options) =>
               form.setValue(
                 "models",
-                vals.map((v) => ({ value: v })),
+                options.map((option) => ({
+                  value: option.value,
+                  model: option.model,
+                })),
                 { shouldDirty: true },
               )
             }

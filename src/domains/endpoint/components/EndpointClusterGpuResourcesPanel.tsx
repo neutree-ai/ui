@@ -86,6 +86,8 @@ const formatPoolValue = (
     ? "-"
     : `${formatCount(scaleMetricValue(value, valueScale))}${unit}`;
 
+const formatUnitLabel = (unit: string | undefined) => unit?.trim() ?? "";
+
 const toPercentValue = (
   used: number | null | undefined,
   total: number | null | undefined,
@@ -203,6 +205,32 @@ type ResourceSummaryMetric = {
   variant?: "accelerator" | "system";
 };
 
+function ResourceMetricLabel({
+  label,
+  unit,
+  className,
+}: {
+  label: string;
+  unit?: string;
+  className?: string;
+}) {
+  const unitLabel = formatUnitLabel(unit);
+
+  return (
+    <div
+      className={cn("flex min-w-0 items-baseline gap-1.5", className)}
+      title={label}
+    >
+      <span className="min-w-0 truncate">{label}</span>
+      {unitLabel && (
+        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
+          {unitLabel}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function ResourceSummaryCard({
   metric,
   t,
@@ -215,14 +243,10 @@ function ResourceSummaryCard({
   const usageText = formatUsage(
     metric.used,
     metric.total,
-    metric.unit,
+    "",
     metric.valueScale,
   );
-  const freeText = formatPoolValue(
-    metric.available,
-    metric.unit,
-    metric.valueScale,
-  );
+  const freeText = formatPoolValue(metric.available, "", metric.valueScale);
   const isAccelerator = metric.variant === "accelerator";
   const usageClasses = isAccelerator
     ? acceleratorUsageClasses
@@ -234,9 +258,11 @@ function ResourceSummaryCard({
       className="grid min-w-0 gap-2 rounded-lg border bg-background px-2.5 py-2"
     >
       <div className="flex min-w-0 items-baseline justify-between gap-2">
-        <span className="min-w-0 truncate text-xs font-semibold">
-          {metric.label}
-        </span>
+        <ResourceMetricLabel
+          label={metric.label}
+          unit={metric.unit}
+          className="text-xs font-semibold"
+        />
         <span
           data-testid="endpoint-resource-summary-percent"
           className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground"
@@ -298,17 +324,9 @@ function NodeResourcePill({
   metric: ResourceSummaryMetric;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
-  const totalText = formatPoolValue(
-    metric.total,
-    metric.unit,
-    metric.valueScale,
-  );
-  const usedText = formatPoolValue(metric.used, metric.unit, metric.valueScale);
-  const freeText = formatPoolValue(
-    metric.available,
-    metric.unit,
-    metric.valueScale,
-  );
+  const totalText = formatPoolValue(metric.total, "", metric.valueScale);
+  const usedText = formatPoolValue(metric.used, "", metric.valueScale);
+  const freeText = formatPoolValue(metric.available, "", metric.valueScale);
   const isAccelerator = metric.variant === "accelerator";
 
   return (
@@ -321,9 +339,11 @@ function NodeResourcePill({
           : "border-border bg-muted/20",
       )}
     >
-      <div className="truncate text-xs font-semibold" title={metric.label}>
-        {metric.label}
-      </div>
+      <ResourceMetricLabel
+        label={metric.label}
+        unit={metric.unit}
+        className="text-xs font-semibold"
+      />
       <div className="mt-1 grid grid-cols-3 gap-1 text-[11px] leading-tight text-muted-foreground">
         <span>{t("clusters.options.total")}</span>
         <span>{t("clusters.options.used")}</span>

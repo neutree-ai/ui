@@ -1077,7 +1077,8 @@
 		},
 		"models": {
 			"internal": "Internal",
-			"external": "External"
+			"external": "External",
+			"unknown": "Unknown"
 		},
 		"performance": {
 			"title": "Last 24h request performance",
@@ -1510,6 +1511,8 @@
 			"noWrap": "No wrap",
 			"collapse": "Collapse",
 			"expand": "Expand",
+			"collapseAll": "Collapse all",
+			"expandAll": "Expand all",
 			"searchPlaceholder": "Search in body…",
 			"clearSearch": "Clear search",
 			"matchCount": "{{current}} / {{total}}",

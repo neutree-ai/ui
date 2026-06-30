@@ -8,7 +8,7 @@ import {
   WrapText,
   X,
 } from "lucide-react";
-import { Fragment, useId, useMemo, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -177,6 +177,15 @@ const MetaRow = ({
 
 type BodyKind = "request" | "response";
 type ViewMode = "formatted" | "raw";
+type ExpansionSignal = {
+  action: "collapse" | "expand";
+  version: number;
+};
+
+const isOpenForExpansionSignal = (
+  action: ExpansionSignal["action"],
+  version: number,
+) => version === 0 || action === "expand";
 
 const BodySection = ({
   title,
@@ -203,6 +212,10 @@ const BodySection = ({
   const [wrap, setWrap] = useState(false);
   const [query, setQuery] = useState("");
   const [activeMatch, setActiveMatch] = useState(0);
+  const [expansionSignal, setExpansionSignal] = useState<ExpansionSignal>({
+    action: "expand",
+    version: 0,
+  });
 
   const effectiveView: ViewMode = hasFormatted ? view : "raw";
 
@@ -230,6 +243,12 @@ const BodySection = ({
       return next;
     });
   };
+  const setAllFormattedOpen = (action: ExpansionSignal["action"]) => {
+    setExpansionSignal((current) => ({
+      action,
+      version: current.version + 1,
+    }));
+  };
 
   return (
     <Collapsible
@@ -256,18 +275,46 @@ const BodySection = ({
 
         <div className="ml-auto flex items-center gap-1">
           {hasFormatted && (
-            <div className="flex rounded-md border p-0.5">
-              <ToggleChip
-                active={effectiveView === "formatted"}
-                onClick={() => setView("formatted")}
-                label={t("ai_traces.detail.viewFormatted")}
-              />
-              <ToggleChip
-                active={effectiveView === "raw"}
-                onClick={() => setView("raw")}
-                label={t("ai_traces.detail.viewRaw")}
-              />
-            </div>
+            <>
+              {effectiveView === "formatted" && (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setAllFormattedOpen("collapse")}
+                    aria-label={t("ai_traces.detail.collapseAll")}
+                  >
+                    <ChevronRight />
+                    {t("ai_traces.detail.collapseAll")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setAllFormattedOpen("expand")}
+                    aria-label={t("ai_traces.detail.expandAll")}
+                  >
+                    <ChevronDown />
+                    {t("ai_traces.detail.expandAll")}
+                  </Button>
+                </>
+              )}
+              <div className="flex rounded-md border p-0.5">
+                <ToggleChip
+                  active={effectiveView === "formatted"}
+                  onClick={() => setView("formatted")}
+                  label={t("ai_traces.detail.viewFormatted")}
+                />
+                <ToggleChip
+                  active={effectiveView === "raw"}
+                  onClick={() => setView("raw")}
+                  label={t("ai_traces.detail.viewRaw")}
+                />
+              </div>
+            </>
           )}
           <Button
             type="button"
@@ -299,7 +346,7 @@ const BodySection = ({
                 setActiveMatch(0);
               }}
               placeholder={t("ai_traces.detail.searchPlaceholder")}
-              className="h-7 pl-7 pr-7 text-xs"
+              className="h-7 pl-7 pr-7 text-xs focus-visible:ring-inset"
             />
             {query && (
               <button
@@ -357,6 +404,7 @@ const BodySection = ({
             query={query}
             activeMatch={safeActive}
             wrap={wrap}
+            expansionSignal={expansionSignal}
           />
         ) : (
           <RawView
@@ -426,11 +474,13 @@ const ConversationView = ({
   query,
   activeMatch,
   wrap,
+  expansionSignal,
 }: {
   messages: ChatMessage[];
   query: string;
   activeMatch: number;
   wrap: boolean;
+  expansionSignal: ExpansionSignal;
 }) => {
   // Match indices are assigned in document order across every rendered text
   // node, so we accumulate a running offset as we walk the messages.
@@ -447,12 +497,21 @@ const ConversationView = ({
               query={query}
               activeMatch={activeMatch - cursor}
               wrap={wrap}
+              expansionSignal={expansionSignal}
             />
           );
           cursor += occ;
           return node;
         });
-        return <MessageCard key={mi} msg={msg} wrap={wrap} blocks={blocks} />;
+        return (
+          <MessageCard
+            key={mi}
+            msg={msg}
+            wrap={wrap}
+            blocks={blocks}
+            expansionSignal={expansionSignal}
+          />
+        );
       })}
     </div>
   );
@@ -462,14 +521,29 @@ const MessageCard = ({
   msg,
   blocks,
   wrap,
+  expansionSignal,
 }: {
   msg: ChatMessage;
   blocks: React.ReactNode;
   wrap: boolean;
+  expansionSignal: ExpansionSignal;
 }) => {
   const { t } = useTranslation();
   const [showRaw, setShowRaw] = useState(false);
-  const [open, setOpen] = useState(true);
+  const { action: expansionAction, version: expansionVersion } =
+    expansionSignal;
+  const expansionOpen = isOpenForExpansionSignal(
+    expansionAction,
+    expansionVersion,
+  );
+  const [open, setOpen] = useState(() =>
+    isOpenForExpansionSignal(expansionAction, expansionVersion),
+  );
+  useEffect(() => {
+    if (expansionVersion === 0) return;
+    setOpen(expansionOpen);
+  }, [expansionOpen, expansionVersion]);
+
   return (
     <Collapsible
       open={open}
@@ -546,11 +620,13 @@ const BlockView = ({
   query,
   activeMatch,
   wrap,
+  expansionSignal,
 }: {
   block: ContentBlock;
   query: string;
   activeMatch: number;
   wrap: boolean;
+  expansionSignal: ExpansionSignal;
 }) => {
   const { t } = useTranslation();
   const labelKey =
@@ -585,7 +661,11 @@ const BlockView = ({
   const accent = BLOCK_ACCENT[block.kind];
   if (accent) {
     return (
-      <AccentBlock accent={accent} label={label}>
+      <AccentBlock
+        accent={accent}
+        label={label}
+        expansionSignal={expansionSignal}
+      >
         {body}
       </AccentBlock>
     );
@@ -610,12 +690,27 @@ const AccentBlock = ({
   accent,
   label,
   children,
+  expansionSignal,
 }: {
   accent: string;
   label: string;
   children: React.ReactNode;
+  expansionSignal: ExpansionSignal;
 }) => {
-  const [open, setOpen] = useState(true);
+  const { action: expansionAction, version: expansionVersion } =
+    expansionSignal;
+  const expansionOpen = isOpenForExpansionSignal(
+    expansionAction,
+    expansionVersion,
+  );
+  const [open, setOpen] = useState(() =>
+    isOpenForExpansionSignal(expansionAction, expansionVersion),
+  );
+  useEffect(() => {
+    if (expansionVersion === 0) return;
+    setOpen(expansionOpen);
+  }, [expansionOpen, expansionVersion]);
+
   return (
     <Collapsible
       open={open}
@@ -1057,7 +1152,12 @@ function parseSSEResponse(text: string): ChatMessage[] {
   if (assistant) blocks.push({ kind: "text", text: assistant });
   for (const index of toolOrder) {
     const entry = toolAcc.get(index);
-    if (entry) blocks.push({ kind: "tool_use", label: entry.name, text: entry.args || "{}" });
+    if (entry)
+      blocks.push({
+        kind: "tool_use",
+        label: entry.name,
+        text: entry.args || "{}",
+      });
   }
   // SSE has no per-message wire shape — surface the full stream as the raw.
   return blocks.length > 0 ? [{ role: "assistant", blocks, raw: text }] : [];

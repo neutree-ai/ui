@@ -1,5 +1,5 @@
-import { useCustomMutation } from "@refinedev/core";
-import { useCallback, useEffect, useState } from "react";
+import { useCustomMutation, useList } from "@refinedev/core";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 
@@ -15,7 +15,7 @@ import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 export const QUOTA_PERIODS = ["daily", "weekly", "monthly", "yearly"] as const;
 export type QuotaPeriod = (typeof QUOTA_PERIODS)[number];
 
-export type PolicyModelRow = { value: string };
+export type PolicyModelRow = { value: string; model?: string };
 
 export type ApiKeyPolicyFormValues = {
   quota_period: QuotaPeriod;
@@ -70,9 +70,13 @@ export function buildApiKeyLimits(
   if (rpm !== undefined) limits.rpm = rpm;
   const cc = num(values.concurrency);
   if (cc !== undefined) limits.concurrency = cc;
-  const models = (values.models ?? [])
-    .map((m) => String(m.value ?? "").trim())
-    .filter((m) => m !== "");
+  const models = [
+    ...new Set(
+      (values.models ?? [])
+        .map((m) => String(m.model ?? m.value ?? "").trim())
+        .filter((m) => m !== ""),
+    ),
+  ];
   if (models.length > 0) limits.allowed_models = models;
   if (opts?.disabled) limits.disabled = true;
   return limits;
@@ -128,9 +132,7 @@ export function summarizeApiKeyLimits(
 }
 
 // rate/concurrency summary parts for a key's limits (list "Rate limits" column).
-export function rateSummary(
-  limits: ApiKeyLimits | null | undefined,
-): string[] {
+export function rateSummary(limits: ApiKeyLimits | null | undefined): string[] {
   const out: string[] = [];
   if (!limits) return out;
   if (limits.rps) out.push(`${limits.rps} RPS`);
@@ -216,131 +218,155 @@ export function useApiKeyDisable() {
   };
 }
 
+export type WorkspaceModelOption = {
+  value: string;
+  label: string;
+  model: string;
+  endpointName: string;
+  type: "internal" | "external";
+  phase: string | null;
+};
+
+type WorkspaceEndpointRef = {
+  metadata?: { name?: string | null } | null;
+  spec?: { model?: { name?: string | null } | null } | null;
+  status?: { phase?: string | null } | null;
+};
+
+type WorkspaceExternalEndpointRef = {
+  metadata?: { name?: string | null } | null;
+  spec?: {
+    upstreams?: {
+      model_mapping?: Record<string, string> | null;
+    }[];
+  } | null;
+  status?: { phase?: string | null } | null;
+};
+
+const modelOptionValue = (
+  type: WorkspaceModelOption["type"],
+  endpointName: string,
+  model: string,
+) => `${type}:${endpointName}:${model}`;
+
+function exposedExternalModels(
+  spec: WorkspaceExternalEndpointRef["spec"],
+): string[] {
+  if (!spec?.upstreams) return [];
+  return spec.upstreams.flatMap((upstream) =>
+    upstream.model_mapping ? Object.keys(upstream.model_mapping) : [],
+  );
+}
+
 // Available client-facing models in a workspace (for the allowed-models
-// dropdown). The label shows the serving endpoint name(s) annotated with type —
-// internal (regular endpoint) / external (external endpoint) — so the user picks
-// by where the model is actually served, e.g. `gpt-4 (openrouter-free [external])`.
-// A model served by several endpoints lists all of them. Backed by
-// get_workspace_models.
+// dropdown). Options are endpoint-level rows so duplicate model names served by
+// different internal/external endpoints remain visually distinct in the picker.
 export function useWorkspaceModels(
   workspace: string | undefined,
-): { value: string; label: string }[] {
-  const { mutateAsync } = useCustomMutation();
-  const [opts, setOpts] = useState<{ value: string; label: string }[]>([]);
-  useEffect(() => {
-    if (!workspace) {
-      setOpts([]);
-      return;
+): WorkspaceModelOption[] {
+  const enabled = Boolean(workspace);
+  const { data: endpointsData } = useList<WorkspaceEndpointRef>({
+    resource: "endpoints",
+    pagination: { mode: "off" },
+    meta: { workspace, workspaced: true },
+    queryOptions: { enabled },
+  });
+  const { data: externalEndpointsData } = useList<WorkspaceExternalEndpointRef>({
+    resource: "external_endpoints",
+    pagination: { mode: "off" },
+    meta: { workspace, workspaced: true },
+    queryOptions: { enabled },
+  });
+
+  return useMemo(() => {
+    if (!workspace) return [];
+    const options: WorkspaceModelOption[] = [];
+
+    for (const endpoint of endpointsData?.data ?? []) {
+      const model = String(endpoint.spec?.model?.name ?? "").trim();
+      const endpointName = String(endpoint.metadata?.name ?? "").trim();
+      if (!model || !endpointName) continue;
+      options.push({
+        value: modelOptionValue("internal", endpointName, model),
+        label: model,
+        model,
+        endpointName,
+        type: "internal",
+        phase: endpoint.status?.phase ?? null,
+      });
     }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await mutateAsync({
-          url: "/rpc/get_workspace_models",
-          method: "post",
-          values: { p_workspace: workspace },
+
+    for (const endpoint of externalEndpointsData?.data ?? []) {
+      const endpointName = String(endpoint.metadata?.name ?? "").trim();
+      if (!endpointName) continue;
+      for (const model of exposedExternalModels(endpoint.spec)) {
+        const trimmed = String(model ?? "").trim();
+        if (!trimmed) continue;
+        options.push({
+          value: modelOptionValue("external", endpointName, trimmed),
+          label: trimmed,
+          model: trimmed,
+          endpointName,
+          type: "external",
+          phase: endpoint.status?.phase ?? null,
         });
-        const rows =
-          (res.data as {
-            model: string;
-            source: string;
-            endpoint_name: string | null;
-          }[]) ?? [];
-        // Collect the serving endpoint name(s) per model, each annotated with its
-        // type (internal = regular endpoint, external = external endpoint).
-        // Deduped and sorted, e.g. `gpt-4 (openrouter-free [external])`.
-        const byModel = new Map<string, Set<string>>();
-        for (const r of rows) {
-          const entries = byModel.get(r.model) ?? new Set<string>();
-          const name = String(r.endpoint_name ?? "").trim();
-          const type =
-            r.source === "external_endpoint" ? "external" : "internal";
-          if (name !== "") entries.add(`${name} [${type}]`);
-          byModel.set(r.model, entries);
-        }
-        const out = [...byModel.entries()]
-          .map(([model, entries]) => {
-            const list = [...entries].sort((a, b) => a.localeCompare(b));
-            return {
-              value: model,
-              label: list.length > 0 ? `${model} (${list.join(", ")})` : model,
-            };
-          })
-          .sort((a, b) => a.label.localeCompare(b.label));
-        if (!cancelled) setOpts(out);
-      } catch {
-        if (!cancelled) setOpts([]);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [mutateAsync, workspace]);
-  return opts;
+    }
+
+    return options.sort(
+      (a, b) =>
+        a.model.localeCompare(b.model) ||
+        a.endpointName.localeCompare(b.endpointName) ||
+        a.type.localeCompare(b.type),
+    );
+  }, [endpointsData?.data, externalEndpointsData?.data, workspace]);
 }
 
 // Per-model serving info: whether the model is served internally / externally
 // and the endpoint(s) that serve it. Powers the list Models column and the
 // detail Model access section (aligning name + Internal/External + endpoint).
-type ModelEndpoint = { name: string; type: "internal" | "external" };
+type ModelEndpoint = {
+  name: string;
+  type: "internal" | "external";
+  phase: string | null;
+};
 type ModelInfo = {
   internal: boolean;
   external: boolean;
   endpoints: ModelEndpoint[];
 };
 
-// Map of model name -> serving info for a workspace, from get_workspace_models.
+// Map of model name -> serving info for a workspace.
 export function useWorkspaceModelMap(
   workspace: string | undefined,
 ): Map<string, ModelInfo> {
-  const { mutateAsync } = useCustomMutation();
-  const [map, setMap] = useState<Map<string, ModelInfo>>(new Map());
-  useEffect(() => {
-    if (!workspace) {
-      setMap(new Map());
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await mutateAsync({
-          url: "/rpc/get_workspace_models",
-          method: "post",
-          values: { p_workspace: workspace },
+  const options = useWorkspaceModels(workspace);
+
+  return useMemo(() => {
+    const m = new Map<string, ModelInfo>();
+    for (const option of options) {
+      const info = m.get(option.model) ?? {
+        internal: false,
+        external: false,
+        endpoints: [],
+      };
+      if (option.type === "external") info.external = true;
+      else info.internal = true;
+      if (
+        !info.endpoints.some(
+          (e) => e.name === option.endpointName && e.type === option.type,
+        )
+      ) {
+        info.endpoints.push({
+          name: option.endpointName,
+          type: option.type,
+          phase: option.phase,
         });
-        const rows =
-          (res.data as {
-            model: string;
-            source: string;
-            endpoint_name: string | null;
-          }[]) ?? [];
-        const m = new Map<string, ModelInfo>();
-        for (const r of rows) {
-          const type: "internal" | "external" =
-            r.source === "external_endpoint" ? "external" : "internal";
-          const info = m.get(r.model) ?? {
-            internal: false,
-            external: false,
-            endpoints: [],
-          };
-          if (type === "external") info.external = true;
-          else info.internal = true;
-          const name = String(r.endpoint_name ?? "").trim();
-          if (name && !info.endpoints.some((e) => e.name === name && e.type === type)) {
-            info.endpoints.push({ name, type });
-          }
-          m.set(r.model, info);
-        }
-        if (!cancelled) setMap(m);
-      } catch {
-        if (!cancelled) setMap(new Map());
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [mutateAsync, workspace]);
-  return map;
+      m.set(option.model, info);
+    }
+    return m;
+  }, [options]);
 }
 
 type ApiKeyUsage = {

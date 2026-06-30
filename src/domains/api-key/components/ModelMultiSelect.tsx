@@ -18,9 +18,22 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { WorkspaceModelOption } from "@/domains/api-key/hooks/use-api-key-policy";
 import { cn } from "@/foundation/lib/utils";
 
-type Option = { value: string; label: string };
+type Option = WorkspaceModelOption;
+
+const phaseClass = (phase: string | null) =>
+  ({
+    Running: "border-green-200 bg-green-50 text-green-700",
+    Failed: "border-red-200 bg-red-50 text-red-700",
+    Pending: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    Deploying: "border-blue-200 bg-blue-50 text-blue-700",
+    ModelDownloading: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    Deleting: "border-orange-200 bg-orange-50 text-orange-700",
+    Paused: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    Deleted: "border-gray-200 bg-gray-50 text-gray-700",
+  })[phase ?? ""] ?? "border-muted bg-muted text-muted-foreground";
 
 // Multi-select dropdown for the allowed-models field: pick any number of models
 // from one dropdown (no per-row "Add model"); selections show as removable
@@ -33,7 +46,7 @@ export const ModelMultiSelect = ({
 }: {
   options: Option[];
   value: string[];
-  onChange: (next: string[]) => void;
+  onChange: (next: Option[]) => void;
   placeholder?: string;
 }) => {
   const { t } = useTranslation();
@@ -44,10 +57,15 @@ export const ModelMultiSelect = ({
     const next = new Set(selected);
     if (next.has(v)) next.delete(v);
     else next.add(v);
-    onChange([...next]);
+    onChange(options.filter((option) => next.has(option.value)));
   };
-  const labelFor = (v: string) =>
-    options.find((o) => o.value === v)?.label ?? v;
+  const optionFor = (v: string) => options.find((o) => o.value === v);
+  const phaseLabel = (phase: string | null) =>
+    phase ? t(`status.phases.endpoint.${phase}`) : t("api_keys.models.unknown");
+  const typeLabel = (type: Option["type"]) =>
+    type === "external"
+      ? t("api_keys.models.external")
+      : t("api_keys.models.internal");
 
   return (
     <div className="space-y-2">
@@ -56,7 +74,6 @@ export const ModelMultiSelect = ({
           <Button
             type="button"
             variant="outline"
-            // biome-ignore lint/a11y/useSemanticElements: follow shadcn-ui combobox
             role="combobox"
             aria-expanded={open}
             className={cn(
@@ -82,13 +99,39 @@ export const ModelMultiSelect = ({
                   {options.map((o) => (
                     <CommandItem
                       key={o.value}
-                      value={o.label}
+                      value={`${o.model} ${o.endpointName} ${typeLabel(o.type)} ${phaseLabel(o.phase)}`}
                       onSelect={() => toggle(o.value)}
+                      className="group items-start gap-2"
                     >
-                      {o.label}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="truncate text-sm font-medium">
+                          {o.model}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
+                          <span className="truncate max-w-[180px]">
+                            {o.endpointName}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="h-5 bg-background/80 font-normal group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground"
+                          >
+                            {typeLabel(o.type)}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "h-5 font-normal",
+                              phaseClass(o.phase),
+                              "group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground",
+                            )}
+                          >
+                            {phaseLabel(o.phase)}
+                          </Badge>
+                        </div>
+                      </div>
                       <CheckIcon
                         className={cn(
-                          "ml-auto h-4 w-4",
+                          "mt-1 ml-auto h-4 w-4",
                           selected.has(o.value) ? "opacity-100" : "opacity-0",
                         )}
                       />
@@ -102,19 +145,33 @@ export const ModelMultiSelect = ({
       </Popover>
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {value.map((v) => (
-            <Badge key={v} variant="secondary" className="gap-1 pr-1">
-              <span className="truncate max-w-[220px]">{labelFor(v)}</span>
-              <button
-                type="button"
-                onClick={() => toggle(v)}
-                className="rounded-sm hover:bg-muted-foreground/20"
-                aria-label={t("buttons.delete")}
+          {value.map((v) => {
+            const option = optionFor(v);
+            return (
+              <Badge
+                key={v}
+                variant="secondary"
+                className="max-w-full gap-1 pr-1"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
+                <span className="truncate max-w-[220px]">
+                  {option ? `${option.model} · ${option.endpointName}` : v}
+                </span>
+                {option && (
+                  <span className="text-muted-foreground">
+                    {typeLabel(option.type)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggle(v)}
+                  className="rounded-sm hover:bg-muted-foreground/20"
+                  aria-label={t("buttons.delete")}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            );
+          })}
         </div>
       )}
     </div>

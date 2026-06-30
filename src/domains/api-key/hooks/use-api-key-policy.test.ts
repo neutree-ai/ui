@@ -60,6 +60,20 @@ describe("buildApiKeyLimits", () => {
     });
   });
 
+  it("stores endpoint-level selections as unique model names", () => {
+    const v = {
+      ...apiKeyPolicyDefaults(),
+      models: [
+        { value: "internal:chat-a:gpt-4o", model: "gpt-4o" },
+        { value: "external:openrouter:gpt-4o", model: "gpt-4o" },
+        { value: "external:anthropic:claude", model: "claude" },
+      ],
+    };
+    expect(buildApiKeyLimits(v)).toEqual({
+      allowed_models: ["gpt-4o", "claude"],
+    });
+  });
+
   it("ignores zero / blank values", () => {
     const v = {
       ...apiKeyPolicyDefaults(),
@@ -71,9 +85,9 @@ describe("buildApiKeyLimits", () => {
   });
 
   it("carries the disabled flag when asked", () => {
-    expect(buildApiKeyLimits(apiKeyPolicyDefaults(), { disabled: true })).toEqual(
-      { disabled: true },
-    );
+    expect(
+      buildApiKeyLimits(apiKeyPolicyDefaults(), { disabled: true }),
+    ).toEqual({ disabled: true });
     expect(
       buildApiKeyLimits(apiKeyPolicyDefaults(), { disabled: false }),
     ).toEqual({});
@@ -102,9 +116,9 @@ describe("limitsToForm", () => {
   });
 
   it("ignores a non-positive token quota", () => {
-    expect(limitsToForm({ token_quota: { limit: 0, period: "daily" } }).quota_limit).toBe(
-      "",
-    );
+    expect(
+      limitsToForm({ token_quota: { limit: 0, period: "daily" } }).quota_limit,
+    ).toBe("");
   });
 
   it("falls back to the default period for an unknown / empty period", () => {

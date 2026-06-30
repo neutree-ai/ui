@@ -21,12 +21,27 @@ import {
 import type { ApiKey, ApiKeyLimits } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { defaultSorters, RowAction, Table } from "@/foundation/components/Table";
+import {
+  defaultSorters,
+  RowAction,
+  Table,
+} from "@/foundation/components/Table";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
 const fmt = (n: number) => Number(n).toLocaleString();
+const endpointPhaseClass = (phase: string | null | undefined) =>
+  ({
+    Running: "border-green-200 bg-green-50 text-green-700",
+    Failed: "border-red-200 bg-red-50 text-red-700",
+    Pending: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    Deploying: "border-blue-200 bg-blue-50 text-blue-700",
+    ModelDownloading: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    Deleting: "border-orange-200 bg-orange-50 text-orange-700",
+    Paused: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    Deleted: "border-gray-200 bg-gray-50 text-gray-700",
+  })[phase ?? ""] ?? "border-muted bg-muted text-muted-foreground";
 
 export const ApiKeysList = () => {
   const { t } = useTranslation();
@@ -37,8 +52,7 @@ export const ApiKeysList = () => {
   // These aggregates are per-workspace RPCs; ALL_WORKSPACES (`_all_`) is a
   // UI-only sentinel, not a real workspace, so gate them to a concrete value
   // (the hooks no-op on undefined) instead of firing p_workspace="_all_".
-  const scopedWorkspace =
-    workspace === ALL_WORKSPACES ? undefined : workspace;
+  const scopedWorkspace = workspace === ALL_WORKSPACES ? undefined : workspace;
   const usageByKey = useAllApiKeyUsage(scopedWorkspace);
   const trafficByKey = useAllApiKeyTraffic(scopedWorkspace);
   const modelMap = useWorkspaceModelMap(scopedWorkspace);
@@ -67,7 +81,10 @@ export const ApiKeysList = () => {
         (k) =>
           workspace === ALL_WORKSPACES || k.metadata?.workspace === workspace,
       )
-      .map((k) => ({ id: String(k.id), name: k.metadata?.name ?? String(k.id) }));
+      .map((k) => ({
+        id: String(k.id),
+        name: k.metadata?.name ?? String(k.id),
+      }));
   }, [keysData, workspace]);
 
   // Limits live on the key itself (spec.limits) — read straight off each row,
@@ -102,7 +119,11 @@ export const ApiKeysList = () => {
               <div
                 className={cn(
                   "h-full",
-                  over ? "bg-destructive" : warn ? "bg-amber-500" : "bg-primary",
+                  over
+                    ? "bg-destructive"
+                    : warn
+                      ? "bg-amber-500"
+                      : "bg-primary",
                 )}
                 style={{ width: `${pct}%` }}
               />
@@ -147,9 +168,8 @@ export const ApiKeysList = () => {
             </span>
           );
         }
-        // Each allowed model on its own line: name (bold, truncated) with its
-        // Internal/External tag(s) — from the serving endpoint(s) — stacked
-        // below. A model served both ways shows both tags.
+        // Each allowed model on its own line: model name first, endpoint/type
+        // and running phase below so duplicate model names stay distinguishable.
         return (
           <div className="flex flex-col gap-2">
             {models.map((m) => {
@@ -159,18 +179,38 @@ export const ApiKeysList = () => {
                   <span className="truncate text-sm font-semibold" title={m}>
                     {m}
                   </span>
-                  <div className="flex flex-wrap gap-1">
-                    {info?.internal && (
-                      <Badge variant="outline" className="font-normal">
-                        {t("api_keys.models.internal")}
-                      </Badge>
-                    )}
-                    {info?.external && (
-                      <Badge variant="outline" className="font-normal">
-                        {t("api_keys.models.external")}
-                      </Badge>
-                    )}
-                  </div>
+                  {scopedWorkspace && info && info.endpoints.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {info.endpoints.map((endpoint) => (
+                        <div
+                          key={`${endpoint.type}:${endpoint.name}`}
+                          className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+                        >
+                          <span className="truncate max-w-[140px]">
+                            {endpoint.name}
+                          </span>
+                          <Badge variant="outline" className="h-5 font-normal">
+                            {t(`api_keys.models.${endpoint.type}`)}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "h-5 font-normal",
+                              endpointPhaseClass(endpoint.phase),
+                            )}
+                          >
+                            {endpoint.phase
+                              ? t(`status.phases.endpoint.${endpoint.phase}`)
+                              : t("api_keys.models.unknown")}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : scopedWorkspace ? (
+                    <span className="text-xs text-muted-foreground">
+                      {t("api_keys.modelAccess.unavailable")}
+                    </span>
+                  ) : null}
                 </div>
               );
             })}
