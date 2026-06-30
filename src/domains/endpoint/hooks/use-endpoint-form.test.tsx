@@ -1974,6 +1974,11 @@ describe("useEndpointForm", () => {
       expect(
         screen.queryByTestId("endpoint-resource-summary-strip"),
       ).toBeNull();
+      expect(
+        within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
+          "endpoints.fields.matchingGpuCards",
+        ),
+      ).toBeNull();
       expect(screen.getByTestId("endpoint-current-request-panel")).toBeTruthy();
       expect(
         screen.getByTestId("endpoint-current-request-grid").className,
@@ -2121,6 +2126,11 @@ describe("useEndpointForm", () => {
       expect(getAcceleratorCardText()).toContain(
         "endpoints.messages.vgpuResourcesInsufficient",
       );
+      expect(
+        within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
+          "endpoints.messages.vgpuResourcesInsufficient",
+        ),
+      ).toBeNull();
     });
 
     it("shows configured vGPU core request when available core is zero", async () => {
@@ -2201,6 +2211,11 @@ describe("useEndpointForm", () => {
           "endpoints.messages.fullGpuResourcesInsufficient",
         );
       });
+      expect(
+        within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
+          "endpoints.messages.fullGpuResourcesInsufficient",
+        ),
+      ).toBeNull();
     });
 
     it("checks only additional full cards while editing an existing endpoint", async () => {

@@ -935,7 +935,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 data-testid="endpoint-resource-plan-card"
                 className="grid overflow-hidden rounded-xl border bg-background shadow-sm"
               >
-                <div className="flex items-start justify-between gap-3 border-b p-4">
+                <div
+                  data-testid="endpoint-resource-plan-header"
+                  className="flex items-start justify-between gap-3 border-b p-4"
+                >
                   <div className="min-w-0">
                     <h3 className="text-base font-semibold">
                       {t("endpoints.sections.resourcePlan")}
@@ -944,30 +947,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       {t("endpoints.descriptions.basicResources")}
                     </p>
                   </div>
-                  {selectedAccelerator?.type &&
-                    selectedAccelerator?.product && (
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "shrink-0 font-normal",
-                          getCapacityBadgeClassName(
-                            isVgpuAllocationMode
-                              ? isVgpuCapacityExceeded
-                              : isFullGpuCapacityExceeded,
-                          ),
-                        )}
-                      >
-                        {isVgpuAllocationMode
-                          ? isVgpuCapacityExceeded
-                            ? t("endpoints.messages.vgpuResourcesInsufficient")
-                            : t("endpoints.fields.matchingGpuCards")
-                          : isFullGpuCapacityExceeded
-                            ? t(
-                                "endpoints.messages.fullGpuResourcesInsufficient",
-                              )
-                            : t("endpoints.fields.matchingGpuCards")}
-                      </Badge>
-                    )}
                 </div>
                 <div
                   data-testid="endpoint-resource-request-grid"
