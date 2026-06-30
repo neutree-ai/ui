@@ -428,7 +428,7 @@ export const ClustersShow = () => {
                                       "clusters.fields.modelCache.nfsServer",
                                     )}
                                   >
-                                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                    <code className="text-sm bg-gray-100 text-gray-900 px-2 py-1 rounded">
                                       {cache.nfs.server}
                                     </code>
                                   </ShowPage.Row>
@@ -438,7 +438,7 @@ export const ClustersShow = () => {
                                       "clusters.fields.modelCache.cachePath",
                                     )}
                                   >
-                                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                    <code className="text-sm bg-gray-100 text-gray-900 px-2 py-1 rounded">
                                       {cache.nfs.path}
                                     </code>
                                   </ShowPage.Row>
@@ -451,7 +451,7 @@ export const ClustersShow = () => {
                                     "clusters.fields.modelCache.cachePath",
                                   )}
                                 >
-                                  <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                  <code className="text-sm bg-gray-100 text-gray-900 px-2 py-1 rounded">
                                     {cache.host_path.path}
                                   </code>
                                 </ShowPage.Row>
