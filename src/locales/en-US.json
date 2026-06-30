@@ -841,7 +841,8 @@
 			"estimatedVram": "Estimated VRAM",
 			"replicasCount": "{{count}} replica",
 			"noVerifiedAccelerator": "No validated GPU available in this cluster.",
-			"requiredVram": "Requires ≥ {{gb}} GB VRAM."
+			"requiredVram": "Requires ≥ {{gb}} GB VRAM.",
+			"composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}"
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",

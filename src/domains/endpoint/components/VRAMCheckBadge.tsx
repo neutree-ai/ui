@@ -4,6 +4,7 @@ import { checkVRAM } from "@/foundation/recipe/vram";
 
 type Props = {
   acceleratorProduct?: string | null;
+  perGpuGb?: number | null;
   gpuCount?: number | string | null;
   requiredGb?: number | null;
 };
@@ -15,11 +16,17 @@ type Props = {
 //   (nothing — when the check can't be made; we'd rather under-warn)
 export const VRAMCheckBadge = ({
   acceleratorProduct,
+  perGpuGb,
   gpuCount,
   requiredGb,
 }: Props) => {
   const { t } = useTranslation();
-  const result = checkVRAM({ acceleratorProduct, gpuCount, requiredGb });
+  const result = checkVRAM({
+    acceleratorProduct,
+    perGpuGb,
+    gpuCount,
+    requiredGb,
+  });
   if (result.kind === "unknown") return null;
 
   const isOK = result.kind === "sufficient";

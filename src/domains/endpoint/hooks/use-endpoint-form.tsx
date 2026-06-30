@@ -4,6 +4,7 @@ import { ChevronDown, CircleHelp, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
@@ -67,6 +68,7 @@ import type {
   FeatureSelection,
   RecipeInputSpec,
 } from "@/foundation/recipe/types";
+import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 
 // Reads `?model_catalog=<id>` off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
@@ -865,7 +867,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // "Show all options" reveals every available product.
   const restrictAcceleratorToVerified = !showFull && verifiedProducts.size > 0;
   const displayedAcceleratorOptions = restrictAcceleratorToVerified
-    ? acceleratorOptions.filter((opt) => verifiedProducts.has(opt.product))
+    ? acceleratorOptions.filter((opt) =>
+        matchesAcceleratorName(opt.product, verifiedProducts),
+      )
     : acceleratorOptions;
   // No validated + available GPU in this cluster → hide the product picker and
   // just surface the required VRAM (the user can still expand "Show all
@@ -882,6 +886,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       onFinish: async (
         values: Parameters<typeof form.refineCore.onFinish>[0],
       ) => {
+        // A recipe selection that doesn't compose must not be submitted: the
+        // form's legacy spec fields still hold the last successful compose (or
+        // empty defaults), so submitting would deploy a spec that contradicts
+        // the visible variant/feature selection. Block and surface the error.
+        if (composeResult && !composeResult.ok) {
+          toast.error(
+            t("endpoints.recipe.composeBlocked", {
+              error: composeResult.error,
+            }),
+          );
+          return;
+        }
         const transformedValues =
           typeof structuredClone === "function"
             ? structuredClone(values)
@@ -1180,6 +1196,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   acceleratorProduct={
                     form.watch("spec.resources.accelerator")?.product
                   }
+                  perGpuGb={
+                    selectedMemoryTotalMiB != null
+                      ? selectedMemoryTotalMiB / 1024
+                      : undefined
+                  }
                   gpuCount={form.watch("spec.resources.gpu")}
                   requiredGb={req}
                 />
@@ -1271,16 +1292,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 />
               </FormFieldGroup>
             )}
-          {showFull && (
+          {composeResult && !composeResult.ok && (
+            // Compose failures must be visible even in simplified mode, where
+            // the full ComposePreview below is hidden — otherwise an invalid
+            // selection (e.g. an out-of-range input) shows no feedback.
             <div className="col-span-4">
-              <ComposePreview
-                composed={
-                  composeResult && composeResult.ok ? composeResult.spec : null
-                }
-                error={
-                  composeResult && !composeResult.ok ? composeResult.error : null
-                }
-              />
+              <ComposePreview composed={null} error={composeResult.error} />
+            </div>
+          )}
+          {showFull && composeResult?.ok && (
+            <div className="col-span-4">
+              <ComposePreview composed={composeResult.spec} error={null} />
             </div>
           )}
         </FormCardGrid>

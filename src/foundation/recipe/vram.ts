@@ -25,6 +25,53 @@ const PER_GPU_VRAM_GB: Record<string, number> = {
   MI355X: 288,
 };
 
+// Accelerator product strings reported by a cluster are vendor-prefixed and
+// decorated (e.g. "NVIDIA-H100-80GB-HBM3", "Tesla-V100-SXM2-16GB"), while
+// recipe annotations and PER_GPU_VRAM_GB keys use bare model names ("H100",
+// "V100"). matchesAcceleratorName lines the two schemes up by comparing the
+// product's alphanumeric tokens against the bare names — so "H100" matches a
+// product token of "H100" without an exact-string equality that never holds.
+export function matchesAcceleratorName(
+  product: string,
+  names: Iterable<string>,
+): boolean {
+  const tokens = new Set(
+    product
+      .toUpperCase()
+      .split(/[^A-Z0-9]+/)
+      .filter(Boolean),
+  );
+  for (const name of names) {
+    const n = name.trim().toUpperCase();
+    if (n && tokens.has(n)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// resolvePerGpuGb prefers the live per-GPU memory the cluster reports (passed
+// in from accelerator_metadata) and only falls back to the static table when
+// that is absent — and the fallback is token-matched so a vendor-prefixed
+// product still resolves.
+function resolvePerGpuGb(
+  livePerGpuGb: number | null | undefined,
+  product: string,
+): number | undefined {
+  if (livePerGpuGb && livePerGpuGb > 0) {
+    return livePerGpuGb;
+  }
+  if (PER_GPU_VRAM_GB[product]) {
+    return PER_GPU_VRAM_GB[product];
+  }
+  for (const [key, gb] of Object.entries(PER_GPU_VRAM_GB)) {
+    if (matchesAcceleratorName(product, [key])) {
+      return gb;
+    }
+  }
+  return undefined;
+}
+
 type VRAMCheck =
   | { kind: "unknown"; reason: string }
   | {
@@ -37,16 +84,19 @@ type VRAMCheck =
 
 export function checkVRAM(opts: {
   acceleratorProduct?: string | null;
+  // Live per-GPU memory (GiB) from the selected cluster's accelerator metadata;
+  // preferred over the static PER_GPU_VRAM_GB table when available.
+  perGpuGb?: number | null;
   gpuCount?: number | string | null;
   requiredGb?: number | null;
 }): VRAMCheck {
   if (!opts.requiredGb || opts.requiredGb <= 0) {
     return { kind: "unknown", reason: "variant has no vram_minimum_gb" };
   }
-  if (!opts.acceleratorProduct) {
+  if (!opts.acceleratorProduct && !(opts.perGpuGb && opts.perGpuGb > 0)) {
     return { kind: "unknown", reason: "no accelerator selected yet" };
   }
-  const perGpu = PER_GPU_VRAM_GB[opts.acceleratorProduct];
+  const perGpu = resolvePerGpuGb(opts.perGpuGb, opts.acceleratorProduct ?? "");
   if (!perGpu) {
     return {
       kind: "unknown",
