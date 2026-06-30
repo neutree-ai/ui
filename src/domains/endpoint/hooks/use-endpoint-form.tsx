@@ -663,15 +663,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     );
   }, [selectedCatalog, isRecipeCatalog, selectedVariant, featureSelections]);
 
-  // Apply a composed Recipe spec onto the form. Mirrors `applyCatalogSpec`'s
-  // semantics (deep-merge over defaults) but uses the ComposedSpec fields and
-  // additionally writes the new ref fields (model_catalog/variant/feature_selections).
-  const applyComposedToForm = (
-    catalogName: string,
-    variant: string,
-    selections: FeatureSelection[],
-    composed: ComposedSpec,
-  ) => {
+  // Apply a composed Recipe spec onto the form. Composition happens entirely
+  // client-side, so the endpoint is written as a plain, concrete spec (model /
+  // engine / resources / variables / env) — no recipe refs are persisted; the
+  // variant/feature selection lives only in this hook's local state.
+  const applyComposedToForm = (composed: ComposedSpec) => {
     // Build a pseudo catalog spec containing only the kernel fields so we can
     // reuse buildCatalogMergedSpec's deep-merge over defaults.
     const pseudoCatalogSpec: Record<string, unknown> = {
@@ -685,11 +681,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     for (const [key, value] of Object.entries(merged)) {
       setLeafValues(`spec.${key}`, value);
     }
-    // Double-write the recipe refs so the backend has the option of
-    // recomposing in the future without losing the user's selection.
-    form.setValue("spec.model_catalog" as any, catalogName);
-    form.setValue("spec.variant" as any, variant || DEFAULT_VARIANT);
-    form.setValue("spec.feature_selections" as any, selections);
   };
 
   // Handle model catalog selection with merge logic. Trivial MCs go through
@@ -699,10 +690,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
     if (!catalogId) {
       applyCatalogSpec(null);
-      // Clear recipe ref fields when going back to "none"
-      form.setValue("spec.model_catalog" as any, "");
-      form.setValue("spec.variant" as any, "");
-      form.setValue("spec.feature_selections" as any, []);
       setSelectedVariant("");
       setFeatureSelections([]);
       return;
@@ -730,19 +717,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         initialFeatures,
       );
       if (result.ok) {
-        applyComposedToForm(
-          catalog.metadata.name,
-          initialVariant,
-          initialFeatures,
-          result.spec,
-        );
+        applyComposedToForm(result.spec);
       }
     } else {
       // Trivial path — current behavior, unchanged.
       applyCatalogSpec(catalog.spec as Record<string, unknown>);
-      form.setValue("spec.model_catalog" as any, "");
-      form.setValue("spec.variant" as any, "");
-      form.setValue("spec.feature_selections" as any, []);
       setSelectedVariant("");
       setFeatureSelections([]);
     }
@@ -778,12 +757,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       featureSelections,
     );
     if (result.ok) {
-      applyComposedToForm(
-        selectedCatalog.metadata.name,
-        v,
-        featureSelections,
-        result.spec,
-      );
+      applyComposedToForm(result.spec);
     }
   };
 
@@ -796,12 +770,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       next,
     );
     if (result.ok) {
-      applyComposedToForm(
-        selectedCatalog.metadata.name,
-        selectedVariant,
-        next,
-        result.spec,
-      );
+      applyComposedToForm(result.spec);
     }
   };
 
@@ -1161,18 +1130,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </div>
             );
           })()}
-          <FormFieldGroup
-            {...form}
-            name="spec.variant"
-            label={t("endpoints.recipe.variant", "Variant")}
-            className="col-span-4"
-          >
+          {/*
+            Variant / features are client-side configurators, not endpoint
+            fields — they drive composeEndpointSpec into the concrete spec.
+            Plain labeled divs (no FormFieldGroup) so nothing registers a
+            spec.variant / spec.feature_selections form field to submit.
+          */}
+          <div className="col-span-4 space-y-2">
+            <div className="text-sm font-medium">
+              {t("endpoints.recipe.variant", "Variant")}
+            </div>
             <VariantPicker
               variants={selectedCatalog.spec.variants ?? {}}
               value={selectedVariant}
               onChange={handleVariantChange}
             />
-          </FormFieldGroup>
+          </div>
           {promoteCoreFeatures && (
             <div className="col-span-4">
               <FeaturePicker
@@ -1278,19 +1251,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {selectedCatalog.spec.features &&
             selectedCatalog.spec.features.length > 0 &&
             bottomFeatureGroups.length > 0 && (
-              <FormFieldGroup
-                {...form}
-                name="spec.feature_selections"
-                label={t("endpoints.recipe.features", "Features")}
-                className="col-span-4"
-              >
+              <div className="col-span-4 space-y-2">
+                <div className="text-sm font-medium">
+                  {t("endpoints.recipe.features", "Features")}
+                </div>
                 <FeaturePicker
                   features={selectedCatalog.spec.features ?? []}
                   value={featureSelections}
                   onChange={handleFeaturesChange}
                   renderGroups={bottomFeatureGroups}
                 />
-              </FormFieldGroup>
+              </div>
             )}
           {composeResult && !composeResult.ok && (
             // Compose failures must be visible even in simplified mode, where

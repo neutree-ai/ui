@@ -1,7 +1,4 @@
-import type {
-  FeatureSelection,
-  RecipeFeature,
-} from "@/foundation/recipe/types";
+import type { RecipeFeature } from "@/foundation/recipe/types";
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 import type {
   ClusterResourceInfo,
@@ -43,12 +40,6 @@ export type EndpointSpec = {
   deployment_options: DeploymentOptions | null;
   variables: Record<string, unknown> | null;
   env: Record<string, string> | null;
-  // Recipe extension — filled in when the endpoint was created from a
-  // Recipe MC. The frontend currently double-writes both these refs AND the
-  // expanded model/resources/variables/env so existing backends keep working.
-  model_catalog?: string;
-  variant?: string;
-  feature_selections?: FeatureSelection[];
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
