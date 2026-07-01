@@ -641,6 +641,7 @@
 			"wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\"",
 			"invalidResource": "Missing apiVersion, kind, or metadata.name.",
 			"unknownError": "Unknown error",
+			"alreadyExists": "A model catalog named \"{{name}}\" already exists — import does not overwrite it. Use Edit to update its spec.",
 			"successAll": "Imported {{count}} catalogs",
 			"failedAll": "All {{count}} imports failed",
 			"partial": "{{ok}} imported, {{failed}} failed"
@@ -842,7 +843,8 @@
 			"replicasCount": "{{count}} replica",
 			"noVerifiedAccelerator": "No validated GPU available in this cluster.",
 			"requiredVram": "Requires ≥ {{gb}} GB VRAM.",
-			"composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}"
+			"composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}",
+			"defaultVariant": "Default variant"
 		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",

@@ -26,6 +26,23 @@ import {
 
 type Source = "yaml" | "url" | "file";
 
+// A duplicate metadata.name collides with the (workspace, name) unique index.
+// PostgREST surfaces this as a 409 / Postgres unique_violation (code 23505).
+// Client-side import never upserts, so we translate it into actionable guidance
+// pointing at Edit rather than leaking the raw DB constraint message.
+function isDuplicateNameError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { statusCode?: number; code?: string; message?: string };
+  if (e.statusCode === 409 || e.code === "23505") return true;
+  const msg = (e.message ?? "").toLowerCase();
+  return (
+    msg.includes("duplicate key") ||
+    msg.includes("already exists") ||
+    msg.includes("23505") ||
+    msg.includes("unique constraint")
+  );
+}
+
 // Per-document result of a client-side import, shown in the results table.
 type ModelCatalogImportItem = {
   index: number;
@@ -159,10 +176,18 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
           });
           item.ok = true;
         } catch (err) {
-          item.error =
-            err instanceof Error
-              ? err.message
-              : t("model_catalogs.import.unknownError", "Unknown error");
+          if (isDuplicateNameError(err)) {
+            item.error = t(
+              "model_catalogs.import.alreadyExists",
+              'A model catalog named "{{name}}" already exists — import does not overwrite it. Use Edit to update its spec.',
+              { name: item.name ?? "" },
+            );
+          } else {
+            item.error =
+              err instanceof Error
+                ? err.message
+                : t("model_catalogs.import.unknownError", "Unknown error");
+          }
         }
         items.push(item);
       }

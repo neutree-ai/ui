@@ -1,5 +1,5 @@
 import { useGo } from "@refinedev/core";
-import { Rocket, Trash2 } from "lucide-react";
+import { Pencil, Rocket, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -77,6 +77,12 @@ export const ModelCatalogCard = ({ catalog, showWorkspace }: Props) => {
       type: "push",
     });
 
+  const goEdit = () =>
+    go({
+      to: `/${recordWorkspace}/model-catalogs/edit/${name}`,
+      type: "push",
+    });
+
   return (
     <Card className="flex flex-col h-full hover:border-primary/40 transition-colors">
       <CardContent className="flex flex-col gap-3 flex-1 pt-5">
@@ -129,6 +135,14 @@ export const ModelCatalogCard = ({ catalog, showWorkspace }: Props) => {
         </Button>
         <Button size="sm" variant="outline" onClick={goShow}>
           {t("model_catalogs.card.details", "Details")}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={goEdit}
+          aria-label={t("buttons.edit", "Edit")}
+        >
+          <Pencil className="size-4" />
         </Button>
         <Button
           size="sm"
