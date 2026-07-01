@@ -1404,6 +1404,8 @@
 			"noWrap": "No wrap",
 			"collapse": "Collapse",
 			"expand": "Expand",
+			"collapseAll": "Collapse all",
+			"expandAll": "Expand all",
 			"searchPlaceholder": "Search in body…",
 			"clearSearch": "Clear search",
 			"matchCount": "{{current}} / {{total}}",
