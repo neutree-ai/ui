@@ -55,7 +55,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
-    const transformedValues = transformClusterValues(values as Cluster, isEdit);
+    const transformedValues = transformClusterValues(
+      values as Cluster,
+      isEdit,
+      form.formState.touchedFields,
+    );
 
     return originalOnFinish(transformedValues);
   };
@@ -284,7 +288,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             }
             className="col-span-4"
           >
-            <Textarea disabled={isEdit} />
+            <Textarea />
           </FormFieldGroup>
         )}
       </FormCardGrid>
@@ -392,7 +396,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             isEdit ? t("common.messages.leaveEmptyToKeepValue") : undefined
           }
         >
-          <Textarea disabled={isEdit} />
+          <Textarea />
         </FormFieldGroup>
       </FormCardGrid>
     ),

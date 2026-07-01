@@ -47,6 +47,7 @@ export const useImageRegistryForm = ({
     const transformedValues = transformImageRegistryValues(
       values as ImageRegistry,
       isEdit,
+      form.formState.touchedFields,
     );
 
     return originalOnFinish(transformedValues);
