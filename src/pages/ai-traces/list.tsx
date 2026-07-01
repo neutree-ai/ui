@@ -159,7 +159,7 @@ export const AITracesList = () => {
     >
       <TraceStatsChart workspace={workspace} />
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         <DateRangePicker value={range} onChange={setRange} />
         <Input
           className="w-[200px]"
