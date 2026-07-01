@@ -182,6 +182,11 @@ type ExpansionSignal = {
   version: number;
 };
 
+const isOpenForExpansionSignal = (
+  action: ExpansionSignal["action"],
+  version: number,
+) => version === 0 || action === "expand";
+
 const BodySection = ({
   title,
   body,
@@ -525,11 +530,19 @@ const MessageCard = ({
 }) => {
   const { t } = useTranslation();
   const [showRaw, setShowRaw] = useState(false);
-  const [open, setOpen] = useState(true);
+  const { action: expansionAction, version: expansionVersion } =
+    expansionSignal;
+  const expansionOpen = isOpenForExpansionSignal(
+    expansionAction,
+    expansionVersion,
+  );
+  const [open, setOpen] = useState(() =>
+    isOpenForExpansionSignal(expansionAction, expansionVersion),
+  );
   useEffect(() => {
-    if (expansionSignal.version === 0) return;
-    setOpen(expansionSignal.action === "expand");
-  }, [expansionSignal]);
+    if (expansionVersion === 0) return;
+    setOpen(expansionOpen);
+  }, [expansionOpen, expansionVersion]);
 
   return (
     <Collapsible
@@ -684,11 +697,19 @@ const AccentBlock = ({
   children: React.ReactNode;
   expansionSignal: ExpansionSignal;
 }) => {
-  const [open, setOpen] = useState(true);
+  const { action: expansionAction, version: expansionVersion } =
+    expansionSignal;
+  const expansionOpen = isOpenForExpansionSignal(
+    expansionAction,
+    expansionVersion,
+  );
+  const [open, setOpen] = useState(() =>
+    isOpenForExpansionSignal(expansionAction, expansionVersion),
+  );
   useEffect(() => {
-    if (expansionSignal.version === 0) return;
-    setOpen(expansionSignal.action === "expand");
-  }, [expansionSignal]);
+    if (expansionVersion === 0) return;
+    setOpen(expansionOpen);
+  }, [expansionOpen, expansionVersion]);
 
   return (
     <Collapsible
