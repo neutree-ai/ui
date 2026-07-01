@@ -1,9 +1,6 @@
 import { useCustomMutation, useList } from "@refinedev/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
-import type { Endpoint } from "@/domains/endpoint/types";
-import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
-import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 
 // API-key limits live on the key itself: quota + access are a single object
@@ -230,11 +227,36 @@ export type WorkspaceModelOption = {
   phase: string | null;
 };
 
+type WorkspaceEndpointRef = {
+  metadata?: { name?: string | null } | null;
+  spec?: { model?: { name?: string | null } | null } | null;
+  status?: { phase?: string | null } | null;
+};
+
+type WorkspaceExternalEndpointRef = {
+  metadata?: { name?: string | null } | null;
+  spec?: {
+    upstreams?: {
+      model_mapping?: Record<string, string> | null;
+    }[];
+  } | null;
+  status?: { phase?: string | null } | null;
+};
+
 const modelOptionValue = (
   type: WorkspaceModelOption["type"],
   endpointName: string,
   model: string,
 ) => `${type}:${endpointName}:${model}`;
+
+function exposedExternalModels(
+  spec: WorkspaceExternalEndpointRef["spec"],
+): string[] {
+  if (!spec?.upstreams) return [];
+  return spec.upstreams.flatMap((upstream) =>
+    upstream.model_mapping ? Object.keys(upstream.model_mapping) : [],
+  );
+}
 
 // Available client-facing models in a workspace (for the allowed-models
 // dropdown). Options are endpoint-level rows so duplicate model names served by
@@ -243,13 +265,13 @@ export function useWorkspaceModels(
   workspace: string | undefined,
 ): WorkspaceModelOption[] {
   const enabled = Boolean(workspace);
-  const { data: endpointsData } = useList<Endpoint>({
+  const { data: endpointsData } = useList<WorkspaceEndpointRef>({
     resource: "endpoints",
     pagination: { mode: "off" },
     meta: { workspace, workspaced: true },
     queryOptions: { enabled },
   });
-  const { data: externalEndpointsData } = useList<ExternalEndpoint>({
+  const { data: externalEndpointsData } = useList<WorkspaceExternalEndpointRef>({
     resource: "external_endpoints",
     pagination: { mode: "off" },
     meta: { workspace, workspaced: true },
@@ -277,7 +299,7 @@ export function useWorkspaceModels(
     for (const endpoint of externalEndpointsData?.data ?? []) {
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
-      for (const model of getExposedModels(endpoint.spec)) {
+      for (const model of exposedExternalModels(endpoint.spec)) {
         const trimmed = String(model ?? "").trim();
         if (!trimmed) continue;
         options.push({

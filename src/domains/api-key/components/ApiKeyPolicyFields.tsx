@@ -32,12 +32,14 @@ export const ApiKeyPolicyFields = ({
         .flatMap((m) => {
           const value = String(m.value ?? "").trim();
           if (!value) return [];
+          if (modelOptions.length === 0) return [value];
           if (modelOptions.some((option) => option.value === value)) {
             return [value];
           }
-          return modelOptions
+          const optionValues = modelOptions
             .filter((option) => option.model === value)
             .map((option) => option.value);
+          return optionValues.length > 0 ? optionValues : [value];
         })
         .filter(Boolean),
     ),
