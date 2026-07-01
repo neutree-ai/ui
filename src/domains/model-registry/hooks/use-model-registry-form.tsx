@@ -49,6 +49,7 @@ export const useModelRegistryForm = ({
     const transformedValues = transformModelRegistryValues(
       values as ModelRegistry,
       isEdit,
+      form.formState.touchedFields,
     );
 
     return originalOnFinish(transformedValues);
