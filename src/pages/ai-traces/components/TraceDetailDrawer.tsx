@@ -299,7 +299,7 @@ const BodySection = ({
                 setActiveMatch(0);
               }}
               placeholder={t("ai_traces.detail.searchPlaceholder")}
-              className="h-7 pl-7 pr-7 text-xs"
+              className="h-7 pl-7 pr-7 text-xs focus-visible:ring-inset"
             />
             {query && (
               <button
