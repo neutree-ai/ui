@@ -970,7 +970,8 @@
 		},
 		"models": {
 			"internal": "Internal",
-			"external": "External"
+			"external": "External",
+			"unknown": "Unknown"
 		},
 		"performance": {
 			"title": "Last 24h request performance",
