@@ -28,7 +28,7 @@ describe("transformModelRegistryValues", () => {
     const result = transformModelRegistryValues(makeRegistry(""), true);
     expect(result.spec.credentials).toBeUndefined();
   });
-  it("preserves dirty empty credentials in edit mode", () => {
+  it("preserves touched empty credentials in edit mode", () => {
     const result = transformModelRegistryValues(makeRegistry(""), true, {
       spec: { credentials: true },
     });

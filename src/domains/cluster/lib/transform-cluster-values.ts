@@ -1,5 +1,8 @@
 import type { Cluster } from "@/domains/cluster/types";
-import { type DirtyFields, isDirtyField } from "@/foundation/lib/dirty-fields";
+import {
+  type TouchedFields,
+  isTouchedField,
+} from "@/foundation/lib/touched-fields";
 import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualization";
 
 /**
@@ -11,18 +14,18 @@ import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualizati
 export function transformClusterValues(
   values: Cluster,
   isEdit = false,
-  dirtyFields?: DirtyFields,
+  touchedFields?: TouchedFields,
 ): Cluster {
   const transformed = { ...values };
-  const config = transformed.spec?.config;
-  const sshPrivateKeyDirty = isDirtyField(dirtyFields, [
+  const config = transformed.spec.config;
+  const sshPrivateKeyTouched = isTouchedField(touchedFields, [
     "spec",
     "config",
     "ssh_config",
     "auth",
     "ssh_private_key",
   ]);
-  const kubeconfigDirty = isDirtyField(dirtyFields, [
+  const kubeconfigTouched = isTouchedField(touchedFields, [
     "spec",
     "config",
     "kubernetes_config",
@@ -64,14 +67,14 @@ export function transformClusterValues(
     if (
       config.ssh_config?.auth &&
       !config.ssh_config.auth.ssh_private_key &&
-      !sshPrivateKeyDirty
+      !sshPrivateKeyTouched
     ) {
       delete config.ssh_config.auth.ssh_private_key;
     }
     if (
       config.kubernetes_config &&
       !config.kubernetes_config.kubeconfig &&
-      !kubeconfigDirty
+      !kubeconfigTouched
     ) {
       delete config.kubernetes_config.kubeconfig;
     }

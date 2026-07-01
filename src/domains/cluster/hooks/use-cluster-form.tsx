@@ -15,7 +15,10 @@ import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
-import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  isValidWorkspace,
+  useWorkspace,
+} from "@/foundation/hooks/use-workspace";
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -28,7 +31,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       kind: "Cluster",
       metadata: {
         name: "",
-        workspace: currentWorkspace,
+        workspace: isValidWorkspace(currentWorkspace) ? currentWorkspace : "",
       },
       spec: {
         image_registry: "",
@@ -55,7 +58,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     const transformedValues = transformClusterValues(
       values as Cluster,
       isEdit,
-      form.formState.dirtyFields,
+      form.formState.touchedFields,
     );
 
     return originalOnFinish(transformedValues);
@@ -160,6 +163,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
+          rules={{
+            required: t("common.validation.workspaceRequired"),
+            validate: (value: string) =>
+              isValidWorkspace(value) ||
+              t("common.validation.workspaceRequired"),
+          }}
         >
           <WorkspaceField disabled={isEdit} />
         </FormFieldGroup>

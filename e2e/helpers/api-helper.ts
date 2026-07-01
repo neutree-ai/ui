@@ -197,14 +197,23 @@ export class ApiHelper {
   /** POST /api/v1/engines */
   async createEngine(
     name: string,
-    options?: { workspace?: string; version?: string },
+    options?: {
+      workspace?: string;
+      version?: string;
+      valuesSchema?: Record<string, unknown>;
+    },
   ): Promise<void> {
     await this.api("POST", "/engines", {
       api_version: "v1",
       kind: "Engine",
       metadata: { name, workspace: options?.workspace ?? "default" },
       spec: {
-        versions: [{ version: options?.version ?? "v1.0", values_schema: {} }],
+        versions: [
+          {
+            version: options?.version ?? "v1.0",
+            values_schema: options?.valuesSchema ?? {},
+          },
+        ],
         supported_tasks: ["text-generation"],
       },
     });

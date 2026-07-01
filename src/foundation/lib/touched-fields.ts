@@ -1,14 +1,14 @@
-export type DirtyFields =
+export type TouchedFields =
   | Record<string, unknown>
   | unknown[]
   | boolean
   | undefined;
 
-export const isDirtyField = (
-  dirtyFields: DirtyFields,
+export const isTouchedField = (
+  touchedFields: TouchedFields,
   path: string[],
 ): boolean => {
-  let current: unknown = dirtyFields;
+  let current: unknown = touchedFields;
   for (const segment of path) {
     if (current === true) return true;
     if (!current || typeof current !== "object") return false;

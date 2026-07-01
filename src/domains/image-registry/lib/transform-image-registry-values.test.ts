@@ -42,7 +42,7 @@ describe("transformImageRegistryValues", () => {
     expect(result.spec.authconfig.username).toBeUndefined();
     expect(result.spec.authconfig.password).toBeUndefined();
   });
-  it("preserves dirty empty username and password in edit mode", () => {
+  it("preserves touched empty username and password in edit mode", () => {
     const result = transformImageRegistryValues(
       makeRegistry({ username: "", password: "" }),
       true,

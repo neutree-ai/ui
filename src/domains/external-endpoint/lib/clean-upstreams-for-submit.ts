@@ -1,5 +1,8 @@
 import type { UpstreamSpec } from "@/domains/external-endpoint/types";
-import { type DirtyFields, isDirtyField } from "@/foundation/lib/dirty-fields";
+import {
+  type TouchedFields,
+  isTouchedField,
+} from "@/foundation/lib/touched-fields";
 
 /**
  * Clean upstream data before submitting to the API.
@@ -9,7 +12,7 @@ import { type DirtyFields, isDirtyField } from "@/foundation/lib/dirty-fields";
 export function cleanUpstreamsForSubmit(
   upstreams: UpstreamSpec[],
   isEdit: boolean,
-  dirtyFields?: DirtyFields,
+  touchedFields?: TouchedFields,
 ): UpstreamSpec[] {
   return upstreams.map((u, index) => {
     let result = { ...u };
@@ -26,7 +29,7 @@ export function cleanUpstreamsForSubmit(
       isEdit &&
       result.auth &&
       !result.auth.credential &&
-      !isDirtyField(dirtyFields, [String(index), "auth", "credential"])
+      !isTouchedField(touchedFields, [String(index), "auth", "credential"])
     ) {
       const { credential, ...authRest } = result.auth;
       result = { ...result, auth: authRest };

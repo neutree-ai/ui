@@ -5,7 +5,10 @@ import type { ImageRegistry } from "@/domains/image-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
-import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  isValidWorkspace,
+  useWorkspace,
+} from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export const useImageRegistryForm = ({
@@ -22,7 +25,7 @@ export const useImageRegistryForm = ({
       kind: "ImageRegistry",
       metadata: {
         name: "",
-        workspace: currentWorkspace,
+        workspace: isValidWorkspace(currentWorkspace) ? currentWorkspace : "",
       },
       spec: {
         url: "",
@@ -44,7 +47,7 @@ export const useImageRegistryForm = ({
     const transformedValues = transformImageRegistryValues(
       values as ImageRegistry,
       isEdit,
-      form.formState.dirtyFields,
+      form.formState.touchedFields,
     );
 
     return originalOnFinish(transformedValues);
@@ -73,6 +76,12 @@ export const useImageRegistryForm = ({
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
+          rules={{
+            required: t("common.validation.workspaceRequired"),
+            validate: (value: string) =>
+              isValidWorkspace(value) ||
+              t("common.validation.workspaceRequired"),
+          }}
         >
           <WorkspaceField disabled={isEdit} />
         </FormFieldGroup>

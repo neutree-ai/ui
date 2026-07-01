@@ -267,6 +267,50 @@ describe("transformEndpointValues", () => {
       product: "Tesla-T4",
     });
   });
+
+  it("parses valid JSON object and array engine_args strings before submission", () => {
+    const spec = {
+      resources: null,
+      replicas: null,
+      variables: {
+        engine_args: {
+          speculative_config: '{"method":"mtp","nested":{"enabled":true}}',
+          stop: '["</s>","<|end|>"]',
+          max_model_len: "4096",
+          invalid_object: '{"method":',
+          json_number: "1",
+        },
+      },
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.variables.engine_args).toEqual({
+      speculative_config: {
+        method: "mtp",
+        nested: { enabled: true },
+      },
+      stop: ["</s>", "<|end|>"],
+      max_model_len: "4096",
+      invalid_object: '{"method":',
+      json_number: "1",
+    });
+  });
+
+  it("ignores non-object engine_args values during submission normalization", () => {
+    const spec = {
+      resources: null,
+      replicas: null,
+      variables: {
+        engine_args: '{"speculative_config":{"method":"mtp"}}',
+      },
+    } as unknown as Parameters<typeof transformEndpointValues>[0];
+
+    expect(() => transformEndpointValues(spec)).not.toThrow();
+    expect(spec.variables?.engine_args).toBe(
+      '{"speculative_config":{"method":"mtp"}}',
+    );
+  });
 });
 
 describe("normalizeEndpointResourcesForForm", () => {

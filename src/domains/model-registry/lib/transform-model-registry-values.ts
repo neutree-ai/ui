@@ -1,5 +1,8 @@
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { type DirtyFields, isDirtyField } from "@/foundation/lib/dirty-fields";
+import {
+  type TouchedFields,
+  isTouchedField,
+} from "@/foundation/lib/touched-fields";
 
 /**
  * Transform model registry form values before submission.
@@ -8,14 +11,14 @@ import { type DirtyFields, isDirtyField } from "@/foundation/lib/dirty-fields";
 export function transformModelRegistryValues(
   values: ModelRegistry,
   isEdit = false,
-  dirtyFields?: DirtyFields,
+  touchedFields?: TouchedFields,
 ): ModelRegistry {
   const transformed = { ...values };
   if (
     isEdit &&
     transformed.spec &&
     !transformed.spec.credentials &&
-    !isDirtyField(dirtyFields, ["spec", "credentials"])
+    !isTouchedField(touchedFields, ["spec", "credentials"])
   ) {
     delete transformed.spec.credentials;
   }

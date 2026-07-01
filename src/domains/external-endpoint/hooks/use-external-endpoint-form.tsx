@@ -23,7 +23,10 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
-import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  isValidWorkspace,
+  useWorkspace,
+} from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const emptyExternalUpstream: UpstreamSpec = {
@@ -47,7 +50,7 @@ export const useExternalEndpointForm = ({
       kind: "ExternalEndpoint",
       metadata: {
         name: "",
-        workspace: currentWorkspace,
+        workspace: isValidWorkspace(currentWorkspace) ? currentWorkspace : "",
       },
       spec: {
         route_type: "/v1/chat/completions",
@@ -160,7 +163,7 @@ export const useExternalEndpointForm = ({
       v.spec.upstreams = cleanUpstreamsForSubmit(
         v.spec.upstreams,
         isEdit,
-        form.formState.dirtyFields.spec?.upstreams,
+        form.formState.touchedFields.spec?.upstreams,
       );
     }
     return originalOnFinish(v);
@@ -189,6 +192,12 @@ export const useExternalEndpointForm = ({
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
+          rules={{
+            required: t("common.validation.workspaceRequired"),
+            validate: (value: string) =>
+              isValidWorkspace(value) ||
+              t("common.validation.workspaceRequired"),
+          }}
         >
           <WorkspaceField disabled={isEdit} />
         </FormFieldGroup>

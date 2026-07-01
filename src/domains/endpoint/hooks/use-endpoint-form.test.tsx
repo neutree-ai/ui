@@ -63,8 +63,11 @@ vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
+const mockUseWorkspace = vi.fn(() => ({ current: "default" }));
+
 vi.mock("@/foundation/hooks/use-workspace", () => ({
-  useWorkspace: () => ({ current: "default" }),
+  useWorkspace: () => mockUseWorkspace(),
+  isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
 vi.mock("@/foundation/components/VariablesInput", () => ({
@@ -1482,7 +1485,20 @@ describe("useEndpointForm", () => {
       expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
       expect(screen.queryByText("clusters.fields.vgpuMemoryUsage")).toBeNull();
 
-      for (const expectedFreeValue of ["12.0 cores", "48.0 GiB", "15.0 GiB"]) {
+      expect(
+        within(clusterSection).getAllByText("cores").length,
+      ).toBeGreaterThan(0);
+      expect(within(clusterSection).getAllByText("GiB").length).toBeGreaterThan(
+        0,
+      );
+      expect(
+        within(clusterSection).queryByText((text) =>
+          ["12.0 cores", "48.0 GiB", "15.0 GiB"].some((value) =>
+            text.includes(value),
+          ),
+        ),
+      ).toBeNull();
+      for (const expectedFreeValue of ["12.0", "48.0", "15.0"]) {
         expect(
           within(clusterSection)
             .getAllByTestId("endpoint-resource-summary-free-value")
@@ -1491,27 +1507,27 @@ describe("useEndpointForm", () => {
       }
       expect(
         within(clusterSection).getAllByText((text) =>
-          text.includes("4.0 / 16.0 cores"),
+          text.includes("4.0 / 16.0"),
         ).length,
       ).toBeGreaterThan(0);
       expect(
         within(clusterSection).getAllByText((text) =>
-          text.includes("16.0 / 64.0 GiB"),
+          text.includes("16.0 / 64.0"),
         ).length,
       ).toBeGreaterThan(0);
       expect(
         within(clusterSection).getAllByText((text) =>
-          text.includes("15.0 / 30.0 GiB"),
+          text.includes("15.0 / 30.0"),
         ).length,
       ).toBeTruthy();
       expect(
-        screen.getAllByText((text) => text.includes("15.0 / 30.0 GiB")).length,
+        screen.getAllByText((text) => text.includes("15.0 / 30.0")).length,
       ).toBeGreaterThan(0);
       expect(
         screen.getAllByText((text) => text.includes("50.0 / 200.0")).length,
       ).toBeGreaterThan(0);
-      expect(screen.getAllByText("7.5 GiB").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("15.0 GiB").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("7.5").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("15.0").length).toBeGreaterThan(0);
       expect(
         screen.getAllByText((text) => text.includes("50.0")).length,
       ).toBeGreaterThan(0);
@@ -1958,6 +1974,11 @@ describe("useEndpointForm", () => {
       expect(
         screen.queryByTestId("endpoint-resource-summary-strip"),
       ).toBeNull();
+      expect(
+        within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
+          "endpoints.fields.matchingGpuCards",
+        ),
+      ).toBeNull();
       expect(screen.getByTestId("endpoint-current-request-panel")).toBeTruthy();
       expect(
         screen.getByTestId("endpoint-current-request-grid").className,
@@ -2105,6 +2126,11 @@ describe("useEndpointForm", () => {
       expect(getAcceleratorCardText()).toContain(
         "endpoints.messages.vgpuResourcesInsufficient",
       );
+      expect(
+        within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
+          "endpoints.messages.vgpuResourcesInsufficient",
+        ),
+      ).toBeNull();
     });
 
     it("shows configured vGPU core request when available core is zero", async () => {
@@ -2185,6 +2211,11 @@ describe("useEndpointForm", () => {
           "endpoints.messages.fullGpuResourcesInsufficient",
         );
       });
+      expect(
+        within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
+          "endpoints.messages.fullGpuResourcesInsufficient",
+        ),
+      ).toBeNull();
     });
 
     it("checks only additional full cards while editing an existing endpoint", async () => {
@@ -2462,6 +2493,33 @@ describe("useEndpointForm", () => {
         undefined,
       );
     });
+
+    it("submits JSON object engine_args as structured values", async () => {
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("metadata.name", "json-engine-args-endpoint");
+        formInstance?.setValue("spec.variables.engine_args", {
+          speculative_config: '{"method":"mtp","nested":{"enabled":true}}',
+          max_model_len: "4096",
+        });
+      });
+
+      await act(async () => {
+        await formInstance?.refineCore.onFinish(formInstance.getValues());
+      });
+
+      const submitted = refineCoreOnFinishMock.mock.calls[0]?.[0];
+      expect(submitted?.spec.variables.engine_args).toEqual({
+        speculative_config: {
+          method: "mtp",
+          nested: { enabled: true },
+        },
+        max_model_len: "4096",
+      });
+    });
   });
 
   describe("handleModelCatalogSelect", () => {
@@ -2594,6 +2652,41 @@ describe("useEndpointForm", () => {
           "spec.deployment_options.scheduler.type"
         ];
       expect(error?.message).toBe("endpoints.messages.schedulerTypeRequired");
+    });
+  });
+
+  describe("workspace validation (resolver)", () => {
+    beforeEach(() => {
+      setupMocks();
+      mockUseWorkspace.mockReset();
+    });
+
+    it("shows validation error when workspace is _all_ (resolver path)", async () => {
+      mockUseWorkspace.mockReturnValue({ current: "_all_" });
+
+      render(<CreateForm />);
+
+      await act(async () => {
+        await formInstance!.trigger("metadata.workspace");
+      });
+
+      expect(
+        screen.getByText("common.validation.workspaceRequired"),
+      ).toBeTruthy();
+    });
+
+    it("does not show error when workspace is valid (resolver path)", async () => {
+      mockUseWorkspace.mockReturnValue({ current: "ws-alpha" });
+
+      render(<CreateForm />);
+
+      await act(async () => {
+        await formInstance!.trigger("metadata.workspace");
+      });
+
+      expect(
+        screen.queryByText("common.validation.workspaceRequired"),
+      ).toBeNull();
     });
   });
 });

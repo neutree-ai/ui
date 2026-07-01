@@ -1,5 +1,8 @@
 import type { ImageRegistry } from "@/domains/image-registry/types";
-import { type DirtyFields, isDirtyField } from "@/foundation/lib/dirty-fields";
+import {
+  type TouchedFields,
+  isTouchedField,
+} from "@/foundation/lib/touched-fields";
 
 /**
  * Transform image registry form values before submission.
@@ -8,20 +11,20 @@ import { type DirtyFields, isDirtyField } from "@/foundation/lib/dirty-fields";
 export function transformImageRegistryValues(
   values: ImageRegistry,
   isEdit = false,
-  dirtyFields?: DirtyFields,
+  touchedFields?: TouchedFields,
 ): ImageRegistry {
   const transformed = { ...values };
   if (isEdit && transformed.spec?.authconfig) {
     const authconfig = transformed.spec.authconfig;
     if (
       !authconfig.username &&
-      !isDirtyField(dirtyFields, ["spec", "authconfig", "username"])
+      !isTouchedField(touchedFields, ["spec", "authconfig", "username"])
     ) {
       delete authconfig.username;
     }
     if (
       !authconfig.password &&
-      !isDirtyField(dirtyFields, ["spec", "authconfig", "password"])
+      !isTouchedField(touchedFields, ["spec", "authconfig", "password"])
     ) {
       delete authconfig.password;
     }

@@ -64,7 +64,7 @@ describe("transformClusterValues", () => {
         result.spec.config.ssh_config?.auth?.ssh_private_key,
       ).toBeUndefined();
     });
-    it("preserves dirty empty ssh_private_key in edit mode", () => {
+    it("preserves touched empty ssh_private_key in edit mode", () => {
       const cluster = makeCluster({
         spec: {
           type: "ssh",
@@ -128,7 +128,7 @@ describe("transformClusterValues", () => {
       const result = transformClusterValues(cluster, true);
       expect(result.spec.config.kubernetes_config?.kubeconfig).toBeUndefined();
     });
-    it("preserves dirty empty kubeconfig in edit mode", () => {
+    it("preserves touched empty kubeconfig in edit mode", () => {
       const cluster = makeCluster({
         spec: {
           type: "kubernetes",

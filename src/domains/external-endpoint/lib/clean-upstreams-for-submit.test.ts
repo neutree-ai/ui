@@ -32,7 +32,7 @@ describe("cleanUpstreamsForSubmit", () => {
       expect(result[0].auth).toEqual({ type: "bearer" });
       expect("credential" in (result[0].auth ?? {})).toBe(false);
     });
-    it("preserves dirty empty credential", () => {
+    it("preserves touched empty credential", () => {
       const result = cleanUpstreamsForSubmit([baseUpstream], true, [
         { auth: { credential: true } },
       ]);

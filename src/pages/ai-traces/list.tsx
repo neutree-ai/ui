@@ -52,7 +52,11 @@ export const AITracesList = () => {
   const [endpointType, setEndpointType] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [model, setModel] = useState("");
-  const [apiKeyId, setApiKeyId] = useState<string>("");
+  // Pre-fill the api-key filter from ?api_key_id=… so the API-key detail page's
+  // "view call logs" link lands here scoped to that key.
+  const [apiKeyId, setApiKeyId] = useState<string>(
+    () => (params?.api_key_id as string) ?? "",
+  );
   const [finishReason, setFinishReason] = useState<string>("");
   const [range, setRange] = useState<DateRange>(() => trailingRange(7));
   const [selected, setSelected] = useState<AITrace | null>(null);
