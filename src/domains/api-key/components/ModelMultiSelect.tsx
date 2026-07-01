@@ -100,17 +100,20 @@ export const ModelMultiSelect = ({
                       key={o.value}
                       value={`${o.model} ${o.endpointName} ${typeLabel(o.type)} ${phaseLabel(o.phase)}`}
                       onSelect={() => toggle(o.value)}
-                      className="items-start gap-2"
+                      className="group items-start gap-2"
                     >
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="truncate text-sm font-medium">
                           {o.model}
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
                           <span className="truncate max-w-[180px]">
                             {o.endpointName}
                           </span>
-                          <Badge variant="outline" className="h-5 font-normal">
+                          <Badge
+                            variant="outline"
+                            className="h-5 bg-background/80 font-normal group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground"
+                          >
                             {typeLabel(o.type)}
                           </Badge>
                           <Badge
@@ -118,6 +121,7 @@ export const ModelMultiSelect = ({
                             className={cn(
                               "h-5 font-normal",
                               phaseClass(o.phase),
+                              "group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground",
                             )}
                           >
                             {phaseLabel(o.phase)}
