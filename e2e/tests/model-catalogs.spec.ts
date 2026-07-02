@@ -1,8 +1,8 @@
+import type { Locator, Page } from "@playwright/test";
 import { config } from "../config";
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
 import { MULTI_USER_TIMEOUT } from "../helpers/constants";
-import { ResourcePage } from "../helpers/resource-page";
 import { YamlImportHelper } from "../helpers/yaml-import";
 
 /** Build a ModelCatalog YAML document for import */
@@ -65,6 +65,39 @@ spec:
   variables: {}`;
 }
 
+// ── Card-surface helpers ──
+// The catalog list is a card grid (design §3.7), not a table. These helpers
+// locate and act on cards by catalog name via the card's data-testid/data-name,
+// replacing the old TableHelper for the model-catalog list surface.
+const CATALOG_CARD = '[data-testid="model-catalog-card"]';
+
+async function gotoCatalogList(
+  page: Page,
+  workspace = "default",
+): Promise<void> {
+  await page.goto(`/#/${workspace}/model-catalogs`);
+  // The search box renders unconditionally once the list page mounts, so it is
+  // a reliable "page loaded" signal for a grid that may legitimately be empty.
+  await page.getByPlaceholder(/search by name/i).waitFor({ state: "visible" });
+}
+
+function catalogCard(page: Page, name: string): Locator {
+  return page.locator(`${CATALOG_CARD}[data-name="${name}"]`);
+}
+
+async function deleteCatalogCardByName(
+  page: Page,
+  name: string,
+): Promise<void> {
+  await catalogCard(page, name)
+    .getByRole("button", { name: /delete/i })
+    .click();
+  const dialog = page.getByRole("alertdialog");
+  await dialog.waitFor({ state: "visible" });
+  await dialog.getByRole("button", { name: /delete/i }).click();
+  await dialog.waitFor({ state: "hidden" });
+}
+
 // ── Shared test data for list + detail tests ──
 // Created once in beforeAll, cleaned up in afterAll.
 const mcNames = {
@@ -122,389 +155,195 @@ test.describe("model catalogs", () => {
   });
 
   // ────────────────────────────────────────────────────────────
-  // List tests
+  // List tests — the catalog list is a card grid (design §3.7), not a table.
+  // The per-column / sort / column-visibility assertions were removed with the
+  // table UI; this is a focused smoke test of the card surface.
   // ────────────────────────────────────────────────────────────
   test.describe("list", () => {
-    test(
-      "list page shows expected columns and model catalogs",
-      {
-        tag: "@C2613160",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
+    test("list renders a card per catalog with task and deploy/details entries", {
+      tag: "@C2613160",
+    }, async ({ modelCatalogs }) => {
+      await gotoCatalogList(modelCatalogs.page);
 
-        const headers = modelCatalogs.table.root.locator("thead th");
-        await expect(headers.filter({ hasText: /name/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /workspace/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /model/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /task/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /engine/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /status/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /updated/i })).toBeVisible();
+      const card = catalogCard(modelCatalogs.page, mcNames.tg);
+      await expect(card).toBeVisible();
+      await expect(card.getByText("test-model-tg")).toBeVisible();
+      await expect(card.getByText("Text Generation")).toBeVisible();
+      await expect(card.getByRole("button", { name: /deploy/i })).toBeVisible();
+      await expect(
+        card.getByRole("button", { name: /details/i }),
+      ).toBeVisible();
+    });
 
-        await modelCatalogs.table.expectRowWithText(mcNames.tg);
-      },
-    );
+    test("clicking Details navigates to the catalog detail page", {
+      tag: "@C2613162",
+    }, async ({ modelCatalogs }) => {
+      await gotoCatalogList(modelCatalogs.page);
+      await catalogCard(modelCatalogs.page, mcNames.tg)
+        .getByRole("button", { name: /details/i })
+        .click();
 
-    test(
-      "can sort by name",
-      {
-        tag: "@C2613161",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-        await modelCatalogs.table.sort(/name/i);
-      },
-    );
+      const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
+      await expect(
+        showPage.getByText(mcNames.tg, { exact: true }),
+      ).toBeVisible();
+    });
 
-    test(
-      "clicking name navigates to detail page",
-      {
-        tag: "@C2613162",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-        await modelCatalogs.table.clickRowLink(mcNames.tg);
+    test("search filters cards by name", {
+      tag: "@C2613180",
+    }, async ({ modelCatalogs }) => {
+      await gotoCatalogList(modelCatalogs.page);
+      await expect(catalogCard(modelCatalogs.page, mcNames.tg)).toBeVisible();
 
-        const showPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
-        await expect(showPage).toBeVisible();
-        await expect(
-          showPage.getByText(mcNames.tg, { exact: true }),
-        ).toBeVisible();
-      },
-    );
+      await modelCatalogs.page
+        .getByPlaceholder(/search by name/i)
+        .fill(mcNames.te);
 
-    test(
-      "clicking workspace navigates to workspace detail",
-      {
-        tag: "@C2613163",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-
-        const row = modelCatalogs.table.rowWithText(mcNames.tg);
-        await row.getByRole("link", { name: "default" }).click();
-
-        const showPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
-        await expect(showPage).toBeVisible();
-        await expect(
-          showPage.getByText("default", { exact: true }),
-        ).toBeVisible();
-      },
-    );
-
-    test(
-      "model column shows name:version format",
-      {
-        tag: "@C2613164",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-
-        const row = modelCatalogs.table.rowWithText(mcNames.tg);
-        await expect(row.getByText("test-model-tg:1.0")).toBeVisible();
-      },
-    );
-
-    test(
-      "task column shows Text Generation badge",
-      {
-        tag: "@C2613165",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-
-        const row = modelCatalogs.table.rowWithText(mcNames.tg);
-        await expect(row.getByText("Text Generation")).toBeVisible();
-      },
-    );
-
-    test(
-      "task column shows Text Embedding badge",
-      {
-        tag: "@C2613166",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-
-        const row = modelCatalogs.table.rowWithText(mcNames.te);
-        await expect(row.getByText("Text Embedding")).toBeVisible();
-      },
-    );
-
-    test(
-      "task column shows Text Rerank badge",
-      {
-        tag: "@C2613167",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-
-        const row = modelCatalogs.table.rowWithText(mcNames.tr);
-        await expect(row.getByText("Text Rerank")).toBeVisible();
-      },
-    );
-
-    test(
-      "engine column shows engine:version as link",
-      {
-        tag: "@C2613168",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-
-        const row = modelCatalogs.table.rowWithText(mcNames.tg);
-        const engineLink = row.getByRole("link", {
-          name: `${config.engine.name}:${config.engine.version}`,
-        });
-        await expect(engineLink).toBeVisible();
-      },
-    );
-
-    test(
-      "status column shows engine phase",
-      {
-        tag: "@C2613169",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-
-        const row = modelCatalogs.table.rowWithText(mcNames.tg);
-        // Status should show a phase (Pending, Ready, Failed, etc.)
-        await expect(row).toBeVisible();
-        await expect(modelCatalogs.table.headerCell(/status/i)).toBeVisible();
-      },
-    );
-
-    test(
-      "updated at column visible and sortable",
-      {
-        tag: ["@C2613170", "@C2613171"],
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-        await expect(modelCatalogs.table.headerCell(/updated/i)).toBeVisible();
-        await modelCatalogs.table.sort(/updated/i);
-      },
-    );
-
-    test(
-      "created at column visible and sortable",
-      {
-        tag: ["@C2613172", "@C2613173"],
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-        await expect(modelCatalogs.table.headerCell(/created/i)).toBeVisible();
-        await modelCatalogs.table.sort(/created/i);
-      },
-    );
-
-    test(
-      "can toggle column visibility",
-      {
-        tag: "@C2613174",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-        // Status column is visible by default
-        await expect(modelCatalogs.table.headerCell(/status/i)).toBeVisible();
-        // Toggle it hidden
-        await modelCatalogs.table.toggleColumn(/status/i);
-        await expect(modelCatalogs.table.headerCell(/status/i)).toBeHidden();
-        // Toggle it visible again
-        await modelCatalogs.table.toggleColumn(/status/i);
-        await expect(modelCatalogs.table.headerCell(/status/i)).toBeVisible();
-      },
-    );
-
-    test(
-      "admin can see all model catalogs",
-      {
-        tag: "@C2613180",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToList();
-        const rowCount = await modelCatalogs.table.rows().count();
-        expect(rowCount).toBeGreaterThan(0);
-        await modelCatalogs.table.expectRowWithText(mcNames.tg);
-      },
-    );
+      await expect(catalogCard(modelCatalogs.page, mcNames.te)).toBeVisible();
+      await expect(catalogCard(modelCatalogs.page, mcNames.tg)).toHaveCount(0);
+    });
   });
 
   // ────────────────────────────────────────────────────────────
   // Detail tests (uses MC_TR — has full resource/replica config)
   // ────────────────────────────────────────────────────────────
   test.describe("detail", () => {
-    test(
-      "show page displays name, workspace, timestamps, and status",
-      {
-        tag: "@C2613178",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToShow(mcNames.tr);
+    test("show page displays name, workspace, timestamps, and status", {
+      tag: "@C2613178",
+    }, async ({ modelCatalogs }) => {
+      await modelCatalogs.goToShow(mcNames.tr);
 
-        const showPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
-        await expect(showPage).toBeVisible();
+      const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
 
-        // Name
-        await expect(
-          showPage.getByText(mcNames.tr, { exact: true }),
-        ).toBeVisible();
+      // Name
+      await expect(
+        showPage.getByText(mcNames.tr, { exact: true }),
+      ).toBeVisible();
 
-        // Workspace
-        const workspaceDt = showPage.locator("dt", {
-          hasText: /workspace/i,
-        });
-        await expect(workspaceDt).toBeVisible();
+      // Workspace
+      const workspaceDt = showPage.locator("dt", {
+        hasText: /workspace/i,
+      });
+      await expect(workspaceDt).toBeVisible();
 
-        // Timestamps (use role="term" to scope to <dt> elements)
-        await expect(
-          showPage.getByRole("term").filter({ hasText: /created at/i }),
-        ).toBeVisible();
-        await expect(
-          showPage.getByRole("term").filter({ hasText: /updated at/i }),
-        ).toBeVisible();
+      // Timestamps (use role="term" to scope to <dt> elements)
+      await expect(
+        showPage.getByRole("term").filter({ hasText: /created at/i }),
+      ).toBeVisible();
+      await expect(
+        showPage.getByRole("term").filter({ hasText: /updated at/i }),
+      ).toBeVisible();
 
-        // Status
-        const statusDt = showPage.locator("dt", { hasText: /^status$/i });
-        await expect(statusDt).toBeVisible();
-      },
-    );
+      // Status
+      const statusDt = showPage.locator("dt", { hasText: /^status$/i });
+      await expect(statusDt).toBeVisible();
+    });
 
-    test(
-      "workspace link navigates to workspace detail",
-      {
-        tag: "@C2613184",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToShow(mcNames.tr);
+    test("workspace link navigates to workspace detail", {
+      tag: "@C2613184",
+    }, async ({ modelCatalogs }) => {
+      await modelCatalogs.goToShow(mcNames.tr);
 
-        const showPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
-        const workspaceDt = showPage.locator("dt", {
-          hasText: /workspace/i,
-        });
-        const workspaceDd = workspaceDt.locator("~ dd").first();
-        await workspaceDd.getByRole("link").click();
+      const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
+      const workspaceDt = showPage.locator("dt", {
+        hasText: /workspace/i,
+      });
+      const workspaceDd = workspaceDt.locator("~ dd").first();
+      await workspaceDd.getByRole("link").click();
 
-        // Should navigate to workspace show page
-        const wsShowPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
-        await expect(wsShowPage).toBeVisible();
-        await expect(
-          wsShowPage.getByText("default", { exact: true }),
-        ).toBeVisible();
-      },
-    );
+      // Should navigate to workspace show page
+      const wsShowPage = modelCatalogs.page.locator(
+        '[data-testid="show-page"]',
+      );
+      await expect(wsShowPage).toBeVisible();
+      await expect(
+        wsShowPage.getByText("default", { exact: true }),
+      ).toBeVisible();
+    });
 
-    test(
-      "show page displays engine, model, and task info",
-      {
-        tag: "@C2613185",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToShow(mcNames.tr);
+    test("show page displays engine, model, and task info", {
+      tag: "@C2613185",
+    }, async ({ modelCatalogs }) => {
+      await modelCatalogs.goToShow(mcNames.tr);
 
-        const showPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
+      const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
 
-        // Engine
-        const engineDt = showPage.locator("dt", { hasText: /^engine$/i });
-        await expect(engineDt).toBeVisible();
-        await expect(
-          showPage.getByRole("link", {
-            name: `${config.engine.name}:${config.engine.version}`,
-          }),
-        ).toBeVisible();
+      // Engine
+      const engineDt = showPage.locator("dt", { hasText: /^engine$/i });
+      await expect(engineDt).toBeVisible();
+      await expect(
+        showPage.getByRole("link", {
+          name: `${config.engine.name}:${config.engine.version}`,
+        }),
+      ).toBeVisible();
 
-        // Model
-        const modelDt = showPage.locator("dt", { hasText: /^model$/i });
-        await expect(modelDt).toBeVisible();
-        await expect(showPage.getByText("test-model-tr:3.0")).toBeVisible();
+      // Model
+      const modelDt = showPage.locator("dt", { hasText: /^model$/i });
+      await expect(modelDt).toBeVisible();
+      await expect(showPage.getByText("test-model-tr:3.0")).toBeVisible();
 
-        // Task
-        const taskDt = showPage.locator("dt", { hasText: /^task$/i });
-        await expect(taskDt).toBeVisible();
-        await expect(showPage.getByText("Text Rerank")).toBeVisible();
+      // Task
+      const taskDt = showPage.locator("dt", { hasText: /^task$/i });
+      await expect(taskDt).toBeVisible();
+      await expect(showPage.getByText("Text Rerank")).toBeVisible();
 
-        // Model File
-        const modelFileDt = showPage.locator("dt", {
-          hasText: /model file/i,
-        });
-        await expect(modelFileDt).toBeVisible();
-        await expect(showPage.getByText("model-tr.safetensors")).toBeVisible();
-      },
-    );
+      // Model File
+      const modelFileDt = showPage.locator("dt", {
+        hasText: /model file/i,
+      });
+      await expect(modelFileDt).toBeVisible();
+      await expect(showPage.getByText("model-tr.safetensors")).toBeVisible();
+    });
 
-    test(
-      "show page displays deployment config (replicas and scheduler)",
-      {
-        tag: "@C2613186",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToShow(mcNames.tr);
+    test("show page displays deployment config (replicas and scheduler)", {
+      tag: "@C2613186",
+    }, async ({ modelCatalogs }) => {
+      await modelCatalogs.goToShow(mcNames.tr);
 
-        const showPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
+      const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
 
-        // Replica
-        const replicaDt = showPage.locator("dt", { hasText: /replica/i });
-        await expect(replicaDt).toBeVisible();
-        const replicaDd = replicaDt.locator("~ dd").first();
-        await expect(replicaDd.getByText("2")).toBeVisible();
+      // Replica
+      const replicaDt = showPage.locator("dt", { hasText: /replica/i });
+      await expect(replicaDt).toBeVisible();
+      const replicaDd = replicaDt.locator("~ dd").first();
+      await expect(replicaDd.getByText("2")).toBeVisible();
 
-        // Scheduler
-        const schedulerDt = showPage.locator("dt", {
-          hasText: /scheduler/i,
-        });
-        await expect(schedulerDt).toBeVisible();
-        const schedulerDd = schedulerDt.locator("~ dd").first();
-        await expect(schedulerDd.getByText("Round robin")).toBeVisible();
-      },
-    );
+      // Scheduler
+      const schedulerDt = showPage.locator("dt", {
+        hasText: /scheduler/i,
+      });
+      await expect(schedulerDt).toBeVisible();
+      const schedulerDd = schedulerDt.locator("~ dd").first();
+      await expect(schedulerDd.getByText("Round robin")).toBeVisible();
+    });
 
-    test(
-      "show page displays resources (GPU, CPU, Memory)",
-      {
-        tag: "@C2622605",
-      },
-      async ({ modelCatalogs }) => {
-        await modelCatalogs.goToShow(mcNames.tr);
+    test("show page displays resources (GPU, CPU, Memory)", {
+      tag: "@C2622605",
+    }, async ({ modelCatalogs }) => {
+      await modelCatalogs.goToShow(mcNames.tr);
 
-        const showPage = modelCatalogs.page.locator(
-          '[data-testid="show-page"]',
-        );
+      const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
 
-        // GPU
-        const gpuDt = showPage.locator("dt", { hasText: /^gpu$/i });
-        await expect(gpuDt).toBeVisible();
-        const gpuDd = gpuDt.locator("~ dd").first();
-        await expect(gpuDd.getByText("1")).toBeVisible();
+      // GPU
+      const gpuDt = showPage.locator("dt", { hasText: /^gpu$/i });
+      await expect(gpuDt).toBeVisible();
+      const gpuDd = gpuDt.locator("~ dd").first();
+      await expect(gpuDd.getByText("1")).toBeVisible();
 
-        // CPU
-        const cpuDt = showPage.locator("dt", { hasText: /^cpu$/i });
-        await expect(cpuDt).toBeVisible();
-        const cpuDd = cpuDt.locator("~ dd").first();
-        await expect(cpuDd.getByText("4")).toBeVisible();
+      // CPU
+      const cpuDt = showPage.locator("dt", { hasText: /^cpu$/i });
+      await expect(cpuDt).toBeVisible();
+      const cpuDd = cpuDt.locator("~ dd").first();
+      await expect(cpuDd.getByText("4")).toBeVisible();
 
-        // Memory
-        const memDt = showPage.locator("dt", { hasText: /^memory$/i });
-        await expect(memDt).toBeVisible();
-        const memDd = memDt.locator("~ dd").first();
-        await expect(memDd.getByText("8")).toBeVisible();
-      },
-    );
+      // Memory
+      const memDt = showPage.locator("dt", { hasText: /^memory$/i });
+      await expect(memDt).toBeVisible();
+      const memDd = memDt.locator("~ dd").first();
+      await expect(memDd.getByText("8")).toBeVisible();
+    });
   });
 
   // ────────────────────────────────────────────────────────────
@@ -524,14 +363,9 @@ test.describe("model catalogs", () => {
         testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const testUser = await createTestUser(["model_catalog:read"]);
-        const mcPage = new ResourcePage(testUser.page, {
-          routeName: "model-catalogs",
-          workspaced: true,
-        });
 
-        await mcPage.goToList();
-        const rowCount = await mcPage.table.rows().count();
-        expect(rowCount).toBeGreaterThan(0);
+        await gotoCatalogList(testUser.page);
+        await expect(testUser.page.locator(CATALOG_CARD).first()).toBeVisible();
       },
     );
 
@@ -549,16 +383,11 @@ test.describe("model catalogs", () => {
         testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const testUser = await createTestUser(["role:read"]);
-        const mcPage = new ResourcePage(testUser.page, {
-          routeName: "model-catalogs",
-          workspaced: true,
-        });
 
-        await testUser.page.goto("/#/default/model-catalogs");
-        await mcPage.table.waitForLoaded();
+        await gotoCatalogList(testUser.page);
 
         await expect(
-          testUser.page.locator('[data-testid="table-empty"]'),
+          testUser.page.getByText(/no model catalogs/i),
         ).toBeVisible();
       },
     );
@@ -569,104 +398,96 @@ test.describe("model catalogs", () => {
 // Create tests (YAML import)
 // ────────────────────────────────────────────────────────────
 test.describe("model catalogs create", () => {
-  test(
-    "no create button on list page, only YAML import supported",
-    {
-      tag: "@C2613187",
-    },
-    async ({ modelCatalogs }) => {
-      await modelCatalogs.goToList();
+  test("no create button on list page, only YAML import supported", {
+    tag: "@C2613187",
+  }, async ({ modelCatalogs }) => {
+    await gotoCatalogList(modelCatalogs.page);
 
-      // No Create link/button
-      await expect(
-        modelCatalogs.page.getByRole("link", { name: /create/i }),
-      ).toBeHidden();
+    // No Create link/button
+    await expect(
+      modelCatalogs.page.getByRole("link", { name: /create/i }),
+    ).toBeHidden();
 
-      // Import YAML button should be visible in the navbar
-      await expect(
-        modelCatalogs.page.getByRole("button", { name: /import yaml/i }),
-      ).toBeVisible();
-    },
-  );
+    // Import YAML button should be visible in the navbar
+    await expect(
+      modelCatalogs.page.getByRole("button", { name: /import yaml/i }),
+    ).toBeVisible();
+  });
 
-  test(
-    "admin can import model catalog via YAML and verify all fields",
-    {
-      tag: ["@C2612861", "@C2613188"],
-    },
-    async ({ modelCatalogs, yamlImport, apiHelper }) => {
-      const mcName = `test-mc-imp-${Date.now()}`;
-      const yaml = modelCatalogYaml(mcName, {
-        modelName: "import-test-model",
-        modelVersion: "2.5",
-        modelFile: "imported.safetensors",
-        task: "text-embedding",
-        cpu: 4,
-        memory: 8,
-        gpu: 1,
-        replicas: 3,
-        schedulerType: "consistent_hash",
-      });
+  test("admin can import model catalog via YAML and verify all fields", {
+    tag: ["@C2612861", "@C2613188"],
+  }, async ({ modelCatalogs, yamlImport }) => {
+    const mcName = `test-mc-imp-${Date.now()}`;
+    const yaml = modelCatalogYaml(mcName, {
+      modelName: "import-test-model",
+      modelVersion: "2.5",
+      modelFile: "imported.safetensors",
+      task: "text-embedding",
+      cpu: 4,
+      memory: 8,
+      gpu: 1,
+      replicas: 3,
+      schedulerType: "consistent_hash",
+    });
 
-      // Import via YAML
-      await modelCatalogs.goToList();
-      await yamlImport.importYaml(yaml);
-      await yamlImport.expectResults({ success: 1 });
-      await yamlImport.close();
+    // Import via YAML
+    await gotoCatalogList(modelCatalogs.page);
+    await yamlImport.importYaml(yaml);
+    await yamlImport.expectResults({ success: 1 });
+    await yamlImport.close();
 
-      // Verify in list
-      await modelCatalogs.table.expectRowWithText(mcName);
+    // Verify the card appears, then open its detail page
+    await expect(catalogCard(modelCatalogs.page, mcName)).toBeVisible();
+    await catalogCard(modelCatalogs.page, mcName)
+      .getByRole("button", { name: /details/i })
+      .click();
+    const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
+    await expect(showPage).toBeVisible();
 
-      // Navigate to detail page and verify all fields
-      await modelCatalogs.table.clickRowLink(mcName);
-      const showPage = modelCatalogs.page.locator('[data-testid="show-page"]');
-      await expect(showPage).toBeVisible();
+    // Name
+    await expect(showPage.getByText(mcName, { exact: true })).toBeVisible();
 
-      // Name
-      await expect(showPage.getByText(mcName, { exact: true })).toBeVisible();
+    // Model info
+    await expect(showPage.getByText("import-test-model:2.5")).toBeVisible();
+    await expect(showPage.getByText("Text Embedding")).toBeVisible();
+    await expect(showPage.getByText("imported.safetensors")).toBeVisible();
 
-      // Model info
-      await expect(showPage.getByText("import-test-model:2.5")).toBeVisible();
-      await expect(showPage.getByText("Text Embedding")).toBeVisible();
-      await expect(showPage.getByText("imported.safetensors")).toBeVisible();
+    // Engine
+    await expect(
+      showPage.getByRole("link", {
+        name: `${config.engine.name}:${config.engine.version}`,
+      }),
+    ).toBeVisible();
 
-      // Engine
-      await expect(
-        showPage.getByRole("link", {
-          name: `${config.engine.name}:${config.engine.version}`,
-        }),
-      ).toBeVisible();
+    // Resources
+    const gpuDd = showPage
+      .locator("dt", { hasText: /^gpu$/i })
+      .locator("~ dd")
+      .first();
+    await expect(gpuDd.getByText("1")).toBeVisible();
+    const cpuDd = showPage
+      .locator("dt", { hasText: /^cpu$/i })
+      .locator("~ dd")
+      .first();
+    await expect(cpuDd.getByText("4")).toBeVisible();
+    const memDd = showPage
+      .locator("dt", { hasText: /^memory$/i })
+      .locator("~ dd")
+      .first();
+    await expect(memDd.getByText("8")).toBeVisible();
 
-      // Resources
-      const gpuDd = showPage
-        .locator("dt", { hasText: /^gpu$/i })
-        .locator("~ dd")
-        .first();
-      await expect(gpuDd.getByText("1")).toBeVisible();
-      const cpuDd = showPage
-        .locator("dt", { hasText: /^cpu$/i })
-        .locator("~ dd")
-        .first();
-      await expect(cpuDd.getByText("4")).toBeVisible();
-      const memDd = showPage
-        .locator("dt", { hasText: /^memory$/i })
-        .locator("~ dd")
-        .first();
-      await expect(memDd.getByText("8")).toBeVisible();
+    // Deployment config
+    const replicaDd = showPage
+      .locator("dt", { hasText: /replica/i })
+      .locator("~ dd")
+      .first();
+    await expect(replicaDd.getByText("3")).toBeVisible();
+    await expect(showPage.getByText("Consistent hashing")).toBeVisible();
 
-      // Deployment config
-      const replicaDd = showPage
-        .locator("dt", { hasText: /replica/i })
-        .locator("~ dd")
-        .first();
-      await expect(replicaDd.getByText("3")).toBeVisible();
-      await expect(showPage.getByText("Consistent hashing")).toBeVisible();
-
-      // Cleanup
-      await modelCatalogs.goToList();
-      await modelCatalogs.table.deleteRow(mcName, { noWait: true });
-    },
-  );
+    // Cleanup
+    await gotoCatalogList(modelCatalogs.page);
+    await deleteCatalogCardByName(modelCatalogs.page, mcName);
+  });
 
   test(
     "non-admin with model_catalog:create can import via YAML",
@@ -689,17 +510,13 @@ test.describe("model catalogs create", () => {
       const mcName = `test-mc-imp-${Date.now()}`;
       const yaml = modelCatalogYaml(mcName);
       const yamlHelper = new YamlImportHelper(testUser.page);
-      const mcPage = new ResourcePage(testUser.page, {
-        routeName: "model-catalogs",
-        workspaced: true,
-      });
 
-      await mcPage.goToList();
+      await gotoCatalogList(testUser.page);
       await yamlHelper.importYaml(yaml);
       await yamlHelper.expectResults({ success: 1 });
       await yamlHelper.close();
 
-      await mcPage.table.expectRowWithText(mcName);
+      await expect(catalogCard(testUser.page, mcName)).toBeVisible();
 
       // Cleanup (admin deletes)
       await apiHelper.deleteModelCatalog(mcName).catch(() => {});
@@ -723,18 +540,14 @@ test.describe("model catalogs create", () => {
       const mcName = `test-mc-imp-${Date.now()}`;
       const yaml = modelCatalogYaml(mcName);
       const yamlHelper = new YamlImportHelper(testUser.page);
-      const mcPage = new ResourcePage(testUser.page, {
-        routeName: "model-catalogs",
-        workspaced: true,
-      });
 
-      await mcPage.goToList();
+      await gotoCatalogList(testUser.page);
       await yamlHelper.importYaml(yaml);
       await yamlHelper.expectResults({ errors: 1 });
       await yamlHelper.close();
 
       // Model catalog should NOT appear in the list
-      await mcPage.table.expectNoRowWithText(mcName);
+      await expect(catalogCard(testUser.page, mcName)).toHaveCount(0);
     },
   );
 });
@@ -743,49 +556,37 @@ test.describe("model catalogs create", () => {
 // Delete tests
 // ────────────────────────────────────────────────────────────
 test.describe("model catalogs delete", () => {
-  test(
-    "can delete from list action menu",
-    {
-      tag: ["@C2613192", "@C2612870"],
-    },
-    async ({ modelCatalogs, apiHelper }) => {
-      const mcName = `test-mc-del-${Date.now()}`;
-      await apiHelper.createModelCatalog(mcName);
+  test("can delete from list card", {
+    tag: ["@C2613192", "@C2612870"],
+  }, async ({ modelCatalogs, apiHelper }) => {
+    const mcName = `test-mc-del-${Date.now()}`;
+    await apiHelper.createModelCatalog(mcName);
 
-      await modelCatalogs.goToList();
-      await modelCatalogs.table.deleteRow(mcName);
-      await modelCatalogs.table.expectNoRowWithText(mcName);
-    },
-  );
+    await gotoCatalogList(modelCatalogs.page);
+    await deleteCatalogCardByName(modelCatalogs.page, mcName);
+    await expect(catalogCard(modelCatalogs.page, mcName)).toHaveCount(0);
+  });
 
-  test(
-    "can delete from detail page action menu",
-    {
-      tag: "@C2613193",
-    },
-    async ({ modelCatalogs, apiHelper }) => {
-      const mcName = `test-mc-del-${Date.now()}`;
-      await apiHelper.createModelCatalog(mcName);
+  test("can delete from detail page action menu", {
+    tag: "@C2613193",
+  }, async ({ modelCatalogs, apiHelper }) => {
+    const mcName = `test-mc-del-${Date.now()}`;
+    await apiHelper.createModelCatalog(mcName);
 
-      await modelCatalogs.goToShow(mcName);
-      await modelCatalogs.showPageDelete(mcName);
-    },
-  );
+    await modelCatalogs.goToShow(mcName);
+    await modelCatalogs.showPageDelete(mcName);
+  });
 
-  test(
-    "admin can delete model catalog",
-    {
-      tag: "@C2613194",
-    },
-    async ({ modelCatalogs, apiHelper }) => {
-      const mcName = `test-mc-del-${Date.now()}`;
-      await apiHelper.createModelCatalog(mcName);
+  test("admin can delete model catalog", {
+    tag: "@C2613194",
+  }, async ({ modelCatalogs, apiHelper }) => {
+    const mcName = `test-mc-del-${Date.now()}`;
+    await apiHelper.createModelCatalog(mcName);
 
-      await modelCatalogs.goToList();
-      await modelCatalogs.table.deleteRow(mcName);
-      await modelCatalogs.table.expectNoRowWithText(mcName);
-    },
-  );
+    await gotoCatalogList(modelCatalogs.page);
+    await deleteCatalogCardByName(modelCatalogs.page, mcName);
+    await expect(catalogCard(modelCatalogs.page, mcName)).toHaveCount(0);
+  });
 });
 
 // ────────────────────────────────────────────────────────────
@@ -812,14 +613,10 @@ test.describe("model catalogs delete permissions", () => {
         "model_catalog:read",
         "model_catalog:delete",
       ]);
-      const mcPage = new ResourcePage(testUser.page, {
-        routeName: "model-catalogs",
-        workspaced: true,
-      });
 
-      await mcPage.goToList();
-      await mcPage.table.deleteRow(mcName);
-      await mcPage.table.expectNoRowWithText(mcName);
+      await gotoCatalogList(testUser.page);
+      await deleteCatalogCardByName(testUser.page, mcName);
+      await expect(catalogCard(testUser.page, mcName)).toHaveCount(0);
     },
   );
 
@@ -839,31 +636,22 @@ test.describe("model catalogs delete permissions", () => {
       await apiHelper.createModelCatalog(mcName);
 
       const testUser = await createTestUser(["model_catalog:read"]);
-      const mcPage = new ResourcePage(testUser.page, {
-        routeName: "model-catalogs",
-        workspaced: true,
-      });
 
-      await mcPage.goToList();
-      await mcPage.table.expectRowWithText(mcName);
+      await gotoCatalogList(testUser.page);
+      await expect(catalogCard(testUser.page, mcName)).toBeVisible();
 
-      // Attempt delete — API should reject with 403
-      await mcPage.table
-        .rowWithText(mcName)
-        .locator('[data-testid="row-actions-trigger"]')
+      // Attempt delete from the card — API should reject with 403
+      await catalogCard(testUser.page, mcName)
+        .getByRole("button", { name: /delete/i })
         .click();
-      await testUser.page
-        .locator('[role="menu"]')
-        .waitFor({ state: "visible" });
-      await testUser.page.getByRole("menuitem", { name: /delete/i }).click();
 
       const dialog = testUser.page.getByRole("alertdialog");
       await dialog.waitFor({ state: "visible" });
       await dialog.getByRole("button", { name: /delete/i }).click();
 
-      // Delete should fail — row still visible after the attempt
+      // Delete should fail — card still visible after the attempt
       await dialog.waitFor({ state: "hidden" });
-      await mcPage.table.expectRowWithText(mcName);
+      await expect(catalogCard(testUser.page, mcName)).toBeVisible();
 
       // Cleanup
       await apiHelper.deleteModelCatalog(mcName).catch(() => {});

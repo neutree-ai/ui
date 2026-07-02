@@ -55,9 +55,11 @@ export const ModelCatalogCard = ({ catalog, showWorkspace }: Props) => {
   // routable workspace and 404s the show/deploy pages.
   const recordWorkspace = catalog.metadata.workspace;
 
+  // model_catalogs is keyed by metadata->name (idColumnName), so the delete key
+  // is the catalog name, not the numeric id — passing id soft-deletes nothing.
   const { mutate: deleteCatalog, isLoading: isDeleting } = useDeleteHelper(
     "model_catalogs",
-    id,
+    name,
     { workspace: recordWorkspace },
   );
 
@@ -84,7 +86,11 @@ export const ModelCatalogCard = ({ catalog, showWorkspace }: Props) => {
     });
 
   return (
-    <Card className="flex flex-col h-full hover:border-primary/40 transition-colors">
+    <Card
+      data-testid="model-catalog-card"
+      data-name={name}
+      className="flex flex-col h-full hover:border-primary/40 transition-colors"
+    >
       <CardContent className="flex flex-col gap-3 flex-1 pt-5">
         <div className="flex items-start justify-between gap-2">
           <button
