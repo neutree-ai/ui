@@ -1,3 +1,4 @@
+import type { RecipeFeature } from "@/foundation/recipe/types";
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 import type {
   ClusterResourceInfo,
@@ -100,6 +101,24 @@ export type EndpointModelCatalogRef = {
     replicas: ReplicaSpec | null;
     deployment_options: DeploymentOptions | null;
     variables: Record<string, unknown> | null;
+    env?: Record<string, string> | null;
+    // Recipe extension — present on Recipe MCs.
+    base?: {
+      engine_args?: Record<string, unknown> | null;
+      env?: Record<string, string> | null;
+    } | null;
+    variants?: Record<
+      string,
+      {
+        model?: ModelSpec | null;
+        resources?: ResourceSpec | null;
+        engine_args?: Record<string, unknown> | null;
+        env?: Record<string, string> | null;
+        description?: string;
+        vram_minimum_gb?: number | null;
+      }
+    > | null;
+    features?: RecipeFeature[] | null;
   };
 };
 

@@ -35,6 +35,7 @@
 			"anthropicUrl": "Anthropic Compatible URL",
 			"allReplicas": "All Replicas",
 			"version": "Version",
+			"description": "Description",
 			"reason": "Reason",
 			"message": "Message"
 		},
@@ -571,6 +572,86 @@
 			"errorMessage": "Error Message",
 			"registry": "Registry",
 			"modelFile": "Model File"
+		},
+		"sections": {
+			"overview": "Overview",
+			"keyConfig": "Key Configuration",
+			"engineArgs": "Engine Arguments",
+			"env": "Environment Variables",
+			"advanced": "Advanced (all fields)"
+		},
+		"keyConfig": {
+			"contextLength": "Context Length",
+			"tensorParallel": "Tensor Parallel",
+			"dataParallel": "Data Parallel",
+			"pipelineParallel": "Pipeline Parallel",
+			"expertParallel": "Expert Parallel",
+			"quantization": "Quantization",
+			"kvCacheDtype": "KV Cache Dtype",
+			"reasoningParser": "Reasoning Parser",
+			"toolParser": "Tool Parser",
+			"prefixCaching": "Prefix Caching",
+			"speculative": "Speculative Decoding",
+			"none": "—"
+		},
+		"recipe": {
+			"variants": "Variants",
+			"features": "Features",
+			"variantKey": "Variant",
+			"argsOverrides": "Args overrides",
+			"defaultOn": "default on",
+			"optIn": "opt-in",
+			"conflictsWith": "conflicts with",
+			"verifiedHardware": "Verified hardware",
+			"performanceTuning": "Performance tuning",
+			"vramMin": "Min VRAM"
+		},
+		"modelInfo": {
+			"title": "Model info",
+			"parameterCount": "Parameters",
+			"quantization": "Quantization",
+			"contextLength": "Context",
+			"architecture": "Architecture"
+		},
+		"card": {
+			"deploy": "Deploy",
+			"details": "Details",
+			"variantCount": "{{count}} variants",
+			"searchPlaceholder": "Search by name",
+			"empty": "No model catalogs yet. Import one to get started.",
+			"deleteTitle": "Delete model catalog",
+			"deleteDescription": "Delete \"{{name}}\"? This cannot be undone."
+		},
+		"import": {
+			"button": "Import",
+			"title": "Import model catalogs",
+			"description": "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported.",
+			"tabYaml": "Paste YAML",
+			"tabFile": "Upload file",
+			"tabUrl": "From URL",
+			"chooseFile": "Choose file",
+			"urlHint": "Fetched in your browser — the URL must allow cross-origin (CORS) access. Use a raw YAML link.",
+			"workspaceLabel": "Default workspace",
+			"workspacePlaceholder": "Used when the YAML has no metadata.workspace",
+			"submit": "Import",
+			"detail": "Detail",
+			"created": "Created",
+			"fetchFailed": "Failed to fetch URL: {{status}} {{statusText}}",
+			"noDocuments": "No model catalog documents found in the input.",
+			"wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\"",
+			"invalidResource": "Missing apiVersion, kind, or metadata.name.",
+			"unknownError": "Unknown error",
+			"alreadyExists": "A model catalog named \"{{name}}\" already exists — import does not overwrite it. Use Edit to update its spec.",
+			"successAll": "Imported {{count}} catalogs",
+			"failedAll": "All {{count}} imports failed",
+			"partial": "{{ok}} imported, {{failed}} failed"
+		},
+		"edit": {
+			"title": "Edit model catalog",
+			"specLabel": "Spec (YAML)",
+			"specHint": "Edit the catalog spec — e.g. point the model at a locally-imported registry. Invalid recipes surface as a Failed status after saving.",
+			"saved": "Catalog updated",
+			"invalidSpec": "Spec must be a mapping"
 		}
 	},
 	"image_registries": {
@@ -742,6 +823,29 @@
 		"tabs": {
 			"playground": "Playground"
 		},
+		"recipe": {
+			"section": "Recipe options",
+			"variant": "Variant",
+			"features": "Features",
+			"selectVariant": "Select a variant",
+			"defaultOn": "default on",
+			"conflictsWith": "conflicts with",
+			"preview": "Composed preview",
+			"previewError": "Cannot compose",
+			"engineArgs": "Engine args",
+			"env": "Environment",
+			"performanceTuning": "Performance tuning",
+			"verifiedOn": "Verified on:",
+			"vramOk": "Sufficient VRAM",
+			"vramLow": "Insufficient VRAM",
+			"resourceEstimate": "Resource estimate",
+			"estimatedVram": "Estimated VRAM",
+			"replicasCount": "{{count}} replica",
+			"noVerifiedAccelerator": "No validated GPU available in this cluster.",
+			"requiredVram": "Requires ≥ {{gb}} GB VRAM.",
+			"composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}",
+			"defaultVariant": "Default variant"
+		},
 		"monitor": {
 			"endpointMetrics": "Ray Metrics",
 			"vllmMetrics": "vLLM Engine Metrics",
@@ -763,6 +867,11 @@
 			"stdoutLogsNotAvailable": "Stdout logs not available",
 			"failedToLoadRayApplication": "Failed to load Ray application information. Please check if the cluster is accessible.",
 			"noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
+		},
+		"simplified": {
+			"autoConfigured": "Model, engine and resources are auto-configured from the selected variant.",
+			"showAdvanced": "Show all options",
+			"hideAdvanced": "Hide advanced options"
 		}
 	},
 	"external_endpoints": {

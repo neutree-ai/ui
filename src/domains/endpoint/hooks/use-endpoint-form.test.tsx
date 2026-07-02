@@ -679,8 +679,10 @@ describe("useEndpointForm", () => {
     expect(screen.getByTestId("model-catalog-row").className).toContain(
       "col-span-4",
     );
+    // Catalog occupies the left half; Replicas sits beside it in the right half
+    // of the same row (see use-endpoint-form templateFields).
     expect(screen.getByTestId("field--model-catalog").className).toContain(
-      "col-span-1",
+      "col-span-2",
     );
   });
 

@@ -1,10 +1,12 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { CircleHelp } from "lucide-react";
+import { ChevronDown, CircleHelp, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
@@ -14,8 +16,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
+import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
+import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
+import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
@@ -52,6 +58,29 @@ import {
   countFullCardAvailableDevicesByProduct,
 } from "@/foundation/lib/gpu-device-resources";
 import { cn } from "@/foundation/lib/utils";
+import {
+  composeEndpointSpec,
+  defaultFeatureSelections,
+} from "@/foundation/recipe/compose";
+import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
+import type {
+  ComposedSpec,
+  FeatureSelection,
+  RecipeInputSpec,
+} from "@/foundation/recipe/types";
+import { matchesAcceleratorName } from "@/foundation/recipe/vram";
+
+// Reads `?model_catalog=<id>` off the current URL. The app uses a HashRouter so
+// the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
+// Returns "" when absent or outside a browser (e.g. unit tests), so callers can
+// treat it as "no preselection".
+function readModelCatalogQueryParam(): string {
+  if (typeof window === "undefined") return "";
+  const hash = window.location.hash ?? "";
+  const q = hash.indexOf("?");
+  if (q === -1) return "";
+  return new URLSearchParams(hash.slice(q + 1)).get("model_catalog") ?? "";
+}
 
 type AcceleratorVirtualization = NonNullable<
   ResourceSpec["accelerator"]
@@ -94,6 +123,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { current: currentWorkspace } = useWorkspace();
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [modelSearch, setModelSearch] = useState("");
+  // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
+  const [selectedVariant, setSelectedVariant] = useState<string>("");
+  const [featureSelections, setFeatureSelections] = useState<FeatureSelection[]>([]);
+  // Simplified-mode disclosure: when deploying from a Recipe catalog card the
+  // model/engine/resources are auto-configured from the chosen variant, so the
+  // raw fields and advanced resource controls start collapsed behind this toggle.
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm<Endpoint>({
     mode: "all",
@@ -583,21 +619,158 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
-  // Handle model catalog selection with merge logic
+  // Locate the currently selected catalog (or undefined).
+  const selectedCatalog = useMemo<EndpointModelCatalogRef | undefined>(
+    () =>
+      modelCatalogs.query.data?.data.find(
+        (catalog) => catalog.id.toString() === selectedModelCatalog,
+      ),
+    [modelCatalogs.query.data?.data, selectedModelCatalog],
+  );
+
+  // True when the selected catalog uses the Recipe extension.
+  const isRecipeCatalog = useMemo(
+    () => isRecipeShape(selectedCatalog?.spec ?? null),
+    [selectedCatalog],
+  );
+
+  // Distinct feature group labels in first-seen order. The first *named* group
+  // is treated as the "core" group and promoted into the main form grid (like
+  // the deploy mockup's 上下文窗口 / 并发数 fields); the rest render in the
+  // Features section below. All driven by the same selection state.
+  const featureGroups = useMemo(() => {
+    const gs: string[] = [];
+    for (const f of selectedCatalog?.spec.features ?? []) {
+      const g = f.group ?? "";
+      if (!gs.includes(g)) gs.push(g);
+    }
+    return gs;
+  }, [selectedCatalog]);
+  const coreFeatureGroup = featureGroups[0] ?? "";
+  const promoteCoreFeatures = Boolean(coreFeatureGroup);
+  const bottomFeatureGroups = promoteCoreFeatures
+    ? featureGroups.slice(1)
+    : featureGroups;
+
+  // Live composition for Recipe MCs — used for preview and for populating the
+  // legacy form fields on selection / when the user toggles features/variant.
+  const composeResult = useMemo(() => {
+    if (!selectedCatalog || !isRecipeCatalog) return null;
+    return composeEndpointSpec(
+      selectedCatalog.spec as RecipeInputSpec,
+      selectedVariant,
+      featureSelections,
+    );
+  }, [selectedCatalog, isRecipeCatalog, selectedVariant, featureSelections]);
+
+  // Apply a composed Recipe spec onto the form. Composition happens entirely
+  // client-side, so the endpoint is written as a plain, concrete spec (model /
+  // engine / resources / variables / env) — no recipe refs are persisted; the
+  // variant/feature selection lives only in this hook's local state.
+  const applyComposedToForm = (composed: ComposedSpec) => {
+    // Build a pseudo catalog spec containing only the kernel fields so we can
+    // reuse buildCatalogMergedSpec's deep-merge over defaults.
+    const pseudoCatalogSpec: Record<string, unknown> = {
+      model: composed.model ?? undefined,
+      engine: composed.engine ?? undefined,
+      resources: composed.resources ?? undefined,
+      variables: { engine_args: composed.engine_args ?? {} },
+      env: composed.env ?? {},
+    };
+    const merged = buildCatalogMergedSpec(pseudoCatalogSpec);
+    for (const [key, value] of Object.entries(merged)) {
+      setLeafValues(`spec.${key}`, value);
+    }
+  };
+
+  // Handle model catalog selection with merge logic. Trivial MCs go through
+  // the original `applyCatalogSpec` path; Recipe MCs go through the composer.
   const handleModelCatalogSelect = (catalogId: string) => {
     setSelectedModelCatalog(catalogId);
 
     if (!catalogId) {
       applyCatalogSpec(null);
+      setSelectedVariant("");
+      setFeatureSelections([]);
       return;
     }
 
-    const selectedCatalog = modelCatalogs.query.data?.data.find(
-      (catalog) => catalog.id.toString() === catalogId,
+    const catalog = modelCatalogs.query.data?.data.find(
+      (c) => c.id.toString() === catalogId,
     );
+    if (!catalog) return;
 
-    if (selectedCatalog) {
-      applyCatalogSpec(selectedCatalog.spec as Record<string, unknown>);
+    if (isRecipeShape(catalog.spec)) {
+      // Recipe path — initialize variant/features defaults, then compose.
+      const variants = Object.keys(catalog.spec.variants ?? {});
+      const initialVariant = variants.includes(DEFAULT_VARIANT)
+        ? DEFAULT_VARIANT
+        : (variants[0] ?? DEFAULT_VARIANT);
+      const initialFeatures = defaultFeatureSelections(
+        catalog.spec as RecipeInputSpec,
+      );
+      setSelectedVariant(initialVariant);
+      setFeatureSelections(initialFeatures);
+      const result = composeEndpointSpec(
+        catalog.spec as RecipeInputSpec,
+        initialVariant,
+        initialFeatures,
+      );
+      if (result.ok) {
+        applyComposedToForm(result.spec);
+      }
+    } else {
+      // Trivial path — current behavior, unchanged.
+      applyCatalogSpec(catalog.spec as Record<string, unknown>);
+      setSelectedVariant("");
+      setFeatureSelections([]);
+    }
+  };
+
+  // Deploy-from-catalog-card: the catalog list page links here with
+  // `?model_catalog=<id>` to preselect that catalog (lightweight deploy entry —
+  // no backend change, the create form just opens with the catalog chosen).
+  // Read the id straight off the HashRouter URL (no refine router hook, so this
+  // stays inert in unit tests that mount the hook without a router) and apply
+  // once, after the catalog list has loaded and contains the id.
+  const [preselectCatalogId] = useState(() =>
+    action === "create" ? readModelCatalogQueryParam() : "",
+  );
+  const preselectAppliedRef = useRef(false);
+  useEffect(() => {
+    if (preselectAppliedRef.current || !preselectCatalogId) return;
+    const list = modelCatalogs.query.data?.data;
+    if (!list?.some((c) => c.id.toString() === preselectCatalogId)) return;
+    preselectAppliedRef.current = true;
+    handleModelCatalogSelect(preselectCatalogId);
+    // handleModelCatalogSelect is stable enough for a one-shot guarded apply.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselectCatalogId, modelCatalogs.query.data]);
+
+  // When user changes variant or features, re-apply the composed result.
+  const handleVariantChange = (v: string) => {
+    setSelectedVariant(v);
+    if (!selectedCatalog) return;
+    const result = composeEndpointSpec(
+      selectedCatalog.spec as RecipeInputSpec,
+      v,
+      featureSelections,
+    );
+    if (result.ok) {
+      applyComposedToForm(result.spec);
+    }
+  };
+
+  const handleFeaturesChange = (next: FeatureSelection[]) => {
+    setFeatureSelections(next);
+    if (!selectedCatalog) return;
+    const result = composeEndpointSpec(
+      selectedCatalog.spec as RecipeInputSpec,
+      selectedVariant,
+      next,
+    );
+    if (result.ok) {
+      applyComposedToForm(result.spec);
     }
   };
 
@@ -626,6 +799,55 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     />
   ) : null;
 
+  // Simplified mode applies only to creating an endpoint from a Recipe catalog
+  // (the "deploy from card" entry). In that flow model/engine/resources are
+  // already composed from the variant, so we hide the raw fields by default and
+  // surface only the essentials (variant, replicas, cluster, accelerator) plus a
+  // lightweight resource estimate. `showFull` re-reveals every advanced control.
+  const simplified = !isEdit && isRecipeCatalog && Boolean(selectedCatalog);
+  const showFull = !simplified || showAdvanced;
+
+  // Active variant + its display metadata, used for the estimate summary.
+  const activeVariant =
+    selectedCatalog?.spec.variants?.[selectedVariant] ??
+    selectedCatalog?.spec.variants?.["default"];
+  const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
+  const estimatedTotalVramGb =
+    activeVariantVram != null ? activeVariantVram * replicaCount : null;
+  const activeModelInfo = activeVariant?.model?.info ?? null;
+
+  // GPU products this recipe MC declares as validated (annotation
+  // `recipe.vllm.ai/hardware-verified`, e.g. "H200,H100,L40S"); empty for
+  // non-recipe / un-annotated catalogs.
+  const verifiedProducts = useMemo(() => {
+    const raw =
+      selectedCatalog?.metadata.annotations?.[
+        "recipe.vllm.ai/hardware-verified"
+      ] ?? "";
+    return new Set(
+      raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+  }, [selectedCatalog]);
+  // Simplified recipe deploy only offers GPU products that are both validated
+  // (verifiedProducts) and present in the selected cluster (acceleratorOptions);
+  // "Show all options" reveals every available product.
+  const restrictAcceleratorToVerified = !showFull && verifiedProducts.size > 0;
+  const displayedAcceleratorOptions = restrictAcceleratorToVerified
+    ? acceleratorOptions.filter((opt) =>
+        matchesAcceleratorName(opt.product, verifiedProducts),
+      )
+    : acceleratorOptions;
+  // No validated + available GPU in this cluster → hide the product picker and
+  // just surface the required VRAM (the user can still expand "Show all
+  // options" to pick any available accelerator).
+  const noVerifiedAcceleratorAvailable =
+    restrictAcceleratorToVerified &&
+    Boolean(currentCluster) &&
+    displayedAcceleratorOptions.length === 0;
+
   const formWithTransformedOnFinish = {
     ...form,
     refineCore: {
@@ -633,6 +855,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       onFinish: async (
         values: Parameters<typeof form.refineCore.onFinish>[0],
       ) => {
+        // A recipe selection that doesn't compose must not be submitted: the
+        // form's legacy spec fields still hold the last successful compose (or
+        // empty defaults), so submitting would deploy a spec that contradicts
+        // the visible variant/feature selection. Block and surface the error.
+        if (composeResult && !composeResult.ok) {
+          toast.error(
+            t("endpoints.recipe.composeBlocked", {
+              error: composeResult.error,
+            }),
+          );
+          return;
+        }
         const transformedValues =
           typeof structuredClone === "function"
             ? structuredClone(values)
@@ -683,7 +917,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {...form}
                 name="-model-catalog"
                 label={t("endpoints.fields.modelCatalog")}
-                className="col-span-1"
+                className="col-span-2"
               >
                 <FormCombobox
                   placeholder={t("endpoints.placeholders.selectModelCatalog")}
@@ -701,8 +935,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   }
                 />
               </FormFieldGroup>
+              {/* Replicas sits beside the catalog to use the otherwise-empty
+                  right half of this row (create mode; edit renders it below). */}
+              <FormFieldGroup
+                {...form}
+                name="spec.replicas.num"
+                label={t("endpoints.fields.replicas")}
+                className="col-span-2"
+              >
+                <Input type="number" min={1} />
+              </FormFieldGroup>
             </div>
           )}
+          {/* Model registry + name are shown by default (so a recipe deploy
+              surfaces which model/registry it resolves to); version + file are
+              advanced and stay under "Show all options". */}
           <FormFieldGroup
             {...form}
             name="spec.model.registry"
@@ -757,29 +1004,37 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               />
             </div>
           </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.model.version"
-            label={t("endpoints.fields.modelVersion")}
-          >
-            <Input />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.model.file"
-            label={t("endpoints.fields.modelFile")}
-          >
-            <Input />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.replicas.num"
-            label={t("endpoints.fields.replicas")}
-          >
-            <Input type="number" min={1} />
-          </FormFieldGroup>
+          {showFull && (
+            <>
+              <FormFieldGroup
+                {...form}
+                name="spec.model.version"
+                label={t("endpoints.fields.modelVersion")}
+              >
+                <Input />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.model.file"
+                label={t("endpoints.fields.modelFile")}
+              >
+                <Input />
+              </FormFieldGroup>
+            </>
+          )}
+          {/* Edit mode has no catalog row, so Replicas renders here instead. */}
+          {isEdit && (
+            <FormFieldGroup
+              {...form}
+              name="spec.replicas.num"
+              label={t("endpoints.fields.replicas")}
+            >
+              <Input type="number" min={1} />
+            </FormFieldGroup>
+          )}
         </FormCardGrid>
 
+        {showFull && (
         <FormCardGrid title={t("endpoints.sections.engineSettings")}>
           <FormFieldGroup
             {...form}
@@ -839,8 +1094,190 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             />
           </FormFieldGroup>
         </FormCardGrid>
+        )}
       </>
     ),
+    // Recipe selection section — shown only when the selected MC is a Recipe MC.
+    // For trivial MCs this returns `null` so the existing form layout is
+    // pixel-identical to before.
+    recipeFields:
+      !isEdit && isRecipeCatalog && selectedCatalog ? (
+        <FormCardGrid title={t("endpoints.recipe.section", "Recipe options")}>
+          {(() => {
+            const verified = (
+              selectedCatalog.metadata.annotations?.[
+                "recipe.vllm.ai/hardware-verified"
+              ] ?? ""
+            )
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            if (verified.length === 0) return null;
+            return (
+              <div className="col-span-4 flex items-center gap-2 flex-wrap text-sm">
+                <span className="text-muted-foreground">
+                  {t("endpoints.recipe.verifiedOn", "Verified on:")}
+                </span>
+                {verified.map((hw) => (
+                  <Badge
+                    key={hw}
+                    variant="outline"
+                    className="border-green-600/40 text-green-700 dark:text-green-400"
+                  >
+                    ✓ {hw}
+                  </Badge>
+                ))}
+              </div>
+            );
+          })()}
+          {/*
+            Variant / features are client-side configurators, not endpoint
+            fields — they drive composeEndpointSpec into the concrete spec.
+            Plain labeled divs (no FormFieldGroup) so nothing registers a
+            spec.variant / spec.feature_selections form field to submit.
+          */}
+          <div className="col-span-4 space-y-2">
+            <div className="text-sm font-medium">
+              {t("endpoints.recipe.variant", "Variant")}
+            </div>
+            <VariantPicker
+              variants={selectedCatalog.spec.variants ?? {}}
+              value={selectedVariant}
+              onChange={handleVariantChange}
+            />
+          </div>
+          {promoteCoreFeatures && (
+            <div className="col-span-4">
+              <FeaturePicker
+                features={selectedCatalog.spec.features ?? []}
+                value={featureSelections}
+                onChange={handleFeaturesChange}
+                renderGroups={[coreFeatureGroup]}
+                layout="grid"
+              />
+            </div>
+          )}
+          {(() => {
+            const v =
+              selectedCatalog.spec.variants?.[selectedVariant] ??
+              selectedCatalog.spec.variants?.["default"];
+            const req = v?.vram_minimum_gb ?? null;
+            if (!req) return null;
+            return (
+              <div className="col-span-4">
+                <VRAMCheckBadge
+                  acceleratorProduct={
+                    form.watch("spec.resources.accelerator")?.product
+                  }
+                  perGpuGb={
+                    selectedMemoryTotalMiB != null
+                      ? selectedMemoryTotalMiB / 1024
+                      : undefined
+                  }
+                  gpuCount={form.watch("spec.resources.gpu")}
+                  requiredGb={req}
+                />
+              </div>
+            );
+          })()}
+          {(estimatedTotalVramGb != null || activeModelInfo) && (
+            <div className="col-span-4 rounded-lg border bg-muted/20 p-3">
+              <div className="mb-2 text-sm font-medium">
+                {t("endpoints.recipe.resourceEstimate", "Resource estimate")}
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                {estimatedTotalVramGb != null && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("endpoints.recipe.estimatedVram", "Estimated VRAM")}
+                    </div>
+                    <div className="mt-1 font-semibold tabular-nums">
+                      ≈ {estimatedTotalVramGb} GB
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {activeVariantVram} GB ×{" "}
+                      {t("endpoints.recipe.replicasCount", "{{count}} replica", {
+                        count: replicaCount,
+                      })}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.parameter_count && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("model_catalogs.modelInfo.parameterCount", "Parameters")}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.parameter_count}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.quantization && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("model_catalogs.modelInfo.quantization", "Quantization")}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.quantization}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.context_length && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t(
+                        "model_catalogs.modelInfo.contextLength",
+                        "Context length",
+                      )}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.context_length}
+                    </div>
+                  </div>
+                )}
+                {activeModelInfo?.architecture && (
+                  <div className="rounded-md border bg-background px-3 py-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {t("model_catalogs.modelInfo.architecture", "Architecture")}
+                    </div>
+                    <div className="mt-1 font-semibold">
+                      {activeModelInfo.architecture}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {selectedCatalog.spec.features &&
+            selectedCatalog.spec.features.length > 0 &&
+            bottomFeatureGroups.length > 0 && (
+              <div className="col-span-4 space-y-2">
+                <div className="text-sm font-medium">
+                  {t("endpoints.recipe.features", "Features")}
+                </div>
+                <FeaturePicker
+                  features={selectedCatalog.spec.features ?? []}
+                  value={featureSelections}
+                  onChange={handleFeaturesChange}
+                  renderGroups={bottomFeatureGroups}
+                />
+              </div>
+            )}
+          {composeResult && !composeResult.ok && (
+            // Compose failures must be visible even in simplified mode, where
+            // the full ComposePreview below is hidden — otherwise an invalid
+            // selection (e.g. an out-of-range input) shows no feedback.
+            <div className="col-span-4">
+              <ComposePreview composed={null} error={composeResult.error} />
+            </div>
+          )}
+          {showFull && composeResult?.ok && (
+            <div className="col-span-4">
+              <ComposePreview composed={composeResult.spec} error={null} />
+            </div>
+          )}
+        </FormCardGrid>
+      ) : null,
     // Scheduling target and resource selection section - always visible.
     resourceFields: (
       <FormCardGrid title={t("endpoints.sections.schedulingTargetResources")}>
@@ -922,7 +1359,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             data-testid="endpoint-resource-layout-grid"
             className={cn(
               "grid gap-3",
-              currentCluster
+              showFull && currentCluster
                 ? "xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]"
                 : "xl:grid-cols-[minmax(360px,420px)]",
             )}
@@ -1013,57 +1450,87 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       data-testid="endpoint-accelerator-allocator-row"
                       className="contents"
                     >
-                      <FormFieldGroup
-                        {...form}
-                        name="spec.resources.accelerator"
-                        label={t("endpoints.fields.accelerator")}
-                        className="col-span-1 min-w-0 sm:col-span-2"
-                      >
-                        <FormCombobox
-                          options={acceleratorOptions.map((opt) => ({
-                            label: opt.label,
-                            value: opt.value,
-                          }))}
-                          value={
-                            selectedAccelerator?.type &&
-                            selectedAccelerator?.product
-                              ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
-                              : ""
-                          }
-                          onChange={(value) => {
-                            // Parse "type:product" format
-                            const selectedOption = acceleratorOptions.find(
-                              (opt) => opt.value === value,
-                            );
-                            if (selectedOption) {
-                              const currentVirtualization = form.getValues(
-                                "spec.resources.accelerator.virtualization",
-                              );
-                              form.setValue("spec.resources.accelerator", {
-                                type: selectedOption.type,
-                                product: selectedOption.product,
-                                ...(isSelectedClusterVgpuEnabled
-                                  ? {
-                                      virtualization:
-                                        currentVirtualization || {},
-                                    }
-                                  : {}),
-                              } satisfies ResourceSpec["accelerator"]);
-                            } else {
-                              form.setValue("spec.resources.accelerator", null);
+                      {noVerifiedAcceleratorAvailable ? (
+                        // No validated GPU exists in this cluster — don't offer
+                        // a product, just state the VRAM requirement.
+                        <div className="col-span-1 min-w-0 space-y-1 sm:col-span-2">
+                          <div className="text-sm font-medium">
+                            {t("endpoints.fields.accelerator")}
+                          </div>
+                          <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                            {t(
+                              "endpoints.recipe.noVerifiedAccelerator",
+                              "No validated GPU available in this cluster.",
+                            )}
+                            {activeVariantVram != null && (
+                              <span className="ml-1">
+                                {t(
+                                  "endpoints.recipe.requiredVram",
+                                  "Requires ≥ {{gb}} GB VRAM.",
+                                  { gb: activeVariantVram },
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <FormFieldGroup
+                          {...form}
+                          name="spec.resources.accelerator"
+                          label={t("endpoints.fields.accelerator")}
+                          className="col-span-1 min-w-0 sm:col-span-2"
+                        >
+                          <FormCombobox
+                            options={displayedAcceleratorOptions.map((opt) => ({
+                              label: opt.label,
+                              value: opt.value,
+                            }))}
+                            value={
+                              selectedAccelerator?.type &&
+                              selectedAccelerator?.product
+                                ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
+                                : ""
                             }
-                          }}
-                          placeholder={t(
-                            "endpoints.placeholders.selectAccelerator",
-                          )}
-                          disabled={
-                            !currentCluster || acceleratorOptions.length === 0
-                          }
-                          emptyMessage={t(
-                            "endpoints.messages.noAcceleratorsAvailable",
-                          )}
-                        />
-                      </FormFieldGroup>
+                            onChange={(value) => {
+                              // Parse "type:product" format
+                              const selectedOption =
+                                displayedAcceleratorOptions.find(
+                                  (opt) => opt.value === value,
+                                );
+                              if (selectedOption) {
+                                const currentVirtualization = form.getValues(
+                                  "spec.resources.accelerator.virtualization",
+                                );
+                                form.setValue("spec.resources.accelerator", {
+                                  type: selectedOption.type,
+                                  product: selectedOption.product,
+                                  ...(isSelectedClusterVgpuEnabled
+                                    ? {
+                                        virtualization:
+                                          currentVirtualization || {},
+                                      }
+                                    : {}),
+                                } satisfies ResourceSpec["accelerator"]);
+                              } else {
+                                form.setValue(
+                                  "spec.resources.accelerator",
+                                  null,
+                                );
+                              }
+                            }}
+                            placeholder={t(
+                              "endpoints.placeholders.selectAccelerator",
+                            )}
+                            disabled={
+                              !currentCluster ||
+                              displayedAcceleratorOptions.length === 0
+                            }
+                            emptyMessage={t(
+                              "endpoints.messages.noAcceleratorsAvailable",
+                            )}
+                          />
+                        </FormFieldGroup>
+                      )}
                     </div>
 
                     <FormFieldGroup
@@ -1101,6 +1568,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       />
                     </FormFieldGroup>
 
+                    {showFull && (
                     <div
                       data-testid="endpoint-virtual-card-split-group"
                       className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
@@ -1171,9 +1639,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         />
                       </FormFieldGroup>
                     </div>
+                    )}
                   </div>
 
-                  {selectedAccelerator?.type &&
+                  {showFull &&
+                    selectedAccelerator?.type &&
                     selectedAccelerator?.product && (
                       <div
                         data-testid="endpoint-current-request-panel"
@@ -1282,7 +1752,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
               </section>
             </div>
-            {clusterGpuResourcesPanel && (
+            {showFull && clusterGpuResourcesPanel && (
               <div
                 data-testid="endpoint-resource-context"
                 className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm"
@@ -1304,7 +1774,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     // Advanced settings keep endpoint deployment controls and runtime details.
-    customizeFields: (
+    // Hidden in simplified mode until the user expands the advanced disclosure.
+    customizeFields: showFull ? (
       <FormCardGrid title={t("endpoints.sections.advancedOptions")}>
         <FormFieldGroup
           {...form}
@@ -1346,6 +1817,35 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           <VariablesInput schema={{}} />
         </FormFieldGroup>
       </FormCardGrid>
-    ),
+    ) : null,
+    // Simplified-mode banner + disclosure toggle. Null outside simplified mode so
+    // the standard create/edit layouts are unaffected.
+    advancedToggle: simplified ? (
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2.5">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Sparkles className="size-4 text-primary" />
+          {t(
+            "endpoints.simplified.autoConfigured",
+            "Model, engine and resources are auto-configured from the selected variant.",
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAdvanced((v) => !v)}
+        >
+          {showAdvanced
+            ? t("endpoints.simplified.hideAdvanced", "Hide advanced options")
+            : t("endpoints.simplified.showAdvanced", "Show all options")}
+          <ChevronDown
+            className={cn(
+              "ml-1 size-4 transition-transform",
+              showAdvanced && "rotate-180",
+            )}
+          />
+        </Button>
+      </div>
+    ) : null,
   };
 };
