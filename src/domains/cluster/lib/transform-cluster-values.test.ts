@@ -150,7 +150,7 @@ describe("transformClusterValues", () => {
       const cluster = makeCluster({
         spec: {
           type: "kubernetes",
-          version: "v1.1.0",
+          version: "v1.0.2",
           accelerator_virtualization: { enabled: true },
           config: {
             kubernetes_config: {
@@ -168,11 +168,11 @@ describe("transformClusterValues", () => {
       });
     });
 
-    it("removes accelerator virtualization config for kubernetes clusters below v1.1.0", () => {
+    it("removes accelerator virtualization config for kubernetes clusters at or below v1.0.1", () => {
       const cluster = makeCluster({
         spec: {
           type: "kubernetes",
-          version: "v1.0.9",
+          version: "v1.0.1",
           accelerator_virtualization: { enabled: true },
           config: {
             kubernetes_config: {

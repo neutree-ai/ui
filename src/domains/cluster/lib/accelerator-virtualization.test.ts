@@ -42,7 +42,8 @@ describe("cluster accelerator virtualization helpers", () => {
   });
 
   it("checks accelerator virtualization support by cluster version", () => {
-    expect(isAcceleratorVirtualizationSupported("v1.0.9")).toBe(false);
+    expect(isAcceleratorVirtualizationSupported("v1.0.1")).toBe(false);
+    expect(isAcceleratorVirtualizationSupported("v1.0.2")).toBe(true);
     expect(isAcceleratorVirtualizationSupported("v1.1.0")).toBe(true);
     expect(isAcceleratorVirtualizationSupported("v1.2.0")).toBe(true);
     expect(isAcceleratorVirtualizationSupported(null)).toBe(false);
