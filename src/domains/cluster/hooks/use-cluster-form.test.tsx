@@ -245,14 +245,14 @@ describe("useClusterForm", () => {
       });
     });
 
-    it("disables accelerator virtualization for kubernetes clusters below v1.1.0", async () => {
+    it("disables accelerator virtualization for kubernetes clusters at or below v1.0.1", async () => {
       render(<CreateForm />);
 
       selectType("clusters.options.kubernetes");
 
       await waitFor(() => expect(formInstance).not.toBeNull());
       act(() => {
-        formInstance?.setValue("spec.version", "v1.0.9");
+        formInstance?.setValue("spec.version", "v1.0.1");
       });
 
       const field = await screen.findByTestId(

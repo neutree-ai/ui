@@ -6,7 +6,7 @@ import type {
   NodeResourceStatus,
 } from "@/foundation/types/resource-types";
 
-const MIN_ACCELERATOR_VIRTUALIZATION_CLUSTER_VERSION = "v1.1.0";
+const MAX_UNSUPPORTED_ACCELERATOR_VIRTUALIZATION_CLUSTER_VERSION = "v1.0.1";
 
 type AcceleratorProductResourceRow = {
   acceleratorType: string;
@@ -119,8 +119,8 @@ export function isAcceleratorVirtualizationSupported(
     return (
       compareVersions(
         version,
-        MIN_ACCELERATOR_VIRTUALIZATION_CLUSTER_VERSION,
-      ) >= 0
+        MAX_UNSUPPORTED_ACCELERATOR_VIRTUALIZATION_CLUSTER_VERSION,
+      ) > 0
     );
   } catch {
     return false;
