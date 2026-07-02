@@ -37,6 +37,8 @@ export const VRAMCheckBadge = ({
 
   return (
     <div
+      data-testid="vram-check-badge"
+      data-state={result.kind}
       className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm ${cls}`}
     >
       <Icon className="size-4" />

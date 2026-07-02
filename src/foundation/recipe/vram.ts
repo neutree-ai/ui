@@ -14,11 +14,15 @@ const PER_GPU_VRAM_GB: Record<string, number> = {
   B300: 268,
   GB200: 192,
   GB300: 288,
-  // NVIDIA Ada / Ampere (legacy convenience)
+  // NVIDIA Ada / Ampere / Turing (legacy convenience)
   L40S: 48,
+  L4: 24,
   A100: 80,
   A100_80GB: 80,
   A100_40GB: 40,
+  A10G: 24,
+  T4: 16,
+  V100: 16,
   // AMD CDNA
   MI300X: 192,
   MI325X: 256,
