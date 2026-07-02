@@ -873,6 +873,61 @@ test.describe("clusters - create", () => {
     );
 
     test(
+      "K8s: create payload does not include router version",
+      { tag: "@C2728017" },
+      async ({ clusters, apiHelper }) => {
+        const name = `test-k8s-router-ver-${Date.now()}`;
+        try {
+          await clusters.page.route(
+            "**/api/v1/clusters/available_versions?**",
+            async (route) => {
+              await route.fulfill({
+                contentType: "application/json",
+                body: JSON.stringify({ available_versions: ["v1.0.1"] }),
+              });
+            },
+          );
+          await clusters.goToCreate();
+
+          await clusters.form.fillInput("metadata.name", name);
+          await clusters.form.selectComboboxOption(
+            "spec.image_registry",
+            irName.value,
+          );
+          await clusters.form.selectOption("spec.type", "Kubernetes");
+          await clusters.form.fillTextarea(
+            "spec.config.kubernetes_config.kubeconfig",
+            "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+          );
+          await expect(
+            clusters.form
+              .field("spec.version")
+              .locator('button[role="combobox"]'),
+          ).toHaveText("v1.0.1");
+
+          const requestPromise = clusters.page.waitForRequest(
+            (r) => r.url().includes("/clusters") && r.method() === "POST",
+          );
+          await clusters.form.submit();
+          const request = await requestPromise;
+          const body = JSON.parse(request.postData() || "{}");
+
+          expect(body.spec?.version).toBe("v1.0.1");
+          expect(
+            body.spec?.config?.kubernetes_config?.router,
+          ).not.toHaveProperty("version");
+          expect(body.spec?.config?.kubernetes_config?.router).toMatchObject({
+            access_mode: "LoadBalancer",
+            replicas: 2,
+            resources: { cpu: "1", memory: "1Gi" },
+          });
+        } finally {
+          await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+        }
+      },
+    );
+
+    test(
       "K8s: empty replicas → submit fails",
       { tag: "@C2612768" },
       async ({ clusters }) => {

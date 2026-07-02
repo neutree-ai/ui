@@ -233,7 +233,7 @@
   "src/domains/model-registry/hooks/use-model-registry-form.tsx": "7209947c2079b41b6b83c9051a5235e2",
   "src/domains/image-registry/lib/transform-image-registry-values.ts": "d317d857ad5092eae0770bab89240ec6",
   "src/domains/image-registry/hooks/use-image-registry-form.tsx": "ca7795582e54f820a3fb26492a68c13c",
-  "src/domains/cluster/hooks/use-cluster-form.tsx": "ebd56c933e83996386d67e57e608df23",
+  "src/domains/cluster/hooks/use-cluster-form.tsx": "760541d2f85c5a4d3ea72d07efb6b387",
   "src/foundation/types/resource-types.ts": "35e5676ea62d78f48a7b6f63509c03d5",
   "src/foundation/hooks/use-variables-input.ts": "4e7645dd01994e5fd252bc3e2ad7676f",
   "src/foundation/components/VariablesInput.tsx": "24057e155ee2272d6ba949b42639d752",

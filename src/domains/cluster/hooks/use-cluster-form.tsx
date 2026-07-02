@@ -247,7 +247,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   kubernetes_config: {
                     kubeconfig: "",
                     router: {
-                      version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
                       access_mode: "LoadBalancer",
                       replicas: 2,
                       resources: {
