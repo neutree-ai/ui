@@ -279,6 +279,11 @@ export class ApiHelper {
     });
   }
 
+  /** Generic authenticated GET — for reading resource status in polls. */
+  async get<T = unknown>(path: string): Promise<T> {
+    return this.api<T>("GET", path);
+  }
+
   /**
    * Create a recipe-form ModelCatalog (spec.base / spec.variants / spec.features)
    * via the API. The body hits the same recipe-validation middleware as a UI
