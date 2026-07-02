@@ -263,10 +263,12 @@ export class ApiHelper {
           engine: options?.engine ?? config.engine.name,
           version: options?.engineVersion ?? config.engine.version,
         },
+        // ResourceSpec cpu/memory/gpu are *string on the Go side — numbers are
+        // rejected with "cannot unmarshal number into ... type string".
         resources: {
-          cpu: options?.cpu ?? 1,
-          memory: options?.memory ?? 1,
-          gpu: options?.gpu ?? 0,
+          cpu: String(options?.cpu ?? 1),
+          memory: String(options?.memory ?? 1),
+          gpu: String(options?.gpu ?? 0),
         },
         replicas: { num: options?.replicas ?? 1 },
         deployment_options: {

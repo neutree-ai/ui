@@ -58,11 +58,32 @@ function composePreview(page: Page) {
   return page.locator('[data-testid="compose-preview"][data-state="ok"]');
 }
 
+/** Open the model-catalog list's own Import dialog (paste/file/URL tabs with a
+ * per-document result table) — distinct from the global navbar "Import YAML". */
+async function mcImportPaste(page: Page, yaml: string) {
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor({ state: "visible" });
+  await dialog.locator("textarea").fill(yaml);
+  await dialog.getByRole("button", { name: "Import", exact: true }).click();
+  // The per-document result table renders once all creates settle.
+  await dialog.locator("table").waitFor({ state: "visible" });
+  return dialog;
+}
+
+async function closeMcImportDialog(page: Page) {
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: /cancel/i }).click();
+  await dialog.waitFor({ state: "hidden" });
+}
+
 // ── A comprehensive, valid recipe spec covering every feature shape the deploy
 // tests need: two variants (default + fp8), a promoted "Core" group, a boolean
 // default-on toggle, a mutually-exclusive pair, a select feature, a free-input
-// feature, and a "Performance tuning" group. ──
-function recipeSpec(): Record<string, unknown> {
+// feature, and a "Performance tuning" group. `registry` must name an existing
+// model registry when the spec is used for an actual deploy submit — the
+// create form resolves the variant's model against it. ──
+function recipeSpec(registry = "huggingface"): Record<string, unknown> {
   return {
     engine: { engine: "vllm", version: "v0.8.5" },
     base: { engine_args: { enable_prefix_caching: true } },
@@ -70,8 +91,8 @@ function recipeSpec(): Record<string, unknown> {
       default: {
         description: "BF16 full-precision.",
         model: {
-          registry: "huggingface",
-          name: "Neutree/Test-27B",
+          registry,
+          name: "Qwen/Qwen3.5-0.8B",
           task: "text-generation",
           info: {
             parameter_count: "27B",
@@ -86,8 +107,8 @@ function recipeSpec(): Record<string, unknown> {
       fp8: {
         description: "FP8 checkpoint — single GPU.",
         model: {
-          registry: "huggingface",
-          name: "Neutree/Test-27B-FP8",
+          registry,
+          name: "Qwen/Qwen2.5-0.5B-Instruct",
           task: "text-generation",
           info: {
             parameter_count: "27B",
@@ -218,21 +239,25 @@ spec:
 
   test("import a recipe catalog via paste, then it is visible as a card", {
     tag: "@C2727741",
-  }, async ({ modelCatalogs, yamlImport }) => {
+  }, async ({ modelCatalogs }) => {
     const name = `test-mc-recipe-imp-${Date.now()}`;
     created.push(name);
 
     await gotoCatalogList(modelCatalogs.page);
-    await yamlImport.importYaml(validRecipeYaml(name));
-    await yamlImport.expectResults({ success: 1 });
-    await yamlImport.close();
+    const dialog = await mcImportPaste(
+      modelCatalogs.page,
+      validRecipeYaml(name),
+    );
+    await expect(dialog.getByText("OK")).toBeVisible();
+    await expect(dialog.getByText("Created")).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
 
     await expect(catalogCard(modelCatalogs.page, name)).toBeVisible();
   });
 
   test("re-importing an existing recipe catalog is rejected (no upsert)", {
     tag: "@C2727742",
-  }, async ({ modelCatalogs, yamlImport, apiHelper }) => {
+  }, async ({ modelCatalogs, apiHelper }) => {
     const name = `test-mc-recipe-dup-${Date.now()}`;
     created.push(name);
     await apiHelper.createRecipeModelCatalog(name, recipeSpec(), {
@@ -240,10 +265,20 @@ spec:
     });
 
     await gotoCatalogList(modelCatalogs.page);
-    await yamlImport.importYaml(validRecipeYaml(name));
-    // Duplicate name violates the (workspace, name) unique index -> import fails.
-    await yamlImport.expectResults({ errors: 1 });
-    await yamlImport.close();
+    const dialog = await mcImportPaste(
+      modelCatalogs.page,
+      validRecipeYaml(name),
+    );
+    // Duplicate name violates the (workspace, name) unique index — import must
+    // fail and point the user at Edit rather than silently upserting.
+    await expect(dialog.getByText("FAIL")).toBeVisible();
+    await expect(dialog.getByText(/already exists/i)).toBeVisible();
+    await expect(dialog.getByText(/use edit/i)).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
+
+    // Still exactly one card for this name.
+    await gotoCatalogList(modelCatalogs.page);
+    await expect(catalogCard(modelCatalogs.page, name)).toHaveCount(1);
   });
 
   test("import fails when variants coexist with top-level model/resources", {
@@ -261,9 +296,12 @@ spec:
       model: { registry: huggingface, name: Neutree/Test-27B, task: text-generation }`;
 
     await gotoCatalogList(modelCatalogs.page);
-    await yamlImport.importYaml(yaml);
-    await yamlImport.expectResults({ errors: 1 });
-    await yamlImport.close();
+    const dialog = await mcImportPaste(modelCatalogs.page, yaml);
+    await expect(dialog.getByText("FAIL")).toBeVisible();
+    await expect(
+      dialog.getByText(/top-level model together with variants/i),
+    ).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
 
     await gotoCatalogList(modelCatalogs.page);
     await expect(catalogCard(modelCatalogs.page, name)).toHaveCount(0);
@@ -271,7 +309,7 @@ spec:
 
   test("import fails when conflicts_with references an unknown feature", {
     tag: "@C2727744",
-  }, async ({ modelCatalogs, yamlImport }) => {
+  }, async ({ modelCatalogs }) => {
     const name = `test-mc-recipe-badconf-${Date.now()}`;
     const yaml = `apiVersion: v1
 kind: ModelCatalog
@@ -286,14 +324,21 @@ spec:
       conflicts_with: [ghost_feature]`;
 
     await gotoCatalogList(modelCatalogs.page);
-    await yamlImport.importYaml(yaml);
-    await yamlImport.expectResults({ errors: 1 });
-    await yamlImport.close();
+    const dialog = await mcImportPaste(modelCatalogs.page, yaml);
+    await expect(dialog.getByText("FAIL")).toBeVisible();
+    // The reason names the unknown reference target.
+    await expect(
+      dialog.getByText(/conflicts_with unknown feature/i),
+    ).toBeVisible();
+    await expect(
+      dialog.locator("table").getByText(/ghost_feature/),
+    ).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
   });
 
   test("import fails when a feature conflicts with itself", {
     tag: "@C2727745",
-  }, async ({ modelCatalogs, yamlImport }) => {
+  }, async ({ modelCatalogs }) => {
     const name = `test-mc-recipe-selfconf-${Date.now()}`;
     const yaml = `apiVersion: v1
 kind: ModelCatalog
@@ -308,14 +353,17 @@ spec:
       conflicts_with: [text_only]`;
 
     await gotoCatalogList(modelCatalogs.page);
-    await yamlImport.importYaml(yaml);
-    await yamlImport.expectResults({ errors: 1 });
-    await yamlImport.close();
+    const dialog = await mcImportPaste(modelCatalogs.page, yaml);
+    await expect(dialog.getByText("FAIL")).toBeVisible();
+    await expect(
+      dialog.getByText(/lists itself in conflicts_with/i),
+    ).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
   });
 
   test("import fails on invalid feature definitions (duplicate name / select without options)", {
     tag: "@C2727746",
-  }, async ({ modelCatalogs, yamlImport }) => {
+  }, async ({ modelCatalogs }) => {
     const name = `test-mc-recipe-badfeat-${Date.now()}`;
     // Two features with the same name AND a select feature with no options.
     const yaml = `apiVersion: v1
@@ -333,9 +381,11 @@ spec:
       type: select`;
 
     await gotoCatalogList(modelCatalogs.page);
-    await yamlImport.importYaml(yaml);
-    await yamlImport.expectResults({ errors: 1 });
-    await yamlImport.close();
+    const dialog = await mcImportPaste(modelCatalogs.page, yaml);
+    await expect(dialog.getByText("FAIL")).toBeVisible();
+    // Validation reports the first invalid feature definition it finds.
+    await expect(dialog.getByText(/duplicate feature name/i)).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
   });
 });
 
@@ -428,14 +478,18 @@ test.describe("recipe model catalog: display", () => {
       // Rename the default variant's model. Its value "Neutree/Test-27B"
       // appears before the fp8 "Neutree/Test-27B-FP8", so the first match is
       // the default variant.
-      const updated = yaml.replace("Neutree/Test-27B", "Neutree/Test-EDITED");
+      const updated = yaml.replace("Qwen/Qwen3.5-0.8B", "Neutree/Test-EDITED");
       await editor.fill(updated);
       await modelCatalogs.page.getByRole("button", { name: /^save/i }).click();
 
       // Detail page reflects the edited model name.
       await modelCatalogs.goToShow(name);
       const show = modelCatalogs.page.locator('[data-testid="show-page"]');
-      await expect(show.getByText(/Neutree\/Test-EDITED/)).toBeVisible();
+      // The edited model name shows in both the hero row and the variant
+      // table — first() avoids the strict-mode violation.
+      await expect(
+        show.getByText(/Neutree\/Test-EDITED/).first(),
+      ).toBeVisible();
     } finally {
       await apiHelper.deleteModelCatalog(name).catch(() => {});
     }
@@ -450,6 +504,8 @@ test.describe("recipe model catalog: deploy", () => {
   const recipe = { name: "" };
   const trivial = { name: "" };
   const cluster = { name: "" };
+  const imageRegistry = { name: "" };
+  const modelRegistry = { name: "" };
 
   test.beforeAll(async ({ browser }) => {
     const context = await browser.newContext();
@@ -459,21 +515,43 @@ test.describe("recipe model catalog: deploy", () => {
     recipe.name = `test-mc-recipe-dep-${ts}`;
     trivial.name = `test-mc-trivial-dep-${ts}`;
     cluster.name = `test-cl-recipe-${ts}`;
-    await api.createRecipeModelCatalog(recipe.name, recipeSpec(), {
-      annotations: { "recipe.vllm.ai/hardware-verified": "L20" },
-    });
+    imageRegistry.name = `test-ir-recipe-${ts}`;
+    modelRegistry.name = `test-mr-recipe-${ts}`;
+    // The submit test resolves the variant's model against its registry, so the
+    // recipe must reference a registry that actually exists on the env.
+    await api.createModelRegistry(modelRegistry.name);
+    await api.createRecipeModelCatalog(
+      recipe.name,
+      recipeSpec(modelRegistry.name),
+      {
+        annotations: { "recipe.vllm.ai/hardware-verified": "L20" },
+      },
+    );
     await api.createModelCatalog(trivial.name);
-    await api.createCluster(cluster.name, { type: "ssh", headIp: "10.0.0.1" });
+    // Clusters require an image registry reference.
+    await api.createImageRegistry(imageRegistry.name);
+    await api.createCluster(cluster.name, {
+      type: "ssh",
+      imageRegistry: imageRegistry.name,
+    });
     await context.close();
   });
 
   test.afterAll(async ({ browser }) => {
+    // Cluster deletion is reconciled asynchronously and the image registry
+    // rejects deletion while still referenced, so the retry loops here can
+    // exceed the default 30s hook budget.
+    test.setTimeout(120_000);
     const context = await browser.newContext();
     const page = await context.newPage();
     const api = new ApiHelper(page);
     await api.deleteModelCatalog(recipe.name).catch(() => {});
     await api.deleteModelCatalog(trivial.name).catch(() => {});
     await api.deleteCluster(cluster.name, { force: true }).catch(() => {});
+    await api
+      .deleteImageRegistry(imageRegistry.name, { retries: 10 })
+      .catch(() => {});
+    await api.deleteModelRegistry(modelRegistry.name).catch(() => {});
     await context.close();
   });
 
@@ -563,7 +641,7 @@ test.describe("recipe model catalog: deploy", () => {
     const preview = composePreview(endpoints.page);
     await expect(preview).toBeVisible();
     // Default variant -> its model; a default-on feature -> its engine_arg.
-    await expect(preview.getByText(/Neutree\/Test-27B/)).toBeVisible();
+    await expect(preview.getByText(/Qwen\/Qwen3\.5-0\.8B/)).toBeVisible();
     await expect(
       preview.locator('[data-arg="enable_reasoning"]'),
     ).toBeVisible();
@@ -576,7 +654,9 @@ test.describe("recipe model catalog: deploy", () => {
 
     // Switch to the fp8 variant -> the composed model changes.
     await region.getByRole("radio", { name: "fp8" }).click();
-    await expect(preview.getByText(/Neutree\/Test-27B-FP8/)).toBeVisible();
+    await expect(
+      preview.getByText(/Qwen\/Qwen2\.5-0\.5B-Instruct/),
+    ).toBeVisible();
   });
 
   test("select feature option flows into the compose preview", {
@@ -616,8 +696,17 @@ test.describe("recipe model catalog: deploy", () => {
     await deployFromCard(endpoints.page, recipe.name);
     const region = endpoints.page.locator(RECIPE_REGION);
 
-    // Non-default variant + toggle an opt-in feature.
+    // Non-default variant + toggle an opt-in feature. Switching the variant
+    // re-seeds the registry model search with the fp8 model; wait for that
+    // lookup to land — submit-time validation checks the variant model against
+    // the fetched list and would reject while the request is still in flight.
+    const modelLookup = endpoints.page.waitForResponse(
+      (r) =>
+        r.url().includes("/models?") &&
+        decodeURIComponent(r.url()).includes("Qwen2.5-0.5B"),
+    );
     await region.getByRole("radio", { name: "fp8" }).click();
+    await modelLookup;
     await region.getByRole("switch", { name: "tool_calling" }).check();
 
     const name = `test-ep-recipe-${Date.now()}`;
