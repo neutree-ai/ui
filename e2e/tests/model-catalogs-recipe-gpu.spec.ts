@@ -53,7 +53,7 @@ async function pickAccelerator(page: Page): Promise<void> {
 function hwRecipeSpec(registry: string): Record<string, unknown> {
   return {
     engine: { engine: "vllm", version: "v0.8.5" },
-    base: { engine_args: { enable_prefix_caching: true } },
+    base: { engine_args: { enable_prefix_caching: true, dtype: "half" } },
     variants: {
       default: {
         description: "Fits any modern GPU.",
@@ -142,7 +142,9 @@ test.describe("recipe model catalog: GPU cluster", () => {
     const api = new ApiHelper(page);
     await api.deleteModelCatalog(mcHw.name).catch(() => {});
     await api.deleteModelCatalog(mcFar.name).catch(() => {});
-    await api.deleteModelRegistry(mr.name).catch(() => {});
+    await api
+      .deleteModelRegistry(mr.name, { retries: 10 })
+      .catch(() => {});
     await context.close();
   });
 
