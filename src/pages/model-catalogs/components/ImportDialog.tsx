@@ -183,9 +183,16 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
               { name: item.name ?? "" },
             );
           } else {
-            item.error =
+            // Refine's HttpError is a plain object, not an Error instance, so
+            // read .message off any shape before giving up — otherwise every
+            // server-side validation reason surfaces as "Unknown error".
+            const msg =
               err instanceof Error
                 ? err.message
+                : (err as { message?: unknown } | null)?.message;
+            item.error =
+              typeof msg === "string" && msg
+                ? msg
                 : t("model_catalogs.import.unknownError", "Unknown error");
           }
         }
