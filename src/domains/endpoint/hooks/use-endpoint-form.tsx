@@ -1102,7 +1102,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // pixel-identical to before.
     recipeFields:
       !isEdit && isRecipeCatalog && selectedCatalog ? (
-        <FormCardGrid title={t("endpoints.recipe.section", "Recipe options")}>
+        <FormCardGrid
+          title={t("endpoints.recipe.section", "Recipe options")}
+          testId="endpoint-recipe-options"
+        >
           {(() => {
             const verified = (
               selectedCatalog.metadata.annotations?.[

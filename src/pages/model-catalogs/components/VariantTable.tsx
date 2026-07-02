@@ -65,7 +65,7 @@ export const VariantTable = ({ variants, base }: Props) => {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table data-testid="variant-table" className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground border-b">
                 <th className="py-2 pr-4 font-medium">
@@ -98,7 +98,11 @@ export const VariantTable = ({ variants, base }: Props) => {
                   v.engine_args ?? null,
                 );
                 return (
-                  <tr key={key} className="border-b align-top">
+                  <tr
+                    key={key}
+                    data-variant={key}
+                    className="border-b align-top"
+                  >
                     <td className="py-2 pr-4">
                       <Badge variant="secondary" className="font-mono">
                         {key}

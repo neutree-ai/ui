@@ -119,6 +119,7 @@ export const ModelCatalogsEdit = () => {
                 )}
               </p>
               <Textarea
+                data-testid="catalog-spec-yaml"
                 className="font-mono text-xs h-[28rem]"
                 value={specYaml}
                 onChange={(e) => setSpecYaml(e.target.value)}

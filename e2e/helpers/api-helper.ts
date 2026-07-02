@@ -277,6 +277,29 @@ export class ApiHelper {
     });
   }
 
+  /**
+   * Create a recipe-form ModelCatalog (spec.base / spec.variants / spec.features)
+   * via the API. The body hits the same recipe-validation middleware as a UI
+   * import, so an invalid recipe rejects here too. Used to seed valid recipe MCs
+   * for display / deploy tests without driving the import dialog.
+   */
+  async createRecipeModelCatalog(
+    name: string,
+    spec: Record<string, unknown>,
+    options?: { workspace?: string; annotations?: Record<string, string> },
+  ): Promise<void> {
+    await this.api("POST", "/model_catalogs", {
+      api_version: "v1",
+      kind: "ModelCatalog",
+      metadata: {
+        name,
+        workspace: options?.workspace ?? "default",
+        ...(options?.annotations ? { annotations: options.annotations } : {}),
+      },
+      spec,
+    });
+  }
+
   /** Soft-delete a model_catalog by name */
   async deleteModelCatalog(
     name: string,
