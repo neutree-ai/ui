@@ -239,7 +239,7 @@
   "src/foundation/components/VariablesInput.tsx": "24057e155ee2272d6ba949b42639d752",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "1d23880bb99098fadec0cc37dbc0e947",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "ce20bb159437998856469e59fd283b62",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "5e5e9cc24bcc488c7608d444e873656b",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "1e1cfe7ad811875f9a8b101c39edb45b",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "b2466d871f8436202bb1e6011ec61ecd",
   "src/pages/external-endpoints/create.tsx": "bd5d137b2a4a49d077ea1891707f2988",
@@ -329,7 +329,7 @@
   "src/domains/model-catalog/components/ModelInfoBadges.tsx": "1608ced09a1c2236d30ee644f974dda2",
   "src/domains/endpoint/components/ComposePreview.tsx": "ab9fb6ee6b9dfed17c774cbf0f6dd823",
   "src/domains/endpoint/components/FeaturePicker.tsx": "899067c0e1879037378ebaf1fd51fb98",
-  "src/domains/endpoint/components/VRAMCheckBadge.tsx": "4908f5d543ad801375996bdc222649c5",
+  "src/domains/endpoint/components/VRAMCheckBadge.tsx": "e40ec87d25bacbcf4bfce6be2b23abf1",
   "src/domains/endpoint/components/VariantPicker.tsx": "06adfa7eca1c9d1b25e97583a12574c3",
   "src/components/ui/switch.tsx": "ed96194f48772c1f9aff21df61013a69",
   "src/foundation/lib/touched-fields.ts": "8bb21e569f8f08090d42f67df8e1e702"
