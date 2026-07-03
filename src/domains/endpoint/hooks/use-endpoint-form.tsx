@@ -1176,9 +1176,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             return (
               <div className="col-span-4">
                 <VRAMCheckBadge
-                  acceleratorProduct={
-                    form.watch("spec.resources.accelerator")?.product
-                  }
+                  // Only feed the check accelerator data that comes from the
+                  // selected cluster (selectedAcceleratorOption matches the
+                  // form value against real cluster options). The composed
+                  // variant also writes its *reference* accelerator into the
+                  // form; comparing that against the variant's own requirement
+                  // is recipe-vs-recipe math with no environment information
+                  // (NEU-499) — in that case the badge shows the requirement
+                  // alone.
+                  acceleratorProduct={selectedAcceleratorOption?.product}
                   perGpuGb={
                     selectedMemoryTotalMiB != null
                       ? selectedMemoryTotalMiB / 1024

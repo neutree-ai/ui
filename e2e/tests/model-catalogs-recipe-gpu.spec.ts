@@ -188,7 +188,9 @@ test.describe("recipe model catalog: GPU cluster", () => {
     await expect(
       endpoints.page.getByText(/no validated gpu available/i),
     ).toBeVisible();
-    await expect(endpoints.page.getByText(/4 GB VRAM/i)).toBeVisible();
+    await expect(
+      endpoints.page.getByText(/4 GB VRAM/i).first(),
+    ).toBeVisible();
 
     // Show all options reveals every cluster accelerator (incl. the real one).
     await endpoints.page
@@ -212,18 +214,25 @@ test.describe("recipe model catalog: GPU cluster", () => {
     await deployFromCard(endpoints.page, mcHw.name);
     const region = endpoints.page.locator(RECIPE_REGION);
     await endpoints.form.selectComboboxOption("spec.cluster", GPU_CLUSTER);
-    // The check needs a picked accelerator (it supplies per-GPU memory).
+
+    // Before any real accelerator is picked the badge must NOT do math from
+    // recipe-declared reference hardware (NEU-499) — it shows the floor alone.
+    const badge = endpoints.page.locator(VRAM_BADGE);
+    await expect(badge).toHaveAttribute("data-state", "required-only");
+    await expect(badge.getByText(/requires ≥ 4 GB VRAM/i)).toBeVisible();
+
+    // The comparison needs a picked accelerator (it supplies per-GPU memory).
     await pickAccelerator(endpoints.page);
 
     // default variant: 15 GB card ≥ 4 GB floor -> sufficient.
-    const badge = endpoints.page.locator(VRAM_BADGE);
     await expect(badge).toHaveAttribute("data-state", "sufficient");
     await expect(badge.getByText(/sufficient vram/i)).toBeVisible();
 
     // big variant: floor 999 GB -> insufficient, but submit stays enabled.
     await region.getByRole("radio", { name: "big" }).click();
-    // Variant switch recomposes spec.resources; re-pick if cleared.
-    if ((await badge.count()) === 0) {
+    // Variant switch recomposes spec.resources; re-pick if the selection got
+    // cleared (the badge then falls back to the required-only state).
+    if ((await badge.getAttribute("data-state")) === "required-only") {
       await pickAccelerator(endpoints.page);
     }
     await expect(badge).toHaveAttribute("data-state", "insufficient");
