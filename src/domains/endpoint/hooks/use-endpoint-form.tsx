@@ -1359,7 +1359,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             data-testid="endpoint-resource-layout-grid"
             className={cn(
               "grid gap-3",
-              showFull && currentCluster
+              currentCluster
                 ? "xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]"
                 : "xl:grid-cols-[minmax(360px,420px)]",
             )}
@@ -1752,7 +1752,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
               </section>
             </div>
-            {showFull && clusterGpuResourcesPanel && (
+            {clusterGpuResourcesPanel && (
               <div
                 data-testid="endpoint-resource-context"
                 className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm"
