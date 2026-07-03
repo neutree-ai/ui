@@ -249,6 +249,12 @@ const BodySection = ({
       version: current.version + 1,
     }));
   };
+  // Reflects the last bulk action (defaults to expanded at version 0), so the
+  // single toggle knows which direction to fire and how to label itself.
+  const allExpanded = isOpenForExpansionSignal(
+    expansionSignal.action,
+    expansionSignal.version,
+  );
 
   return (
     <Collapsible
@@ -277,30 +283,25 @@ const BodySection = ({
           {hasFormatted && (
             <>
               {effectiveView === "formatted" && (
-                <>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2"
-                    onClick={() => setAllFormattedOpen("collapse")}
-                    aria-label={t("ai_traces.detail.collapseAll")}
-                  >
-                    <ChevronRight />
-                    {t("ai_traces.detail.collapseAll")}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2"
-                    onClick={() => setAllFormattedOpen("expand")}
-                    aria-label={t("ai_traces.detail.expandAll")}
-                  >
-                    <ChevronDown />
-                    {t("ai_traces.detail.expandAll")}
-                  </Button>
-                </>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() =>
+                    setAllFormattedOpen(allExpanded ? "collapse" : "expand")
+                  }
+                  aria-label={
+                    allExpanded
+                      ? t("ai_traces.detail.collapseAll")
+                      : t("ai_traces.detail.expandAll")
+                  }
+                >
+                  {allExpanded ? <ChevronRight /> : <ChevronDown />}
+                  {allExpanded
+                    ? t("ai_traces.detail.collapseAll")
+                    : t("ai_traces.detail.expandAll")}
+                </Button>
               )}
               <div className="flex rounded-md border p-0.5">
                 <ToggleChip
