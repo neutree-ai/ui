@@ -5,7 +5,7 @@ import { MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { YamlImportHelper } from "../helpers/yaml-import";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// E2E for the Recipe Model Catalog feature (TestRail suite 2420 §"模型目录 Recipe").
+// E2E for the Recipe Model Catalog feature (TestRail suite 2420, Model Catalog Recipe section).
 //
 // Scope: UI-feasible cases only. The e2e env is GPU-free (no cluster reports
 // accelerator resource_info), so the VRAM check and hardware-verified

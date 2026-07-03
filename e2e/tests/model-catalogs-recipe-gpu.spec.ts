@@ -3,7 +3,7 @@ import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GPU-dependent Recipe Model Catalog cases (TestRail §模型目录 Recipe):
+// GPU-dependent Recipe Model Catalog cases (TestRail, Model Catalog Recipe section):
 //   C2727751 — Verified-on badge + accelerator soft-filter + Show all options
 //   C2727752 — VRAM check sufficient / insufficient, advisory (non-blocking)
 //   C2727753 — VRAM unknown → no badge (never a false "insufficient")
