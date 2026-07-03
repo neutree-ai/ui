@@ -1,6 +1,6 @@
-import { REST_URL, clientPostgrest } from "@/foundation/lib/api";
-import { auth } from "@/foundation/providers/auth-provider";
 import { useEffect, useRef, useState } from "react";
+import { clientPostgrest, REST_URL } from "@/foundation/lib/api";
+import { auth } from "@/foundation/providers/auth-provider";
 
 const AUTO_REFRESH_INTERVAL = 10000;
 
@@ -35,6 +35,10 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
   const [refetchTrigger, setRefetchTrigger] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isFetchingRef = useRef(false);
+  // Tracks the URL we've already completed a visible (non-silent) load for.
+  // Persists across effect re-runs (manual refetch, auto-refresh) so only a
+  // URL change (switching tabs) shows the loading state again.
+  const loadedUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Skip if not enabled or no URL
@@ -45,7 +49,14 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
     async function fetchLogs() {
       if (isFetchingRef.current) return;
       isFetchingRef.current = true;
-      setIsLoading(true);
+      // The first fetch for a given URL shows the loading state and streams
+      // content in incrementally. Subsequent refreshes (auto or manual) are
+      // silent: we keep the current logs visible and swap them atomically once
+      // the new content is ready, so the viewer never flashes a loading state.
+      const silent = loadedUrlRef.current === url;
+      if (!silent) {
+        setIsLoading(true);
+      }
       setError(null);
 
       // Create new abort controller for this request
@@ -93,6 +104,14 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
 
           const chunk = decoder.decode(value, { stream: true });
           accumulatedLogs += chunk;
+          // On a silent refresh keep the old logs on screen until the stream
+          // completes, then swap once below — avoids partial-content flicker.
+          if (!silent) {
+            setLogs(accumulatedLogs);
+          }
+        }
+
+        if (silent) {
           setLogs(accumulatedLogs);
         }
       } catch (err) {
@@ -107,7 +126,15 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
         }
       } finally {
         isFetchingRef.current = false;
-        setIsLoading(false);
+        // Mark this URL as loaded so future fetches refresh silently. Only set
+        // on a visible load that reached this point without aborting, so an
+        // aborted/failed first load still shows the loading state on retry.
+        if (!silent && !abortControllerRef.current?.signal.aborted) {
+          loadedUrlRef.current = url;
+        }
+        if (!silent) {
+          setIsLoading(false);
+        }
       }
     }
 
