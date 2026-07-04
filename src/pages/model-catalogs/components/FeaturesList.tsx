@@ -32,7 +32,12 @@ const renderItem = (f: RecipeFeature, t: (k: string, d: string) => string) => {
   const envSummary = summarize(f.env);
   const conflicts = f.conflicts_with ?? [];
   return (
-    <li key={f.name} className="border-b last:border-b-0 pb-3">
+    <li
+      key={f.name}
+      data-testid="feature-item"
+      data-feature={f.name}
+      className="border-b last:border-b-0 pb-3"
+    >
       <div className="flex items-center gap-2 flex-wrap">
         {f.display_name && (
           <span className="text-sm font-medium">{f.display_name}</span>

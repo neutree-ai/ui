@@ -263,10 +263,12 @@ export class ApiHelper {
           engine: options?.engine ?? config.engine.name,
           version: options?.engineVersion ?? config.engine.version,
         },
+        // ResourceSpec cpu/memory/gpu are *string on the Go side — numbers are
+        // rejected with "cannot unmarshal number into ... type string".
         resources: {
-          cpu: options?.cpu ?? 1,
-          memory: options?.memory ?? 1,
-          gpu: options?.gpu ?? 0,
+          cpu: String(options?.cpu ?? 1),
+          memory: String(options?.memory ?? 1),
+          gpu: String(options?.gpu ?? 0),
         },
         replicas: { num: options?.replicas ?? 1 },
         deployment_options: {
@@ -274,6 +276,34 @@ export class ApiHelper {
         },
         variables: {},
       },
+    });
+  }
+
+  /** Generic authenticated GET — for reading resource status in polls. */
+  async get<T = unknown>(path: string): Promise<T> {
+    return this.api<T>("GET", path);
+  }
+
+  /**
+   * Create a recipe-form ModelCatalog (spec.base / spec.variants / spec.features)
+   * via the API. The body hits the same recipe-validation middleware as a UI
+   * import, so an invalid recipe rejects here too. Used to seed valid recipe MCs
+   * for display / deploy tests without driving the import dialog.
+   */
+  async createRecipeModelCatalog(
+    name: string,
+    spec: Record<string, unknown>,
+    options?: { workspace?: string; annotations?: Record<string, string> },
+  ): Promise<void> {
+    await this.api("POST", "/model_catalogs", {
+      api_version: "v1",
+      kind: "ModelCatalog",
+      metadata: {
+        name,
+        workspace: options?.workspace ?? "default",
+        ...(options?.annotations ? { annotations: options.annotations } : {}),
+      },
+      spec,
     });
   }
 

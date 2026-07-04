@@ -681,6 +681,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     for (const [key, value] of Object.entries(merged)) {
       setLeafValues(`spec.${key}`, value);
     }
+    // Seed the model search with the composed model so the registry lookup
+    // queries for exactly that name. The submit-time containment check
+    // (validateEndpointValues → availableModelNames) otherwise runs against
+    // the first, unsearched page of registry models and rejects every recipe
+    // deploy with "Model not found in selected registry" — while a genuinely
+    // missing model still fails the seeded search, keeping that guard intact.
+    setModelSearch(composed.model?.name ?? "");
   };
 
   // Handle model catalog selection with merge logic. Trivial MCs go through
@@ -1102,7 +1109,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // pixel-identical to before.
     recipeFields:
       !isEdit && isRecipeCatalog && selectedCatalog ? (
-        <FormCardGrid title={t("endpoints.recipe.section", "Recipe options")}>
+        <FormCardGrid
+          title={t("endpoints.recipe.section", "Recipe options")}
+          testId="endpoint-recipe-options"
+        >
           {(() => {
             const verified = (
               selectedCatalog.metadata.annotations?.[
@@ -1166,9 +1176,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             return (
               <div className="col-span-4">
                 <VRAMCheckBadge
-                  acceleratorProduct={
-                    form.watch("spec.resources.accelerator")?.product
-                  }
+                  // Only feed the check accelerator data that comes from the
+                  // selected cluster (selectedAcceleratorOption matches the
+                  // form value against real cluster options). The composed
+                  // variant also writes its *reference* accelerator into the
+                  // form; comparing that against the variant's own requirement
+                  // is recipe-vs-recipe math with no environment information
+                  // (NEU-499) — in that case the badge shows the requirement
+                  // alone.
+                  acceleratorProduct={selectedAcceleratorOption?.product}
                   perGpuGb={
                     selectedMemoryTotalMiB != null
                       ? selectedMemoryTotalMiB / 1024

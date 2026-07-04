@@ -1,13 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PropsWithChildren } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type FormCardGridProps = {
   title?: string;
+  testId?: string;
 } & PropsWithChildren<unknown>;
 
-export default function FormCardGrid({ children, title }: FormCardGridProps) {
+export default function FormCardGrid({
+  children,
+  title,
+  testId,
+}: FormCardGridProps) {
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card data-testid={testId} className="border-border/60 shadow-sm">
       {title && (
         <CardHeader className="py-2 px-4">
           <CardTitle>{title}</CardTitle>

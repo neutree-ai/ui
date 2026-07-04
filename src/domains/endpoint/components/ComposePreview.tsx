@@ -31,7 +31,11 @@ export const ComposePreview = ({ composed, error }: Props) => {
 
   if (error) {
     return (
-      <Card className="mt-2 border-destructive/40">
+      <Card
+        data-testid="compose-preview"
+        data-state="error"
+        className="mt-2 border-destructive/40"
+      >
         <CardHeader>
           <CardTitle className="text-destructive">
             {t("endpoints.recipe.previewError", "Cannot compose")}
@@ -50,7 +54,7 @@ export const ComposePreview = ({ composed, error }: Props) => {
   const env = Object.entries(composed.env ?? {});
 
   return (
-    <Card className="mt-2">
+    <Card data-testid="compose-preview" data-state="ok" className="mt-2">
       <CardHeader>
         <CardTitle>
           {t("endpoints.recipe.preview", "Composed preview")}
@@ -83,7 +87,11 @@ export const ComposePreview = ({ composed, error }: Props) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
               {engineArgs.map(([k, v]) => (
-                <div key={k} className="font-mono text-xs break-all">
+                <div
+                  key={k}
+                  data-arg={k}
+                  className="font-mono text-xs break-all"
+                >
                   <span className="font-medium">{k}</span>
                   <span className="text-muted-foreground">: </span>
                   <span>{fmt(v)}</span>
@@ -99,7 +107,11 @@ export const ComposePreview = ({ composed, error }: Props) => {
           ) : (
             <div className="space-y-1">
               {env.map(([k, v]) => (
-                <div key={k} className="flex items-baseline gap-2 text-sm">
+                <div
+                  key={k}
+                  data-env={k}
+                  className="flex items-baseline gap-2 text-sm"
+                >
                   <Badge variant="secondary" className="font-mono">
                     {k}
                   </Badge>
