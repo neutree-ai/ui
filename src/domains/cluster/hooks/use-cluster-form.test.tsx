@@ -153,6 +153,7 @@ function selectType(label: string) {
 
 describe("useClusterForm", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     formInstance = null;
   });
 
@@ -221,6 +222,31 @@ describe("useClusterForm", () => {
       ).toBeNull();
     });
 
+    it("does not seed router version when switching to kubernetes", async () => {
+      vi.stubEnv("VITE_DEFAULT_CLUSTER_VERSION", "v1.0.1");
+      render(<CreateForm />);
+
+      selectType("clusters.options.kubernetes");
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues(
+            "spec.config.kubernetes_config.router.access_mode",
+          ),
+        ).toBe("LoadBalancer");
+      });
+
+      const router = formInstance?.getValues(
+        "spec.config.kubernetes_config.router",
+      );
+      expect(router).toMatchObject({
+        access_mode: "LoadBalancer",
+        replicas: 2,
+        resources: { cpu: "1", memory: "1Gi" },
+      });
+      expect(router).not.toHaveProperty("version");
+    });
+
     it("shows accelerator virtualization only for kubernetes clusters", async () => {
       render(<CreateForm />);
 
@@ -245,14 +271,14 @@ describe("useClusterForm", () => {
       });
     });
 
-    it("disables accelerator virtualization for kubernetes clusters below v1.1.0", async () => {
+    it("disables accelerator virtualization for kubernetes clusters at or below v1.0.1", async () => {
       render(<CreateForm />);
 
       selectType("clusters.options.kubernetes");
 
       await waitFor(() => expect(formInstance).not.toBeNull());
       act(() => {
-        formInstance?.setValue("spec.version", "v1.0.9");
+        formInstance?.setValue("spec.version", "v1.0.1");
       });
 
       const field = await screen.findByTestId(
