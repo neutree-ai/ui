@@ -1687,6 +1687,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           {...form}
                           name="spec.resources.accelerator.virtualization.core_percent"
                           label={t("endpoints.fields.vgpuCoreLimit")}
+                          description={t(
+                            "endpoints.messages.vgpuCoreLimitUnlimitedHint",
+                          )}
                           className="col-span-1"
                         >
                           <Input
@@ -1747,13 +1750,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         </div>
                         <div
                           data-testid="endpoint-current-request-grid"
-                          className="mt-2 grid gap-2 sm:grid-cols-4"
+                          className="mt-2 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-2"
                         >
                           <div className="rounded-lg border bg-background px-3 py-2">
                             <div className="text-xs font-medium text-muted-foreground">
                               {t("endpoints.fields.virtualCardCount")}
                             </div>
-                            <div className="mt-1 font-semibold tabular-nums">
+                            <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
                               {isVgpuAllocationMode
                                 ? `${formatOneDecimal(
                                     requestedVirtualCards,
@@ -1768,16 +1771,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             </div>
                           </div>
                           <div className="rounded-lg border bg-background px-3 py-2">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              {t("endpoints.fields.vgpuMemoryCapacity")}
+                            <div className="flex items-baseline gap-1.5 text-xs font-medium text-muted-foreground">
+                              <span>
+                                {t("endpoints.fields.vgpuMemoryCapacity")}
+                              </span>
+                              {isVgpuAllocationMode && (
+                                <span className="text-[11px]">GiB</span>
+                              )}
                             </div>
-                            <div className="mt-1 font-semibold tabular-nums">
+                            <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
                               {isVgpuAllocationMode
                                 ? `${formatOneDecimal(
                                     requestedVgpuMemoryMiB / 1024,
                                   )} / ${formatOneDecimal(
                                     availableVgpuMemoryMiB / 1024,
-                                  )} GiB`
+                                  )}`
                                 : "-"}
                             </div>
                           </div>
@@ -1785,7 +1793,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             <div className="text-xs font-medium text-muted-foreground">
                               {t("endpoints.fields.vgpuCoreCapacity")}
                             </div>
-                            <div className="mt-1 font-semibold tabular-nums">
+                            <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
                               {isVgpuAllocationMode
                                 ? vgpuCoreUnitsPerCard > 0
                                   ? `${formatOneDecimal(
