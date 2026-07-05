@@ -647,6 +647,23 @@ describe("gpu device resource helpers", () => {
     expect(rows.every((row) => row.matchesSelectedAccelerator)).toBe(true);
   });
 
+  it("matches bare recipe-style product names against vendor-prefixed cluster products", () => {
+    // A recipe/catalog preset uses bare model names ("T4") while the cluster
+    // reports decorated products ("Tesla-T4") — the two schemes must line up
+    // instead of filtering every row out (NEU-501).
+    const rows = buildGpuDeviceResourceRows(nodeResources, {
+      type: "nvidia_gpu",
+      product: "T4",
+    });
+
+    expect(
+      rows.map((row) => [row.product, row.matchesSelectedAccelerator]),
+    ).toEqual([
+      ["Tesla-T4", true],
+      ["Tesla-A10", false],
+    ]);
+  });
+
   it("builds node physical GPU rows without device-level details", () => {
     expect(
       buildNodePhysicalGpuResourceRows(

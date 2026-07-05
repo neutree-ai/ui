@@ -818,7 +818,8 @@
 			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
 			"vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
 			"vgpuMonitorContextFailed": "Failed to load virtual accelerator monitor context",
-			"noRunningVgpuPods": "No running virtual accelerator pods"
+			"noRunningVgpuPods": "No running virtual accelerator pods",
+			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared"
 		},
 		"tabs": {
 			"playground": "Playground"

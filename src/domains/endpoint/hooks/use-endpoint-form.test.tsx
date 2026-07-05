@@ -1990,7 +1990,7 @@ describe("useEndpointForm", () => {
       expect(screen.getByTestId("endpoint-current-request-panel")).toBeTruthy();
       expect(
         screen.getByTestId("endpoint-current-request-grid").className,
-      ).toContain("sm:grid-cols-4");
+      ).toContain("grid-cols-[repeat(auto-fit,minmax(110px,1fr))]");
       expect(
         screen.getByText("endpoints.messages.cardsAvailable").className,
       ).toContain("bg-emerald-50");

@@ -1,3 +1,4 @@
+import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 import type {
   ClusterResourceInfo,
   DeviceResource,
@@ -236,6 +237,15 @@ const getAcceleratorGroupQuantity = (
   );
 };
 
+// Cluster-reported products are vendor-prefixed ("NVIDIA-L4") while a
+// recipe/catalog-preset accelerator uses bare model names ("L4"), so exact
+// string equality never holds across the two schemes. Token-match in both
+// directions to line them up (NEU-501).
+const productNamesMatch = (rowProduct: string, selectedProduct: string) =>
+  rowProduct === selectedProduct ||
+  matchesAcceleratorName(rowProduct, [selectedProduct]) ||
+  matchesAcceleratorName(selectedProduct, [rowProduct]);
+
 const matchesSelectedAccelerator = (
   row: Pick<GpuDeviceResourceRow, "acceleratorType" | "product">,
   selectedAccelerator?: SelectedAccelerator | null,
@@ -245,7 +255,8 @@ const matchesSelectedAccelerator = (
   }
 
   const productMatches =
-    !selectedAccelerator.product || row.product === selectedAccelerator.product;
+    !selectedAccelerator.product ||
+    productNamesMatch(row.product, selectedAccelerator.product);
   const typeMatches =
     !selectedAccelerator.type ||
     row.acceleratorType == null ||

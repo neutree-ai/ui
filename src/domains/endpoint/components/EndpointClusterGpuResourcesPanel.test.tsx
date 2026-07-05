@@ -179,4 +179,34 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       within(coreCard).getByText((text) => text.includes("50.0 / 200.0")),
     ).toBeTruthy();
   });
+
+  it("keeps cluster pool values visible when the preset accelerator matches no product", () => {
+    // A recipe/catalog preset can carry a product name the cluster does not
+    // report at all; the summary must fall back to the full pool instead of
+    // rendering an all-dashes board (NEU-501).
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "H100" }}
+        virtualizationEnabled={true}
+        t={t}
+      />,
+    );
+
+    const summaryCards = screen.getAllByTestId(
+      "endpoint-resource-summary-card",
+    );
+    const cardCountCard = findByExactLabel(summaryCards, "Card Count");
+    const vramCard = findByExactLabel(summaryCards, "Memory Usage");
+
+    expect(
+      within(cardCountCard).getByText((text) => text.includes("1.0 / 2.0")),
+    ).toBeTruthy();
+    expect(cardCountCard.textContent).not.toContain("Used -");
+    expect(
+      within(vramCard).getByText((text) => text.includes("7.5 / 30.0")),
+    ).toBeTruthy();
+    expect(vramCard.textContent).not.toContain("Used -");
+  });
 });

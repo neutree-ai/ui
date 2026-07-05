@@ -1024,13 +1024,16 @@ export function EndpointClusterGpuResourcesPanel({
     () => buildGpuCardResourceRows(resourceInfo, selectedAccelerator),
     [resourceInfo, selectedAccelerator],
   );
-  const summaryRows = useMemo(
-    () =>
-      selectedAccelerator?.product
-        ? rows.filter((row) => row.matchesSelectedAccelerator)
-        : rows,
-    [rows, selectedAccelerator?.product],
-  );
+  const summaryRows = useMemo(() => {
+    if (!selectedAccelerator?.product) {
+      return rows;
+    }
+    const matchingRows = rows.filter((row) => row.matchesSelectedAccelerator);
+    // A preset accelerator (e.g. from a recipe catalog) may not line up with
+    // any cluster-reported product; the summary should still show the
+    // cluster's pool instead of an all-dashes board (NEU-501).
+    return matchingRows.length > 0 ? matchingRows : rows;
+  }, [rows, selectedAccelerator?.product]);
   const hasGpuResources = hasGpuResourceRows(rows);
   const selectedProduct = selectedAccelerator?.product;
   const gpuTypeProducts = useMemo(
