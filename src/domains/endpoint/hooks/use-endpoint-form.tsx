@@ -559,12 +559,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   // The resolver only runs on form events, so a lookup result landing after
   // the last user interaction would never surface (or clear) the
-  // model-not-found error. Re-validate that one field when the result set
-  // changes.
+  // model-not-found error. Re-validate that one field when the inputs or the
+  // result set actually change. `form` is a NEW object every render (refine's
+  // useForm spreads the RHF result) and trigger() itself re-renders form
+  // state, so an unguarded trigger here loops forever and freezes the page —
+  // the ref keeps the effect idempotent per key.
   const modelExistenceKey = modelExistenceNames?.join("\n") ?? null;
-  // biome-ignore lint/correctness/useExhaustiveDependencies(modelExistenceKey): trigger-only dependency — re-validate when the lookup result changes.
+  const lastExistenceTriggerKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (action !== "create" || !currentRegistry || !currentModelName) return;
+    if (action !== "create" || !currentRegistry || !currentModelName) {
+      lastExistenceTriggerKeyRef.current = null;
+      return;
+    }
+    const triggerKey = [
+      currentRegistry,
+      currentModelName,
+      modelExistenceKey ?? "",
+    ].join("\u0000");
+    if (lastExistenceTriggerKeyRef.current === triggerKey) return;
+    lastExistenceTriggerKeyRef.current = triggerKey;
     void form.trigger("-model-catalog" as Path<Endpoint>);
   }, [action, currentRegistry, currentModelName, modelExistenceKey, form]);
 

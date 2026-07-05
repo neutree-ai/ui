@@ -43,13 +43,19 @@ vi.mock("@refinedev/react-hook-form", async () => {
       useFormOptionsRef.current = opts;
       const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
       const form = rhf.useForm(rhfOpts);
-      (form as Record<string, unknown>).refineCore = {
-        onFinish: refineCoreOnFinishMock,
-        query: queryDataRef.current
-          ? { data: { data: queryDataRef.current } }
-          : undefined,
+      // Like the real @refinedev/react-hook-form useForm, return a NEW object
+      // every render (it spreads the RHF result). Effects in the hook must not
+      // rely on the wrapper's identity being stable — depending on it while
+      // also updating form state on every run loops forever (NEU-503 freeze).
+      return {
+        ...form,
+        refineCore: {
+          onFinish: refineCoreOnFinishMock,
+          query: queryDataRef.current
+            ? { data: { data: queryDataRef.current } }
+            : undefined,
+        },
       };
-      return form;
     },
   };
 });
