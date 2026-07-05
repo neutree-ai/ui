@@ -140,6 +140,26 @@ const catalogB = {
   },
 };
 
+// Recipe-shaped MC (has variants) — selecting it activates simplified mode.
+const recipeCatalog = {
+  id: 3,
+  metadata: { name: "recipe-mc" },
+  spec: {
+    engine: { engine: "vllm", version: "0.8.5" },
+    variants: {
+      default: {
+        model: {
+          name: "org/recipe-model",
+          version: "",
+          registry: "hf",
+          file: "",
+          task: "text-generation",
+        },
+      },
+    },
+  },
+};
+
 // --- Mocks setup ---
 
 const plainKubernetesCluster = {
@@ -459,7 +479,11 @@ const defaultSelectResult = {
 };
 
 function setupMocks(
-  catalogs = [catalogA, catalogB],
+  catalogs: Array<{
+    id: number;
+    metadata: { name: string };
+    spec: Record<string, unknown>;
+  }> = [catalogA, catalogB],
   clusters: EndpointClusterRef[] = [],
 ) {
   vi.mocked(useSelect).mockImplementation(((opts: { resource: string }) => {
@@ -2694,6 +2718,54 @@ describe("useEndpointForm", () => {
 
       expect(
         screen.queryByText("common.validation.workspaceRequired"),
+      ).toBeNull();
+    });
+  });
+
+  // Simplified recipe deploy hides advanced controls, but on a vGPU-enabled
+  // cluster the virtual-card split (and its capacity feedback) is a deploy
+  // essential — a partially used card can make full-card allocation
+  // impossible, so these must not sit behind "Show all options".
+  describe("simplified recipe deploy on vGPU clusters", () => {
+    it("keeps the vGPU split group and current-request panel visible without expanding all options", async () => {
+      setupMocks(
+        [catalogA, recipeCatalog],
+        [virtualizedKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      selectCatalog("recipe-mc");
+      await act(async () => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources.accelerator", {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+        });
+      });
+
+      // Simplified mode is active: advanced model fields stay hidden...
+      expect(screen.queryByTestId("field-spec.model.version")).toBeNull();
+      // ...but the vGPU split controls and capacity feedback are visible.
+      expect(
+        screen.getByTestId("endpoint-virtual-card-split-group"),
+      ).toBeTruthy();
+      expect(screen.getByTestId("endpoint-current-request-panel")).toBeTruthy();
+    });
+
+    it("keeps the vGPU split group hidden in simplified mode on non-vGPU clusters", async () => {
+      setupMocks(
+        [catalogA, recipeCatalog],
+        [plainKubernetesClusterWithNodeResources],
+      );
+      render(<CreateForm />);
+
+      selectCatalog("recipe-mc");
+      await act(async () => {
+        formInstance?.setValue("spec.cluster", "plain-k8s-node-resources");
+      });
+
+      expect(
+        screen.queryByTestId("endpoint-virtual-card-split-group"),
       ).toBeNull();
     });
   });

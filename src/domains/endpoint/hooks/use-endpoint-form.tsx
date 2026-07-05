@@ -1640,7 +1640,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       />
                     </FormFieldGroup>
 
-                    {showFull && (
+                    {/* vGPU split is a deploy essential on virtualization-
+                        enabled clusters (a partially-used card can make full
+                        card allocation impossible), so simplified recipe mode
+                        must not hide it behind "Show all options". */}
+                    {(showFull || isSelectedClusterVgpuEnabled) && (
                       <div
                         data-testid="endpoint-virtual-card-split-group"
                         className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
@@ -1719,7 +1723,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     )}
                   </div>
 
-                  {showFull &&
+                  {/* Same rule as the split group above: on vGPU clusters the
+                      capacity feedback must stay visible in simplified mode,
+                      or users configure the split blind. */}
+                  {(showFull || isSelectedClusterVgpuEnabled) &&
                     selectedAccelerator?.type &&
                     selectedAccelerator?.product && (
                       <div
