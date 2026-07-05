@@ -455,6 +455,20 @@ describe("validateEndpointValues", () => {
     expect(errors["-model-catalog"]).toBeUndefined();
   });
 
+  it("skips model check when availableModelNames is null (existence unknown)", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 }, ...validScheduler },
+      {
+        action: "create",
+        currentRegistry: "my-registry",
+        currentModelName: "missing-model",
+        availableModelNames: null,
+      },
+      mockT,
+    );
+    expect(errors["-model-catalog"]).toBeUndefined();
+  });
+
   it("skips model check in edit mode", () => {
     const errors = validateEndpointValues(
       { replicas: { num: 1 }, ...validScheduler },

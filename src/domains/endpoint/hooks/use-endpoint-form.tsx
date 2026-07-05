@@ -125,7 +125,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [modelSearch, setModelSearch] = useState("");
   // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
   const [selectedVariant, setSelectedVariant] = useState<string>("");
-  const [featureSelections, setFeatureSelections] = useState<FeatureSelection[]>([]);
+  const [featureSelections, setFeatureSelections] = useState<
+    FeatureSelection[]
+  >([]);
   // Simplified-mode disclosure: when deploying from a Recipe catalog card the
   // model/engine/resources are auto-configured from the chosen variant, so the
   // raw fields and advanced resource controls start collapsed behind this toggle.
@@ -163,9 +165,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           action,
           currentRegistry,
           currentModelName,
-          availableModelNames: (modelsData.data?.data || []).map(
-            (m: { name: string }) => m.name,
-          ),
+          availableModelNames: modelExistenceNames,
         },
         t,
       );
@@ -534,6 +534,40 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     },
   });
 
+  // Existence lookup for the currently selected model, keyed by the exact
+  // model name — deliberately decoupled from the dropdown's `modelSearch`.
+  // Validating against the search-coupled list above rejects any model that
+  // isn't in whatever page the user last searched (NEU-503: catalog-template
+  // deploys failed with "Model not found in selected registry" for models
+  // that exist upstream). While this query is loading or failed the resolver
+  // skips the containment check instead of blocking submit.
+  const modelExistenceQuery = useCustom({
+    url: `/workspaces/${workspace}/model_registries/${currentRegistry}/models?search=${encodeURIComponent(currentModelName)}&limit=20`,
+    method: "get",
+    queryOptions: {
+      enabled: Boolean(
+        action === "create" && currentRegistry && currentModelName,
+      ),
+    },
+  });
+  const modelExistenceNames = useMemo<string[] | null>(() => {
+    const models = modelExistenceQuery.data?.data as
+      | { name: string }[]
+      | undefined;
+    return models ? models.map((m) => m.name) : null;
+  }, [modelExistenceQuery.data?.data]);
+
+  // The resolver only runs on form events, so a lookup result landing after
+  // the last user interaction would never surface (or clear) the
+  // model-not-found error. Re-validate that one field when the result set
+  // changes.
+  const modelExistenceKey = modelExistenceNames?.join("\n") ?? null;
+  // biome-ignore lint/correctness/useExhaustiveDependencies(modelExistenceKey): trigger-only dependency — re-validate when the lookup result changes.
+  useEffect(() => {
+    if (action !== "create" || !currentRegistry || !currentModelName) return;
+    void form.trigger("-model-catalog" as Path<Endpoint>);
+  }, [action, currentRegistry, currentModelName, modelExistenceKey, form]);
+
   const { engineNames, engineVersions, engineTasks, engineValueSchema } =
     useEndpointEngineOptions({
       enginesData: engines.query.data?.data,
@@ -681,13 +715,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     for (const [key, value] of Object.entries(merged)) {
       setLeafValues(`spec.${key}`, value);
     }
-    // Seed the model search with the composed model so the registry lookup
-    // queries for exactly that name. The submit-time containment check
-    // (validateEndpointValues → availableModelNames) otherwise runs against
-    // the first, unsearched page of registry models and rejects every recipe
-    // deploy with "Model not found in selected registry" — while a genuinely
-    // missing model still fails the seeded search, keeping that guard intact.
-    setModelSearch(composed.model?.name ?? "");
   };
 
   // Handle model catalog selection with merge logic. Trivial MCs go through
@@ -1042,65 +1069,68 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </FormCardGrid>
 
         {showFull && (
-        <FormCardGrid title={t("endpoints.sections.engineSettings")}>
-          <FormFieldGroup
-            {...form}
-            name="spec.engine.engine"
-            label={t("common.fields.engine")}
-          >
-            <FormCombobox
-              placeholder={t("endpoints.placeholders.selectEngine")}
-              disabled={engines.query.isLoading}
-              options={engineNames.map((v) => ({
-                label: v,
-                value: v,
-              }))}
-              onChange={(value) => {
-                form.setValue("spec.engine", {
-                  engine: value,
-                  version: engineVersions[String(value)][0].version,
-                });
-                form.setValue("spec.model.task", engineTasks[String(value)][0]);
-                form.trigger("spec.engine.engine");
-              }}
-            />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.engine.version"
-            label={t("endpoints.fields.engineVersion")}
-          >
-            <FormCombobox
-              placeholder={t("endpoints.placeholders.selectVersion")}
-              disabled={!form.getValues().spec.engine.engine}
-              options={(
-                engineVersions[form.getValues().spec.engine.engine] || []
-              ).map(({ version: v }) => ({
-                label: v,
-                value: v,
-              }))}
-            />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.model.task"
-            label={t("endpoints.fields.taskType")}
-          >
-            <FormCombobox
-              placeholder={t("endpoints.placeholders.selectTaskType")}
-              disabled={!form.getValues().spec.engine.engine}
-              options={(
-                engineTasks[form.getValues().spec.engine.engine] || []
-              ).map((v) => ({
-                label:
-                  t(`models.tasks.${v}`) === `models.tasks.${v}`
-                    ? formatTaskName(v)
-                    : t(`models.tasks.${v}`),
-                value: v,
-              }))}
-            />
-          </FormFieldGroup>
-        </FormCardGrid>
+          <FormCardGrid title={t("endpoints.sections.engineSettings")}>
+            <FormFieldGroup
+              {...form}
+              name="spec.engine.engine"
+              label={t("common.fields.engine")}
+            >
+              <FormCombobox
+                placeholder={t("endpoints.placeholders.selectEngine")}
+                disabled={engines.query.isLoading}
+                options={engineNames.map((v) => ({
+                  label: v,
+                  value: v,
+                }))}
+                onChange={(value) => {
+                  form.setValue("spec.engine", {
+                    engine: value,
+                    version: engineVersions[String(value)][0].version,
+                  });
+                  form.setValue(
+                    "spec.model.task",
+                    engineTasks[String(value)][0],
+                  );
+                  form.trigger("spec.engine.engine");
+                }}
+              />
+            </FormFieldGroup>
+            <FormFieldGroup
+              {...form}
+              name="spec.engine.version"
+              label={t("endpoints.fields.engineVersion")}
+            >
+              <FormCombobox
+                placeholder={t("endpoints.placeholders.selectVersion")}
+                disabled={!form.getValues().spec.engine.engine}
+                options={(
+                  engineVersions[form.getValues().spec.engine.engine] || []
+                ).map(({ version: v }) => ({
+                  label: v,
+                  value: v,
+                }))}
+              />
+            </FormFieldGroup>
+            <FormFieldGroup
+              {...form}
+              name="spec.model.task"
+              label={t("endpoints.fields.taskType")}
+            >
+              <FormCombobox
+                placeholder={t("endpoints.placeholders.selectTaskType")}
+                disabled={!form.getValues().spec.engine.engine}
+                options={(
+                  engineTasks[form.getValues().spec.engine.engine] || []
+                ).map((v) => ({
+                  label:
+                    t(`models.tasks.${v}`) === `models.tasks.${v}`
+                      ? formatTaskName(v)
+                      : t(`models.tasks.${v}`),
+                  value: v,
+                }))}
+              />
+            </FormFieldGroup>
+          </FormCardGrid>
         )}
       </>
     ),
@@ -1212,16 +1242,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {activeVariantVram} GB ×{" "}
-                      {t("endpoints.recipe.replicasCount", "{{count}} replica", {
-                        count: replicaCount,
-                      })}
+                      {t(
+                        "endpoints.recipe.replicasCount",
+                        "{{count}} replica",
+                        {
+                          count: replicaCount,
+                        },
+                      )}
                     </div>
                   </div>
                 )}
                 {activeModelInfo?.parameter_count && (
                   <div className="rounded-md border bg-background px-3 py-2">
                     <div className="text-xs font-medium text-muted-foreground">
-                      {t("model_catalogs.modelInfo.parameterCount", "Parameters")}
+                      {t(
+                        "model_catalogs.modelInfo.parameterCount",
+                        "Parameters",
+                      )}
                     </div>
                     <div className="mt-1 font-semibold">
                       {activeModelInfo.parameter_count}
@@ -1231,7 +1268,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {activeModelInfo?.quantization && (
                   <div className="rounded-md border bg-background px-3 py-2">
                     <div className="text-xs font-medium text-muted-foreground">
-                      {t("model_catalogs.modelInfo.quantization", "Quantization")}
+                      {t(
+                        "model_catalogs.modelInfo.quantization",
+                        "Quantization",
+                      )}
                     </div>
                     <div className="mt-1 font-semibold">
                       {activeModelInfo.quantization}
@@ -1254,7 +1294,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {activeModelInfo?.architecture && (
                   <div className="rounded-md border bg-background px-3 py-2">
                     <div className="text-xs font-medium text-muted-foreground">
-                      {t("model_catalogs.modelInfo.architecture", "Architecture")}
+                      {t(
+                        "model_catalogs.modelInfo.architecture",
+                        "Architecture",
+                      )}
                     </div>
                     <div className="mt-1 font-semibold">
                       {activeModelInfo.architecture}
@@ -1585,76 +1628,78 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     </FormFieldGroup>
 
                     {showFull && (
-                    <div
-                      data-testid="endpoint-virtual-card-split-group"
-                      className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
-                    >
-                      <div className="col-span-1 flex items-center justify-between gap-3 text-xs font-medium sm:col-span-2">
-                        <span className="text-foreground">
-                          {t("endpoints.sections.virtualCardSplitResources")}
-                        </span>
-                        <Badge variant="outline" className="font-normal">
-                          {t("endpoints.fields.perCard")}
-                        </Badge>
-                      </div>
-                      <FormFieldGroup
-                        {...form}
-                        name="spec.resources.accelerator.virtualization.memory_mib"
-                        label={t("endpoints.fields.singleCardMemory")}
-                        className="col-span-1"
+                      <div
+                        data-testid="endpoint-virtual-card-split-group"
+                        className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
                       >
-                        <Input
-                          type="number"
-                          aria-label={t("endpoints.fields.singleCardMemory")}
-                          value={vgpuMemoryGiBInputValue}
-                          onChange={(event) =>
-                            setSingleCardMemoryGiB(event.target.value)
-                          }
-                          min={0}
-                          max={
-                            selectedMemoryTotalMiB
-                              ? Number(
-                                  formatInputNumber(
-                                    selectedMemoryTotalMiB / 1024,
-                                  ),
-                                )
-                              : undefined
-                          }
-                          step={0.5}
-                          disabled={!showVgpuFields}
-                          placeholder="GiB"
-                          className="h-9"
-                        />
-                      </FormFieldGroup>
+                        <div className="col-span-1 flex items-center justify-between gap-3 text-xs font-medium sm:col-span-2">
+                          <span className="text-foreground">
+                            {t("endpoints.sections.virtualCardSplitResources")}
+                          </span>
+                          <Badge variant="outline" className="font-normal">
+                            {t("endpoints.fields.perCard")}
+                          </Badge>
+                        </div>
+                        <FormFieldGroup
+                          {...form}
+                          name="spec.resources.accelerator.virtualization.memory_mib"
+                          label={t("endpoints.fields.singleCardMemory")}
+                          className="col-span-1"
+                        >
+                          <Input
+                            type="number"
+                            aria-label={t("endpoints.fields.singleCardMemory")}
+                            value={vgpuMemoryGiBInputValue}
+                            onChange={(event) =>
+                              setSingleCardMemoryGiB(event.target.value)
+                            }
+                            min={0}
+                            max={
+                              selectedMemoryTotalMiB
+                                ? Number(
+                                    formatInputNumber(
+                                      selectedMemoryTotalMiB / 1024,
+                                    ),
+                                  )
+                                : undefined
+                            }
+                            step={0.5}
+                            disabled={!showVgpuFields}
+                            placeholder="GiB"
+                            className="h-9"
+                          />
+                        </FormFieldGroup>
 
-                      <FormFieldGroup
-                        {...form}
-                        name="spec.resources.accelerator.virtualization.core_percent"
-                        label={t("endpoints.fields.vgpuCoreLimit")}
-                        className="col-span-1"
-                      >
-                        <Input
-                          type="number"
-                          aria-label={t("endpoints.fields.vgpuCoreLimit")}
-                          value={
-                            showVgpuFields && vgpuCoreUnitsPerCard > 0
-                              ? formatInputNumber(vgpuCoreUnitsPerCard)
-                              : ""
-                          }
-                          onChange={(event) =>
-                            setCoreLimitPercent(event.target.value)
-                          }
-                          min={0}
-                          max={100}
-                          step={1}
-                          disabled={!showVgpuFields}
-                          placeholder={
-                            showVgpuFields ? "0" : t("common.options.disabled")
-                          }
-                          className="h-9"
-                        />
-                      </FormFieldGroup>
-                    </div>
+                        <FormFieldGroup
+                          {...form}
+                          name="spec.resources.accelerator.virtualization.core_percent"
+                          label={t("endpoints.fields.vgpuCoreLimit")}
+                          className="col-span-1"
+                        >
+                          <Input
+                            type="number"
+                            aria-label={t("endpoints.fields.vgpuCoreLimit")}
+                            value={
+                              showVgpuFields && vgpuCoreUnitsPerCard > 0
+                                ? formatInputNumber(vgpuCoreUnitsPerCard)
+                                : ""
+                            }
+                            onChange={(event) =>
+                              setCoreLimitPercent(event.target.value)
+                            }
+                            min={0}
+                            max={100}
+                            step={1}
+                            disabled={!showVgpuFields}
+                            placeholder={
+                              showVgpuFields
+                                ? "0"
+                                : t("common.options.disabled")
+                            }
+                            className="h-9"
+                          />
+                        </FormFieldGroup>
+                      </div>
                     )}
                   </div>
 

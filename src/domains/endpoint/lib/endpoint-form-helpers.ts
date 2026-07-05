@@ -457,7 +457,13 @@ export function validateEndpointValues(
     action: "create" | "edit";
     currentRegistry: string;
     currentModelName: string;
-    availableModelNames: string[];
+    /**
+     * Registry models matching a search for the exact current model name.
+     * `null` means the existence lookup hasn't resolved (loading/failed) —
+     * in that case the containment check is skipped rather than blocking
+     * submit on unknown data.
+     */
+    availableModelNames: string[] | null;
   },
   t: (key: string) => string,
 ): Record<string, { type: string; message: string }> {
@@ -534,7 +540,8 @@ export function validateEndpointValues(
   if (
     context.action === "create" &&
     context.currentRegistry &&
-    context.currentModelName
+    context.currentModelName &&
+    context.availableModelNames !== null
   ) {
     if (!context.availableModelNames.includes(context.currentModelName)) {
       errors["-model-catalog"] = {
