@@ -43,13 +43,19 @@ vi.mock("@refinedev/react-hook-form", async () => {
       useFormOptionsRef.current = opts;
       const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
       const form = rhf.useForm(rhfOpts);
-      (form as Record<string, unknown>).refineCore = {
-        onFinish: refineCoreOnFinishMock,
-        query: queryDataRef.current
-          ? { data: { data: queryDataRef.current } }
-          : undefined,
+      // Like the real @refinedev/react-hook-form useForm, return a NEW object
+      // every render (it spreads the RHF result). Effects in the hook must not
+      // rely on the wrapper's identity being stable — depending on it while
+      // also updating form state on every run loops forever (NEU-503 freeze).
+      return {
+        ...form,
+        refineCore: {
+          onFinish: refineCoreOnFinishMock,
+          query: queryDataRef.current
+            ? { data: { data: queryDataRef.current } }
+            : undefined,
+        },
       };
-      return form;
     },
   };
 });
@@ -2688,6 +2694,68 @@ describe("useEndpointForm", () => {
 
       expect(
         screen.queryByText("common.validation.workspaceRequired"),
+      ).toBeNull();
+    });
+  });
+
+  // NEU-503: the model-exists check must be driven by an exact-name lookup,
+  // not by whatever page the dropdown's search last fetched.
+  describe("model existence validation (NEU-503)", () => {
+    // The hook issues two useCustom model queries: the dropdown list (keyed
+    // by modelSearch) and the exact-name existence lookup. Route by URL so
+    // the dropdown list stays empty while the existence lookup is controlled.
+    function mockModelQueries(existenceModels: { name: string }[] | null) {
+      vi.mocked(useCustom).mockImplementation(((opts: { url: string }) => {
+        if (opts.url.includes(`search=${encodeURIComponent("llama-3")}`)) {
+          return {
+            data: existenceModels ? { data: existenceModels } : null,
+            isFetching: false,
+          };
+        }
+        return { data: null, isFetching: false };
+      }) as unknown as typeof useCustom);
+    }
+
+    it("surfaces model-not-found when the exact-name lookup has no match", async () => {
+      mockModelQueries([{ name: "some-other-model" }]);
+      render(<CreateForm />);
+
+      selectCatalog("vllm-llama");
+
+      // The re-validation effect fires on lookup data, without any further
+      // user interaction.
+      await waitFor(() => {
+        expect(
+          screen.getByText("endpoints.messages.modelNotFoundInRegistry"),
+        ).toBeTruthy();
+      });
+    });
+
+    it("accepts a model returned by the exact-name lookup even when the dropdown list misses it", async () => {
+      mockModelQueries([{ name: "llama-3" }]);
+      render(<CreateForm />);
+
+      selectCatalog("vllm-llama");
+
+      await act(async () => {
+        await formInstance?.trigger();
+      });
+      expect(
+        screen.queryByText("endpoints.messages.modelNotFoundInRegistry"),
+      ).toBeNull();
+    });
+
+    it("does not block while the existence lookup is unresolved", async () => {
+      mockModelQueries(null);
+      render(<CreateForm />);
+
+      selectCatalog("vllm-llama");
+
+      await act(async () => {
+        await formInstance?.trigger();
+      });
+      expect(
+        screen.queryByText("endpoints.messages.modelNotFoundInRegistry"),
       ).toBeNull();
     });
   });
