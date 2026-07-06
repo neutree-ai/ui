@@ -362,19 +362,19 @@ const resources: ResourceProps[] = [
     },
   },
   {
-    name: "ai_traces",
-    list: "/:workspace/ai-traces",
+    name: "model_usage",
+    list: "/:workspace/model-usage",
     meta: {
-      icon: <Activity />,
+      icon: <BarChart3 />,
       workspaced: true,
       parent: "model_gateway",
     },
   },
   {
-    name: "model_usage",
-    list: "/:workspace/model-usage",
+    name: "ai_traces",
+    list: "/:workspace/ai-traces",
     meta: {
-      icon: <BarChart3 />,
+      icon: <Activity />,
       workspaced: true,
       parent: "model_gateway",
     },
