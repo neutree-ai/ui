@@ -45,6 +45,21 @@ export const dataProvider = (
   }) => {
     const current = await _getOne({ resource, id, meta });
 
+    // Re-read must find the record before we stamp deletion_timestamp. If it
+    // returns nothing (e.g. a caller omitted the workspace for a workspaced
+    // resource), fail with a clear error instead of dereferencing undefined and
+    // crashing with "Cannot read properties of undefined (reading 'metadata')".
+    if (!current.data) {
+      return handleError(
+        new PostgrestError({
+          message: `Record not found: ${resource} "${String(id)}"`,
+          code: "404",
+          details: "",
+          hint: "",
+        }),
+      );
+    }
+
     const client = meta?.schema
       ? postgrestClient.schema(meta.schema)
       : postgrestClient;
