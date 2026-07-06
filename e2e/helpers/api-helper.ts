@@ -23,6 +23,36 @@ export interface UsageRow {
   completion_tokens: number | null;
 }
 
+/**
+ * The `spec.limits` object carried on an API key (and the shape returned by
+ * `get_api_key_limits` / accepted by `set_api_key_limits`). Rate limits are
+ * flat integers (`rps`/`rpm`/`concurrency`), not a windowed array. An absent
+ * field means unlimited; `allowed_models: []` means deny-all.
+ */
+export interface ApiKeyLimits {
+  token_quota?: {
+    limit?: number;
+    period?: "daily" | "weekly" | "monthly" | "yearly";
+    /** Read-only, computed by get_api_key_limits over the current period. */
+    used?: number;
+    remaining?: number;
+  };
+  rps?: number;
+  rpm?: number;
+  concurrency?: number;
+  allowed_models?: string[];
+  disabled?: boolean;
+}
+
+/** One row of `get_api_keys_usage_summary`. */
+export interface ApiKeyUsageSummaryRow {
+  api_key_id: string;
+  period: string;
+  token_limit: number;
+  used: number;
+  remaining: number;
+}
+
 /** Build a `?a=b&c=d` string from a params object, skipping undefined values. */
 function qs(params?: Record<string, string | number | undefined>): string {
   if (!params) return "";
@@ -199,6 +229,117 @@ export class ApiHelper {
       "POST",
       "/rpc/aggregate_usage_records",
       { p_older_than: new Date().toISOString() },
+      { probe: true },
+    );
+  }
+
+  // ── API-key limits (quota / rate / access control) ──
+
+  /**
+   * POST /rpc/create_api_key with a `spec.limits` object. Returns the new key's
+   * id and one-time secret. `p_quota` stays 0 — all enforcement lives in
+   * `spec.limits` (the legacy scalar is kept consistent by the RPC).
+   */
+  async createApiKeyWithLimits(
+    name: string,
+    options?: { workspace?: string; limits?: ApiKeyLimits | null },
+  ): Promise<{ id: string; sk_value: string }> {
+    const result = await this.api<{
+      id: string;
+      status?: { sk_value?: string };
+    }>("POST", "/rpc/create_api_key", {
+      p_workspace: options?.workspace ?? "default",
+      p_name: name,
+      p_quota: 0,
+      p_limits: options?.limits ?? null,
+    });
+    return { id: result?.id ?? "", sk_value: result?.status?.sk_value ?? "" };
+  }
+
+  /** Look up an API key's id by name (within a workspace). */
+  async getApiKeyId(name: string, workspace?: string): Promise<string> {
+    const ws = workspace ?? "default";
+    const rows = await this.api<Array<{ id: string }>>(
+      "GET",
+      `/api_keys?metadata->>name=eq.${name}&metadata->>workspace=eq.${ws}&select=id`,
+    );
+    return rows?.[0]?.id ?? "";
+  }
+
+  /** POST /rpc/get_api_key_limits — owner-only config + used/remaining. */
+  async getApiKeyLimits(
+    id: string,
+  ): Promise<{ status: number; ok: boolean; body: ApiKeyLimits | null }> {
+    return this.request(
+      "POST",
+      "/rpc/get_api_key_limits",
+      { p_id: id },
+      { probe: true },
+    );
+  }
+
+  /** POST /rpc/set_api_key_limits — whole-object replace of `spec.limits`. */
+  async setApiKeyLimits(
+    id: string,
+    limits: ApiKeyLimits | null,
+  ): Promise<{ status: number; ok: boolean; body: unknown }> {
+    return this.request(
+      "POST",
+      "/rpc/set_api_key_limits",
+      { p_id: id, p_limits: limits },
+      { probe: true },
+    );
+  }
+
+  /** POST /rpc/get_api_key_remaining — the scalar the quota plugin reads. */
+  async getApiKeyRemaining(
+    id: string,
+  ): Promise<{ status: number; ok: boolean; body: number | null }> {
+    return this.request(
+      "POST",
+      "/rpc/get_api_key_remaining",
+      { p_id: id },
+      { probe: true },
+    );
+  }
+
+  /** POST /rpc/api_key_period_usage — used tokens in the current period. */
+  async apiKeyPeriodUsage(
+    id: string,
+    period: string,
+  ): Promise<{ status: number; ok: boolean; body: number | null }> {
+    return this.request(
+      "POST",
+      "/rpc/api_key_period_usage",
+      { p_id: id, p_period: period },
+      { probe: true },
+    );
+  }
+
+  /** POST /rpc/get_api_keys_usage_summary — batched list-page usage. */
+  async getApiKeysUsageSummary(workspace: string): Promise<{
+    status: number;
+    ok: boolean;
+    body: ApiKeyUsageSummaryRow[];
+  }> {
+    return this.request(
+      "POST",
+      "/rpc/get_api_keys_usage_summary",
+      { p_workspace: workspace },
+      { probe: true },
+    );
+  }
+
+  /** POST /rpc/get_workspace_models — options for the allowed-models picker. */
+  async getWorkspaceModels(workspace: string): Promise<{
+    status: number;
+    ok: boolean;
+    body: Array<{ model: string; source: string; endpoint_name: string }>;
+  }> {
+    return this.request(
+      "POST",
+      "/rpc/get_workspace_models",
+      { p_workspace: workspace },
       { probe: true },
     );
   }
