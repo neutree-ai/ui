@@ -723,9 +723,9 @@
 			"vgpuMemoryMode": "VRAM Mode",
 			"vgpuMemory": "VRAM",
 			"vgpuMemoryPercent": "VRAM Percent",
-			"vgpuCoreLimit": "Core Limit",
-			"vgpuCorePercent": "Core Percent",
-			"vgpuCoreUnits": "Core Units",
+			"vgpuCoreLimit": "Core",
+			"vgpuCorePercent": "Core",
+			"vgpuCoreUnits": "Core",
 			"singleCardMemory": "VRAM",
 			"requestedVgpuMemory": "Requested VRAM",
 			"effectiveVgpuMemory": "Effective VRAM",
@@ -788,7 +788,7 @@
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
 			"basicResources": "Capacity shared with the selected cluster.",
-			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card."
+			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining core on the assigned card."
 		},
 		"actions": {
 			"openResources": "Open Resources",
@@ -815,12 +815,12 @@
 			"vgpuMemoryMutuallyExclusive": "Use either virtual card memory amount or memory percent, not both",
 			"vgpuMemoryMiBPositive": "Virtual card memory must be greater than 0",
 			"vgpuMemoryPercentRange": "Virtual card memory percent must be between 1 and 100",
-			"vgpuCorePercentRange": "Virtual card core percent must be between 0 and 100",
+			"vgpuCorePercentRange": "Virtual card core must be between 0 and 100",
 			"cardsAvailable": "{{count}} cards available",
 			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
 			"vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
 			"noRunningVgpuPods": "No running virtual accelerator pods",
-			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared"
+			"vgpuCoreLimitUnlimitedHint": "0 means no limit; core is shared"
 		},
 		"tabs": {
 			"playground": "Playground"
