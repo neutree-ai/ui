@@ -23,6 +23,17 @@ export interface UsageRow {
   completion_tokens: number | null;
 }
 
+/** Build a `?a=b&c=d` string from a params object, skipping undefined values. */
+function qs(params?: Record<string, string | number | undefined>): string {
+  if (!params) return "";
+  const parts = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== "")
+    .map(
+      ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`,
+    );
+  return parts.length ? `?${parts.join("&")}` : "";
+}
+
 /** Data returned by `createTestUserData` */
 export interface TestUserData {
   userName: string;
@@ -192,44 +203,6 @@ export class ApiHelper {
     );
   }
 
-  // ── External Endpoint CRUD ──
-
-  /**
-   * POST /api/v1/external_endpoints — a model gateway proxying to an upstream
-   * OpenAI-compatible URL. Used to produce external-endpoint usage rows.
-   */
-  async createExternalEndpoint(
-    name: string,
-    upstreamUrl: string,
-    modelMapping: Record<string, string>,
-    options?: { workspace?: string },
-  ): Promise<void> {
-    await this.api("POST", "/external_endpoints", {
-      api_version: "v1",
-      kind: "ExternalEndpoint",
-      metadata: { name, workspace: options?.workspace ?? "default" },
-      spec: {
-        timeout: 60000,
-        upstreams: [
-          {
-            auth: { type: "bearer", credential: "none" },
-            upstream: { url: upstreamUrl },
-            endpoint_ref: null,
-            model_mapping: modelMapping,
-          },
-        ],
-      },
-    });
-  }
-
-  /** Soft-delete an external_endpoint by name */
-  async deleteExternalEndpoint(
-    name: string,
-    options?: { retries?: number; force?: boolean },
-  ): Promise<void> {
-    await this.softDelete("external_endpoints", name, options);
-  }
-
   // ── User CRUD ──
 
   /** POST /api/v1/auth/admin/users → poll for user_profile id */
@@ -311,12 +284,9 @@ export class ApiHelper {
   // ── Policy (RoleAssignment) CRUD ──
 
   /**
-   * POST /api/v1/role_assignments.
-   *
-   * Pass `workspace` for a workspace-scoped assignment (global defaults to
-   * false in that case unless explicitly set true). A workspace-scoped
-   * assignment only takes effect against the enterprise workspace-aware
-   * `has_permission`; on community it is inert.
+   * POST /api/v1/role_assignments. Pass `workspace` to bind the assignment to a
+   * single workspace (`global:false`) — only effective on the enterprise
+   * workspace-aware `has_permission`; community treats non-global as inert.
    */
   async createPolicy(
     name: string,
@@ -374,8 +344,12 @@ export class ApiHelper {
       workspace?: string;
       version?: string;
       valuesSchema?: Record<string, unknown>;
+      /** Accelerator→image map for a deployable engine (e.g. { ssh_cpu: {...} }). */
+      images?: Record<string, { image_name: string; tag: string }>;
+      supportedTasks?: string[];
     },
   ): Promise<void> {
+    const tasks = options?.supportedTasks ?? ["text-generation"];
     await this.api("POST", "/engines", {
       api_version: "v1",
       kind: "Engine",
@@ -385,9 +359,11 @@ export class ApiHelper {
           {
             version: options?.version ?? "v1.0",
             values_schema: options?.valuesSchema ?? {},
+            ...(options?.images ? { images: options.images } : {}),
+            supported_tasks: tasks,
           },
         ],
-        supported_tasks: ["text-generation"],
+        supported_tasks: tasks,
       },
     });
   }
@@ -455,6 +431,32 @@ export class ApiHelper {
   /** Generic authenticated GET — for reading resource status in polls. */
   async get<T = unknown>(path: string): Promise<T> {
     return this.api<T>("GET", path);
+  }
+
+  // ── AI traces (Access Log) read API ──
+
+  /** GET /api/v1/ai-traces/{workspace} (list; no request/response bodies). */
+  async listAITraces<T = { items: unknown[]; next_before?: string }>(
+    workspace: string,
+    query?: Record<string, string | number | undefined>,
+  ): Promise<{ status: number; ok: boolean; body: T }> {
+    return this.request<T>("GET", `/ai-traces/${workspace}${qs(query)}`);
+  }
+
+  /** GET /api/v1/ai-traces/{workspace}/{request_id} (single; with bodies). */
+  async getAITrace<T = Record<string, unknown>>(
+    workspace: string,
+    requestId: string,
+  ): Promise<{ status: number; ok: boolean; body: T }> {
+    return this.request<T>("GET", `/ai-traces/${workspace}/${requestId}`);
+  }
+
+  /** GET /api/v1/ai-traces/{workspace}/stats. */
+  async getAITraceStats<T = { days: Array<{ date: string; count: number }> }>(
+    workspace: string,
+    query?: Record<string, string | number | undefined>,
+  ): Promise<{ status: number; ok: boolean; body: T }> {
+    return this.request<T>("GET", `/ai-traces/${workspace}/stats${qs(query)}`);
   }
 
   /**
@@ -676,6 +678,7 @@ export class ApiHelper {
       sshPrivateKey?: string;
       imageRegistry?: string;
       kubeconfig?: string;
+      version?: string;
     },
   ): Promise<void> {
     const type = options?.type ?? "ssh";
@@ -720,6 +723,7 @@ export class ApiHelper {
       spec: {
         type,
         image_registry: options?.imageRegistry ?? "",
+        ...(options?.version ? { version: options.version } : {}),
         config: clusterConfig,
       },
     });
@@ -795,6 +799,44 @@ export class ApiHelper {
     options?: { retries?: number; force?: boolean },
   ): Promise<void> {
     await this.softDelete("endpoints", name, options);
+  }
+
+  // ── External Endpoint (model gateway) CRUD ──
+
+  /** POST /api/v1/external_endpoints — a model gateway proxying to an upstream. */
+  async createExternalEndpoint(
+    name: string,
+    upstreamUrl: string,
+    modelMapping: Record<string, string>,
+    options?: {
+      workspace?: string;
+      auth?: { type: string; credential: string };
+    },
+  ): Promise<void> {
+    await this.api("POST", "/external_endpoints", {
+      api_version: "v1",
+      kind: "ExternalEndpoint",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec: {
+        timeout: 60000,
+        upstreams: [
+          {
+            auth: options?.auth ?? { type: "bearer", credential: "none" },
+            upstream: { url: upstreamUrl },
+            endpoint_ref: null,
+            model_mapping: modelMapping,
+          },
+        ],
+      },
+    });
+  }
+
+  /** Soft-delete an external_endpoint by name */
+  async deleteExternalEndpoint(
+    name: string,
+    options?: { retries?: number; force?: boolean },
+  ): Promise<void> {
+    await this.softDelete("external_endpoints", name, options);
   }
 
   // ── Generic soft-delete ──
