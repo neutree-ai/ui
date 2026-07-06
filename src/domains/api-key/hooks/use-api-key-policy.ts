@@ -258,6 +258,22 @@ function exposedExternalModels(
   );
 }
 
+// Order the allowed-models options: Running endpoints first so usable models
+// surface at the top, then a stable alphabetical order (model, endpoint, type)
+// within each group.
+export function compareWorkspaceModelOptions(
+  a: WorkspaceModelOption,
+  b: WorkspaceModelOption,
+): number {
+  const runningRank = (phase: string | null) => (phase === "Running" ? 0 : 1);
+  return (
+    runningRank(a.phase) - runningRank(b.phase) ||
+    a.model.localeCompare(b.model) ||
+    a.endpointName.localeCompare(b.endpointName) ||
+    a.type.localeCompare(b.type)
+  );
+}
+
 // Available client-facing models in a workspace (for the allowed-models
 // dropdown). Options are endpoint-level rows so duplicate model names served by
 // different internal/external endpoints remain visually distinct in the picker.
@@ -271,12 +287,14 @@ export function useWorkspaceModels(
     meta: { workspace, workspaced: true },
     queryOptions: { enabled },
   });
-  const { data: externalEndpointsData } = useList<WorkspaceExternalEndpointRef>({
-    resource: "external_endpoints",
-    pagination: { mode: "off" },
-    meta: { workspace, workspaced: true },
-    queryOptions: { enabled },
-  });
+  const { data: externalEndpointsData } = useList<WorkspaceExternalEndpointRef>(
+    {
+      resource: "external_endpoints",
+      pagination: { mode: "off" },
+      meta: { workspace, workspaced: true },
+      queryOptions: { enabled },
+    },
+  );
 
   return useMemo(() => {
     if (!workspace) return [];
@@ -313,12 +331,7 @@ export function useWorkspaceModels(
       }
     }
 
-    return options.sort(
-      (a, b) =>
-        a.model.localeCompare(b.model) ||
-        a.endpointName.localeCompare(b.endpointName) ||
-        a.type.localeCompare(b.type),
-    );
+    return options.sort(compareWorkspaceModelOptions);
   }, [endpointsData?.data, externalEndpointsData?.data, workspace]);
 }
 

@@ -153,7 +153,12 @@ export const ModelMultiSelect = ({
                 variant="secondary"
                 className="max-w-full gap-1 pr-1"
               >
-                <span className="truncate max-w-[220px]">
+                <span
+                  className="break-all whitespace-normal"
+                  title={
+                    option ? `${option.model} · ${option.endpointName}` : v
+                  }
+                >
                   {option ? `${option.model} · ${option.endpointName}` : v}
                 </span>
                 {option && (
