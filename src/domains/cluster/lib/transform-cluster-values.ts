@@ -1,7 +1,7 @@
 import type { Cluster } from "@/domains/cluster/types";
 import {
-  type TouchedFields,
   isTouchedField,
+  type TouchedFields,
 } from "@/foundation/lib/touched-fields";
 import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualization";
 
@@ -10,6 +10,11 @@ import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualizati
  * - Base64-encode SSH private key (with trailing newline) and kubeconfig
  * - Convert router replicas to number
  * - In edit mode, strip unchanged empty sensitive fields to avoid overwriting backend values
+ *
+ * In edit mode the form is pre-populated with the stored values, which are
+ * already base64-encoded. Encoding is therefore applied only to values the
+ * user actually entered (create mode, or touched in edit mode); untouched
+ * values round-trip unchanged to avoid double encoding.
  */
 export function transformClusterValues(
   values: Cluster,
@@ -33,7 +38,11 @@ export function transformClusterValues(
   ]);
 
   // Transform SSH private key for SSH type clusters
-  if (config.ssh_config?.auth?.ssh_private_key && values.spec.type === "ssh") {
+  if (
+    config.ssh_config?.auth?.ssh_private_key &&
+    values.spec.type === "ssh" &&
+    (!isEdit || sshPrivateKeyTouched)
+  ) {
     if (!config.ssh_config.auth.ssh_private_key.endsWith("\n")) {
       config.ssh_config.auth.ssh_private_key += "\n";
     }
@@ -44,7 +53,8 @@ export function transformClusterValues(
   // Transform kubeconfig for Kubernetes type clusters
   if (
     config.kubernetes_config?.kubeconfig &&
-    values.spec.type === "kubernetes"
+    values.spec.type === "kubernetes" &&
+    (!isEdit || kubeconfigTouched)
   ) {
     config.kubernetes_config.kubeconfig = btoa(
       config.kubernetes_config.kubeconfig,

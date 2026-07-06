@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   type FieldArray,
   type FieldArrayPath,
@@ -16,6 +16,11 @@ import {
  * Refine's `useForm` populates form values via `setValue()`, but
  * react-hook-form's `useFieldArray` ignores `setValue` on its array path.
  * This hook bridges the gap by calling `replace()` when query data arrives.
+ *
+ * Population happens only once, on the first query data arrival. Later
+ * query updates (window-focus refetch, background invalidation) must not
+ * call `replace()` again: it would silently overwrite unsaved user edits
+ * with the server state (NEU-500).
  */
 export function useRefineFieldArray<
   TFieldValues extends FieldValues = FieldValues,
@@ -38,9 +43,11 @@ export function useRefineFieldArray<
   );
 
   const queryData = refineForm?.refineCore?.query?.data?.data;
+  const populated = useRef(false);
 
   useEffect(() => {
-    if (!queryData) return;
+    if (populated.current || !queryData) return;
+    populated.current = true;
     const arr = fieldArrayProps.name
       .split(".")
       .reduce<unknown>(
