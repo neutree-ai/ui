@@ -89,7 +89,7 @@
   "src/foundation/types/license.ts": "e7cd2bf058d508b41b5521f5cee745a3",
   "src/foundation/types/serving-types.ts": "d3ade7b3debf53702e7f730c8469e26e",
   "src/foundation/types/system-types.ts": "95251bc1ec54424d96b599dedf23ffeb",
-  "src/foundation/providers/data-provider/index.ts": "2e0faf1150c368ef33d0093f1b59c27b",
+  "src/foundation/providers/data-provider/index.ts": "0bdab9286702a0166e9ba670b856ef1d",
   "src/foundation/providers/data-provider/utils/generate-filter.ts": "5d3bce54e997574b28f34e20392290be",
   "src/foundation/providers/data-provider/utils/handle-error.ts": "bd404b9fbf8c81eae7941b4bca78623f",
   "src/foundation/providers/data-provider/utils/map-operator.ts": "4aafc8f97463e07318fabaf816f8d321",
@@ -119,7 +119,7 @@
   "src/foundation/components/AppSidebar.tsx": "2bf74a7a63eadc4382a0797120a6ee64",
   "src/foundation/components/BaseLayout.tsx": "64ddc4474cb6be136156ab722644c460",
   "src/foundation/components/BaseStatus.tsx": "4bdd1a3d50997cad867e852e5526a2c2",
-  "src/foundation/components/BatchDeleteBar.tsx": "9825a8c0178b4a6bef389c8d61e326a4",
+  "src/foundation/components/BatchDeleteBar.tsx": "3914804d690aa8e89d99299bdd821b14",
   "src/foundation/components/ConfirmDialog.tsx": "ebe2dec7a0f7bf14ffce2aba33b5e040",
   "src/foundation/components/CreateButton.tsx": "6e3741144546089ed5bad8c1d1ff35cf",
   "src/foundation/components/DefaultLayout.tsx": "1efe07e1ec0621ec845daae497764550",
@@ -332,5 +332,6 @@
   "src/domains/endpoint/components/VRAMCheckBadge.tsx": "8669ff213df55b49535f2134db420d66",
   "src/domains/endpoint/components/VariantPicker.tsx": "06adfa7eca1c9d1b25e97583a12574c3",
   "src/components/ui/switch.tsx": "ed96194f48772c1f9aff21df61013a69",
-  "src/foundation/lib/touched-fields.ts": "8bb21e569f8f08090d42f67df8e1e702"
+  "src/foundation/lib/touched-fields.ts": "8bb21e569f8f08090d42f67df8e1e702",
+  "src/foundation/lib/batch-delete.ts": "257dd2f4cbccf000afce74b379d4e80c"
 }
