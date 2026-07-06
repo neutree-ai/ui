@@ -518,6 +518,113 @@ const virtualizedKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
+const roundedVramKubernetesClusterWithDevices = {
+  metadata: metadata("virtualized-k8s-rounded-vram"),
+  spec: {
+    type: "kubernetes",
+    accelerator_virtualization: { enabled: true },
+  },
+  status: {
+    resource_info: {
+      allocatable: {
+        cpu: 16,
+        memory: 64,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 46068,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        },
+      },
+      available: {
+        cpu: 12,
+        memory: 48,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 46068,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        },
+      },
+      node_resources: {
+        "node-a": {
+          allocatable: {
+            cpu: 16,
+            memory: 64,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 1,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 1,
+                    virtualization: {
+                      memory_mib: 46068,
+                      core_units: 100,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          available: {
+            cpu: 12,
+            memory: 48,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 1,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 1,
+                    virtualization: {
+                      memory_mib: 46068,
+                      core_units: 100,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          devices: [
+            {
+              uuid: "GPU-rounded-vram-1111-2222-3333-444444444444",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: {
+                memory_mib: 46068,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 46068,
+                core_units: 100,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
+} satisfies EndpointClusterRef;
+
 const defaultSelectResult = {
   query: { data: { data: [] }, isLoading: false },
 };
@@ -1081,6 +1188,101 @@ describe("useEndpointForm", () => {
       expect(
         screen.queryByText(/endpoints\.fields\.requestedVgpuMemory/),
       ).toBeNull();
+    });
+
+    it("displays rounded raw-max vGPU memory and accepts the displayed boundary", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [roundedVramKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-rounded-vram");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 46068,
+              core_percent: 100,
+            },
+          },
+        });
+      });
+
+      const input = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(input.max).toBe("45");
+      expect(input.value).toBe("45");
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "45" } });
+
+      await waitFor(() => {
+        expect(input.value).toBe("45");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(46068);
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("keeps values above the displayed vGPU memory max as over-limit", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [roundedVramKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-rounded-vram");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 100,
+            },
+          },
+        });
+      });
+
+      const input = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "46" } });
+
+      await waitFor(() => {
+        expect(input.value).toBe("46");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(47104);
+        expect(
+          screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
+        ).toBeTruthy();
+      });
     });
 
     it("renders percent-backed virtual memory as GiB and edits it as MiB", async () => {

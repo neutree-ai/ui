@@ -8,11 +8,57 @@ type VgpuVirtualization = NonNullable<
 type VgpuAccelerator = NonNullable<ResourceSpec["accelerator"]> &
   Record<string, unknown>;
 
+const MIB_PER_GIB = 1024;
+
 const toOptionalNumber = (value: unknown): number | undefined => {
   if (value === null || value === undefined || value === "") return undefined;
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : undefined;
 };
+
+export function getRoundedVgpuMemoryGiBValue(
+  memoryMiB: number | null | undefined,
+  precision = 1,
+): number | null {
+  const memoryMiBValue = toOptionalNumber(memoryMiB);
+  if (memoryMiBValue === undefined) return null;
+  return Number((memoryMiBValue / MIB_PER_GIB).toFixed(precision));
+}
+
+export function formatVgpuMemoryGiBInputValue(
+  memoryMiB: number | null | undefined,
+  rawMaxMiB?: number | null,
+): string {
+  const memoryMiBValue = toOptionalNumber(memoryMiB);
+  if (memoryMiBValue === undefined) return "";
+
+  const rawMaxMiBValue = toOptionalNumber(rawMaxMiB);
+  if (rawMaxMiBValue !== undefined && memoryMiBValue === rawMaxMiBValue) {
+    return String(getRoundedVgpuMemoryGiBValue(rawMaxMiBValue) ?? "");
+  }
+
+  return String(memoryMiBValue / MIB_PER_GIB);
+}
+
+export function normalizeVgpuMemoryGiBInput(
+  memoryGiB: number,
+  rawMaxMiB?: number | null,
+): number {
+  const requestedMiB = Math.ceil(memoryGiB * MIB_PER_GIB);
+  const rawMaxMiBValue = toOptionalNumber(rawMaxMiB);
+  const displayMaxGiB = getRoundedVgpuMemoryGiBValue(rawMaxMiBValue);
+
+  if (
+    rawMaxMiBValue !== undefined &&
+    displayMaxGiB !== null &&
+    requestedMiB > rawMaxMiBValue &&
+    memoryGiB <= displayMaxGiB
+  ) {
+    return rawMaxMiBValue;
+  }
+
+  return requestedMiB;
+}
 
 export function normalizeVgpuVirtualization(
   virtualization: VgpuVirtualization | null | undefined,
