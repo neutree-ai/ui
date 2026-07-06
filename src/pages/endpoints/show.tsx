@@ -4,24 +4,9 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
@@ -32,34 +17,19 @@ import EndpointRuntimeResourcesCard from "@/domains/endpoint/components/Endpoint
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
-import {
-  getBackendReplicas,
-  useEndpointLogSources,
-} from "@/domains/endpoint/hooks/use-endpoint-log-sources";
-import {
-  type EndpointMonitorPanelType,
-  useEndpointMonitorPanels,
-} from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
-import { useEndpointVgpuMonitorContext } from "@/domains/endpoint/hooks/use-endpoint-vgpu-monitor-context";
-import { getEndpointVgpuDashboardContext } from "@/domains/endpoint/lib/resource-status";
-import { hasVgpuResources } from "@/domains/endpoint/lib/vgpu";
+import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
 import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import {
-  GRAFANA_VAR_ALL,
-  getEndpointDashboardProps,
-  getEndpointVgpuDashboardProps,
-  getSglangDashboardProps,
-  getVllmDashboardProps,
-} from "@/foundation/lib/grafana-dashboard-configs";
+import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 
 const EndpointLogTabs = lazy(() =>
   import("@/domains/endpoint/components/EndpointLogTabs").then((m) => ({
@@ -159,7 +129,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const clusterType = clusterData?.data?.[0]?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
-  const endpointHasVgpuResources = hasVgpuResources(record?.spec.resources);
 
   const {
     panels,
@@ -168,79 +137,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     showMonitorTab,
     showSelector,
   } = useEndpointMonitorPanels({
-    clusterType,
     engineType: record?.spec.engine.engine,
-    hasVgpuResources: endpointHasVgpuResources,
   });
-
-  const vgpuDashboardContext = useMemo(() => {
-    if (!record) return null;
-    return getEndpointVgpuDashboardContext({
-      resourceStatus: record.status?.resources,
-      cluster: record.spec.cluster,
-      workspace: record.metadata.workspace || "",
-      endpoint: record.metadata.name,
-    });
-  }, [record]);
-
-  const { data: vgpuMonitorContextData } = useEndpointVgpuMonitorContext(
-    record,
-    endpointHasVgpuResources && !vgpuDashboardContext,
-  );
-
-  const { deployments } = useEndpointLogSources(record ?? null);
-  const monitorReplicas = useMemo(
-    () => getBackendReplicas(deployments),
-    [deployments],
-  );
-  const [selectedReplica, setSelectedReplica] =
-    useState<string>(GRAFANA_VAR_ALL);
-
-  // Reset selection when the selected replica no longer exists
-  useEffect(() => {
-    if (
-      selectedReplica !== GRAFANA_VAR_ALL &&
-      !monitorReplicas.some((r) => r.replica_id === selectedReplica)
-    ) {
-      setSelectedReplica(GRAFANA_VAR_ALL);
-    }
-  }, [monitorReplicas, selectedReplica]);
-
-  const replicaParam =
-    selectedReplica !== GRAFANA_VAR_ALL ? selectedReplica : undefined;
-  const endpointVgpuDashboardProps = useMemo(() => {
-    if (!record || !grafanaUrl) {
-      return null;
-    }
-
-    const legacyContext = vgpuMonitorContextData?.data;
-    return getEndpointVgpuDashboardProps(grafanaUrl, {
-      cluster:
-        vgpuDashboardContext?.cluster ??
-        legacyContext?.cluster ??
-        record.spec.cluster ??
-        "",
-      workspace:
-        vgpuDashboardContext?.workspace ??
-        legacyContext?.workspace ??
-        record.metadata.workspace ??
-        "",
-      endpoint:
-        vgpuDashboardContext?.endpoint ??
-        legacyContext?.endpoint ??
-        record.metadata.name ??
-        "",
-      namespace:
-        vgpuDashboardContext?.namespace ?? legacyContext?.namespace ?? ".*",
-      pod: replicaParam,
-    });
-  }, [
-    grafanaUrl,
-    record,
-    replicaParam,
-    vgpuDashboardContext,
-    vgpuMonitorContextData?.data,
-  ]);
 
   const url = record?.status?.service_url ?? "";
 
@@ -331,7 +229,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Row>
               </div>
               <EndpointRuntimeResourcesCard
-                requestedResources={record.spec.resources}
                 resources={record.status?.resources}
               />
             </CardContent>
@@ -383,123 +280,52 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         >
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
-              {(showSelector || monitorReplicas.length > 1) && (
+              {showSelector && (
                 <Card className="p-4">
-                  <div className="flex items-center justify-start gap-4">
-                    {showSelector && (
-                      <>
-                        <Select
-                          value={selectedPanel || undefined}
-                          onValueChange={(value: EndpointMonitorPanelType) =>
-                            setSelectedPanel(value)
-                          }
-                        >
-                          <SelectTrigger className="w-[220px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {panels.includes("endpoint") && (
-                              <SelectItem value="endpoint">
-                                {t("endpoints.monitor.endpointMetrics")}
-                              </SelectItem>
-                            )}
-                            {panels.includes("vgpu") && (
-                              <SelectItem value="vgpu">
-                                {t("endpoints.monitor.vgpuMetrics")}
-                              </SelectItem>
-                            )}
-                            {panels.includes("vllm") && (
-                              <SelectItem value="vllm">
-                                {t("endpoints.monitor.vllmMetrics")}
-                              </SelectItem>
-                            )}
-                            {panels.includes("sglang") && (
-                              <SelectItem value="sglang">
-                                {t("endpoints.monitor.sglangMetrics")}
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedPanel === "endpoint"
-                            ? t("endpoints.monitor.endpointDescription")
-                            : selectedPanel === "vgpu"
-                              ? t("endpoints.monitor.vgpuDescription")
-                              : selectedPanel === "sglang"
-                                ? t("endpoints.monitor.sglangDescription")
-                                : t("endpoints.monitor.vllmDescription")}
-                        </p>
-                      </>
-                    )}
-                    {monitorReplicas.length > 1 && (
-                      <div className="flex items-center gap-2 ml-auto">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          {t("common.fields.replica")} ({monitorReplicas.length}
-                          )
-                        </span>
-                        <Select
-                          value={selectedReplica}
-                          onValueChange={setSelectedReplica}
-                        >
-                          <SelectTrigger className="w-[260px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={GRAFANA_VAR_ALL}>
-                              {t("common.fields.allReplicas")}
-                            </SelectItem>
-                            {monitorReplicas.map((replica) => (
-                              <SelectItem
-                                key={replica.replica_id}
-                                value={replica.replica_id}
-                              >
-                                {replica.replica_id}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                  <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center">
+                    <SegmentedControl
+                      ariaLabel={t("common.tabs.monitor")}
+                      items={panels.map((panel) => ({
+                        value: panel,
+                        label:
+                          panel === "overview"
+                            ? t("endpoints.monitor.overviewMetrics")
+                            : panel === "latency"
+                              ? t("endpoints.monitor.latencyMetrics")
+                              : panel === "throughput"
+                                ? t("endpoints.monitor.throughputMetrics")
+                                : panel === "queue"
+                                  ? t("endpoints.monitor.queueMetrics")
+                                  : t("endpoints.monitor.cacheMetrics"),
+                      }))}
+                      onValueChange={setSelectedPanel}
+                      value={selectedPanel || undefined}
+                    />
+                    <p className="min-w-0 text-sm text-muted-foreground lg:text-right">
+                      {selectedPanel === "latency"
+                        ? t("endpoints.monitor.latencyDescription")
+                        : selectedPanel === "throughput"
+                          ? t("endpoints.monitor.throughputDescription")
+                          : selectedPanel === "queue"
+                            ? t("endpoints.monitor.queueDescription")
+                            : selectedPanel === "cache"
+                              ? t("endpoints.monitor.cacheDescription")
+                              : t("endpoints.monitor.overviewDescription")}
+                    </p>
                   </div>
                 </Card>
               )}
 
-              {selectedPanel === "vllm" ? (
+              {selectedPanel ? (
                 <GrafanaDashboard
-                  {...getVllmDashboardProps(
+                  {...getEndpointSplitDashboardProps(
                     grafanaUrl,
-                    record.metadata.name,
-                    record.spec.cluster,
-                    replicaParam,
+                    selectedPanel,
+                    {
+                      clusterName: record.spec.cluster,
+                      endpointName: record.metadata.name,
+                    },
                   )}
-                  className="flex-1"
-                  hideVariables
-                />
-              ) : selectedPanel === "sglang" ? (
-                <GrafanaDashboard
-                  {...getSglangDashboardProps(
-                    grafanaUrl,
-                    record.metadata.name,
-                    record.spec.cluster,
-                    replicaParam,
-                  )}
-                  className="flex-1"
-                  hideVariables
-                />
-              ) : selectedPanel === "endpoint" ? (
-                <GrafanaDashboard
-                  {...getEndpointDashboardProps(
-                    grafanaUrl,
-                    record.metadata.name,
-                    record.spec.cluster,
-                    replicaParam,
-                  )}
-                  className="flex-1"
-                  hideVariables
-                />
-              ) : selectedPanel === "vgpu" && endpointVgpuDashboardProps ? (
-                <GrafanaDashboard
-                  {...endpointVgpuDashboardProps}
                   className="flex-1"
                   hideVariables
                 />

@@ -171,6 +171,13 @@ const hasGpuResourceRows = (
       hasPositiveMetric(row.quantity.available),
   );
 
+const hasNodeDeviceResources = (
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+) =>
+  Object.values(nodeResources ?? {}).some(
+    (nodeStatus) => (nodeStatus.devices?.length ?? 0) > 0,
+  );
+
 const getAcceleratorUsageClasses = (percent: number) =>
   percent >= ACCELERATOR_USAGE_WARNING_PERCENT
     ? {
@@ -499,8 +506,8 @@ function GpuDeviceCard({
             type="button"
             variant="ghost"
             size="sm"
-            title={row.uuid}
-            aria-label={`${t("clusters.fields.gpuNumber")} ${row.gpuNumber}, ${t("clusters.fields.deviceUuid")} ${row.uuid}`}
+            title={t("clusters.actions.copyUuid")}
+            aria-label={`${t("clusters.fields.gpuNumber")} ${row.gpuNumber} ${t("clusters.actions.copyUuid")}`}
             className="-ml-2 h-7 min-w-0 justify-start px-2 text-xs"
             onClick={() => copyUuid(row.uuid)}
           >
@@ -508,6 +515,7 @@ function GpuDeviceCard({
               {t("clusters.fields.gpuNumber")} {row.gpuNumber}
             </span>
             <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
+            <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
           </Button>
           <Badge
             variant="outline"
@@ -577,6 +585,10 @@ function EndpointClusterResourceSummary({
   const gpuSummary = summarizeRows(summaryRows, "quantity");
   const acceleratorMemorySummary = summarizeRows(summaryRows, "memory");
   const acceleratorCoreSummary = summarizeRows(summaryRows, "core");
+  const showDetailedGpuMetrics =
+    hasGpuResources &&
+    (virtualizationEnabled ||
+      hasNodeDeviceResources(resourceInfo.node_resources));
   const items: ResourceSummaryMetric[] = [];
 
   if (hasGpuResources) {
@@ -589,7 +601,7 @@ function EndpointClusterResourceSummary({
     });
   }
 
-  if (hasGpuResources && virtualizationEnabled) {
+  if (showDetailedGpuMetrics) {
     items.push(
       {
         label: t("clusters.fields.memoryUsage"),
@@ -756,18 +768,19 @@ function EndpointNodeResources({
   nodeResources,
   selectedAccelerator,
   hasGpuResources,
-  virtualizationEnabled,
   request,
   t,
 }: {
   nodeResources: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   hasGpuResources: boolean;
-  virtualizationEnabled: boolean;
   request?: EndpointResourceRequestContext;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
-  if (!virtualizationEnabled || !hasGpuResources) {
+  const hasNodeDevices = hasNodeDeviceResources(nodeResources);
+  const showDetailedGpuDevices = hasGpuResources && hasNodeDevices;
+
+  if (!showDetailedGpuDevices) {
     return (
       <EndpointNodeResourceSummaries
         nodeResources={nodeResources}
@@ -1190,7 +1203,6 @@ function EndpointClusterGpuResourcesInlineContent({
           nodeResources={resourceInfo.node_resources}
           selectedAccelerator={selectedAccelerator}
           hasGpuResources={hasGpuResources}
-          virtualizationEnabled={virtualizationEnabled}
           request={request}
           t={t}
         />

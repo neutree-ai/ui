@@ -79,6 +79,7 @@ type GpuDeviceResourcesViewProps = {
   showSummary?: boolean;
   showResourceControls?: boolean;
   resourceControlsTestId?: string;
+  showNodeColumn?: boolean;
   request?: GpuDeviceRequestFitContext;
 };
 
@@ -298,6 +299,7 @@ export function GpuDeviceResourcesView({
   showSummary = true,
   showResourceControls = false,
   resourceControlsTestId = "gpu-device-resource-toolbar",
+  showNodeColumn = true,
   request,
 }: GpuDeviceResourcesViewProps) {
   const [productFilter, setProductFilter] = useState(GPU_DEVICE_FILTER_ALL);
@@ -501,8 +503,8 @@ export function GpuDeviceResourcesView({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  title={row.uuid}
-                  aria-label={`${labels.gpuNumber} ${row.gpuNumber}, ${labels.uuid} ${row.uuid}`}
+                  title={labels.copyUuid}
+                  aria-label={`${labels.gpuNumber} ${row.gpuNumber} ${labels.copyUuid}`}
                   className="-ml-2 h-8 justify-start px-2"
                   onClick={() =>
                     copy(row.uuid, {
@@ -587,7 +589,9 @@ export function GpuDeviceResourcesView({
                   {labels.gpuNumber}
                 </TableHead>
                 <TableHead>{labels.status}</TableHead>
-                <TableHead className="min-w-[140px]">{labels.node}</TableHead>
+                {showNodeColumn && (
+                  <TableHead className="min-w-[140px]">{labels.node}</TableHead>
+                )}
                 <TableHead className="min-w-[150px]">
                   {labels.product}
                 </TableHead>
@@ -614,8 +618,8 @@ export function GpuDeviceResourcesView({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      title={row.uuid}
-                      aria-label={`${labels.gpuNumber} ${row.gpuNumber}, ${labels.uuid} ${row.uuid}`}
+                      title={labels.copyUuid}
+                      aria-label={`${labels.gpuNumber} ${row.gpuNumber} ${labels.copyUuid}`}
                       className="h-8 justify-start px-2"
                       onClick={() =>
                         copy(row.uuid, {
@@ -648,9 +652,11 @@ export function GpuDeviceResourcesView({
                       )}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    <span className="break-all text-sm">{row.nodeName}</span>
-                  </TableCell>
+                  {showNodeColumn && (
+                    <TableCell>
+                      <span className="break-all text-sm">{row.nodeName}</span>
+                    </TableCell>
+                  )}
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-2">
                       <span>{row.product || "-"}</span>

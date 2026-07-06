@@ -1,30 +1,41 @@
+import { Copy } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   getEndpointReplicaResourceGroups,
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
-import { hasVgpuResources } from "@/domains/endpoint/lib/vgpu";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
-import type { ResourceSpec } from "@/foundation/types/serving-types";
 
 type EndpointRuntimeResourcesCardProps = {
-  requestedResources: ResourceSpec | null | undefined;
   resources: EndpointResourceStatus | null | undefined;
 };
 
 const formatInteger = (value: number) => formatToDecimal(value, 0) ?? "-";
 
+const formatCoreLimit = (value: number) =>
+  value > 0 ? formatInteger(value) : "-";
+
 const formatMemoryGiB = (value: number) => formatMiBAsGiB(value) ?? "-";
 
-const formatCount = (count: number, singular: string, plural: string) =>
-  `${count} ${count === 1 ? singular : plural}`;
+const formatCount = (
+  count: number,
+  singular: string,
+  plural: string,
+  t: (key: string) => string,
+) => `${count} ${t(count === 1 ? singular : plural)}`;
 
-const formatAllocatedCardCount = (count: number) =>
-  `${count} allocated ${count === 1 ? "card" : "cards"}`;
+const formatAllocatedCardCount = (count: number, t: (key: string) => string) =>
+  `${count} ${t(
+    count === 1
+      ? "endpoints.fields.allocatedCard"
+      : "endpoints.fields.allocatedCards",
+  )}`;
 
 const ResourceValue = ({
   label,
@@ -49,14 +60,10 @@ const ResourceValue = ({
 );
 
 export default function EndpointRuntimeResourcesCard({
-  requestedResources,
   resources,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
-
-  if (!hasVgpuResources(requestedResources)) {
-    return null;
-  }
+  const { copy } = useCopyToClipboard();
 
   const summaryRows = getEndpointResourceSummaryRows(resources);
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
@@ -78,8 +85,13 @@ export default function EndpointRuntimeResourcesCard({
           </div>
           {allocatedDeviceCount > 0 && (
             <div className="mt-0.5 text-xs text-muted-foreground">
-              {formatCount(replicaGroups.length, "replica", "replicas")} /{" "}
-              {formatAllocatedCardCount(allocatedDeviceCount)}
+              {formatCount(
+                replicaGroups.length,
+                "endpoints.fields.replicaUnit",
+                "endpoints.fields.replicaUnits",
+                t,
+              )}{" "}
+              / {formatAllocatedCardCount(allocatedDeviceCount, t)}
             </div>
           )}
         </div>
@@ -94,7 +106,7 @@ export default function EndpointRuntimeResourcesCard({
             >
               <div className="flex min-w-0 items-center gap-3 rounded-md border bg-background px-3 py-2">
                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary/10 text-xs font-bold text-primary">
-                  GPU
+                  {t("clusters.fields.gpuNumber")}
                 </div>
                 <div className="min-w-0">
                   <strong className="block truncate text-sm font-semibold leading-5">
@@ -106,12 +118,12 @@ export default function EndpointRuntimeResourcesCard({
                 </div>
               </div>
               <ResourceValue
-                label={t("endpoints.fields.vgpuMemory")}
+                label={t("clusters.fields.memoryUsage")}
                 value={formatMemoryGiB(row.memoryMiB)}
               />
               <ResourceValue
-                label={t("endpoints.fields.vgpuCoreUnits")}
-                value={formatInteger(row.coreUnits)}
+                label={t("clusters.fields.coreUsage")}
+                value={formatCoreLimit(row.coreUnits)}
               />
             </div>
           ))}
@@ -146,57 +158,80 @@ export default function EndpointRuntimeResourcesCard({
                   </div>
                   <div className="flex min-w-0 flex-wrap justify-end gap-1.5">
                     <Badge variant="outline" className="bg-muted/40">
-                      {formatCount(group.deviceCount, "card", "cards")}
+                      {formatCount(
+                        group.deviceCount,
+                        "endpoints.fields.card",
+                        "endpoints.fields.cards",
+                        t,
+                      )}
                     </Badge>
                     <Badge variant="outline" className="bg-muted/40">
-                      {formatMemoryGiB(group.memoryMiB)} VRAM
+                      {formatMemoryGiB(group.memoryMiB)}{" "}
+                      {t("endpoints.fields.vgpuMemory")}
                     </Badge>
                     <Badge variant="outline" className="bg-muted/40">
-                      Core {formatInteger(group.coreUnits)}
+                      {t("endpoints.fields.vgpuCoreCapacity")}{" "}
+                      {formatCoreLimit(group.coreUnits)}
                     </Badge>
                   </div>
                 </div>
 
                 <div className="grid gap-2">
-                  {group.devices.map((device, index) => (
-                    <div
-                      className="grid min-w-0 gap-2 rounded-md border bg-muted/30 p-2 lg:grid-cols-[56px_minmax(110px,0.9fr)_minmax(86px,0.6fr)_minmax(76px,0.5fr)_minmax(120px,0.8fr)_minmax(180px,1.3fr)] lg:items-center"
-                      key={`${groupKey}:${device.uuid || index}`}
-                    >
-                      <div className="inline-flex min-h-7 w-fit min-w-12 items-center justify-center rounded-md bg-primary/10 px-2 text-xs font-bold text-primary">
-                        GPU {index}
+                  {group.devices.map((device, index) => {
+                    const gpuNumber = device.order ?? index + 1;
+
+                    return (
+                      <div
+                        className="grid min-w-0 gap-2 rounded-md border bg-muted/30 p-2 lg:grid-cols-[72px_minmax(110px,0.9fr)_minmax(86px,0.6fr)_minmax(76px,0.5fr)_minmax(120px,0.8fr)] lg:items-center"
+                        key={`${groupKey}:${device.uuid || index}`}
+                      >
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          title={t("clusters.actions.copyUuid")}
+                          aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
+                          className="-ml-2 h-7 min-w-0 justify-start px-2 text-xs"
+                          onClick={() =>
+                            copy(device.uuid, {
+                              successMessage: t(
+                                "clusters.messages.copyUuidSuccess",
+                              ),
+                              errorMessage: t(
+                                "clusters.messages.copyUuidFailed",
+                              ),
+                            })
+                          }
+                        >
+                          {t("clusters.fields.gpuNumber")} {gpuNumber}
+                          <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="sr-only">
+                            {t("clusters.actions.copyUuid")}
+                          </span>
+                        </Button>
+                        <ResourceValue
+                          className="border-0 bg-transparent p-0"
+                          label={t("common.fields.acceleratorProduct")}
+                          value={device.product || "-"}
+                        />
+                        <ResourceValue
+                          className="border-0 bg-transparent p-0"
+                          label={t("clusters.fields.memoryUsage")}
+                          value={formatMemoryGiB(device.memoryMiB)}
+                        />
+                        <ResourceValue
+                          className="border-0 bg-transparent p-0"
+                          label={t("clusters.fields.coreUsage")}
+                          value={formatCoreLimit(device.coreUnits)}
+                        />
+                        <ResourceValue
+                          className="border-0 bg-transparent p-0"
+                          label={t("clusters.fields.nodeName")}
+                          value={device.nodeId || "-"}
+                        />
                       </div>
-                      <ResourceValue
-                        className="border-0 bg-transparent p-0"
-                        label={t("common.fields.acceleratorProduct")}
-                        value={device.product || "-"}
-                      />
-                      <ResourceValue
-                        className="border-0 bg-transparent p-0"
-                        label={t("endpoints.fields.vgpuMemory")}
-                        value={formatMemoryGiB(device.memoryMiB)}
-                      />
-                      <ResourceValue
-                        className="border-0 bg-transparent p-0"
-                        label={t("endpoints.fields.vgpuCoreUnits")}
-                        value={formatInteger(device.coreUnits)}
-                      />
-                      <ResourceValue
-                        className="border-0 bg-transparent p-0"
-                        label={t("clusters.fields.nodeName")}
-                        value={device.nodeId || "-"}
-                      />
-                      <ResourceValue
-                        className="border-0 bg-transparent p-0"
-                        label={t("clusters.fields.deviceUuid")}
-                        value={
-                          <code className="block truncate text-xs">
-                            {device.uuid || "-"}
-                          </code>
-                        }
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );

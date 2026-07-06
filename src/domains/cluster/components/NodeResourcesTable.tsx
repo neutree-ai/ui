@@ -252,6 +252,7 @@ export const NodeResourcesTable = ({
                           }}
                           showFilters={false}
                           showSummary={false}
+                          showNodeColumn={false}
                           className="bg-background"
                         />
                       </div>
