@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { checkVRAM } from "@/foundation/recipe/vram";
+import { checkVRAM, formatGb } from "@/foundation/recipe/vram";
 
 type Props = {
   acceleratorProduct?: string | null;
@@ -45,7 +45,7 @@ export const VRAMCheckBadge = ({
         <Info className="size-4" />
         <span>
           {t("endpoints.recipe.vramRequiredOnly", "Requires ≥ {{gb}} GB VRAM", {
-            gb: requiredGb,
+            gb: formatGb(requiredGb),
           })}
         </span>
       </div>
@@ -70,12 +70,18 @@ export const VRAMCheckBadge = ({
           ? t(
               "endpoints.recipe.vramSufficient",
               "Sufficient VRAM: {{total}} GB available, {{required}} GB required",
-              { total: result.totalGb, required: result.requiredGb },
+              {
+                total: formatGb(result.totalGb),
+                required: formatGb(result.requiredGb),
+              },
             )
           : t(
               "endpoints.recipe.vramInsufficient",
               "Insufficient VRAM: {{total}} GB available, {{required}} GB required",
-              { total: result.totalGb, required: result.requiredGb },
+              {
+                total: formatGb(result.totalGb),
+                required: formatGb(result.requiredGb),
+              },
             )}
       </span>
     </div>

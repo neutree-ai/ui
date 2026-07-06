@@ -325,11 +325,11 @@
   "src/foundation/recipe/compose.ts": "c0cfe4da9024b651f47e4773318641d9",
   "src/foundation/recipe/normalize.ts": "37973e33217df534c07c56a63d07c1ed",
   "src/foundation/recipe/types.ts": "6b11c3319d89fc7158795a4dc2bfe661",
-  "src/foundation/recipe/vram.ts": "1b51851b7627036a5b8f6893244dcf8a",
+  "src/foundation/recipe/vram.ts": "7cdf1eda25921556f7991b37ba5d8a16",
   "src/domains/model-catalog/components/ModelInfoBadges.tsx": "1608ced09a1c2236d30ee644f974dda2",
   "src/domains/endpoint/components/ComposePreview.tsx": "ab9fb6ee6b9dfed17c774cbf0f6dd823",
   "src/domains/endpoint/components/FeaturePicker.tsx": "899067c0e1879037378ebaf1fd51fb98",
-  "src/domains/endpoint/components/VRAMCheckBadge.tsx": "e40ec87d25bacbcf4bfce6be2b23abf1",
+  "src/domains/endpoint/components/VRAMCheckBadge.tsx": "8669ff213df55b49535f2134db420d66",
   "src/domains/endpoint/components/VariantPicker.tsx": "06adfa7eca1c9d1b25e97583a12574c3",
   "src/components/ui/switch.tsx": "ed96194f48772c1f9aff21df61013a69",
   "src/foundation/lib/touched-fields.ts": "8bb21e569f8f08090d42f67df8e1e702"

@@ -120,3 +120,13 @@ export function checkVRAM(opts: {
     requiredGb: opts.requiredGb,
   };
 }
+
+// Format a VRAM amount (GB) for display. Live per-GPU memory reported by a
+// cluster is often fractional (e.g. 44.988 GiB × 2 = 89.9765625), which reads
+// as noise in the badge. Round to at most one decimal and drop a trailing
+// ".0" so whole numbers stay clean. Display-only — the sufficiency comparison
+// in checkVRAM still uses the exact value.
+export function formatGb(gb: number): string {
+  const rounded = Math.round(gb * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkVRAM, matchesAcceleratorName } from "./vram";
+import { checkVRAM, formatGb, matchesAcceleratorName } from "./vram";
 
 describe("matchesAcceleratorName", () => {
   it("matches a bare name against a vendor-prefixed product string", () => {
@@ -61,5 +61,22 @@ describe("checkVRAM", () => {
   it("returns unknown without a required VRAM", () => {
     const r = checkVRAM({ acceleratorProduct: "H100", gpuCount: 1 });
     expect(r.kind).toBe("unknown");
+  });
+});
+
+describe("formatGb", () => {
+  it("rounds noisy fractional VRAM to one decimal", () => {
+    expect(formatGb(89.9765625)).toBe("90");
+    expect(formatGb(44.988)).toBe("45");
+    expect(formatGb(23.45)).toBe("23.5");
+  });
+
+  it("keeps whole numbers clean (no trailing .0)", () => {
+    expect(formatGb(140)).toBe("140");
+    expect(formatGb(16)).toBe("16");
+  });
+
+  it("preserves a meaningful single decimal", () => {
+    expect(formatGb(47.5)).toBe("47.5");
   });
 });
