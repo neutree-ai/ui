@@ -64,6 +64,35 @@ describe("transformClusterValues", () => {
         result.spec.config.ssh_config?.auth?.ssh_private_key,
       ).toBeUndefined();
     });
+    it("does not re-encode untouched ssh_private_key in edit mode", () => {
+      const stored = btoa("key-content\n");
+      const cluster = makeCluster({
+        spec: {
+          type: "ssh",
+          config: {
+            ssh_config: {
+              provider: { head_ip: "1.2.3.4" },
+              auth: { ssh_user: "root", ssh_private_key: stored },
+            },
+          },
+        },
+      });
+      const result = transformClusterValues(cluster, true);
+      expect(result.spec.config.ssh_config?.auth?.ssh_private_key).toBe(stored);
+    });
+
+    it("encodes touched ssh_private_key in edit mode", () => {
+      const cluster = makeCluster();
+      const result = transformClusterValues(cluster, true, {
+        spec: {
+          config: { ssh_config: { auth: { ssh_private_key: true } } },
+        },
+      });
+      expect(result.spec.config.ssh_config?.auth?.ssh_private_key).toBe(
+        btoa("key-content\n"),
+      );
+    });
+
     it("preserves touched empty ssh_private_key in edit mode", () => {
       const cluster = makeCluster({
         spec: {
@@ -111,6 +140,32 @@ describe("transformClusterValues", () => {
     it("converts router replicas to number", () => {
       const result = transformClusterValues(makeK8s());
       expect(result.spec.config.kubernetes_config?.router?.replicas).toBe(3);
+    });
+
+    it("does not re-encode untouched kubeconfig in edit mode", () => {
+      const stored = btoa("apiVersion: v1");
+      const cluster = makeCluster({
+        spec: {
+          type: "kubernetes",
+          config: {
+            kubernetes_config: {
+              kubeconfig: stored,
+              router: { replicas: "3" },
+            },
+          },
+        },
+      });
+      const result = transformClusterValues(cluster, true);
+      expect(result.spec.config.kubernetes_config?.kubeconfig).toBe(stored);
+    });
+
+    it("encodes touched kubeconfig in edit mode", () => {
+      const result = transformClusterValues(makeK8s(), true, {
+        spec: { config: { kubernetes_config: { kubeconfig: true } } },
+      });
+      expect(result.spec.config.kubernetes_config?.kubeconfig).toBe(
+        btoa("apiVersion: v1"),
+      );
     });
 
     it("removes unchanged empty kubeconfig in edit mode", () => {
