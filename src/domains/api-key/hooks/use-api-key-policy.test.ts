@@ -3,10 +3,12 @@ import type { ApiKeyLimits } from "@/domains/api-key/types";
 import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
+  compareWorkspaceModelOptions,
   isPositiveIntLimit,
   limitsToForm,
   rateSummary,
   summarizeApiKeyLimits,
+  type WorkspaceModelOption,
 } from "./use-api-key-policy";
 
 describe("isPositiveIntLimit", () => {
@@ -162,5 +164,34 @@ describe("rateSummary", () => {
       allowed_models: ["gpt-4o"],
     });
     expect(parts).toEqual(["10 RPS", "600 RPM", "8 concurrent"]);
+  });
+});
+
+describe("compareWorkspaceModelOptions", () => {
+  const opt = (
+    over: Partial<WorkspaceModelOption> &
+      Pick<WorkspaceModelOption, "model" | "endpointName">,
+  ): WorkspaceModelOption => ({
+    value: `${over.model}:${over.endpointName}`,
+    label: over.model,
+    type: "internal",
+    phase: null,
+    ...over,
+  });
+
+  it("orders Running endpoints before non-running ones", () => {
+    const paused = opt({ model: "a", endpointName: "e1", phase: "Paused" });
+    const running = opt({ model: "z", endpointName: "e2", phase: "Running" });
+    expect([paused, running].sort(compareWorkspaceModelOptions)).toEqual([
+      running,
+      paused,
+    ]);
+  });
+
+  it("falls back to model, endpoint, then type within the same group", () => {
+    const a = opt({ model: "alpha", endpointName: "e2", phase: "Running" });
+    const b = opt({ model: "alpha", endpointName: "e1", phase: "Running" });
+    const c = opt({ model: "beta", endpointName: "e1", phase: "Running" });
+    expect([c, a, b].sort(compareWorkspaceModelOptions)).toEqual([b, a, c]);
   });
 });
