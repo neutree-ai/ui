@@ -67,12 +67,15 @@ export async function chatCompletion(
     stream?: boolean;
     model?: string;
     endpoint?: string;
+    /** Route through an external endpoint (model gateway) instead of internal. */
+    external?: boolean;
     /** Retry while the gateway returns 401 (Kong syncs new API keys async). */
     retryOn401?: boolean;
   },
 ): Promise<GatewayResult> {
   const endpoint = opts?.endpoint ?? env.endpoint;
-  const url = `${env.gateway}/workspace/${env.workspace}/endpoint/${endpoint}/v1/chat/completions`;
+  const kind = opts?.external ? "external-endpoint" : "endpoint";
+  const url = `${env.gateway}/workspace/${env.workspace}/${kind}/${endpoint}/v1/chat/completions`;
   const payload = JSON.stringify({
     model: opts?.model ?? "any",
     stream: opts?.stream ?? false,

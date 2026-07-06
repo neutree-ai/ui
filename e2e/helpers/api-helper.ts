@@ -161,18 +161,28 @@ export class ApiHelper {
 
   // ── Policy (RoleAssignment) CRUD ──
 
-  /** POST /api/v1/role_assignments */
+  /**
+   * POST /api/v1/role_assignments. Pass `workspace` to bind the assignment to a
+   * single workspace (`global:false`) — only effective on the enterprise
+   * workspace-aware `has_permission`; community treats non-global as inert.
+   */
   async createPolicy(
     name: string,
     userId: string,
     roleName: string,
     global = true,
+    workspace?: string,
   ): Promise<void> {
     await this.api("POST", "/role_assignments", {
       api_version: "v1",
       kind: "RoleAssignment",
       metadata: { name },
-      spec: { user_id: userId, role: roleName, global },
+      spec: {
+        user_id: userId,
+        role: roleName,
+        global,
+        ...(workspace ? { workspace } : {}),
+      },
     });
   }
 
@@ -712,6 +722,44 @@ export class ApiHelper {
     options?: { retries?: number; force?: boolean },
   ): Promise<void> {
     await this.softDelete("endpoints", name, options);
+  }
+
+  // ── External Endpoint (model gateway) CRUD ──
+
+  /** POST /api/v1/external_endpoints — a model gateway proxying to an upstream. */
+  async createExternalEndpoint(
+    name: string,
+    upstreamUrl: string,
+    modelMapping: Record<string, string>,
+    options?: {
+      workspace?: string;
+      auth?: { type: string; credential: string };
+    },
+  ): Promise<void> {
+    await this.api("POST", "/external_endpoints", {
+      api_version: "v1",
+      kind: "ExternalEndpoint",
+      metadata: { name, workspace: options?.workspace ?? "default" },
+      spec: {
+        timeout: 60000,
+        upstreams: [
+          {
+            auth: options?.auth ?? { type: "bearer", credential: "none" },
+            upstream: { url: upstreamUrl },
+            endpoint_ref: null,
+            model_mapping: modelMapping,
+          },
+        ],
+      },
+    });
+  }
+
+  /** Soft-delete an external_endpoint by name */
+  async deleteExternalEndpoint(
+    name: string,
+    options?: { retries?: number; force?: boolean },
+  ): Promise<void> {
+    await this.softDelete("external_endpoints", name, options);
   }
 
   // ── Generic soft-delete ──
