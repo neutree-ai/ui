@@ -9,6 +9,20 @@ export function isApiErrorMuted(): boolean {
   return _muteApiErrors;
 }
 
+/** One row returned by the `get_usage_by_dimension` RPC. */
+export interface UsageRow {
+  date: string;
+  api_key_id: string;
+  api_key_name: string;
+  endpoint_type: string | null;
+  endpoint_name: string | null;
+  model_name: string | null;
+  workspace: string;
+  usage: number;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+}
+
 /** Build a `?a=b&c=d` string from a params object, skipping undefined values. */
 function qs(params?: Record<string, string | number | undefined>): string {
   if (!params) return "";
@@ -92,6 +106,103 @@ export class ApiHelper {
     );
   }
 
+  /**
+   * Like `api()` but never throws on a non-2xx response — returns the parsed
+   * status/body so callers can assert on 4xx/5xx (RPC probes, write-denial
+   * checks). `probe` mutes the page error listener for the duration.
+   */
+  async request<T = unknown>(
+    method: string,
+    path: string,
+    body?: unknown,
+    opts?: { probe?: boolean },
+  ): Promise<{ status: number; ok: boolean; body: T }> {
+    await this.ensureOnAppOrigin();
+    if (opts?.probe) _muteApiErrors = true;
+    try {
+      return (await this.page.evaluate(
+        async ({ method, path, body }) => {
+          let token = "";
+          for (const key of Object.keys(localStorage)) {
+            try {
+              const raw = localStorage.getItem(key);
+              if (!raw) continue;
+              const val = JSON.parse(raw);
+              if (val?.access_token) {
+                token = val.access_token;
+                break;
+              }
+            } catch {}
+          }
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          };
+          if (token) headers.Authorization = `Bearer ${token}`;
+          const res = await fetch(`/api/v1${path}`, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined,
+          });
+          const text = await res.text();
+          let parsed: unknown = text;
+          try {
+            parsed = text ? JSON.parse(text) : null;
+          } catch {}
+          return { status: res.status, ok: res.ok, body: parsed };
+        },
+        { method, path, body },
+      )) as { status: number; ok: boolean; body: T };
+    } finally {
+      if (opts?.probe) _muteApiErrors = false;
+    }
+  }
+
+  // ── Model Usage (get_usage_by_dimension RPC) ──
+
+  /**
+   * POST /rpc/get_usage_by_dimension — the read RPC behind the Model Usage
+   * page. `p_workspace`/`p_api_key_id`/`p_endpoint_name` are optional filters;
+   * omit `workspace` to aggregate across all entitled workspaces (the "All
+   * workspaces" case the UI models by sending no `p_workspace`).
+   */
+  async getUsageByDimension(params: {
+    start: string;
+    end: string;
+    workspace?: string;
+    apiKeyId?: string;
+    endpointName?: string;
+  }): Promise<{ status: number; ok: boolean; body: UsageRow[] }> {
+    const values: Record<string, unknown> = {
+      p_start_date: params.start,
+      p_end_date: params.end,
+    };
+    if (params.workspace !== undefined) values.p_workspace = params.workspace;
+    if (params.apiKeyId !== undefined) values.p_api_key_id = params.apiKeyId;
+    if (params.endpointName !== undefined)
+      values.p_endpoint_name = params.endpointName;
+    return this.request<UsageRow[]>(
+      "POST",
+      "/rpc/get_usage_by_dimension",
+      values,
+      { probe: true },
+    );
+  }
+
+  /**
+   * Force the daily-usage aggregation to run now (same call the 5-minute Go
+   * cron makes) so freshly produced usage records surface in the RPC without
+   * waiting for the scheduled job.
+   */
+  async aggregateUsage(): Promise<void> {
+    await this.request(
+      "POST",
+      "/rpc/aggregate_usage_records",
+      { p_older_than: new Date().toISOString() },
+      { probe: true },
+    );
+  }
+
   // ── User CRUD ──
 
   /** POST /api/v1/auth/admin/users → poll for user_profile id */
@@ -147,6 +258,17 @@ export class ApiHelper {
       api_version: "v1",
       kind: "Role",
       metadata: { name },
+      spec: { permissions },
+    });
+  }
+
+  /**
+   * PATCH /api/v1/roles — replace a role's permission set in place. Because
+   * `has_permission` reads roles live, this takes effect immediately (unlike
+   * soft-deleting a role assignment, which lingers until GC).
+   */
+  async updateRole(name: string, permissions: string[]): Promise<void> {
+    await this.api("PATCH", `/roles?metadata->>name=eq.${name}`, {
       spec: { permissions },
     });
   }
@@ -309,51 +431,6 @@ export class ApiHelper {
   /** Generic authenticated GET — for reading resource status in polls. */
   async get<T = unknown>(path: string): Promise<T> {
     return this.api<T>("GET", path);
-  }
-
-  /**
-   * Authenticated request that returns the raw status + parsed body WITHOUT
-   * throwing on non-2xx. Needed to assert permission-denied (403) responses.
-   */
-  async request<T = unknown>(
-    method: string,
-    path: string,
-    body?: unknown,
-  ): Promise<{ status: number; ok: boolean; body: T }> {
-    await this.ensureOnAppOrigin();
-    return this.page.evaluate(
-      async ({ method, path, body }) => {
-        let token = "";
-        for (const key of Object.keys(localStorage)) {
-          try {
-            const val = JSON.parse(localStorage.getItem(key) ?? "");
-            if (val?.access_token) {
-              token = val.access_token;
-              break;
-            }
-          } catch {}
-        }
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        };
-        if (token) headers.Authorization = `Bearer ${token}`;
-        const res = await fetch(`/api/v1${path}`, {
-          method,
-          headers,
-          body: body ? JSON.stringify(body) : undefined,
-        });
-        const text = await res.text();
-        let parsed: unknown = null;
-        try {
-          parsed = text ? JSON.parse(text) : null;
-        } catch {
-          parsed = text;
-        }
-        return { status: res.status, ok: res.ok, body: parsed as never };
-      },
-      { method, path, body },
-    );
   }
 
   // ── AI traces (Access Log) read API ──
