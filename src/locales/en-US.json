@@ -1066,6 +1066,8 @@
 			"rateColumn": "Rate limits",
 			"modelsColumn": "Supported models",
 			"allModels": "All",
+			"showMore": "Show {{count}} more",
+			"showLess": "Show less",
 			"statusColumn": "Status",
 			"statusActive": "Active",
 			"statusDisabled": "Disabled",

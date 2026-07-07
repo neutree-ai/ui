@@ -43,6 +43,89 @@ const endpointPhaseClass = (phase: string | null | undefined) =>
     Deleted: "border-gray-200 bg-gray-50 text-gray-700",
   })[phase ?? ""] ?? "border-muted bg-muted text-muted-foreground";
 
+// Number of allowed models rendered before the cell collapses the rest behind
+// a "show N more" toggle — keeps rows short when a key allows many models.
+const MODELS_COLLAPSED = 2;
+
+// Allowed-models table cell: renders each model (name + endpoint/type/phase) on
+// its own block, but only the first MODELS_COLLAPSED until expanded in place.
+function ModelsCell({
+  models,
+  modelMap,
+  scopedWorkspace,
+}: {
+  models: string[];
+  modelMap: ReturnType<typeof useWorkspaceModelMap>;
+  scopedWorkspace: string | undefined;
+}) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? models : models.slice(0, MODELS_COLLAPSED);
+  const hiddenCount = models.length - MODELS_COLLAPSED;
+
+  return (
+    <div className="flex flex-col gap-2">
+      {visible.map((m) => {
+        const info = modelMap.get(m);
+        return (
+          <div key={m} className="flex min-w-0 flex-col gap-1">
+            <span className="truncate text-sm font-semibold" title={m}>
+              {m}
+            </span>
+            {scopedWorkspace && info && info.endpoints.length > 0 ? (
+              <div className="flex flex-col gap-1">
+                {info.endpoints.map((endpoint) => (
+                  <div
+                    key={`${endpoint.type}:${endpoint.name}`}
+                    className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+                  >
+                    <span className="truncate max-w-[140px]">
+                      {endpoint.name}
+                    </span>
+                    <Badge variant="outline" className="h-5 font-normal">
+                      {t(`api_keys.models.${endpoint.type}`)}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "h-5 font-normal",
+                        endpointPhaseClass(endpoint.phase),
+                      )}
+                    >
+                      {endpoint.phase
+                        ? t(`status.phases.endpoint.${endpoint.phase}`)
+                        : t("api_keys.models.unknown")}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : scopedWorkspace ? (
+              <span className="text-xs text-muted-foreground">
+                {t("api_keys.modelAccess.unavailable")}
+              </span>
+            ) : null}
+          </div>
+        );
+      })}
+      {models.length > MODELS_COLLAPSED && (
+        <button
+          type="button"
+          onClick={(e) => {
+            // Don't trigger row navigation when toggling the cell.
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          className="self-start text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          {expanded
+            ? t("api_keys.limits.showLess")
+            : t("api_keys.limits.showMore", { count: hiddenCount })}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export const ApiKeysList = () => {
   const { t } = useTranslation();
   const { show } = useNavigation();
@@ -168,53 +251,12 @@ export const ApiKeysList = () => {
             </span>
           );
         }
-        // Each allowed model on its own line: model name first, endpoint/type
-        // and running phase below so duplicate model names stay distinguishable.
         return (
-          <div className="flex flex-col gap-2">
-            {models.map((m) => {
-              const info = modelMap.get(m);
-              return (
-                <div key={m} className="flex min-w-0 flex-col gap-1">
-                  <span className="truncate text-sm font-semibold" title={m}>
-                    {m}
-                  </span>
-                  {scopedWorkspace && info && info.endpoints.length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      {info.endpoints.map((endpoint) => (
-                        <div
-                          key={`${endpoint.type}:${endpoint.name}`}
-                          className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
-                        >
-                          <span className="truncate max-w-[140px]">
-                            {endpoint.name}
-                          </span>
-                          <Badge variant="outline" className="h-5 font-normal">
-                            {t(`api_keys.models.${endpoint.type}`)}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "h-5 font-normal",
-                              endpointPhaseClass(endpoint.phase),
-                            )}
-                          >
-                            {endpoint.phase
-                              ? t(`status.phases.endpoint.${endpoint.phase}`)
-                              : t("api_keys.models.unknown")}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : scopedWorkspace ? (
-                    <span className="text-xs text-muted-foreground">
-                      {t("api_keys.modelAccess.unavailable")}
-                    </span>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
+          <ModelsCell
+            models={models}
+            modelMap={modelMap}
+            scopedWorkspace={scopedWorkspace}
+          />
         );
       }}
     />
