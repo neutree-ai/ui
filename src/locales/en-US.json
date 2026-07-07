@@ -1458,7 +1458,7 @@
 		"empty": "No access logs in the selected window.",
 		"refresh": "Refresh",
 		"stats": {
-			"title": "Requests (last 7 days)",
+			"title": "Requests",
 			"requests": "Requests",
 			"totalRequests": "{{total}} total"
 		},

@@ -132,12 +132,19 @@ export async function fetchAITraceKeyStats(
 }
 
 // fetchAITraceStats returns per-day request counts for the activity chart.
+// An explicit [start, end] window (RFC3339) makes the chart follow the list's
+// date-range filter; `days` is the trailing-window fallback. The backend clamps
+// the span to 90 day buckets.
 export async function fetchAITraceStats(
   workspace: string,
-  days?: number,
+  opts?: { start?: string; end?: string; days?: number },
   signal?: AbortSignal,
 ): Promise<AITraceStatsResponse> {
-  const qs = days != null ? `?days=${days}` : "";
+  const params = new URLSearchParams();
+  if (opts?.start) params.set("start", opts.start);
+  if (opts?.end) params.set("end", opts.end);
+  if (opts?.days != null) params.set("days", String(opts.days));
+  const qs = params.toString() ? `?${params.toString()}` : "";
   const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/stats${qs}`;
   return apiGet<AITraceStatsResponse>(url, signal);
 }

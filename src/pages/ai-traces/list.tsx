@@ -162,7 +162,7 @@ export const AITracesList = () => {
         </Button>
       }
     >
-      <TraceStatsChart workspace={workspace} />
+      <TraceStatsChart workspace={workspace} range={range} />
 
       <div className="flex flex-wrap gap-2 mb-4">
         <DateRangePicker value={range} onChange={setRange} />
