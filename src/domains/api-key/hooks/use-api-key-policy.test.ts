@@ -148,6 +148,13 @@ describe("summarizeApiKeyLimits", () => {
     expect(parts).toContain("models: gpt-4o, claude");
   });
 
+  it("caps the inline model list at 3 with a +N suffix", () => {
+    const parts = summarizeApiKeyLimits({
+      allowed_models: ["a", "b", "c", "d", "e"],
+    });
+    expect(parts).toContain("models: a, b, c +2");
+  });
+
   it("is empty for no limits", () => {
     expect(summarizeApiKeyLimits(null)).toEqual([]);
     expect(summarizeApiKeyLimits({})).toEqual([]);
