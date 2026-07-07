@@ -23,23 +23,11 @@ import {
   summarizeApiKeyLimits,
   useApiKeyDisable,
   useApiKeyLimits,
-  useWorkspaceModelMap,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { cn } from "@/foundation/lib/utils";
 
 const fmt = (n: number) => Number(n).toLocaleString();
-const endpointPhaseClass = (phase: string | null | undefined) =>
-  ({
-    Running: "border-green-200 bg-green-50 text-green-700",
-    Failed: "border-red-200 bg-red-50 text-red-700",
-    Pending: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    Deploying: "border-blue-200 bg-blue-50 text-blue-700",
-    ModelDownloading: "border-cyan-200 bg-cyan-50 text-cyan-700",
-    Deleting: "border-orange-200 bg-orange-50 text-orange-700",
-    Paused: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    Deleted: "border-gray-200 bg-gray-50 text-gray-700",
-  })[phase ?? ""] ?? "border-muted bg-muted text-muted-foreground";
 
 // Editable Limits panel on the API key detail page: shows the key's current
 // limits (a single object at spec.limits), its token-quota consumption
@@ -55,7 +43,6 @@ export const ApiKeyLimitsCard = ({
   const { t } = useTranslation();
   const { load, save } = useApiKeyLimits();
   const { disable, enable } = useApiKeyDisable();
-  const modelMap = useWorkspaceModelMap(workspace);
   const [limits, setLimits] = useState<ApiKeyLimits>({});
   const form = useForm<ApiKeyPolicyFormValues>({
     mode: "all",
@@ -196,77 +183,6 @@ export const ApiKeyLimitsCard = ({
         <p className="text-sm text-muted-foreground">
           {summary.length > 0 ? summary.join(" · ") : t("api_keys.limits.none")}
         </p>
-
-        {/* Model access (read): each allowed model with endpoint, source type,
-            and serving phase. */}
-        <div className="space-y-2">
-          <div className="text-sm font-medium">
-            {t("api_keys.modelAccess.title")}
-          </div>
-          {(limits.allowed_models ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t("api_keys.modelAccess.all")}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {(limits.allowed_models ?? []).map((m) => {
-                const info = modelMap.get(m);
-                return (
-                  <div
-                    key={m}
-                    className="flex min-h-[58px] items-center gap-2 rounded-md border px-2.5 py-2"
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="truncate text-sm font-semibold" title={m}>
-                        {m}
-                      </div>
-                      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                        {info && info.endpoints.length > 0
-                          ? info.endpoints.map((e) => (
-                              <div
-                                key={`${e.type}:${e.name}`}
-                                className="flex min-w-0 flex-wrap items-center gap-1.5"
-                              >
-                                <span className="truncate max-w-[220px]">
-                                  {t(
-                                    e.type === "external"
-                                      ? "api_keys.modelAccess.endpointLabel"
-                                      : "api_keys.modelAccess.instanceLabel",
-                                    { name: e.name },
-                                  )}
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className="h-5 font-normal"
-                                >
-                                  {t(`api_keys.models.${e.type}`)}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    "h-5 font-normal",
-                                    endpointPhaseClass(e.phase),
-                                  )}
-                                >
-                                  {e.phase
-                                    ? t(`status.phases.endpoint.${e.phase}`)
-                                    : t("api_keys.models.unknown")}
-                                </Badge>
-                              </div>
-                            ))
-                          : !info && (
-                              <span>
-                                {t("api_keys.modelAccess.unavailable")}
-                              </span>
-                            )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-3">
