@@ -95,6 +95,7 @@ type DeviceResourcePool = {
 
 export type DeviceResource = {
   uuid: string;
+  order?: number | null;
   product: string;
   health: boolean;
   allocatable?: DeviceResourcePool | null;
@@ -126,6 +127,7 @@ export type ClusterResourceInfo = ResourceStatus & {
 
 type DeviceAllocation = {
   uuid: string;
+  order?: number | null;
   product: string;
   memory_mib: number;
   core_units: number;

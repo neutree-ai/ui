@@ -19,6 +19,7 @@ const translations: Record<string, string> = {
   "clusters.fields.gpuNumber": "GPU",
   "clusters.fields.gpuType": "GPU Type",
   "clusters.fields.memoryUsage": "Memory Usage",
+  "clusters.actions.copyUuid": "Copy UUID",
   "clusters.messages.copyUuidFailed": "Failed to copy GPU UUID",
   "clusters.messages.copyUuidSuccess": "GPU UUID copied",
   "clusters.options.allocated": "Allocated",
@@ -118,6 +119,38 @@ const resourceInfo: ClusterResourceInfo = {
 };
 
 describe("EndpointClusterGpuResourcesPanel", () => {
+  it("shows node GPU device cards when virtualization is disabled but devices exist", () => {
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        t={t}
+      />,
+    );
+
+    expect(screen.getByTestId("endpoint-node-gpu-card-grid")).toBeTruthy();
+    const clusterSummary = within(
+      screen.getByTestId("endpoint-cluster-resource-summary"),
+    );
+    expect(clusterSummary.getByText("Memory Usage")).toBeTruthy();
+    expect(clusterSummary.getByText("Core Usage")).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "GPU 1 Copy UUID",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "GPU 2 Copy UUID",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 1"),
+    ).toBeTruthy();
+  });
+
   it("counts only fully free devices as usable when no request context exists", () => {
     render(
       <EndpointClusterGpuResourcesPanel
@@ -134,6 +167,60 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toBeTruthy();
     expect(screen.getAllByLabelText("Usable")).toHaveLength(1);
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
+  });
+
+  it("falls back to compact node summaries when devices are missing", () => {
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={{
+          ...resourceInfo,
+          node_resources: {
+            "node-a": {
+              allocatable: {
+                cpu: 32,
+                memory: 128,
+                accelerator_groups: {
+                  nvidia_gpu: {
+                    quantity: 2,
+                    product_groups: null,
+                    products: {
+                      "Tesla-T4": {
+                        quantity: 2,
+                      },
+                    },
+                  },
+                },
+              },
+              available: {
+                cpu: 24,
+                memory: 96,
+                accelerator_groups: {
+                  nvidia_gpu: {
+                    quantity: 1,
+                    product_groups: null,
+                    products: {
+                      "Tesla-T4": {
+                        quantity: 1,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={true}
+        t={t}
+      />,
+    );
+
+    expect(screen.queryByTestId("endpoint-node-gpu-card-grid")).toBeNull();
+    const compactResources = within(
+      screen.getByTestId("endpoint-compact-node-resources"),
+    );
+    expect(compactResources.getByText("Card Count")).toBeTruthy();
   });
 
   it("shows resource units in card titles instead of appending them to every value", () => {

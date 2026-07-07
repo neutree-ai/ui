@@ -118,10 +118,13 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.getByText("GPU 1")).toBeTruthy();
     expect(
       screen.getByText("GPU 1").closest("button")?.getAttribute("title"),
-    ).toBe("GPU-11111111-2222-3333-4444-555555555555");
+    ).toBe("Copy UUID");
+    expect(
+      screen.queryByTitle("GPU-11111111-2222-3333-4444-555555555555"),
+    ).toBeNull();
     fireEvent.click(
       screen.getByRole("button", {
-        name: "GPU 1, GPU UUID GPU-11111111-2222-3333-4444-555555555555",
+        name: "GPU 1 Copy UUID",
       }),
     );
     expect(copyMock).toHaveBeenCalledWith(
@@ -155,9 +158,7 @@ describe("GpuDeviceResourcesView", () => {
     );
 
     expect(
-      screen
-        .getAllByRole("columnheader")
-        .map((header) => header.textContent),
+      screen.getAllByRole("columnheader").map((header) => header.textContent),
     ).toEqual([
       "GPU",
       "Status",
@@ -247,18 +248,21 @@ describe("GpuDeviceResourcesView", () => {
     );
 
     const gpuButtons = screen.getAllByRole("button", {
-      name: /GPU \d, GPU UUID/,
+      name: /GPU \d Copy UUID/,
     });
     expect(gpuButtons.map((button) => button.getAttribute("title"))).toEqual([
-      "GPU-aaaaaaaa-2222-3333-4444-555555555555",
-      "GPU-bbbbbbbb-2222-3333-4444-555555555555",
-      "GPU-cccccccc-2222-3333-4444-555555555555",
+      "Copy UUID",
+      "Copy UUID",
+      "Copy UUID",
     ]);
     expect(gpuButtons.map((button) => button.textContent)).toEqual([
       "GPU 1Copy UUID",
       "GPU 2Copy UUID",
       "GPU 1Copy UUID",
     ]);
+    expect(
+      screen.queryByTitle("GPU-aaaaaaaa-2222-3333-4444-555555555555"),
+    ).toBeNull();
   });
 
   it("renders compact cards without table or filters", () => {
@@ -288,7 +292,7 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.getByText("Tesla-T4")).toBeTruthy();
     fireEvent.click(
       screen.getByRole("button", {
-        name: "GPU 1, GPU UUID GPU-11111111-2222-3333-4444-555555555555",
+        name: "GPU 1 Copy UUID",
       }),
     );
     expect(copyMock).toHaveBeenCalledWith(

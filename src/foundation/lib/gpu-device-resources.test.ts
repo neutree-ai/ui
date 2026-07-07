@@ -770,7 +770,72 @@ describe("gpu device resource helpers", () => {
     ]);
   });
 
-  it("numbers GPU devices within each node by UUID order", () => {
+  it("orders GPU devices by physical order within each node", () => {
+    const rows = buildGpuDeviceResourceRows({
+      "node-a": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-node-a-bbbbbbbb",
+            order: 1,
+            product: "Tesla-T4",
+            health: true,
+            allocatable: { memory_mib: 15360, core_units: 100 },
+            available: { memory_mib: 15360, core_units: 100 },
+          },
+          {
+            uuid: "GPU-node-a-aaaaaaaa",
+            order: 0,
+            product: "Tesla-T4",
+            health: true,
+            allocatable: { memory_mib: 15360, core_units: 100 },
+            available: { memory_mib: 15360, core_units: 100 },
+          },
+        ],
+      },
+      "node-b": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-node-b-cccccccc",
+            order: 0,
+            product: "Tesla-T4",
+            health: true,
+            allocatable: { memory_mib: 15360, core_units: 100 },
+            available: { memory_mib: 15360, core_units: 100 },
+          },
+        ],
+      },
+    });
+
+    expect(
+      rows.map((row) => ({
+        gpuNumber: row.gpuNumber,
+        nodeName: row.nodeName,
+        uuid: row.uuid,
+      })),
+    ).toEqual([
+      {
+        gpuNumber: 0,
+        nodeName: "node-a",
+        uuid: "GPU-node-a-aaaaaaaa",
+      },
+      {
+        gpuNumber: 1,
+        nodeName: "node-a",
+        uuid: "GPU-node-a-bbbbbbbb",
+      },
+      {
+        gpuNumber: 0,
+        nodeName: "node-b",
+        uuid: "GPU-node-b-cccccccc",
+      },
+    ]);
+  });
+
+  it("falls back to UUID order when GPU device order is missing", () => {
     const rows = buildGpuDeviceResourceRows({
       "node-a": {
         allocatable: null,
@@ -785,19 +850,6 @@ describe("gpu device resource helpers", () => {
           },
           {
             uuid: "GPU-node-a-aaaaaaaa",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 15360, core_units: 100 },
-            available: { memory_mib: 15360, core_units: 100 },
-          },
-        ],
-      },
-      "node-b": {
-        allocatable: null,
-        available: null,
-        devices: [
-          {
-            uuid: "GPU-node-b-cccccccc",
             product: "Tesla-T4",
             health: true,
             allocatable: { memory_mib: 15360, core_units: 100 },
@@ -823,11 +875,6 @@ describe("gpu device resource helpers", () => {
         gpuNumber: 2,
         nodeName: "node-a",
         uuid: "GPU-node-a-bbbbbbbb",
-      },
-      {
-        gpuNumber: 1,
-        nodeName: "node-b",
-        uuid: "GPU-node-b-cccccccc",
       },
     ]);
   });
