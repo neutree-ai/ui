@@ -309,7 +309,7 @@ export const ApiKeysList = () => {
       }}
     >
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t("api_keys.create")}</DialogTitle>
             <DialogDescription>
