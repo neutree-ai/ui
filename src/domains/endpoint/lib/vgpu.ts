@@ -52,7 +52,7 @@ export function normalizeVgpuMemoryGiBInput(
     rawMaxMiBValue !== undefined &&
     displayMaxGiB !== null &&
     requestedMiB > rawMaxMiBValue &&
-    memoryGiB === displayMaxGiB
+    memoryGiB <= displayMaxGiB
   ) {
     return rawMaxMiBValue;
   }

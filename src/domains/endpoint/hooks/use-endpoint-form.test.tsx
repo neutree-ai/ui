@@ -1285,6 +1285,52 @@ describe("useEndpointForm", () => {
       });
     });
 
+    it("clamps values within the displayed vGPU memory max to raw capacity", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [roundedVramKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-rounded-vram");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 100,
+            },
+          },
+        });
+      });
+
+      const input = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "44.99" } });
+
+      await waitFor(() => {
+        expect(input.value).toBe("45");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(46068);
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
     it("renders percent-backed virtual memory as GiB and edits it as MiB", async () => {
       setupMocks(
         [catalogA, catalogB],
