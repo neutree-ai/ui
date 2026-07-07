@@ -313,7 +313,7 @@
   "src/domains/api-key/components/ApiKeyPerformanceCard.tsx": "986c799c7c0ca0993eb7c99ae3880a12",
   "src/domains/api-key/components/ApiKeyPolicyFields.tsx": "fbdc0433ed23cc17ca7791758485a1ac",
   "src/domains/api-key/components/ApiKeyRankingOverview.tsx": "195d9f1d66efb631da3a763c2ad8da61",
-  "src/domains/api-key/components/ModelMultiSelect.tsx": "c84e82a55a2b97bdf55cee608e388376",
+  "src/domains/api-key/components/ModelMultiSelect.tsx": "64b3eef5dff936a484b316381c5bb290",
   "src/domains/api-key/hooks/use-api-key-policy.ts": "1249078e705dda965c81832e6ef4b964",
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
   "src/pages/model-catalogs/edit.tsx": "c82acd5263236b26ffe12d82b17d807a",

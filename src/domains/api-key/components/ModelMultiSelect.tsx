@@ -162,33 +162,44 @@ export const ModelMultiSelect = ({
           {value.map((v) => {
             const option = optionFor(v);
             return (
-              <Badge
+              <div
                 key={v}
-                variant="secondary"
-                className="max-w-full gap-1 pr-1"
+                className="flex max-w-full items-center gap-1.5 rounded-md border bg-muted/40 py-1 pl-2 pr-1"
+                title={option ? `${option.model} · ${option.endpointName}` : v}
               >
-                <span
-                  className="break-all whitespace-normal"
-                  title={
-                    option ? `${option.model} · ${option.endpointName}` : v
-                  }
-                >
-                  {option ? `${option.model} · ${option.endpointName}` : v}
-                </span>
-                {option && (
-                  <span className="text-muted-foreground">
-                    {typeLabel(option.type)}
-                  </span>
+                {option ? (
+                  <>
+                    <span className="truncate max-w-[160px] text-xs font-medium">
+                      {option.model}
+                    </span>
+                    <span className="truncate max-w-[120px] text-xs text-muted-foreground">
+                      {option.endpointName}
+                    </span>
+                    <Badge variant="outline" className="h-5 font-normal">
+                      {typeLabel(option.type)}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "h-5 font-normal",
+                        phaseClass(option.phase),
+                      )}
+                    >
+                      {phaseLabel(option.phase)}
+                    </Badge>
+                  </>
+                ) : (
+                  <span className="break-all text-xs font-medium">{v}</span>
                 )}
                 <button
                   type="button"
                   onClick={() => toggle(v)}
-                  className="rounded-sm hover:bg-muted-foreground/20"
+                  className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground"
                   aria-label={t("buttons.delete")}
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </Badge>
+              </div>
             );
           })}
         </div>
