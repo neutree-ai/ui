@@ -545,14 +545,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       return;
     }
 
+    const memoryMiB = normalizeVgpuMemoryGiBInput(
+      memoryGiB,
+      selectedMemoryTotalMiB,
+    );
+    if (memoryMiB === undefined) return;
+
     form.setValue(
       "spec.resources.accelerator.virtualization",
       {
         ...(coreOnlyVirtualization ?? {}),
-        memory_mib: normalizeVgpuMemoryGiBInput(
-          memoryGiB,
-          selectedMemoryTotalMiB,
-        ),
+        memory_mib: memoryMiB,
       },
       userSetValueOptions,
     );

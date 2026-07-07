@@ -137,4 +137,10 @@ describe("endpoint vgpu helpers", () => {
     expect(normalizeVgpuMemoryGiBInput(44.99, 46068)).toBe(46068);
     expect(normalizeVgpuMemoryGiBInput(46, 46068)).toBe(47104);
   });
+
+  it("rejects non-finite vGPU memory inputs", () => {
+    expect(normalizeVgpuMemoryGiBInput(Number.POSITIVE_INFINITY, 46068)).toBe(
+      undefined,
+    );
+  });
 });

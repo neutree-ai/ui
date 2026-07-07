@@ -43,7 +43,9 @@ export function formatVgpuMemoryGiBInputValue(
 export function normalizeVgpuMemoryGiBInput(
   memoryGiB: number,
   rawMaxMiB?: number | null,
-): number {
+): number | undefined {
+  if (!Number.isFinite(memoryGiB)) return undefined;
+
   const requestedMiB = Math.ceil(memoryGiB * MIB_PER_GIB);
   const rawMaxMiBValue = toOptionalNumber(rawMaxMiB);
   const displayMaxGiB = getRoundedVgpuMemoryGiBValue(rawMaxMiBValue);
