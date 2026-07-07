@@ -1,42 +1,35 @@
 import { useMemo, useState } from "react";
 
-// Endpoint monitor panel types
-export type EndpointMonitorPanelType = "endpoint" | "vllm" | "sglang" | "vgpu";
+type EndpointMonitorPanelType =
+  | "overview"
+  | "latency"
+  | "throughput"
+  | "queue"
+  | "cache";
 
 interface UseEndpointMonitorPanelsProps {
-  clusterType?: string;
   engineType?: string;
-  hasVgpuResources?: boolean;
 }
 
 /**
  * Hook for managing endpoint monitoring panels
  */
 export const useEndpointMonitorPanels = ({
-  clusterType,
   engineType,
-  hasVgpuResources = false,
 }: UseEndpointMonitorPanelsProps) => {
   const panels = useMemo(() => {
-    const list: EndpointMonitorPanelType[] = [];
-    // Rule 0: Kubernetes endpoints with vGPU resources expose the accelerator virtualization panel.
-    if (clusterType === "kubernetes" && hasVgpuResources) {
-      list.push("vgpu");
+    if (engineType !== "vllm" && engineType !== "sglang") {
+      return [];
     }
-    // Rule 1: If engine is vllm, always have vllm related panels (default for SSH)
-    if (engineType === "vllm") {
-      list.push("vllm");
-    }
-    // Rule 2: If engine is sglang, always have sglang related panel
-    if (engineType === "sglang") {
-      list.push("sglang");
-    }
-    // Rule 3: If cluster is ssh, always have ray related endpoint panel
-    if (clusterType === "ssh") {
-      list.push("endpoint");
-    }
-    return list;
-  }, [clusterType, engineType, hasVgpuResources]);
+
+    return [
+      "overview",
+      "latency",
+      "throughput",
+      "queue",
+      "cache",
+    ] satisfies EndpointMonitorPanelType[];
+  }, [engineType]);
 
   const [userSelectedPanel, setUserSelectedPanel] =
     useState<EndpointMonitorPanelType | null>(null);

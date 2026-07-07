@@ -11,6 +11,7 @@ type EndpointReplicaResourceRow = {
   replicaId: string;
   nodeId: string;
   uuid: string;
+  order: number | null;
   product: string;
   memoryMiB: number;
   coreUnits: number;
@@ -25,19 +26,48 @@ type EndpointReplicaResourceGroup = {
   devices: EndpointReplicaResourceRow[];
 };
 
-type EndpointVgpuDashboardContext = {
-  cluster: string;
-  workspace: string;
-  endpoint: string;
-  namespace: string;
+type ReplicaDeviceAllocation = NonNullable<
+  NonNullable<EndpointResourceStatus["replicas"]>[number]["devices"]
+>[number];
+
+const getDeviceOrder = (order: number | null | undefined) =>
+  typeof order === "number" && Number.isFinite(order) ? order : null;
+
+const compareDevicesByOrderThenUuid = (
+  first: Pick<ReplicaDeviceAllocation, "order" | "uuid">,
+  second: Pick<ReplicaDeviceAllocation, "order" | "uuid">,
+) => {
+  const firstOrder = getDeviceOrder(first.order);
+  const secondOrder = getDeviceOrder(second.order);
+
+  if (firstOrder != null && secondOrder != null) {
+    return firstOrder - secondOrder || first.uuid.localeCompare(second.uuid);
+  }
+
+  if (firstOrder != null) {
+    return -1;
+  }
+
+  if (secondOrder != null) {
+    return 1;
+  }
+
+  return first.uuid.localeCompare(second.uuid);
 };
 
-type EndpointVgpuDashboardContextInput = {
-  resourceStatus: EndpointResourceStatus | null | undefined;
-  cluster: string;
-  workspace: string;
-  endpoint: string;
-};
+const toReplicaResourceRow = (
+  replica: NonNullable<EndpointResourceStatus["replicas"]>[number],
+  device: ReplicaDeviceAllocation,
+): EndpointReplicaResourceRow => ({
+  instanceId: replica.instance_id,
+  replicaId: replica.replica_id ?? "",
+  nodeId: device.node_id || replica.node_id || "",
+  uuid: device.uuid,
+  order: getDeviceOrder(device.order),
+  product: device.product,
+  memoryMiB: device.memory_mib,
+  coreUnits: device.core_units,
+});
 
 export function getEndpointResourceSummaryRows(
   resourceStatus: EndpointResourceStatus | null | undefined,
@@ -55,15 +85,9 @@ export function getEndpointReplicaResourceRows(
   resourceStatus: EndpointResourceStatus | null | undefined,
 ): EndpointReplicaResourceRow[] {
   return (resourceStatus?.replicas ?? []).flatMap((replica) =>
-    (replica.devices ?? []).map((device) => ({
-      instanceId: replica.instance_id,
-      replicaId: replica.replica_id ?? "",
-      nodeId: device.node_id || replica.node_id || "",
-      uuid: device.uuid,
-      product: device.product,
-      memoryMiB: device.memory_mib,
-      coreUnits: device.core_units,
-    })),
+    [...(replica.devices ?? [])]
+      .sort(compareDevicesByOrderThenUuid)
+      .map((device) => toReplicaResourceRow(replica, device)),
   );
 }
 
@@ -72,15 +96,9 @@ export function getEndpointReplicaResourceGroups(
 ): EndpointReplicaResourceGroup[] {
   return (resourceStatus?.replicas ?? [])
     .map((replica) => {
-      const devices = (replica.devices ?? []).map((device) => ({
-        instanceId: replica.instance_id,
-        replicaId: replica.replica_id ?? "",
-        nodeId: device.node_id || replica.node_id || "",
-        uuid: device.uuid,
-        product: device.product,
-        memoryMiB: device.memory_mib,
-        coreUnits: device.core_units,
-      }));
+      const devices = [...(replica.devices ?? [])]
+        .sort(compareDevicesByOrderThenUuid)
+        .map((device) => toReplicaResourceRow(replica, device));
 
       return {
         instanceId: replica.instance_id,
@@ -92,21 +110,4 @@ export function getEndpointReplicaResourceGroups(
       };
     })
     .filter((group) => group.deviceCount > 0);
-}
-
-export function getEndpointVgpuDashboardContext({
-  resourceStatus,
-  cluster,
-  workspace,
-  endpoint,
-}: EndpointVgpuDashboardContextInput): EndpointVgpuDashboardContext | null {
-  const rows = getEndpointReplicaResourceRows(resourceStatus);
-  if (rows.length === 0) return null;
-
-  return {
-    cluster,
-    workspace,
-    endpoint,
-    namespace: ".*",
-  };
 }

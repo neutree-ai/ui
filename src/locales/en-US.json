@@ -511,11 +511,7 @@
 			"acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
 		},
 		"monitor": {
-			"rayMetrics": "Ray Metrics",
-			"routerMetrics": "Router Metrics",
-			"nodeMetrics": "Node Metrics",
-			"gpuMetrics": "Accelerator Metrics",
-			"vgpuMetrics": "Virtual Accelerator Metrics"
+			"overviewMetrics": "Cluster Overview"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
@@ -697,7 +693,11 @@
 			"modelCatalog": "Model Catalog (Template)",
 			"memoryGb": "Memory (GB)",
 			"acceleratorCount": "Accelerator Count",
+			"allocatedCard": "allocated card",
+			"allocatedCards": "allocated cards",
 			"allocationMode": "Allocation Mode",
+			"card": "card",
+			"cards": "cards",
 			"fullGpu": "Full Card",
 			"vgpu": "Virtual Card",
 			"physicalGpuCount": "Card Count",
@@ -723,9 +723,9 @@
 			"vgpuMemoryMode": "VRAM Mode",
 			"vgpuMemory": "VRAM",
 			"vgpuMemoryPercent": "VRAM Percent",
-			"vgpuCoreLimit": "Core Limit",
-			"vgpuCorePercent": "Core Percent",
-			"vgpuCoreUnits": "Core Units",
+			"vgpuCoreLimit": "Core",
+			"vgpuCorePercent": "Core",
+			"vgpuCoreUnits": "Core",
 			"singleCardMemory": "VRAM",
 			"requestedVgpuMemory": "Requested VRAM",
 			"effectiveVgpuMemory": "Effective VRAM",
@@ -733,6 +733,8 @@
 			"vgpuMemoryCapacity": "VRAM",
 			"vgpuCoreCapacity": "Core",
 			"matchingGpuCards": "Matching Cards",
+			"replicaUnit": "replica",
+			"replicaUnits": "replicas",
 			"instance": "Instance",
 			"nodeCount": "Node Count"
 		},
@@ -817,7 +819,6 @@
 			"cardsAvailable": "{{count}} cards available",
 			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
 			"vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
-			"vgpuMonitorContextFailed": "Failed to load virtual accelerator monitor context",
 			"noRunningVgpuPods": "No running virtual accelerator pods",
 			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared"
 		},
@@ -849,14 +850,16 @@
 			"defaultVariant": "Default variant"
 		},
 		"monitor": {
-			"endpointMetrics": "Ray Metrics",
-			"vllmMetrics": "vLLM Engine Metrics",
-			"sglangMetrics": "SGLang Engine Metrics",
-			"vgpuMetrics": "Virtual Accelerator Metrics",
-			"endpointDescription": "Ray Serve deployment metrics including requests, latency, and replica status",
-			"vgpuDescription": "Virtual accelerator allocation and runtime metrics scoped to this endpoint",
-			"vllmDescription": "vLLM engine specific metrics including model performance and resource utilization",
-			"sglangDescription": "SGLang engine specific metrics including TTFT, cache hit rate, queue depth, and throughput"
+			"overviewMetrics": "Overview",
+			"latencyMetrics": "Latency",
+			"throughputMetrics": "Throughput",
+			"queueMetrics": "Queue",
+			"cacheMetrics": "Cache",
+			"overviewDescription": "Consumed GPUs, VRAM used, CPU cores, memory working set, GPU, VRAM, CPU, and memory trends, plus GPU allocation details",
+			"latencyDescription": "E2E, TTFT, TPOT, and ITL latency metrics",
+			"throughputDescription": "Prompt, generation, and total token throughput plus request length distributions",
+			"queueDescription": "Running, swapped, waiting, preemptions, and queue time metrics",
+			"cacheDescription": "KV token capacity, KV usage, and cache hit metrics"
 		},
 		"logs": {
 			"application": "Application",

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { NodeResourcesTable } from "./NodeResourcesTable";
 
@@ -122,13 +122,25 @@ describe("NodeResourcesTable", () => {
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
     expect(
       screen.getByRole("button", {
-        name: "clusters.fields.gpuNumber 1, clusters.fields.deviceUuid GPU-1",
+        name: "clusters.fields.gpuNumber 1 clusters.actions.copyUuid",
       }),
     ).toBeTruthy();
+    expect(screen.queryByTitle("GPU-1")).toBeNull();
     expect(screen.queryByText("clusters.options.healthy")).toBeNull();
     expect(screen.queryByText("clusters.options.unhealthy")).toBeNull();
     expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
     expect(screen.getByText("50 / 100")).toBeTruthy();
+    expect(
+      within(screen.getAllByRole("table")[1])
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "clusters.fields.gpuNumber",
+      "common.fields.status",
+      "common.fields.acceleratorProduct",
+      "clusters.fields.memoryUsage",
+      "clusters.fields.coreUsage",
+    ]);
     expect(screen.queryByText(/slot/i)).toBeNull();
     expect(screen.queryByText("GPU-2")).toBeNull();
   });

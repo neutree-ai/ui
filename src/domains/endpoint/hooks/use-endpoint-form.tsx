@@ -87,6 +87,8 @@ type AcceleratorVirtualization = NonNullable<
 >["virtualization"];
 type GpuAllocationMode = "full" | "vgpu";
 
+const FULL_CARD_CORE_UNITS = 100;
+
 const hasVgpuVirtualizationValues = (
   virtualization: AcceleratorVirtualization | undefined,
 ) =>
@@ -414,6 +416,19 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     rawAvailableVgpuMemoryMiB + reusableVgpuMemoryMiB;
   const availableVgpuCoreUnits =
     rawAvailableVgpuCoreUnits + reusableVgpuCoreUnits;
+  const fullGpuCoreUnitsPerCard =
+    selectedAccelerator?.type && selectedAccelerator?.product
+      ? FULL_CARD_CORE_UNITS
+      : 0;
+  const currentRequestCoreUnitsPerCard = isVgpuAllocationMode
+    ? vgpuCoreUnitsPerCard
+    : fullGpuCoreUnitsPerCard;
+  const currentRequestCoreUnits = isVgpuAllocationMode
+    ? requestedVgpuCoreUnits
+    : requestedFullGpuCards * fullGpuCoreUnitsPerCard;
+  const currentRequestAvailableCoreUnits = isVgpuAllocationMode
+    ? availableVgpuCoreUnits
+    : fullGpuCardCapacity * fullGpuCoreUnitsPerCard;
   const totalVirtualCardCapacity =
     vgpuCardCapacity.totalCards + reusableVirtualCards;
   const maxVirtualCardsPerReplica = Math.floor(
@@ -1801,14 +1816,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               {t("endpoints.fields.vgpuCoreCapacity")}
                             </div>
                             <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
-                              {isVgpuAllocationMode
-                                ? vgpuCoreUnitsPerCard > 0
-                                  ? `${formatOneDecimal(
-                                      requestedVgpuCoreUnits,
-                                    )} / ${formatOneDecimal(
-                                      availableVgpuCoreUnits,
-                                    )}`
-                                  : t("endpoints.options.shared")
+                              {currentRequestCoreUnitsPerCard > 0
+                                ? `${formatOneDecimal(
+                                    currentRequestCoreUnits,
+                                  )} / ${formatOneDecimal(
+                                    currentRequestAvailableCoreUnits,
+                                  )}`
                                 : "-"}
                             </div>
                           </div>

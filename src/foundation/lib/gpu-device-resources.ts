@@ -208,6 +208,31 @@ const shortenUuid = (uuid: string) => {
   return `${uuid.slice(0, 8)}...${uuid.slice(-6)}`;
 };
 
+const getDeviceOrder = (order: number | null | undefined) =>
+  typeof order === "number" && Number.isFinite(order) ? order : null;
+
+const compareDevicesByOrderThenUuid = (
+  first: Pick<DeviceResource, "order" | "uuid">,
+  second: Pick<DeviceResource, "order" | "uuid">,
+) => {
+  const firstOrder = getDeviceOrder(first.order);
+  const secondOrder = getDeviceOrder(second.order);
+
+  if (firstOrder != null && secondOrder != null) {
+    return firstOrder - secondOrder || first.uuid.localeCompare(second.uuid);
+  }
+
+  if (firstOrder != null) {
+    return -1;
+  }
+
+  if (secondOrder != null) {
+    return 1;
+  }
+
+  return first.uuid.localeCompare(second.uuid);
+};
+
 const getProductAcceleratorType = (
   resourceInfo: ResourceInfo | null | undefined,
   product: string,
@@ -427,10 +452,14 @@ export function buildGpuDeviceResourceRows(
   }
 
   return Object.entries(nodeResources)
+    .sort(([firstNodeName], [secondNodeName]) =>
+      firstNodeName.localeCompare(secondNodeName),
+    )
     .flatMap(([nodeName, nodeStatus]) =>
       [...(nodeStatus.devices ?? [])]
-        .sort((a, b) => a.uuid.localeCompare(b.uuid))
+        .sort(compareDevicesByOrderThenUuid)
         .map((device, index) => {
+          const deviceOrder = getDeviceOrder(device.order);
           const acceleratorType = getProductAcceleratorType(
             nodeStatus.allocatable,
             device.product,
@@ -440,7 +469,7 @@ export function buildGpuDeviceResourceRows(
             nodeName,
             uuid: device.uuid,
             shortUuid: shortenUuid(device.uuid),
-            gpuNumber: index + 1,
+            gpuNumber: deviceOrder ?? index + 1,
             product: device.product,
             healthy: device.health,
             fullFree: isDeviceAvailableForFullCardAllocation(device),
@@ -463,10 +492,6 @@ export function buildGpuDeviceResourceRows(
             ),
           };
         }),
-    )
-    .sort(
-      (a, b) =>
-        a.nodeName.localeCompare(b.nodeName) || a.uuid.localeCompare(b.uuid),
     );
 }
 

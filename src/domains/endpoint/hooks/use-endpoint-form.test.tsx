@@ -239,6 +239,50 @@ const nonVirtualizedResourceInfo = {
   NonNullable<EndpointClusterRef["status"]>["resource_info"]
 >;
 
+const nonVirtualizedResourceInfoWithDevices = {
+  ...nonVirtualizedResourceInfo,
+  node_resources: {
+    "node-a": {
+      ...nonVirtualizedResourceInfo.node_resources["node-a"],
+      devices: [
+        {
+          uuid: "GPU-non-vgpu-free",
+          product: "Tesla-T4",
+          health: true,
+          allocatable: {
+            memory_mib: 15360,
+            core_units: 100,
+          },
+          available: {
+            memory_mib: 15360,
+            core_units: 100,
+          },
+        },
+      ],
+    },
+    "node-b": {
+      ...nonVirtualizedResourceInfo.node_resources["node-b"],
+      devices: [
+        {
+          uuid: "GPU-non-vgpu-allocated",
+          product: "Tesla-T4",
+          health: true,
+          allocatable: {
+            memory_mib: 15360,
+            core_units: 100,
+          },
+          available: {
+            memory_mib: 0,
+            core_units: 0,
+          },
+        },
+      ],
+    },
+  },
+} satisfies NonNullable<
+  NonNullable<EndpointClusterRef["status"]>["resource_info"]
+>;
+
 const cpuMemoryOnlyResourceInfo = {
   allocatable: {
     cpu: 32,
@@ -289,13 +333,13 @@ const cpuMemoryOnlyCluster = {
 const plainKubernetesClusterWithNodeResources = {
   metadata: metadata("plain-k8s-node-resources"),
   spec: { type: "kubernetes" },
-  status: { resource_info: nonVirtualizedResourceInfo },
+  status: { resource_info: nonVirtualizedResourceInfoWithDevices },
 } satisfies EndpointClusterRef;
 
 const staticNodeClusterWithNodeResources = {
   metadata: metadata("static-node-resources"),
   spec: { type: "ssh" },
-  status: { resource_info: nonVirtualizedResourceInfo },
+  status: { resource_info: nonVirtualizedResourceInfoWithDevices },
 } satisfies EndpointClusterRef;
 
 const virtualizedKubernetesCluster = {
@@ -552,6 +596,13 @@ function getAcceleratorCardText() {
 
 function getCurrentRequestText() {
   return screen.getByTestId("endpoint-current-request-grid").textContent;
+}
+
+function getCurrentRequestMetricText(label: string) {
+  const labelNode = within(
+    screen.getByTestId("endpoint-current-request-grid"),
+  ).getByText(label);
+  return labelNode.parentElement?.textContent ?? "";
 }
 
 // --- Tests ---
@@ -1574,12 +1625,12 @@ describe("useEndpointForm", () => {
       ).toBeGreaterThan(0);
       expect(
         panel.getAllByRole("button", {
-          name: /clusters\.fields\.gpuNumber 1, clusters\.fields\.deviceUuid/,
+          name: /clusters\.fields\.gpuNumber 1.*clusters\.actions\.copyUuid/,
         }),
       ).toHaveLength(2);
       expect(
         panel.queryByRole("button", {
-          name: /clusters\.fields\.gpuNumber 2, clusters\.fields\.deviceUuid/,
+          name: /clusters\.fields\.gpuNumber 2.*clusters\.actions\.copyUuid/,
         }),
       ).toBeNull();
 
@@ -1662,7 +1713,7 @@ describe("useEndpointForm", () => {
         label: "static node",
       },
     ]) {
-      it(`shows only physical GPU, CPU and memory resources for ${scenario.label} clusters`, async () => {
+      it(`shows detailed GPU device resources for ${scenario.label} clusters`, async () => {
         setupMocks([catalogA, catalogB], [scenario.cluster]);
         render(<CreateForm />);
 
@@ -1706,22 +1757,25 @@ describe("useEndpointForm", () => {
           within(clusterMetricsRow).getAllByTestId(
             "endpoint-resource-summary-card",
           ).length,
-        ).toBe(3);
-        expect(
+        ).toBe(5);
+        const orderedClusterMetrics = [
           within(clusterSection).getByText("endpoints.fields.physicalGpu"),
-        ).toBeTruthy();
-        expect(
+          within(clusterSection).getByText("clusters.fields.memoryUsage"),
+          within(clusterSection).getByText("clusters.fields.coreUsage"),
           within(clusterSection).getByText("common.fields.cpu"),
-        ).toBeTruthy();
-        expect(
           within(clusterSection).getByText("common.fields.memory"),
-        ).toBeTruthy();
-        expect(
-          within(clusterSection).queryByText("clusters.fields.memoryUsage"),
-        ).toBeNull();
-        expect(
-          within(clusterSection).queryByText("clusters.fields.coreUsage"),
-        ).toBeNull();
+        ];
+        for (
+          let index = 0;
+          index < orderedClusterMetrics.length - 1;
+          index += 1
+        ) {
+          expect(
+            orderedClusterMetrics[index].compareDocumentPosition(
+              orderedClusterMetrics[index + 1],
+            ) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ).toBeTruthy();
+        }
 
         expect(
           panel.getByTestId("endpoint-compact-node-resources"),
@@ -1733,55 +1787,23 @@ describe("useEndpointForm", () => {
           expect(nodeCard.className).toContain("border");
           expect(nodeCard.className).toContain("bg-background");
         }
-        for (const nodeMetrics of panel.getAllByTestId(
-          "endpoint-node-resource-metrics",
-        )) {
-          expect(nodeMetrics.className).toContain("grid");
-          expect(nodeMetrics.className).toContain(
-            "grid-cols-[repeat(auto-fill,minmax(160px,200px))]",
-          );
-          const pills = within(nodeMetrics).getAllByTestId(
-            "endpoint-node-resource-pill",
-          );
-          expect(pills.length).toBe(3);
-          for (const pill of pills) {
-            expect(pill.className).not.toContain("w-[168px]");
-            expect(pill.className).toContain("rounded");
-            expect(pill.className).toContain("border");
-            for (const value of within(pill).getAllByTestId(
-              "endpoint-node-resource-pill-value",
-            )) {
-              expect(value.className).toContain("text-card-foreground");
-              expect(value.className).not.toContain("text-emerald");
-            }
-          }
-          expect(
-            within(nodeMetrics).getAllByText("clusters.options.free").length,
-          ).toBeGreaterThan(0);
-          expect(
-            within(nodeMetrics).getByText("endpoints.fields.physicalGpu"),
-          ).toBeTruthy();
-          expect(
-            within(nodeMetrics).getByText("common.fields.cpu"),
-          ).toBeTruthy();
-          expect(
-            within(nodeMetrics).getByText("common.fields.memory"),
-          ).toBeTruthy();
-          expect(
-            within(nodeMetrics).queryByText("clusters.fields.memoryUsage"),
-          ).toBeNull();
-          expect(
-            within(nodeMetrics).queryByText("clusters.fields.coreUsage"),
-          ).toBeNull();
-        }
-
-        expect(panel.queryByTestId("endpoint-node-gpu-card-grid")).toBeNull();
-        expect(panel.queryByText("clusters.messages.noGpuDevices")).toBeNull();
         expect(
-          panel.queryByRole("button", {
-            name: /clusters\.fields\.gpuNumber/,
+          panel.getAllByTestId("endpoint-node-gpu-card-grid"),
+        ).toHaveLength(2);
+        expect(
+          panel.getAllByRole("button", {
+            name: /clusters\.fields\.gpuNumber 1.*clusters\.actions\.copyUuid/,
           }),
-        ).toBeNull();
+        ).toHaveLength(2);
+        expect(panel.queryByText("GPU-non-vgpu-free")).toBeNull();
+        expect(panel.queryByText("GPU-non-vgpu-allocated")).toBeNull();
+        expect(
+          panel.getAllByText("clusters.fields.memoryUsage").length,
+        ).toBeGreaterThan(0);
+        expect(
+          panel.getAllByText("clusters.fields.coreUsage").length,
+        ).toBeGreaterThan(0);
+        expect(panel.queryByText("clusters.messages.noGpuDevices")).toBeNull();
       });
     }
 
@@ -2032,7 +2054,12 @@ describe("useEndpointForm", () => {
       );
       expect(getAcceleratorCardText()).toContain("endpoints.fields.scheduling");
       expect(getAcceleratorCardText()).toContain("common.fields.cluster");
-      expect(getAcceleratorCardText()).toContain("endpoints.options.shared");
+      expect(
+        getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
+      ).toBe("endpoints.fields.vgpuCoreCapacity-");
+      expect(getAcceleratorCardText()).not.toContain(
+        "endpoints.options.shared",
+      );
       expect(getAcceleratorCardText()).not.toContain(
         "endpoints.descriptions.vgpuCorePercentZero",
       );
@@ -2244,6 +2271,9 @@ describe("useEndpointForm", () => {
         );
       });
       expect(
+        getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
+      ).toBe("endpoints.fields.vgpuCoreCapacity200.0 / 0.0");
+      expect(
         within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
           "endpoints.messages.fullGpuResourcesInsufficient",
         ),
@@ -2338,6 +2368,9 @@ describe("useEndpointForm", () => {
       await waitFor(() => {
         expect(getCurrentRequestText()).toContain("1.0 / 1.0");
       });
+      expect(
+        getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
+      ).toBe("endpoints.fields.vgpuCoreCapacity100.0 / 100.0");
       expect(
         screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
       ).toBeNull();
