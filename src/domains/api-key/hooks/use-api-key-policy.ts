@@ -104,6 +104,9 @@ export function limitsToForm(
   return v;
 }
 
+// Max model names inlined in summarizeApiKeyLimits before collapsing to "+N".
+const SUMMARY_MODELS_LIMIT = 3;
+
 // Compact, en-US summary of a key's limits for detail display.
 export function summarizeApiKeyLimits(
   limits: ApiKeyLimits | null | undefined,
@@ -126,7 +129,11 @@ export function summarizeApiKeyLimits(
   if (limits.rpm) out.push(`${limits.rpm} RPM`);
   if (limits.concurrency) out.push(`${limits.concurrency} concurrent`);
   if (limits.allowed_models && limits.allowed_models.length > 0) {
-    out.push(`models: ${limits.allowed_models.join(", ")}`);
+    // Cap the inline list so a key allowing many models doesn't blow up this
+    // one-line summary; the full set is shown by the Allowed-models field below.
+    const shown = limits.allowed_models.slice(0, SUMMARY_MODELS_LIMIT);
+    const extra = limits.allowed_models.length - shown.length;
+    out.push(`models: ${shown.join(", ")}${extra > 0 ? ` +${extra}` : ""}`);
   }
   return out;
 }

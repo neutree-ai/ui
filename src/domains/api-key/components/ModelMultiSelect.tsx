@@ -81,7 +81,11 @@ export const ModelMultiSelect = ({
 
   return (
     <div className="space-y-2">
-      <Popover open={open} onOpenChange={setOpen}>
+      {/* modal: this Popover is also used inside the API-key create Dialog, whose
+          react-remove-scroll otherwise blocks wheel scrolling on the portaled
+          list. A modal Popover installs its own scroll management so the option
+          list scrolls. */}
+      <Popover open={open} onOpenChange={setOpen} modal>
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -101,7 +105,7 @@ export const ModelMultiSelect = ({
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[400px] max-w-full p-0">
+        <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] max-w-full p-0">
           <Command shouldFilter={false} className="rounded-lg border shadow-md">
             <CommandInput
               placeholder={t("api_keys.limits.selectModel")}
