@@ -431,9 +431,6 @@
 			"nvidia_gpu": "NVIDIA GPU",
 			"amd_gpu": "AMD GPU"
 		},
-		"componentNames": {
-			"acceleratorVirtualization": "Accelerator Virtualization"
-		},
 		"sections": {
 			"clusterVersion": "Cluster Version",
 			"clusterType": "Cluster Type",
@@ -447,7 +444,6 @@
 			"nodes": "Nodes",
 			"clusterResources": "Cluster Resources",
 			"nodeResources": "Node Resources",
-			"componentStatus": "Component Status",
 			"nodeDevices": "Node Devices"
 		},
 		"placeholders": {

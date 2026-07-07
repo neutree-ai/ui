@@ -1,7 +1,6 @@
 import { useShow, useTranslation } from "@refinedev/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClusterComponentStatusList } from "@/domains/cluster/components/ClusterComponentStatusList";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
@@ -204,10 +203,6 @@ export const ClustersShow = () => {
                     </CardContent>
                   </Card>
                 )}
-                <ClusterComponentStatusList
-                  componentStatus={record.status?.component_status}
-                  t={t}
-                />
               </CardContent>
             </Card>
             {record.status?.resource_info && (

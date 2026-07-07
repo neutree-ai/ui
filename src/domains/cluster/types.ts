@@ -140,21 +140,8 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
    * Accelerator type (e.g. nvidia_gpu, amd_gpu)
    */
   accelerator_type?: string | null;
-  component_status?: ClusterComponentStatusMap | null;
+  component_status?: Record<string, unknown> | null;
 };
-
-export type ClusterComponentStatus = {
-  phase?: string | null;
-  managed?: boolean | null;
-  version?: string | null;
-  reason?: string | null;
-  message?: string | null;
-};
-
-export type ClusterComponentStatusMap = Record<
-  string,
-  ClusterComponentStatus | null
->;
 
 enum ClusterPhase {
   PENDING = "Pending",
