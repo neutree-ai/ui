@@ -99,7 +99,10 @@ export const ApiKeyPolicyFields = ({
           {t("api_keys.limits.accessTitle")}
         </div>
 
-        <div className="flex items-end gap-2">
+        {/* Labels can wrap to two lines (e.g. the longer zh RPM label); reserve a
+            uniform two-line height across the three columns so a single wrap
+            doesn't misalign one field against its siblings. */}
+        <div className="flex items-end gap-2 [&_label]:flex [&_label]:min-h-10 [&_label]:items-start">
           <div className="flex-1">
             <FormFieldGroup
               {...form}
