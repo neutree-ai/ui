@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import {
   Bar,
   BarChart,
@@ -7,27 +8,41 @@ import {
   Tooltip,
   XAxis,
 } from "recharts";
+import type { DateRange } from "@/foundation/components/DateRangePicker";
 import {
   type AITraceDayCount,
   fetchAITraceStats,
 } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-const DAYS = 7;
-
-export const TraceStatsChart = ({ workspace }: { workspace: string }) => {
+export const TraceStatsChart = ({
+  workspace,
+  range,
+}: {
+  workspace: string;
+  range: DateRange;
+}) => {
   const { t } = useTranslation();
 
+  // Mirror the list's [start-of-day, end-of-day] window so the chart follows
+  // the same date-range filter (backend clamps the span to 90 day buckets).
+  const start = dayjs(range.start).startOf("day").toISOString();
+  const end = dayjs(range.end).endOf("day").toISOString();
+
   const { data } = useQuery({
-    queryKey: ["ai-trace-stats", workspace, DAYS],
-    queryFn: ({ signal }) => fetchAITraceStats(workspace, DAYS, signal),
+    queryKey: ["ai-trace-stats", workspace, start, end],
+    queryFn: ({ signal }) =>
+      fetchAITraceStats(workspace, { start, end }, signal),
     enabled: Boolean(workspace),
   });
 
   const days = data?.days ?? [];
-  // The trailing day is the current, still-accumulating day.
-  const today = days.length > 0 ? days[days.length - 1].date : "";
+  // Hatch only the actual current (still-accumulating) day — the selected
+  // window may end in the past, in which case no bar is in progress.
+  const today = dayjs().format("YYYY-MM-DD");
   const total = days.reduce((sum, d) => sum + d.count, 0);
+  // Thin the axis labels once there are too many day buckets to fit.
+  const tickInterval = days.length > 14 ? "preserveStartEnd" : 0;
 
   return (
     <div className="border rounded-md p-4 mb-4">
@@ -76,7 +91,7 @@ export const TraceStatsChart = ({ workspace }: { workspace: string }) => {
               tickLine={false}
               axisLine={false}
               fontSize={11}
-              interval={0}
+              interval={tickInterval}
             />
             <Tooltip
               cursor={{ fill: "hsl(var(--muted))" }}

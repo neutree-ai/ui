@@ -1461,7 +1461,7 @@
 		"empty": "No access logs in the selected window.",
 		"refresh": "Refresh",
 		"stats": {
-			"title": "Requests (last 7 days)",
+			"title": "Requests",
 			"requests": "Requests",
 			"totalRequests": "{{total}} total"
 		},
@@ -1489,6 +1489,26 @@
 			"throughput": "Tok/s",
 			"duration": "Duration",
 			"finishReason": "Finish"
+		},
+		"status": {
+			"classSuccess": "Success — the request completed normally.",
+			"classRedirect": "Redirect.",
+			"classClient": "Client error — the request was rejected.",
+			"classServer": "Server error — the gateway or upstream failed.",
+			"unknown": "Unknown status.",
+			"description": {
+				"400": "Bad request — the request was malformed or rejected by the gateway.",
+				"401": "Unauthorized — the API key is missing or invalid.",
+				"403": "Forbidden — the API key is not allowed to access this resource.",
+				"404": "Not found — the requested model or endpoint does not exist.",
+				"408": "Request timeout — the client did not finish sending the request in time.",
+				"429": "Too many requests — a rate or quota limit was exceeded.",
+				"499": "Client closed request — the client disconnected before the response completed.",
+				"500": "Internal server error — the gateway or upstream failed unexpectedly.",
+				"502": "Bad gateway — the upstream returned an invalid response.",
+				"503": "Service unavailable — no healthy upstream was available to serve the request.",
+				"504": "Gateway timeout — the upstream did not respond within the time limit."
+			}
 		},
 		"detail": {
 			"title": "Access log detail",

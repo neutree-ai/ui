@@ -17,7 +17,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { WorkspaceModelOption } from "@/domains/api-key/hooks/use-api-key-policy";
 import { cn } from "@/foundation/lib/utils";
 
@@ -51,6 +50,7 @@ export const ModelMultiSelect = ({
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const selected = new Set(value);
 
   const toggle = (v: string) => {
@@ -66,6 +66,18 @@ export const ModelMultiSelect = ({
     type === "external"
       ? t("api_keys.models.external")
       : t("api_keys.models.internal");
+
+  // cmdk's built-in filter re-orders items by match score, which would discard
+  // the Running-first ordering the options already arrive in. Disable it
+  // (shouldFilter={false}) and filter here so the incoming order is preserved.
+  const query = search.trim().toLowerCase();
+  const visibleOptions = query
+    ? options.filter((o) =>
+        `${o.model} ${o.endpointName} ${typeLabel(o.type)} ${phaseLabel(o.phase)}`
+          .toLowerCase()
+          .includes(query),
+      )
+    : options;
 
   return (
     <div className="space-y-2">
@@ -90,54 +102,56 @@ export const ModelMultiSelect = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[400px] max-w-full p-0">
-          <Command className="rounded-lg border shadow-md">
-            <CommandInput placeholder={t("api_keys.limits.selectModel")} />
-            <CommandList>
+          <Command shouldFilter={false} className="rounded-lg border shadow-md">
+            <CommandInput
+              placeholder={t("api_keys.limits.selectModel")}
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandList className="max-h-60">
               <CommandEmpty>{t("api_keys.limits.noModels")}</CommandEmpty>
               <CommandGroup>
-                <ScrollArea className="max-h-52 overflow-y-auto">
-                  {options.map((o) => (
-                    <CommandItem
-                      key={o.value}
-                      value={`${o.model} ${o.endpointName} ${typeLabel(o.type)} ${phaseLabel(o.phase)}`}
-                      onSelect={() => toggle(o.value)}
-                      className="group items-start gap-2"
-                    >
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="truncate text-sm font-medium">
-                          {o.model}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
-                          <span className="truncate max-w-[180px]">
-                            {o.endpointName}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="h-5 bg-background/80 font-normal group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground"
-                          >
-                            {typeLabel(o.type)}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "h-5 font-normal",
-                              phaseClass(o.phase),
-                              "group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground",
-                            )}
-                          >
-                            {phaseLabel(o.phase)}
-                          </Badge>
-                        </div>
+                {visibleOptions.map((o) => (
+                  <CommandItem
+                    key={o.value}
+                    value={o.value}
+                    onSelect={() => toggle(o.value)}
+                    className="group items-start gap-2"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="truncate text-sm font-medium">
+                        {o.model}
                       </div>
-                      <CheckIcon
-                        className={cn(
-                          "mt-1 ml-auto h-4 w-4",
-                          selected.has(o.value) ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </ScrollArea>
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
+                        <span className="truncate max-w-[180px]">
+                          {o.endpointName}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="h-5 bg-background/80 font-normal group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground"
+                        >
+                          {typeLabel(o.type)}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "h-5 font-normal",
+                            phaseClass(o.phase),
+                            "group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground",
+                          )}
+                        >
+                          {phaseLabel(o.phase)}
+                        </Badge>
+                      </div>
+                    </div>
+                    <CheckIcon
+                      className={cn(
+                        "mt-1 ml-auto h-4 w-4",
+                        selected.has(o.value) ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  </CommandItem>
+                ))}
               </CommandGroup>
             </CommandList>
           </Command>
@@ -148,33 +162,44 @@ export const ModelMultiSelect = ({
           {value.map((v) => {
             const option = optionFor(v);
             return (
-              <Badge
+              <div
                 key={v}
-                variant="secondary"
-                className="max-w-full gap-1 pr-1"
+                className="flex max-w-full items-center gap-1.5 rounded-md border bg-muted/40 py-1 pl-2 pr-1"
+                title={option ? `${option.model} · ${option.endpointName}` : v}
               >
-                <span
-                  className="break-all whitespace-normal"
-                  title={
-                    option ? `${option.model} · ${option.endpointName}` : v
-                  }
-                >
-                  {option ? `${option.model} · ${option.endpointName}` : v}
-                </span>
-                {option && (
-                  <span className="text-muted-foreground">
-                    {typeLabel(option.type)}
-                  </span>
+                {option ? (
+                  <>
+                    <span className="truncate max-w-[160px] text-xs font-medium">
+                      {option.model}
+                    </span>
+                    <span className="truncate max-w-[120px] text-xs text-muted-foreground">
+                      {option.endpointName}
+                    </span>
+                    <Badge variant="outline" className="h-5 font-normal">
+                      {typeLabel(option.type)}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "h-5 font-normal",
+                        phaseClass(option.phase),
+                      )}
+                    >
+                      {phaseLabel(option.phase)}
+                    </Badge>
+                  </>
+                ) : (
+                  <span className="break-all text-xs font-medium">{v}</span>
                 )}
                 <button
                   type="button"
                   onClick={() => toggle(v)}
-                  className="rounded-sm hover:bg-muted-foreground/20"
+                  className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground"
                   aria-label={t("buttons.delete")}
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </Badge>
+              </div>
             );
           })}
         </div>

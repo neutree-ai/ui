@@ -22,6 +22,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   type DateRange,
   DateRangePicker,
   trailingRange,
@@ -157,7 +162,7 @@ export const AITracesList = () => {
         </Button>
       }
     >
-      <TraceStatsChart workspace={workspace} />
+      <TraceStatsChart workspace={workspace} range={range} />
 
       <div className="flex flex-wrap gap-2 mb-4">
         <DateRangePicker value={range} onChange={setRange} />
@@ -420,12 +425,41 @@ function formatDuration(durationMs?: number): React.ReactNode {
   return `${(durationMs / 1000).toFixed(2)} s`;
 }
 
+// Status codes with a maintained, gateway-accurate description (includes the
+// non-standard 499 "client closed request" and 504 "gateway timeout" seen from
+// the Kong layer). Codes outside this set fall back to a status-class hint.
+const DESCRIBED_STATUS_CODES = new Set([
+  400, 401, 403, 404, 408, 429, 499, 500, 502, 503, 504,
+]);
+
 const StatusBadge = ({ status }: { status: number }) => {
-  if (status >= 200 && status < 300) {
-    return <Badge variant="default">{status}</Badge>;
-  }
-  if (status >= 400 && status < 500) {
-    return <Badge variant="outline">{status}</Badge>;
-  }
-  return <Badge variant="destructive">{status || "-"}</Badge>;
+  const { t } = useTranslation();
+  const variant =
+    status >= 200 && status < 300
+      ? "default"
+      : status >= 400 && status < 500
+        ? "outline"
+        : "destructive";
+  const description = statusDescription(status, t);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge variant={variant} className="cursor-help">
+          {status || "-"}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[260px]">{description}</TooltipContent>
+    </Tooltip>
+  );
 };
+
+function statusDescription(status: number, t: (key: string) => string): string {
+  if (DESCRIBED_STATUS_CODES.has(status)) {
+    return t(`ai_traces.status.description.${status}`);
+  }
+  if (status >= 200 && status < 300) return t("ai_traces.status.classSuccess");
+  if (status >= 300 && status < 400) return t("ai_traces.status.classRedirect");
+  if (status >= 400 && status < 500) return t("ai_traces.status.classClient");
+  if (status >= 500) return t("ai_traces.status.classServer");
+  return t("ai_traces.status.unknown");
+}
