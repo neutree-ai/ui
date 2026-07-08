@@ -4,12 +4,37 @@ import {
   computeMaxAvailable,
   deepMerge,
   defaultEndpointSpec,
+  isResourceRequestExceeded,
   normalizeEndpointRecordForForm,
   normalizeEndpointResourcesForForm,
   transformEndpointValues,
   validateCurrentUsage,
   validateEndpointValues,
 } from "./endpoint-form-helpers";
+
+describe("isResourceRequestExceeded", () => {
+  it("flags a request larger than the available budget", () => {
+    // 3 requested vs 2.9 free on the target node -> over-allocated (NEU-514).
+    expect(isResourceRequestExceeded(3, 2.9, 15.7)).toBe(true);
+  });
+
+  it("does not flag a request that fits", () => {
+    expect(isResourceRequestExceeded(2, 2.9, 15.7)).toBe(false);
+  });
+
+  it("treats exactly-available as fitting (not exceeded)", () => {
+    expect(isResourceRequestExceeded(2.9, 2.9, 15.7)).toBe(false);
+  });
+
+  it("never flags a zero request", () => {
+    expect(isResourceRequestExceeded(0, 0, 15.7)).toBe(false);
+  });
+
+  it("never flags when capacity info is unknown (total 0)", () => {
+    // No cluster selected / no resource data yet -> avoid false positives.
+    expect(isResourceRequestExceeded(3, 0, 0)).toBe(false);
+  });
+});
 
 describe("validateCurrentUsage", () => {
   it("returns currentUsage when within capacity", () => {

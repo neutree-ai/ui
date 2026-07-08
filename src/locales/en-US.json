@@ -815,6 +815,8 @@
 			"cardsAvailable": "{{count}} cards available",
 			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
 			"vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
+			"cpuResourcesInsufficient": "Requested CPU exceeds the currently available capacity on the target node.",
+			"memoryResourcesInsufficient": "Requested memory exceeds the currently available capacity on the target node.",
 			"noRunningVgpuPods": "No running virtual accelerator pods",
 			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared"
 		},
