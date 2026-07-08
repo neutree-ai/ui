@@ -1,5 +1,15 @@
 import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
-
+import type {
+  BaseOption,
+  BaseRecord,
+  UseSelectReturnType,
+} from "@refinedev/core";
+import {
+  type ComponentPropsWithoutRef,
+  type ElementRef,
+  forwardRef,
+  useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -18,24 +28,15 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import type {
-  BaseOption,
-  BaseRecord,
-  UseSelectReturnType,
-} from "@refinedev/core";
-import {
-  type ComponentPropsWithoutRef,
-  type ElementRef,
-  forwardRef,
-  useState,
-} from "react";
 
 type ComboboxProps = ComponentPropsWithoutRef<typeof Command> &
   Pick<UseSelectReturnType<BaseOption, any>, "options"> & {
     placeholder?: string;
     emptyMessage?: string;
     onChange?: (value: string | number) => void;
-    value?: string | number | BaseRecord;
+    // null is not a valid prop value, but FormFieldGroup injects field.value
+    // verbatim and the API returns explicit nulls for empty composite fields.
+    value?: string | number | BaseRecord | null;
     disabled?: boolean;
   };
 
@@ -47,7 +48,11 @@ export const FormCombobox = forwardRef<
   const [open, setOpen] = useState(false);
 
   const value = () => {
-    if (typeof props.value === "object" && "id" in props.value) {
+    if (
+      props.value != null &&
+      typeof props.value === "object" &&
+      "id" in props.value
+    ) {
       return (props.value as BaseRecord).id;
     }
 
