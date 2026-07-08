@@ -186,7 +186,28 @@ describe("compareWorkspaceModelOptions", () => {
     ...over,
   });
 
-  it("orders Running endpoints before non-running ones", () => {
+  it("groups all internal before all external, regardless of model name", () => {
+    // A running external model that sorts alphabetically before an internal one
+    // must still come after every internal model (no interleaving).
+    const extA = opt({
+      model: "aaa",
+      endpointName: "e1",
+      type: "external",
+      phase: "Running",
+    });
+    const intZ = opt({
+      model: "zzz",
+      endpointName: "e2",
+      type: "internal",
+      phase: "Running",
+    });
+    expect([extA, intZ].sort(compareWorkspaceModelOptions)).toEqual([
+      intZ,
+      extA,
+    ]);
+  });
+
+  it("orders Running endpoints before non-running ones within a type group", () => {
     const paused = opt({ model: "a", endpointName: "e1", phase: "Paused" });
     const running = opt({ model: "z", endpointName: "e2", phase: "Running" });
     expect([paused, running].sort(compareWorkspaceModelOptions)).toEqual([
@@ -195,7 +216,7 @@ describe("compareWorkspaceModelOptions", () => {
     ]);
   });
 
-  it("falls back to model, endpoint, then type within the same group", () => {
+  it("falls back to model then endpoint within the same group", () => {
     const a = opt({ model: "alpha", endpointName: "e2", phase: "Running" });
     const b = opt({ model: "alpha", endpointName: "e1", phase: "Running" });
     const c = opt({ model: "beta", endpointName: "e1", phase: "Running" });

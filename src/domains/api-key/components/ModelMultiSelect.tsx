@@ -106,7 +106,7 @@ export const ModelMultiSelect = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] max-w-full p-0">
-          <Command shouldFilter={false} className="rounded-lg border shadow-md">
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder={t("api_keys.limits.selectModel")}
               value={search}
