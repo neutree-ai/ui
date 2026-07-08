@@ -274,6 +274,32 @@ describe("transformEndpointValues", () => {
     });
   });
 
+  it("drops memory_percent virtualization before submission", () => {
+    const spec = {
+      resources: {
+        cpu: 4,
+        memory: 8,
+        gpu: 1,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            memory_percent: 50,
+            core_percent: 30,
+          },
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.accelerator).toEqual({
+      type: "nvidia_gpu",
+      product: "Tesla-T4",
+    });
+  });
+
   it("drops core-only virtualization before submission", () => {
     const spec = {
       resources: {
@@ -571,7 +597,7 @@ describe("validateEndpointValues", () => {
     expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
   });
 
-  it("returns error when vGPU memory_mib and memory_percent are both set", () => {
+  it("ignores memory_percent when memory_mib is set", () => {
     const errors = validateEndpointValues(
       {
         ...validScheduler,
@@ -597,9 +623,11 @@ describe("validateEndpointValues", () => {
     );
 
     expect(
-      errors["spec.resources.accelerator.virtualization.memory_percent"]
-        ?.message,
-    ).toBe("endpoints.messages.vgpuMemoryMutuallyExclusive");
+      errors["spec.resources.accelerator.virtualization.memory_percent"],
+    ).toBeUndefined();
+    expect(
+      errors["spec.resources.accelerator.virtualization.memory_mib"],
+    ).toBeUndefined();
   });
 
   it("treats blank optional vGPU fields as not configured", () => {
@@ -630,7 +658,7 @@ describe("validateEndpointValues", () => {
     expect(errors).toEqual({});
   });
 
-  it("allows zero vGPU core percent as not configured", () => {
+  it("ignores memory_percent and allows zero vGPU core percent as not configured", () => {
     const errors = validateEndpointValues(
       {
         ...validScheduler,
@@ -659,7 +687,7 @@ describe("validateEndpointValues", () => {
     ).toBeUndefined();
   });
 
-  it("returns error when vGPU percentages are out of range", () => {
+  it("returns error when vGPU core percent is out of range", () => {
     const errors = validateEndpointValues(
       {
         ...validScheduler,
@@ -668,7 +696,6 @@ describe("validateEndpointValues", () => {
             type: "nvidia_gpu",
             product: "Tesla-T4",
             virtualization: {
-              memory_percent: 101,
               core_percent: -1,
             },
           },
@@ -684,9 +711,8 @@ describe("validateEndpointValues", () => {
     );
 
     expect(
-      errors["spec.resources.accelerator.virtualization.memory_percent"]
-        ?.message,
-    ).toBe("endpoints.messages.vgpuMemoryPercentRange");
+      errors["spec.resources.accelerator.virtualization.memory_percent"],
+    ).toBeUndefined();
     expect(
       errors["spec.resources.accelerator.virtualization.core_percent"]?.message,
     ).toBe("endpoints.messages.vgpuCorePercentRange");

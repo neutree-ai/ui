@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import {
+  addBackEndpointDeviceAllocationsToNodeResources,
   buildGpuCardResourceRows,
   buildGpuDeviceResourceRows,
   buildNodePhysicalGpuResourceRows,
+  calculatePhysicalCardUsageForRequest,
   calculateVgpuCardCapacity,
+  calculateVgpuDevicePlacementCapacity,
   filterGpuDeviceResourceRows,
+  sumMatchingDeviceAvailableResources,
 } from "./gpu-device-resources";
 
 const nodeResources: Record<string, NodeResourceStatus> = {
@@ -104,6 +108,265 @@ const nodeResources: Record<string, NodeResourceStatus> = {
 };
 
 describe("gpu device resource helpers", () => {
+  it("adds current endpoint device allocations back to matching node devices", () => {
+    const result = addBackEndpointDeviceAllocationsToNodeResources(
+      {
+        "node-a": {
+          allocatable: null,
+          available: null,
+          devices: [
+            {
+              uuid: "GPU-current",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: { memory_mib: 15360, core_units: 100 },
+              available: { memory_mib: 7680, core_units: 50 },
+            },
+            {
+              uuid: "GPU-other",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: { memory_mib: 15360, core_units: 100 },
+              available: { memory_mib: 15360, core_units: 100 },
+            },
+          ],
+        },
+      },
+      {
+        replicas: [
+          {
+            instance_id: "endpoint-a",
+            node_id: "node-a",
+            devices: [
+              {
+                uuid: "GPU-current",
+                product: "Tesla-T4",
+                memory_mib: 8192,
+                core_units: 60,
+                node_id: "node-a",
+              },
+            ],
+          },
+        ],
+      },
+      { type: "nvidia_gpu", product: "Tesla-T4" },
+    );
+
+    expect(result?.["node-a"]?.devices?.[0]?.available).toEqual({
+      memory_mib: 15360,
+      core_units: 100,
+    });
+    expect(result?.["node-a"]?.devices?.[1]?.available).toEqual({
+      memory_mib: 15360,
+      core_units: 100,
+    });
+  });
+
+  it("calculates fractional GPU card usage with physical-card semantics", () => {
+    expect(
+      calculatePhysicalCardUsageForRequest(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-fit",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 7680, core_units: 50 },
+              },
+              {
+                uuid: "GPU-too-small",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 4096, core_units: 50 },
+              },
+            ],
+          },
+        },
+        {
+          allocationMode: "fractional",
+          selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+          requestedPerReplica: 0.5,
+          replicaCount: 2,
+        },
+      ),
+    ).toEqual({
+      available: 1,
+      requested: 1,
+      total: 1,
+      used: 1,
+    });
+  });
+
+  it("calculates vGPU card count by spread-style physical-card count", () => {
+    expect(
+      calculatePhysicalCardUsageForRequest(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 8192, core_units: 100 },
+              },
+              {
+                uuid: "GPU-b",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 4096, core_units: 50 },
+              },
+            ],
+          },
+        },
+        {
+          allocationMode: "vgpu",
+          selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+          requestedPerReplica: 3,
+          replicaCount: 1,
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 50,
+        },
+      ),
+    ).toEqual({
+      available: 2,
+      requested: 3,
+      total: 2,
+      used: 2,
+    });
+  });
+
+  it("calculates vGPU placement capacity from per-device memory slots", () => {
+    const l20NodeResources = {
+      "node-a": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-a",
+            product: "NVIDIA-L20",
+            health: true,
+            allocatable: { memory_mib: 46068, core_units: 100 },
+            available: { memory_mib: 46068, core_units: 100 },
+          },
+          {
+            uuid: "GPU-b",
+            product: "NVIDIA-L20",
+            health: true,
+            allocatable: { memory_mib: 46068, core_units: 100 },
+            available: { memory_mib: 46068, core_units: 100 },
+          },
+        ],
+      },
+    };
+
+    expect(
+      calculateVgpuDevicePlacementCapacity(l20NodeResources, {
+        selectedAccelerator: { type: "nvidia_gpu", product: "NVIDIA-L20" },
+        memoryMiBPerCard: 30 * 1024,
+        coreUnitsPerCard: 0,
+      }),
+    ).toBe(2);
+
+    expect(
+      calculateVgpuDevicePlacementCapacity(l20NodeResources, {
+        selectedAccelerator: { type: "nvidia_gpu", product: "NVIDIA-L20" },
+        memoryMiBPerCard: 20 * 1024,
+        coreUnitsPerCard: 0,
+      }),
+    ).toBe(4);
+  });
+
+  it("calculates vGPU placement capacity from per-device memory and core slots", () => {
+    expect(
+      calculateVgpuDevicePlacementCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "NVIDIA-L20",
+                health: true,
+                allocatable: { memory_mib: 46068, core_units: 100 },
+                available: { memory_mib: 46068, core_units: 100 },
+              },
+              {
+                uuid: "GPU-b",
+                product: "NVIDIA-L20",
+                health: true,
+                allocatable: { memory_mib: 46068, core_units: 100 },
+                available: { memory_mib: 46068, core_units: 100 },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: { type: "nvidia_gpu", product: "NVIDIA-L20" },
+          memoryMiBPerCard: 20 * 1024,
+          coreUnitsPerCard: 60,
+        },
+      ),
+    ).toBe(2);
+  });
+
+  it("sums matching device resources after endpoint allocation reuse", () => {
+    const reusable = addBackEndpointDeviceAllocationsToNodeResources(
+      {
+        "node-a": {
+          allocatable: null,
+          available: null,
+          devices: [
+            {
+              uuid: "GPU-current",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: { memory_mib: 15360, core_units: 100 },
+              available: { memory_mib: 7680, core_units: 50 },
+            },
+          ],
+        },
+      },
+      {
+        replicas: [
+          {
+            instance_id: "endpoint-a",
+            node_id: "node-a",
+            devices: [
+              {
+                uuid: "GPU-current",
+                product: "Tesla-T4",
+                memory_mib: 4096,
+                core_units: 25,
+                node_id: "node-a",
+              },
+            ],
+          },
+        ],
+      },
+      { type: "nvidia_gpu", product: "Tesla-T4" },
+    );
+
+    expect(
+      sumMatchingDeviceAvailableResources(reusable, {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+      }),
+    ).toEqual({
+      coreUnits: 75,
+      memoryMiB: 11776,
+    });
+  });
+
   it("builds card-level GPU resource rows from cluster resources", () => {
     expect(
       buildGpuCardResourceRows(
