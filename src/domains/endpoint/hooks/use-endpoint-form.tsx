@@ -28,6 +28,7 @@ import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resource
 import {
   buildCatalogMergedSpec,
   defaultEndpointSpec,
+  isResourceRequestExceeded,
   normalizeEndpointRecordForForm,
   normalizeEndpointResourcesForForm,
   transformEndpointValues,
@@ -461,6 +462,35 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       selectedAccelerator?.product &&
       additionalFullGpuCards > availableFullGpuCards,
   );
+  // CPU / memory over-allocation: the request summed across replicas must fit
+  // the target node's available budget (maxAvailable already adds back the
+  // edited endpoint's own usage). Mirrors the GPU capacity checks above.
+  const requestedCpuTotal = (normalizedResources?.cpu || 0) * replicaCount;
+  const requestedMemoryTotal =
+    (normalizedResources?.memory || 0) * replicaCount;
+  const isCpuCapacityExceeded = Boolean(
+    currentCluster &&
+      isResourceRequestExceeded(
+        requestedCpuTotal,
+        maxAvailable.cpu.available,
+        maxAvailable.cpu.total,
+      ),
+  );
+  const isMemoryCapacityExceeded = Boolean(
+    currentCluster &&
+      isResourceRequestExceeded(
+        requestedMemoryTotal,
+        maxAvailable.memory.available,
+        maxAvailable.memory.total,
+      ),
+  );
+  // Any over-allocated resource blocks deploy (returned as `submitBlocked` and
+  // handed to ResourceForm); each card renders its own warning message.
+  const isResourceCapacityExceeded =
+    isCpuCapacityExceeded ||
+    isMemoryCapacityExceeded ||
+    isFullGpuCapacityExceeded ||
+    isVgpuCapacityExceeded;
 
   useEffect(() => {
     if (
@@ -941,6 +971,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   return {
     form: formWithTransformedOnFinish,
+    // Block deploy while any requested resource exceeds cluster capacity; the
+    // page forwards this straight to <ResourceForm submitBlocked>.
+    submitBlocked: isResourceCapacityExceeded,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
         <FormFieldGroup
@@ -1527,6 +1560,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         className="h-9"
                       />
                     </FormFieldGroup>
+
+                    {(isCpuCapacityExceeded || isMemoryCapacityExceeded) && (
+                      <div className="col-span-2 space-y-1 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive">
+                        {isCpuCapacityExceeded && (
+                          <div>
+                            {t("endpoints.messages.cpuResourcesInsufficient")}
+                          </div>
+                        )}
+                        {isMemoryCapacityExceeded && (
+                          <div>
+                            {t(
+                              "endpoints.messages.memoryResourcesInsufficient",
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div

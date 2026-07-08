@@ -4,6 +4,7 @@ import { ResourceForm } from "@/foundation/components/ResourceForm";
 export const EndpointsCreate = () => {
   const {
     form,
+    submitBlocked,
     metadataFields,
     advancedToggle,
     templateFields,
@@ -15,7 +16,7 @@ export const EndpointsCreate = () => {
   });
 
   return (
-    <ResourceForm {...form}>
+    <ResourceForm {...form} submitBlocked={submitBlocked}>
       {metadataFields}
       {advancedToggle}
       {templateFields}

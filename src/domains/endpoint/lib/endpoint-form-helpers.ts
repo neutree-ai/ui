@@ -326,6 +326,34 @@ export function computeMaxAvailable(
 }
 
 /**
+ * Whether a requested resource amount over-allocates the target node/cluster.
+ *
+ * Only flags when capacity info is actually known (`total > 0`) and a positive
+ * request exceeds what's available — so an unselected cluster (no data) or a
+ * zero request never reports a false positive. `requestedTotal` is the request
+ * summed across replicas; `available` is the max-available budget (which already
+ * adds back the edited endpoint's own current usage).
+ *
+ * A small epsilon absorbs floating-point drift from the per-replica × count
+ * arithmetic (the CPU field steps by 0.1, so e.g. `0.1 * 3` is
+ * `0.30000000000000004`) — without it a request that exactly equals the
+ * available budget would spuriously block deploy.
+ */
+const RESOURCE_REQUEST_EPSILON = 1e-6;
+
+export function isResourceRequestExceeded(
+  requestedTotal: number,
+  available: number,
+  total: number,
+): boolean {
+  return (
+    total > 0 &&
+    requestedTotal > 0 &&
+    requestedTotal - available > RESOURCE_REQUEST_EPSILON
+  );
+}
+
+/**
  * Transform endpoint spec values in-place before submission.
  * - Converts resource fields (cpu, memory, gpu) to strings for API compatibility
  * - Converts replicas.num from string (HTML input) to number

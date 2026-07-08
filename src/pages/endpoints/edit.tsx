@@ -4,6 +4,7 @@ import { ResourceForm } from "@/foundation/components/ResourceForm";
 export const EndpointsEdit = () => {
   const {
     form,
+    submitBlocked,
     metadataFields,
     templateFields,
     resourceFields,
@@ -13,7 +14,7 @@ export const EndpointsEdit = () => {
   });
 
   return (
-    <ResourceForm {...form}>
+    <ResourceForm {...form} submitBlocked={submitBlocked}>
       {metadataFields}
       {templateFields}
       {resourceFields}
