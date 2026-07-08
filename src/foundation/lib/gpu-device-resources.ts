@@ -49,28 +49,14 @@ type NodePhysicalGpuResourceRow = {
   memory: DevicePoolUsage;
 };
 
-type VgpuCardCapacity = {
-  matchingDeviceCount: number;
-  maxCardsPerReplica: number;
-  totalCards: number;
-};
-
 export type GpuAllocationMode = "full" | "fractional" | "vgpu";
 
 type GpuRequestCapacity = {
   allocationMode: GpuAllocationMode;
-  canAllocate: boolean;
-  canAllocateCpu: boolean;
-  canAllocateMemory: boolean;
   matchingDeviceCount: number;
-  maxCardsPerReplica: number;
   requestedCardsPerReplica: number;
-  requestedCpu: number;
-  requestedMemory: number;
   requestedTotalCards: number;
   satisfyingDeviceCount: number;
-  totalAvailableCpu: number;
-  totalAvailableMemory: number;
   totalAvailableCoreUnits: number;
   totalAvailableMemoryMiB: number;
 };
@@ -640,28 +626,15 @@ export function buildGpuDeviceResourceRows(
     );
 }
 
-type GpuAllocationDevice = {
+type GpuCapacityDevice = {
   availableCoreUnits: number;
   availableMemoryMiB: number;
-  id: string;
-  nodeName: string;
   totalCoreUnits: number;
   totalMemoryMiB: number;
 };
 
-type NodeAllocationState = {
-  availableCpu: number | null;
-  availableMemory: number | null;
-  nodeName: string;
-};
-
 const getPositiveFiniteNumber = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
-
-const getFiniteResourceNumber = (value: unknown) =>
-  typeof value === "number" && Number.isFinite(value)
-    ? Math.max(0, value)
-    : null;
 
 const getRequestedCardsPerReplica = (
   allocationMode: GpuAllocationMode,
@@ -677,7 +650,7 @@ const getRequestedCardsPerReplica = (
 };
 
 const getDeviceRequirement = (
-  device: GpuAllocationDevice,
+  device: GpuCapacityDevice,
   options: {
     allocationMode: GpuAllocationMode;
     coreUnitsPerCard?: number | null;
@@ -715,7 +688,7 @@ const getDeviceRequirement = (
 };
 
 const canDeviceSatisfyGpuRequest = (
-  device: GpuAllocationDevice,
+  device: GpuCapacityDevice,
   options: {
     allocationMode: GpuAllocationMode;
     coreUnitsPerCard?: number | null;
@@ -742,148 +715,29 @@ const canDeviceSatisfyGpuRequest = (
   return true;
 };
 
-const applyGpuRequestToDevice = (
-  device: GpuAllocationDevice,
-  options: {
-    allocationMode: GpuAllocationMode;
-    coreUnitsPerCard?: number | null;
-    gpuPerReplica: number;
-    memoryMiBPerCard?: number | null;
-  },
-) => {
-  const requirement = getDeviceRequirement(device, options);
-  if (!requirement) {
-    return device;
-  }
-
-  return {
-    ...device,
-    availableCoreUnits:
-      requirement.coreUnits > 0
-        ? device.availableCoreUnits - requirement.coreUnits
-        : device.availableCoreUnits,
-    availableMemoryMiB: device.availableMemoryMiB - requirement.memoryMiB,
-  };
-};
-
-const canNodeSatisfyReplicaResources = (
-  node: NodeAllocationState,
-  options: {
-    cpuPerReplica?: number | null;
-    memoryPerReplica?: number | null;
-  },
-) => {
-  const cpuPerReplica = Number(options.cpuPerReplica || 0);
-  const memoryPerReplica = Number(options.memoryPerReplica || 0);
-
-  if (
-    cpuPerReplica > 0 &&
-    node.availableCpu !== null &&
-    node.availableCpu < cpuPerReplica
-  ) {
-    return false;
-  }
-
-  if (
-    memoryPerReplica > 0 &&
-    node.availableMemory !== null &&
-    node.availableMemory < memoryPerReplica
-  ) {
-    return false;
-  }
-
-  return true;
-};
-
-const applyReplicaResourcesToNode = (
-  node: NodeAllocationState,
-  options: {
-    cpuPerReplica?: number | null;
-    memoryPerReplica?: number | null;
-  },
-) => {
-  const cpuPerReplica = Number(options.cpuPerReplica || 0);
-  const memoryPerReplica = Number(options.memoryPerReplica || 0);
-
-  return {
-    ...node,
-    availableCpu:
-      node.availableCpu === null || cpuPerReplica <= 0
-        ? node.availableCpu
-        : node.availableCpu - cpuPerReplica,
-    availableMemory:
-      node.availableMemory === null || memoryPerReplica <= 0
-        ? node.availableMemory
-        : node.availableMemory - memoryPerReplica,
-  };
-};
-
-const chooseDeviceCombinations = (
-  devices: GpuAllocationDevice[],
-  count: number,
-): GpuAllocationDevice[][] => {
-  if (count <= 0) return [[]];
-  if (devices.length < count) return [];
-
-  const result: GpuAllocationDevice[][] = [];
-  const visit = (
-    startIndex: number,
-    selectedDevices: GpuAllocationDevice[],
-  ) => {
-    if (selectedDevices.length === count) {
-      result.push(selectedDevices);
-      return;
-    }
-
-    const remainingSlots = count - selectedDevices.length;
-    for (
-      let index = startIndex;
-      index <= devices.length - remainingSlots;
-      index += 1
-    ) {
-      visit(index + 1, [...selectedDevices, devices[index]]);
-    }
-  };
-
-  visit(0, []);
-  return result;
-};
-
 export function calculateGpuRequestCapacity(
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
   options: {
     allocationMode: GpuAllocationMode;
-    cpuPerReplica?: number | null;
     gpuPerReplica: number;
     selectedAccelerator?: SelectedAccelerator | null;
     memoryMiBPerCard?: number | null;
     coreUnitsPerCard?: number | null;
-    memoryPerReplica?: number | null;
     replicaCount?: number | null;
   },
 ): GpuRequestCapacity {
   const gpuPerReplica = Number(options.gpuPerReplica || 0);
   const replicaCount = Math.max(1, Number(options.replicaCount || 1));
-  const cpuPerReplica = Number(options.cpuPerReplica || 0);
-  const memoryPerReplica = Number(options.memoryPerReplica || 0);
   const requestedCardsPerReplica = getRequestedCardsPerReplica(
     options.allocationMode,
     gpuPerReplica,
   );
   const baseResult = {
     allocationMode: options.allocationMode,
-    canAllocate: false,
-    canAllocateCpu: true,
-    canAllocateMemory: true,
     matchingDeviceCount: 0,
-    maxCardsPerReplica: 0,
     requestedCardsPerReplica,
-    requestedCpu: cpuPerReplica * replicaCount,
-    requestedMemory: memoryPerReplica * replicaCount,
     requestedTotalCards: requestedCardsPerReplica * replicaCount,
     satisfyingDeviceCount: 0,
-    totalAvailableCpu: 0,
-    totalAvailableMemory: 0,
     totalAvailableCoreUnits: 0,
     totalAvailableMemoryMiB: 0,
   };
@@ -896,17 +750,10 @@ export function calculateGpuRequestCapacity(
     return baseResult;
   }
 
-  const devices: GpuAllocationDevice[] = [];
-  const nodeStates = new Map<string, NodeAllocationState>();
+  const devices: GpuCapacityDevice[] = [];
 
-  for (const [nodeName, nodeStatus] of Object.entries(nodeResources)) {
-    nodeStates.set(nodeName, {
-      availableCpu: getFiniteResourceNumber(nodeStatus.available?.cpu),
-      availableMemory: getFiniteResourceNumber(nodeStatus.available?.memory),
-      nodeName,
-    });
-
-    for (const [deviceIndex, device] of (nodeStatus.devices ?? []).entries()) {
+  for (const nodeStatus of Object.values(nodeResources)) {
+    for (const device of nodeStatus.devices ?? []) {
       if (!device.health) {
         continue;
       }
@@ -927,8 +774,6 @@ export function calculateGpuRequestCapacity(
       devices.push({
         availableCoreUnits: Number(device.available?.core_units || 0),
         availableMemoryMiB: Number(device.available?.memory_mib || 0),
-        id: `${nodeName}:${device.uuid}:${deviceIndex}`,
-        nodeName,
         totalCoreUnits: getPositiveFiniteNumber(device.allocatable?.core_units),
         totalMemoryMiB: getPositiveFiniteNumber(device.allocatable?.memory_mib),
       });
@@ -947,169 +792,15 @@ export function calculateGpuRequestCapacity(
   const satisfyingDeviceCount = devices.filter((device) =>
     canDeviceSatisfyGpuRequest(device, options),
   ).length;
-  const nodeStateValues = Array.from(nodeStates.values());
-  const hasCpuSignals = nodeStateValues.some(
-    (node) => node.availableCpu !== null,
-  );
-  const hasMemorySignals = nodeStateValues.some(
-    (node) => node.availableMemory !== null,
-  );
-  const totalAvailableCpu = nodeStateValues.reduce(
-    (sum, node) => sum + (node.availableCpu ?? 0),
-    0,
-  );
-  const totalAvailableMemory = nodeStateValues.reduce(
-    (sum, node) => sum + (node.availableMemory ?? 0),
-    0,
-  );
-  const requestedCpu = cpuPerReplica * replicaCount;
-  const requestedMemory = memoryPerReplica * replicaCount;
-  const canAllocateCpu = !hasCpuSignals || requestedCpu <= totalAvailableCpu;
-  const canAllocateMemory =
-    !hasMemorySignals || requestedMemory <= totalAvailableMemory;
-  const canAllocateCardsPerReplica = (cardsPerReplica: number) => {
-    if (cardsPerReplica <= 0) {
-      return true;
-    }
-    if (cardsPerReplica > satisfyingDeviceCount) {
-      return false;
-    }
-    if (!canAllocateCpu || !canAllocateMemory) {
-      return false;
-    }
-
-    const remainingDevices = devices.map((device) => ({ ...device }));
-    const remainingNodes = new Map(
-      Array.from(nodeStates.entries()).map(([nodeName, node]) => [
-        nodeName,
-        { ...node },
-      ]),
-    );
-
-    const allocateReplica = (replicaIndex: number): boolean => {
-      if (replicaIndex >= replicaCount) {
-        return true;
-      }
-
-      const nodeNames = Array.from(
-        new Set(remainingDevices.map((device) => device.nodeName)),
-      ).sort();
-
-      for (const nodeName of nodeNames) {
-        const nodeState = remainingNodes.get(nodeName);
-        if (!nodeState || !canNodeSatisfyReplicaResources(nodeState, options)) {
-          continue;
-        }
-
-        const nodeCandidates = remainingDevices
-          .filter(
-            (device) =>
-              device.nodeName === nodeName &&
-              canDeviceSatisfyGpuRequest(device, options),
-          )
-          .sort((first, second) => {
-            if (second.availableMemoryMiB !== first.availableMemoryMiB) {
-              return second.availableMemoryMiB - first.availableMemoryMiB;
-            }
-            return second.availableCoreUnits - first.availableCoreUnits;
-          });
-        const combinations = chooseDeviceCombinations(
-          nodeCandidates,
-          cardsPerReplica,
-        );
-
-        for (const combination of combinations) {
-          const nodeSnapshot = { ...nodeState };
-          const snapshots = combination.map((device) => {
-            const index = remainingDevices.findIndex(
-              (remainingDevice) => remainingDevice.id === device.id,
-            );
-            return { device: remainingDevices[index], index };
-          });
-
-          remainingNodes.set(
-            nodeName,
-            applyReplicaResourcesToNode(nodeState, options),
-          );
-
-          for (const snapshot of snapshots) {
-            remainingDevices[snapshot.index] = applyGpuRequestToDevice(
-              snapshot.device,
-              options,
-            );
-          }
-
-          if (allocateReplica(replicaIndex + 1)) {
-            return true;
-          }
-
-          for (const snapshot of snapshots) {
-            remainingDevices[snapshot.index] = snapshot.device;
-          }
-          remainingNodes.set(nodeName, nodeSnapshot);
-        }
-      }
-
-      return false;
-    };
-
-    return allocateReplica(0);
-  };
-  let maxCardsPerReplica = 0;
-  for (
-    let cardsPerReplica = matchingDeviceCount;
-    cardsPerReplica > 0;
-    cardsPerReplica -= 1
-  ) {
-    if (canAllocateCardsPerReplica(cardsPerReplica)) {
-      maxCardsPerReplica = cardsPerReplica;
-      break;
-    }
-  }
 
   return {
     ...baseResult,
-    canAllocate: canAllocateCardsPerReplica(requestedCardsPerReplica),
-    canAllocateCpu,
-    canAllocateMemory,
     matchingDeviceCount,
     requestedCardsPerReplica,
-    requestedCpu,
-    requestedMemory,
     requestedTotalCards: requestedCardsPerReplica * replicaCount,
-    maxCardsPerReplica,
     satisfyingDeviceCount,
-    totalAvailableCpu,
-    totalAvailableMemory,
     totalAvailableCoreUnits,
     totalAvailableMemoryMiB,
-  };
-}
-
-export function calculateVgpuCardCapacity(
-  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
-  options: {
-    selectedAccelerator?: SelectedAccelerator | null;
-    memoryMiBPerCard?: number | null;
-    coreUnitsPerCard?: number | null;
-    replicaCount?: number | null;
-  },
-): VgpuCardCapacity {
-  const capacity = calculateGpuRequestCapacity(nodeResources, {
-    allocationMode: "vgpu",
-    coreUnitsPerCard: options.coreUnitsPerCard,
-    gpuPerReplica: 1,
-    memoryMiBPerCard: options.memoryMiBPerCard,
-    replicaCount: options.replicaCount,
-    selectedAccelerator: options.selectedAccelerator,
-  });
-
-  return {
-    matchingDeviceCount: capacity.matchingDeviceCount,
-    maxCardsPerReplica: capacity.maxCardsPerReplica,
-    totalCards:
-      capacity.maxCardsPerReplica *
-      Math.max(1, Number(options.replicaCount || 1)),
   };
 }
 
