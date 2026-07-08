@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { NumberInput } from "@/foundation/components/NumberInput";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 interface MaxLengthSelectorProps {
@@ -43,9 +44,22 @@ export const MaxLengthSelector = forwardRef<
               <Label htmlFor="maxlength">
                 {t("components.playground.chat.maximumLength")}
               </Label>
-              <span className="min-w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm text-muted-foreground hover:border-border">
-                {formatMaxLength(value)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {formatMaxLength(value)}
+                </span>
+                <NumberInput
+                  min={KB}
+                  max={MB}
+                  step={KB}
+                  value={value}
+                  onValueChange={(num) =>
+                    onChange(Math.min(Math.max(KB, num), MB))
+                  }
+                  aria-label={t("components.playground.chat.maximumLength")}
+                  className="h-7 w-24 px-2 text-right text-sm text-muted-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <Slider
               ref={ref}

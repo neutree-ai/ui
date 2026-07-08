@@ -1,3 +1,4 @@
+import { type ElementRef, forwardRef } from "react";
 import {
   HoverCard,
   HoverCardContent,
@@ -5,8 +6,8 @@ import {
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { NumberInput } from "@/foundation/components/NumberInput";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { type ElementRef, forwardRef } from "react";
 
 interface TemperatureSelectorProps {
   value: number;
@@ -28,9 +29,15 @@ export const TemperatureSelector = forwardRef<
               <Label htmlFor="temperature">
                 {t("components.playground.chat.temperature")}
               </Label>
-              <span className="w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm text-muted-foreground hover:border-border">
-                {value}
-              </span>
+              <NumberInput
+                min={0}
+                max={1}
+                step={0.1}
+                value={value}
+                onValueChange={(num) => onChange(Math.min(Math.max(0, num), 1))}
+                aria-label={t("components.playground.chat.temperature")}
+                className="h-7 w-16 px-2 text-right text-sm text-muted-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
             </div>
             <Slider
               ref={ref}
