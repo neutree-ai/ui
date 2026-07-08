@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 import {
+  formatVgpuMemoryGiBInputValue,
   getEffectiveVgpuMemoryMiB,
+  getRoundedVgpuMemoryGiBValue,
   getVgpuMemoryDisplay,
   getVgpuVirtualization,
   hasVgpuResources,
+  normalizeVgpuMemoryGiBInput,
   normalizeVgpuVirtualization,
 } from "./vgpu";
 
@@ -118,11 +121,32 @@ describe("endpoint vgpu helpers", () => {
   });
 
   it("formats memory display in GiB and percentage modes", () => {
-    expect(getVgpuMemoryDisplay({ memory_mib: 10240 }, 15360)).toBe(
-      "10.0 GiB",
-    );
+    expect(getVgpuMemoryDisplay({ memory_mib: 10240 }, 15360)).toBe("10.0 GiB");
     expect(getVgpuMemoryDisplay({ memory_percent: 50 }, 15360)).toBe(
       "50% (7.5 GiB)",
+    );
+  });
+
+  it("rounds the raw vGPU memory max for display", () => {
+    expect(getRoundedVgpuMemoryGiBValue(46068)).toBe(45);
+    expect(formatVgpuMemoryGiBInputValue(46068, 46068)).toBe("45");
+  });
+
+  it("clamps vGPU memory inputs within the displayed boundary to raw MiB", () => {
+    expect(normalizeVgpuMemoryGiBInput(45, 46068)).toBe(46068);
+    expect(normalizeVgpuMemoryGiBInput(44.99, 46068)).toBe(46068);
+    expect(normalizeVgpuMemoryGiBInput(46, 46068)).toBe(47104);
+  });
+
+  it("clamps vGPU memory inputs within the remaining display boundary", () => {
+    expect(formatVgpuMemoryGiBInputValue(500, 46068, 500)).toBe("0.5");
+    expect(normalizeVgpuMemoryGiBInput(0.5, 46068, 500)).toBe(500);
+    expect(normalizeVgpuMemoryGiBInput(0.51, 46068, 500)).toBe(523);
+  });
+
+  it("rejects non-finite vGPU memory inputs", () => {
+    expect(normalizeVgpuMemoryGiBInput(Number.POSITIVE_INFINITY, 46068)).toBe(
+      undefined,
     );
   });
 });

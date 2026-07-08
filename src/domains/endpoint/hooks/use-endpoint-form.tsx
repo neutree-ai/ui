@@ -34,7 +34,12 @@ import {
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
-import { getEffectiveVgpuMemoryMiB } from "@/domains/endpoint/lib/vgpu";
+import {
+  formatVgpuMemoryGiBInputValue,
+  getEffectiveVgpuMemoryMiB,
+  getRoundedVgpuMemoryGiBValue,
+  normalizeVgpuMemoryGiBInput,
+} from "@/domains/endpoint/lib/vgpu";
 import type {
   Endpoint,
   EndpointClusterRef,
@@ -318,12 +323,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedVirtualization,
     selectedMemoryTotalMiB,
   );
-  const vgpuMemoryGiBInputValue =
-    selectedVirtualization?.memory_mib !== undefined
-      ? formatInputNumber(Number(selectedVirtualization.memory_mib) / 1024)
-      : effectiveVgpuMemoryMiB
-        ? formatInputNumber(effectiveVgpuMemoryMiB / 1024)
-        : "";
   const effectiveGpuAllocationMode: GpuAllocationMode =
     showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
   const isVgpuAllocationMode = effectiveGpuAllocationMode === "vgpu";
@@ -405,6 +404,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         )
       : Math.floor(reusableVgpuMemoryMiB / effectiveVgpuMemoryMiB)
     : 0;
+  const hasRawAvailableVgpuMemoryMiB = Number.isFinite(
+    selectedAcceleratorOption?.virtualizationMemoryMiB,
+  );
   const rawAvailableVgpuMemoryMiB = Number(
     selectedAcceleratorOption?.virtualizationMemoryMiB || 0,
   );
@@ -415,6 +417,44 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     rawAvailableVgpuMemoryMiB + reusableVgpuMemoryMiB;
   const availableVgpuCoreUnits =
     rawAvailableVgpuCoreUnits + reusableVgpuCoreUnits;
+  const rawVgpuMemoryBoundaryMiB = (() => {
+    const rawMaxMiB =
+      typeof selectedMemoryTotalMiB === "number" &&
+      Number.isFinite(selectedMemoryTotalMiB)
+        ? selectedMemoryTotalMiB
+        : null;
+    if (!hasRawAvailableVgpuMemoryMiB && reusableVgpuMemoryMiB <= 0) {
+      return rawMaxMiB;
+    }
+    const requestedCardCount = Math.max(1, requestedVirtualCards);
+    const perCardBoundaryMiB = Math.floor(
+      availableVgpuMemoryMiB / requestedCardCount,
+    );
+    if (!Number.isFinite(perCardBoundaryMiB)) {
+      return rawMaxMiB;
+    }
+    const boundedPerCardMiB = Math.max(0, perCardBoundaryMiB);
+    return rawMaxMiB === null
+      ? boundedPerCardMiB
+      : Math.min(rawMaxMiB, boundedPerCardMiB);
+  })();
+  const vgpuMemoryGiBMaxValue = getRoundedVgpuMemoryGiBValue(
+    rawVgpuMemoryBoundaryMiB,
+  );
+  const vgpuMemoryGiBInputValue =
+    selectedVirtualization?.memory_mib !== undefined
+      ? formatVgpuMemoryGiBInputValue(
+          selectedVirtualization.memory_mib,
+          selectedMemoryTotalMiB,
+          rawVgpuMemoryBoundaryMiB,
+        )
+      : effectiveVgpuMemoryMiB
+        ? formatVgpuMemoryGiBInputValue(
+            effectiveVgpuMemoryMiB,
+            selectedMemoryTotalMiB,
+            rawVgpuMemoryBoundaryMiB,
+          )
+        : "";
   const currentRequestCoreUnitsPerCard = isVgpuAllocationMode
     ? vgpuCoreUnitsPerCard
     : 0;
@@ -531,11 +571,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       return;
     }
 
+    const memoryMiB = normalizeVgpuMemoryGiBInput(
+      memoryGiB,
+      selectedMemoryTotalMiB,
+      rawVgpuMemoryBoundaryMiB,
+    );
+    if (memoryMiB === undefined) return;
+
     form.setValue(
       "spec.resources.accelerator.virtualization",
       {
         ...(coreOnlyVirtualization ?? {}),
-        memory_mib: Math.ceil(memoryGiB * 1024),
+        memory_mib: memoryMiB,
       },
       userSetValueOptions,
     );
@@ -1730,15 +1777,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               setSingleCardMemoryGiB(event.target.value)
                             }
                             min={0}
-                            max={
-                              selectedMemoryTotalMiB
-                                ? Number(
-                                    formatInputNumber(
-                                      selectedMemoryTotalMiB / 1024,
-                                    ),
-                                  )
-                                : undefined
-                            }
+                            max={vgpuMemoryGiBMaxValue ?? undefined}
                             step={0.5}
                             disabled={!showVgpuFields}
                             placeholder="GiB"
