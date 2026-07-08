@@ -548,7 +548,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ? availableVgpuCoreUnits
     : 0;
   const maxVirtualCardsPerReplica = hasDetailedGpuCapacity
-    ? gpuRequestCapacity.maxCardsPerReplica
+    ? displayedGpuRequestCapacity.satisfyingDeviceCount
     : Math.floor(legacyTotalVirtualCardCapacity / replicaCount);
   const requestedCardsPerReplica = hasDetailedGpuCapacity
     ? displayedGpuRequestCapacity.requestedCardsPerReplica
@@ -560,11 +560,27 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       : legacyFullGpuCardCapacity;
   const requestedVirtualCardsPerReplica = gpuUsage;
   const displayedVirtualCardCapacity = displayedCardCapacity;
+  const requestedDetailedGpuCards = isVgpuAllocationMode
+    ? gpuRequestCapacity.requestedCardsPerReplica
+    : gpuRequestCapacity.requestedTotalCards;
+  const isDetailedGpuCardCapacityExceeded =
+    hasDetailedGpuCapacity &&
+    requestedDetailedGpuCards > gpuRequestCapacity.satisfyingDeviceCount;
+  const isDetailedVgpuMemoryCapacityExceeded =
+    hasDetailedGpuCapacity &&
+    gpuRequestCapacity.totalAvailableMemoryMiB > 0 &&
+    requestedVgpuMemoryMiB > gpuRequestCapacity.totalAvailableMemoryMiB;
+  const isDetailedVgpuCoreCapacityExceeded =
+    hasDetailedGpuCapacity &&
+    requestedVgpuCoreUnits > 0 &&
+    requestedVgpuCoreUnits > gpuRequestCapacity.totalAvailableCoreUnits;
   const isVgpuCapacityExceeded = Boolean(
     isVgpuAllocationMode &&
       selectedAccelerator?.product &&
       (hasDetailedGpuCapacity
-        ? !gpuRequestCapacity.canAllocate
+        ? isDetailedGpuCardCapacityExceeded ||
+          isDetailedVgpuMemoryCapacityExceeded ||
+          isDetailedVgpuCoreCapacityExceeded
         : additionalVirtualCards > legacyAvailableVirtualCards ||
           ((rawAvailableVgpuMemoryMiB > 0 || reusableVgpuMemoryMiB > 0) &&
             additionalVgpuMemoryMiB > rawAvailableVgpuMemoryMiB) ||
@@ -576,7 +592,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       selectedAccelerator?.type &&
       selectedAccelerator?.product &&
       (hasDetailedGpuCapacity
-        ? !gpuRequestCapacity.canAllocate
+        ? isDetailedGpuCardCapacityExceeded
         : additionalFullGpuCards > legacyAvailableFullGpuCards),
   );
   // CPU / memory over-allocation: the request summed across replicas must fit
@@ -585,39 +601,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const requestedCpuTotal = (normalizedResources?.cpu || 0) * replicaCount;
   const requestedMemoryTotal =
     (normalizedResources?.memory || 0) * replicaCount;
-  const hasNodeComputeResourceSignals = Boolean(
-    capacityNodeResources &&
-      Object.values(capacityNodeResources).some(
-        (nodeStatus) =>
-          typeof nodeStatus.available?.cpu === "number" ||
-          typeof nodeStatus.available?.memory === "number",
+  const isCpuCapacityExceeded = Boolean(
+    currentCluster &&
+      isResourceRequestExceeded(
+        requestedCpuTotal,
+        maxAvailable.cpu.available,
+        maxAvailable.cpu.total,
       ),
   );
-  const shouldUseNodeResourceCapacity = Boolean(
-    capacityNodeResources &&
-      selectedAccelerator?.product &&
-      hasNodeComputeResourceSignals,
+  const isMemoryCapacityExceeded = Boolean(
+    currentCluster &&
+      isResourceRequestExceeded(
+        requestedMemoryTotal,
+        maxAvailable.memory.available,
+        maxAvailable.memory.total,
+      ),
   );
-  const isCpuCapacityExceeded = shouldUseNodeResourceCapacity
-    ? !gpuRequestCapacity.canAllocateCpu
-    : Boolean(
-        currentCluster &&
-          isResourceRequestExceeded(
-            requestedCpuTotal,
-            maxAvailable.cpu.available,
-            maxAvailable.cpu.total,
-          ),
-      );
-  const isMemoryCapacityExceeded = shouldUseNodeResourceCapacity
-    ? !gpuRequestCapacity.canAllocateMemory
-    : Boolean(
-        currentCluster &&
-          isResourceRequestExceeded(
-            requestedMemoryTotal,
-            maxAvailable.memory.available,
-            maxAvailable.memory.total,
-          ),
-      );
   // Any over-allocated resource blocks deploy (returned as `submitBlocked` and
   // handed to ResourceForm); each card renders its own warning message.
   const isResourceCapacityExceeded =

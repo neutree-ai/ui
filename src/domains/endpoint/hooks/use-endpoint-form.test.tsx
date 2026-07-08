@@ -2762,6 +2762,201 @@ describe("useEndpointForm", () => {
       );
     });
 
+    it("does not block vGPU capacity when matching cards are split across nodes", async () => {
+      const splitCardsCluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      splitCardsCluster.metadata = metadata("split-vgpu-cards");
+      const resourceInfo = splitCardsCluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 2,
+                virtualization: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: {
+              cpu: 8,
+              memory: 32,
+              accelerator_groups: null,
+            },
+            devices: [
+              {
+                uuid: "GPU-split-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 4096,
+                  core_units: 50,
+                },
+              },
+            ],
+          },
+          "node-b": {
+            allocatable: null,
+            available: {
+              cpu: 8,
+              memory: 32,
+              accelerator_groups: null,
+            },
+            devices: [
+              {
+                uuid: "GPU-split-b",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 4096,
+                  core_units: 50,
+                },
+              },
+            ],
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [splitCardsCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "split-vgpu-cards");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 2,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 1024,
+              core_percent: 25,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("2.0 / 2.0");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("does not block GPU capacity when CPU is available only on another node", async () => {
+      const splitCpuCluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      splitCpuCluster.metadata = metadata("split-cpu-vgpu");
+      const resourceInfo = splitCpuCluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.cpu = 18;
+        resourceInfo.available.memory = 96;
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: {
+              cpu: 2,
+              memory: 32,
+              accelerator_groups: null,
+            },
+            devices: [
+              {
+                uuid: "GPU-cpu-split",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+          "node-b": {
+            allocatable: null,
+            available: {
+              cpu: 16,
+              memory: 64,
+              accelerator_groups: null,
+            },
+            devices: [],
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [splitCpuCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "split-cpu-vgpu");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 4,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+      expect(
+        screen.queryByText("endpoints.messages.cpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
     it("allows separate replicas to reuse one physical card when global vGPU resources are enough", async () => {
       const singleSharedCardCluster = JSON.parse(
         JSON.stringify(virtualizedKubernetesClusterWithDevices),
@@ -3753,7 +3948,7 @@ describe("useEndpointForm", () => {
       expect(getCurrentRequestText()).toContain("100.0 / 200.0");
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
-      ).toBeTruthy();
+      ).toBeNull();
     });
 
     it("switches allocation mode by clearing or setting single-card memory", async () => {
