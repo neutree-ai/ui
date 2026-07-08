@@ -267,6 +267,43 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toBeTruthy();
   });
 
+  it("shows the cluster's reported GPU products in the header badge, not the preset product", () => {
+    // A catalog/recipe preset can carry a product (e.g. "L4") the cluster does
+    // not have; the "GPU Type" badge must reflect the cluster's actual GPUs.
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "L4" }}
+        virtualizationEnabled={true}
+        t={t}
+      />,
+    );
+
+    const toolbar = within(
+      screen.getByTestId("endpoint-cluster-resource-target-notes"),
+    );
+    expect(toolbar.getByText("Tesla-T4")).toBeTruthy();
+    expect(toolbar.queryByText("L4")).toBeNull();
+  });
+
+  it("keeps the header badge on cluster products when the preset accelerator matches", () => {
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={true}
+        t={t}
+      />,
+    );
+
+    const toolbar = within(
+      screen.getByTestId("endpoint-cluster-resource-target-notes"),
+    );
+    expect(toolbar.getByText("Tesla-T4")).toBeTruthy();
+  });
+
   it("keeps cluster pool values visible when the preset accelerator matches no product", () => {
     // A recipe/catalog preset can carry a product name the cluster does not
     // report at all; the summary must fall back to the full pool instead of

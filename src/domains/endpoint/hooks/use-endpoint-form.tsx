@@ -1940,7 +1940,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             {clusterGpuResourcesPanel && (
               <div
                 data-testid="endpoint-resource-context"
-                className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm"
+                className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm xl:sticky xl:top-4 xl:self-start"
               >
                 {clusterGpuResourcesPanel}
               </div>
