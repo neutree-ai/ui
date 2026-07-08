@@ -196,7 +196,7 @@
   "src/domains/endpoint/components/RerankPlayground.tsx": "a4409b6861a882c89aecb9aec8c878e3",
   "src/domains/endpoint/components/ResourcesCard.tsx": "367ce4f960a848d614f781a3b9bccf44",
   "src/domains/endpoint/components/SliderWithInput.tsx": "79e861ce4a0846107bdad89c93389131",
-  "src/domains/endpoint/components/VirtualLog.tsx": "27086754a748869249911de248b3536f",
+  "src/domains/endpoint/components/VirtualLog.tsx": "6ce5bbb904e53e6362a7cedf99da8c84",
   "src/domains/cluster/types.ts": "5d2d2f05b4701d4a771055dc9dcbf799",
   "src/domains/cluster/lib/get-ray-dashboard-proxy.ts": "a4a3c75f58c68ee9dca572ad3a70c62b",
   "src/domains/cluster/hooks/use-cluster-monitor-panels.ts": "9b1755f6538148e43f76f6f7aab08420",
