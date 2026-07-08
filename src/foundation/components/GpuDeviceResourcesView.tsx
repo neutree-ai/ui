@@ -588,7 +588,9 @@ export function GpuDeviceResourcesView({
                 <TableHead className="min-w-[120px]">
                   {labels.gpuNumber}
                 </TableHead>
-                <TableHead>{labels.status}</TableHead>
+                <TableHead className="w-[72px] text-center">
+                  {labels.status}
+                </TableHead>
                 {showNodeColumn && (
                   <TableHead className="min-w-[140px]">{labels.node}</TableHead>
                 )}
@@ -636,9 +638,9 @@ export function GpuDeviceResourcesView({
                       <span className="sr-only">{labels.copyUuid}</span>
                     </Button>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <span
-                      className="flex items-center justify-center"
+                      className="flex w-full items-center justify-center"
                       role="img"
                       aria-label={
                         row.healthy ? labels.healthy : labels.unhealthy

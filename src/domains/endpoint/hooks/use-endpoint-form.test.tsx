@@ -599,10 +599,11 @@ function getCurrentRequestText() {
 }
 
 function getCurrentRequestMetricText(label: string) {
-  const labelNode = within(
-    screen.getByTestId("endpoint-current-request-grid"),
-  ).getByText(label);
-  return labelNode.parentElement?.textContent ?? "";
+  const grid = screen.getByTestId("endpoint-current-request-grid");
+  const metricCard = Array.from(grid.children).find((child) =>
+    child.textContent?.startsWith(label),
+  );
+  return metricCard?.textContent ?? "";
 }
 
 // --- Tests ---
@@ -2272,7 +2273,7 @@ describe("useEndpointForm", () => {
       });
       expect(
         getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
-      ).toBe("endpoints.fields.vgpuCoreCapacity200.0 / 0.0");
+      ).toBe("endpoints.fields.vgpuCoreCapacity-");
       expect(
         within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
           "endpoints.messages.fullGpuResourcesInsufficient",
@@ -2370,10 +2371,44 @@ describe("useEndpointForm", () => {
       });
       expect(
         getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
-      ).toBe("endpoints.fields.vgpuCoreCapacity100.0 / 100.0");
+      ).toBe("endpoints.fields.vgpuCoreCapacity-");
       expect(
         screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
       ).toBeNull();
+    });
+
+    it("shows current request VRAM and core as dashes for fractional full-card static cluster allocation", async () => {
+      setupMocks([catalogA, catalogB], [staticNodeClusterWithNodeResources]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "static-node-resources");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 0.5,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("0.5 / 1.0");
+      });
+      expect(
+        getCurrentRequestMetricText("endpoints.fields.vgpuMemoryCapacity"),
+      ).toBe("endpoints.fields.vgpuMemoryCapacity-");
+      expect(
+        getCurrentRequestMetricText("endpoints.fields.vgpuMemoryCapacity"),
+      ).not.toContain("GiB");
+      expect(
+        getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
+      ).toBe("endpoints.fields.vgpuCoreCapacity-");
     });
 
     it("adds the current endpoint vGPU allocation back while editing", async () => {

@@ -169,6 +169,19 @@ describe("GpuDeviceResourcesView", () => {
     ]);
   });
 
+  it("centers the device status column", () => {
+    render(
+      <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
+    );
+
+    expect(
+      screen.getByRole("columnheader", { name: "Status" }).className,
+    ).toContain("text-center");
+    expect(
+      screen.getByRole("img", { name: "Healthy" }).closest("td")?.className,
+    ).toContain("text-center");
+  });
+
   it("does not append a VRAM unit when summary remaining memory is unknown", () => {
     render(
       <GpuDeviceResourcesView
