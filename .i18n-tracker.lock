@@ -43,7 +43,7 @@
   "src/pages/api-keys/show.tsx": "3ecbea3750b6bc421c97fb673084dd5f",
   "src/components/ui/alert-dialog.tsx": "fd2a0854b18d61d21fe0e8effd7e4cd9",
   "src/components/ui/alert.tsx": "25ac92016d099c561981ce1456ee8741",
-  "src/components/ui/badge.tsx": "ee17cf4c4ae2e3bf161fcd6d1006eecc",
+  "src/components/ui/badge.tsx": "d90d68a1c91314812335d2d5f2a807e0",
   "src/components/ui/breadcrumb.tsx": "82df08a923d32340565cd384babe01c7",
   "src/components/ui/button.tsx": "c8948183740d3c2351034f8b5e9fe5d2",
   "src/components/ui/card.tsx": "a21745b6e55daad1af599956327a5e8f",
