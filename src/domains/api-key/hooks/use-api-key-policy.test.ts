@@ -186,19 +186,102 @@ describe("compareWorkspaceModelOptions", () => {
     ...over,
   });
 
-  it("orders Running endpoints before non-running ones", () => {
-    const paused = opt({ model: "a", endpointName: "e1", phase: "Paused" });
-    const running = opt({ model: "z", endpointName: "e2", phase: "Running" });
+  it("orders Running endpoints before non-running ones, regardless of type", () => {
+    const paused = opt({
+      model: "a",
+      endpointName: "e1",
+      type: "external",
+      phase: "Paused",
+    });
+    const running = opt({
+      model: "z",
+      endpointName: "e2",
+      type: "internal",
+      phase: "Running",
+    });
     expect([paused, running].sort(compareWorkspaceModelOptions)).toEqual([
       running,
       paused,
     ]);
   });
 
-  it("falls back to model, endpoint, then type within the same group", () => {
-    const a = opt({ model: "alpha", endpointName: "e2", phase: "Running" });
-    const b = opt({ model: "alpha", endpointName: "e1", phase: "Running" });
-    const c = opt({ model: "beta", endpointName: "e1", phase: "Running" });
+  it("groups internal before external within the same status", () => {
+    // Same status (Running), so a Running external model that sorts
+    // alphabetically before an internal one must still land after every
+    // Running internal model (type groups stay contiguous, internal first).
+    const extA = opt({
+      model: "aaa",
+      endpointName: "e1",
+      type: "external",
+      phase: "Running",
+    });
+    const intZ = opt({
+      model: "zzz",
+      endpointName: "e2",
+      type: "internal",
+      phase: "Running",
+    });
+    expect([extA, intZ].sort(compareWorkspaceModelOptions)).toEqual([
+      intZ,
+      extA,
+    ]);
+  });
+
+  it("falls back to model then endpoint within the same status+type group", () => {
+    const a = opt({
+      model: "alpha",
+      endpointName: "e2",
+      type: "internal",
+      phase: "Running",
+    });
+    const b = opt({
+      model: "alpha",
+      endpointName: "e1",
+      type: "internal",
+      phase: "Running",
+    });
+    const c = opt({
+      model: "beta",
+      endpointName: "e1",
+      type: "internal",
+      phase: "Running",
+    });
     expect([c, a, b].sort(compareWorkspaceModelOptions)).toEqual([b, a, c]);
+  });
+
+  it("orders Running internal, Running external, then stopped internal", () => {
+    const ie1 = opt({
+      model: "ie-1",
+      endpointName: "ie-1",
+      type: "internal",
+      phase: "Running",
+    });
+    const ie2 = opt({
+      model: "ie-2",
+      endpointName: "ie-2",
+      type: "internal",
+      phase: "Running",
+    });
+    const ee1 = opt({
+      model: "ee-1",
+      endpointName: "ee-1",
+      type: "external",
+      phase: "Running",
+    });
+    const ee2 = opt({
+      model: "ee-2",
+      endpointName: "ee-2",
+      type: "external",
+      phase: "Running",
+    });
+    const ie3 = opt({
+      model: "ie-3",
+      endpointName: "ie-3",
+      type: "internal",
+      phase: "Stopped",
+    });
+    expect(
+      [ee2, ie3, ee1, ie2, ie1].sort(compareWorkspaceModelOptions),
+    ).toEqual([ie1, ie2, ee1, ee2, ie3]);
   });
 });

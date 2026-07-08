@@ -106,7 +106,7 @@ export const ModelMultiSelect = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] max-w-full p-0">
-          <Command shouldFilter={false} className="rounded-lg border shadow-md">
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder={t("api_keys.limits.selectModel")}
               value={search}
@@ -138,11 +138,7 @@ export const ModelMultiSelect = ({
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={cn(
-                            "h-5 font-normal",
-                            phaseClass(o.phase),
-                            "group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground",
-                          )}
+                          className={cn("h-5 font-normal", phaseClass(o.phase))}
                         >
                           {phaseLabel(o.phase)}
                         </Badge>
