@@ -37,6 +37,15 @@ describe("EndpointRuntimeResourcesCard", () => {
   it("renders virtual allocated resource summary and replica groups", () => {
     const { container } = render(
       <EndpointRuntimeResourcesCard
+        configuredResources={{
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        }}
         resources={{
           summary: {
             products: {
@@ -180,7 +189,8 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getByText("endpoint-abc-xgpwv")).toBeTruthy();
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
     expect(screen.getAllByText("15.0 GiB").length).toBeGreaterThan(0);
-    expect(screen.getByText("Core 100")).toBeTruthy();
+    expect(screen.getByText("Core -")).toBeTruthy();
+    expect(screen.queryByText("Core 100")).toBeNull();
     expect(screen.getAllByText("neutree-gpu-t4-02").length).toBeGreaterThan(0);
     expect(
       screen.queryByText("GPU-5ad72eb2-9871-1aba-55b8-ade03c41e56a"),
@@ -197,6 +207,55 @@ describe("EndpointRuntimeResourcesCard", () => {
       "GPU-5ad72eb2-9871-1aba-55b8-ade03c41e56a",
       expect.any(Object),
     );
+  });
+
+  it("renders configured replica core resources when vGPU core percent is set", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        configuredResources={{
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        }}
+        resources={{
+          summary: {
+            products: {
+              "Tesla-T4": {
+                memory_mib: 8192,
+                core_units: 100,
+              },
+            },
+          },
+          replicas: [
+            {
+              instance_id: "endpoint-vgpu",
+              replica_id: "endpoint-vgpu-0",
+              node_id: "neutree-gpu-t4-02",
+              devices: [
+                {
+                  uuid: "GPU-vgpu-core",
+                  product: "Tesla-T4",
+                  memory_mib: 8192,
+                  core_units: 100,
+                  node_id: "neutree-gpu-t4-02",
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getAllByText("Core 50").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Core -")).toBeNull();
   });
 
   it("renders replica GPU labels in physical order when order is provided", () => {

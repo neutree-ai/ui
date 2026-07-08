@@ -11,8 +11,10 @@ import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
+import type { ResourceSpec } from "@/foundation/types/serving-types";
 
 type EndpointRuntimeResourcesCardProps = {
+  configuredResources?: ResourceSpec | null;
   resources: EndpointResourceStatus | null | undefined;
 };
 
@@ -60,10 +62,16 @@ const ResourceValue = ({
 );
 
 export default function EndpointRuntimeResourcesCard({
+  configuredResources,
   resources,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
+  const configuredCoreLimit = Number(
+    configuredResources?.accelerator?.virtualization?.core_percent ?? 0,
+  );
+  const coreLimitText =
+    configuredCoreLimit > 0 ? formatCoreLimit(configuredCoreLimit) : "-";
 
   const summaryRows = getEndpointResourceSummaryRows(resources);
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
@@ -123,7 +131,7 @@ export default function EndpointRuntimeResourcesCard({
               />
               <ResourceValue
                 label={t("clusters.fields.coreUsage")}
-                value={formatCoreLimit(row.coreUnits)}
+                value={coreLimitText}
               />
             </div>
           ))}
@@ -170,8 +178,7 @@ export default function EndpointRuntimeResourcesCard({
                       {t("endpoints.fields.vgpuMemory")}
                     </Badge>
                     <Badge variant="outline" className="bg-muted/40">
-                      {t("endpoints.fields.vgpuCoreCapacity")}{" "}
-                      {formatCoreLimit(group.coreUnits)}
+                      {t("endpoints.fields.vgpuCoreCapacity")} {coreLimitText}
                     </Badge>
                   </div>
                 </div>
@@ -222,7 +229,7 @@ export default function EndpointRuntimeResourcesCard({
                         <ResourceValue
                           className="border-0 bg-transparent p-0"
                           label={t("clusters.fields.coreUsage")}
-                          value={formatCoreLimit(device.coreUnits)}
+                          value={coreLimitText}
                         />
                         <ResourceValue
                           className="border-0 bg-transparent p-0"

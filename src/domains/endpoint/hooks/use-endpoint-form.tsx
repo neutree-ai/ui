@@ -88,8 +88,6 @@ type AcceleratorVirtualization = NonNullable<
 >["virtualization"];
 type GpuAllocationMode = "full" | "vgpu";
 
-const FULL_CARD_CORE_UNITS = 100;
-
 const hasVgpuVirtualizationValues = (
   virtualization: AcceleratorVirtualization | undefined,
 ) =>
@@ -417,19 +415,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     rawAvailableVgpuMemoryMiB + reusableVgpuMemoryMiB;
   const availableVgpuCoreUnits =
     rawAvailableVgpuCoreUnits + reusableVgpuCoreUnits;
-  const fullGpuCoreUnitsPerCard =
-    selectedAccelerator?.type && selectedAccelerator?.product
-      ? FULL_CARD_CORE_UNITS
-      : 0;
   const currentRequestCoreUnitsPerCard = isVgpuAllocationMode
     ? vgpuCoreUnitsPerCard
-    : fullGpuCoreUnitsPerCard;
+    : 0;
   const currentRequestCoreUnits = isVgpuAllocationMode
     ? requestedVgpuCoreUnits
-    : requestedFullGpuCards * fullGpuCoreUnitsPerCard;
+    : 0;
   const currentRequestAvailableCoreUnits = isVgpuAllocationMode
     ? availableVgpuCoreUnits
-    : fullGpuCardCapacity * fullGpuCoreUnitsPerCard;
+    : 0;
   const totalVirtualCardCapacity =
     vgpuCardCapacity.totalCards + reusableVirtualCards;
   const maxVirtualCardsPerReplica = Math.floor(
