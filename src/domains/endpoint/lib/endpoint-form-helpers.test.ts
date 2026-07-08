@@ -26,6 +26,12 @@ describe("isResourceRequestExceeded", () => {
     expect(isResourceRequestExceeded(2.9, 2.9, 15.7)).toBe(false);
   });
 
+  it("does not flag floating-point drift from per-replica × count", () => {
+    // The CPU field steps by 0.1, so 0.1 requested across 3 replicas is
+    // 0.30000000000000004 — must not spuriously exceed a 0.3 budget.
+    expect(isResourceRequestExceeded(0.1 * 3, 0.3, 15.7)).toBe(false);
+  });
+
   it("never flags a zero request", () => {
     expect(isResourceRequestExceeded(0, 0, 15.7)).toBe(false);
   });

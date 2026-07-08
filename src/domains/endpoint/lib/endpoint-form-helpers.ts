@@ -333,13 +333,24 @@ export function computeMaxAvailable(
  * zero request never reports a false positive. `requestedTotal` is the request
  * summed across replicas; `available` is the max-available budget (which already
  * adds back the edited endpoint's own current usage).
+ *
+ * A small epsilon absorbs floating-point drift from the per-replica × count
+ * arithmetic (the CPU field steps by 0.1, so e.g. `0.1 * 3` is
+ * `0.30000000000000004`) — without it a request that exactly equals the
+ * available budget would spuriously block deploy.
  */
+const RESOURCE_REQUEST_EPSILON = 1e-6;
+
 export function isResourceRequestExceeded(
   requestedTotal: number,
   available: number,
   total: number,
 ): boolean {
-  return total > 0 && requestedTotal > 0 && requestedTotal > available;
+  return (
+    total > 0 &&
+    requestedTotal > 0 &&
+    requestedTotal - available > RESOURCE_REQUEST_EPSILON
+  );
 }
 
 /**
