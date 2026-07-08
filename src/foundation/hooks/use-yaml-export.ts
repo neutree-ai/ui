@@ -30,7 +30,6 @@ export const EXPORTABLE_RESOURCES = [
 // Resources that support credentials API for sensitive field export
 const CREDENTIAL_RESOURCES = [
   "clusters",
-  "external_endpoints",
   "image_registries",
   "model_registries",
 ] as const;
