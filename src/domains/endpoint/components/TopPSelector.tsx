@@ -1,3 +1,4 @@
+import { type ElementRef, forwardRef } from "react";
 import {
   HoverCard,
   HoverCardContent,
@@ -5,7 +6,8 @@ import {
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { type ElementRef, forwardRef } from "react";
+import { NumberInput } from "@/foundation/components/NumberInput";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 interface TopPSelectorProps {
   value: number;
@@ -16,16 +18,26 @@ export const TopPSelector = forwardRef<
   ElementRef<typeof Slider>,
   TopPSelectorProps
 >(({ value, onChange }: TopPSelectorProps, ref) => {
+  const { t } = useTranslation();
+
   return (
     <div className="grid gap-2 pt-2">
       <HoverCard openDelay={200}>
         <HoverCardTrigger asChild>
           <div className="grid gap-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="top-p">Top P</Label>
-              <span className="w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm text-muted-foreground hover:border-border">
-                {value}
-              </span>
+              <Label htmlFor="top-p">
+                {t("components.playground.chat.topP")}
+              </Label>
+              <NumberInput
+                min={0}
+                max={1}
+                step={0.1}
+                value={value}
+                onValueChange={(num) => onChange(Math.min(Math.max(0, num), 1))}
+                aria-label={t("components.playground.chat.topP")}
+                className="h-7 w-16 px-2 text-right text-sm text-muted-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
             </div>
             <Slider
               id="top-p"
@@ -35,7 +47,7 @@ export const TopPSelector = forwardRef<
               step={0.1}
               onValueChange={(v) => onChange(v[0])}
               className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
-              aria-label="Top P"
+              aria-label={t("components.playground.chat.topP")}
             />
           </div>
         </HoverCardTrigger>
@@ -44,8 +56,7 @@ export const TopPSelector = forwardRef<
           className="w-[260px] text-sm"
           side="left"
         >
-          Control diversity via nucleus sampling: 0.5 means half of all
-          likelihood-weighted options are considered.
+          {t("components.playground.chat.topPDescription")}
         </HoverCardContent>
       </HoverCard>
     </div>

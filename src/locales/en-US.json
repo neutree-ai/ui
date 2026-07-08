@@ -1270,7 +1270,9 @@
 				"temperature": "Temperature",
 				"temperatureDescription": "Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.",
 				"maximumLength": "Maximum Length",
-				"maximumLengthDescription": "The maximum number of tokens to generate. Range: 1K to 1M, shared between prompt and completion. The exact limit varies by model."
+				"maximumLengthDescription": "The maximum number of tokens to generate. Range: 1K to 1M, shared between prompt and completion. The exact limit varies by model.",
+				"topP": "Top P",
+				"topPDescription": "Control diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options are considered."
 			},
 			"embedding": {
 				"title": "Embedding",
