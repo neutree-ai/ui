@@ -4,6 +4,7 @@ import {
   buildGpuCardResourceRows,
   buildGpuDeviceResourceRows,
   buildNodePhysicalGpuResourceRows,
+  calculateGpuRequestCapacity,
   calculateVgpuCardCapacity,
   filterGpuDeviceResourceRows,
 } from "./gpu-device-resources";
@@ -414,6 +415,182 @@ describe("gpu device resource helpers", () => {
       total: 2,
       used: 1,
       percent: 50,
+    });
+  });
+
+  it("keeps non-virtualized card count aligned with backend quantity", () => {
+    const rows = buildGpuCardResourceRows(
+      {
+        allocatable: {
+          cpu: 32,
+          memory: 128,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 2,
+                  virtualization: {
+                    memory_mib: 30720,
+                    core_units: 200,
+                  },
+                },
+              },
+            },
+          },
+        },
+        available: {
+          cpu: 24,
+          memory: 96,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 1,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 1,
+                  virtualization: {
+                    memory_mib: 15360,
+                    core_units: 100,
+                  },
+                },
+              },
+            },
+          },
+        },
+        node_resources: {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-partial",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 7680,
+                  core_units: 50,
+                },
+              },
+            ],
+          },
+        },
+      },
+      { type: "nvidia_gpu", product: "Tesla-T4" },
+      { virtualizationEnabled: false },
+    );
+
+    expect(rows[0]?.quantity).toEqual({
+      available: 1,
+      total: 2,
+      used: 1,
+      percent: 50,
+    });
+  });
+
+  it("counts virtualized card usage by device memory or core exhaustion", () => {
+    const rows = buildGpuCardResourceRows(
+      {
+        allocatable: {
+          cpu: 32,
+          memory: 128,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 3,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 3,
+                  virtualization: {
+                    memory_mib: 46080,
+                    core_units: 300,
+                  },
+                },
+              },
+            },
+          },
+        },
+        available: {
+          cpu: 24,
+          memory: 96,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 3,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 3,
+                  virtualization: {
+                    memory_mib: 23040,
+                    core_units: 150,
+                  },
+                },
+              },
+            },
+          },
+        },
+        node_resources: {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-memory-full",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 0,
+                  core_units: 100,
+                },
+              },
+              {
+                uuid: "GPU-core-full",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 0,
+                },
+              },
+              {
+                uuid: "GPU-partial",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 7680,
+                  core_units: 50,
+                },
+              },
+            ],
+          },
+        },
+      },
+      { type: "nvidia_gpu", product: "Tesla-T4" },
+      { virtualizationEnabled: true },
+    );
+
+    expect(rows[0]?.quantity).toEqual({
+      available: 1,
+      total: 3,
+      used: 2,
+      percent: 67,
     });
   });
 
@@ -978,7 +1155,218 @@ describe("gpu device resource helpers", () => {
       }),
     ).toEqual({
       matchingDeviceCount: 1,
+      maxCardsPerReplica: 1,
       totalCards: 1,
+    });
+  });
+
+  it("allocates fractional card requests as one physical card per replica", () => {
+    expect(
+      calculateGpuRequestCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 60,
+                },
+              },
+            ],
+          },
+        },
+        {
+          allocationMode: "fractional",
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          gpuPerReplica: 0.5,
+          replicaCount: 1,
+        },
+      ),
+    ).toMatchObject({
+      allocationMode: "fractional",
+      canAllocate: true,
+      requestedCardsPerReplica: 1,
+      requestedTotalCards: 1,
+      satisfyingDeviceCount: 1,
+    });
+  });
+
+  it("rejects fractional card requests when one card cannot satisfy the fraction", () => {
+    expect(
+      calculateGpuRequestCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 7000,
+                  core_units: 60,
+                },
+              },
+            ],
+          },
+        },
+        {
+          allocationMode: "fractional",
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          gpuPerReplica: 0.5,
+          replicaCount: 1,
+        },
+      ),
+    ).toMatchObject({
+      canAllocate: false,
+      requestedCardsPerReplica: 1,
+      satisfyingDeviceCount: 0,
+    });
+  });
+
+  it("requires each replica allocation to fit on one node", () => {
+    expect(
+      calculateGpuRequestCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+          "node-b": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-b",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        },
+        {
+          allocationMode: "full",
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          gpuPerReplica: 2,
+          replicaCount: 1,
+        },
+      ),
+    ).toMatchObject({
+      canAllocate: false,
+      requestedCardsPerReplica: 2,
+      satisfyingDeviceCount: 2,
+    });
+  });
+
+  it("requires CPU and memory to fit on the same node as each replica GPU allocation", () => {
+    expect(
+      calculateGpuRequestCapacity(
+        {
+          "node-a": {
+            allocatable: {
+              cpu: 16,
+              memory: 64,
+              accelerator_groups: null,
+            },
+            available: {
+              cpu: 2,
+              memory: 64,
+              accelerator_groups: null,
+            },
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15360,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+          "node-b": {
+            allocatable: {
+              cpu: 16,
+              memory: 64,
+              accelerator_groups: null,
+            },
+            available: {
+              cpu: 16,
+              memory: 64,
+              accelerator_groups: null,
+            },
+            devices: [],
+          },
+        },
+        {
+          allocationMode: "full",
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          gpuPerReplica: 1,
+          cpuPerReplica: 4,
+          memoryPerReplica: 8,
+          replicaCount: 1,
+        },
+      ),
+    ).toMatchObject({
+      canAllocate: false,
+      canAllocateCpu: true,
+      canAllocateMemory: true,
+      requestedCardsPerReplica: 1,
+      satisfyingDeviceCount: 1,
     });
   });
 
@@ -1017,6 +1405,7 @@ describe("gpu device resource helpers", () => {
       ),
     ).toEqual({
       matchingDeviceCount: 1,
+      maxCardsPerReplica: 1,
       totalCards: 1,
     });
   });
@@ -1082,6 +1471,7 @@ describe("gpu device resource helpers", () => {
       ),
     ).toEqual({
       matchingDeviceCount: 3,
+      maxCardsPerReplica: 1,
       totalCards: 1,
     });
   });
@@ -1134,11 +1524,12 @@ describe("gpu device resource helpers", () => {
       ),
     ).toEqual({
       matchingDeviceCount: 1,
+      maxCardsPerReplica: 1,
       totalCards: 1,
     });
   });
 
-  it("treats zero vGPU core percent as unconfigured while still requiring remaining core on the card", () => {
+  it("treats zero vGPU core percent as memory-only allocation", () => {
     expect(
       calculateVgpuCardCapacity(
         {
@@ -1186,7 +1577,144 @@ describe("gpu device resource helpers", () => {
       ),
     ).toEqual({
       matchingDeviceCount: 2,
+      maxCardsPerReplica: 2,
+      totalCards: 2,
+    });
+  });
+
+  it("does not allocate multiple vGPU cards from one physical card for the same replica", () => {
+    expect(
+      calculateVgpuCardCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-large",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 16384,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 16384,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 25,
+          replicaCount: 1,
+        },
+      ),
+    ).toEqual({
+      matchingDeviceCount: 1,
+      maxCardsPerReplica: 1,
       totalCards: 1,
+    });
+  });
+
+  it("allows different replicas to reuse the same physical card while consuming global vGPU resources", () => {
+    expect(
+      calculateVgpuCardCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-shared",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 50,
+          replicaCount: 2,
+        },
+      ),
+    ).toEqual({
+      matchingDeviceCount: 1,
+      maxCardsPerReplica: 1,
+      totalCards: 2,
+    });
+  });
+
+  it("requires enough distinct cards per replica for multi-vGPU replica placement", () => {
+    expect(
+      calculateVgpuCardCapacity(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+              {
+                uuid: "GPU-b",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 4096,
+                  core_units: 50,
+                },
+                available: {
+                  memory_mib: 4096,
+                  core_units: 50,
+                },
+              },
+            ],
+          },
+        },
+        {
+          selectedAccelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 50,
+          replicaCount: 2,
+        },
+      ),
+    ).toEqual({
+      matchingDeviceCount: 2,
+      maxCardsPerReplica: 1,
+      totalCards: 2,
     });
   });
 });

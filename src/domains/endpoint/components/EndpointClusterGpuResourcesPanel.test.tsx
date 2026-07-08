@@ -169,6 +169,36 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
   });
 
+  it("treats zero-core vGPU requests as memory-only when marking usable cards", () => {
+    const zeroCoreResourceInfo = structuredClone(resourceInfo);
+    const firstDevice =
+      zeroCoreResourceInfo.node_resources?.["node-a"]?.devices?.[0];
+    if (firstDevice?.available) {
+      firstDevice.available.core_units = 0;
+    }
+
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={zeroCoreResourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={true}
+        request={{
+          allocationMode: "vgpu",
+          gpuPerReplica: 1,
+          memoryMiBPerCard: 15360,
+          coreUnitsPerCard: 0,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 1"),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Usable")).toHaveLength(1);
+  });
+
   it("falls back to compact node summaries when devices are missing", () => {
     render(
       <EndpointClusterGpuResourcesPanel
@@ -325,7 +355,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const vramCard = findByExactLabel(summaryCards, "Memory Usage");
 
     expect(
-      within(cardCountCard).getByText((text) => text.includes("1.0 / 2.0")),
+      within(cardCountCard).getByText((text) => text.includes("0.0 / 2.0")),
     ).toBeTruthy();
     expect(cardCountCard.textContent).not.toContain("Used -");
     expect(

@@ -470,6 +470,7 @@ export function validateEndpointValues(
     replicas?: { num?: number } | null;
     deployment_options?: { scheduler?: { type?: string } | null } | null;
     resources?: {
+      gpu?: unknown;
       accelerator?: {
         type?: string;
         product?: string;
@@ -525,6 +526,22 @@ export function validateEndpointValues(
     memoryPercent !== undefined &&
     Number.isFinite(memoryPercent) &&
     memoryPercent > 0;
+  const gpuCount = parseOptionalValidationNumber(spec.resources?.gpu);
+  const hasPositiveGpuCount =
+    gpuCount !== undefined && Number.isFinite(gpuCount) && gpuCount > 0;
+  const usesVgpuResources = hasMemoryMiB || hasMemoryPercent;
+  const usesFractionalGpu = hasPositiveGpuCount && gpuCount < 1;
+
+  if (
+    hasPositiveGpuCount &&
+    !Number.isInteger(gpuCount) &&
+    (usesVgpuResources || !usesFractionalGpu)
+  ) {
+    errors["spec.resources.gpu"] = {
+      type: "manual",
+      message: t("endpoints.messages.gpuCountIntegerOrFractional"),
+    };
+  }
 
   if (hasMemoryMiB && hasMemoryPercent) {
     errors["spec.resources.accelerator.virtualization.memory_percent"] = {

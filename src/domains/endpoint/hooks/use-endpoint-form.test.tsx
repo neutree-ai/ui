@@ -1447,6 +1447,133 @@ describe("useEndpointForm", () => {
       ).toBeNull();
     });
 
+    it("clamps displayed per-card vGPU memory to a detailed device boundary", async () => {
+      const twoCardCluster = JSON.parse(
+        JSON.stringify(roundedVramKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      twoCardCluster.metadata = metadata("virtualized-k8s-two-rounded-cards");
+      const resourceInfo = twoCardCluster.status?.resource_info;
+      if (resourceInfo) {
+        resourceInfo.allocatable = {
+          cpu: 16,
+          memory: 64,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 2,
+                  virtualization: {
+                    memory_mib: 92136,
+                    core_units: 200,
+                  },
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.available = {
+          cpu: 12,
+          memory: 48,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: null,
+              products: {
+                "Tesla-T4": {
+                  quantity: 2,
+                  virtualization: {
+                    memory_mib: 30696,
+                    core_units: 200,
+                  },
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-rounded-vram-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 46068,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15348,
+                  core_units: 100,
+                },
+              },
+              {
+                uuid: "GPU-rounded-vram-b",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 46068,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 15348,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [twoCardCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue(
+          "spec.cluster",
+          "virtualized-k8s-two-rounded-cards",
+        );
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 128,
+            },
+          },
+        });
+      });
+
+      const input = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(input.max).toBe("15");
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "15" } });
+
+      await waitFor(() => {
+        expect(input.value).toBe("15");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(15348);
+      });
+      expect(getCurrentRequestText()).toContain("1.0 / 2.0");
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
     it("renders percent-backed virtual memory as GiB and edits it as MiB", async () => {
       setupMocks(
         [catalogA, catalogB],
@@ -2014,7 +2141,7 @@ describe("useEndpointForm", () => {
             "field-spec.resources.accelerator.virtualization.memory_mib",
           ),
         ).toBeTruthy();
-        expect(getCurrentRequestText()).toContain("2.0 / 0.0");
+        expect(getCurrentRequestText()).toContain("1.0 / 0.0");
         expect(getAcceleratorCardText()).toContain(
           "endpoints.messages.fullGpuResourcesInsufficient",
         );
@@ -2288,7 +2415,7 @@ describe("useEndpointForm", () => {
         formInstance?.setValue("spec.resources", {
           cpu: 2,
           memory: 8,
-          gpu: 2,
+          gpu: 1,
           accelerator: {
             type: "nvidia_gpu",
             product: "Tesla-T4",
@@ -2472,7 +2599,7 @@ describe("useEndpointForm", () => {
       expect(
         (within(orderedFields[3]).getByRole("spinbutton") as HTMLInputElement)
           .value,
-      ).toBe("2");
+      ).toBe("1");
       expect(
         (within(orderedFields[4]).getByRole("spinbutton") as HTMLInputElement)
           .value,
@@ -2540,7 +2667,7 @@ describe("useEndpointForm", () => {
           "endpoints.fields.virtualCardCount",
         );
       });
-      expect(getCurrentRequestText()).toContain("4.0 / 1.0");
+      expect(getCurrentRequestText()).toContain("2.0 / 1.0");
       expect(
         screen.getByText("endpoints.messages.cardsAvailable").className,
       ).toContain("bg-amber-50");
@@ -2554,6 +2681,459 @@ describe("useEndpointForm", () => {
         within(screen.getByTestId("endpoint-resource-plan-header")).queryByText(
           "endpoints.messages.vgpuResourcesInsufficient",
         ),
+      ).toBeNull();
+    });
+
+    it("does not count multiple vGPU cards on the same physical card for one replica", async () => {
+      const singleSharedCardCluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      singleSharedCardCluster.metadata.name = "single-shared-card";
+      const resourceInfo = singleSharedCardCluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-shared",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [singleSharedCardCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "single-shared-card");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 2,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.virtualCardCount",
+        );
+      });
+      expect(getCurrentRequestText()).toContain("2.0 / 1.0");
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.messages.vgpuResourcesInsufficient",
+      );
+    });
+
+    it("allows separate replicas to reuse one physical card when global vGPU resources are enough", async () => {
+      const singleSharedCardCluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      singleSharedCardCluster.metadata.name = "single-shared-card";
+      const resourceInfo = singleSharedCardCluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-shared",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 8192,
+                  core_units: 100,
+                },
+              },
+            ],
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [singleSharedCardCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "single-shared-card");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.virtualCardCount",
+        );
+      });
+      expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("shows vGPU card capacity as per-replica physical card capacity", async () => {
+      const fourCardCluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      fourCardCluster.metadata.name = "four-l20-vgpu-cards";
+      const resourceInfo = fourCardCluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 4,
+            product_groups: {
+              "NVIDIA-L20": 4,
+            },
+            products: {
+              "NVIDIA-L20": {
+                quantity: 4,
+                virtualization: {
+                  memory_mib: 184320,
+                  core_units: 400,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.allocatable = {
+          cpu: 16,
+          memory: 64,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 4,
+              product_groups: {
+                "NVIDIA-L20": 4,
+              },
+              products: {
+                "NVIDIA-L20": {
+                  quantity: 4,
+                  virtualization: {
+                    memory_mib: 184320,
+                    core_units: 400,
+                  },
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: Array.from({ length: 4 }, (_, index) => ({
+              uuid: `GPU-L20-${index}`,
+              product: "NVIDIA-L20",
+              health: true,
+              allocatable: {
+                memory_mib: 46080,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 46080,
+                core_units: 100,
+              },
+            })),
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [fourCardCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "four-l20-vgpu-cards");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 4,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+            virtualization: {
+              memory_mib: 20480,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.virtualCardCount",
+        );
+      });
+      expect(getCurrentRequestText()).toContain("4.0 / 4.0");
+      expect(getCurrentRequestText()).not.toContain("8.0 / 8.0");
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("does not reduce displayed vGPU card capacity by replica total resource pressure", async () => {
+      const fourCardCluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      fourCardCluster.metadata.name = "four-l20-vgpu-cards";
+      const resourceInfo = fourCardCluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 4,
+            product_groups: {
+              "NVIDIA-L20": 4,
+            },
+            products: {
+              "NVIDIA-L20": {
+                quantity: 4,
+                virtualization: {
+                  memory_mib: 184320,
+                  core_units: 400,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.allocatable = {
+          cpu: 16,
+          memory: 64,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 4,
+              product_groups: {
+                "NVIDIA-L20": 4,
+              },
+              products: {
+                "NVIDIA-L20": {
+                  quantity: 4,
+                  virtualization: {
+                    memory_mib: 184320,
+                    core_units: 400,
+                  },
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: Array.from({ length: 4 }, (_, index) => ({
+              uuid: `GPU-L20-${index}`,
+              product: "NVIDIA-L20",
+              health: true,
+              allocatable: {
+                memory_mib: 46080,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 46080,
+                core_units: 100,
+              },
+            })),
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [fourCardCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "four-l20-vgpu-cards");
+        formInstance?.setValue("spec.replicas.num", 3);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 4,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+            virtualization: {
+              memory_mib: 20480,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.virtualCardCount",
+        );
+      });
+      expect(getCurrentRequestText()).toContain("4.0 / 4.0");
+      expect(getCurrentRequestText()).not.toContain("4.0 / 2.0");
+      expect(
+        screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeTruthy();
+    });
+
+    it("allows a memory-only vGPU request that exactly fits one physical card", async () => {
+      const singleL20Cluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      singleL20Cluster.metadata.name = "single-l20-vgpu-card";
+      const resourceInfo = singleL20Cluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: {
+              "NVIDIA-L20": 1,
+            },
+            products: {
+              "NVIDIA-L20": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 46080,
+                  core_units: 0,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.allocatable = {
+          cpu: 16,
+          memory: 64,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 1,
+              product_groups: {
+                "NVIDIA-L20": 1,
+              },
+              products: {
+                "NVIDIA-L20": {
+                  quantity: 1,
+                  virtualization: {
+                    memory_mib: 46080,
+                    core_units: 100,
+                  },
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-L20-single",
+                product: "NVIDIA-L20",
+                health: true,
+                allocatable: {
+                  memory_mib: 46080,
+                  core_units: 100,
+                },
+                available: {
+                  memory_mib: 46080,
+                  core_units: 0,
+                },
+              },
+            ],
+          },
+        };
+      }
+      setupMocks([catalogA, catalogB], [singleL20Cluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "single-l20-vgpu-card");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+            virtualization: {
+              memory_mib: 46080,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
       ).toBeNull();
     });
 
@@ -2691,7 +3271,7 @@ describe("useEndpointForm", () => {
       });
     });
 
-    it("does not warn for unchanged full-card usage while editing", async () => {
+    it("warns for unchanged full-card usage when status resources are missing", async () => {
       queryDataRef.current = {
         metadata: metadata("accelerator-existing-full-gpu"),
         spec: {
@@ -2731,14 +3311,119 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+        expect(getCurrentRequestText()).toContain("1.0 / 0.0");
       });
-      expect(
-        getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
-      ).toBe("endpoints.fields.vgpuCoreCapacity-");
-      expect(
-        screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
-      ).toBeNull();
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.messages.fullGpuResourcesInsufficient",
+      );
+    });
+
+    it("does not add spec full-card usage when status resources are missing", async () => {
+      const fullFreeCluster = JSON.parse(
+        JSON.stringify(virtualizedKubernetesClusterWithDevices),
+      ) as EndpointClusterRef;
+      fullFreeCluster.metadata = metadata("full-free-l20-cluster");
+      const resourceInfo = fullFreeCluster.status?.resource_info;
+      if (resourceInfo?.available) {
+        resourceInfo.available.accelerator_groups = {
+          nvidia_gpu: {
+            quantity: 4,
+            product_groups: {
+              "NVIDIA-L20": 4,
+            },
+            products: {
+              "NVIDIA-L20": {
+                quantity: 4,
+                virtualization: {
+                  memory_mib: 184272,
+                  core_units: 400,
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.allocatable = {
+          cpu: 16,
+          memory: 64,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 4,
+              product_groups: {
+                "NVIDIA-L20": 4,
+              },
+              products: {
+                "NVIDIA-L20": {
+                  quantity: 4,
+                  virtualization: {
+                    memory_mib: 184272,
+                    core_units: 400,
+                  },
+                },
+              },
+            },
+          },
+        };
+        resourceInfo.node_resources = {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: Array.from({ length: 4 }, (_, index) => ({
+              uuid: `GPU-L20-${index}`,
+              product: "NVIDIA-L20",
+              health: true,
+              allocatable: {
+                memory_mib: 46068,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 46068,
+                core_units: 100,
+              },
+            })),
+          },
+        };
+      }
+      queryDataRef.current = {
+        metadata: metadata("accelerator-existing-full-gpu"),
+        spec: {
+          cluster: "full-free-l20-cluster",
+          replicas: { num: 1 },
+          resources: {
+            cpu: "8",
+            memory: "16",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "NVIDIA-L20",
+            },
+          },
+        },
+        status: {
+          resources: null,
+        },
+      };
+      setupMocks([catalogA, catalogB], [fullFreeCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "full-free-l20-cluster");
+        formInstance?.setValue("spec.resources", {
+          cpu: 8,
+          memory: 16,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.0 / 4.0");
+      });
+      expect(getCurrentRequestText()).not.toContain("1.0 / 5.0");
     });
 
     it("shows current request VRAM and core as dashes for fractional full-card static cluster allocation", async () => {
@@ -2762,7 +3447,7 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("0.5 / 1.0");
+        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
       });
       expect(
         getCurrentRequestMetricText("endpoints.fields.vgpuMemoryCapacity"),
@@ -2775,7 +3460,231 @@ describe("useEndpointForm", () => {
       ).toBe("endpoints.fields.vgpuCoreCapacity-");
     });
 
-    it("adds the current endpoint vGPU allocation back while editing", async () => {
+    it("counts partial physical cards that satisfy fractional card requests", async () => {
+      const fractionalCluster = JSON.parse(
+        JSON.stringify(staticNodeClusterWithNodeResources),
+      ) as EndpointClusterRef;
+      fractionalCluster.metadata.name = "fractional-card-static";
+      const resourceInfo = fractionalCluster.status?.resource_info;
+      const nodeADevice =
+        resourceInfo?.node_resources?.["node-a"]?.devices?.[0];
+      if (nodeADevice) {
+        nodeADevice.available = {
+          memory_mib: 7680,
+          core_units: 50,
+        };
+      }
+
+      setupMocks([catalogA, catalogB], [fractionalCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "fractional-card-static");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 0.5,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("uses aggregate GPU capacity for legacy clusters without device details", async () => {
+      const legacyCluster = {
+        metadata: metadata("sshgpu-old"),
+        spec: { type: "ssh" },
+        status: { resource_info: nonVirtualizedResourceInfo },
+      } satisfies EndpointClusterRef;
+
+      setupMocks([catalogA, catalogB], [legacyCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "sshgpu-old");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.0 / 2.0");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("recalculates displayed full-card capacity after adding current endpoint device resources while editing", async () => {
+      queryDataRef.current = {
+        metadata: metadata("accelerator-existing-full-gpu"),
+        spec: {
+          cluster: "virtualized-k8s-devices",
+          replicas: { num: 1 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+            },
+          },
+        },
+        status: {
+          resources: {
+            replicas: [
+              {
+                instance_id: "accelerator-existing-full-gpu-abc",
+                replica_id: "accelerator-existing-full-gpu-abc",
+                node_id: "node-a",
+                devices: [
+                  {
+                    uuid: "GPU-11111111-2222-3333-4444-555555555555",
+                    product: "Tesla-T4",
+                    memory_mib: 7680,
+                    core_units: 50,
+                    node_id: "node-a",
+                  },
+                ],
+              },
+            ],
+            summary: {
+              products: {
+                "Tesla-T4": {
+                  memory_mib: 7680,
+                  core_units: 50,
+                },
+              },
+            },
+          },
+        },
+      };
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithDevices],
+      );
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("shows current backend card usage while checking allocation with restored endpoint resources", async () => {
+      queryDataRef.current = {
+        metadata: metadata("accelerator-existing-full-gpu"),
+        spec: {
+          cluster: "virtualized-k8s-devices",
+          replicas: { num: 1 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+            },
+          },
+        },
+        status: {
+          resources: {
+            replicas: [
+              {
+                instance_id: "accelerator-existing-full-gpu-abc",
+                replica_id: "accelerator-existing-full-gpu-abc",
+                node_id: "node-a",
+                devices: [
+                  {
+                    uuid: "GPU-11111111-2222-3333-4444-555555555555",
+                    product: "Tesla-T4",
+                    memory_mib: 7680,
+                    core_units: 50,
+                    node_id: "node-a",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithDevices],
+      );
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      });
+
+      const panel = within(screen.getByTestId("endpoint-resource-context"));
+      const gpuCards = panel.getAllByTestId("endpoint-gpu-device-card");
+      expect(gpuCards[0].textContent).toContain("7.5 / 15.0 GiB");
+      expect(gpuCards[0].textContent).toContain("50.0 / 100.0");
+      expect(panel.queryAllByLabelText("clusters.options.usable")).toHaveLength(
+        1,
+      );
+      expect(
+        panel.queryAllByLabelText("clusters.options.allocated"),
+      ).toHaveLength(1);
+    });
+
+    it("recalculates displayed vGPU card capacity after adding current endpoint device resources while editing", async () => {
       queryDataRef.current = {
         metadata: metadata("virtualized-existing-vgpu"),
         spec: {
@@ -2784,7 +3693,7 @@ describe("useEndpointForm", () => {
           resources: {
             cpu: "2",
             memory: "8",
-            gpu: "1",
+            gpu: "2",
             accelerator: {
               type: "nvidia_gpu",
               product: "Tesla-T4",
@@ -2808,17 +3717,16 @@ describe("useEndpointForm", () => {
                     core_units: 50,
                     node_id: "node-a",
                   },
+                  {
+                    uuid: "GPU-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                    product: "Tesla-T4",
+                    memory_mib: 8192,
+                    core_units: 50,
+                    node_id: "node-b",
+                  },
                 ],
               },
             ],
-            summary: {
-              products: {
-                "Tesla-T4": {
-                  memory_mib: 8192,
-                  core_units: 50,
-                },
-              },
-            },
           },
         },
       };
@@ -2840,10 +3748,12 @@ describe("useEndpointForm", () => {
           "endpoints.fields.virtualCardCount",
         );
       });
-      expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      expect(getCurrentRequestText()).toContain("2.0 / 2.0");
+      expect(getCurrentRequestText()).toContain("16.0 / 30.0");
+      expect(getCurrentRequestText()).toContain("100.0 / 200.0");
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
-      ).toBeNull();
+      ).toBeTruthy();
     });
 
     it("switches allocation mode by clearing or setting single-card memory", async () => {
@@ -3130,8 +4040,13 @@ describe("useEndpointForm", () => {
 
       render(<CreateForm />);
 
+      const form = formInstance;
+      if (!form) {
+        throw new Error("Expected endpoint form instance to be initialized");
+      }
+
       await act(async () => {
-        await formInstance!.trigger("metadata.workspace");
+        await form.trigger("metadata.workspace");
       });
 
       expect(
@@ -3144,8 +4059,13 @@ describe("useEndpointForm", () => {
 
       render(<CreateForm />);
 
+      const form = formInstance;
+      if (!form) {
+        throw new Error("Expected endpoint form instance to be initialized");
+      }
+
       await act(async () => {
-        await formInstance!.trigger("metadata.workspace");
+        await form.trigger("metadata.workspace");
       });
 
       expect(

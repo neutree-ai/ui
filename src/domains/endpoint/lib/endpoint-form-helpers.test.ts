@@ -659,6 +659,61 @@ describe("validateEndpointValues", () => {
     ).toBeUndefined();
   });
 
+  it("requires vGPU card count to be a positive integer", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          gpu: 1.5,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 10240,
+            },
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(errors["spec.resources.gpu"]?.message).toBe(
+      "endpoints.messages.gpuCountIntegerOrFractional",
+    );
+  });
+
+  it("rejects non-vGPU mixed fractional card counts above one", () => {
+    const errors = validateEndpointValues(
+      {
+        ...validScheduler,
+        resources: {
+          gpu: 1.5,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+      },
+      mockT,
+    );
+
+    expect(errors["spec.resources.gpu"]?.message).toBe(
+      "endpoints.messages.gpuCountIntegerOrFractional",
+    );
+  });
+
   it("returns error when vGPU percentages are out of range", () => {
     const errors = validateEndpointValues(
       {

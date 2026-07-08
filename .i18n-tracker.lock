@@ -238,8 +238,8 @@
   "src/foundation/hooks/use-variables-input.ts": "4e7645dd01994e5fd252bc3e2ad7676f",
   "src/foundation/components/VariablesInput.tsx": "24057e155ee2272d6ba949b42639d752",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
-  "src/domains/endpoint/lib/endpoint-form-helpers.ts": "1428a5169196579168c2b51b0476e71f",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "b15ad48b457326e52d7d2ee8053afc80",
+  "src/domains/endpoint/lib/endpoint-form-helpers.ts": "ea3d74febb7f4986e5650c72b51015c2",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "f209570a0f06dbf47a22fd4b5ceff749",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "1e1cfe7ad811875f9a8b101c39edb45b",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "b2466d871f8436202bb1e6011ec61ecd",
   "src/pages/external-endpoints/create.tsx": "bd5d137b2a4a49d077ea1891707f2988",
@@ -303,9 +303,9 @@
   "src/domains/endpoint/lib/resource-status.ts": "8bf88a620b262d25091e78061584c14e",
   "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "9e1483ce5083a745267a18e28545efac",
   "src/domains/cluster/lib/resource-status.ts": "9e759f014c4589740efe23ebdaf8bf74",
-  "src/foundation/lib/gpu-device-resources.ts": "605d90c777059055b5e4931eb31c0c61",
+  "src/foundation/lib/gpu-device-resources.ts": "aa15add218bf12b092bc71fd88f59dee",
   "src/foundation/components/GpuDeviceResourcesView.tsx": "bd15d01f7f41c71b7427a487a72fe429",
-  "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "5a0749a1c6cb7e13472f55cc96e2600f",
+  "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "73dafae4271cdd7efc490806cbd06b31",
   "src/domains/cluster/lib/accelerator-virtualization.ts": "dcf581d3b3d29e8d916a967bbe61b8a9",
   "src/domains/api-key/components/ApiKeyLimitsCard.tsx": "6fcbddf3dfae65a9f8874d51066b2946",
   "src/domains/api-key/components/ApiKeyPerformanceCard.tsx": "986c799c7c0ca0993eb7c99ae3880a12",
@@ -332,5 +332,6 @@
   "src/components/ui/switch.tsx": "ed96194f48772c1f9aff21df61013a69",
   "src/foundation/lib/touched-fields.ts": "8bb21e569f8f08090d42f67df8e1e702",
   "src/foundation/lib/batch-delete.ts": "257dd2f4cbccf000afce74b379d4e80c",
-  "src/foundation/components/SegmentedControl.tsx": "66a14c7092816c92af7cc3550af73aa0"
+  "src/foundation/components/SegmentedControl.tsx": "66a14c7092816c92af7cc3550af73aa0",
+  "src/domains/endpoint/lib/endpoint-capacity-resources.ts": "9ecdcadd00c416e5669603465db51749"
 }
