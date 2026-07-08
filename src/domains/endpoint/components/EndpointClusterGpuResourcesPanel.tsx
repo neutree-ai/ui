@@ -1048,23 +1048,24 @@ export function EndpointClusterGpuResourcesPanel({
     return matchingRows.length > 0 ? matchingRows : rows;
   }, [rows, selectedAccelerator?.product]);
   const hasGpuResources = hasGpuResourceRows(rows);
-  const selectedProduct = selectedAccelerator?.product;
+  // A catalog-preset accelerator (e.g. "L4") may not exist on the selected
+  // cluster, so the badge only reports cluster-exposed products; summaryRows
+  // already narrows them to the preset-matching ones when a match exists.
   const gpuTypeProducts = useMemo(
     () =>
       Array.from(
         new Set(
-          rows
+          summaryRows
             .map((row) => row.product)
             .filter((product): product is string => Boolean(product)),
         ),
       ).sort((first, second) => first.localeCompare(second)),
-    [rows],
+    [summaryRows],
   );
   const gpuTypeLabel =
-    selectedProduct ||
-    (gpuTypeProducts.length > 0
+    gpuTypeProducts.length > 0
       ? gpuTypeProducts.join(", ")
-      : t("clusters.options.allGpuProducts"));
+      : t("clusters.options.allGpuProducts");
   if (!resourceInfo) {
     return (
       <div className="grid min-h-[220px] grid-rows-[auto_1fr] overflow-hidden">
@@ -1087,7 +1088,7 @@ export function EndpointClusterGpuResourcesPanel({
   }
 
   return (
-    <div className="grid min-h-0 grid-rows-[auto_1fr] overflow-hidden">
+    <div className="grid min-h-0 grid-rows-[auto_1fr] overflow-hidden xl:max-h-[calc(100vh-2rem)]">
       <ClusterResourcesToolbar
         title={title}
         currentCluster={currentCluster}
@@ -1187,7 +1188,7 @@ function EndpointClusterGpuResourcesInlineContent({
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   return (
-    <div className="min-h-0 overflow-auto px-3 pb-3 pt-1 [scrollbar-gutter:stable_both-edges] xl:max-h-[calc(100vh-180px)]">
+    <div className="min-h-0 overflow-auto px-3 pb-3 pt-1 [scrollbar-gutter:stable_both-edges]">
       <div
         data-testid="endpoint-cluster-resource-board"
         className="grid min-w-[1120px] gap-2.5"
