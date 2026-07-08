@@ -112,7 +112,10 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   onScrollBottom,
 }) => {
   const { t } = useTranslation();
-  const { theme } = useTheme();
+  // resolvedTheme resolves "system" to the actual "light"/"dark"; using the raw
+  // `theme` would leave system users on the light syntax palette (unreadable on
+  // the dark background).
+  const { resolvedTheme } = useTheme();
   const listRef = useRef<List>(null);
 
   /**
@@ -295,9 +298,8 @@ export const VirtualLog: FC<VirtualLogProps> = ({
 
   // Determine theme class for highlight.js
   const hlThemeClass = useMemo(() => {
-    const resolvedTheme = theme === "system" ? "light" : theme; // Default to light for system
     return resolvedTheme === "dark" ? "hljs-dark" : "hljs-light";
-  }, [theme]);
+  }, [resolvedTheme]);
 
   if (!processedLines.length) {
     return (
