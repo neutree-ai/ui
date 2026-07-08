@@ -138,6 +138,12 @@ describe("endpoint vgpu helpers", () => {
     expect(normalizeVgpuMemoryGiBInput(46, 46068)).toBe(47104);
   });
 
+  it("clamps vGPU memory inputs within the remaining display boundary", () => {
+    expect(formatVgpuMemoryGiBInputValue(500, 46068, 500)).toBe("0.5");
+    expect(normalizeVgpuMemoryGiBInput(0.5, 46068, 500)).toBe(500);
+    expect(normalizeVgpuMemoryGiBInput(0.51, 46068, 500)).toBe(523);
+  });
+
   it("rejects non-finite vGPU memory inputs", () => {
     expect(normalizeVgpuMemoryGiBInput(Number.POSITIVE_INFINITY, 46068)).toBe(
       undefined,

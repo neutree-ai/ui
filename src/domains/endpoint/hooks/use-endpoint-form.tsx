@@ -323,21 +323,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedVirtualization,
     selectedMemoryTotalMiB,
   );
-  const vgpuMemoryGiBMaxValue = getRoundedVgpuMemoryGiBValue(
-    selectedMemoryTotalMiB,
-  );
-  const vgpuMemoryGiBInputValue =
-    selectedVirtualization?.memory_mib !== undefined
-      ? formatVgpuMemoryGiBInputValue(
-          selectedVirtualization.memory_mib,
-          selectedMemoryTotalMiB,
-        )
-      : effectiveVgpuMemoryMiB
-        ? formatVgpuMemoryGiBInputValue(
-            effectiveVgpuMemoryMiB,
-            selectedMemoryTotalMiB,
-          )
-        : "";
   const effectiveGpuAllocationMode: GpuAllocationMode =
     showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
   const isVgpuAllocationMode = effectiveGpuAllocationMode === "vgpu";
@@ -419,6 +404,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         )
       : Math.floor(reusableVgpuMemoryMiB / effectiveVgpuMemoryMiB)
     : 0;
+  const hasRawAvailableVgpuMemoryMiB = Number.isFinite(
+    selectedAcceleratorOption?.virtualizationMemoryMiB,
+  );
   const rawAvailableVgpuMemoryMiB = Number(
     selectedAcceleratorOption?.virtualizationMemoryMiB || 0,
   );
@@ -429,6 +417,44 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     rawAvailableVgpuMemoryMiB + reusableVgpuMemoryMiB;
   const availableVgpuCoreUnits =
     rawAvailableVgpuCoreUnits + reusableVgpuCoreUnits;
+  const rawVgpuMemoryBoundaryMiB = (() => {
+    const rawMaxMiB =
+      typeof selectedMemoryTotalMiB === "number" &&
+      Number.isFinite(selectedMemoryTotalMiB)
+        ? selectedMemoryTotalMiB
+        : null;
+    if (!hasRawAvailableVgpuMemoryMiB && reusableVgpuMemoryMiB <= 0) {
+      return rawMaxMiB;
+    }
+    const requestedCardCount = Math.max(1, requestedVirtualCards);
+    const perCardBoundaryMiB = Math.floor(
+      availableVgpuMemoryMiB / requestedCardCount,
+    );
+    if (!Number.isFinite(perCardBoundaryMiB)) {
+      return rawMaxMiB;
+    }
+    const boundedPerCardMiB = Math.max(0, perCardBoundaryMiB);
+    return rawMaxMiB === null
+      ? boundedPerCardMiB
+      : Math.min(rawMaxMiB, boundedPerCardMiB);
+  })();
+  const vgpuMemoryGiBMaxValue = getRoundedVgpuMemoryGiBValue(
+    rawVgpuMemoryBoundaryMiB,
+  );
+  const vgpuMemoryGiBInputValue =
+    selectedVirtualization?.memory_mib !== undefined
+      ? formatVgpuMemoryGiBInputValue(
+          selectedVirtualization.memory_mib,
+          selectedMemoryTotalMiB,
+          rawVgpuMemoryBoundaryMiB,
+        )
+      : effectiveVgpuMemoryMiB
+        ? formatVgpuMemoryGiBInputValue(
+            effectiveVgpuMemoryMiB,
+            selectedMemoryTotalMiB,
+            rawVgpuMemoryBoundaryMiB,
+          )
+        : "";
   const currentRequestCoreUnitsPerCard = isVgpuAllocationMode
     ? vgpuCoreUnitsPerCard
     : 0;
@@ -548,6 +574,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const memoryMiB = normalizeVgpuMemoryGiBInput(
       memoryGiB,
       selectedMemoryTotalMiB,
+      rawVgpuMemoryBoundaryMiB,
     );
     if (memoryMiB === undefined) return;
 

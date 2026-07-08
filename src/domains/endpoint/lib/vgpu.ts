@@ -28,13 +28,16 @@ export function getRoundedVgpuMemoryGiBValue(
 export function formatVgpuMemoryGiBInputValue(
   memoryMiB: number | null | undefined,
   rawMaxMiB?: number | null,
+  rawDisplayBoundaryMiB?: number | null,
 ): string {
   const memoryMiBValue = toOptionalNumber(memoryMiB);
   if (memoryMiBValue === undefined) return "";
 
-  const rawMaxMiBValue = toOptionalNumber(rawMaxMiB);
-  if (rawMaxMiBValue !== undefined && memoryMiBValue === rawMaxMiBValue) {
-    return String(getRoundedVgpuMemoryGiBValue(rawMaxMiBValue) ?? "");
+  for (const boundaryMiB of [rawMaxMiB, rawDisplayBoundaryMiB]) {
+    const boundaryMiBValue = toOptionalNumber(boundaryMiB);
+    if (boundaryMiBValue !== undefined && memoryMiBValue === boundaryMiBValue) {
+      return String(getRoundedVgpuMemoryGiBValue(boundaryMiBValue) ?? "");
+    }
   }
 
   return String(memoryMiBValue / MIB_PER_GIB);
@@ -43,20 +46,24 @@ export function formatVgpuMemoryGiBInputValue(
 export function normalizeVgpuMemoryGiBInput(
   memoryGiB: number,
   rawMaxMiB?: number | null,
+  rawDisplayBoundaryMiB?: number | null,
 ): number | undefined {
   if (!Number.isFinite(memoryGiB)) return undefined;
 
   const requestedMiB = Math.ceil(memoryGiB * MIB_PER_GIB);
-  const rawMaxMiBValue = toOptionalNumber(rawMaxMiB);
-  const displayMaxGiB = getRoundedVgpuMemoryGiBValue(rawMaxMiBValue);
+  const boundaries = [rawDisplayBoundaryMiB, rawMaxMiB];
 
-  if (
-    rawMaxMiBValue !== undefined &&
-    displayMaxGiB !== null &&
-    requestedMiB > rawMaxMiBValue &&
-    memoryGiB <= displayMaxGiB
-  ) {
-    return rawMaxMiBValue;
+  for (const boundaryMiB of boundaries) {
+    const boundaryMiBValue = toOptionalNumber(boundaryMiB);
+    const displayBoundaryGiB = getRoundedVgpuMemoryGiBValue(boundaryMiBValue);
+    if (
+      boundaryMiBValue !== undefined &&
+      displayBoundaryGiB !== null &&
+      requestedMiB > boundaryMiBValue &&
+      memoryGiB <= displayBoundaryGiB
+    ) {
+      return boundaryMiBValue;
+    }
   }
 
   return requestedMiB;

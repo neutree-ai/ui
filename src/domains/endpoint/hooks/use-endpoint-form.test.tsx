@@ -625,6 +625,71 @@ const roundedVramKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
+const roundedVramLowRemainingClusterWithDevices = {
+  ...roundedVramKubernetesClusterWithDevices,
+  metadata: metadata("virtualized-k8s-rounded-vram-low-remaining"),
+  status: {
+    ...roundedVramKubernetesClusterWithDevices.status,
+    resource_info: {
+      ...roundedVramKubernetesClusterWithDevices.status.resource_info,
+      available: {
+        ...roundedVramKubernetesClusterWithDevices.status.resource_info
+          .available,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": {
+                quantity: 1,
+                virtualization: {
+                  memory_mib: 500,
+                  core_units: 100,
+                },
+              },
+            },
+          },
+        },
+      },
+      node_resources: {
+        "node-a": {
+          ...roundedVramKubernetesClusterWithDevices.status.resource_info
+            .node_resources["node-a"],
+          available: {
+            ...roundedVramKubernetesClusterWithDevices.status.resource_info
+              .node_resources["node-a"].available,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 1,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 1,
+                    virtualization: {
+                      memory_mib: 500,
+                      core_units: 100,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          devices: [
+            {
+              ...roundedVramKubernetesClusterWithDevices.status.resource_info
+                .node_resources["node-a"].devices[0],
+              available: {
+                memory_mib: 500,
+                core_units: 100,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
+} satisfies EndpointClusterRef;
+
 const defaultSelectResult = {
   query: { data: { data: [] }, isLoading: false },
 };
@@ -1325,6 +1390,57 @@ describe("useEndpointForm", () => {
             "spec.resources.accelerator.virtualization.memory_mib",
           ),
         ).toBe(46068);
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("clamps values within the displayed remaining vGPU memory max", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [roundedVramLowRemainingClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue(
+          "spec.cluster",
+          "virtualized-k8s-rounded-vram-low-remaining",
+        );
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 128,
+              core_percent: 100,
+            },
+          },
+        });
+      });
+
+      const input = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(input.max).toBe("0.5");
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "0.5" } });
+
+      await waitFor(() => {
+        expect(input.value).toBe("0.5");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(500);
       });
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
