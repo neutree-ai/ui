@@ -1,5 +1,5 @@
-import { type VariantProps, cva } from "class-variance-authority";
-import type * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
 import { cn } from "@/foundation/lib/utils";
 
@@ -27,10 +27,21 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
-}
+// forwardRef so the Badge can be used as a Radix `asChild` trigger (Tooltip /
+// Popover / DropdownMenu). Without it, Slot can't attach the trigger ref, so
+// the tooltip has no anchor and never opens — only the cursor-help style leaks
+// through (the access-log status badge symptom).
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
+  ({ className, variant, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn(badgeVariants({ variant }), className)}
+        {...props}
+      />
+    );
+  },
+);
+Badge.displayName = "Badge";
 
 export { Badge, badgeVariants };
