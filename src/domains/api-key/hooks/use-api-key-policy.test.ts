@@ -7,7 +7,6 @@ import {
   isPositiveIntLimit,
   limitsToForm,
   rateSummary,
-  summarizeApiKeyLimits,
   type WorkspaceModelOption,
 } from "./use-api-key-policy";
 
@@ -131,33 +130,6 @@ describe("limitsToForm", () => {
     expect(
       limitsToForm({ token_quota: { limit: 100, period: "" } }).quota_period,
     ).toBe("monthly");
-  });
-});
-
-describe("summarizeApiKeyLimits", () => {
-  it("renders compact parts", () => {
-    const parts = summarizeApiKeyLimits({
-      token_quota: { limit: 500000, period: "monthly" },
-      rps: 10,
-      concurrency: 8,
-      allowed_models: ["gpt-4o", "claude"],
-    });
-    expect(parts).toContain("500,000 tok/mo");
-    expect(parts).toContain("10 RPS");
-    expect(parts).toContain("8 concurrent");
-    expect(parts).toContain("models: gpt-4o, claude");
-  });
-
-  it("caps the inline model list at 3 with a +N suffix", () => {
-    const parts = summarizeApiKeyLimits({
-      allowed_models: ["a", "b", "c", "d", "e"],
-    });
-    expect(parts).toContain("models: a, b, c +2");
-  });
-
-  it("is empty for no limits", () => {
-    expect(summarizeApiKeyLimits(null)).toEqual([]);
-    expect(summarizeApiKeyLimits({})).toEqual([]);
   });
 });
 

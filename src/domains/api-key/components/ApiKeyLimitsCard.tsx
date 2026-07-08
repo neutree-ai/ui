@@ -20,7 +20,6 @@ import {
   limitsToForm,
   QUOTA_PERIODS,
   type QuotaPeriod,
-  summarizeApiKeyLimits,
   useApiKeyDisable,
   useApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
@@ -66,7 +65,6 @@ export const ApiKeyLimitsCard = ({
     refresh().catch(() => {});
   }, [refresh]);
 
-  const summary = summarizeApiKeyLimits(limits);
   const disabled = !!limits.disabled;
   const [toggling, setToggling] = useState(false);
 
@@ -179,10 +177,6 @@ export const ApiKeyLimitsCard = ({
             </div>
           </div>
         )}
-
-        <p className="text-sm text-muted-foreground">
-          {summary.length > 0 ? summary.join(" · ") : t("api_keys.limits.none")}
-        </p>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-3">
