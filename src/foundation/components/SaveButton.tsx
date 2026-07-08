@@ -1,5 +1,3 @@
-import type { ButtonProps } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
 import { useSaveButton } from "@refinedev/core";
 import type {
   RefineButtonResourceProps,
@@ -8,6 +6,8 @@ import type {
 } from "@refinedev/ui-types";
 import { SaveIcon } from "lucide-react";
 import type { FC } from "react";
+import type { ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 type SaveButtonProps = ButtonProps &
   RefineSaveButtonProps &
@@ -25,7 +25,7 @@ export const SaveButton: FC<SaveButtonProps> = ({
   const { label } = useSaveButton();
 
   return (
-    <Button {...props} disabled={loading}>
+    <Button {...props} disabled={loading || props.disabled}>
       <SaveIcon className="mr-2 w-4 h-4" />
       {!hideText && (children ?? label)}
     </Button>

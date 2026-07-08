@@ -16,7 +16,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CapacitySubmitGuard } from "@/domains/endpoint/components/CapacitySubmitGuard";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
@@ -485,8 +484,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         maxAvailable.memory.total,
       ),
   );
-  // Any over-allocated resource blocks deploy (via CapacitySubmitGuard below);
-  // each card renders its own warning message.
+  // Any over-allocated resource blocks deploy (returned as `submitBlocked` and
+  // handed to ResourceForm); each card renders its own warning message.
   const isResourceCapacityExceeded =
     isCpuCapacityExceeded ||
     isMemoryCapacityExceeded ||
@@ -972,6 +971,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   return {
     form: formWithTransformedOnFinish,
+    // Block deploy while any requested resource exceeds cluster capacity; the
+    // page forwards this straight to <ResourceForm submitBlocked>.
+    submitBlocked: isResourceCapacityExceeded,
     metadataFields: (
       <FormCardGrid title={t("common.sections.basicInformation")}>
         <FormFieldGroup
@@ -1399,7 +1401,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // Scheduling target and resource selection section - always visible.
     resourceFields: (
       <FormCardGrid title={t("endpoints.sections.schedulingTargetResources")}>
-        <CapacitySubmitGuard blocked={isResourceCapacityExceeded} />
         <div
           data-testid="endpoint-resource-config-grid"
           className="col-span-4 space-y-4"

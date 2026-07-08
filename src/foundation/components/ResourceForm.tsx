@@ -43,6 +43,11 @@ type FormProps<
     isWatchable?: boolean;
     hideCancel?: boolean;
     title?: string;
+    // When true, the submit button is greyed out and submit attempts (incl.
+    // Enter key) are refused. Owners compute this from their own state — e.g.
+    // the endpoint form blocks deploy while a requested resource exceeds
+    // cluster capacity — so no upward effect/context plumbing is needed.
+    submitBlocked?: boolean;
   };
 
 export const ResourceForm = <
@@ -58,6 +63,7 @@ export const ResourceForm = <
   isWatchable,
   saveButtonProps,
   title,
+  submitBlocked = false,
   ...props
 }: FormProps<
   TQueryFnData,
@@ -91,6 +97,10 @@ export const ResourceForm = <
   );
 
   const onSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+    if (submitBlocked) {
+      event.preventDefault();
+      return;
+    }
     for (const handler of beforeSubmitHandlers.current) {
       if (handler() === false) {
         event.preventDefault();
@@ -131,6 +141,7 @@ export const ResourceForm = <
               <SaveButton
                 type="submit"
                 loading={props.refineCore.formLoading}
+                disabled={submitBlocked}
                 data-testid="form-submit"
               />
             </div>
