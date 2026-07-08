@@ -138,11 +138,7 @@ export const ModelMultiSelect = ({
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={cn(
-                            "h-5 font-normal",
-                            phaseClass(o.phase),
-                            "group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground",
-                          )}
+                          className={cn("h-5 font-normal", phaseClass(o.phase))}
                         >
                           {phaseLabel(o.phase)}
                         </Badge>

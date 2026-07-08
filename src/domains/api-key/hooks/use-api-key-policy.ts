@@ -265,20 +265,20 @@ function exposedExternalModels(
   );
 }
 
-// Order the allowed-models options: group by source type first (internal before
-// external) so internal and external models never interleave, then Running
-// endpoints first within each group so usable models surface at the top, then a
-// stable alphabetical order (model, endpoint).
+// Order the allowed-models options: status is the primary grouping (Running
+// endpoints first, so usable models surface at the top), and within the same
+// status, internal models are grouped before external ones, then a stable
+// alphabetical order (model, endpoint).
 export function compareWorkspaceModelOptions(
   a: WorkspaceModelOption,
   b: WorkspaceModelOption,
 ): number {
+  const runningRank = (phase: string | null) => (phase === "Running" ? 0 : 1);
   const typeRank = (type: WorkspaceModelOption["type"]) =>
     type === "internal" ? 0 : 1;
-  const runningRank = (phase: string | null) => (phase === "Running" ? 0 : 1);
   return (
-    typeRank(a.type) - typeRank(b.type) ||
     runningRank(a.phase) - runningRank(b.phase) ||
+    typeRank(a.type) - typeRank(b.type) ||
     a.model.localeCompare(b.model) ||
     a.endpointName.localeCompare(b.endpointName)
   );
