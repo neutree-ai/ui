@@ -411,7 +411,7 @@ export function addBackEndpointDeviceAllocationsToNodeResources(
   );
 }
 
-const canDeviceSatisfyFractionalGpuRequest = (
+const getDeviceFractionalGpuSlotCapacity = (
   device: DeviceResource,
   requestedPerReplica: number,
 ) => {
@@ -426,15 +426,21 @@ const canDeviceSatisfyFractionalGpuRequest = (
     allocatableMemoryMiB == null ||
     availableCoreUnits == null ||
     allocatableCoreUnits == null ||
+    allocatableMemoryMiB <= 0 ||
+    allocatableCoreUnits <= 0 ||
     requestedPerReplica <= 0
   ) {
-    return false;
+    return 0;
   }
 
-  return (
-    availableMemoryMiB >= allocatableMemoryMiB * requestedPerReplica &&
-    availableCoreUnits >= allocatableCoreUnits * requestedPerReplica
+  const memorySlots = Math.floor(
+    availableMemoryMiB / (allocatableMemoryMiB * requestedPerReplica),
   );
+  const coreSlots = Math.floor(
+    availableCoreUnits / (allocatableCoreUnits * requestedPerReplica),
+  );
+
+  return Math.max(0, Math.min(memorySlots, coreSlots));
 };
 
 const canDeviceSatisfyVgpuRequest = (
@@ -472,6 +478,7 @@ export function calculatePhysicalCardUsageForRequest(
   const memoryMiBPerCard = Number(options.memoryMiBPerCard || 0);
   const coreUnitsPerCard = Number(options.coreUnitsPerCard || 0);
   let available = 0;
+  let placementCapacity = 0;
 
   for (const nodeStatus of Object.values(nodeResources ?? {})) {
     for (const device of nodeStatus.devices ?? []) {
@@ -488,28 +495,38 @@ export function calculatePhysicalCardUsageForRequest(
         continue;
       }
 
-      if (
+      if (options.allocationMode === "fractional") {
+        const devicePlacementCapacity = getDeviceFractionalGpuSlotCapacity(
+          device,
+          Number(options.requestedPerReplica || 0),
+        );
+        if (devicePlacementCapacity > 0) {
+          available += 1;
+          placementCapacity += devicePlacementCapacity;
+        }
+        continue;
+      }
+
+      const canSatisfyRequest =
         (options.allocationMode === "full" &&
           isDeviceAvailableForFullCardAllocation(device)) ||
-        (options.allocationMode === "fractional" &&
-          canDeviceSatisfyFractionalGpuRequest(
-            device,
-            Number(options.requestedPerReplica || 0),
-          )) ||
         (options.allocationMode === "vgpu" &&
           canDeviceSatisfyVgpuRequest(
             device,
             memoryMiBPerCard,
             coreUnitsPerCard,
-          ))
-      ) {
+          ));
+
+      if (canSatisfyRequest) {
         available += 1;
+        placementCapacity += 1;
       }
     }
   }
 
   return {
     available,
+    placementCapacity,
     requested,
     total: available,
     used: Math.min(requested, available),

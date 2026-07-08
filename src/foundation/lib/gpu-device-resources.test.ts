@@ -196,6 +196,82 @@ describe("gpu device resource helpers", () => {
       ),
     ).toEqual({
       available: 1,
+      placementCapacity: 1,
+      requested: 1,
+      total: 1,
+      used: 1,
+    });
+  });
+
+  it("calculates fractional GPU placement slots per physical card", () => {
+    expect(
+      calculatePhysicalCardUsageForRequest(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 9216, core_units: 60 },
+              },
+              {
+                uuid: "GPU-b",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 9216, core_units: 60 },
+              },
+            ],
+          },
+        },
+        {
+          allocationMode: "fractional",
+          selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+          requestedPerReplica: 0.5,
+          replicaCount: 3,
+        },
+      ),
+    ).toEqual({
+      available: 2,
+      placementCapacity: 2,
+      requested: 1.5,
+      total: 2,
+      used: 1.5,
+    });
+  });
+
+  it("allows multiple fractional GPU replicas on one card when capacity fits", () => {
+    expect(
+      calculatePhysicalCardUsageForRequest(
+        {
+          "node-a": {
+            allocatable: null,
+            available: null,
+            devices: [
+              {
+                uuid: "GPU-a",
+                product: "Tesla-T4",
+                health: true,
+                allocatable: { memory_mib: 15360, core_units: 100 },
+                available: { memory_mib: 15360, core_units: 100 },
+              },
+            ],
+          },
+        },
+        {
+          allocationMode: "fractional",
+          selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+          requestedPerReplica: 0.5,
+          replicaCount: 2,
+        },
+      ),
+    ).toEqual({
+      available: 1,
+      placementCapacity: 2,
       requested: 1,
       total: 1,
       used: 1,
@@ -238,6 +314,7 @@ describe("gpu device resource helpers", () => {
       ),
     ).toEqual({
       available: 2,
+      placementCapacity: 2,
       requested: 3,
       total: 2,
       used: 2,

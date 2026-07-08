@@ -3007,6 +3007,91 @@ describe("useEndpointForm", () => {
       ).toBe("endpoints.fields.vgpuCoreCapacity-");
     });
 
+    it("blocks fractional GPU replicas that exceed per-device placement slots", async () => {
+      const fractionalPlacementCluster = {
+        metadata: metadata("fractional-placement"),
+        spec: { type: "kubernetes" },
+        status: {
+          resource_info: {
+            allocatable: {
+              cpu: 16,
+              memory: 64,
+              accelerator_groups: {
+                nvidia_gpu: {
+                  quantity: 2,
+                  product_groups: null,
+                  products: {
+                    "Tesla-T4": { quantity: 2 },
+                  },
+                },
+              },
+            },
+            available: {
+              cpu: 12,
+              memory: 48,
+              accelerator_groups: {
+                nvidia_gpu: {
+                  quantity: 2,
+                  product_groups: null,
+                  products: {
+                    "Tesla-T4": { quantity: 2 },
+                  },
+                },
+              },
+            },
+            node_resources: {
+              "node-a": {
+                allocatable: null,
+                available: null,
+                devices: [
+                  {
+                    uuid: "GPU-fractional-a",
+                    product: "Tesla-T4",
+                    health: true,
+                    allocatable: { memory_mib: 15360, core_units: 100 },
+                    available: { memory_mib: 9216, core_units: 60 },
+                  },
+                  {
+                    uuid: "GPU-fractional-b",
+                    product: "Tesla-T4",
+                    health: true,
+                    allocatable: { memory_mib: 15360, core_units: 100 },
+                    available: { memory_mib: 9216, core_units: 60 },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      } satisfies EndpointClusterRef;
+
+      setupMocks([catalogA, catalogB], [fractionalPlacementCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "fractional-placement");
+        formInstance?.setValue("spec.replicas.num", 3);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 0.5,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("1.5 / 2.0");
+        expect(getAcceleratorCardText()).toContain(
+          "endpoints.messages.fullGpuResourcesInsufficient",
+        );
+      });
+    });
+
     it("adds the current endpoint vGPU allocation back while editing", async () => {
       queryDataRef.current = {
         metadata: metadata("virtualized-existing-vgpu"),

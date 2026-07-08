@@ -460,6 +460,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     0,
     requestedFullGpuCards - reusableFullGpuCards,
   );
+  const reusableFractionalReplicaSlots =
+    isFractionalGpuAllocationMode && gpuUsage > 0
+      ? Math.floor(reusableFullGpuCards / gpuUsage)
+      : 0;
+  const fractionalGpuPlacementCapacity =
+    nonVgpuPhysicalCardUsage.placementCapacity + reusableFractionalReplicaSlots;
   const currentEndpointProductUsage =
     canReuseCurrentEndpointAccelerator &&
     isCurrentEndpointVgpuAllocation &&
@@ -599,7 +605,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     !isVgpuAllocationMode &&
       selectedAccelerator?.type &&
       selectedAccelerator?.product &&
-      additionalFullGpuCards > availableFullGpuCards,
+      (additionalFullGpuCards > availableFullGpuCards ||
+        (isFractionalGpuAllocationMode &&
+          replicaCount > fractionalGpuPlacementCapacity)),
   );
   // CPU / memory over-allocation: the request summed across replicas must fit
   // the target node's available budget (maxAvailable already adds back the
