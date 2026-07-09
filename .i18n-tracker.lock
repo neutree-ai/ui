@@ -38,7 +38,7 @@
   "src/pages/clusters/create.tsx": "ee6e135f119688d2f7a72c3ecd2cd42a",
   "src/pages/clusters/edit.tsx": "ecb3a6e4f04286c161d3872d9e91bfa9",
   "src/pages/clusters/list.tsx": "71b3323f97b02b4391464719cc3aa521",
-  "src/pages/clusters/show.tsx": "8115a02a59c8da4ed7fb5562b790efd6",
+  "src/pages/clusters/show.tsx": "973c28f1c576680c9b836cb2a704da86",
   "src/pages/api-keys/list.tsx": "c48386dc0c9ab827a12a68e9994b82fb",
   "src/pages/api-keys/show.tsx": "3ecbea3750b6bc421c97fb673084dd5f",
   "src/components/ui/alert-dialog.tsx": "fd2a0854b18d61d21fe0e8effd7e4cd9",
