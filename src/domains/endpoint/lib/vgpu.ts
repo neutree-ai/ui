@@ -40,7 +40,7 @@ export function formatVgpuMemoryGiBInputValue(
     }
   }
 
-  return String(memoryMiBValue / MIB_PER_GIB);
+  return String(getRoundedVgpuMemoryGiBValue(memoryMiBValue) ?? "");
 }
 
 export function normalizeVgpuMemoryGiBInput(

@@ -8,6 +8,7 @@ import {
   calculatePhysicalCardUsageForRequest,
   calculateVgpuCardCapacity,
   calculateVgpuDevicePlacementCapacity,
+  calculateVgpuMemoryBoundaryMiB,
   filterGpuDeviceResourceRows,
   sumMatchingDeviceAvailableResources,
 } from "./gpu-device-resources";
@@ -1524,6 +1525,129 @@ describe("gpu device resource helpers", () => {
           coreUnitsPerCard: 0,
         },
       ),
+    ).toEqual({
+      matchingDeviceCount: 2,
+      totalCards: 1,
+    });
+  });
+
+  it("calculates the largest per-card vGPU memory boundary from usable devices", () => {
+    const fragmentedL20Resources = {
+      "node-l20": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-l20-low-memory",
+            product: "NVIDIA-L20",
+            health: true,
+            allocatable: {
+              memory_mib: 46068,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 1012,
+              core_units: 30,
+            },
+          },
+          {
+            uuid: "GPU-l20-rounded-seven-gib",
+            product: "NVIDIA-L20",
+            health: true,
+            allocatable: {
+              memory_mib: 46068,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 7156,
+              core_units: 15,
+            },
+          },
+        ],
+      },
+    } satisfies Record<string, NodeResourceStatus>;
+
+    expect(
+      calculateVgpuMemoryBoundaryMiB(fragmentedL20Resources, {
+        selectedAccelerator: {
+          type: "nvidia_gpu",
+          product: "NVIDIA-L20",
+        },
+        requestedCardCount: 1,
+        coreUnitsPerCard: 0,
+      }),
+    ).toBe(7156);
+    expect(
+      calculateVgpuMemoryBoundaryMiB(fragmentedL20Resources, {
+        selectedAccelerator: {
+          type: "nvidia_gpu",
+          product: "NVIDIA-L20",
+        },
+        requestedCardCount: 2,
+        coreUnitsPerCard: 0,
+      }),
+    ).toBe(1012);
+  });
+
+  it("counts vGPU card capacity with displayed GiB memory alignment", () => {
+    const fragmentedL20Resources = {
+      "node-l20": {
+        allocatable: null,
+        available: null,
+        devices: [
+          {
+            uuid: "GPU-l20-low-memory",
+            product: "NVIDIA-L20",
+            health: true,
+            allocatable: {
+              memory_mib: 46068,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 1012,
+              core_units: 40,
+            },
+          },
+          {
+            uuid: "GPU-l20-rounded-seven-gib",
+            product: "NVIDIA-L20",
+            health: true,
+            allocatable: {
+              memory_mib: 46068,
+              core_units: 100,
+            },
+            available: {
+              memory_mib: 7156,
+              core_units: 50,
+            },
+          },
+        ],
+      },
+    } satisfies Record<string, NodeResourceStatus>;
+
+    expect(
+      calculateVgpuCardCapacity(fragmentedL20Resources, {
+        selectedAccelerator: {
+          type: "nvidia_gpu",
+          product: "NVIDIA-L20",
+        },
+        memoryMiBPerCard: 1024,
+        coreUnitsPerCard: 0,
+      }),
+    ).toEqual({
+      matchingDeviceCount: 2,
+      totalCards: 2,
+    });
+
+    expect(
+      calculateVgpuCardCapacity(fragmentedL20Resources, {
+        selectedAccelerator: {
+          type: "nvidia_gpu",
+          product: "NVIDIA-L20",
+        },
+        memoryMiBPerCard: 1024,
+        coreUnitsPerCard: 45,
+      }),
     ).toEqual({
       matchingDeviceCount: 2,
       totalCards: 1,
