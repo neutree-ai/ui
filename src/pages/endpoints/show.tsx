@@ -179,7 +179,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         </TabsList>
         <TabsContent
           value="basic"
-          className="overflow-auto h-[calc(100%-theme('spacing.9'))]"
+          className="overflow-auto h-[calc(100%-theme('spacing.11'))]"
         >
           <MetadataCard metadata={record.metadata} />
           <Card className="mt-4">
@@ -270,14 +270,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         {shouldShowRayDashboard && (
           <TabsContent
             value="ray"
-            className="h-[calc(100%-theme('spacing.9'))]"
+            className="h-[calc(100%-theme('spacing.11'))]"
           >
             <RayDashboardTab record={record} cluster={clusterData?.data?.[0]} />
           </TabsContent>
         )}
         <TabsContent
           value="monitor"
-          className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
+          className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
         >
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
@@ -342,7 +342,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         </TabsContent>
         <TabsContent
           value="logs"
-          className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
+          className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
         >
           <Suspense fallback={<Loader width="20" height="20" />}>
             <EndpointLogTabs endpoint={record} />
@@ -350,7 +350,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         </TabsContent>
         <TabsContent
           value="playground"
-          className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
+          className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
         >
           <Suspense
             fallback={<Loader className="w-16 text-muted-foreground" />}
