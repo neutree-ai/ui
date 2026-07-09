@@ -8,7 +8,6 @@ const ALLOWED_ACCELERATOR_KEYS = new Set([
   "type",
   "product",
   VGPU_MEMORY_MIB_KEY,
-  VGPU_MEMORY_PERCENT_KEY,
   VGPU_CORE_PERCENT_KEY,
 ]);
 
@@ -395,20 +394,13 @@ export function transformEndpointValues(spec: {
       delete accelerator[VGPU_MEMORY_PERCENT_KEY];
       delete accelerator[VGPU_CORE_PERCENT_KEY];
 
-      const hasVirtualMemory =
-        normalized?.memory_mib !== undefined ||
-        normalized?.memory_percent !== undefined;
+      const hasVirtualMemory = normalized?.memory_mib !== undefined;
 
       if (normalized && hasVirtualMemory) {
         setFlatVgpuValue(
           accelerator,
           VGPU_MEMORY_MIB_KEY,
           normalized.memory_mib,
-        );
-        setFlatVgpuValue(
-          accelerator,
-          VGPU_MEMORY_PERCENT_KEY,
-          normalized.memory_percent,
         );
         setFlatVgpuValue(
           accelerator,
@@ -513,25 +505,9 @@ export function validateEndpointValues(
 
   const virtualization = spec.resources?.accelerator?.virtualization;
   const memoryMiB = parseOptionalValidationNumber(virtualization?.memory_mib);
-  const memoryPercent = parseOptionalValidationNumber(
-    virtualization?.memory_percent,
-  );
   const corePercent = parseOptionalValidationNumber(
     virtualization?.core_percent,
   );
-  const hasMemoryMiB =
-    memoryMiB !== undefined && Number.isFinite(memoryMiB) && memoryMiB > 0;
-  const hasMemoryPercent =
-    memoryPercent !== undefined &&
-    Number.isFinite(memoryPercent) &&
-    memoryPercent > 0;
-
-  if (hasMemoryMiB && hasMemoryPercent) {
-    errors["spec.resources.accelerator.virtualization.memory_percent"] = {
-      type: "manual",
-      message: t("endpoints.messages.vgpuMemoryMutuallyExclusive"),
-    };
-  }
 
   if (
     memoryMiB !== undefined &&
@@ -540,18 +516,6 @@ export function validateEndpointValues(
     errors["spec.resources.accelerator.virtualization.memory_mib"] = {
       type: "manual",
       message: t("endpoints.messages.vgpuMemoryMiBPositive"),
-    };
-  }
-
-  if (
-    memoryPercent !== undefined &&
-    (!Number.isFinite(memoryPercent) ||
-      memoryPercent < 1 ||
-      memoryPercent > 100)
-  ) {
-    errors["spec.resources.accelerator.virtualization.memory_percent"] = {
-      type: "manual",
-      message: t("endpoints.messages.vgpuMemoryPercentRange"),
     };
   }
 

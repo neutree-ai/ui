@@ -76,6 +76,31 @@ describe("endpoint vgpu helpers", () => {
     ).toEqual({ core_percent: 50 });
   });
 
+  it("ignores memory_percent virtualization values", () => {
+    expect(
+      normalizeVgpuVirtualization({
+        memory_percent: 50,
+        core_percent: 50,
+      }),
+    ).toEqual({ core_percent: 50 });
+
+    expect(getEffectiveVgpuMemoryMiB({ memory_percent: 50 }, 15360)).toBeNull();
+
+    expect(
+      hasVgpuResources({
+        gpu: 1,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+          virtualization: {
+            memory_percent: 50,
+            core_percent: 50,
+          },
+        },
+      } as ResourceSpec),
+    ).toBe(false);
+  });
+
   it("detects backend flat vGPU keys", () => {
     const resources = {
       gpu: 1,
@@ -94,10 +119,6 @@ describe("endpoint vgpu helpers", () => {
     });
   });
 
-  it("computes effective memory from percentage using ceiling", () => {
-    expect(getEffectiveVgpuMemoryMiB({ memory_percent: 33 }, 15360)).toBe(5069);
-  });
-
   it("prefers explicit memory_mib for effective memory", () => {
     expect(
       getEffectiveVgpuMemoryMiB(
@@ -107,7 +128,7 @@ describe("endpoint vgpu helpers", () => {
     ).toBe(10240);
   });
 
-  it("normalizes empty and mutually exclusive memory fields", () => {
+  it("normalizes empty memory fields and ignores memory_percent", () => {
     expect(
       normalizeVgpuVirtualization({
         memory_mib: "" as unknown as number,
@@ -115,16 +136,13 @@ describe("endpoint vgpu helpers", () => {
         core_percent: "30" as unknown as number,
       }),
     ).toEqual({
-      memory_percent: 50,
       core_percent: 30,
     });
   });
 
-  it("formats memory display in GiB and percentage modes", () => {
+  it("formats memory display in GiB and ignores percentage mode", () => {
     expect(getVgpuMemoryDisplay({ memory_mib: 10240 }, 15360)).toBe("10.0 GiB");
-    expect(getVgpuMemoryDisplay({ memory_percent: 50 }, 15360)).toBe(
-      "50% (7.5 GiB)",
-    );
+    expect(getVgpuMemoryDisplay({ memory_percent: 50 }, 15360)).toBeNull();
   });
 
   it("rounds the raw vGPU memory max for display", () => {
