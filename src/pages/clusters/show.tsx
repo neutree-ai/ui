@@ -111,7 +111,7 @@ export const ClustersShow = () => {
           </TabsList>
           <TabsContent
             value="basic"
-            className="h-[calc(100%-theme('spacing.9'))] overflow-auto"
+            className="h-[calc(100%-theme('spacing.11'))] overflow-auto"
           >
             <MetadataCard metadata={record.metadata} />
             <Card className="mt-4">
@@ -521,7 +521,7 @@ export const ClustersShow = () => {
           {showMonitorTab && (
             <TabsContent
               value="monitor"
-              className="h-[calc(100%-theme('spacing.9'))] overflow-hidden"
+              className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
             >
               {grafanaUrl ? (
                 <div className="flex flex-col gap-4 h-full">
@@ -549,7 +549,7 @@ export const ClustersShow = () => {
           {record.spec.type === "ssh" && (
             <TabsContent
               value="ray"
-              className="h-[calc(100%-theme('spacing.9'))]"
+              className="h-[calc(100%-theme('spacing.11'))]"
             >
               {dashboardUrl && (
                 <iframe
