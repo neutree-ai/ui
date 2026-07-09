@@ -18,6 +18,13 @@ type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
 };
 
+type AcceleratorWithFlatVirtualization = NonNullable<
+  ResourceSpec["accelerator"]
+> &
+  Record<string, unknown>;
+
+const FLAT_CORE_PERCENT_KEY = "virtualization.core_percent";
+
 const formatInteger = (value: number) => formatToDecimal(value, 0) ?? "-";
 
 const formatCoreLimit = (value: number) =>
@@ -38,6 +45,25 @@ const formatAllocatedCardCount = (count: number, t: (key: string) => string) =>
       ? "endpoints.fields.allocatedCard"
       : "endpoints.fields.allocatedCards",
   )}`;
+
+const parsePositiveNumber = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const getConfiguredCorePercent = (
+  configuredResources: ResourceSpec | null | undefined,
+) => {
+  const accelerator = configuredResources?.accelerator as
+    | AcceleratorWithFlatVirtualization
+    | null
+    | undefined;
+  const value =
+    accelerator?.virtualization?.core_percent ??
+    accelerator?.[FLAT_CORE_PERCENT_KEY];
+
+  return parsePositiveNumber(value);
+};
 
 const ResourceValue = ({
   label,
@@ -62,10 +88,16 @@ const ResourceValue = ({
 );
 
 export default function EndpointRuntimeResourcesCard({
+  configuredResources,
   resources,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
+  const configuredCorePercent = getConfiguredCorePercent(configuredResources);
+  const coreLimitText =
+    configuredCorePercent != null
+      ? formatCoreLimit(configuredCorePercent)
+      : "-";
 
   const summaryRows = getEndpointResourceSummaryRows(resources);
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
@@ -125,7 +157,7 @@ export default function EndpointRuntimeResourcesCard({
               />
               <ResourceValue
                 label={t("clusters.fields.coreUsage")}
-                value={formatCoreLimit(row.coreUnits)}
+                value={coreLimitText}
               />
             </div>
           ))}
@@ -172,8 +204,7 @@ export default function EndpointRuntimeResourcesCard({
                       {t("endpoints.fields.vgpuMemory")}
                     </Badge>
                     <Badge variant="outline" className="bg-muted/40">
-                      {t("endpoints.fields.vgpuCoreCapacity")}{" "}
-                      {formatCoreLimit(group.coreUnits)}
+                      {t("endpoints.fields.vgpuCoreCapacity")} {coreLimitText}
                     </Badge>
                   </div>
                 </div>
@@ -224,7 +255,7 @@ export default function EndpointRuntimeResourcesCard({
                         <ResourceValue
                           className="border-0 bg-transparent p-0"
                           label={t("clusters.fields.coreUsage")}
-                          value={formatCoreLimit(device.coreUnits)}
+                          value={coreLimitText}
                         />
                         <ResourceValue
                           className="border-0 bg-transparent p-0"
