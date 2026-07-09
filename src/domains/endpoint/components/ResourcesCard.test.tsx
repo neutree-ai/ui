@@ -46,7 +46,7 @@ describe("ResourcesCard", () => {
     expect(screen.queryByText("-%")).toBeNull();
   });
 
-  it("renders a percent sign when vGPU core percent is configured", () => {
+  it("renders vGPU core percent as a plain number when configured", () => {
     render(
       <ResourcesCard
         resources={
@@ -67,7 +67,8 @@ describe("ResourcesCard", () => {
       />,
     );
 
-    expect(screen.getByText("50%")).toBeTruthy();
+    expect(screen.getByText("50")).toBeTruthy();
+    expect(screen.queryByText("50%")).toBeNull();
     expect(screen.getByText("8.0 GiB")).toBeTruthy();
   });
 });
