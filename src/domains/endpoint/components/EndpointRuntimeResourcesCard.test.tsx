@@ -147,7 +147,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(container.childElementCount).toBe(0);
   });
 
-  it("renders allocated replica resources for full-card resources", () => {
+  it("hides runtime core units for full-card resources without configured core percent", () => {
     const { container } = render(
       <EndpointRuntimeResourcesCard
         resources={{
@@ -189,8 +189,8 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getByText("endpoint-abc-xgpwv")).toBeTruthy();
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
     expect(screen.getAllByText("15.0 GiB").length).toBeGreaterThan(0);
-    expect(screen.getByText("Core 100")).toBeTruthy();
-    expect(screen.queryByText("Core -")).toBeNull();
+    expect(screen.getAllByText("Core -").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Core 100")).toBeNull();
     expect(screen.getAllByText("neutree-gpu-t4-02").length).toBeGreaterThan(0);
     expect(
       screen.queryByText("GPU-5ad72eb2-9871-1aba-55b8-ade03c41e56a"),
@@ -209,7 +209,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
   });
 
-  it("renders allocated replica core resources when runtime core units are set", () => {
+  it("renders allocated replica core resources when configured core percent is set", () => {
     render(
       <EndpointRuntimeResourcesCard
         configuredResources={{
@@ -254,11 +254,12 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.getAllByText("Core 100").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Core 50").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Core 100")).toBeNull();
     expect(screen.queryByText("Core -")).toBeNull();
   });
 
-  it("renders allocated core units from runtime resources as plain numbers", () => {
+  it("renders configured flat core percent as plain numbers", () => {
     render(
       <EndpointRuntimeResourcesCard
         configuredResources={{
