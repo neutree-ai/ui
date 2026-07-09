@@ -309,6 +309,56 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.queryByText("35%")).toBeNull();
   });
 
+  it("hides configured zero core percent", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        configuredResources={{
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 0,
+            },
+          },
+        }}
+        resources={{
+          summary: {
+            products: {
+              "Tesla-T4": {
+                memory_mib: 8192,
+                core_units: 100,
+              },
+            },
+          },
+          replicas: [
+            {
+              instance_id: "endpoint-vgpu-zero",
+              replica_id: "endpoint-vgpu-zero-0",
+              node_id: "neutree-gpu-t4-02",
+              devices: [
+                {
+                  uuid: "GPU-vgpu-zero-core",
+                  product: "Tesla-T4",
+                  memory_mib: 8192,
+                  core_units: 100,
+                  node_id: "neutree-gpu-t4-02",
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getAllByText("Core -").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Core 0")).toBeNull();
+    expect(screen.queryByText("Core 100")).toBeNull();
+  });
+
   it("renders replica GPU labels in physical order when order is provided", () => {
     render(
       <EndpointRuntimeResourcesCard
