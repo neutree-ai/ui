@@ -386,7 +386,7 @@ export const ClustersShow = () => {
                                     "clusters.fields.modelCache.cacheType",
                                   )}
                                 >
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
                                     {cacheType === "nfs"
                                       ? t("clusters.options.nfs")
                                       : cacheType === "pvc"
@@ -402,7 +402,7 @@ export const ClustersShow = () => {
                                         "clusters.fields.modelCache.nfsServer",
                                       )}
                                     >
-                                      <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                      <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
                                         {cache.nfs.server}
                                       </code>
                                     </ShowPage.Row>
@@ -412,7 +412,7 @@ export const ClustersShow = () => {
                                         "clusters.fields.modelCache.cachePath",
                                       )}
                                     >
-                                      <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                      <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
                                         {cache.nfs.path}
                                       </code>
                                     </ShowPage.Row>
@@ -425,7 +425,7 @@ export const ClustersShow = () => {
                                       "clusters.fields.modelCache.cachePath",
                                     )}
                                   >
-                                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                    <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
                                       {cache.host_path.path}
                                     </code>
                                   </ShowPage.Row>
