@@ -41,7 +41,7 @@ export default function ResourcesCard({
   const vgpuMemory = getVgpuMemoryDisplay(vgpuVirtualization, undefined);
   const vgpuCorePercent =
     vgpuVirtualization?.core_percent !== undefined
-      ? `${vgpuVirtualization.core_percent}%`
+      ? formatToDecimal(vgpuVirtualization.core_percent, 0)
       : "-";
 
   return (

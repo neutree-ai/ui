@@ -189,8 +189,8 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getByText("endpoint-abc-xgpwv")).toBeTruthy();
     expect(screen.getAllByText("Tesla-T4").length).toBeGreaterThan(0);
     expect(screen.getAllByText("15.0 GiB").length).toBeGreaterThan(0);
-    expect(screen.getByText("Core -")).toBeTruthy();
-    expect(screen.queryByText("Core 100")).toBeNull();
+    expect(screen.getByText("Core 100")).toBeTruthy();
+    expect(screen.queryByText("Core -")).toBeNull();
     expect(screen.getAllByText("neutree-gpu-t4-02").length).toBeGreaterThan(0);
     expect(
       screen.queryByText("GPU-5ad72eb2-9871-1aba-55b8-ade03c41e56a"),
@@ -209,7 +209,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
   });
 
-  it("renders configured replica core resources when vGPU core percent is set", () => {
+  it("renders allocated replica core resources when runtime core units are set", () => {
     render(
       <EndpointRuntimeResourcesCard
         configuredResources={{
@@ -254,8 +254,58 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.getAllByText("Core 50").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Core 100").length).toBeGreaterThan(0);
     expect(screen.queryByText("Core -")).toBeNull();
+  });
+
+  it("renders allocated core units from runtime resources as plain numbers", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        configuredResources={{
+          cpu: 8,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+            "virtualization.core_percent": "35",
+            "virtualization.memory_mib": "22528",
+          } as never,
+        }}
+        resources={{
+          summary: {
+            products: {
+              "NVIDIA-L20": {
+                memory_mib: 22528,
+                core_units: 35,
+              },
+            },
+          },
+          replicas: [
+            {
+              instance_id: "ruiyang-endpoint-0-864d94bdbc-8t7lp",
+              replica_id: "ruiyang-endpoint-0-864d94bdbc-8t7lp",
+              node_id: "zhudong-bm01",
+              devices: [
+                {
+                  uuid: "GPU-90cb1c49-9031-486b-b0e8-6a35b04ca488",
+                  product: "NVIDIA-L20",
+                  order: 1,
+                  memory_mib: 22528,
+                  core_units: 35,
+                  node_id: "zhudong-bm01",
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Core 35")).toBeTruthy();
+    expect(screen.getAllByText("35")).toHaveLength(2);
+    expect(screen.queryByText("Core -")).toBeNull();
+    expect(screen.queryByText("35%")).toBeNull();
   });
 
   it("renders replica GPU labels in physical order when order is provided", () => {
