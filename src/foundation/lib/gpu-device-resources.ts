@@ -74,6 +74,9 @@ type PhysicalCardUsageOptions = {
 
 export const GPU_DEVICE_FILTER_ALL = "__all__";
 
+const MIB_PER_GIB = 1024;
+const DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION = 1;
+
 type AcceleratorGroups = NonNullable<ResourceInfo["accelerator_groups"]>;
 type AcceleratorGroupResource = AcceleratorGroups[string];
 
@@ -822,6 +825,30 @@ export function buildGpuDeviceResourceRows(
     );
 }
 
+const getVgpuMemoryDisplayRangeMiB = (
+  memoryMiB: number,
+  precision = DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION,
+) => {
+  const memoryGiB = memoryMiB / MIB_PER_GIB;
+  const bucketHalfStepGiB = 0.5 / 10 ** precision;
+
+  return {
+    lowerMiB: Math.ceil((memoryGiB - bucketHalfStepGiB) * MIB_PER_GIB),
+    upperMiB: Math.floor((memoryGiB + bucketHalfStepGiB) * MIB_PER_GIB),
+  };
+};
+
+const isVgpuMemoryApproximatelySufficient = (
+  availableMemoryMiB: number,
+  memoryMiBPerCard: number,
+) => {
+  if (availableMemoryMiB >= memoryMiBPerCard) return true;
+
+  const { lowerMiB, upperMiB } =
+    getVgpuMemoryDisplayRangeMiB(memoryMiBPerCard);
+  return availableMemoryMiB >= lowerMiB && availableMemoryMiB <= upperMiB;
+};
+
 export function calculateVgpuCardCapacity(
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
   options: {
@@ -873,11 +900,16 @@ export function calculateVgpuCardCapacity(
         continue;
       }
 
-      if (availableMemoryMiB < memoryMiBPerCard) {
+      if (coreUnitsPerCard > 0 && availableCoreUnits < coreUnitsPerCard) {
         continue;
       }
 
-      if (coreUnitsPerCard > 0 && availableCoreUnits < coreUnitsPerCard) {
+      if (
+        !isVgpuMemoryApproximatelySufficient(
+          availableMemoryMiB,
+          memoryMiBPerCard,
+        )
+      ) {
         continue;
       }
 
@@ -889,6 +921,64 @@ export function calculateVgpuCardCapacity(
     matchingDeviceCount,
     totalCards,
   };
+}
+
+export function calculateVgpuMemoryBoundaryMiB(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  options: {
+    selectedAccelerator?: SelectedAccelerator | null;
+    requestedCardCount?: number | null;
+    coreUnitsPerCard?: number | null;
+  },
+) {
+  if (!nodeResources) return null;
+
+  const requestedCardCount = Math.max(
+    1,
+    Math.ceil(Number(options.requestedCardCount || 1)),
+  );
+  const coreUnitsPerCard = Number(options.coreUnitsPerCard || 0);
+  const devices: Array<{
+    availableCoreUnits: number;
+    availableMemoryMiB: number;
+  }> = [];
+
+  for (const nodeStatus of Object.values(nodeResources)) {
+    for (const device of nodeStatus.devices ?? []) {
+      if (!device.health) continue;
+
+      const acceleratorType = getProductAcceleratorType(
+        nodeStatus.allocatable,
+        device.product,
+      );
+      if (
+        !matchesSelectedAccelerator(
+          { acceleratorType, product: device.product },
+          options.selectedAccelerator,
+        )
+      ) {
+        continue;
+      }
+
+      const availableMemoryMiB = Number(device.available?.memory_mib || 0);
+      const availableCoreUnits = Number(device.available?.core_units || 0);
+      if (availableMemoryMiB <= 0 || availableCoreUnits <= 0) continue;
+
+      devices.push({ availableCoreUnits, availableMemoryMiB });
+    }
+  }
+
+  const candidateDevices = devices
+    .filter(
+      (device) =>
+        coreUnitsPerCard <= 0 || device.availableCoreUnits >= coreUnitsPerCard,
+    )
+    .sort((left, right) => right.availableMemoryMiB - left.availableMemoryMiB);
+
+  const boundaryDevice = candidateDevices[requestedCardCount - 1];
+  return boundaryDevice?.availableMemoryMiB > 0
+    ? boundaryDevice.availableMemoryMiB
+    : null;
 }
 
 export function filterGpuDeviceResourceRows(

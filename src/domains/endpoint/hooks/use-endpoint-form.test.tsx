@@ -570,6 +570,135 @@ const virtualizedKubernetesClusterWithoutDeviceDetails = {
   },
 } satisfies EndpointClusterRef;
 
+const virtualizedKubernetesClusterWithFragmentedL20Memory = {
+  metadata: metadata("virtualized-k8s-fragmented-l20-memory"),
+  spec: {
+    type: "kubernetes",
+    accelerator_virtualization: { enabled: true },
+  },
+  status: {
+    resource_info: {
+      allocatable: {
+        cpu: 64,
+        memory: 256,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: null,
+            products: {
+              "NVIDIA-L20": {
+                quantity: 2,
+                virtualization: {
+                  memory_mib: 92136,
+                  core_units: 200,
+                },
+              },
+            },
+          },
+        },
+      },
+      available: {
+        cpu: 48,
+        memory: 192,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 2,
+            product_groups: null,
+            products: {
+              "NVIDIA-L20": {
+                quantity: 2,
+                virtualization: {
+                  memory_mib: 8168,
+                  core_units: 45,
+                },
+              },
+            },
+          },
+        },
+      },
+      accelerator_metadata: {
+        nvidia_gpu: {
+          products: {
+            "NVIDIA-L20": {
+              memory_total_mib: 46068,
+            },
+          },
+        },
+      },
+      node_resources: {
+        "node-l20": {
+          allocatable: {
+            cpu: 64,
+            memory: 256,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 2,
+                product_groups: null,
+                products: {
+                  "NVIDIA-L20": {
+                    quantity: 2,
+                    virtualization: {
+                      memory_mib: 92136,
+                      core_units: 200,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          available: {
+            cpu: 48,
+            memory: 192,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 2,
+                product_groups: null,
+                products: {
+                  "NVIDIA-L20": {
+                    quantity: 2,
+                    virtualization: {
+                      memory_mib: 8168,
+                      core_units: 45,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          devices: [
+            {
+              uuid: "GPU-l20-low-memory",
+              product: "NVIDIA-L20",
+              health: true,
+              allocatable: {
+                memory_mib: 46068,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 1012,
+                core_units: 30,
+              },
+            },
+            {
+              uuid: "GPU-l20-rounded-seven-gib",
+              product: "NVIDIA-L20",
+              health: true,
+              allocatable: {
+                memory_mib: 46068,
+                core_units: 100,
+              },
+              available: {
+                memory_mib: 7156,
+                core_units: 15,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
+} satisfies EndpointClusterRef;
+
 const roundedVramKubernetesClusterWithDevices = {
   metadata: metadata("virtualized-k8s-rounded-vram"),
   spec: {
@@ -1442,6 +1571,263 @@ describe("useEndpointForm", () => {
             "spec.resources.accelerator.virtualization.memory_mib",
           ),
         ).toBe(46068);
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("clamps rounded vGPU memory input to the per-card placement boundary", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithFragmentedL20Memory],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue(
+          "spec.cluster",
+          "virtualized-k8s-fragmented-l20-memory",
+        );
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 0,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+          },
+        });
+      });
+
+      const input = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(input.max).toBe("7");
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "7" } });
+
+      await waitFor(() => {
+        expect(input.value).toBe("7");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(7156);
+      });
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 1);
+      });
+
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+    });
+
+    it("realigns displayed vGPU memory when card count changes after memory input", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithFragmentedL20Memory],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue(
+          "spec.cluster",
+          "virtualized-k8s-fragmented-l20-memory",
+        );
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 0,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+          },
+        });
+      });
+
+      const input = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "1" } });
+
+      await waitFor(() => {
+        expect(input.value).toBe("1");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(1024);
+      });
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 2);
+      });
+
+      await waitFor(() => {
+        expect(input.value).toBe("1");
+        expect(
+          formInstance?.getValues(
+            "spec.resources.accelerator.virtualization.memory_mib",
+          ),
+        ).toBe(1012);
+        expect(getCurrentRequestText()).toContain("2.0 / 2.0");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+
+      act(() => {
+        formInstance?.setValue("spec.replicas.num", 2);
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("2.0 / 2.0");
+        expect(input.max).toBe("1");
+      });
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+
+      const cardCountInput = screen.getByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCount/i,
+      }) as HTMLInputElement;
+      expect(cardCountInput.max).toBe("2");
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 3);
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("3.0 / 2.0");
+      });
+      expect(
+        screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeTruthy();
+    });
+
+    it("uses the full edit request when reusing allocated vGPU devices", async () => {
+      queryDataRef.current = {
+        metadata: metadata("ruiyang-endpoint-0"),
+        spec: {
+          cluster: "virtualized-k8s-fragmented-l20-memory",
+          resources: {
+            cpu: "8",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "NVIDIA-L20",
+              "virtualization.memory_mib": "22528",
+              "virtualization.core_percent": "35",
+            },
+          },
+          replicas: { num: 3 },
+        },
+        status: {
+          resources: {
+            replicas: [
+              {
+                instance_id: "ruiyang-endpoint-0-a",
+                replica_id: "ruiyang-endpoint-0-a",
+                node_id: "node-l20",
+                devices: [
+                  {
+                    uuid: "GPU-l20-low-memory",
+                    product: "NVIDIA-L20",
+                    memory_mib: 22528,
+                    core_units: 35,
+                    node_id: "node-l20",
+                  },
+                ],
+              },
+              {
+                instance_id: "ruiyang-endpoint-0-b",
+                replica_id: "ruiyang-endpoint-0-b",
+                node_id: "node-l20",
+                devices: [
+                  {
+                    uuid: "GPU-l20-low-memory",
+                    product: "NVIDIA-L20",
+                    memory_mib: 22528,
+                    core_units: 35,
+                    node_id: "node-l20",
+                  },
+                ],
+              },
+              {
+                instance_id: "ruiyang-endpoint-0-c",
+                replica_id: "ruiyang-endpoint-0-c",
+                node_id: "node-l20",
+                devices: [
+                  {
+                    uuid: "GPU-l20-rounded-seven-gib",
+                    product: "NVIDIA-L20",
+                    memory_mib: 22528,
+                    core_units: 35,
+                    node_id: "node-l20",
+                  },
+                ],
+              },
+            ],
+            summary: {
+              products: {
+                "NVIDIA-L20": {
+                  memory_mib: 67584,
+                  core_units: 105,
+                },
+              },
+            },
+          },
+        },
+      };
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithFragmentedL20Memory],
+      );
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue(
+          "spec.cluster",
+          "virtualized-k8s-fragmented-l20-memory",
+        );
+        formInstance?.setValue("spec.replicas.num", 3);
+        formInstance?.setValue("spec.resources", {
+          cpu: 8,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "NVIDIA-L20",
+            virtualization: {
+              memory_mib: 22528,
+              core_percent: 35,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain("3.0 / 3.0");
+        expect(
+          getCurrentRequestMetricText("endpoints.fields.vgpuMemoryCapacity"),
+        ).toBe("endpoints.fields.vgpuMemoryCapacityGiB66.0 / 74.0");
+        expect(
+          getCurrentRequestMetricText("endpoints.fields.vgpuCoreCapacity"),
+        ).toBe("endpoints.fields.vgpuCoreCapacity105.0 / 150.0");
       });
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
@@ -2563,7 +2949,7 @@ describe("useEndpointForm", () => {
       expect(screen.queryByTestId("slider-input")).toBeNull();
     });
 
-    it("shows virtual card capacity warnings in the edit resource form", async () => {
+    it("shows single-replica vGPU card count over capacity in the edit resource form", async () => {
       setupMocks(
         [catalogA, catalogB],
         [virtualizedKubernetesClusterWithDevices],
@@ -2595,7 +2981,7 @@ describe("useEndpointForm", () => {
           "endpoints.fields.virtualCardCount",
         );
       });
-      expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      expect(getCurrentRequestText()).toContain("2.0 / 1.0");
       expect(
         screen.getByText("endpoints.messages.cardsAvailable").className,
       ).toContain("bg-amber-50");
@@ -2654,11 +3040,11 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("1.0 / 1.0");
-        expect(
-          screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
-        ).toBeTruthy();
+        expect(getCurrentRequestText()).toContain("2.0 / 1.0");
       });
+      expect(
+        screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeTruthy();
     });
 
     it("shows configured vGPU core request when available core is zero", async () => {
@@ -3222,11 +3608,11 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("2.0 / 2.0");
-        expect(
-          screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
-        ).toBeTruthy();
+        expect(getCurrentRequestText()).toContain("3.0 / 2.0");
       });
+      expect(
+        screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeTruthy();
     });
 
     it("does not double-count an edit endpoint vGPU allocation when the card is already available", async () => {

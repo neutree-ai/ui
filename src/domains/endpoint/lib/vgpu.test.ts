@@ -150,6 +150,10 @@ describe("endpoint vgpu helpers", () => {
     expect(formatVgpuMemoryGiBInputValue(46068, 46068)).toBe("45");
   });
 
+  it("formats aligned vGPU memory values by the displayed GiB bucket", () => {
+    expect(formatVgpuMemoryGiBInputValue(1012, 46068)).toBe("1");
+  });
+
   it("clamps vGPU memory inputs within the displayed boundary to raw MiB", () => {
     expect(normalizeVgpuMemoryGiBInput(45, 46068)).toBe(46068);
     expect(normalizeVgpuMemoryGiBInput(44.99, 46068)).toBe(46068);
