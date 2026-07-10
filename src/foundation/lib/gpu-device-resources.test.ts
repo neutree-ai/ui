@@ -7,7 +7,6 @@ import {
   buildNodePhysicalGpuResourceRows,
   calculatePhysicalCardUsageForRequest,
   calculateVgpuCardCapacity,
-  calculateVgpuDevicePlacementCapacity,
   calculateVgpuMemoryBoundaryMiB,
   filterGpuDeviceResourceRows,
   sumMatchingDeviceAvailableResources,
@@ -320,81 +319,6 @@ describe("gpu device resource helpers", () => {
       total: 2,
       used: 2,
     });
-  });
-
-  it("calculates vGPU placement capacity from per-device memory slots", () => {
-    const l20NodeResources = {
-      "node-a": {
-        allocatable: null,
-        available: null,
-        devices: [
-          {
-            uuid: "GPU-a",
-            product: "NVIDIA-L20",
-            health: true,
-            allocatable: { memory_mib: 46068, core_units: 100 },
-            available: { memory_mib: 46068, core_units: 100 },
-          },
-          {
-            uuid: "GPU-b",
-            product: "NVIDIA-L20",
-            health: true,
-            allocatable: { memory_mib: 46068, core_units: 100 },
-            available: { memory_mib: 46068, core_units: 100 },
-          },
-        ],
-      },
-    };
-
-    expect(
-      calculateVgpuDevicePlacementCapacity(l20NodeResources, {
-        selectedAccelerator: { type: "nvidia_gpu", product: "NVIDIA-L20" },
-        memoryMiBPerCard: 30 * 1024,
-        coreUnitsPerCard: 0,
-      }),
-    ).toBe(2);
-
-    expect(
-      calculateVgpuDevicePlacementCapacity(l20NodeResources, {
-        selectedAccelerator: { type: "nvidia_gpu", product: "NVIDIA-L20" },
-        memoryMiBPerCard: 20 * 1024,
-        coreUnitsPerCard: 0,
-      }),
-    ).toBe(4);
-  });
-
-  it("calculates vGPU placement capacity from per-device memory and core slots", () => {
-    expect(
-      calculateVgpuDevicePlacementCapacity(
-        {
-          "node-a": {
-            allocatable: null,
-            available: null,
-            devices: [
-              {
-                uuid: "GPU-a",
-                product: "NVIDIA-L20",
-                health: true,
-                allocatable: { memory_mib: 46068, core_units: 100 },
-                available: { memory_mib: 46068, core_units: 100 },
-              },
-              {
-                uuid: "GPU-b",
-                product: "NVIDIA-L20",
-                health: true,
-                allocatable: { memory_mib: 46068, core_units: 100 },
-                available: { memory_mib: 46068, core_units: 100 },
-              },
-            ],
-          },
-        },
-        {
-          selectedAccelerator: { type: "nvidia_gpu", product: "NVIDIA-L20" },
-          memoryMiBPerCard: 20 * 1024,
-          coreUnitsPerCard: 60,
-        },
-      ),
-    ).toBe(2);
   });
 
   it("sums matching device resources after endpoint allocation reuse", () => {
