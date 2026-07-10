@@ -1821,7 +1821,7 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("3.0 / 3.0");
+        expect(getCurrentRequestText()).toContain("2.0 / 2.0");
         expect(
           getCurrentRequestMetricText("endpoints.fields.vgpuMemoryCapacity"),
         ).toBe("endpoints.fields.vgpuMemoryCapacityGiB66.0 / 74.0");

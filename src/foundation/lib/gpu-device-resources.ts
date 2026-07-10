@@ -536,59 +536,6 @@ export function calculatePhysicalCardUsageForRequest(
   };
 }
 
-export function calculateVgpuDevicePlacementCapacity(
-  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
-  options: {
-    selectedAccelerator?: SelectedAccelerator | null;
-    memoryMiBPerCard?: number | null;
-    coreUnitsPerCard?: number | null;
-  },
-) {
-  const memoryMiBPerCard = Number(options.memoryMiBPerCard || 0);
-  const coreUnitsPerCard = Number(options.coreUnitsPerCard || 0);
-  if (memoryMiBPerCard <= 0) return 0;
-
-  let capacity = 0;
-
-  for (const nodeStatus of Object.values(nodeResources ?? {})) {
-    for (const device of nodeStatus.devices ?? []) {
-      if (!device.health) continue;
-      const acceleratorType = getProductAcceleratorType(
-        nodeStatus.allocatable,
-        device.product,
-      );
-      if (
-        !matchesSelectedAccelerator(
-          { acceleratorType, product: device.product },
-          options.selectedAccelerator,
-        )
-      ) {
-        continue;
-      }
-
-      const availableMemoryMiB =
-        toFiniteNumber(device.available?.memory_mib) ?? 0;
-      const availableCoreUnits =
-        toFiniteNumber(device.available?.core_units) ?? 0;
-      if (availableMemoryMiB <= 0 || availableCoreUnits <= 0) continue;
-
-      const memorySlots = Math.floor(availableMemoryMiB / memoryMiBPerCard);
-      const coreSlots =
-        coreUnitsPerCard > 0
-          ? Math.floor(availableCoreUnits / coreUnitsPerCard)
-          : Number.POSITIVE_INFINITY;
-      const slots = Math.min(memorySlots, coreSlots);
-      if (Number.isFinite(slots)) {
-        capacity += Math.max(0, slots);
-      } else {
-        capacity += Math.max(0, memorySlots);
-      }
-    }
-  }
-
-  return capacity;
-}
-
 export function sumMatchingDeviceAvailableResources(
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
   selectedAccelerator?: SelectedAccelerator | null,
@@ -844,8 +791,7 @@ const isVgpuMemoryApproximatelySufficient = (
 ) => {
   if (availableMemoryMiB >= memoryMiBPerCard) return true;
 
-  const { lowerMiB, upperMiB } =
-    getVgpuMemoryDisplayRangeMiB(memoryMiBPerCard);
+  const { lowerMiB, upperMiB } = getVgpuMemoryDisplayRangeMiB(memoryMiBPerCard);
   return availableMemoryMiB >= lowerMiB && availableMemoryMiB <= upperMiB;
 };
 
