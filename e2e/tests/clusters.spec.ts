@@ -129,257 +129,231 @@ test.describe("clusters", () => {
   // List tests
   // ────────────────────────────────────────────────────────────
   test.describe("list", () => {
-    test(
-      "list page shows expected columns",
-      { tag: "@C2613064" },
-      async ({ clusters }) => {
-        await clusters.goToList();
+    test("list page shows expected columns", { tag: "@C2613064" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToList();
 
-        const headers = clusters.table.root.locator("thead th");
-        await expect(headers.filter({ hasText: /name/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /workspace/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /status/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /type/i })).toBeVisible();
-        await expect(
-          headers.filter({ hasText: /image registry/i }),
-        ).toBeVisible();
-        await expect(headers.filter({ hasText: /updated/i })).toBeVisible();
-        await expect(headers.filter({ hasText: /created/i })).toBeVisible();
+      const headers = clusters.table.root.locator("thead th");
+      await expect(headers.filter({ hasText: /name/i })).toBeVisible();
+      await expect(headers.filter({ hasText: /workspace/i })).toBeVisible();
+      await expect(headers.filter({ hasText: /status/i })).toBeVisible();
+      await expect(headers.filter({ hasText: /type/i })).toBeVisible();
+      await expect(
+        headers.filter({ hasText: /image registry/i }),
+      ).toBeVisible();
+      await expect(headers.filter({ hasText: /updated/i })).toBeVisible();
+      await expect(headers.filter({ hasText: /created/i })).toBeVisible();
 
-        await clusters.table.expectRowWithText(clNames.ssh);
-      },
-    );
+      await clusters.table.expectRowWithText(clNames.ssh);
+    });
 
     // TODO: shares @C2613068 with "detail > show page displays basic info" — create separate TestRail case
-    test(
-      "clicking name navigates to detail page",
-      { tag: "@C2613068" },
-      async ({ clusters }) => {
-        await clusters.goToList();
-        await clusters.table.clickRowLink(clNames.ssh);
+    test("clicking name navigates to detail page", {
+      tag: "@C2613068",
+    }, async ({ clusters }) => {
+      await clusters.goToList();
+      await clusters.table.clickRowLink(clNames.ssh);
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(showPage).toBeVisible();
-        await expect(
-          showPage.getByText(clNames.ssh, { exact: true }),
-        ).toBeVisible();
-      },
-    );
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
+      await expect(
+        showPage.getByText(clNames.ssh, { exact: true }),
+      ).toBeVisible();
+    });
 
     test("can sort by name", { tag: "@C2612655" }, async ({ clusters }) => {
       await clusters.goToList();
       await clusters.table.sort(/name/i);
     });
 
-    test.skip(
-      "can sort by updated at",
-      { tag: "@miss" },
-      async ({ clusters }) => {
-        await clusters.goToList();
-        await expect(clusters.table.headerCell(/updated/i)).toBeVisible();
-        await clusters.table.sort(/updated/i);
-      },
-    );
+    test.skip("can sort by updated at", { tag: "@miss" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToList();
+      await expect(clusters.table.headerCell(/updated/i)).toBeVisible();
+      await clusters.table.sort(/updated/i);
+    });
 
-    test.skip(
-      "can sort by created at",
-      { tag: "@miss" },
-      async ({ clusters }) => {
-        await clusters.goToList();
-        await expect(clusters.table.headerCell(/created/i)).toBeVisible();
-        await clusters.table.sort(/created/i);
-      },
-    );
+    test.skip("can sort by created at", { tag: "@miss" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToList();
+      await expect(clusters.table.headerCell(/created/i)).toBeVisible();
+      await clusters.table.sort(/created/i);
+    });
 
-    test(
-      "can toggle column visibility",
-      { tag: "@C2612653" },
-      async ({ clusters }) => {
-        await clusters.goToList();
+    test("can toggle column visibility", { tag: "@C2612653" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToList();
 
-        await expect(clusters.table.headerCell(/status/i)).toBeVisible();
-        await clusters.table.toggleColumn(/status/i);
-        await expect(clusters.table.headerCell(/status/i)).toBeHidden();
-        await clusters.table.toggleColumn(/status/i);
-        await expect(clusters.table.headerCell(/status/i)).toBeVisible();
-      },
-    );
+      await expect(clusters.table.headerCell(/status/i)).toBeVisible();
+      await clusters.table.toggleColumn(/status/i);
+      await expect(clusters.table.headerCell(/status/i)).toBeHidden();
+      await clusters.table.toggleColumn(/status/i);
+      await expect(clusters.table.headerCell(/status/i)).toBeVisible();
+    });
 
-    test(
-      "type column shows correct labels",
-      { tag: "@C2612647" },
-      async ({ clusters }) => {
-        await clusters.goToList();
+    test("type column shows correct labels", { tag: "@C2612647" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToList();
 
-        const sshRow = clusters.table.rowWithText(clNames.ssh);
-        await expect(sshRow.getByText("Static Nodes")).toBeVisible();
+      const sshRow = clusters.table.rowWithText(clNames.ssh);
+      await expect(sshRow.getByText("Static Nodes")).toBeVisible();
 
-        const k8sRow = clusters.table.rowWithText(clNames.k8s);
-        await expect(k8sRow.getByText("Kubernetes")).toBeVisible();
-      },
-    );
+      const k8sRow = clusters.table.rowWithText(clNames.k8s);
+      await expect(k8sRow.getByText("Kubernetes")).toBeVisible();
+    });
 
-    test(
-      "clicking image registry navigates to detail page",
-      { tag: "@C2612648" },
-      async ({ clusters }) => {
-        await clusters.goToList();
+    test("clicking image registry navigates to detail page", {
+      tag: "@C2612648",
+    }, async ({ clusters }) => {
+      await clusters.goToList();
 
-        const row = clusters.table.rowWithText(clNames.ssh);
-        await row.getByRole("link", { name: irName.value }).click();
+      const row = clusters.table.rowWithText(clNames.ssh);
+      await row.getByRole("link", { name: irName.value }).click();
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(showPage).toBeVisible();
-        await expect(
-          showPage.getByText(irName.value, { exact: true }),
-        ).toBeVisible();
-      },
-    );
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
+      await expect(
+        showPage.getByText(irName.value, { exact: true }),
+      ).toBeVisible();
+    });
   });
 
   // ────────────────────────────────────────────────────────────
   // Detail tests
   // ────────────────────────────────────────────────────────────
   test.describe("detail", () => {
-    test(
-      "show page displays basic info",
-      { tag: "@C2613068" },
-      async ({ clusters }) => {
-        await clusters.goToShow(clNames.ssh);
+    test("show page displays basic info", { tag: "@C2613068" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToShow(clNames.ssh);
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(showPage).toBeVisible();
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
 
-        // Name
-        await expect(
-          showPage.getByText(clNames.ssh, { exact: true }),
-        ).toBeVisible();
+      // Name
+      await expect(
+        showPage.getByText(clNames.ssh, { exact: true }),
+      ).toBeVisible();
 
-        // Workspace
-        await expect(
-          showPage.locator("dt", { hasText: /workspace/i }),
-        ).toBeVisible();
+      // Workspace
+      await expect(
+        showPage.locator("dt", { hasText: /workspace/i }),
+      ).toBeVisible();
 
-        // Status
-        await expect(
-          showPage.locator("dt", { hasText: /^status$/i }),
-        ).toBeVisible();
+      // Status
+      await expect(
+        showPage.locator("dt", { hasText: /^status$/i }),
+      ).toBeVisible();
 
-        // Timestamps
-        await expect(
-          showPage.getByRole("term").filter({ hasText: /created at/i }),
-        ).toBeVisible();
-        await expect(
-          showPage.getByRole("term").filter({ hasText: /updated at/i }),
-        ).toBeVisible();
+      // Timestamps
+      await expect(
+        showPage.getByRole("term").filter({ hasText: /created at/i }),
+      ).toBeVisible();
+      await expect(
+        showPage.getByRole("term").filter({ hasText: /updated at/i }),
+      ).toBeVisible();
 
-        // Type
-        await expect(
-          showPage.locator("dt", { hasText: /^type$/i }),
-        ).toBeVisible();
-      },
-    );
+      // Type
+      await expect(
+        showPage.locator("dt", { hasText: /^type$/i }),
+      ).toBeVisible();
+    });
 
-    test(
-      "clicking workspace navigates to workspace detail",
-      { tag: "@C2612645" },
-      async ({ clusters }) => {
-        await clusters.goToShow(clNames.ssh);
+    test("clicking workspace navigates to workspace detail", {
+      tag: "@C2612645",
+    }, async ({ clusters }) => {
+      await clusters.goToShow(clNames.ssh);
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await showPage.getByRole("link", { name: "default" }).click();
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await showPage.getByRole("link", { name: "default" }).click();
 
-        const wsShowPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(wsShowPage).toBeVisible();
-        await expect(
-          wsShowPage.getByText("default", { exact: true }),
-        ).toBeVisible();
-      },
-    );
+      const wsShowPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(wsShowPage).toBeVisible();
+      await expect(
+        wsShowPage.getByText("default", { exact: true }),
+      ).toBeVisible();
+    });
 
-    test(
-      "SSH show page displays head IP and worker IPs",
-      { tag: "@C2613071" },
-      async ({ clusters }) => {
-        await clusters.goToShow(clNames.sshWithCache);
+    test("SSH show page displays head IP and worker IPs", {
+      tag: "@C2613071",
+    }, async ({ clusters }) => {
+      await clusters.goToShow(clNames.sshWithCache);
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(showPage).toBeVisible();
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
 
-        // SSH-specific fields
-        await expect(
-          showPage.locator("dt", { hasText: /head ip/i }),
-        ).toBeVisible();
-        await expect(
-          showPage.locator("dt", { hasText: /worker ips/i }),
-        ).toBeVisible();
+      // SSH-specific fields
+      await expect(
+        showPage.locator("dt", { hasText: /head ip/i }),
+      ).toBeVisible();
+      await expect(
+        showPage.locator("dt", { hasText: /worker ips/i }),
+      ).toBeVisible();
 
-        // Verify head IP value
-        await expect(showPage.getByText("10.0.0.100")).toBeVisible();
-        // Verify worker IPs
-        await expect(showPage.getByText(/10\.0\.0\.101/)).toBeVisible();
-      },
-    );
+      // Verify head IP value
+      await expect(showPage.getByText("10.0.0.100")).toBeVisible();
+      // Verify worker IPs
+      await expect(showPage.getByText(/10\.0\.0\.101/)).toBeVisible();
+    });
 
-    test(
-      "show page displays model cache info",
-      { tag: "@C2613069" },
-      async ({ clusters }) => {
-        await clusters.goToShow(clNames.sshWithCache);
+    test("show page displays model cache info", { tag: "@C2613069" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToShow(clNames.sshWithCache);
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(showPage).toBeVisible();
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
 
-        // Model Cache card should be visible
-        await expect(
-          showPage.getByText("test-cache", { exact: true }),
-        ).toBeVisible();
+      // Model Cache card should be visible
+      await expect(
+        showPage.getByText("test-cache", { exact: true }),
+      ).toBeVisible();
 
-        // Cache type badge should show "Host Path"
-        await expect(showPage.getByText(/host path/i)).toBeVisible();
+      // Cache type badge should show "Host Path"
+      await expect(showPage.getByText(/host path/i)).toBeVisible();
 
-        // Cache path should be visible
-        await expect(showPage.getByText("/data/models")).toBeVisible();
-      },
-    );
+      // Cache path should be visible
+      await expect(showPage.getByText("/data/models")).toBeVisible();
+    });
 
-    test(
-      "show page displays endpoints table",
-      { tag: "@C2613070" },
-      async ({ clusters }) => {
-        await clusters.goToShow(clNames.ssh);
+    test("show page displays endpoints table", { tag: "@C2613070" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToShow(clNames.ssh);
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(showPage).toBeVisible();
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
 
-        // Endpoints section title should be visible (scoped to show page content)
-        await expect(showPage.getByText("Endpoints")).toBeVisible();
+      // Endpoints section title should be visible (scoped to show page content)
+      await expect(showPage.getByText("Endpoints")).toBeVisible();
 
-        // Columns button in the endpoints table should be visible
-        await expect(
-          showPage.getByRole("button", { name: /columns/i }),
-        ).toBeVisible();
-      },
-    );
+      // Columns button in the endpoints table should be visible
+      await expect(
+        showPage.getByRole("button", { name: /columns/i }),
+      ).toBeVisible();
+    });
 
-    test(
-      "K8s show page displays router info",
-      { tag: "@C2613074" },
-      async ({ clusters }) => {
-        await clusters.goToShow(clNames.k8s);
+    test("K8s show page displays router info", { tag: "@C2613074" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToShow(clNames.k8s);
 
-        const showPage = clusters.page.locator('[data-testid="show-page"]');
-        await expect(showPage).toBeVisible();
+      const showPage = clusters.page.locator('[data-testid="show-page"]');
+      await expect(showPage).toBeVisible();
 
-        // Router section fields
-        await expect(
-          showPage.locator("dt", { hasText: /access mode/i }),
-        ).toBeVisible();
-        await expect(
-          showPage.locator("dt", { hasText: /replicas/i }),
-        ).toBeVisible();
-      },
-    );
+      // Router section fields
+      await expect(
+        showPage.locator("dt", { hasText: /access mode/i }),
+      ).toBeVisible();
+      await expect(
+        showPage.locator("dt", { hasText: /replicas/i }),
+      ).toBeVisible();
+    });
   });
 
   // ────────────────────────────────────────────────────────────
@@ -387,189 +361,179 @@ test.describe("clusters", () => {
   // ────────────────────────────────────────────────────────────
   test.describe("edit", () => {
     // TODO: shares @C2613080 with "K8s edit: name, workspace, type disabled" — create separate TestRail case
-    test(
-      "SSH edit: name, workspace, type, image registry disabled",
-      { tag: "@C2613080" },
-      async ({ clusters }) => {
-        await clusters.goToEdit(clNames.ssh);
-        await expect(
-          clusters.page.locator('[data-testid="form-submit"]'),
-        ).toBeEnabled();
+    test("SSH edit: name, workspace, type, image registry disabled", {
+      tag: "@C2613080",
+    }, async ({ clusters }) => {
+      await clusters.goToEdit(clNames.ssh);
+      await expect(
+        clusters.page.locator('[data-testid="form-submit"]'),
+      ).toBeEnabled();
 
-        // Name disabled
-        const nameInput = clusters.form.field("metadata.name").locator("input");
-        await expect(nameInput).toBeDisabled();
+      // Name disabled
+      const nameInput = clusters.form.field("metadata.name").locator("input");
+      await expect(nameInput).toBeDisabled();
 
-        // Workspace disabled
-        const wsButton = clusters.form
-          .field("metadata.workspace")
-          .locator('button[role="combobox"]');
-        await expect(wsButton).toBeDisabled();
+      // Workspace disabled
+      const wsButton = clusters.form
+        .field("metadata.workspace")
+        .locator('button[role="combobox"]');
+      await expect(wsButton).toBeDisabled();
 
-        // Type disabled
-        const typeButton = clusters.form
-          .field("spec.type")
-          .locator('button[role="combobox"]');
-        await expect(typeButton).toBeDisabled();
+      // Type disabled
+      const typeButton = clusters.form
+        .field("spec.type")
+        .locator('button[role="combobox"]');
+      await expect(typeButton).toBeDisabled();
 
-        // Image registry disabled
-        const irButton = clusters.form
-          .field("spec.image_registry")
-          .locator("button");
-        await expect(irButton).toBeDisabled();
-      },
-    );
+      // Image registry disabled
+      const irButton = clusters.form
+        .field("spec.image_registry")
+        .locator("button");
+      await expect(irButton).toBeDisabled();
+    });
 
-    test(
-      "SSH edit: provider, auth, and cache fields disabled",
-      { tag: "@C2612829" },
-      async ({ clusters }) => {
-        await clusters.goToEdit(clNames.ssh);
-        await expect(
-          clusters.page.locator('[data-testid="form-submit"]'),
-        ).toBeEnabled();
+    test("SSH edit: head IP + cache disabled; workers/auth stay editable", {
+      tag: "@C2612829",
+    }, async ({ clusters }) => {
+      await clusters.goToEdit(clNames.ssh);
+      await expect(
+        clusters.page.locator('[data-testid="form-submit"]'),
+      ).toBeEnabled();
 
-        // Provider: Head IP input should be disabled
-        await expect(
-          clusters.page.getByPlaceholder("e.g 192.168.1.1"),
-        ).toBeDisabled();
+      // Provider: Head IP input should be disabled
+      await expect(
+        clusters.page.getByPlaceholder("e.g 192.168.1.1"),
+      ).toBeDisabled();
 
-        // Provider: Worker IP "Add" section should be hidden (disabled hides it)
-        await expect(
-          clusters.page.getByRole("button", { name: /add/i }).filter({
-            has: clusters.page.locator("svg"),
-          }),
-        ).toBeHidden();
+      // Provider: Worker IP "Add" section stays visible in edit mode
+      // (NEU-377 #215: only the head IP is locked; worker add/remove stays
+      // functional so static clusters can be resized while editing). The
+      // button itself is disabled until a new worker IP is typed, so we
+      // assert visibility rather than enabled-state here.
+      await expect(
+        clusters.page.getByRole("button", { name: /add/i }).filter({
+          has: clusters.page.locator("svg"),
+        }),
+      ).toBeVisible();
 
-        // Auth: ssh_user disabled
-        const sshUserInput = clusters.form
-          .field("spec.config.ssh_config.auth.ssh_user")
-          .locator("input");
-        await expect(sshUserInput).toBeDisabled();
+      // Auth: ssh_user disabled
+      const sshUserInput = clusters.form
+        .field("spec.config.ssh_config.auth.ssh_user")
+        .locator("input");
+      await expect(sshUserInput).toBeDisabled();
 
-        // Auth: ssh_private_key disabled
-        const sshKeyTextarea = clusters.form
-          .field("spec.config.ssh_config.auth.ssh_private_key")
-          .locator("textarea");
-        await expect(sshKeyTextarea).toBeDisabled();
+      // Auth: ssh_private_key stays editable in edit mode (#276: leave empty
+      // to keep the existing key, or type a new one to replace it).
+      const sshKeyTextarea = clusters.form
+        .field("spec.config.ssh_config.auth.ssh_private_key")
+        .locator("textarea");
+      await expect(sshKeyTextarea).toBeEnabled();
 
-        // Auth: "Leave empty to keep" message
-        await expect(
-          clusters.page.getByText(/leave empty to keep/i).first(),
-        ).toBeVisible();
+      // Auth: "Leave empty to keep" message
+      await expect(
+        clusters.page.getByText(/leave empty to keep/i).first(),
+      ).toBeVisible();
 
-        // Cache: "Add Model Cache" button should not be visible when disabled
-        await expect(
-          clusters.page.getByRole("button", { name: /add model cache/i }),
-        ).toBeHidden();
-      },
-    );
+      // Cache: "Add Model Cache" button should not be visible when disabled
+      await expect(
+        clusters.page.getByRole("button", { name: /add model cache/i }),
+      ).toBeHidden();
+    });
 
-    test(
-      "K8s edit: name, workspace, type disabled; kubeconfig disabled",
-      { tag: "@C2613080" },
-      async ({ clusters }) => {
-        await clusters.goToEdit(clNames.k8s);
-        await expect(
-          clusters.page.locator('[data-testid="form-submit"]'),
-        ).toBeEnabled();
+    test("K8s edit: name, workspace, type disabled; kubeconfig stays editable", {
+      tag: "@C2613080",
+    }, async ({ clusters }) => {
+      await clusters.goToEdit(clNames.k8s);
+      await expect(
+        clusters.page.locator('[data-testid="form-submit"]'),
+      ).toBeEnabled();
 
-        // Name disabled
-        const nameInput = clusters.form.field("metadata.name").locator("input");
-        await expect(nameInput).toBeDisabled();
+      // Name disabled
+      const nameInput = clusters.form.field("metadata.name").locator("input");
+      await expect(nameInput).toBeDisabled();
 
-        // Workspace disabled
-        const wsButton = clusters.form
-          .field("metadata.workspace")
-          .locator('button[role="combobox"]');
-        await expect(wsButton).toBeDisabled();
+      // Workspace disabled
+      const wsButton = clusters.form
+        .field("metadata.workspace")
+        .locator('button[role="combobox"]');
+      await expect(wsButton).toBeDisabled();
 
-        // Type disabled
-        const typeButton = clusters.form
-          .field("spec.type")
-          .locator('button[role="combobox"]');
-        await expect(typeButton).toBeDisabled();
+      // Type disabled
+      const typeButton = clusters.form
+        .field("spec.type")
+        .locator('button[role="combobox"]');
+      await expect(typeButton).toBeDisabled();
 
-        // Kubeconfig disabled
-        const kubeconfigTextarea = clusters.form
-          .field("spec.config.kubernetes_config.kubeconfig")
-          .locator("textarea");
-        await expect(kubeconfigTextarea).toBeDisabled();
+      // Kubeconfig stays editable in edit mode (#276: leave empty to keep
+      // the existing kubeconfig, or paste a new one to replace it).
+      const kubeconfigTextarea = clusters.form
+        .field("spec.config.kubernetes_config.kubeconfig")
+        .locator("textarea");
+      await expect(kubeconfigTextarea).toBeEnabled();
 
-        // "Leave empty to keep" message
-        await expect(
-          clusters.page.getByText(/leave empty to keep/i).first(),
-        ).toBeVisible();
-      },
-    );
+      // "Leave empty to keep" message
+      await expect(
+        clusters.page.getByText(/leave empty to keep/i).first(),
+      ).toBeVisible();
+    });
 
-    test(
-      "K8s edit: router fields editable",
-      { tag: "@C2612832" },
-      async ({ clusters }) => {
-        await clusters.goToEdit(clNames.k8s);
-        await expect(
-          clusters.page.locator('[data-testid="form-submit"]'),
-        ).toBeEnabled();
+    test("K8s edit: router fields editable", { tag: "@C2612832" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToEdit(clNames.k8s);
+      await expect(
+        clusters.page.locator('[data-testid="form-submit"]'),
+      ).toBeEnabled();
 
-        // Access mode should be enabled
-        const accessModeButton = clusters.form
-          .field("spec.config.kubernetes_config.router.access_mode")
-          .locator('button[role="combobox"]');
-        await expect(accessModeButton).toBeEnabled();
+      // Access mode should be enabled
+      const accessModeButton = clusters.form
+        .field("spec.config.kubernetes_config.router.access_mode")
+        .locator('button[role="combobox"]');
+      await expect(accessModeButton).toBeEnabled();
 
-        // Replicas input should be enabled
-        const replicasInput = clusters.form
-          .field("spec.config.kubernetes_config.router.replicas")
-          .locator("input");
-        await expect(replicasInput).toBeEnabled();
+      // Replicas input should be enabled
+      const replicasInput = clusters.form
+        .field("spec.config.kubernetes_config.router.replicas")
+        .locator("input");
+      await expect(replicasInput).toBeEnabled();
 
-        // CPU input should be enabled
-        const cpuInput = clusters.form
-          .field("spec.config.kubernetes_config.router.resources.cpu")
-          .locator("input");
-        await expect(cpuInput).toBeEnabled();
+      // CPU input should be enabled
+      const cpuInput = clusters.form
+        .field("spec.config.kubernetes_config.router.resources.cpu")
+        .locator("input");
+      await expect(cpuInput).toBeEnabled();
 
-        // Memory input should be enabled
-        const memoryInput = clusters.form
-          .field("spec.config.kubernetes_config.router.resources.memory")
-          .locator("input");
-        await expect(memoryInput).toBeEnabled();
-      },
-    );
+      // Memory input should be enabled
+      const memoryInput = clusters.form
+        .field("spec.config.kubernetes_config.router.resources.memory")
+        .locator("input");
+      await expect(memoryInput).toBeEnabled();
+    });
 
-    test(
-      "edit from list action menu",
-      { tag: "@C2613085" },
-      async ({ clusters }) => {
-        await clusters.goToList();
-        await clusters.table.editRow(clNames.ssh);
+    test("edit from list action menu", { tag: "@C2613085" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToList();
+      await clusters.table.editRow(clNames.ssh);
 
-        // Verify form is visible with disabled name
-        await expect(
-          clusters.page.locator('[data-testid="form"]'),
-        ).toBeVisible();
-        const nameInput = clusters.form.field("metadata.name").locator("input");
-        await expect(nameInput).toBeDisabled();
-        await expect(nameInput).toHaveValue(clNames.ssh);
-      },
-    );
+      // Verify form is visible with disabled name
+      await expect(clusters.page.locator('[data-testid="form"]')).toBeVisible();
+      const nameInput = clusters.form.field("metadata.name").locator("input");
+      await expect(nameInput).toBeDisabled();
+      await expect(nameInput).toHaveValue(clNames.ssh);
+    });
 
-    test(
-      "edit from detail action menu",
-      { tag: "@C2613086" },
-      async ({ clusters }) => {
-        await clusters.goToShow(clNames.ssh);
-        await clusters.showPageEdit();
+    test("edit from detail action menu", { tag: "@C2613086" }, async ({
+      clusters,
+    }) => {
+      await clusters.goToShow(clNames.ssh);
+      await clusters.showPageEdit();
 
-        // Verify form is visible with disabled name
-        await expect(
-          clusters.page.locator('[data-testid="form"]'),
-        ).toBeVisible();
-        const nameInput = clusters.form.field("metadata.name").locator("input");
-        await expect(nameInput).toBeDisabled();
-        await expect(nameInput).toHaveValue(clNames.ssh);
-      },
-    );
+      // Verify form is visible with disabled name
+      await expect(clusters.page.locator('[data-testid="form"]')).toBeVisible();
+      const nameInput = clusters.form.field("metadata.name").locator("input");
+      await expect(nameInput).toBeDisabled();
+      await expect(nameInput).toHaveValue(clNames.ssh);
+    });
   });
 });

@@ -2,8 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { config } from "../config";
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
-import { MULTI_USER_TIMEOUT } from "../helpers/constants";
-import { YamlImportHelper } from "../helpers/yaml-import";
+import { DELETE_TIMEOUT, MULTI_USER_TIMEOUT } from "../helpers/constants";
 
 /** Build a ModelCatalog YAML document for import */
 function modelCatalogYaml(
@@ -54,9 +53,9 @@ spec:
     engine: ${o.engine}
     version: ${o.engineVersion}
   resources:
-    cpu: ${o.cpu}
-    memory: ${o.memory}
-    gpu: ${o.gpu}
+    cpu: "${o.cpu}"
+    memory: "${o.memory}"
+    gpu: "${o.gpu}"
   replicas:
     num: ${o.replicas}
   deployment_options:
@@ -85,6 +84,12 @@ function catalogCard(page: Page, name: string): Locator {
   return page.locator(`${CATALOG_CARD}[data-name="${name}"]`);
 }
 
+// Deletion is controller-reconciled, not instant: the confirm click flips the
+// record's status.phase to "Deleted" (or clears it), and the row is only
+// actually removed from the list once the controller finishes cleanup — the
+// same eventual-consistency shape TableHelper.deleteRow/expectNoRowWithText
+// handle for table-surfaced resources via DELETE_TIMEOUT. Card-grid callers
+// must wait with the same extended timeout instead of the default 5s.
 async function deleteCatalogCardByName(
   page: Page,
   name: string,
@@ -95,6 +100,50 @@ async function deleteCatalogCardByName(
   const dialog = page.getByRole("alertdialog");
   await dialog.waitFor({ state: "visible" });
   await dialog.getByRole("button", { name: /delete/i }).click();
+  await dialog.waitFor({ state: "hidden" });
+  await expect(catalogCard(page, name)).toHaveCount(0, {
+    timeout: DELETE_TIMEOUT,
+  });
+}
+
+/** Delete a catalog from its show page's action menu, then verify the card is
+ * gone from the (card-grid) list. Mirrors ResourcePage.showPageDelete, but that
+ * helper's post-delete check waits on a `[data-testid="table"]` list surface —
+ * the model-catalog list is a card grid, so we verify via catalogCard instead. */
+async function deleteFromShowPageActionMenu(
+  page: Page,
+  name: string,
+): Promise<void> {
+  await page.locator('[data-testid="show-actions-trigger"]').click();
+  await page.getByRole("menuitem", { name: /delete/i }).click();
+  const dialog = page.getByRole("alertdialog");
+  await dialog.waitFor({ state: "visible" });
+  await dialog.getByRole("button", { name: /delete/i }).click();
+  await dialog.waitFor({ state: "hidden" });
+
+  await gotoCatalogList(page);
+  await expect(catalogCard(page, name)).toHaveCount(0, {
+    timeout: DELETE_TIMEOUT,
+  });
+}
+
+/** Open the model-catalog list's own Import dialog (paste/file/URL tabs with a
+ * per-document result table) — distinct from the global navbar "Import YAML".
+ * Mirrors the helper of the same name in model-catalogs-recipe.spec.ts. */
+async function mcImportPaste(page: Page, yaml: string): Promise<Locator> {
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor({ state: "visible" });
+  await dialog.locator("textarea").fill(yaml);
+  await dialog.getByRole("button", { name: "Import", exact: true }).click();
+  // The per-document result table renders once all creates settle.
+  await dialog.locator("table").waitFor({ state: "visible" });
+  return dialog;
+}
+
+async function closeMcImportDialog(page: Page): Promise<void> {
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: /cancel/i }).click();
   await dialog.waitFor({ state: "hidden" });
 }
 
@@ -408,15 +457,17 @@ test.describe("model catalogs create", () => {
       modelCatalogs.page.getByRole("link", { name: /create/i }),
     ).toBeHidden();
 
-    // Import YAML button should be visible in the navbar
+    // The catalog list's own Import dialog trigger should be visible — this
+    // page is import-only (see ImportDialog.tsx), distinct from the global
+    // navbar "Import YAML" button which imports other resource kinds.
     await expect(
-      modelCatalogs.page.getByRole("button", { name: /import yaml/i }),
+      modelCatalogs.page.getByRole("button", { name: "Import", exact: true }),
     ).toBeVisible();
   });
 
   test("admin can import model catalog via YAML and verify all fields", {
     tag: ["@C2612861", "@C2613188"],
-  }, async ({ modelCatalogs, yamlImport }) => {
+  }, async ({ modelCatalogs }) => {
     const mcName = `test-mc-imp-${Date.now()}`;
     const yaml = modelCatalogYaml(mcName, {
       modelName: "import-test-model",
@@ -432,9 +483,9 @@ test.describe("model catalogs create", () => {
 
     // Import via YAML
     await gotoCatalogList(modelCatalogs.page);
-    await yamlImport.importYaml(yaml);
-    await yamlImport.expectResults({ success: 1 });
-    await yamlImport.close();
+    const dialog = await mcImportPaste(modelCatalogs.page, yaml);
+    await expect(dialog.getByText("OK", { exact: true })).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
 
     // Verify the card appears, then open its detail page
     await expect(catalogCard(modelCatalogs.page, mcName)).toBeVisible();
@@ -509,12 +560,11 @@ test.describe("model catalogs create", () => {
 
       const mcName = `test-mc-imp-${Date.now()}`;
       const yaml = modelCatalogYaml(mcName);
-      const yamlHelper = new YamlImportHelper(testUser.page);
 
       await gotoCatalogList(testUser.page);
-      await yamlHelper.importYaml(yaml);
-      await yamlHelper.expectResults({ success: 1 });
-      await yamlHelper.close();
+      const dialog = await mcImportPaste(testUser.page, yaml);
+      await expect(dialog.getByText("OK", { exact: true })).toBeVisible();
+      await closeMcImportDialog(testUser.page);
 
       await expect(catalogCard(testUser.page, mcName)).toBeVisible();
 
@@ -539,12 +589,11 @@ test.describe("model catalogs create", () => {
 
       const mcName = `test-mc-imp-${Date.now()}`;
       const yaml = modelCatalogYaml(mcName);
-      const yamlHelper = new YamlImportHelper(testUser.page);
 
       await gotoCatalogList(testUser.page);
-      await yamlHelper.importYaml(yaml);
-      await yamlHelper.expectResults({ errors: 1 });
-      await yamlHelper.close();
+      const dialog = await mcImportPaste(testUser.page, yaml);
+      await expect(dialog.getByText("FAIL", { exact: true })).toBeVisible();
+      await closeMcImportDialog(testUser.page);
 
       // Model catalog should NOT appear in the list
       await expect(catalogCard(testUser.page, mcName)).toHaveCount(0);
@@ -563,8 +612,9 @@ test.describe("model catalogs delete", () => {
     await apiHelper.createModelCatalog(mcName);
 
     await gotoCatalogList(modelCatalogs.page);
+    // deleteCatalogCardByName already waits (with DELETE_TIMEOUT) for the
+    // controller-reconciled removal before returning.
     await deleteCatalogCardByName(modelCatalogs.page, mcName);
-    await expect(catalogCard(modelCatalogs.page, mcName)).toHaveCount(0);
   });
 
   test("can delete from detail page action menu", {
@@ -574,7 +624,7 @@ test.describe("model catalogs delete", () => {
     await apiHelper.createModelCatalog(mcName);
 
     await modelCatalogs.goToShow(mcName);
-    await modelCatalogs.showPageDelete(mcName);
+    await deleteFromShowPageActionMenu(modelCatalogs.page, mcName);
   });
 
   test("admin can delete model catalog", {
@@ -585,7 +635,6 @@ test.describe("model catalogs delete", () => {
 
     await gotoCatalogList(modelCatalogs.page);
     await deleteCatalogCardByName(modelCatalogs.page, mcName);
-    await expect(catalogCard(modelCatalogs.page, mcName)).toHaveCount(0);
   });
 });
 
@@ -616,7 +665,6 @@ test.describe("model catalogs delete permissions", () => {
 
       await gotoCatalogList(testUser.page);
       await deleteCatalogCardByName(testUser.page, mcName);
-      await expect(catalogCard(testUser.page, mcName)).toHaveCount(0);
     },
   );
 

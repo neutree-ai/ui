@@ -92,42 +92,57 @@ test.describe("clusters - permissions & delete", () => {
   // Create permissions (multi-user)
   // ────────────────────────────────────────────────────────────
   test.describe("create permissions", () => {
-    test(
-      "admin can create cluster",
-      { tag: "@C2613081" },
-      async ({ clusters, apiHelper }) => {
-        const name = `test-cl-adm-new-${Date.now()}`;
+    test("admin can create cluster", { tag: "@C2613081" }, async ({
+      clusters,
+      apiHelper,
+    }) => {
+      const name = `test-cl-adm-new-${Date.now()}`;
 
-        await clusters.goToCreate();
-        await clusters.form.fillInput("metadata.name", name);
-        await clusters.form.selectComboboxOption(
-          "spec.image_registry",
-          irName.value,
-        );
+      // spec.version is a required field (cluster version upgrade UI,
+      // src/domains/cluster/hooks/use-cluster-form.tsx) auto-populated from
+      // GET /clusters/available_versions. Mock it so submission doesn't
+      // depend on the test image registry actually having published
+      // versions — same technique as clusters-create.spec.ts's
+      // "K8s: create payload does not include router version" test.
+      await clusters.page.route(
+        "**/api/v1/clusters/available_versions?**",
+        async (route) => {
+          await route.fulfill({
+            contentType: "application/json",
+            body: JSON.stringify({ available_versions: ["v1.0.1"] }),
+          });
+        },
+      );
 
-        // Use K8s type (simpler — just kubeconfig)
-        await clusters.form.selectOption("spec.type", "Kubernetes");
-        await clusters.form.fillTextarea(
-          "spec.config.kubernetes_config.kubeconfig",
-          "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
-        );
+      await clusters.goToCreate();
+      await clusters.form.fillInput("metadata.name", name);
+      await clusters.form.selectComboboxOption(
+        "spec.image_registry",
+        irName.value,
+      );
 
-        const responsePromise = clusters.page.waitForResponse(
-          (r) =>
-            r.url().includes("/clusters") &&
-            r.request().method() === "POST" &&
-            (r.ok() || r.status() >= 400),
-        );
-        await clusters.form.submit();
-        const response = await responsePromise;
+      // Use K8s type (simpler — just kubeconfig)
+      await clusters.form.selectOption("spec.type", "Kubernetes");
+      await clusters.form.fillTextarea(
+        "spec.config.kubernetes_config.kubeconfig",
+        "apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []",
+      );
 
-        // Admin should be able to create successfully
-        expect(response.ok()).toBe(true);
+      const responsePromise = clusters.page.waitForResponse(
+        (r) =>
+          r.url().includes("/clusters") &&
+          r.request().method() === "POST" &&
+          (r.ok() || r.status() >= 400),
+      );
+      await clusters.form.submit();
+      const response = await responsePromise;
 
-        // Cleanup
-        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
-      },
-    );
+      // Admin should be able to create successfully
+      expect(response.ok()).toBe(true);
+
+      // Cleanup
+      await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+    });
 
     test(
       "non-admin with global cluster:create can create",
@@ -152,6 +167,19 @@ test.describe("clusters - permissions & delete", () => {
         });
 
         const name = `test-cl-glb-new-${Date.now()}`;
+
+        // See "admin can create cluster" above — mock available_versions so
+        // the required spec.version field resolves deterministically.
+        await testUser.page.route(
+          "**/api/v1/clusters/available_versions?**",
+          async (route) => {
+            await route.fulfill({
+              contentType: "application/json",
+              body: JSON.stringify({ available_versions: ["v1.0.1"] }),
+            });
+          },
+        );
+
         await clPage.goToCreate();
         await clPage.form.fillInput("metadata.name", name);
         await clPage.form.selectComboboxOption(
@@ -203,6 +231,20 @@ test.describe("clusters - permissions & delete", () => {
         });
 
         const name = `test-cl-no-new-${Date.now()}`;
+
+        // See "admin can create cluster" above — mock available_versions so
+        // the required spec.version field resolves deterministically and the
+        // POST actually fires (letting the server reject it for permissions).
+        await testUser.page.route(
+          "**/api/v1/clusters/available_versions?**",
+          async (route) => {
+            await route.fulfill({
+              contentType: "application/json",
+              body: JSON.stringify({ available_versions: ["v1.0.1"] }),
+            });
+          },
+        );
+
         await clPage.goToCreate();
         await clPage.form.fillInput("metadata.name", name);
         await clPage.form.selectComboboxOption(
@@ -237,38 +279,46 @@ test.describe("clusters - permissions & delete", () => {
   // Edit permissions (multi-user)
   // ────────────────────────────────────────────────────────────
   test.describe("edit permissions", () => {
-    test(
-      "admin can edit cluster",
-      { tag: "@C2613087" },
-      async ({ clusters, apiHelper }) => {
-        const name = `test-cl-adm-upd-${Date.now()}`;
-        await apiHelper.createCluster(name, {
-          type: "kubernetes",
-          imageRegistry: irName.value,
-        });
+    test("admin can edit cluster", { tag: "@C2613087" }, async ({
+      clusters,
+      apiHelper,
+    }) => {
+      const name = `test-cl-adm-upd-${Date.now()}`;
+      // spec.version is a required field on the edit form too (disabled,
+      // pre-populated from the fetched record — use-cluster-form.tsx skips
+      // auto-select in edit mode). Pass it explicitly at creation instead
+      // of relying on the controller's async default-version backfill
+      // (obj.Spec.Version == "" -> defaultClusterVersion in
+      // cluster_controller.go): that reconcile may not run promptly (or at
+      // all) against this test registry, which left the edit form's
+      // required field empty/invalid and blocked submission entirely.
+      await apiHelper.createCluster(name, {
+        type: "kubernetes",
+        imageRegistry: irName.value,
+        version: "v1.0.0",
+      });
 
-        await clusters.goToEdit(name);
-        await expect(
-          clusters.page.locator('[data-testid="form-submit"]'),
-        ).toBeEnabled();
+      await clusters.goToEdit(name);
+      await expect(
+        clusters.page.locator('[data-testid="form-submit"]'),
+      ).toBeEnabled();
 
-        // Change replicas to verify edit works
-        const replicasInput = clusters.form
-          .field("spec.config.kubernetes_config.router.replicas")
-          .locator("input");
-        await replicasInput.clear();
-        await replicasInput.fill("3");
+      // Change replicas to verify edit works
+      const replicasInput = clusters.form
+        .field("spec.config.kubernetes_config.router.replicas")
+        .locator("input");
+      await replicasInput.clear();
+      await replicasInput.fill("3");
 
-        await clusters.form.submit();
+      await clusters.form.submit();
 
-        // Should redirect to list
-        await clusters.table.waitForLoaded();
-        await clusters.table.expectRowWithText(name);
+      // Should redirect to list
+      await clusters.table.waitForLoaded();
+      await clusters.table.expectRowWithText(name);
 
-        // Cleanup
-        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
-      },
-    );
+      // Cleanup
+      await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+    });
 
     test(
       "non-admin with global cluster:update can edit",
@@ -283,9 +333,13 @@ test.describe("clusters - permissions & delete", () => {
         testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const name = `test-cl-glb-upd-${Date.now()}`;
+        // See "admin can edit cluster" above — pass spec.version explicitly
+        // rather than depending on the controller's async default-version
+        // backfill.
         await apiHelper.createCluster(name, {
           type: "kubernetes",
           imageRegistry: irName.value,
+          version: "v1.0.0",
         });
 
         const testUser = await createTestUser([
@@ -332,9 +386,14 @@ test.describe("clusters - permissions & delete", () => {
         testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const name = `test-cl-no-upd-${Date.now()}`;
+        // See "admin can edit cluster" above — pass spec.version explicitly
+        // so the required field is valid and the submit actually reaches the
+        // server (where it should be rejected for lack of cluster:update),
+        // rather than being blocked client-side by an empty required field.
         await apiHelper.createCluster(name, {
           type: "kubernetes",
           imageRegistry: irName.value,
+          version: "v1.0.0",
         });
 
         const testUser = await createTestUser(["cluster:read"]);
@@ -371,108 +430,103 @@ test.describe("clusters - permissions & delete", () => {
   // Delete tests
   // ────────────────────────────────────────────────────────────
   test.describe("delete", () => {
-    test(
-      "delete from list -> confirm -> dialog closes",
-      { tag: "@C2613098" },
-      async ({ clusters, apiHelper }) => {
-        const name = `test-cl-del-${Date.now()}`;
-        await apiHelper.createCluster(name, {
-          imageRegistry: irName.value,
-        });
+    test("delete from list -> confirm -> dialog closes", {
+      tag: "@C2613098",
+    }, async ({ clusters, apiHelper }) => {
+      const name = `test-cl-del-${Date.now()}`;
+      await apiHelper.createCluster(name, {
+        imageRegistry: irName.value,
+      });
 
-        await clusters.goToList();
-        await clusters.table.deleteRow(name, { noWait: true });
+      await clusters.goToList();
+      await clusters.table.deleteRow(name, { noWait: true });
 
-        // Cleanup via API in case backend GC is slow
-        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
-      },
-    );
+      // Cleanup via API in case backend GC is slow
+      await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+    });
 
-    test(
-      "delete from detail action menu",
-      { tag: "@C2613099" },
-      async ({ clusters, apiHelper }) => {
-        const name = `test-cl-del-detail-${Date.now()}`;
-        await apiHelper.createCluster(name, {
-          imageRegistry: irName.value,
-        });
+    test("delete from detail action menu", { tag: "@C2613099" }, async ({
+      clusters,
+      apiHelper,
+    }) => {
+      const name = `test-cl-del-detail-${Date.now()}`;
+      await apiHelper.createCluster(name, {
+        imageRegistry: irName.value,
+      });
 
-        await clusters.goToShow(name);
+      await clusters.goToShow(name);
 
-        // Open show page actions, click delete
-        await clusters.page
-          .locator('[data-testid="show-actions-trigger"]')
-          .click();
-        await clusters.page.getByRole("menuitem", { name: /delete/i }).click();
+      // Open show page actions, click delete
+      await clusters.page
+        .locator('[data-testid="show-actions-trigger"]')
+        .click();
+      await clusters.page.getByRole("menuitem", { name: /delete/i }).click();
 
-        // Confirm delete dialog
-        const dialog = clusters.page.getByRole("alertdialog");
-        await dialog.waitFor({ state: "visible" });
-        await dialog.getByRole("button", { name: /delete/i }).click();
-        await dialog.waitFor({ state: "hidden" });
+      // Confirm delete dialog
+      const dialog = clusters.page.getByRole("alertdialog");
+      await dialog.waitFor({ state: "visible" });
+      await dialog.getByRole("button", { name: /delete/i }).click();
+      await dialog.waitFor({ state: "hidden" });
 
-        // Cleanup via API in case backend GC is slow
-        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
-      },
-    );
+      // Cleanup via API in case backend GC is slow
+      await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+    });
 
-    test.skip(
-      "delete -> cancel -> row still exists",
-      { tag: "@miss" },
-      async ({ clusters, apiHelper }) => {
-        const name = `test-cl-del-cancel-${Date.now()}`;
-        await apiHelper.createCluster(name, {
-          imageRegistry: irName.value,
-        });
+    test.skip("delete -> cancel -> row still exists", { tag: "@miss" }, async ({
+      clusters,
+      apiHelper,
+    }) => {
+      const name = `test-cl-del-cancel-${Date.now()}`;
+      await apiHelper.createCluster(name, {
+        imageRegistry: irName.value,
+      });
 
-        await clusters.goToList();
-        await clusters.table.waitForLoaded();
+      await clusters.goToList();
+      await clusters.table.waitForLoaded();
 
-        // Open row actions, click delete
-        await clusters.table
-          .rowWithText(name)
-          .locator('[data-testid="row-actions-trigger"]')
-          .click();
-        await clusters.page
-          .locator('[role="menu"]')
-          .waitFor({ state: "visible" });
-        await clusters.page.getByRole("menuitem", { name: /delete/i }).click();
+      // Open row actions, click delete
+      await clusters.table
+        .rowWithText(name)
+        .locator('[data-testid="row-actions-trigger"]')
+        .click();
+      await clusters.page
+        .locator('[role="menu"]')
+        .waitFor({ state: "visible" });
+      await clusters.page.getByRole("menuitem", { name: /delete/i }).click();
 
-        // Cancel the dialog
-        const dialog = clusters.page.getByRole("alertdialog");
-        await dialog.waitFor({ state: "visible" });
-        await dialog.getByRole("button", { name: /cancel/i }).click();
-        await dialog.waitFor({ state: "hidden" });
+      // Cancel the dialog
+      const dialog = clusters.page.getByRole("alertdialog");
+      await dialog.waitFor({ state: "visible" });
+      await dialog.getByRole("button", { name: /cancel/i }).click();
+      await dialog.waitFor({ state: "hidden" });
 
-        // Row should still be there
-        await clusters.table.expectRowWithText(name);
+      // Row should still be there
+      await clusters.table.expectRowWithText(name);
 
-        // Cleanup
-        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
-      },
-    );
+      // Cleanup
+      await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+    });
   });
 
   // ────────────────────────────────────────────────────────────
   // Delete permissions (multi-user)
   // ────────────────────────────────────────────────────────────
   test.describe("delete permissions", () => {
-    test(
-      "admin can delete cluster",
-      { tag: "@C2613093" },
-      async ({ clusters, apiHelper }) => {
-        const name = `test-cl-adm-rm-${Date.now()}`;
-        await apiHelper.createCluster(name, {
-          imageRegistry: irName.value,
-        });
+    test("admin can delete cluster", { tag: "@C2613093" }, async ({
+      clusters,
+      apiHelper,
+    }) => {
+      const name = `test-cl-adm-rm-${Date.now()}`;
+      await apiHelper.createCluster(name, {
+        imageRegistry: irName.value,
+      });
 
-        await clusters.goToList();
-        await clusters.table.deleteRow(name, { noWait: true });
+      await clusters.goToList();
+      await clusters.table.deleteRow(name, { noWait: true });
 
-        // Cleanup via API in case backend GC is slow
-        await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
-      },
-    );
+      // Cleanup via API in case backend GC is slow
+      await apiHelper.deleteCluster(name, { force: true }).catch(() => {});
+    });
 
     test(
       "non-admin with global cluster:delete can delete",

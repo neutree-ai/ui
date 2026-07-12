@@ -355,6 +355,10 @@ test.describe("endpoints", () => {
     test("customize section is collapsible", { tag: "@C2613241" }, async ({
       endpoints,
     }) => {
+      test.skip(
+        true,
+        "customize section removed from plain create in #272/#273 — obsolete",
+      );
       await endpoints.goToCreate();
 
       // Model name field should be hidden initially
@@ -376,16 +380,16 @@ test.describe("endpoints", () => {
     }, async ({ endpoints }) => {
       await endpoints.goToCreate();
 
-      // CPU slider input should be disabled when no cluster is selected
+      // CPU number input should be disabled when no cluster is selected
       const cpuInput = endpoints.form
         .field("spec.resources.cpu")
-        .locator('[data-testid="slider-input"]');
+        .locator("input");
       await expect(cpuInput).toBeDisabled();
 
-      // Memory slider input should be disabled when no cluster is selected
+      // Memory number input should be disabled when no cluster is selected
       const memoryInput = endpoints.form
         .field("spec.resources.memory")
-        .locator('[data-testid="slider-input"]');
+        .locator("input");
       await expect(memoryInput).toBeDisabled();
     });
 
@@ -393,11 +397,6 @@ test.describe("endpoints", () => {
       tag: "@C2613269",
     }, async ({ endpoints }) => {
       await endpoints.goToCreate();
-
-      // Expand customize section
-      await endpoints.page
-        .getByRole("button", { name: /customize settings/i })
-        .click();
 
       // Model name AsyncCombobox trigger should be disabled without a registry
       const modelNameTrigger = endpoints.form
@@ -419,11 +418,6 @@ test.describe("endpoints", () => {
     }, async ({ endpoints }) => {
       await endpoints.goToCreate();
 
-      // Expand customize section
-      await endpoints.page
-        .getByRole("button", { name: /customize settings/i })
-        .click();
-
       const versionInput = endpoints.form
         .field("spec.model.version")
         .locator("input");
@@ -438,10 +432,6 @@ test.describe("endpoints", () => {
       endpoints,
     }) => {
       await endpoints.goToCreate();
-
-      await endpoints.page
-        .getByRole("button", { name: /customize settings/i })
-        .click();
 
       await expect(endpoints.form.field("spec.model.file")).toBeVisible();
     });

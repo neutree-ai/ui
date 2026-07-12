@@ -19,6 +19,8 @@ export interface AiTraceEnv {
   endpoint: string;
   gateway: string;
   workspace: string;
+  /** Served model name to send as the OpenAI `model` field (env-specific). */
+  model?: string;
 }
 
 /** Resolve gating config from env, or null when the suite should be skipped. */
@@ -29,6 +31,7 @@ export function aiTraceEnv(): AiTraceEnv | null {
     endpoint,
     gateway: gatewayBase(),
     workspace: process.env.E2E_AITRACE_WORKSPACE ?? "default",
+    model: process.env.E2E_AITRACE_MODEL,
   };
 }
 
@@ -77,7 +80,7 @@ export async function chatCompletion(
   const kind = opts?.external ? "external-endpoint" : "endpoint";
   const url = `${env.gateway}/workspace/${env.workspace}/${kind}/${endpoint}/v1/chat/completions`;
   const payload = JSON.stringify({
-    model: opts?.model ?? "any",
+    model: opts?.model ?? env.model ?? "any",
     stream: opts?.stream ?? false,
     messages: [{ role: "user", content: directive(d) }],
   });
