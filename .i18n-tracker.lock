@@ -179,7 +179,7 @@
   "src/domains/endpoint/hooks/use-endpoint-monitor-panels.ts": "5980494bc4a8d91c2a7eac8b4ab5cfc3",
   "src/domains/endpoint/hooks/use-endpoint-resources.ts": "c1b719ca155f472655bf0644f278e041",
   "src/domains/endpoint/hooks/use-streaming-logs.ts": "cf9cf558b44b0ff2e5b8ab0dcfb32f60",
-  "src/domains/endpoint/components/ChatPlayground.tsx": "b3b7b261bb8aa681fa65673f492f8003",
+  "src/domains/endpoint/components/ChatPlayground.tsx": "7aa3bbbeeccfe2cb6caeef96b56596fa",
   "src/domains/endpoint/components/ChatSidebar.tsx": "19de5399e7ae83d6d220bc7803ef93b9",
   "src/domains/endpoint/components/DeploymentConfigCard.tsx": "b7dfb1faec09a87be1e888d34c7fc338",
   "src/domains/endpoint/components/EmbeddingPlayground.tsx": "f8c4bf8037adf55bb94045bdb901a883",
