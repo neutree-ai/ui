@@ -52,7 +52,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     mode: "all",
     defaultValues: {
       model: "",
-      temperature: 0.56,
+      temperature: 0.7,
       max_length: 8 * 1024,
       top_p: 0.9,
     },
