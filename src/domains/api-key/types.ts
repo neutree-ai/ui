@@ -1,5 +1,16 @@
 import type { Metadata } from "@/foundation/types/basic-types";
 
+// One entry of the model allowlist, scoped to the IE/EE (internal/external
+// endpoint) dimension. A request is allowed when its model equals `model` and,
+// for each of `type` / `endpoint_name` that is set, the endpoint it hit matches.
+// Both absent = "any endpoint serving this model" (the legacy name-only entries
+// migrated keys carry). Mirrors the backend api/v1 AllowedModel.
+export type AllowedModel = {
+  model: string;
+  type?: "internal" | "external";
+  endpoint_name?: string;
+};
+
 // The limits object stored at api_key.spec.limits. get_api_key_limits also
 // returns token_quota.used / token_quota.remaining (read-only, computed).
 export type ApiKeyLimits = {
@@ -12,7 +23,7 @@ export type ApiKeyLimits = {
   rps?: number;
   rpm?: number;
   concurrency?: number;
-  allowed_models?: string[];
+  allowed_models?: AllowedModel[];
   disabled?: boolean;
 };
 

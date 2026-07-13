@@ -18,7 +18,11 @@ import {
   useApiKeyDisable,
   useWorkspaceModelMap,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import type { ApiKey, ApiKeyLimits } from "@/domains/api-key/types";
+import type {
+  AllowedModel,
+  ApiKey,
+  ApiKeyLimits,
+} from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import {
@@ -54,7 +58,7 @@ function ModelsCell({
   modelMap,
   scopedWorkspace,
 }: {
-  models: string[];
+  models: AllowedModel[];
   modelMap: ReturnType<typeof useWorkspaceModelMap>;
   scopedWorkspace: string | undefined;
 }) {
@@ -65,45 +69,56 @@ function ModelsCell({
 
   return (
     <div className="flex flex-col gap-2">
-      {visible.map((m) => {
-        const info = modelMap.get(m);
+      {visible.map((m, i) => {
+        // A pinned entry shows only its one endpoint; a wildcard entry (migrated
+        // legacy, no type/endpoint_name) allows any endpoint serving the model.
+        const pinned = !!m.type && !!m.endpoint_name;
+        const servingEndpoint = pinned
+          ? modelMap
+              .get(m.model)
+              ?.endpoints.find(
+                (e) => e.name === m.endpoint_name && e.type === m.type,
+              )
+          : undefined;
         return (
-          <div key={m} className="flex min-w-0 flex-col gap-1">
-            <span className="truncate text-sm font-semibold" title={m}>
-              {m}
+          <div
+            key={`${m.type ?? ""}:${m.endpoint_name ?? ""}:${m.model}:${i}`}
+            className="flex min-w-0 flex-col gap-1"
+          >
+            <span className="truncate text-sm font-semibold" title={m.model}>
+              {m.model}
             </span>
-            {scopedWorkspace && info && info.endpoints.length > 0 ? (
-              <div className="flex flex-col gap-1">
-                {info.endpoints.map((endpoint) => (
-                  <div
-                    key={`${endpoint.type}:${endpoint.name}`}
-                    className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+            {pinned ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="truncate max-w-[140px]">
+                  {m.endpoint_name}
+                </span>
+                <Badge variant="outline" className="h-5 font-normal">
+                  {t(`api_keys.models.${m.type}`)}
+                </Badge>
+                {servingEndpoint ? (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-5 font-normal",
+                      endpointPhaseClass(servingEndpoint.phase),
+                    )}
                   >
-                    <span className="truncate max-w-[140px]">
-                      {endpoint.name}
-                    </span>
-                    <Badge variant="outline" className="h-5 font-normal">
-                      {t(`api_keys.models.${endpoint.type}`)}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "h-5 font-normal",
-                        endpointPhaseClass(endpoint.phase),
-                      )}
-                    >
-                      {endpoint.phase
-                        ? t(`status.phases.endpoint.${endpoint.phase}`)
-                        : t("api_keys.models.unknown")}
-                    </Badge>
-                  </div>
-                ))}
+                    {servingEndpoint.phase
+                      ? t(`status.phases.endpoint.${servingEndpoint.phase}`)
+                      : t("api_keys.models.unknown")}
+                  </Badge>
+                ) : scopedWorkspace ? (
+                  <Badge variant="outline" className="h-5 font-normal">
+                    {t("api_keys.modelAccess.unavailable")}
+                  </Badge>
+                ) : null}
               </div>
-            ) : scopedWorkspace ? (
+            ) : (
               <span className="text-xs text-muted-foreground">
-                {t("api_keys.modelAccess.unavailable")}
+                {t("api_keys.models.anySource")}
               </span>
-            ) : null}
+            )}
           </div>
         );
       })}

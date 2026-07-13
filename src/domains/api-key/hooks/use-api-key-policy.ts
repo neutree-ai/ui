@@ -1,6 +1,6 @@
 import { useCustomMutation, useList } from "@refinedev/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ApiKeyLimits } from "@/domains/api-key/types";
+import type { AllowedModel, ApiKeyLimits } from "@/domains/api-key/types";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 
 // API-key limits live on the key itself: quota + access are a single object
@@ -15,7 +15,19 @@ import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 export const QUOTA_PERIODS = ["daily", "weekly", "monthly", "yearly"] as const;
 export type QuotaPeriod = (typeof QUOTA_PERIODS)[number];
 
-export type PolicyModelRow = { value: string; model?: string };
+// A selected allowed-model row. `value` is the picker's composite key
+// (`type:endpoint:model`) for a pinned entry, or the bare model name for a
+// wildcard entry. The picker only ever creates pinned rows (type +
+// endpoint_name set); `wildcard` rows come from loading a migrated legacy
+// allowlist ("any endpoint of this model") and are shown read-only and passed
+// through on save so an unrelated edit never silently drops them.
+export type PolicyModelRow = {
+  value: string;
+  model: string;
+  type?: "internal" | "external";
+  endpoint_name?: string;
+  wildcard?: boolean;
+};
 
 export type ApiKeyPolicyFormValues = {
   quota_period: QuotaPeriod;
@@ -70,14 +82,28 @@ export function buildApiKeyLimits(
   if (rpm !== undefined) limits.rpm = rpm;
   const cc = num(values.concurrency);
   if (cc !== undefined) limits.concurrency = cc;
-  const models = [
-    ...new Set(
-      (values.models ?? [])
-        .map((m) => String(m.model ?? m.value ?? "").trim())
-        .filter((m) => m !== ""),
-    ),
-  ];
-  if (models.length > 0) limits.allowed_models = models;
+  // Emit endpoint-scoped entries. Pinned rows (from the picker) carry
+  // type + endpoint_name; wildcard rows (migrated legacy) carry neither and pass
+  // through as bare { model }. Dedup on the full (type,endpoint_name,model) key.
+  const seen = new Set<string>();
+  const allowed: AllowedModel[] = [];
+  for (const r of values.models ?? []) {
+    const model = String(r.model ?? "").trim();
+    if (!model) continue;
+    const pinned = !r.wildcard && !!r.type && !!r.endpoint_name;
+    const entry: AllowedModel = pinned
+      ? { model, type: r.type, endpoint_name: r.endpoint_name }
+      : { model };
+    const key = JSON.stringify([
+      entry.type ?? "",
+      entry.endpoint_name ?? "",
+      model,
+    ]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    allowed.push(entry);
+  }
+  if (allowed.length > 0) limits.allowed_models = allowed;
   if (opts?.disabled) limits.disabled = true;
   return limits;
 }
@@ -100,7 +126,17 @@ export function limitsToForm(
   if (limits.rps) v.rps = String(limits.rps);
   if (limits.rpm) v.rpm = String(limits.rpm);
   if (limits.concurrency) v.concurrency = String(limits.concurrency);
-  v.models = (limits.allowed_models ?? []).map((m) => ({ value: m }));
+  v.models = (limits.allowed_models ?? []).map(
+    (m): PolicyModelRow =>
+      m.type && m.endpoint_name
+        ? {
+            value: modelOptionValue(m.type, m.endpoint_name, m.model),
+            model: m.model,
+            type: m.type,
+            endpoint_name: m.endpoint_name,
+          }
+        : { value: m.model, model: m.model, wildcard: true },
+  );
   return v;
 }
 
