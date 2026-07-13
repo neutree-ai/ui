@@ -301,7 +301,7 @@
   "src/components/ui/calendar.tsx": "dfedaf90a75014faab50dfb32b28c5b2",
   "src/domains/endpoint/lib/vgpu.ts": "7d086eba1576c5e23cfbd524483ef58b",
   "src/domains/endpoint/lib/resource-status.ts": "8bf88a620b262d25091e78061584c14e",
-  "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "a70bee97858c03e2fc4db89d4de7468f",
+  "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "057551fdf73c77c01d5387da87b64c89",
   "src/domains/cluster/lib/resource-status.ts": "9e759f014c4589740efe23ebdaf8bf74",
   "src/foundation/lib/gpu-device-resources.ts": "fddf023743268798b051643a8dd0139a",
   "src/foundation/components/GpuDeviceResourcesView.tsx": "bd15d01f7f41c71b7427a487a72fe429",

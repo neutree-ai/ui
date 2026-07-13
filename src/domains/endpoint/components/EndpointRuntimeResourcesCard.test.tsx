@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import EndpointRuntimeResourcesCard from "./EndpointRuntimeResourcesCard";
 
@@ -124,6 +124,15 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getAllByText("8.0 GiB")).toHaveLength(4);
     expect(screen.getAllByText("neutree-gpu-t4-02")).toHaveLength(2);
     expect(screen.getAllByText("neutree-gpu-t4-03")).toHaveLength(2);
+    const summary = screen.getByTestId("runtime-resource-summary");
+    const summaryGpuModelLabel = within(summary).getByText(
+      "common.fields.acceleratorProduct",
+    );
+    const summaryGpuModelValue = within(summary).getByText("Tesla-T4");
+    expect(
+      summaryGpuModelLabel.compareDocumentPosition(summaryGpuModelValue) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       screen.queryByText("GPU-c7907dc0-40f4-47dd-9dbb-6c3b63d60142"),
     ).toBeNull();
