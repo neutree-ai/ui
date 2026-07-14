@@ -45,33 +45,75 @@ describe("buildApiKeyLimits", () => {
     });
   });
 
-  it("maps RPS / RPM / concurrency and trims blank allowed models", () => {
+  it("maps RPS / RPM / concurrency and drops rows with a blank model", () => {
     const v = {
       ...apiKeyPolicyDefaults(),
       rps: "10",
       rpm: "600",
       concurrency: "8",
-      models: [{ value: "gpt-4o" }, { value: " " }, { value: "claude" }],
+      models: [
+        {
+          value: "external:ee-a:gpt-4o",
+          model: "gpt-4o",
+          type: "external" as const,
+          endpoint_name: "ee-a",
+        },
+        { value: " ", model: " " },
+      ],
     };
     expect(buildApiKeyLimits(v)).toEqual({
       rps: 10,
       rpm: 600,
       concurrency: 8,
-      allowed_models: ["gpt-4o", "claude"],
+      allowed_models: [
+        { model: "gpt-4o", type: "external", endpoint_name: "ee-a" },
+      ],
     });
   });
 
-  it("stores endpoint-level selections as unique model names", () => {
+  it("keeps endpoint-scoped selections distinct (same model, different endpoints)", () => {
     const v = {
       ...apiKeyPolicyDefaults(),
       models: [
-        { value: "internal:chat-a:gpt-4o", model: "gpt-4o" },
-        { value: "external:openrouter:gpt-4o", model: "gpt-4o" },
-        { value: "external:anthropic:claude", model: "claude" },
+        {
+          value: "internal:chat-a:gpt-4o",
+          model: "gpt-4o",
+          type: "internal" as const,
+          endpoint_name: "chat-a",
+        },
+        {
+          value: "external:openrouter:gpt-4o",
+          model: "gpt-4o",
+          type: "external" as const,
+          endpoint_name: "openrouter",
+        },
+        {
+          value: "external:anthropic:claude",
+          model: "claude",
+          type: "external" as const,
+          endpoint_name: "anthropic",
+        },
       ],
     };
     expect(buildApiKeyLimits(v)).toEqual({
-      allowed_models: ["gpt-4o", "claude"],
+      allowed_models: [
+        { model: "gpt-4o", type: "internal", endpoint_name: "chat-a" },
+        { model: "gpt-4o", type: "external", endpoint_name: "openrouter" },
+        { model: "claude", type: "external", endpoint_name: "anthropic" },
+      ],
+    });
+  });
+
+  it("passes wildcard (any-source) rows through and dedups them", () => {
+    const v = {
+      ...apiKeyPolicyDefaults(),
+      models: [
+        { value: "gpt-4o", model: "gpt-4o", wildcard: true },
+        { value: "gpt-4o", model: "gpt-4o", wildcard: true },
+      ],
+    };
+    expect(buildApiKeyLimits(v)).toEqual({
+      allowed_models: [{ model: "gpt-4o" }],
     });
   });
 
@@ -101,14 +143,30 @@ describe("limitsToForm", () => {
       token_quota: { limit: 500000, period: "monthly" },
       rps: 10,
       concurrency: 8,
-      allowed_models: ["gpt-4o"],
+      allowed_models: [
+        { model: "gpt-4o", type: "internal", endpoint_name: "chat-a" },
+      ],
     };
     const v = limitsToForm(limits);
     expect(v.quota_period).toBe("monthly");
     expect(v.quota_limit).toBe("500000");
     expect(v.rps).toBe("10");
     expect(v.concurrency).toBe("8");
-    expect(v.models).toEqual([{ value: "gpt-4o" }]);
+    expect(v.models).toEqual([
+      {
+        value: "internal:chat-a:gpt-4o",
+        model: "gpt-4o",
+        type: "internal",
+        endpoint_name: "chat-a",
+      },
+    ]);
+  });
+
+  it("maps a legacy (any-source) entry to a read-only wildcard row", () => {
+    const v = limitsToForm({ allowed_models: [{ model: "gpt-4o" }] });
+    expect(v.models).toEqual([
+      { value: "gpt-4o", model: "gpt-4o", wildcard: true },
+    ]);
   });
 
   it("returns defaults for null / empty limits", () => {
@@ -140,7 +198,7 @@ describe("rateSummary", () => {
       rps: 10,
       rpm: 600,
       concurrency: 8,
-      allowed_models: ["gpt-4o"],
+      allowed_models: [{ model: "gpt-4o" }],
     });
     expect(parts).toEqual(["10 RPS", "600 RPM", "8 concurrent"]);
   });

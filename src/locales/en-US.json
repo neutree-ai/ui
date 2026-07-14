@@ -1049,7 +1049,7 @@
 			"optional": "Optional",
 			"concurrency": "Max concurrent",
 			"allowedModels": "Allowed models",
-			"allowedModelsHint": "Leave empty to allow all models. Names must match the served model.",
+			"allowedModelsHint": "Leave empty to allow all models. Each selection is scoped to a specific internal/external endpoint.",
 			"rps": "Requests per second (RPS)",
 			"rpm": "Requests per minute (RPM)",
 			"selectModel": "Select a model",
@@ -1084,7 +1084,8 @@
 		"models": {
 			"internal": "Internal",
 			"external": "External",
-			"unknown": "Unknown"
+			"unknown": "Unknown",
+			"anySource": "Any source"
 		},
 		"performance": {
 			"title": "Last 24h request performance",
