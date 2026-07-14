@@ -1,5 +1,6 @@
+import type { Page } from "@playwright/test";
 import { config } from "../config";
-import { expect, type Page, test } from "../fixtures/base";
+import { expect, test } from "../fixtures/base";
 import { DELETE_TIMEOUT, MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { loginAs, logout } from "../helpers/test-user-context";
 
@@ -586,13 +587,23 @@ test.describe("ui layout", () => {
           testUser.page.getByText("Dashboard").first(),
         ).toBeVisible();
 
-        // User without endpoint:read should see 0 endpoints
+        // User without endpoint:read should see 0 endpoints. Dashboard.tsx
+        // renders a "Quick Start" card in place of the endpoint-count card
+        // whenever the (visible) endpoint count is 0, so either the count
+        // card shows "0" or the quick-start card is shown instead — both
+        // confirm no privileged endpoint data is exposed to this user.
         const endpointsCard = testUser.page.locator(
           '[data-testid="dashboard-endpoint-count"]',
         );
-        await expect(endpointsCard.getByText("0")).toBeVisible({
+        const quickStartCard = testUser.page.locator(
+          '[data-testid="dashboard-quick-start"]',
+        );
+        await expect(endpointsCard.or(quickStartCard)).toBeVisible({
           timeout: 10000,
         });
+        if (await endpointsCard.count()) {
+          await expect(endpointsCard.getByText("0")).toBeVisible();
+        }
       },
     );
   });
