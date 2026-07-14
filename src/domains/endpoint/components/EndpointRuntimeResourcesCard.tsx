@@ -143,12 +143,12 @@ export default function EndpointRuntimeResourcesCard({
                   {t("clusters.fields.gpuNumber")}
                 </div>
                 <div className="min-w-0">
-                  <strong className="block truncate text-sm font-semibold leading-5">
-                    {row.product || "-"}
-                  </strong>
                   <span className="block text-xs leading-4 text-muted-foreground">
                     {t("common.fields.acceleratorProduct")}
                   </span>
+                  <strong className="block truncate text-sm font-semibold leading-5">
+                    {row.product || "-"}
+                  </strong>
                 </div>
               </div>
               <ResourceValue
