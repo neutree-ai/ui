@@ -42,11 +42,17 @@ const resourceIcons: Record<string, React.ReactNode> = {
   model_catalog: <BookOpen className="h-5 w-5" />,
 };
 
+const hiddenResources = new Set(["static_node_cluster", "static_node"]);
+
 const parsePermissionsToTree = (permissions: string[]) => {
   const tree: Record<string, string[]> = {};
 
   for (const permission of permissions) {
     const [resource, action] = permission.split(":");
+
+    if (hiddenResources.has(resource)) {
+      continue;
+    }
 
     if (!tree[resource]) {
       tree[resource] = [];
