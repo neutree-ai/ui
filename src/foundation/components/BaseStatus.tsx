@@ -1,3 +1,5 @@
+import { Check, Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Tooltip,
   TooltipContent,
@@ -6,8 +8,6 @@ import {
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { cn } from "@/foundation/lib/utils";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
-import { Check, Copy } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import Timestamp from "./Timestamp";
 
 type BaseStatusProps = BaseStatusType & {

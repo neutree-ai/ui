@@ -1,5 +1,5 @@
-import { cn } from "@/foundation/lib/utils";
 import type { FC, ReactNode } from "react";
+import { cn } from "@/foundation/lib/utils";
 
 type PageHeaderProps = {
   title?: ReactNode;

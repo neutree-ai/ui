@@ -1,9 +1,8 @@
-import { ListPage } from "@/foundation/components/ListPage";
-import { Table } from "@/foundation/components/Table";
-import { defaultSorters } from "@/foundation/components/Table";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { useTranslation } from "@/foundation/lib/i18n";
 import { Trash2 } from "lucide-react";
+import { ListPage } from "@/foundation/components/ListPage";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 const useWorkspaceColumns = () => {
   const { t } = useTranslation();

@@ -1,6 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import type { Role } from "@/domains/role/types";
-import { getResourcePlural } from "@/foundation/lib/plural";
 import {
   BookOpen,
   Box,
@@ -22,6 +19,9 @@ import {
 import type React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import type { Role } from "@/domains/role/types";
+import { getResourcePlural } from "@/foundation/lib/plural";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,

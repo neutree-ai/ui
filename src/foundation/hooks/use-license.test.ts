@@ -1,6 +1,6 @@
-import type { License } from "@/foundation/types/license";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { License } from "@/foundation/types/license";
 
 // --- Module mocks ---
 
@@ -9,7 +9,7 @@ const mockMutate = vi.fn();
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
 
-let mockLicenseData: { data: License } | undefined = undefined;
+let mockLicenseData: { data: License } | undefined;
 let mockIsLoading = false;
 let mockError: { statusCode?: number; message?: string } | null = null;
 

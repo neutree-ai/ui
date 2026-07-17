@@ -1,9 +1,9 @@
-import {
-  type GrafanaDashboardConfig,
-  buildGrafanaDashboardUrl,
-} from "@/foundation/lib/grafana-dashboard-url";
 import { useTheme } from "next-themes";
 import { useCallback, useMemo, useRef } from "react";
+import {
+  buildGrafanaDashboardUrl,
+  type GrafanaDashboardConfig,
+} from "@/foundation/lib/grafana-dashboard-url";
 
 const DEFAULT_GRAFANA_CSS = `
   body { background-color: pink; }

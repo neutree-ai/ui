@@ -1,6 +1,6 @@
+import { useList } from "@refinedev/core";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import type { Metadata } from "@/foundation/types/basic-types";
-import { useList } from "@refinedev/core";
 
 const UserCell = ({ id }: { id: string }) => {
   const { data } = useList<{ metadata: Metadata }>({

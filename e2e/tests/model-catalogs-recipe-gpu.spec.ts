@@ -142,9 +142,7 @@ test.describe("recipe model catalog: GPU cluster", () => {
     const api = new ApiHelper(page);
     await api.deleteModelCatalog(mcHw.name).catch(() => {});
     await api.deleteModelCatalog(mcFar.name).catch(() => {});
-    await api
-      .deleteModelRegistry(mr.name, { retries: 10 })
-      .catch(() => {});
+    await api.deleteModelRegistry(mr.name, { retries: 10 }).catch(() => {});
     await context.close();
   });
 
@@ -188,9 +186,7 @@ test.describe("recipe model catalog: GPU cluster", () => {
     await expect(
       endpoints.page.getByText(/no validated gpu available/i),
     ).toBeVisible();
-    await expect(
-      endpoints.page.getByText(/4 GB VRAM/i).first(),
-    ).toBeVisible();
+    await expect(endpoints.page.getByText(/4 GB VRAM/i).first()).toBeVisible();
 
     // Show all options reveals every cluster accelerator (incl. the real one).
     await endpoints.page

@@ -1,3 +1,6 @@
+import type { CrudFilter, LogicalFilter } from "@refinedev/core";
+import { ChevronDown } from "lucide-react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,9 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { TableListFilterOption } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { CrudFilter, LogicalFilter } from "@refinedev/core";
-import { ChevronDown } from "lucide-react";
-import { useMemo } from "react";
 
 interface ModelTaskFilterProps {
   filters: CrudFilter[];

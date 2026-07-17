@@ -1,13 +1,13 @@
+import { Edit, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { v4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/foundation/lib/utils";
 import type { ChatFunction } from "@/foundation/types/chat-types";
-import { Edit, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { v4 } from "uuid";
 import { FunctionDialog } from "./FunctionDialog";
 
 interface FunctionsManagerProps {

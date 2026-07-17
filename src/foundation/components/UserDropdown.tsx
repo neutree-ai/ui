@@ -1,3 +1,5 @@
+import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
+import { Check, ChevronDown, Globe, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,8 +19,6 @@ import {
   LOCALE_LABELS,
   useTranslation,
 } from "@/foundation/lib/i18n";
-import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
-import { Check, ChevronDown, Globe, KeyRound } from "lucide-react";
 import LogoutButton from "./LogoutButton";
 
 export const UserDropdown = () => {

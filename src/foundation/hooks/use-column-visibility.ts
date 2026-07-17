@@ -1,9 +1,9 @@
+import { useCallback, useEffect, useState } from "react";
 import {
   type ColumnVisibilityState,
   getColumnVisibility,
   setColumnVisibility,
 } from "@/foundation/lib/column-visibility-storage";
-import { useCallback, useEffect, useState } from "react";
 
 export function useColumnVisibility(resourceName: string) {
   const [columnVisibility, setColumnVisibilityState] =

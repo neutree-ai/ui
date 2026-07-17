@@ -1,3 +1,4 @@
+import { useShow } from "@refinedev/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
@@ -7,7 +8,6 @@ import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useShow } from "@refinedev/core";
 
 export const ModelRegistriesShow = () => {
   const { t } = useTranslation();

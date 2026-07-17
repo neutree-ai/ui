@@ -1,9 +1,9 @@
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { Table } from "@/foundation/components/Table";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useResource, useTranslation } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { Table } from "@/foundation/components/Table";
+import Timestamp from "@/foundation/components/Timestamp";
 
 type MetadataColumnOptions = {
   resource?: string;

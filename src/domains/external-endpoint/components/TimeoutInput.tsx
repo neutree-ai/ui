@@ -1,3 +1,4 @@
+import { forwardRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -6,13 +7,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  type TimeoutUnit,
   displayValueToMs,
   msToDisplayValue,
+  type TimeoutUnit,
 } from "@/domains/external-endpoint/lib/convert-timeout";
 import { NumberInput } from "@/foundation/components/NumberInput";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { forwardRef, useState } from "react";
 
 interface TimeoutInputProps {
   value?: number;

@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { useTranslation } from "@/foundation/lib/i18n";
 import { useInvalidate, useLogout } from "@refinedev/core";
 import { LogOutIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 export default function LogoutButton() {
   const { t } = useTranslation();

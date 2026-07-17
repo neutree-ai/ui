@@ -1,13 +1,13 @@
+import { useShow } from "@refinedev/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { UserProfile } from "@/domains/user/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useShow } from "@refinedev/core";
 
 export const UsersShow = () => {
   const { t } = useTranslation();

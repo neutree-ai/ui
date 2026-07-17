@@ -1,10 +1,10 @@
+import { Edit, Trash2 } from "lucide-react";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import { ListPage } from "@/foundation/components/ListPage";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { Table, defaultSorters } from "@/foundation/components/Table";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { Edit, Trash2 } from "lucide-react";
 
 const useRoleAssignmentColumns = () => {
   const { t } = useTranslation();

@@ -1,7 +1,7 @@
+import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { Check, Copy } from "lucide-react";
 
 type ServiceUrlsProps = {
   serviceUrl: string;

@@ -1,5 +1,5 @@
-import { useOemConfig } from "@/foundation/hooks/use-oem-config";
 import type React from "react";
+import { useOemConfig } from "@/foundation/hooks/use-oem-config";
 
 type ThemedTitleProps = {
   collapsed: boolean;

@@ -39,7 +39,9 @@ const UpgradeContext = createContext<UpgradeContextValue | null>(null);
  */
 export function ClusterUpgradeProvider({
   children,
-}: { children: React.ReactNode }) {
+}: {
+  children: React.ReactNode;
+}) {
   const [cluster, setCluster] = useState<Cluster | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -52,11 +54,7 @@ export function ClusterUpgradeProvider({
     <UpgradeContext.Provider value={{ openUpgrade }}>
       {children}
       {cluster && (
-        <UpgradeDialog
-          cluster={cluster}
-          open={open}
-          onOpenChange={setOpen}
-        />
+        <UpgradeDialog cluster={cluster} open={open} onOpenChange={setOpen} />
       )}
     </UpgradeContext.Provider>
   );
@@ -66,9 +64,7 @@ export function ClusterUpgradeProvider({
  * DropdownMenuItem that triggers the upgrade dialog via context.
  * Safe to render inside dropdown content — no dialog lives here.
  */
-export const ClusterUpgradeAction = ({
-  cluster,
-}: { cluster: Cluster }) => {
+export const ClusterUpgradeAction = ({ cluster }: { cluster: Cluster }) => {
   const { t } = useTranslation();
   const ctx = useContext(UpgradeContext);
 
@@ -94,7 +90,11 @@ function UpgradeDialog({
   cluster,
   open,
   onOpenChange,
-}: { cluster: Cluster; open: boolean; onOpenChange: (v: boolean) => void }) {
+}: {
+  cluster: Cluster;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const { t } = useTranslation();
   const invalidate = useInvalidate();
   const { mutateAsync, isLoading: isUpdating } = useUpdate<Cluster>();

@@ -7,12 +7,14 @@ import {
 } from "./validate";
 
 describe("isValidIPAddress", () => {
-  it.each(["0.0.0.0", "192.168.1.1", "255.255.255.255", "10.0.0.1"])(
-    "accepts %s",
-    (ip) => {
-      expect(isValidIPAddress(ip)).toBe(true);
-    },
-  );
+  it.each([
+    "0.0.0.0",
+    "192.168.1.1",
+    "255.255.255.255",
+    "10.0.0.1",
+  ])("accepts %s", (ip) => {
+    expect(isValidIPAddress(ip)).toBe(true);
+  });
 
   it.each([
     "256.1.1.1",
@@ -29,19 +31,23 @@ describe("isValidIPAddress", () => {
 });
 
 describe("isValidPath", () => {
-  it.each(["/", "/tmp", "/var/log/app.log", "/a/b-c/d_e/f.g"])(
-    "accepts %s",
-    (path) => {
-      expect(isValidPath(path)).toBe(true);
-    },
-  );
+  it.each([
+    "/",
+    "/tmp",
+    "/var/log/app.log",
+    "/a/b-c/d_e/f.g",
+  ])("accepts %s", (path) => {
+    expect(isValidPath(path)).toBe(true);
+  });
 
-  it.each(["", "relative/path", "/path with spaces", "/path@special"])(
-    "rejects %s",
-    (path) => {
-      expect(isValidPath(path)).toBe(false);
-    },
-  );
+  it.each([
+    "",
+    "relative/path",
+    "/path with spaces",
+    "/path@special",
+  ])("rejects %s", (path) => {
+    expect(isValidPath(path)).toBe(false);
+  });
 });
 
 describe("isNfsProtocol", () => {
@@ -60,17 +66,28 @@ describe("isNfsProtocol", () => {
 });
 
 describe("isValidStorageQuantity", () => {
-  it.each(["10Gi", "100Mi", "500", "1.5Ti", "0.5Gi", "1024Ki", "2E", "10Pi"])(
-    "accepts %s",
-    (v) => {
-      expect(isValidStorageQuantity(v)).toBe(true);
-    },
-  );
+  it.each([
+    "10Gi",
+    "100Mi",
+    "500",
+    "1.5Ti",
+    "0.5Gi",
+    "1024Ki",
+    "2E",
+    "10Pi",
+  ])("accepts %s", (v) => {
+    expect(isValidStorageQuantity(v)).toBe(true);
+  });
 
-  it.each(["", "abc", "10gi", "Gi", "10 Gi", "-5Gi", "10GiB"])(
-    "rejects %s",
-    (v) => {
-      expect(isValidStorageQuantity(v)).toBe(false);
-    },
-  );
+  it.each([
+    "",
+    "abc",
+    "10gi",
+    "Gi",
+    "10 Gi",
+    "-5Gi",
+    "10GiB",
+  ])("rejects %s", (v) => {
+    expect(isValidStorageQuantity(v)).toBe(false);
+  });
 });
