@@ -9,13 +9,11 @@ vi.mock("@refinedev/core", () => ({
 
 import { useCustom } from "@refinedev/core";
 
-// biome-ignore lint/suspicious/noExplicitAny: partial Endpoint mock for testing
 const endpoint = {
   metadata: { name: "test-ep", workspace: "default" },
 } as any;
 
 function mockModelsResponse(models: { id: string }[], isFetching = false) {
-  // biome-ignore lint/suspicious/noExplicitAny: mock return doesn't need full Refine types
   vi.mocked(useCustom).mockReturnValue({
     data: { data: { data: models } },
     isFetching,
@@ -46,7 +44,6 @@ describe("usePlaygroundModels", () => {
   });
 
   it("returns empty models when API returns no data", () => {
-    // biome-ignore lint/suspicious/noExplicitAny: mock return doesn't need full Refine types
     vi.mocked(useCustom).mockReturnValue({
       data: null,
       isFetching: false,

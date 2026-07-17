@@ -12,7 +12,7 @@ export const handleError = (error: PostgrestError | AuthError) => {
   const customError: HttpError = {
     ...error,
     message,
-    statusCode: Number.parseInt(error.code || ""),
+    statusCode: Number.parseInt(error.code || "", 10),
   };
   return Promise.reject(customError);
 };

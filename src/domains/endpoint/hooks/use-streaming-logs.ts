@@ -40,6 +40,7 @@ export const useStreamingLogs = (url: string | null, enabled = true) => {
   // URL change (switching tabs) shows the loading state again.
   const loadedUrlRef = useRef<string | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refetchTrigger is a manual-refresh signal; bumping it intentionally re-runs the effect
   useEffect(() => {
     // Skip if not enabled or no URL
     if (!enabled || !url) {

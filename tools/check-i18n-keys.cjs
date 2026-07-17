@@ -52,9 +52,10 @@ const T_CALL_RE = /\bt\(\s*["'`]([^"'`]+)["'`]/g;
 
 function extractKeys(content) {
   const keys = [];
-  let match;
-  while ((match = T_CALL_RE.exec(content)) !== null) {
+  let match = T_CALL_RE.exec(content);
+  while (match !== null) {
     keys.push(match[1]);
+    match = T_CALL_RE.exec(content);
   }
   return keys;
 }

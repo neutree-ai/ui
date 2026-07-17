@@ -109,7 +109,6 @@ function SuggestInput({
         <Button
           type="button"
           variant="outline"
-          // biome-ignore lint/a11y/useSemanticElements: shadcn combobox pattern
           role="combobox"
           aria-label={ariaLabel}
           aria-expanded={open}

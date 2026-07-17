@@ -470,7 +470,7 @@ test.describe("engines update permissions", () => {
       // Without engine:read, checkResourceExists fails → import tries POST → 409 conflict
       const testUser = await createTestUser(["engine:create"]);
       const yamlHelper = new YamlImportHelper(testUser.page);
-      const engPage = new ResourcePage(testUser.page, {
+      const _engPage = new ResourcePage(testUser.page, {
         routeName: "engines",
         workspaced: true,
       });

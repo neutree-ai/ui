@@ -13,7 +13,7 @@
 			"!**/playwright-report",
 			"!**/tmp",
 			"!**/coverage",
-			"!src/components/ui/**"
+			"!src/components/ui"
 		]
 	},
 	"formatter": {
@@ -79,5 +79,30 @@
 			"indentStyle": "space",
 			"indentWidth": 2
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["src/foundation/recipe/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noTemplateCurlyInString": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/*.test.ts", "**/*.test.tsx", "e2e/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off"
+					},
+					"suspicious": {
+						"noExplicitAny": "off"
+					}
+				}
+			}
+		}
+	]
 }

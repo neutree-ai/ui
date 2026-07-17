@@ -95,13 +95,14 @@ export const useExternalEndpointForm = ({
         workspace: currentWorkspace,
       });
       if (data.success && data.models?.length) {
+        const models = data.models;
         setAvailableModelsMap((prev) => ({
           ...prev,
-          [index]: data.models!,
+          [index]: models,
         }));
         // Auto-fill model mapping from the selected endpoint ref's models
         const mapping: Record<string, string> = {};
-        for (const model of data.models!) {
+        for (const model of models) {
           mapping[model] = model;
         }
         form.setValue(`spec.upstreams.${index}.model_mapping`, mapping);
@@ -343,9 +344,10 @@ export const useExternalEndpointForm = ({
                                 : {}),
                             });
                             if (data.success && data.models?.length) {
+                              const models = data.models;
                               setAvailableModelsMap((prev) => ({
                                 ...prev,
-                                [index]: data.models!,
+                                [index]: models,
                               }));
                             }
                           }}
@@ -390,9 +392,10 @@ export const useExternalEndpointForm = ({
                               workspace: currentWorkspace,
                             });
                             if (data.success && data.models?.length) {
+                              const models = data.models;
                               setAvailableModelsMap((prev) => ({
                                 ...prev,
-                                [index]: data.models!,
+                                [index]: models,
                               }));
                             }
                           }}

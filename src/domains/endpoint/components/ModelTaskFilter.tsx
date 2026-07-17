@@ -59,11 +59,13 @@ export function ModelTaskFilter({ filters, setFilters }: ModelTaskFilterProps) {
       : [taskFilter.value];
   }, [taskFilter]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: MODEL_TASK_OPTIONS is a module-level constant
   const selectedTask = useMemo(() => {
     if (selectedValues.length === 0) return MODEL_TASK_OPTIONS[0].value;
     return selectedValues[0];
   }, [selectedValues]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: MODEL_TASK_OPTIONS is a module-level constant
   const selectedTaskLabel = useMemo(() => {
     const option = MODEL_TASK_OPTIONS.find((opt) => opt.value === selectedTask);
     return option?.label || MODEL_TASK_OPTIONS[0].label;

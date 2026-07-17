@@ -9,20 +9,18 @@ export default function LogoutButton() {
   const invalidate = useInvalidate();
 
   return (
-    <>
-      <Button
-        onClick={() => {
-          logout();
-          invalidate({
-            invalidates: ["all"],
-          });
-        }}
-        variant="ghost"
-        className="p-0 h-auto w-full justify-start"
-      >
-        <LogOutIcon size={16} className="mr-2" />
-        {t("buttons.logout")}
-      </Button>
-    </>
+    <Button
+      onClick={() => {
+        logout();
+        invalidate({
+          invalidates: ["all"],
+        });
+      }}
+      variant="ghost"
+      className="p-0 h-auto w-full justify-start"
+    >
+      <LogOutIcon size={16} className="mr-2" />
+      {t("buttons.logout")}
+    </Button>
   );
 }

@@ -134,7 +134,7 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
           "w-full flex flex-col items-center justify-start max-w-md",
         )}
       >
-        {renderContent ? renderContent(Content, PageTitle) : <>{Content}</>}
+        {renderContent ? renderContent(Content, PageTitle) : Content}
       </div>
     </div>
   );

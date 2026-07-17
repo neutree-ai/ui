@@ -13,7 +13,7 @@ let mockValue: { head_ip: string; worker_ips: string[] } = {
 const mockOnChange = vi.fn((val: typeof mockValue) => {
   mockValue = val;
 });
-let mockFormError: { message?: string } | undefined = undefined;
+let mockFormError: { message?: string } | undefined;
 let mockIsSubmitted = false;
 
 vi.mock("react-hook-form", async () => {
@@ -47,7 +47,6 @@ const makeKeyEvent = (key: string) => {
 async function setup(initial?: typeof mockValue) {
   if (initial) mockValue = initial;
   const { useNodeIps } = await import("./use-node-ips");
-  // biome-ignore lint/suspicious/noExplicitAny: mock control/name for testing
   return renderHook(() => useNodeIps({ control: {} as any, name: "p" as any }));
 }
 

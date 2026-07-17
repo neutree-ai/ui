@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks ---
 
-let mockListData: { data: any[] } | undefined = undefined;
+let mockListData: { data: any[] } | undefined;
 
 vi.mock("@refinedev/core", () => ({
   useList: () => ({
