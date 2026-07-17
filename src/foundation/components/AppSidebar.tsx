@@ -1,3 +1,4 @@
+import { useMenu, useResourceParams } from "@refinedev/core";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Sidebar,
@@ -21,8 +22,9 @@ import {
   isMenuItemActive,
 } from "@/foundation/lib/sidebar-active";
 import { cn } from "@/foundation/lib/utils";
-import { useMenu, useResourceParams } from "@refinedev/core";
-import type { TreeMenuItem } from "@refinedev/core/dist/hooks/menu/useMenu";
+
+type TreeMenuItem = ReturnType<typeof useMenu>["menuItems"][number];
+
 import React from "react";
 import { useLocation } from "react-router";
 import { Link } from "./Link";

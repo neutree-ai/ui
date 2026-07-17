@@ -1,3 +1,13 @@
+import type { AlertDialogProps } from "@radix-ui/react-alert-dialog";
+import type { VariantProps } from "class-variance-authority";
+import { CheckIcon, XIcon } from "lucide-react";
+import {
+  type FC,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  useMemo,
+} from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,17 +21,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { buttonVariants } from "@/components/ui/button";
 import { LoadingIcon } from "@/components/ui/loading";
-import type { AlertDialogProps } from "@radix-ui/react-alert-dialog";
-import type { DeleteButtonValues } from "@refinedev/core/dist/hooks/button/delete-button";
-import type { VariantProps } from "class-variance-authority";
-import { CheckIcon, XIcon } from "lucide-react";
-import {
-  type FC,
-  type ReactElement,
-  type ReactNode,
-  isValidElement,
-  useMemo,
-} from "react";
 
 type ConfirmDialogProps = AlertDialogProps & {
   title?: string;
@@ -33,7 +32,7 @@ type ConfirmDialogProps = AlertDialogProps & {
   okText?: string;
   cancelText?: string;
   loading?: boolean;
-  onConfirm: DeleteButtonValues["onConfirm"];
+  onConfirm: () => void;
   children?: ReactElement<SVGSVGElement>;
   content?: ReactNode;
   okButtonVariant?: VariantProps<typeof buttonVariants>["variant"];
