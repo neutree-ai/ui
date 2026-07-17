@@ -171,7 +171,7 @@ export async function produceUsage(
     if (![401, 403, 404, 503].includes(gw.status)) break;
     await new Promise((r) => setTimeout(r, 4000));
   }
-  if (!gw || gw.status !== 200) {
+  if (gw?.status !== 200) {
     throw new Error(
       `gateway inference failed: ${gw?.status} ${JSON.stringify(gw?.body).slice(0, 300)}`,
     );

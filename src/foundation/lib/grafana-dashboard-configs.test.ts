@@ -23,19 +23,22 @@ describe("getOverviewDashboardProps", () => {
 describe("getClusterSplitDashboardProps", () => {
   it.each([["overview", "neutree-cluster-overview-embed"]] as Array<
     [ClusterSplitDashboardType, string]
-  >)("uses %s split dashboard UID and cluster variable", (dashboardType, dashboardId) => {
-    const props = getClusterSplitDashboardProps(
-      "http://grafana",
-      dashboardType,
-      "cluster-a",
-    );
+  >)(
+    "uses %s split dashboard UID and cluster variable",
+    (dashboardType, dashboardId) => {
+      const props = getClusterSplitDashboardProps(
+        "http://grafana",
+        dashboardType,
+        "cluster-a",
+      );
 
-    expect(props.dashboardConfig.dashboardId).toBe(dashboardId);
-    expect(props.dashboardConfig.variables).toEqual({
-      datasource: "neutree-cluster",
-      Cluster: "cluster-a",
-    });
-  });
+      expect(props.dashboardConfig.dashboardId).toBe(dashboardId);
+      expect(props.dashboardConfig.variables).toEqual({
+        datasource: "neutree-cluster",
+        Cluster: "cluster-a",
+      });
+    },
+  );
 });
 
 describe("getEndpointSplitDashboardProps", () => {
@@ -45,23 +48,24 @@ describe("getEndpointSplitDashboardProps", () => {
     ["throughput", "neutree-endpoint-token-latency-embed"],
     ["queue", "neutree-endpoint-queue-embed"],
     ["cache", "neutree-endpoint-cache-embed"],
-  ] as Array<
-    [EndpointSplitDashboardType, string]
-  >)("uses %s split dashboard UID and endpoint variables", (dashboardType, dashboardId) => {
-    const props = getEndpointSplitDashboardProps(
-      "http://grafana",
-      dashboardType,
-      {
-        clusterName: "cluster-a",
-        endpointName: "endpoint-a",
-      },
-    );
+  ] as Array<[EndpointSplitDashboardType, string]>)(
+    "uses %s split dashboard UID and endpoint variables",
+    (dashboardType, dashboardId) => {
+      const props = getEndpointSplitDashboardProps(
+        "http://grafana",
+        dashboardType,
+        {
+          clusterName: "cluster-a",
+          endpointName: "endpoint-a",
+        },
+      );
 
-    expect(props.dashboardConfig.dashboardId).toBe(dashboardId);
-    expect(props.dashboardConfig.variables).toEqual({
-      datasource: "neutree-cluster",
-      Cluster: "cluster-a",
-      Endpoint: "endpoint-a",
-    });
-  });
+      expect(props.dashboardConfig.dashboardId).toBe(dashboardId);
+      expect(props.dashboardConfig.variables).toEqual({
+        datasource: "neutree-cluster",
+        Cluster: "cluster-a",
+        Endpoint: "endpoint-a",
+      });
+    },
+  );
 });
