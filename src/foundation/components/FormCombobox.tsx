@@ -66,7 +66,6 @@ export const FormCombobox = forwardRef<
           <Button
             disabled={props.disabled}
             variant="outline"
-            // biome-ignore lint/a11y/useSemanticElements: follow shadcn-ui
             role="combobox"
             aria-expanded={open}
             className={cn(

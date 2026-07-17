@@ -338,7 +338,7 @@ export const dataProvider = (
       return postgrestClient.url;
     },
 
-    custom: async ({ url, method, query, payload, meta }) => {
+    custom: async ({ url, method, payload, meta }) => {
       return fetch(`${postgrestClient.url}${url}`, {
         method,
         body: payload ? JSON.stringify(payload) : undefined,

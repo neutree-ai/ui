@@ -288,7 +288,7 @@ test.describe("ui layout", () => {
           description: "creates test user for password update flow",
         },
       },
-      async ({ page, browser, apiHelper }, testInfo) => {
+      async ({ browser, apiHelper }, testInfo) => {
         testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const ts = Date.now();
@@ -352,7 +352,7 @@ test.describe("ui layout", () => {
           description: "creates test user for logout flow",
         },
       },
-      async ({ page, browser, apiHelper }, testInfo) => {
+      async ({ browser, apiHelper }, testInfo) => {
         testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
         const ts = Date.now();

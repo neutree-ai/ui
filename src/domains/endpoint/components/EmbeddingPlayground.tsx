@@ -67,7 +67,7 @@ const INITIAL_DOCUMENTS = [
 ];
 
 const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     const data = payload[0].payload;
     return (
       <div className="bg-popover text-popover-foreground p-2 border rounded shadow-sm">

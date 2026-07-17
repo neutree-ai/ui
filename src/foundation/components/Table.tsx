@@ -383,7 +383,7 @@ export function DeleteAction({
   onAfterHandle,
   ...props
 }: DeleteActionProps) {
-  const meta = row.metadata;
+  const _meta = row.metadata;
   const deleteContext = useContext(DeleteContext);
 
   return (
@@ -692,8 +692,7 @@ export function Table<
                                 <SortAction column={header.column} />
                               )}
                             {isFilterable &&
-                              columnDef?.filter &&
-                              columnDef.filter({
+                              columnDef?.filter?.({
                                 column: header.column,
                                 title: t("table.filter", {
                                   column: columnDef.header,

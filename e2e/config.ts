@@ -70,7 +70,6 @@ if (!existsSync(profilePath)) {
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: YAML profile values are dynamically typed
 const raw: Record<string, any> =
   (loadYaml(readFileSync(profilePath, "utf-8")) as Record<string, unknown>) ??
   {};
@@ -87,7 +86,6 @@ function readFileAtPath(filePath: string): string | undefined {
 
 // ── Build typed config ──
 
-// biome-ignore lint/suspicious/noExplicitAny: raw YAML sections are untyped
 function buildConfig(raw: Record<string, any>): E2eConfig {
   const auth = raw.auth ?? {};
   const testrail = raw.testrail ?? {};

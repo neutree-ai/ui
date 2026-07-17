@@ -19,7 +19,6 @@ type ListProps = {
 export const ListPage: FC<ListProps> = ({
   title,
   resource: resourceFromProps,
-  breadcrumb: breadcrumbFromProps,
   createButtonProps,
   className,
   canCreate = true,

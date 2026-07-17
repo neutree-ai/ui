@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.7/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
 	"vcs": {
 		"enabled": false,
 		"clientKind": "git",
@@ -13,7 +13,8 @@
 			"!**/playwright-report",
 			"!**/tmp",
 			"!**/coverage",
-			"!src/components/ui/**"
+			"!src/components/ui",
+			"!public"
 		]
 	},
 	"formatter": {
@@ -79,5 +80,30 @@
 			"indentStyle": "space",
 			"indentWidth": 2
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["src/foundation/recipe/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noTemplateCurlyInString": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/*.test.ts", "**/*.test.tsx", "e2e/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off"
+					},
+					"suspicious": {
+						"noExplicitAny": "off"
+					}
+				}
+			}
+		}
+	]
 }

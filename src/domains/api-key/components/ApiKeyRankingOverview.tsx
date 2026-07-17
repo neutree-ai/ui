@@ -59,7 +59,6 @@ const RankingPanel = ({
               >
                 {pie.map((_, i) => (
                   <Cell
-                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed small slice list
                     key={i}
                     fill={SLICE_COLORS[Math.min(i, SLICE_COLORS.length - 1)]}
                   />

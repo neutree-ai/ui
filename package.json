@@ -98,6 +98,7 @@
 		"build": "tsgo -b && vite build",
 		"typecheck": "tsgo -b",
 		"lint": "biome lint .",
+		"lint:ci": "biome ci .",
 		"lint:fix": "biome lint --write .",
 		"format": "biome format --write .",
 		"check": "biome check --write .",

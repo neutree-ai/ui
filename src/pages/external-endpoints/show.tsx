@@ -73,19 +73,17 @@ export const ExternalEndpointsShow = () => {
                   </ShowPage.Row>
                 </div>
               ) : (
-                <>
-                  {upstream.upstream?.url && (
-                    <div className="col-span-3">
-                      <ShowPage.Row
-                        title={t("external_endpoints.fields.upstreamUrl")}
-                      >
-                        <code className="text-sm break-all">
-                          {upstream.upstream.url}
-                        </code>
-                      </ShowPage.Row>
-                    </div>
-                  )}
-                </>
+                upstream.upstream?.url && (
+                  <div className="col-span-3">
+                    <ShowPage.Row
+                      title={t("external_endpoints.fields.upstreamUrl")}
+                    >
+                      <code className="text-sm break-all">
+                        {upstream.upstream.url}
+                      </code>
+                    </ShowPage.Row>
+                  </div>
+                )
               )}
             </div>
             {upstream.model_mapping &&

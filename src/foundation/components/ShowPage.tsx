@@ -1,5 +1,5 @@
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import { useNavigation, useRefineContext, useResource } from "@refinedev/core";
+import { useRefineContext, useResource } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
 import { type FC, isValidElement, type PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,18 +23,16 @@ const Row = ({
   }>
 >) => {
   return (
-    <>
-      <dl className="flex flex-wrap min-w-0">
-        <div className="flex-auto min-w-0 pt-4">
-          <dt className="scroll-m-20 text-xs font-semibold tracking-tight">
-            {title}
-          </dt>
-          <dd className="mt-1 text-base font-normal text-foreground leading-7">
-            {children}
-          </dd>
-        </div>
-      </dl>
-    </>
+    <dl className="flex flex-wrap min-w-0">
+      <div className="flex-auto min-w-0 pt-4">
+        <dt className="scroll-m-20 text-xs font-semibold tracking-tight">
+          {title}
+        </dt>
+        <dd className="mt-1 text-base font-normal text-foreground leading-7">
+          {children}
+        </dd>
+      </div>
+    </dl>
   );
 };
 
@@ -53,7 +51,6 @@ type ShowProps = {
 export const ShowPage: FC<ShowProps> & {
   Row: typeof Row;
 } = ({
-  title,
   resource: resourceFromProps,
   breadcrumb: breadcrumbFromProps = null,
   canDelete = true,
@@ -66,9 +63,7 @@ export const ShowPage: FC<ShowProps> & {
   const { t: translate } = useTranslation();
   const { options: { breadcrumb: globalBreadcrumb } = {} } = useRefineContext();
 
-  const { resource, identifier } = useResource(resourceFromProps);
-
-  const { list } = useNavigation();
+  const { resource } = useResource(resourceFromProps);
 
   const breadcrumb =
     typeof breadcrumbFromProps === "undefined"

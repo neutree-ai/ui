@@ -283,7 +283,7 @@ spec:
 
   test("import fails when variants coexist with top-level model/resources", {
     tag: "@C2727743",
-  }, async ({ modelCatalogs, yamlImport }) => {
+  }, async ({ modelCatalogs }) => {
     const name = `test-mc-recipe-dual-${Date.now()}`;
     const yaml = `apiVersion: v1
 kind: ModelCatalog

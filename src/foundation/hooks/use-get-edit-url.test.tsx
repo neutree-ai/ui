@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks ---
 
-let mockResourceId: string | undefined = undefined;
+let mockResourceId: string | undefined;
 const mockGenerateEditUrl = vi.fn(
-  (resource: string, id: string, meta?: any) =>
+  (resource: string, id: string, _meta?: any) =>
     `/resources/${resource}/edit/${id}`,
 );
 

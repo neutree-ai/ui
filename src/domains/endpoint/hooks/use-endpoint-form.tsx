@@ -1022,14 +1022,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     action === "create" ? readModelCatalogQueryParam() : "",
   );
   const preselectAppliedRef = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot guarded preselect; intentionally excludes handleModelCatalogSelect
   useEffect(() => {
     if (preselectAppliedRef.current || !preselectCatalogId) return;
     const list = modelCatalogs.query.data?.data;
     if (!list?.some((c) => c.id.toString() === preselectCatalogId)) return;
     preselectAppliedRef.current = true;
     handleModelCatalogSelect(preselectCatalogId);
-    // handleModelCatalogSelect is stable enough for a one-shot guarded apply.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preselectCatalogId, modelCatalogs.query.data]);
 
   // When user changes variant or features, re-apply the composed result.
@@ -1095,7 +1094,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Active variant + its display metadata, used for the estimate summary.
   const activeVariant =
     selectedCatalog?.spec.variants?.[selectedVariant] ??
-    selectedCatalog?.spec.variants?.["default"];
+    selectedCatalog?.spec.variants?.default;
   const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
   const estimatedTotalVramGb =
     activeVariantVram != null ? activeVariantVram * replicaCount : null;
@@ -1454,7 +1453,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {(() => {
             const v =
               selectedCatalog.spec.variants?.[selectedVariant] ??
-              selectedCatalog.spec.variants?.["default"];
+              selectedCatalog.spec.variants?.default;
             const req = v?.vram_minimum_gb ?? null;
             if (!req) return null;
             return (

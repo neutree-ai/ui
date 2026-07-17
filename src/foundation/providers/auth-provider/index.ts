@@ -6,7 +6,7 @@ const GOTRUE_URL = `${REST_URL}/auth`;
 
 export const auth = new AuthClient({ url: GOTRUE_URL, autoRefreshToken: true });
 
-auth.onAuthStateChange((event, session) => {
+auth.onAuthStateChange((_event, session) => {
   if (session?.access_token) {
     clientPostgrest.headers.Authorization = `Bearer ${session.access_token}`;
   } else {
