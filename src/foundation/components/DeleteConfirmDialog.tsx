@@ -1,12 +1,12 @@
-import { Checkbox } from "@/components/ui/checkbox";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
-import { useTranslation } from "@/foundation/lib/i18n";
 import {
   type PropsWithChildren,
   type ReactElement,
   useId,
   useState,
 } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 interface DeleteConfirmDialogProps extends PropsWithChildren {
   open?: boolean;

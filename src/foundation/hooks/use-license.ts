@@ -1,9 +1,9 @@
-import type { License } from "@/foundation/types/license";
-import { MAX_UNLIMITED } from "@/foundation/types/license";
 import { useCustom, useCustomMutation } from "@refinedev/core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import type { License } from "@/foundation/types/license";
+import { MAX_UNLIMITED } from "@/foundation/types/license";
 
 export const useLicense = () => {
   const { t } = useTranslation();

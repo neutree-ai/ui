@@ -1,9 +1,9 @@
+import { useGo, useResource, useResourceParams } from "@refinedev/core";
+import { useForm } from "react-hook-form";
 import { Combobox } from "@/components/ui/combobox";
 import { Form } from "@/components/ui/form";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useGo, useResource, useResourceParams } from "@refinedev/core";
-import { useForm } from "react-hook-form";
 
 export default function WorkspaceSelect() {
   const { t } = useTranslation();

@@ -116,324 +116,306 @@ test.describe("custom appearance", () => {
   // Display
   // ────────────────────────────────────────────────────────
   test.describe("display", () => {
-    test(
-      "default appearance shows Neutree brand name and logo",
-      { tag: "@C2611843" },
-      async ({ page, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToDashboard(page);
+    test("default appearance shows Neutree brand name and logo", {
+      tag: "@C2611843",
+    }, async ({ page, apiHelper }) => {
+      await apiHelper.resetOemConfig();
+      await goToDashboard(page);
 
-        await expectSidebarBrand(page, "Neutree");
-        await expectSidebarLogo(page, /logo\.png/);
-      },
-    );
+      await expectSidebarBrand(page, "Neutree");
+      await expectSidebarLogo(page, /logo\.png/);
+    });
 
-    test(
-      "homepage sidebar shows custom brand name and logo",
-      { tag: "@C2611844" },
-      async ({ page, apiHelper }) => {
-        const customBrand = `TestBrand-${Date.now()}`;
-        await apiHelper.upsertOemConfig({
-          brand_name: customBrand,
-          logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
-        });
+    test("homepage sidebar shows custom brand name and logo", {
+      tag: "@C2611844",
+    }, async ({ page, apiHelper }) => {
+      const customBrand = `TestBrand-${Date.now()}`;
+      await apiHelper.upsertOemConfig({
+        brand_name: customBrand,
+        logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
+      });
 
-        await goToDashboard(page);
+      await goToDashboard(page);
 
-        await expectSidebarBrand(page, customBrand);
-        await expectSidebarLogo(page, /^data:image\/png/);
+      await expectSidebarBrand(page, customBrand);
+      await expectSidebarLogo(page, /^data:image\/png/);
 
-        // Cleanup
-        await apiHelper.resetOemConfig();
-      },
-    );
+      // Cleanup
+      await apiHelper.resetOemConfig();
+    });
 
-    test(
-      "login page shows custom brand name and logo",
-      { tag: "@C2611842" },
-      async ({ page, browser, apiHelper }) => {
-        const customBrand = `LoginBrand-${Date.now()}`;
-        await apiHelper.upsertOemConfig({
-          brand_name: customBrand,
-          logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
-        });
+    test("login page shows custom brand name and logo", {
+      tag: "@C2611842",
+    }, async ({ page, browser, apiHelper }) => {
+      const customBrand = `LoginBrand-${Date.now()}`;
+      await apiHelper.upsertOemConfig({
+        brand_name: customBrand,
+        logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
+      });
 
-        await expectLoginPageBrand(browser, page, customBrand);
+      await expectLoginPageBrand(browser, page, customBrand);
 
-        // Cleanup
-        await apiHelper.resetOemConfig();
-      },
-    );
+      // Cleanup
+      await apiHelper.resetOemConfig();
+    });
   });
 
   // ────────────────────────────────────────────────────────
   // Edit
   // ────────────────────────────────────────────────────────
   test.describe("edit", () => {
-    test(
-      "edit page loads current config values",
-      { tag: "@C2611845" },
-      async ({ page, apiHelper }) => {
-        const brandName = `CurrentBrand-${Date.now()}`;
-        await apiHelper.upsertOemConfig({
-          brand_name: brandName,
-          logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
-        });
+    test("edit page loads current config values", { tag: "@C2611845" }, async ({
+      page,
+      apiHelper,
+    }) => {
+      const brandName = `CurrentBrand-${Date.now()}`;
+      await apiHelper.upsertOemConfig({
+        brand_name: brandName,
+        logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
+      });
 
-        await goToOemConfig(page);
+      await goToOemConfig(page);
 
-        const brandInput = page.getByPlaceholder("Enter brand name");
-        await expect(brandInput).toHaveValue(brandName);
-        await expect(page.getByAltText("Main logo preview")).toBeVisible();
+      const brandInput = page.getByPlaceholder("Enter brand name");
+      await expect(brandInput).toHaveValue(brandName);
+      await expect(page.getByAltText("Main logo preview")).toBeVisible();
 
-        // Cleanup
-        await apiHelper.resetOemConfig();
-      },
-    );
+      // Cleanup
+      await apiHelper.resetOemConfig();
+    });
 
-    test(
-      "brand name accepts special characters",
-      { tag: "@C2611835" },
-      async ({ page, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToOemConfig(page);
+    test("brand name accepts special characters", { tag: "@C2611835" }, async ({
+      page,
+      apiHelper,
+    }) => {
+      await apiHelper.resetOemConfig();
+      await goToOemConfig(page);
 
-        const brandInput = page.getByPlaceholder("Enter brand name");
+      const brandInput = page.getByPlaceholder("Enter brand name");
 
-        const specialBrand = "Test Brand & Co. (2024) - AI!";
-        await brandInput.fill(specialBrand);
+      const specialBrand = "Test Brand & Co. (2024) - AI!";
+      await brandInput.fill(specialBrand);
 
-        await saveForm(page);
+      await saveForm(page);
 
-        // Reload and verify the value was saved
-        await goToOemConfig(page);
-        await expect(brandInput).toHaveValue(specialBrand);
+      // Reload and verify the value was saved
+      await goToOemConfig(page);
+      await expect(brandInput).toHaveValue(specialBrand);
 
-        // Cleanup
-        await apiHelper.resetOemConfig();
-      },
-    );
+      // Cleanup
+      await apiHelper.resetOemConfig();
+    });
 
-    test(
-      "main logo upload shows preview",
-      { tag: "@C2611836" },
-      async ({ page, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToOemConfig(page);
+    test("main logo upload shows preview", { tag: "@C2611836" }, async ({
+      page,
+      apiHelper,
+    }) => {
+      await apiHelper.resetOemConfig();
+      await goToOemConfig(page);
 
-        // No preview initially
-        await expect(page.getByAltText("Main logo preview")).toBeHidden();
+      // No preview initially
+      await expect(page.getByAltText("Main logo preview")).toBeHidden();
 
-        // Upload via hidden file input
-        const fileInput = page
-          .locator('input[type="file"][accept="image/*"]')
-          .first();
-        await fileInput.setInputFiles({
-          name: "test-logo.png",
-          mimeType: "image/png",
-          buffer: MINI_PNG,
-        });
+      // Upload via hidden file input
+      const fileInput = page
+        .locator('input[type="file"][accept="image/*"]')
+        .first();
+      await fileInput.setInputFiles({
+        name: "test-logo.png",
+        mimeType: "image/png",
+        buffer: MINI_PNG,
+      });
 
-        // Preview should appear with base64 src
-        const preview = page.getByAltText("Main logo preview");
-        await expect(preview).toBeVisible();
-        await expect(preview).toHaveAttribute("src", /^data:image\/png/);
-      },
-    );
+      // Preview should appear with base64 src
+      const preview = page.getByAltText("Main logo preview");
+      await expect(preview).toBeVisible();
+      await expect(preview).toHaveAttribute("src", /^data:image\/png/);
+    });
 
-    test(
-      "collapsed logo upload shows preview",
-      { tag: "@C2611837" },
-      async ({ page, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToOemConfig(page);
+    test("collapsed logo upload shows preview", { tag: "@C2611837" }, async ({
+      page,
+      apiHelper,
+    }) => {
+      await apiHelper.resetOemConfig();
+      await goToOemConfig(page);
 
-        // No preview initially
-        await expect(page.getByAltText("Collapsed logo preview")).toBeHidden();
+      // No preview initially
+      await expect(page.getByAltText("Collapsed logo preview")).toBeHidden();
 
-        // Upload via filechooser triggered by the Upload Collapsed Logo button
-        const [fileChooser] = await Promise.all([
-          page.waitForEvent("filechooser"),
-          page.getByRole("button", { name: /upload collapsed logo/i }).click(),
-        ]);
-        await fileChooser.setFiles({
-          name: "test-collapsed.png",
-          mimeType: "image/png",
-          buffer: MINI_PNG,
-        });
+      // Upload via filechooser triggered by the Upload Collapsed Logo button
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent("filechooser"),
+        page.getByRole("button", { name: /upload collapsed logo/i }).click(),
+      ]);
+      await fileChooser.setFiles({
+        name: "test-collapsed.png",
+        mimeType: "image/png",
+        buffer: MINI_PNG,
+      });
 
-        const preview = page.getByAltText("Collapsed logo preview");
-        await expect(preview).toBeVisible();
-        await expect(preview).toHaveAttribute("src", /^data:image\/png/);
-      },
-    );
+      const preview = page.getByAltText("Collapsed logo preview");
+      await expect(preview).toBeVisible();
+      await expect(preview).toHaveAttribute("src", /^data:image\/png/);
+    });
 
-    test(
-      "supports PNG and SVG image formats",
-      { tag: "@C2611838" },
-      async ({ page, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToOemConfig(page);
+    test("supports PNG and SVG image formats", { tag: "@C2611838" }, async ({
+      page,
+      apiHelper,
+    }) => {
+      await apiHelper.resetOemConfig();
+      await goToOemConfig(page);
 
-        const fileInput = page
-          .locator('input[type="file"][accept="image/*"]')
-          .first();
-        const preview = page.getByAltText("Main logo preview");
+      const fileInput = page
+        .locator('input[type="file"][accept="image/*"]')
+        .first();
+      const preview = page.getByAltText("Main logo preview");
 
-        // Test PNG
-        await fileInput.setInputFiles({
-          name: "test-logo.png",
-          mimeType: "image/png",
-          buffer: MINI_PNG,
-        });
-        await expect(preview).toBeVisible();
-        await expect(preview).toHaveAttribute("src", /^data:image\/png/);
+      // Test PNG
+      await fileInput.setInputFiles({
+        name: "test-logo.png",
+        mimeType: "image/png",
+        buffer: MINI_PNG,
+      });
+      await expect(preview).toBeVisible();
+      await expect(preview).toHaveAttribute("src", /^data:image\/png/);
 
-        // Clear via the X button next to the main logo preview
-        await preview.locator("..").getByRole("button").click();
-        await expect(preview).toBeHidden();
+      // Clear via the X button next to the main logo preview
+      await preview.locator("..").getByRole("button").click();
+      await expect(preview).toBeHidden();
 
-        // Test SVG
-        await fileInput.setInputFiles({
-          name: "test-logo.svg",
-          mimeType: "image/svg+xml",
-          buffer: MINI_SVG,
-        });
-        await expect(preview).toBeVisible();
-        await expect(preview).toHaveAttribute("src", /^data:image\/svg\+xml/);
-      },
-    );
+      // Test SVG
+      await fileInput.setInputFiles({
+        name: "test-logo.svg",
+        mimeType: "image/svg+xml",
+        buffer: MINI_SVG,
+      });
+      await expect(preview).toBeVisible();
+      await expect(preview).toHaveAttribute("src", /^data:image\/svg\+xml/);
+    });
 
-    test(
-      "save updates homepage sidebar and login page",
-      { tag: "@C2611839" },
-      async ({ page, browser, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToOemConfig(page);
+    test("save updates homepage sidebar and login page", {
+      tag: "@C2611839",
+    }, async ({ page, browser, apiHelper }) => {
+      await apiHelper.resetOemConfig();
+      await goToOemConfig(page);
 
-        const customBrand = `SavedBrand-${Date.now()}`;
+      const customBrand = `SavedBrand-${Date.now()}`;
 
-        await page.getByPlaceholder("Enter brand name").fill(customBrand);
+      await page.getByPlaceholder("Enter brand name").fill(customBrand);
 
-        const fileInput = page
-          .locator('input[type="file"][accept="image/*"]')
-          .first();
-        await fileInput.setInputFiles({
-          name: "test-logo.png",
-          mimeType: "image/png",
-          buffer: MINI_PNG,
-        });
+      const fileInput = page
+        .locator('input[type="file"][accept="image/*"]')
+        .first();
+      await fileInput.setInputFiles({
+        name: "test-logo.png",
+        mimeType: "image/png",
+        buffer: MINI_PNG,
+      });
 
-        await saveForm(page);
+      await saveForm(page);
 
-        // Verify sidebar updated (same page, no navigation needed)
-        await page
-          .locator('[data-sidebar="sidebar"]')
-          .getByAltText("logo")
-          .waitFor({ timeout: 10000 });
-        await expectSidebarBrand(page, customBrand);
+      // Verify sidebar updated (same page, no navigation needed)
+      await page
+        .locator('[data-sidebar="sidebar"]')
+        .getByAltText("logo")
+        .waitFor({ timeout: 10000 });
+      await expectSidebarBrand(page, customBrand);
 
-        // Verify login page
-        await expectLoginPageBrand(browser, page, customBrand);
+      // Verify login page
+      await expectLoginPageBrand(browser, page, customBrand);
 
-        // Cleanup
-        await apiHelper.resetOemConfig();
-      },
-    );
+      // Cleanup
+      await apiHelper.resetOemConfig();
+    });
 
-    test(
-      "unsaved changes are discarded when navigating away",
-      { tag: "@C2611840" },
-      async ({ page, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToOemConfig(page);
+    test("unsaved changes are discarded when navigating away", {
+      tag: "@C2611840",
+    }, async ({ page, apiHelper }) => {
+      await apiHelper.resetOemConfig();
+      await goToOemConfig(page);
 
-        // Modify the brand name
-        const brandInput = page.getByPlaceholder("Enter brand name");
-        await brandInput.fill("UnsavedBrand");
+      // Modify the brand name
+      const brandInput = page.getByPlaceholder("Enter brand name");
+      await brandInput.fill("UnsavedBrand");
 
-        // Accept any dialog (browser confirm from warnWhenUnsavedChanges)
-        page.on("dialog", (dialog) => dialog.accept());
+      // Accept any dialog (browser confirm from warnWhenUnsavedChanges)
+      page.on("dialog", (dialog) => dialog.accept());
 
-        // Use sidebar link click to trigger in-app navigation
-        // (hash-based routing won't fire beforeunload on page.goto)
-        await page
-          .locator('[data-sidebar="sidebar"]')
-          .getByRole("link", { name: /dashboard/i })
-          .click();
-        await page.waitForURL("**/#/dashboard");
+      // Use sidebar link click to trigger in-app navigation
+      // (hash-based routing won't fire beforeunload on page.goto)
+      await page
+        .locator('[data-sidebar="sidebar"]')
+        .getByRole("link", { name: /dashboard/i })
+        .click();
+      await page.waitForURL("**/#/dashboard");
 
-        // Navigate back — form should NOT have the unsaved value
-        await goToOemConfig(page);
-        await expect(brandInput).not.toHaveValue("UnsavedBrand");
-      },
-    );
+      // Navigate back — form should NOT have the unsaved value
+      await goToOemConfig(page);
+      await expect(brandInput).not.toHaveValue("UnsavedBrand");
+    });
 
-    test(
-      "saving empty fields resets to default Neutree appearance",
-      { tag: "@C2611841" },
-      async ({ page, apiHelper }) => {
-        // First set a custom config
-        await apiHelper.upsertOemConfig({
-          brand_name: "TempBrand",
-          logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
-        });
+    test("saving empty fields resets to default Neutree appearance", {
+      tag: "@C2611841",
+    }, async ({ page, apiHelper }) => {
+      // First set a custom config
+      await apiHelper.upsertOemConfig({
+        brand_name: "TempBrand",
+        logo_base64: `data:image/png;base64,${MINI_PNG.toString("base64")}`,
+      });
 
-        await goToOemConfig(page);
+      await goToOemConfig(page);
 
-        // Clear brand name
-        const brandInput = page.getByPlaceholder("Enter brand name");
-        await brandInput.clear();
+      // Clear brand name
+      const brandInput = page.getByPlaceholder("Enter brand name");
+      await brandInput.clear();
 
-        // Clear logo via X button if preview visible
-        const logoPreview = page.getByAltText("Main logo preview");
-        if (await logoPreview.isVisible()) {
-          await logoPreview.locator("..").getByRole("button").click();
-        }
+      // Clear logo via X button if preview visible
+      const logoPreview = page.getByAltText("Main logo preview");
+      if (await logoPreview.isVisible()) {
+        await logoPreview.locator("..").getByRole("button").click();
+      }
 
-        await saveForm(page);
+      await saveForm(page);
 
-        // Reload same page (avoids warnWhenUnsavedChanges hash nav issue)
-        await page.reload();
-        await page
-          .locator('[data-sidebar="sidebar"]')
-          .getByAltText("logo")
-          .waitFor({ timeout: 10000 });
+      // Reload same page (avoids warnWhenUnsavedChanges hash nav issue)
+      await page.reload();
+      await page
+        .locator('[data-sidebar="sidebar"]')
+        .getByAltText("logo")
+        .waitFor({ timeout: 10000 });
 
-        // Custom brand "TempBrand" should no longer appear in the sidebar
-        const sidebar = page.locator('[data-sidebar="sidebar"]');
-        await expect(sidebar.getByText("TempBrand")).toBeHidden();
-        await expectSidebarLogo(page, /logo\.png/);
-      },
-    );
+      // Custom brand "TempBrand" should no longer appear in the sidebar
+      const sidebar = page.locator('[data-sidebar="sidebar"]');
+      await expect(sidebar.getByText("TempBrand")).toBeHidden();
+      await expectSidebarLogo(page, /logo\.png/);
+    });
   });
 
   // ────────────────────────────────────────────────────────
   // Permissions
   // ────────────────────────────────────────────────────────
   test.describe("permissions", () => {
-    test(
-      "admin user can edit custom appearance",
-      { tag: "@C2611848" },
-      async ({ page, apiHelper }) => {
-        await apiHelper.resetOemConfig();
-        await goToOemConfig(page);
+    test("admin user can edit custom appearance", { tag: "@C2611848" }, async ({
+      page,
+      apiHelper,
+    }) => {
+      await apiHelper.resetOemConfig();
+      await goToOemConfig(page);
 
-        const brandName = `AdminBrand-${Date.now()}`;
-        await page.getByPlaceholder("Enter brand name").fill(brandName);
+      const brandName = `AdminBrand-${Date.now()}`;
+      await page.getByPlaceholder("Enter brand name").fill(brandName);
 
-        await saveForm(page);
+      await saveForm(page);
 
-        // Reload and verify
-        await goToOemConfig(page);
-        await expect(page.getByPlaceholder("Enter brand name")).toHaveValue(
-          brandName,
-        );
+      // Reload and verify
+      await goToOemConfig(page);
+      await expect(page.getByPlaceholder("Enter brand name")).toHaveValue(
+        brandName,
+      );
 
-        // Cleanup
-        await apiHelper.resetOemConfig();
-      },
-    );
+      // Cleanup
+      await apiHelper.resetOemConfig();
+    });
 
     test(
       "non-admin with system:admin permission can edit",

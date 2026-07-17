@@ -1,7 +1,7 @@
 import type { UpstreamSpec } from "@/domains/external-endpoint/types";
 import {
-  type TouchedFields,
   isTouchedField,
+  type TouchedFields,
 } from "@/foundation/lib/touched-fields";
 
 /**

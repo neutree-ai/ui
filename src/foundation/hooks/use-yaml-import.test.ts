@@ -1,6 +1,6 @@
-import type { YamlResource } from "@/foundation/lib/yaml-transform";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { YamlResource } from "@/foundation/lib/yaml-transform";
 
 // --- Module mocks ---
 

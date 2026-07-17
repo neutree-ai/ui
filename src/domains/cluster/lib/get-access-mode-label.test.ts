@@ -4,13 +4,14 @@ import { getAccessModeLabel } from "./get-access-mode-label";
 const t = vi.fn((key: string) => key);
 
 describe("getAccessModeLabel", () => {
-  it.each(["LoadBalancer", "NodePort", "Ingress"])(
-    "returns translated label for %s",
-    (mode) => {
-      getAccessModeLabel(mode, t);
-      expect(t).toHaveBeenCalledWith(`status.accessModes.${mode}`);
-    },
-  );
+  it.each([
+    "LoadBalancer",
+    "NodePort",
+    "Ingress",
+  ])("returns translated label for %s", (mode) => {
+    getAccessModeLabel(mode, t);
+    expect(t).toHaveBeenCalledWith(`status.accessModes.${mode}`);
+  });
 
   it("returns '-' for unknown mode", () => {
     expect(getAccessModeLabel("ClusterIP", t)).toBe("-");

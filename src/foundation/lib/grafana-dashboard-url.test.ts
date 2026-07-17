@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  type GrafanaDashboardUrlOptions,
   buildGrafanaDashboardUrl,
+  type GrafanaDashboardUrlOptions,
 } from "./grafana-dashboard-url";
 
 const baseConfig: GrafanaDashboardUrlOptions = {

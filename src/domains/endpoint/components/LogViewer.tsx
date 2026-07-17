@@ -1,3 +1,8 @@
+import dayjs from "dayjs";
+import { CalendarIcon, Download, RefreshCw, Search, X } from "lucide-react";
+import { type FC, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -9,11 +14,6 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/foundation/providers/auth-provider";
-import dayjs from "dayjs";
-import { CalendarIcon, Download, RefreshCw, Search, X } from "lucide-react";
-import { type FC, useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { VirtualLog } from "./VirtualLog";
 
 interface LogViewerProps {

@@ -1,6 +1,6 @@
-import { REST_URL, clientPostgrest } from "@/foundation/lib/api";
 import type { AuthProvider } from "@refinedev/core";
 import { AuthClient } from "@supabase/auth-js";
+import { clientPostgrest, REST_URL } from "@/foundation/lib/api";
 
 const GOTRUE_URL = `${REST_URL}/auth`;
 

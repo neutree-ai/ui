@@ -1,3 +1,7 @@
+import { Check, Copy } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -6,10 +10,6 @@ import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { cn } from "@/foundation/lib/utils";
 import { MAX_UNLIMITED } from "@/foundation/types/license";
-import { Check, Copy } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 
 const formatDate = (timestamp: number) => {
   return new Date(timestamp * 1000).toLocaleDateString();

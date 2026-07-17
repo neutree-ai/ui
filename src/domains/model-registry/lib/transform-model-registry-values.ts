@@ -1,7 +1,7 @@
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import {
-  type TouchedFields,
   isTouchedField,
+  type TouchedFields,
 } from "@/foundation/lib/touched-fields";
 
 /**

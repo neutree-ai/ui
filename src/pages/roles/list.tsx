@@ -1,9 +1,9 @@
-import { ListPage } from "@/foundation/components/ListPage";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { Table, defaultSorters } from "@/foundation/components/Table";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { useTranslation } from "@/foundation/lib/i18n";
 import { Edit, Lock, Trash2 } from "lucide-react";
+import { ListPage } from "@/foundation/components/ListPage";
+import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { ShowButton } from "@/foundation/components/ShowButton";
+import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 const useRoleColumns = () => {
   const { t } = useTranslation();

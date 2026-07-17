@@ -12,7 +12,8 @@
 			"!**/dist",
 			"!**/playwright-report",
 			"!**/tmp",
-			"!**/coverage"
+			"!**/coverage",
+			"!src/components/ui/**"
 		]
 	},
 	"formatter": {

@@ -762,9 +762,9 @@ describe("usePermissionDependencies", () => {
       );
 
       // usage-read depends on read, so read is locked (a dependent is selected).
-      expect(
-        result.current.getActionDependents("workspace", "read"),
-      ).toContain("workspace:usage-read");
+      expect(result.current.getActionDependents("workspace", "read")).toContain(
+        "workspace:usage-read",
+      );
 
       // Attempting to uncheck read is a no-op while usage-read is selected.
       act(() => {

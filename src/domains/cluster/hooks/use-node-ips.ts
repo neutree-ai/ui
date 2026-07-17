@@ -1,4 +1,3 @@
-import { useTranslation } from "@/foundation/lib/i18n";
 import type { ChangeEventHandler, KeyboardEventHandler } from "react";
 import { useState } from "react";
 import {
@@ -8,6 +7,7 @@ import {
   useController,
   useFormState,
 } from "react-hook-form";
+import { useTranslation } from "@/foundation/lib/i18n";
 import {
   type IpsValue,
   type NodeIpsError,

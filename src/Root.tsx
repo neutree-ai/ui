@@ -1,6 +1,6 @@
 import {
-  I18nextProvider,
   useTranslation as _useTranslation,
+  I18nextProvider,
   i18n,
 } from "@/foundation/lib/i18n";
 

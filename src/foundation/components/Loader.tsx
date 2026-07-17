@@ -1,6 +1,6 @@
-import { cn } from "@/foundation/lib/utils";
 import type React from "react";
 import { forwardRef } from "react";
+import { cn } from "@/foundation/lib/utils";
 
 export const Loader = forwardRef<SVGSVGElement, React.SVGProps<SVGSVGElement>>(
   ({ className, ...props }, ref) => {

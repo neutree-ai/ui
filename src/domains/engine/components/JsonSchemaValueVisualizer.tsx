@@ -1,3 +1,5 @@
+import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -5,8 +7,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
 import { mergeSchemaProperties } from "../lib/merge-schema-properties";
 import { getTypeColorClass } from "../lib/schema-type-color";
 import { checkTypeMatch, getActualType } from "../lib/type-match";

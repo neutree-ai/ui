@@ -1,10 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import type {
   DeploymentOptions,
   ReplicaSpec,
 } from "@/foundation/types/serving-types";
-import { useTranslation } from "react-i18next";
 
 interface DeploymentConfigCardProps {
   replicas: ReplicaSpec | null;

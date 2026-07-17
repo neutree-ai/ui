@@ -1,3 +1,4 @@
+import { useShow } from "@refinedev/core";
 import { Card, CardContent } from "@/components/ui/card";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
@@ -6,7 +7,6 @@ import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { useShow } from "@refinedev/core";
 
 export const RoleAssignmentsShow = () => {
   const { t } = useTranslation();

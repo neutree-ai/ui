@@ -1,7 +1,7 @@
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import {
-  type TouchedFields,
   isTouchedField,
+  type TouchedFields,
 } from "@/foundation/lib/touched-fields";
 
 /**

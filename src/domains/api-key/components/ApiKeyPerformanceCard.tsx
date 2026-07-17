@@ -69,11 +69,9 @@ export const ApiKeyPerformanceCard = ({
               {t("api_keys.performance.successRate")}
             </div>
             <div className="text-lg font-semibold tabular-nums">
-              {stat?.successRate != null ? (
-                `${(stat.successRate * 100).toFixed(1)}%`
-              ) : (
-                dash
-              )}
+              {stat?.successRate != null
+                ? `${(stat.successRate * 100).toFixed(1)}%`
+                : dash}
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
+import * as yaml from "js-yaml";
 import { getResourcePlural } from "@/foundation/lib/plural";
 import type { Metadata } from "@/foundation/types/basic-types";
-import * as yaml from "js-yaml";
 
 // --- Types ---
 

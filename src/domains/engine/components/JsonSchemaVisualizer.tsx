@@ -1,7 +1,7 @@
-import { Badge } from "@/components/ui/badge";
-import { useTranslation } from "@/foundation/lib/i18n";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { getTypeColorClass } from "../lib/schema-type-color";
 import { SchemaTypeIcon } from "./SchemaTypeIcon";
 

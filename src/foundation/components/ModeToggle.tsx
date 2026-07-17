@@ -1,3 +1,6 @@
+import { Half2Icon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
+import { useTheme } from "next-themes";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -5,9 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Half2Icon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
-import { useTheme } from "next-themes";
-import { useTranslation } from "react-i18next";
 
 export const ModeToggle = () => {
   const { setTheme } = useTheme();

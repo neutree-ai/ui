@@ -1,10 +1,10 @@
+import { AlertCircle, Plus, Trash } from "lucide-react";
+import type { Control, FieldValues, Path } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { AlertCircle, Plus, Trash } from "lucide-react";
-import type { Control, FieldValues, Path } from "react-hook-form";
 import { useNodeIps } from "../hooks/use-node-ips";
 
 type NodeIPsFieldProps<T extends FieldValues> = {

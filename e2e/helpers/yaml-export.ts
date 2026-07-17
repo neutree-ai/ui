@@ -1,4 +1,4 @@
-import { type Page, expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { ASYNC_UI_TIMEOUT, BULK_TIMEOUT } from "./constants";
 
 export class YamlExportHelper {

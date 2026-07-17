@@ -1,9 +1,9 @@
-import type { ButtonProps } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
 import { useCreateButton } from "@refinedev/core";
 import type { RefineCreateButtonProps } from "@refinedev/ui-types";
 import { SquarePlusIcon } from "lucide-react";
 import type { FC } from "react";
+import type { ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 type CreateButtonProps = ButtonProps &
   Pick<RefineCreateButtonProps, "resource" | "hideText" | "meta" | "onClick">;

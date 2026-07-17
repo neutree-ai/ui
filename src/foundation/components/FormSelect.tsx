@@ -1,3 +1,9 @@
+import type {
+  Content as SelectContentType,
+  SelectProps as SelectCoreProps,
+} from "@radix-ui/react-select";
+import type { BaseOption } from "@refinedev/core";
+import React, { forwardRef } from "react";
 import { FormControl } from "@/components/ui/form";
 import {
   SelectContent,
@@ -6,12 +12,6 @@ import {
   Select as SelectUI,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  Content as SelectContentType,
-  SelectProps as SelectCoreProps,
-} from "@radix-ui/react-select";
-import type { BaseOption } from "@refinedev/core";
-import React, { forwardRef } from "react";
 
 type SelectProps = SelectCoreProps & {
   placeholder?: string;

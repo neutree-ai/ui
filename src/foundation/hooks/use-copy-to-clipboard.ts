@@ -1,5 +1,5 @@
-import { copyToClipboard } from "@/foundation/lib/clipboard";
 import { useCallback, useState } from "react";
+import { copyToClipboard } from "@/foundation/lib/clipboard";
 
 type CopyOptions = {
   successMessage: string;

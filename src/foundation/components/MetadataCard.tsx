@@ -1,3 +1,4 @@
+import { useTranslation } from "@refinedev/core";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Tooltip,
@@ -8,7 +9,6 @@ import {
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import type { Metadata } from "@/foundation/types/basic-types";
-import { useTranslation } from "@refinedev/core";
 import Timestamp from "./Timestamp";
 
 type MetadataCardProps = {

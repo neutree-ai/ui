@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
-import { Suspense, lazy } from "react";
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 
 // Lazy load the YamlExportDialog component
 const YamlExportDialog = lazy(() =>

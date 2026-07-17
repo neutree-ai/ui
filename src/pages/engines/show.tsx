@@ -1,3 +1,7 @@
+import { useShow } from "@refinedev/core";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -12,10 +16,6 @@ import type { Engine } from "@/domains/engine/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import { useShow } from "@refinedev/core";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
 
 export const EnginesShow = () => {
   const { t } = useTranslation();

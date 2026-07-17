@@ -1,6 +1,6 @@
-import type { EndpointEngineRef } from "@/domains/endpoint/types";
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { EndpointEngineRef } from "@/domains/endpoint/types";
 import { useEndpointEngineOptions } from "./use-endpoint-engine-options";
 
 function makeEngine(
