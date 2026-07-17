@@ -74,6 +74,7 @@
 		"@types/react": "^18.0.0",
 		"@types/react-dom": "^18.0.0",
 		"@types/react-window": "^1.8.8",
+		"@typescript/native-preview": "^7.0.0-dev.20260707.2",
 		"@vitejs/plugin-react": "^4.0.0",
 		"@vitest/coverage-v8": "^4.0.18",
 		"@vitest/ui": "^4.0.8",
@@ -94,8 +95,8 @@
 	"scripts": {
 		"prepare": "husky",
 		"dev": "vite",
-		"build": "tsc -b && vite build",
-		"typecheck": "tsc -b",
+		"build": "tsgo -b && vite build",
+		"typecheck": "tsgo -b",
 		"lint": "biome lint .",
 		"lint:fix": "biome lint --write .",
 		"format": "biome format --write .",
