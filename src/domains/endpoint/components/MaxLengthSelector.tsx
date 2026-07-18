@@ -1,5 +1,4 @@
 import { type ElementRef, forwardRef } from "react";
-import type { Slider } from "@/components/ui/slider";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { ParameterSlider } from "./ParameterSlider";
 
@@ -24,7 +23,7 @@ export function formatMaxLength(v: number): string {
 }
 
 export const MaxLengthSelector = forwardRef<
-  ElementRef<typeof Slider>,
+  ElementRef<typeof ParameterSlider>,
   MaxLengthSelectorProps
 >(({ value, onChange }, ref) => {
   const { t } = useTranslation();

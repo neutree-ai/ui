@@ -1,5 +1,4 @@
 import { type ElementRef, forwardRef } from "react";
-import type { Slider } from "@/components/ui/slider";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { ParameterSlider } from "./ParameterSlider";
 
@@ -9,7 +8,7 @@ interface TopPSelectorProps {
 }
 
 export const TopPSelector = forwardRef<
-  ElementRef<typeof Slider>,
+  ElementRef<typeof ParameterSlider>,
   TopPSelectorProps
 >(({ value, onChange }, ref) => {
   const { t } = useTranslation();
