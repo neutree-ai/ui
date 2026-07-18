@@ -1,5 +1,6 @@
 import { compareVersions } from "compare-versions";
 import type { Cluster } from "@/domains/cluster/types";
+import { mergePoolTotals } from "@/foundation/lib/device-resource-utils";
 import type {
   AcceleratorProductResources,
   ClusterResourceInfo,
@@ -19,21 +20,6 @@ type AcceleratorProductResourceRow = {
   allocatableCoreUnits?: number | null;
   availableCoreUnits?: number | null;
 };
-
-const mergePoolTotals = (
-  current: { total: number | null; available: number | null },
-  nextTotal: number | null | undefined,
-  nextAvailable: number | null | undefined,
-) => ({
-  total:
-    current.total == null && nextTotal == null
-      ? null
-      : (current.total ?? 0) + (nextTotal ?? 0),
-  available:
-    current.available == null && nextAvailable == null
-      ? null
-      : (current.available ?? 0) + (nextAvailable ?? 0),
-});
 
 const getDevicePoolsByProduct = (
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,

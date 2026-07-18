@@ -1,13 +1,7 @@
 import { type ElementRef, forwardRef } from "react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { NumberInput } from "@/foundation/components/NumberInput";
+import type { Slider } from "@/components/ui/slider";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ParameterSlider } from "./ParameterSlider";
 
 interface MaxLengthSelectorProps {
   value: number;
@@ -36,52 +30,22 @@ export const MaxLengthSelector = forwardRef<
   const { t } = useTranslation();
 
   return (
-    <div className="grid gap-2 pt-2">
-      <HoverCard openDelay={200}>
-        <HoverCardTrigger asChild>
-          <div className="grid gap-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="maxlength">
-                {t("components.playground.chat.maximumLength")}
-              </Label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {formatMaxLength(value)}
-                </span>
-                <NumberInput
-                  min={KB}
-                  max={MB}
-                  step={KB}
-                  value={value}
-                  onValueChange={(num) =>
-                    onChange(Math.min(Math.max(KB, num), MB))
-                  }
-                  aria-label={t("components.playground.chat.maximumLength")}
-                  className="h-7 w-24 px-2 text-right text-sm text-muted-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                />
-              </div>
-            </div>
-            <Slider
-              ref={ref}
-              id="maxlength"
-              min={KB}
-              max={MB}
-              value={[value]}
-              step={KB}
-              onValueChange={(v) => onChange(v[0])}
-              className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
-              aria-label={t("components.playground.chat.maximumLength")}
-            />
-          </div>
-        </HoverCardTrigger>
-        <HoverCardContent
-          align="start"
-          className="w-[260px] text-sm"
-          side="left"
-        >
-          {t("components.playground.chat.maximumLengthDescription")}
-        </HoverCardContent>
-      </HoverCard>
-    </div>
+    <ParameterSlider
+      ref={ref}
+      id="maxlength"
+      label={t("components.playground.chat.maximumLength")}
+      description={t("components.playground.chat.maximumLengthDescription")}
+      min={KB}
+      max={MB}
+      step={KB}
+      value={value}
+      onChange={onChange}
+      numberInputClassName="h-7 w-24 px-2 text-right text-sm text-muted-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      valuePreview={
+        <span className="text-xs text-muted-foreground">
+          {formatMaxLength(value)}
+        </span>
+      }
+    />
   );
 });

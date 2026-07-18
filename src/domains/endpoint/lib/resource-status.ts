@@ -1,3 +1,7 @@
+import {
+  compareDevicesByOrderThenUuid,
+  getDeviceOrder,
+} from "@/foundation/lib/device-resource-utils";
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
 
 type EndpointResourceSummaryRow = {
@@ -29,31 +33,6 @@ type EndpointReplicaResourceGroup = {
 type ReplicaDeviceAllocation = NonNullable<
   NonNullable<EndpointResourceStatus["replicas"]>[number]["devices"]
 >[number];
-
-const getDeviceOrder = (order: number | null | undefined) =>
-  typeof order === "number" && Number.isFinite(order) ? order : null;
-
-const compareDevicesByOrderThenUuid = (
-  first: Pick<ReplicaDeviceAllocation, "order" | "uuid">,
-  second: Pick<ReplicaDeviceAllocation, "order" | "uuid">,
-) => {
-  const firstOrder = getDeviceOrder(first.order);
-  const secondOrder = getDeviceOrder(second.order);
-
-  if (firstOrder != null && secondOrder != null) {
-    return firstOrder - secondOrder || first.uuid.localeCompare(second.uuid);
-  }
-
-  if (firstOrder != null) {
-    return -1;
-  }
-
-  if (secondOrder != null) {
-    return 1;
-  }
-
-  return first.uuid.localeCompare(second.uuid);
-};
 
 const toReplicaResourceRow = (
   replica: NonNullable<EndpointResourceStatus["replicas"]>[number],
