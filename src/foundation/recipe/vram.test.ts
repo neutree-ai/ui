@@ -16,6 +16,14 @@ describe("matchesAcceleratorName", () => {
     expect(matchesAcceleratorName("nvidia-h100-80gb", [" H100 "])).toBe(true);
   });
 
+  it("matches a complete multi-token product name", () => {
+    expect(
+      matchesAcceleratorName("NVIDIA-GeForce-RTX-4090", [
+        "NVIDIA-GeForce-RTX-4090",
+      ]),
+    ).toBe(true);
+  });
+
   it("does not match on partial tokens", () => {
     // "H100" must not match a product whose only similar token is "H1000".
     expect(matchesAcceleratorName("NVIDIA-H1000", ["H100"])).toBe(false);
