@@ -334,5 +334,5 @@
   "src/foundation/lib/batch-delete.ts": "257dd2f4cbccf000afce74b379d4e80c",
   "src/foundation/components/SegmentedControl.tsx": "66a14c7092816c92af7cc3550af73aa0",
   "src/foundation/lib/token-quota.ts": "dee58b27c987d8ba96b05ac695044ebc",
-  "src/domains/api-key/components/TokenQuotaField.tsx": "a439dcaffbeb95ab84f5c9981bed1189"
+  "src/domains/api-key/components/TokenQuotaField.tsx": "a7c98aedb46387b79bc766104feb9217"
 }

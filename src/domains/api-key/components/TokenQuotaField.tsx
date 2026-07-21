@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ const ThousandsInput = ({
 }: {
   value?: string;
   onChange?: (value: string) => void;
-} & Omit<React.ComponentProps<typeof Input>, "value" | "onChange">) => (
+} & Omit<ComponentProps<typeof Input>, "value" | "onChange">) => (
   <Input
     {...rest}
     type="text"

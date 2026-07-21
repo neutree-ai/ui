@@ -99,6 +99,15 @@ describe("splitTokenQuota", () => {
     expect(splitTokenQuota(1)).toEqual({ amount: 1, unit: "tokens" });
   });
 
+  it("returns the value as-is for non-finite or non-positive input", () => {
+    expect(splitTokenQuota(0)).toEqual({ amount: 0, unit: "tokens" });
+    expect(splitTokenQuota(-100)).toEqual({ amount: -100, unit: "tokens" });
+    expect(splitTokenQuota(Number.NaN)).toEqual({
+      amount: Number.NaN,
+      unit: "tokens",
+    });
+  });
+
   it("round-trips through toTokenCount without losing precision", () => {
     for (const n of [1, 999, 12_345, 10_000, 1_500_000, 200_000_000]) {
       const { amount, unit } = splitTokenQuota(n);
