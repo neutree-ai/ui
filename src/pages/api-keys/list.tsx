@@ -32,9 +32,9 @@ import {
 } from "@/foundation/components/Table";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
-const fmt = (n: number) => Number(n).toLocaleString();
 const endpointPhaseClass = (phase: string | null | undefined) =>
   ({
     Running: "border-green-200 bg-green-50 text-green-700",
@@ -209,7 +209,7 @@ export const ApiKeysList = () => {
           <div className="flex w-40 flex-col gap-1">
             <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
               <span>
-                {fmt(u.used)} / {fmt(u.token_limit)}
+                {formatTokenQuota(u.used)} / {formatTokenQuota(u.token_limit)}
               </span>
               <span>{Math.round(pct)}%</span>
             </div>

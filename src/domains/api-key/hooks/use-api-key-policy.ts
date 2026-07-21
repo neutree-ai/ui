@@ -2,6 +2,13 @@ import { useCustomMutation, useList } from "@refinedev/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AllowedModel, ApiKeyLimits } from "@/domains/api-key/types";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
+import {
+  DEFAULT_TOKEN_QUOTA_UNIT,
+  formatThousands,
+  splitTokenQuota,
+  type TokenQuotaUnit,
+  toTokenCount,
+} from "@/foundation/lib/token-quota";
 
 // API-key limits live on the key itself: quota + access are a single object
 // stored at api_key.spec.limits and read/written via
@@ -31,7 +38,10 @@ export type PolicyModelRow = {
 
 export type ApiKeyPolicyFormValues = {
   quota_period: QuotaPeriod;
-  quota_limit: string; // tokens; empty = no quota
+  // Token quota is entered as amount + unit; the token count sent to the
+  // backend is quota_limit × quota_unit. Empty quota_limit = no quota.
+  quota_limit: string; // display amount, may be comma-grouped and/or decimal
+  quota_unit: TokenQuotaUnit;
   rps: string; // requests/second; empty = no per-second rate limit
   rpm: string; // requests/minute; empty = no per-minute rate limit
   concurrency: string; // max in-flight; empty = no limit
@@ -41,6 +51,7 @@ export type ApiKeyPolicyFormValues = {
 export const apiKeyPolicyDefaults = (): ApiKeyPolicyFormValues => ({
   quota_period: "monthly",
   quota_limit: "",
+  quota_unit: DEFAULT_TOKEN_QUOTA_UNIT,
   rps: "",
   rpm: "",
   concurrency: "",
@@ -72,7 +83,8 @@ export function buildApiKeyLimits(
   opts?: { disabled?: boolean },
 ): ApiKeyLimits {
   const limits: ApiKeyLimits = {};
-  const qLimit = num(values.quota_limit);
+  const qLimit =
+    toTokenCount(values.quota_limit, values.quota_unit) ?? undefined;
   if (qLimit !== undefined) {
     limits.token_quota = { limit: qLimit, period: values.quota_period };
   }
@@ -115,7 +127,11 @@ export function limitsToForm(
   const v = apiKeyPolicyDefaults();
   if (!limits) return v;
   if (limits.token_quota?.limit && limits.token_quota.limit > 0) {
-    v.quota_limit = String(limits.token_quota.limit);
+    // Prefill with the largest unit that divides the stored count exactly, so
+    // saving an untouched form writes back the same number.
+    const { amount, unit } = splitTokenQuota(limits.token_quota.limit);
+    v.quota_limit = formatThousands(String(amount));
+    v.quota_unit = unit;
     // Only accept a known period; an unexpected/empty value from the backend
     // would not match the combobox options, so fall back to the default.
     const period = limits.token_quota.period;

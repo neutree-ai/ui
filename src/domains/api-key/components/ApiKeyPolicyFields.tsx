@@ -4,13 +4,12 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ModelMultiSelect } from "@/domains/api-key/components/ModelMultiSelect";
+import { TokenQuotaField } from "@/domains/api-key/components/TokenQuotaField";
 import {
   isPositiveIntLimit,
   type PolicyModelRow,
-  QUOTA_PERIODS,
   useWorkspaceModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 
 type ApiKeyPolicyFieldsProps = {
@@ -59,36 +58,7 @@ export const ApiKeyPolicyFields = ({
         <p className="text-xs text-muted-foreground">
           {t("api_keys.limits.quotaHint")}
         </p>
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <FormFieldGroup
-              {...form}
-              name="quota_limit"
-              label={t("api_keys.limits.tokenLimit")}
-              rules={positiveIntRule}
-            >
-              <Input
-                type="number"
-                min={1}
-                placeholder={t("api_keys.limits.optional")}
-              />
-            </FormFieldGroup>
-          </div>
-          <div className="w-36">
-            <FormFieldGroup
-              {...form}
-              name="quota_period"
-              label={t("api_keys.limits.period")}
-            >
-              <FormCombobox
-                options={QUOTA_PERIODS.map((p) => ({
-                  label: t(`api_keys.limits.periods.${p}`),
-                  value: p,
-                }))}
-              />
-            </FormFieldGroup>
-          </div>
-        </div>
+        <TokenQuotaField form={form} />
       </div>
 
       {/* Access control */}

@@ -3,20 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
 // Per-key reference (id + display name) for attributing ranking entries.
 type RankingKeyRef = { id: string; name: string };
 
 // Top-3 + "others" donut slice colors (blue / green / amber / muted-gray).
 const SLICE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#cbd5e1"];
-
-// Compact number for token-scale values: 1.24M, 244K, 712.
-const compact = (n: number): string => {
-  if (n >= 1_000_000)
-    return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 2)}M`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
-  return n.toLocaleString();
-};
 
 type Entry = { name: string; value: number };
 
@@ -144,7 +137,7 @@ export const ApiKeyRankingOverview = ({
         <RankingPanel
           title={t("api_keys.ranking.tokens")}
           entries={tokenEntries}
-          format={compact}
+          format={formatTokenQuota}
         />
       </CardContent>
     </Card>
