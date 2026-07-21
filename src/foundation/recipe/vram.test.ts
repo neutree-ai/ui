@@ -24,6 +24,19 @@ describe("matchesAcceleratorName", () => {
     ).toBe(true);
   });
 
+  it("does not match complete product names with different SKUs", () => {
+    expect(
+      matchesAcceleratorName("NVIDIA-GeForce-RTX-4090-Ti", [
+        "NVIDIA-GeForce-RTX-4090",
+      ]),
+    ).toBe(false);
+    expect(
+      matchesAcceleratorName("NVIDIA-GeForce-RTX-4090-Laptop-GPU", [
+        "NVIDIA-GeForce-RTX-4090",
+      ]),
+    ).toBe(false);
+  });
+
   it("does not match on partial tokens", () => {
     // "H100" must not match a product whose only similar token is "H1000".
     expect(matchesAcceleratorName("NVIDIA-H1000", ["H100"])).toBe(false);

@@ -32,27 +32,28 @@ const PER_GPU_VRAM_GB: Record<string, number> = {
 // Accelerator product strings reported by a cluster are vendor-prefixed and
 // decorated (e.g. "NVIDIA-H100-80GB-HBM3", "Tesla-V100-SXM2-16GB"), while
 // recipe annotations and PER_GPU_VRAM_GB keys can use either bare model names
-// ("H100", "V100") or complete product names. A match requires every token
-// from the declared name to occur in the product string.
+// ("H100", "V100") or complete product names. Bare names can match a product
+// token; complete product names must match the normalized identifier exactly.
 export function matchesAcceleratorName(
   product: string,
   names: Iterable<string>,
 ): boolean {
-  const tokens = new Set(
-    product
-      .toUpperCase()
-      .split(/[^A-Z0-9]+/)
-      .filter(Boolean),
-  );
+  const productTokens = product
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(Boolean);
+  const tokens = new Set(productTokens);
+  const normalizedProduct = productTokens.join("-");
+
   for (const name of names) {
     const nameTokens = name
       .toUpperCase()
       .split(/[^A-Z0-9]+/)
       .filter(Boolean);
-    if (
-      nameTokens.length > 0 &&
-      nameTokens.every((token) => tokens.has(token))
-    ) {
+    if (nameTokens.length === 1 && tokens.has(nameTokens[0])) {
+      return true;
+    }
+    if (nameTokens.length > 1 && nameTokens.join("-") === normalizedProduct) {
       return true;
     }
   }
