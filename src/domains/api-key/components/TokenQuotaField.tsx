@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import {
   formatThousands,
   isValidTokenQuota,
   TOKEN_QUOTA_UNITS,
-  type TokenQuotaUnit,
 } from "@/foundation/lib/token-quota";
 
 // Amount input that re-groups digits with thousands separators as you type
@@ -41,19 +39,6 @@ export const TokenQuotaField = ({
   form: UseFormReturn<any>;
 }) => {
   const { t } = useTranslation();
-  const unit = (form.watch("quota_unit") as TokenQuotaUnit) ?? "M";
-
-  // "1.5" is a valid amount in M but not in Tokens, so the amount's validity
-  // depends on the unit — revalidate it whenever the unit changes.
-  const firstRender = useRef(true);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `unit` is the trigger, not a body dependency.
-  useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    void form.trigger("quota_limit");
-  }, [unit, form.trigger]);
 
   return (
     <div className="flex items-end gap-2">
@@ -62,9 +47,11 @@ export const TokenQuotaField = ({
           {...form}
           name="quota_limit"
           label={t("api_keys.limits.tokenLimit")}
+          // Read the unit fresh at validation time: "1.5" is legal in M but not
+          // in Tokens, so validity depends on the current unit selection.
           rules={{
             validate: (v: string) =>
-              isValidTokenQuota(v, unit) ||
+              isValidTokenQuota(v, form.getValues("quota_unit")) ||
               t("api_keys.limits.invalidTokenQuota"),
           }}
         >
@@ -76,6 +63,9 @@ export const TokenQuotaField = ({
           {...form}
           name="quota_unit"
           label={t("api_keys.limits.unit")}
+          // Changing the unit re-runs the amount's validation (deps), so an
+          // amount that just became legal/illegal updates its error immediately.
+          rules={{ deps: ["quota_limit"] }}
         >
           <FormCombobox
             options={TOKEN_QUOTA_UNITS.map((u) => ({
