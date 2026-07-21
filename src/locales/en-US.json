@@ -1039,6 +1039,13 @@
 			"quotaHint": "Cap token usage for this key over a period. Leave empty for no quota.",
 			"accessTitle": "Access control",
 			"tokenLimit": "Token limit",
+			"unit": "Unit",
+			"units": {
+				"tokens": "Tokens",
+				"K": "K",
+				"M": "M",
+				"B": "B"
+			},
 			"period": "Period",
 			"periods": {
 				"daily": "Daily",
@@ -1057,6 +1064,7 @@
 			"noModels": "No models available",
 			"tokensUnit": "tokens",
 			"invalidPositiveInt": "Must be a positive integer",
+			"invalidTokenQuota": "Must resolve to a positive whole number of tokens",
 			"consumptionTitle": "Resource consumption",
 			"remainingLabel": "remaining",
 			"usageColumn": "Usage",

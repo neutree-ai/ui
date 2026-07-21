@@ -24,9 +24,8 @@ import {
   useApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
+import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
-
-const fmt = (n: number) => Number(n).toLocaleString();
 
 // Editable Limits panel on the API key detail page: shows the key's current
 // limits (a single object at spec.limits), its token-quota consumption
@@ -171,8 +170,10 @@ export const ApiKeyLimitsCard = ({
               />
             </div>
             <div className="text-xs text-muted-foreground">
-              {fmt(used)} / {fmt(limit)} {t("api_keys.limits.tokensUnit")} ·{" "}
-              {t("api_keys.limits.remainingLabel")}: {fmt(remaining)} ·{" "}
+              {formatTokenQuota(used)} / {formatTokenQuota(limit)}{" "}
+              {t("api_keys.limits.tokensUnit")} ·{" "}
+              {t("api_keys.limits.remainingLabel")}:{" "}
+              {formatTokenQuota(remaining)} ·{" "}
               {t(`api_keys.limits.periods.${period}`)}
             </div>
           </div>

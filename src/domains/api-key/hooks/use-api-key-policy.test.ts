@@ -38,11 +38,31 @@ describe("buildApiKeyLimits", () => {
     const v = {
       ...apiKeyPolicyDefaults(),
       quota_period: "monthly" as const,
-      quota_limit: "500000",
+      quota_limit: "500,000",
+      quota_unit: "tokens" as const,
     };
     expect(buildApiKeyLimits(v)).toEqual({
       token_quota: { limit: 500000, period: "monthly" },
     });
+  });
+
+  it("multiplies the amount by the selected unit", () => {
+    const build = (quota_limit: string, quota_unit: "K" | "M" | "B") =>
+      buildApiKeyLimits({ ...apiKeyPolicyDefaults(), quota_limit, quota_unit })
+        .token_quota?.limit;
+    expect(build("200", "M")).toBe(200_000_000);
+    expect(build("1.5", "M")).toBe(1_500_000);
+    expect(build("2", "B")).toBe(2_000_000_000);
+    expect(build("10", "K")).toBe(10_000);
+  });
+
+  it("drops a quota whose amount does not resolve to whole tokens", () => {
+    const v = {
+      ...apiKeyPolicyDefaults(),
+      quota_limit: "1.5",
+      quota_unit: "tokens" as const,
+    };
+    expect(buildApiKeyLimits(v)).toEqual({});
   });
 
   it("maps RPS / RPM / concurrency and drops rows with a blank model", () => {
@@ -138,6 +158,19 @@ describe("buildApiKeyLimits", () => {
 });
 
 describe("limitsToForm", () => {
+  it("round-trips a token quota through the form without losing precision", () => {
+    for (const limit of [1, 12_345, 10_000, 1_500_000, 200_000_000]) {
+      const v = limitsToForm({ token_quota: { limit, period: "monthly" } });
+      expect(buildApiKeyLimits(v).token_quota?.limit).toBe(limit);
+    }
+  });
+
+  it("prefills an indivisible count as raw tokens", () => {
+    const v = limitsToForm({ token_quota: { limit: 12_345, period: "daily" } });
+    expect(v.quota_limit).toBe("12,345");
+    expect(v.quota_unit).toBe("tokens");
+  });
+
   it("maps a stored limits object back into editable form values", () => {
     const limits: ApiKeyLimits = {
       token_quota: { limit: 500000, period: "monthly" },
@@ -149,7 +182,9 @@ describe("limitsToForm", () => {
     };
     const v = limitsToForm(limits);
     expect(v.quota_period).toBe("monthly");
-    expect(v.quota_limit).toBe("500000");
+    // 500000 divides evenly into K, so it prefills as 500 K.
+    expect(v.quota_limit).toBe("500");
+    expect(v.quota_unit).toBe("K");
     expect(v.rps).toBe("10");
     expect(v.concurrency).toBe("8");
     expect(v.models).toEqual([
