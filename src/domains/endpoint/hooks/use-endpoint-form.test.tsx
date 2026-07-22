@@ -4136,6 +4136,87 @@ describe("useEndpointForm", () => {
     });
   });
 
+  // NEU-590: the hardware-verified list is advice, not a gate. When none of
+  // the recipe's validated GPUs exist in the cluster, the accelerator picker
+  // must stay visible and fall back to every available accelerator, with a
+  // notice — not disappear behind "Show all options".
+  describe("unverified accelerator fallback (NEU-590)", () => {
+    const recipeCatalogVerified = (verified: string) => ({
+      ...recipeCatalog,
+      metadata: {
+        name: "recipe-mc",
+        annotations: { "recipe.vllm.ai/hardware-verified": verified },
+      },
+      spec: {
+        ...recipeCatalog.spec,
+        variants: {
+          default: {
+            ...recipeCatalog.spec.variants.default,
+            vram_minimum_gb: 4,
+          },
+        },
+      },
+    });
+
+    async function renderWithVerified(verified: string) {
+      setupMocks(
+        [catalogA, recipeCatalogVerified(verified)],
+        [plainKubernetesClusterWithNodeResources],
+      );
+      render(<CreateForm />);
+      selectCatalog("recipe-mc");
+      await act(async () => {
+        formInstance?.setValue("spec.cluster", "plain-k8s-node-resources");
+      });
+    }
+
+    it("keeps the picker usable with all cluster accelerators when the verified list is disjoint", async () => {
+      await renderWithVerified("H100");
+
+      // The picker is still rendered (not replaced by a notice-only block)...
+      const field = screen.getByTestId("field-spec.resources.accelerator");
+      const trigger = field.querySelector('button[role="combobox"]');
+      expect(trigger).toBeTruthy();
+      // ...and enabled, which proves the fallback options are non-empty (the
+      // combobox is disabled whenever displayedAcceleratorOptions is empty).
+      expect((trigger as HTMLButtonElement).disabled).toBe(false);
+      // The unvalidated-hardware notice is shown alongside it.
+      expect(
+        screen.getByTestId("endpoint-accelerator-unverified-notice"),
+      ).toBeTruthy();
+    });
+
+    it("shows no notice on a cluster without accelerators", async () => {
+      setupMocks(
+        [catalogA, recipeCatalogVerified("H100")],
+        [plainKubernetesCluster],
+      );
+      render(<CreateForm />);
+      selectCatalog("recipe-mc");
+      await act(async () => {
+        formInstance?.setValue("spec.cluster", "plain-k8s");
+      });
+
+      // A GPU-less cluster is not a "disjoint verified list" — the notice
+      // must not claim to be showing alternative accelerators.
+      expect(
+        screen.queryByTestId("endpoint-accelerator-unverified-notice"),
+      ).toBeNull();
+    });
+
+    it("shows no notice and keeps the verified-only options when the lists intersect", async () => {
+      await renderWithVerified("T4");
+
+      const field = screen.getByTestId("field-spec.resources.accelerator");
+      const trigger = field.querySelector('button[role="combobox"]');
+      expect(trigger).toBeTruthy();
+      expect((trigger as HTMLButtonElement).disabled).toBe(false);
+      expect(
+        screen.queryByTestId("endpoint-accelerator-unverified-notice"),
+      ).toBeNull();
+    });
+  });
+
   // NEU-503: the model-exists check must be driven by an exact-name lookup,
   // not by whatever page the dropdown's search last fetched.
   describe("model existence validation (NEU-503)", () => {

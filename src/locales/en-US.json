@@ -839,7 +839,7 @@
 			"resourceEstimate": "Resource estimate",
 			"estimatedVram": "Estimated VRAM",
 			"replicasCount": "{{count}} replica",
-			"noVerifiedAccelerator": "No validated GPU available in this cluster.",
+			"noVerifiedAccelerator": "This recipe has not been validated on the GPUs in this cluster — showing all available accelerators.",
 			"requiredVram": "Requires ≥ {{gb}} GB VRAM.",
 			"vramSufficient": "Sufficient VRAM: {{total}} GB available, {{required}} GB required",
 			"vramInsufficient": "Insufficient VRAM: {{total}} GB available, {{required}} GB required",
