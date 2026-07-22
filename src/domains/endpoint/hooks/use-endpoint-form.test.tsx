@@ -4186,6 +4186,24 @@ describe("useEndpointForm", () => {
       ).toBeTruthy();
     });
 
+    it("shows no notice on a cluster without accelerators", async () => {
+      setupMocks(
+        [catalogA, recipeCatalogVerified("H100")],
+        [plainKubernetesCluster],
+      );
+      render(<CreateForm />);
+      selectCatalog("recipe-mc");
+      await act(async () => {
+        formInstance?.setValue("spec.cluster", "plain-k8s");
+      });
+
+      // A GPU-less cluster is not a "disjoint verified list" — the notice
+      // must not claim to be showing alternative accelerators.
+      expect(
+        screen.queryByTestId("endpoint-accelerator-unverified-notice"),
+      ).toBeNull();
+    });
+
     it("shows no notice and keeps the verified-only options when the lists intersect", async () => {
       await renderWithVerified("T4");
 

@@ -1128,9 +1128,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // selecting a card is a deploy essential, and the verified list is advice,
   // not a gate), so fall back to every available accelerator and render an
   // unvalidated-hardware notice next to the picker instead of hiding it.
+  // Requires the cluster to actually offer accelerators — a GPU-less cluster
+  // (or one whose resource info hasn't loaded yet) is not a "disjoint
+  // verified list" and must not claim to be showing alternatives.
   const noVerifiedAcceleratorAvailable =
     restrictAcceleratorToVerified &&
     Boolean(currentCluster) &&
+    acceleratorOptions.length > 0 &&
     verifiedAcceleratorOptions.length === 0;
   const displayedAcceleratorOptions = noVerifiedAcceleratorAvailable
     ? acceleratorOptions
