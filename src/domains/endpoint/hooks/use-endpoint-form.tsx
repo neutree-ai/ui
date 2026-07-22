@@ -1119,18 +1119,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // (verifiedProducts) and present in the selected cluster (acceleratorOptions);
   // "Show all options" reveals every available product.
   const restrictAcceleratorToVerified = !showFull && verifiedProducts.size > 0;
-  const displayedAcceleratorOptions = restrictAcceleratorToVerified
+  const verifiedAcceleratorOptions = restrictAcceleratorToVerified
     ? acceleratorOptions.filter((opt) =>
         matchesAcceleratorName(opt.product, verifiedProducts),
       )
     : acceleratorOptions;
-  // No validated + available GPU in this cluster → hide the product picker and
-  // just surface the required VRAM (the user can still expand "Show all
-  // options" to pick any available accelerator).
+  // No validated GPU in this cluster → the picker must stay usable (NEU-590:
+  // selecting a card is a deploy essential, and the verified list is advice,
+  // not a gate), so fall back to every available accelerator and render an
+  // unvalidated-hardware notice next to the picker instead of hiding it.
   const noVerifiedAcceleratorAvailable =
     restrictAcceleratorToVerified &&
     Boolean(currentCluster) &&
-    displayedAcceleratorOptions.length === 0;
+    verifiedAcceleratorOptions.length === 0;
+  const displayedAcceleratorOptions = noVerifiedAcceleratorAvailable
+    ? acceleratorOptions
+    : verifiedAcceleratorOptions;
 
   const formWithTransformedOnFinish = {
     ...form,
@@ -1779,86 +1783,82 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       data-testid="endpoint-accelerator-allocator-row"
                       className="contents"
                     >
-                      {noVerifiedAcceleratorAvailable ? (
-                        // No validated GPU exists in this cluster — don't offer
-                        // a product, just state the VRAM requirement.
-                        <div className="col-span-1 min-w-0 space-y-1 sm:col-span-2">
-                          <div className="text-sm font-medium">
-                            {t("endpoints.fields.accelerator")}
-                          </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                            {t(
-                              "endpoints.recipe.noVerifiedAccelerator",
-                              "No validated GPU available in this cluster.",
-                            )}
-                            {activeVariantVram != null && (
-                              <span className="ml-1">
-                                {t(
-                                  "endpoints.recipe.requiredVram",
-                                  "Requires ≥ {{gb}} GB VRAM.",
-                                  { gb: activeVariantVram },
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <FormFieldGroup
-                          {...form}
-                          name="spec.resources.accelerator"
-                          label={t("endpoints.fields.accelerator")}
-                          className="col-span-1 min-w-0 sm:col-span-2"
+                      <FormFieldGroup
+                        {...form}
+                        name="spec.resources.accelerator"
+                        label={t("endpoints.fields.accelerator")}
+                        className="col-span-1 min-w-0 sm:col-span-2"
+                      >
+                        <FormCombobox
+                          options={displayedAcceleratorOptions.map((opt) => ({
+                            label: opt.label,
+                            value: opt.value,
+                          }))}
+                          value={
+                            selectedAccelerator?.type &&
+                            selectedAccelerator?.product
+                              ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
+                              : ""
+                          }
+                          onChange={(value) => {
+                            // Parse "type:product" format
+                            const selectedOption =
+                              displayedAcceleratorOptions.find(
+                                (opt) => opt.value === value,
+                              );
+                            if (selectedOption) {
+                              const currentVirtualization = form.getValues(
+                                "spec.resources.accelerator.virtualization",
+                              );
+                              form.setValue("spec.resources.accelerator", {
+                                type: selectedOption.type,
+                                product: selectedOption.product,
+                                ...(isSelectedClusterVgpuEnabled
+                                  ? {
+                                      virtualization:
+                                        currentVirtualization || {},
+                                    }
+                                  : {}),
+                              } satisfies ResourceSpec["accelerator"]);
+                            } else {
+                              form.setValue("spec.resources.accelerator", null);
+                            }
+                          }}
+                          placeholder={t(
+                            "endpoints.placeholders.selectAccelerator",
+                          )}
+                          disabled={
+                            !currentCluster ||
+                            displayedAcceleratorOptions.length === 0
+                          }
+                          emptyMessage={t(
+                            "endpoints.messages.noAcceleratorsAvailable",
+                          )}
+                        />
+                      </FormFieldGroup>
+                      {noVerifiedAcceleratorAvailable && (
+                        // The recipe's validated GPU list has no overlap with
+                        // this cluster — the picker above falls back to every
+                        // available accelerator; surface that plus the VRAM
+                        // floor so the fallback is an informed choice.
+                        <div
+                          data-testid="endpoint-accelerator-unverified-notice"
+                          className="col-span-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground sm:col-span-2"
                         >
-                          <FormCombobox
-                            options={displayedAcceleratorOptions.map((opt) => ({
-                              label: opt.label,
-                              value: opt.value,
-                            }))}
-                            value={
-                              selectedAccelerator?.type &&
-                              selectedAccelerator?.product
-                                ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
-                                : ""
-                            }
-                            onChange={(value) => {
-                              // Parse "type:product" format
-                              const selectedOption =
-                                displayedAcceleratorOptions.find(
-                                  (opt) => opt.value === value,
-                                );
-                              if (selectedOption) {
-                                const currentVirtualization = form.getValues(
-                                  "spec.resources.accelerator.virtualization",
-                                );
-                                form.setValue("spec.resources.accelerator", {
-                                  type: selectedOption.type,
-                                  product: selectedOption.product,
-                                  ...(isSelectedClusterVgpuEnabled
-                                    ? {
-                                        virtualization:
-                                          currentVirtualization || {},
-                                      }
-                                    : {}),
-                                } satisfies ResourceSpec["accelerator"]);
-                              } else {
-                                form.setValue(
-                                  "spec.resources.accelerator",
-                                  null,
-                                );
-                              }
-                            }}
-                            placeholder={t(
-                              "endpoints.placeholders.selectAccelerator",
-                            )}
-                            disabled={
-                              !currentCluster ||
-                              displayedAcceleratorOptions.length === 0
-                            }
-                            emptyMessage={t(
-                              "endpoints.messages.noAcceleratorsAvailable",
-                            )}
-                          />
-                        </FormFieldGroup>
+                          {t(
+                            "endpoints.recipe.noVerifiedAccelerator",
+                            "This recipe has not been validated on the GPUs in this cluster — showing all available accelerators.",
+                          )}
+                          {activeVariantVram != null && (
+                            <span className="ml-1">
+                              {t(
+                                "endpoints.recipe.requiredVram",
+                                "Requires ≥ {{gb}} GB VRAM.",
+                                { gb: activeVariantVram },
+                              )}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 

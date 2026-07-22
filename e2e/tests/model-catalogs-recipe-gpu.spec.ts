@@ -156,9 +156,11 @@ test.describe("recipe model catalog: GPU cluster", () => {
     await endpoints.form.selectComboboxOption("spec.cluster", GPU_CLUSTER);
 
     // Intersection is non-empty -> the picker offers the verified product and
-    // the "no validated GPU" notice must NOT appear.
+    // the unvalidated-hardware notice must NOT appear.
     await expect(
-      endpoints.page.getByText(/no validated gpu available/i),
+      endpoints.page.locator(
+        '[data-testid="endpoint-accelerator-unverified-notice"]',
+      ),
     ).toHaveCount(0);
     await endpoints.page
       .locator('[data-testid="field-spec.resources.accelerator"] button')
@@ -172,7 +174,7 @@ test.describe("recipe model catalog: GPU cluster", () => {
     ).toBeVisible();
   });
 
-  test("disjoint verified hardware hides the picker until Show all options", {
+  test("disjoint verified hardware keeps the picker with all accelerators and a notice", {
     tag: "@C2727751",
   }, async ({ endpoints }) => {
     await deployFromCard(endpoints.page, mcFar.name);
@@ -181,17 +183,17 @@ test.describe("recipe model catalog: GPU cluster", () => {
 
     await endpoints.form.selectComboboxOption("spec.cluster", GPU_CLUSTER);
 
-    // No intersection -> picker replaced by the advisory notice with the
-    // variant's VRAM floor.
+    // No intersection -> the picker stays visible (NEU-590) and the
+    // unvalidated-hardware notice states the fallback and the VRAM floor.
     await expect(
-      endpoints.page.getByText(/no validated gpu available/i),
+      endpoints.page.locator(
+        '[data-testid="endpoint-accelerator-unverified-notice"]',
+      ),
     ).toBeVisible();
     await expect(endpoints.page.getByText(/4 GB VRAM/i).first()).toBeVisible();
 
-    // Show all options reveals every cluster accelerator (incl. the real one).
-    await endpoints.page
-      .getByRole("button", { name: /show all options/i })
-      .click();
+    // Without touching "Show all options" the picker already offers every
+    // cluster accelerator (incl. the real one).
     await endpoints.page
       .locator('[data-testid="field-spec.resources.accelerator"] button')
       .first()
