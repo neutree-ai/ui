@@ -18,8 +18,12 @@ export const useEndpointMonitorPanels = ({
   engineType,
 }: UseEndpointMonitorPanelsProps) => {
   const panels = useMemo(() => {
-    if (engineType !== "vllm" && engineType !== "sglang") {
+    if (!engineType) {
       return [];
+    }
+
+    if (engineType !== "vllm" && engineType !== "sglang") {
+      return ["overview"] satisfies EndpointMonitorPanelType[];
     }
 
     return [
