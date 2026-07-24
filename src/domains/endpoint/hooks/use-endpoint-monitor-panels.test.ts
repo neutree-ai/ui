@@ -16,12 +16,14 @@ describe("useEndpointMonitorPanels", () => {
     expect(result.current.showSelector).toBe(false);
   });
 
-  it("should return empty panels without a supported engine", () => {
-    const { result } = renderHook(() => useEndpointMonitorPanels({}));
+  it("should return an overview panel for a non-LLM engine", () => {
+    const { result } = renderHook(() =>
+      useEndpointMonitorPanels({ engineType: "llama-cpp" }),
+    );
 
-    expect(result.current.panels).toEqual([]);
-    expect(result.current.selectedPanel).toBeNull();
-    expect(result.current.showMonitorTab).toBe(false);
+    expect(result.current.panels).toEqual(["overview"]);
+    expect(result.current.selectedPanel).toBe("overview");
+    expect(result.current.showMonitorTab).toBe(true);
     expect(result.current.showSelector).toBe(false);
   });
 
@@ -125,5 +127,25 @@ describe("useEndpointMonitorPanels", () => {
     rerender({ engineType: "vllm" });
 
     expect(result.current.selectedPanel).toBe("cache");
+  });
+
+  it("should fall back to overview when switching to a non-LLM engine", () => {
+    const { result, rerender } = renderHook(
+      ({ engineType }: UseHookArgs) => useEndpointMonitorPanels({ engineType }),
+      {
+        initialProps: { engineType: "vllm" } as UseHookArgs,
+      },
+    );
+
+    act(() => {
+      result.current.setSelectedPanel("queue");
+    });
+
+    rerender({ engineType: "llama-cpp" });
+
+    expect(result.current.panels).toEqual(["overview"]);
+    expect(result.current.selectedPanel).toBe("overview");
+    expect(result.current.showMonitorTab).toBe(true);
+    expect(result.current.showSelector).toBe(false);
   });
 });

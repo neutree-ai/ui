@@ -1,3 +1,4 @@
+import { config } from "../config";
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
 import { MULTI_USER_TIMEOUT } from "../helpers/constants";
@@ -7,10 +8,12 @@ import { ResourcePage } from "../helpers/resource-page";
 const irName = { value: "" }; // Image registry for cluster dependency
 const clusterName = { value: "" };
 const engineName = { value: "" };
+const nonLlmEngineName = { value: "" };
 const mrName = { value: "" };
 const mcNames = { a: "", b: "" }; // Model catalogs for template selection tests
 const epNames = {
   base: "", // primary endpoint for list/detail/edit
+  nonLlm: "", // endpoint using a non-LLM engine for monitor coverage
   sort: "", // second endpoint for sort ordering
 };
 
@@ -24,8 +27,10 @@ test.describe("endpoints", () => {
     irName.value = `test-ep-ir-${ts}`;
     clusterName.value = `test-ep-cl-${ts}`;
     engineName.value = `test-ep-engine-${ts}`;
+    nonLlmEngineName.value = `test-ep-non-llm-engine-${ts}`;
     mrName.value = `test-ep-mr-${ts}`;
     epNames.base = `test-ep-base-${ts}`;
+    epNames.nonLlm = `test-ep-non-llm-${ts}`;
     epNames.sort = `test-ep-sort-${ts}`;
 
     mcNames.a = `test-ep-mc-a-${ts}`;
@@ -47,6 +52,9 @@ test.describe("endpoints", () => {
         },
       },
     });
+    await api.createEngine(nonLlmEngineName.value, {
+      supportedTasks: ["text-embedding"],
+    });
     await api.createModelRegistry(mrName.value);
     await api.createModelCatalog(mcNames.a, {
       modelVersion: "2.0",
@@ -61,6 +69,13 @@ test.describe("endpoints", () => {
     await api.createEndpoint(epNames.base, {
       cluster: clusterName.value,
       modelRegistry: mrName.value,
+    });
+    await api.createEndpoint(epNames.nonLlm, {
+      cluster: clusterName.value,
+      modelRegistry: mrName.value,
+      engine: nonLlmEngineName.value,
+      engineVersion: "v1.0",
+      modelTask: "text-embedding",
     });
     await api.createEndpoint(epNames.sort, {
       cluster: clusterName.value,
@@ -86,6 +101,7 @@ test.describe("endpoints", () => {
     await Promise.all([
       api.deleteCluster(clusterName.value, { force: true }).catch(() => {}),
       api.deleteEngine(engineName.value, { force: true }).catch(() => {}),
+      api.deleteEngine(nonLlmEngineName.value, { force: true }).catch(() => {}),
       api.deleteModelRegistry(mrName.value, { force: true }).catch(() => {}),
       api.deleteModelCatalog(mcNames.a).catch(() => {}),
       api.deleteModelCatalog(mcNames.b).catch(() => {}),
@@ -296,6 +312,58 @@ test.describe("endpoints", () => {
       ).toBeVisible();
       await expect(
         showPage.getByRole("term").filter({ hasText: /updated at/i }),
+      ).toBeVisible();
+    });
+
+    test("monitor exposes LLM semantic panels", { tag: "@C2737863" }, async ({
+      endpoints,
+    }) => {
+      test.skip(
+        config.engine.name !== "vllm" && config.engine.name !== "sglang",
+        "LLM monitor panel coverage requires a vllm or sglang E2E profile",
+      );
+
+      await endpoints.goToShow(epNames.base);
+
+      const showPage = endpoints.page.locator('[data-testid="show-page"]');
+      const monitorTab = showPage.getByRole("tab", { name: /monitor/i });
+      await expect(monitorTab).toBeVisible();
+      await monitorTab.click();
+
+      const panelSelector = endpoints.page.getByRole("group", {
+        name: /monitor/i,
+      });
+      await expect(panelSelector).toBeVisible();
+      await expect(panelSelector.getByRole("button")).toHaveCount(5);
+      await expect(
+        endpoints.page.getByTitle(
+          /grafana dashboard neutree-endpoint-overview-embed/i,
+        ),
+      ).toBeVisible();
+    });
+
+    test("monitor exposes overview only for non-LLM engines", {
+      tag: "@C2737864",
+    }, async ({ endpoints }) => {
+      await endpoints.goToShow(epNames.nonLlm);
+
+      const nonLlmShowPage = endpoints.page.locator(
+        '[data-testid="show-page"]',
+      );
+      const nonLlmMonitorTab = nonLlmShowPage.getByRole("tab", {
+        name: /monitor/i,
+      });
+      await expect(nonLlmMonitorTab).toBeVisible();
+      await nonLlmMonitorTab.click();
+
+      const panelSelector = endpoints.page.getByRole("group", {
+        name: /monitor/i,
+      });
+      await expect(panelSelector).toBeHidden();
+      await expect(
+        endpoints.page.getByTitle(
+          /grafana dashboard neutree-endpoint-overview-embed/i,
+        ),
       ).toBeVisible();
     });
 
