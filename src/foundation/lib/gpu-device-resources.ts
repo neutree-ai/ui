@@ -1,3 +1,8 @@
+import {
+  compareDevicesByOrderThenUuid,
+  getDeviceOrder,
+  mergePoolTotals,
+} from "@/foundation/lib/device-resource-utils";
 import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 import type {
   ClusterResourceInfo,
@@ -113,21 +118,6 @@ const buildPoolUsage = (
   };
 };
 
-const mergePoolTotals = (
-  current: { total: number | null; available: number | null },
-  nextTotal: number | null | undefined,
-  nextAvailable: number | null | undefined,
-) => ({
-  total:
-    current.total == null && nextTotal == null
-      ? null
-      : (current.total ?? 0) + (nextTotal ?? 0),
-  available:
-    current.available == null && nextAvailable == null
-      ? null
-      : (current.available ?? 0) + (nextAvailable ?? 0),
-});
-
 const sumDevicePoolsByProduct = (
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
 ) => {
@@ -221,31 +211,6 @@ const shortenUuid = (uuid: string) => {
   }
 
   return `${uuid.slice(0, 8)}...${uuid.slice(-6)}`;
-};
-
-const getDeviceOrder = (order: number | null | undefined) =>
-  typeof order === "number" && Number.isFinite(order) ? order : null;
-
-const compareDevicesByOrderThenUuid = (
-  first: Pick<DeviceResource, "order" | "uuid">,
-  second: Pick<DeviceResource, "order" | "uuid">,
-) => {
-  const firstOrder = getDeviceOrder(first.order);
-  const secondOrder = getDeviceOrder(second.order);
-
-  if (firstOrder != null && secondOrder != null) {
-    return firstOrder - secondOrder || first.uuid.localeCompare(second.uuid);
-  }
-
-  if (firstOrder != null) {
-    return -1;
-  }
-
-  if (secondOrder != null) {
-    return 1;
-  }
-
-  return first.uuid.localeCompare(second.uuid);
 };
 
 const getProductAcceleratorType = (
