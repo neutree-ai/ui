@@ -297,6 +297,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const isEdit = action === "edit";
+  const sectionVariant = "section";
 
   const selectedVirtualization = selectedAccelerator?.virtualization;
   const isSelectedClusterVgpuEnabled =
@@ -1175,7 +1176,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // page forwards this straight to <ResourceForm submitBlocked>.
     submitBlocked: isResourceCapacityExceeded,
     metadataFields: (
-      <FormCardGrid title={t("common.sections.basicInformation")}>
+      <FormCardGrid
+        title={t("common.sections.basicInformation")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="metadata.name"
@@ -1202,7 +1206,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // Endpoint configuration order: Model & Replicas -> Engine -> Scheduling target and resources.
     templateFields: (
       <>
-        <FormCardGrid title={t("endpoints.sections.modelAndReplicas")}>
+        <FormCardGrid
+          title={t("endpoints.sections.modelAndReplicas")}
+          variant={sectionVariant}
+        >
           {!isEdit && (
             <div
               data-testid="model-catalog-row"
@@ -1330,7 +1337,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </FormCardGrid>
 
         {showFull && (
-          <FormCardGrid title={t("endpoints.sections.engineSettings")}>
+          <FormCardGrid
+            title={t("endpoints.sections.engineSettings")}
+            variant={sectionVariant}
+          >
             <FormFieldGroup
               {...form}
               name="spec.engine.engine"
@@ -1403,6 +1413,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         <FormCardGrid
           title={t("endpoints.recipe.section", "Recipe options")}
           testId="endpoint-recipe-options"
+          variant={sectionVariant}
         >
           {(() => {
             const verified = (
@@ -1600,7 +1611,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       ) : null,
     // Scheduling target and resource selection section - always visible.
     resourceFields: (
-      <FormCardGrid title={t("endpoints.sections.schedulingTargetResources")}>
+      <FormCardGrid
+        title={t("endpoints.sections.schedulingTargetResources")}
+        variant={sectionVariant}
+      >
         <div
           data-testid="endpoint-resource-config-grid"
           className="col-span-4 space-y-4"
@@ -2116,7 +2130,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // Advanced settings keep endpoint deployment controls and runtime details.
     // Hidden in simplified mode until the user expands the advanced disclosure.
     customizeFields: showFull ? (
-      <FormCardGrid title={t("endpoints.sections.advancedOptions")}>
+      <FormCardGrid
+        title={t("endpoints.sections.advancedOptions")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="spec.deployment_options.scheduler.type"
@@ -2161,31 +2178,33 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // Simplified-mode banner + disclosure toggle. Null outside simplified mode so
     // the standard create/edit layouts are unaffected.
     advancedToggle: simplified ? (
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2.5">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Sparkles className="size-4 text-primary" />
-          {t(
-            "endpoints.simplified.autoConfigured",
-            "Model, engine and resources are auto-configured from the selected variant.",
-          )}
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowAdvanced((v) => !v)}
-        >
-          {showAdvanced
-            ? t("endpoints.simplified.hideAdvanced", "Hide advanced options")
-            : t("endpoints.simplified.showAdvanced", "Show all options")}
-          <ChevronDown
-            className={cn(
-              "ml-1 size-4 transition-transform",
-              showAdvanced && "rotate-180",
+      <FormCardGrid variant={sectionVariant}>
+        <div className="col-span-4 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Sparkles className="size-4 text-primary" />
+            {t(
+              "endpoints.simplified.autoConfigured",
+              "Model, engine and resources are auto-configured from the selected variant.",
             )}
-          />
-        </Button>
-      </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            {showAdvanced
+              ? t("endpoints.simplified.hideAdvanced", "Hide advanced options")
+              : t("endpoints.simplified.showAdvanced", "Show all options")}
+            <ChevronDown
+              className={cn(
+                "ml-1 size-4 transition-transform",
+                showAdvanced && "rotate-180",
+              )}
+            />
+          </Button>
+        </div>
+      </FormCardGrid>
     ) : null,
   };
 };

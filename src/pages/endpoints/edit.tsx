@@ -1,4 +1,5 @@
 import { useEndpointForm } from "@/domains/endpoint/hooks/use-endpoint-form";
+import { FormSectionStack } from "@/foundation/components/FormSectionStack";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -21,10 +22,12 @@ export const EndpointsEdit = () => {
       submitBlocked={submitBlocked}
       title={t("endpoints.edit", "Edit Endpoint")}
     >
-      {metadataFields}
-      {templateFields}
-      {resourceFields}
-      {customizeFields}
+      <FormSectionStack>
+        {metadataFields}
+        {templateFields}
+        {resourceFields}
+        {customizeFields}
+      </FormSectionStack>
     </ResourceForm>
   );
 };
