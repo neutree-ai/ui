@@ -1,4 +1,5 @@
 import { useClusterForm } from "@/domains/cluster/hooks/use-cluster-form";
+import { FormSectionStack } from "@/foundation/components/FormSectionStack";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -16,7 +17,7 @@ export const ClustersCreate = () => {
   } = useClusterForm({ action: "create" });
   return (
     <ResourceForm {...form} title={t("clusters.create")}>
-      <div className="overflow-hidden rounded-lg border bg-card">
+      <FormSectionStack>
         {metadataFields}
         {clusterConfigurationFields}
         {providerFields}
@@ -24,7 +25,7 @@ export const ClustersCreate = () => {
         {routerFields}
         {acceleratorVirtualizationFields}
         {modelCacheFields}
-      </div>
+      </FormSectionStack>
     </ResourceForm>
   );
 };

@@ -17,16 +17,10 @@ export default function FormCardGrid({
 }: FormCardGridProps) {
   if (variant === "section") {
     return (
-      <section
-        data-testid={testId}
-        className={cn(
-          "border-t border-[var(--nt-stroke-neutral-trans-2)] first:border-t-0",
-          className,
-        )}
-      >
+      <section data-testid={testId} className={className}>
         {title && (
           <div className="px-6 pt-5">
-            <h2 className="text-sm font-semibold leading-5 text-[var(--nt-text-neutral-super)]">
+            <h2 className="text-base font-semibold leading-6 text-[var(--nt-text-neutral-super)]">
               {title}
             </h2>
           </div>

@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/form";
 import { cn } from "@/foundation/lib/utils";
 
+const formFieldLabelClassName =
+  "text-sm font-normal leading-[22px] text-[var(--nt-text-neutral-secondary)]";
+
 type FieldProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -45,7 +48,11 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
                   : "",
               )}
             >
-              {!props.isCheckbox && <FormLabel>{props.label}</FormLabel>}
+              {!props.isCheckbox && (
+                <FormLabel className={formFieldLabelClassName}>
+                  {props.label}
+                </FormLabel>
+              )}
               <FormControl>
                 {cloneElement(props.children, {
                   ...field,
@@ -53,7 +60,7 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
                 })}
               </FormControl>
               {props.isCheckbox && (
-                <FormLabel className="text-sm font-normal">
+                <FormLabel className={formFieldLabelClassName}>
                   {props.label}
                 </FormLabel>
               )}

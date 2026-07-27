@@ -488,18 +488,16 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ) : null,
     modelCacheFields: (
-      <div>
-        <FormCardGrid
-          title={t("clusters.sections.modelCaches")}
+      <FormCardGrid
+        title={t("clusters.sections.modelCaches")}
+        variant={sectionVariant}
+      >
+        <ModelCacheFields
+          form={form}
+          disabled={isModelCacheDisabled}
           variant={sectionVariant}
-        >
-          <ModelCacheFields
-            form={form}
-            disabled={isModelCacheDisabled}
-            variant={sectionVariant}
-          />
-        </FormCardGrid>
-      </div>
+        />
+      </FormCardGrid>
     ),
     authFields: isKubernetes ? null : (
       <FormCardGrid
