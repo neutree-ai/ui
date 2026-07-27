@@ -3,7 +3,6 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,11 +21,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   type DateRange,
   DateRangePicker,
   trailingRange,
@@ -39,8 +33,10 @@ import { type AITrace, fetchAITraces } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import { StatusCodeFilter } from "./components/StatusCodeFilter";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
 import { TraceStatsChart } from "./components/TraceStatsChart";
+import { StatusBadge } from "./status";
 
 const LIMIT = 50;
 
@@ -187,25 +183,7 @@ export const AITracesList = () => {
             <SelectItem value="external-endpoint">external-endpoint</SelectItem>
           </SelectContent>
         </Select>
-        <Select
-          value={status || "all"}
-          onValueChange={(v) => setStatus(v === "all" ? "" : v)}
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder={t("ai_traces.filters.status")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              {t("ai_traces.filters.allStatuses")}
-            </SelectItem>
-            <SelectItem value="200">200</SelectItem>
-            <SelectItem value="400">400</SelectItem>
-            <SelectItem value="401">401</SelectItem>
-            <SelectItem value="429">429</SelectItem>
-            <SelectItem value="500">500</SelectItem>
-            <SelectItem value="502">502</SelectItem>
-          </SelectContent>
-        </Select>
+        <StatusCodeFilter value={status} onChange={setStatus} />
         <Input
           className="w-[200px]"
           placeholder={t("ai_traces.filters.model")}
@@ -423,43 +401,4 @@ function formatDuration(durationMs?: number): React.ReactNode {
     return <span className="text-muted-foreground">-</span>;
   }
   return `${(durationMs / 1000).toFixed(2)} s`;
-}
-
-// Status codes with a maintained, gateway-accurate description (includes the
-// non-standard 499 "client closed request" and 504 "gateway timeout" seen from
-// the Kong layer). Codes outside this set fall back to a status-class hint.
-const DESCRIBED_STATUS_CODES = new Set([
-  400, 401, 403, 404, 408, 429, 499, 500, 502, 503, 504,
-]);
-
-const StatusBadge = ({ status }: { status: number }) => {
-  const { t } = useTranslation();
-  const variant =
-    status >= 200 && status < 300
-      ? "default"
-      : status >= 400 && status < 500
-        ? "outline"
-        : "destructive";
-  const description = statusDescription(status, t);
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Badge variant={variant} className="cursor-help">
-          {status || "-"}
-        </Badge>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-[260px]">{description}</TooltipContent>
-    </Tooltip>
-  );
-};
-
-function statusDescription(status: number, t: (key: string) => string): string {
-  if (DESCRIBED_STATUS_CODES.has(status)) {
-    return t(`ai_traces.status.description.${status}`);
-  }
-  if (status >= 200 && status < 300) return t("ai_traces.status.classSuccess");
-  if (status >= 300 && status < 400) return t("ai_traces.status.classRedirect");
-  if (status >= 400 && status < 500) return t("ai_traces.status.classClient");
-  if (status >= 500) return t("ai_traces.status.classServer");
-  return t("ai_traces.status.unknown");
 }

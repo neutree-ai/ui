@@ -1481,6 +1481,8 @@
 			"allTypes": "All types",
 			"status": "Status",
 			"allStatuses": "All statuses",
+			"statusSearch": "Type or pick a status code",
+			"statusHint": "Enter a 3-digit status code (100–599).",
 			"model": "Model",
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",
@@ -1501,12 +1503,14 @@
 			"finishReason": "Finish"
 		},
 		"status": {
+			"classInfo": "Informational — the server acknowledged the request and is still processing it.",
 			"classSuccess": "Success — the request completed normally.",
 			"classRedirect": "Redirect.",
 			"classClient": "Client error — the request was rejected.",
 			"classServer": "Server error — the gateway or upstream failed.",
 			"unknown": "Unknown status.",
 			"description": {
+				"200": "OK — the request completed successfully.",
 				"400": "Bad request — the request was malformed or rejected by the gateway.",
 				"401": "Unauthorized — the API key is missing or invalid.",
 				"403": "Forbidden — the API key is not allowed to access this resource.",
@@ -1518,6 +1522,25 @@
 				"502": "Bad gateway — the upstream returned an invalid response.",
 				"503": "Service unavailable — no healthy upstream was available to serve the request.",
 				"504": "Gateway timeout — the upstream did not respond within the time limit."
+			},
+			"shortInfo": "Informational",
+			"shortSuccess": "Success",
+			"shortRedirect": "Redirect",
+			"shortClient": "Client error",
+			"shortServer": "Server error",
+			"short": {
+				"200": "OK",
+				"400": "Bad request",
+				"401": "Unauthorized",
+				"403": "Forbidden",
+				"404": "Not found",
+				"408": "Request timeout",
+				"429": "Too many requests",
+				"499": "Client closed request",
+				"500": "Internal server error",
+				"502": "Bad gateway",
+				"503": "Service unavailable",
+				"504": "Gateway timeout"
 			}
 		},
 		"detail": {
