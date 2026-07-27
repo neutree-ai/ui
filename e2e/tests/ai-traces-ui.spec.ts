@@ -2,8 +2,9 @@ import { expect, test } from "../fixtures/base";
 import { aiTraceEnv, chatCompletion } from "../helpers/ai-trace";
 
 // TestRail suite 2420, Access Log section — frontend UI cases
-// (列表 / 活动柱状图 / 详情抽屉). The ai-traces UI has no data-testids, so
-// selectors rely on the i18n labels. Opt-in via E2E_AITRACE_ENDPOINT.
+// (list / activity chart / detail drawer). The ai-traces UI is almost free of
+// data-testids, so selectors mostly rely on the i18n labels.
+// Opt-in via E2E_AITRACE_ENDPOINT.
 
 const env = aiTraceEnv();
 const e = env as NonNullable<typeof env>;
@@ -102,6 +103,32 @@ test.describe("access log — UI", () => {
     await page
       .getByPlaceholder("Endpoint name")
       .fill(`no-such-endpoint-${Date.now()}`);
+    await expect(
+      page.getByText("No access logs in the selected window."),
+    ).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("status filter accepts both suggested and free-typed codes", async ({
+    page,
+  }) => {
+    await openFiltered(page);
+    const rows = page.locator("tbody tr");
+    await expect(rows.first()).toBeVisible({ timeout: 15_000 });
+
+    const trigger = page.getByTestId("status-filter");
+    const options = page.locator('[data-state="open"][role="dialog"]');
+
+    // A suggested code — the seeded traces all succeeded.
+    await trigger.click();
+    await options.getByRole("option", { name: /^200/ }).click();
+    await expect(trigger).toHaveText("200");
+    await expect(rows.first()).toBeVisible({ timeout: 15_000 });
+
+    // A code that is not in the suggestion list is still selectable.
+    await trigger.click();
+    await options.getByPlaceholder("Type or pick a status code").fill("418");
+    await options.getByRole("option", { name: /^418/ }).click();
+    await expect(trigger).toHaveText("418");
     await expect(
       page.getByText("No access logs in the selected window."),
     ).toBeVisible({ timeout: 15_000 });

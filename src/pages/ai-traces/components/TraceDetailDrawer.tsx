@@ -32,6 +32,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { type AITrace, fetchAITrace } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { StatusBadge } from "../status";
 
 type Props = {
   trace: AITrace | null;
@@ -115,17 +116,7 @@ const MetaGrid = ({ trace }: { trace: AITrace }) => {
         <Timestamp timestamp={trace.time} format="YYYY-MM-DD HH:mm:ss" />
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.status")}>
-        <Badge
-          variant={
-            trace.response_status >= 200 && trace.response_status < 300
-              ? "default"
-              : trace.response_status >= 400 && trace.response_status < 500
-                ? "outline"
-                : "destructive"
-          }
-        >
-          {trace.response_status || "-"}
-        </Badge>
+        <StatusBadge status={trace.response_status} />
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.endpoint")}>
         <EndpointLink
