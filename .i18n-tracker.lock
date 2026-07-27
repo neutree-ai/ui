@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "a2ebabd7035347e83eb48536602b2fe1",
-  "src/App.tsx": "0b6988c2f23930d5a8f5808ff1649bef",
+  "src/App.tsx": "fde81ee0bd7da1cc39c7ed969abed825",
   "src/Root.tsx": "dd7ccc8e83bb3cb7f8c8fb879e4aa203",
   "src/index.tsx": "6eaed6f7788c9ba4ace41044c3cbc5a8",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",
@@ -337,7 +337,6 @@
   "src/domains/api-key/components/TokenQuotaField.tsx": "a7c98aedb46387b79bc766104feb9217",
   "src/domains/endpoint/components/ParameterSlider.tsx": "f9fd46610b6416c4164158bd71302930",
   "src/foundation/lib/device-resource-utils.ts": "7be0c31919e517221667a491023cf5a1",
-  "src/pages/component-gallery/index.tsx": "d94f691af3e75cf3b2c3bc5faae2d842",
   "src/pages/ai-traces/status.tsx": "115ed148e0cb242ef1a5bc53c0408097",
   "src/pages/ai-traces/components/StatusCodeFilter.tsx": "9f36fc145c432c079c278378ba8cf882"
 }

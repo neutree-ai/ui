@@ -52,11 +52,6 @@ const AuthPage = lazy(() =>
   import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),
 );
 const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
-const ComponentGallery = lazy(() =>
-  import("./pages/component-gallery").then((m) => ({
-    default: m.ComponentGallery,
-  })),
-);
 
 const AITracesList = lazy(() =>
   import("./pages/ai-traces/list").then((m) => ({ default: m.AITracesList })),
@@ -449,14 +444,6 @@ const resources: ResourceProps[] = [
   {
     name: "settings",
   },
-  {
-    name: "component_gallery",
-    list: "/component-gallery",
-    meta: {
-      icon: <LayoutTemplate />,
-      parent: "settings",
-    },
-  },
   // {
   //   name: "vram_calculator",
   //   list: "/vram-calculator",
@@ -574,10 +561,6 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   element={<NavigateToResource resource="dashboard" />}
                 />
                 <Route path="/dashboard" index element={<Dashboard />} />
-                <Route
-                  path="/component-gallery"
-                  element={<ComponentGallery />}
-                />
                 {/* <Route path="/vram-calculator" element={<VRAMCalculator />} /> */}
 
                 <Route
