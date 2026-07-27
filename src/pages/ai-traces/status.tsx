@@ -43,6 +43,7 @@ export function statusDescription(
   if (DESCRIBED.has(status)) {
     return t(`ai_traces.status.description.${status}`);
   }
+  if (status >= 100 && status < 200) return t("ai_traces.status.classInfo");
   if (status >= 200 && status < 300) return t("ai_traces.status.classSuccess");
   if (status >= 300 && status < 400) return t("ai_traces.status.classRedirect");
   if (status >= 400 && status < 500) return t("ai_traces.status.classClient");
@@ -61,6 +62,7 @@ export function statusShortLabel(
   if (DESCRIBED.has(status)) {
     return t(`ai_traces.status.short.${status}`);
   }
+  if (status >= 100 && status < 200) return t("ai_traces.status.shortInfo");
   if (status >= 200 && status < 300) return t("ai_traces.status.shortSuccess");
   if (status >= 300 && status < 400) return t("ai_traces.status.shortRedirect");
   if (status >= 400 && status < 500) return t("ai_traces.status.shortClient");

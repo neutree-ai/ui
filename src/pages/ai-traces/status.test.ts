@@ -57,6 +57,8 @@ describe("statusDescription", () => {
   });
 
   it("falls back to a status-class hint for unlisted codes", () => {
+    // Every code parseStatusCode accepts gets a class hint, 1xx included.
+    expect(statusDescription(100, t)).toBe("ai_traces.status.classInfo");
     expect(statusDescription(204, t)).toBe("ai_traces.status.classSuccess");
     expect(statusDescription(302, t)).toBe("ai_traces.status.classRedirect");
     expect(statusDescription(418, t)).toBe("ai_traces.status.classClient");
@@ -71,6 +73,7 @@ describe("statusShortLabel", () => {
   });
 
   it("falls back to a class label for unlisted codes", () => {
+    expect(statusShortLabel(100, t)).toBe("ai_traces.status.shortInfo");
     expect(statusShortLabel(204, t)).toBe("ai_traces.status.shortSuccess");
     expect(statusShortLabel(302, t)).toBe("ai_traces.status.shortRedirect");
     expect(statusShortLabel(418, t)).toBe("ai_traces.status.shortClient");

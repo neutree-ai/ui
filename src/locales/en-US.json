@@ -1503,6 +1503,7 @@
 			"finishReason": "Finish"
 		},
 		"status": {
+			"classInfo": "Informational — the server acknowledged the request and is still processing it.",
 			"classSuccess": "Success — the request completed normally.",
 			"classRedirect": "Redirect.",
 			"classClient": "Client error — the request was rejected.",
@@ -1522,6 +1523,7 @@
 				"503": "Service unavailable — no healthy upstream was available to serve the request.",
 				"504": "Gateway timeout — the upstream did not respond within the time limit."
 			},
+			"shortInfo": "Informational",
 			"shortSuccess": "Success",
 			"shortRedirect": "Redirect",
 			"shortClient": "Client error",
