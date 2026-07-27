@@ -7,9 +7,7 @@ export const ClustersEdit = () => {
   const {
     form,
     metadataFields,
-    imageRegistryFields,
-    versionFields,
-    typeFields,
+    clusterConfigurationFields,
     providerFields,
     routerFields,
     acceleratorVirtualizationFields,
@@ -18,15 +16,15 @@ export const ClustersEdit = () => {
   } = useClusterForm({ action: "edit" });
   return (
     <ResourceForm {...form} title={t("clusters.edit")}>
-      {metadataFields}
-      {imageRegistryFields}
-      {typeFields}
-      {versionFields}
-      {providerFields}
-      {routerFields}
-      {acceleratorVirtualizationFields}
-      {modelCacheFields}
-      {authFields}
+      <div className="overflow-hidden rounded-lg border bg-card">
+        {metadataFields}
+        {clusterConfigurationFields}
+        {providerFields}
+        {authFields}
+        {routerFields}
+        {acceleratorVirtualizationFields}
+        {modelCacheFields}
+      </div>
     </ResourceForm>
   );
 };

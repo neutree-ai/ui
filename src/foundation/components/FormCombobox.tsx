@@ -69,7 +69,7 @@ export const FormCombobox = forwardRef<
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full justify-between overflow-hidden",
+              "w-full justify-between overflow-hidden text-[var(--nt-text-neutral-secondary)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
               !value() && "text-muted-foreground",
             )}
           >

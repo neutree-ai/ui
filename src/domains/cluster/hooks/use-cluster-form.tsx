@@ -63,7 +63,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const isEdit = action === "edit";
-  const sectionVariant = isEdit ? "card" : "section";
+  const sectionVariant = "section";
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {

@@ -62,8 +62,9 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
         // biome-ignore lint/a11y/useSemanticElements: follow shadcn-ui
         role="combobox"
         aria-expanded={open}
+        disabled={disabled}
         className={cn(
-          "w-full flex justify-between overflow-clip",
+          "w-full flex justify-between overflow-clip text-[var(--nt-text-neutral-secondary)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
           !value && "text-[var(--nt-text-neutral-quaternary)]",
           triggerClassName,
         )}
