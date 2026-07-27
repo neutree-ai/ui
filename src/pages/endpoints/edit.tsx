@@ -1,7 +1,9 @@
 import { useEndpointForm } from "@/domains/endpoint/hooks/use-endpoint-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
+import { useTranslation } from "@/foundation/lib/i18n";
 
 export const EndpointsEdit = () => {
+  const { t } = useTranslation();
   const {
     form,
     submitBlocked,
@@ -14,7 +16,11 @@ export const EndpointsEdit = () => {
   });
 
   return (
-    <ResourceForm {...form} submitBlocked={submitBlocked}>
+    <ResourceForm
+      {...form}
+      submitBlocked={submitBlocked}
+      title={t("endpoints.edit", "Edit Endpoint")}
+    >
       {metadataFields}
       {templateFields}
       {resourceFields}

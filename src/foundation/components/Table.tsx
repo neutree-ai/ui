@@ -69,6 +69,11 @@ import {
   TableRow,
   Table as TableUi,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { BatchDeleteBar } from "@/foundation/components/BatchDeleteBar";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
@@ -330,7 +335,7 @@ export const RowAction: FC<RowActionProps> = (props) => {
       {props.asChild ? (
         props.children
       ) : props.to ? (
-        <Link href={props.to} title={props.title} className="hover:bg-accent">
+        <Link href={props.to}>
           {props.icon ? <span className="mr-2">{props.icon}</span> : null}
           {props.title}
         </Link>
@@ -469,16 +474,22 @@ const DataTableViewOptions = <TData,>({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto hidden h-8 lg:flex"
-        >
-          <MixerHorizontalIcon className="mr-2 h-4 w-4" />
-          {t("table.columns")}
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="ml-auto hidden h-8 w-8 lg:inline-flex"
+              aria-label={t("table.columns")}
+              title={t("table.columns")}
+            >
+              <MixerHorizontalIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{t("table.columns")}</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-[150px]">
         <DropdownMenuLabel>{t("table.toggleColumns")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -519,14 +530,14 @@ function DataTableToolbar<TData>({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-1 items-center space-x-2">
+    <div className="flex min-h-8 items-center justify-between gap-2">
+      <div className="flex flex-1 flex-wrap items-center gap-2">
         {searchField && refineTable && (
           <TableSearch field={searchField} table={refineTable} />
         )}
         {filters}
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex shrink-0 items-center gap-2">
         {actions}
         <DataTableViewOptions table={table} />
       </div>

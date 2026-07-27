@@ -1,5 +1,4 @@
 import { useShow } from "@refinedev/core";
-import { Card, CardContent } from "@/components/ui/card";
 import ImageRegistryStatus from "@/domains/image-registry/components/ImageRegistryStatus";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import { Loader } from "@/foundation/components/Loader";
@@ -23,20 +22,31 @@ export const ImageRegistriesShow = () => {
   }
 
   return (
-    <ShowPage record={record}>
-      <MetadataCard metadata={record.metadata} />
-      <Card className="mt-4">
-        <CardContent>
-          <ShowPage.Row title={t("common.fields.status")}>
-            <ImageRegistryStatus {...record.status} />
-          </ShowPage.Row>
-          <div className="grid grid-cols-4 gap-8">
+    <ShowPage record={record} showCurrentBreadcrumb={false}>
+      <ShowPage.ObjectHeader
+        title={record.metadata.name}
+        status={<ImageRegistryStatus {...record.status} />}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("image_registries.fields.repository")}>
+              {record.spec.repository}
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("common.fields.workspace")}>
+              {record.metadata.workspace ?? "-"}
+            </ShowPage.Meta>
+          </span>
+        }
+      />
+      <div className="mt-4 space-y-4">
+        <MetadataCard metadata={record.metadata} showName={false} />
+        <ShowPage.Section title={t("common.sections.configuration")}>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
             <ShowPage.Row title={t("image_registries.fields.repo")}>
               {record.spec.url}/{record.spec.repository}
             </ShowPage.Row>
           </div>
-        </CardContent>
-      </Card>
+        </ShowPage.Section>
+      </div>
     </ShowPage>
   );
 };

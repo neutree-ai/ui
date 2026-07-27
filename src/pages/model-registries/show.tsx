@@ -1,6 +1,5 @@
 import { useShow } from "@refinedev/core";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import type { ModelRegistry } from "@/domains/model-registry/types";
@@ -25,14 +24,25 @@ export const ModelRegistriesShow = () => {
   }
 
   return (
-    <ShowPage record={record}>
-      <MetadataCard metadata={record.metadata} />
-      <Card className="mt-4">
-        <CardContent>
-          <ShowPage.Row title={t("common.fields.status")}>
-            <ModelRegistryStatus {...record.status} />
-          </ShowPage.Row>
-          <div className="grid grid-cols-4 gap-8">
+    <ShowPage record={record} showCurrentBreadcrumb={false}>
+      <ShowPage.ObjectHeader
+        title={record.metadata.name}
+        status={<ModelRegistryStatus {...record.status} />}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("common.fields.type")}>
+              <ModelRegistryType type={record.spec.type} />
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("common.fields.workspace")}>
+              {record.metadata.workspace ?? "-"}
+            </ShowPage.Meta>
+          </span>
+        }
+      />
+      <div className="mt-4 space-y-4">
+        <MetadataCard metadata={record.metadata} showName={false} />
+        <ShowPage.Section title={t("common.sections.configuration")}>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
             <ShowPage.Row title={t("common.fields.type")}>
               <ModelRegistryType type={record.spec.type} />
             </ShowPage.Row>
@@ -44,8 +54,8 @@ export const ModelRegistriesShow = () => {
               </a>
             </ShowPage.Row>
           </div>
-        </CardContent>
-      </Card>
+        </ShowPage.Section>
+      </div>
     </ShowPage>
   );
 };

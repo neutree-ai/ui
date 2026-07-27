@@ -2,58 +2,227 @@
 
 @layer base {
 	:root {
-		--background: 0 0% 97.69%;
-		--foreground: 334 55% 1%;
-		--muted: 0 0% 93.85%;
-		--muted-foreground: 206.04 0% 50.77%;
+		--background: 222 38.46% 94.9%;
+		--foreground: 216.52 100% 9.02%;
+		--muted: 217.5 44.44% 96.47%;
+		--muted-foreground: 224.05 36% 38%;
 		--popover: 0 0% 100%;
-		--popover-foreground: 0 0% 10.2%;
+		--popover-foreground: 216.52 100% 9.02%;
 		--card: 0 0% 100%;
-		--card-foreground: 0 0% 13.73%;
-		--border: 0 0% 80.78%;
-		--input: 0 0% 80.78%;
-		--primary: 211.29 100% 50%;
+		--card-foreground: 216.52 100% 9.02%;
+		--border: 218.57 35% 92.16%;
+		--input: 218 31% 75%;
+		--primary: 209.88 100% 50%;
 		--primary-foreground: 0 0% 100%;
-		--secondary: 0 0% 85.49%;
-		--secondary-foreground: 334 0% 10%;
-		--accent: 211.29 100% 50%;
-		--accent-foreground: 334 0% 100%;
-		--destructive: 3.19 100% 59.41%;
-		--destructive-foreground: 18 0% 100%;
-		--ring: 0 0% 60%;
-		--chart-1: 211.29 100% 50%;
-		--chart-2: 0 0% 85.49%;
-		--chart-3: 211.29 100% 50%;
-		--chart-4: 0 0% 88.49%;
-		--chart-5: 211.29 103% 50%;
-		--radius: 0.5rem;
+		--secondary: 217.5 44.44% 96.47%;
+		--secondary-foreground: 224.05 57.66% 26.86%;
+		--accent: 208.8 100% 95.1%;
+		--accent-foreground: 224.05 57.66% 26.86%;
+		--destructive: 3.37 85.58% 59.22%;
+		--destructive-foreground: 0 0% 100%;
+		--ring: 209.88 100% 50%;
+		--chart-1: 209.88 100% 50%;
+		--chart-2: 150 100% 36.47%;
+		--chart-3: 37.07 99.19% 51.37%;
+		--chart-4: 255.14 91.74% 76.27%;
+		--chart-5: 3.37 85.58% 59.22%;
+		--radius: 0.375rem;
+
+		--nt-pagebackground-primary: #ffffff;
+		--nt-pagebackground-grouped: #edf0f7;
+		--nt-fill-neutral-white: #ffffff;
+		--nt-fill-neutral-opaque-1: #f2f5fa;
+		--nt-fill-neutral-opaque-2: #edf0f7;
+		--nt-fill-neutral-opaque-3: #e4e9f2;
+		--nt-fill-neutral-trans-3: rgba(211, 218, 235, 0.6);
+		--nt-stroke-neutral-trans-2: rgba(211, 218, 235, 0.6);
+		--nt-stroke-neutral-trans-3: rgba(172, 186, 211, 0.6);
+		--nt-stroke-neutral-trans-4: rgba(107, 128, 167, 0.6);
+		--nt-text-neutral-primary: #00122e;
+		--nt-text-neutral-super: #1d326c;
+		--nt-text-neutral-secondary: rgba(44, 56, 82, 0.75);
+		--nt-text-neutral-tertiary: rgba(44, 56, 82, 0.6);
+		--nt-text-neutral-quaternary: rgba(0, 21, 64, 0.3);
+		--nt-text-neutral-ontint: #ffffff;
+		--nt-text-colorful-outstanding: #0080ff;
+		--nt-fill-outstanding-base: #0080ff;
+		--nt-fill-outstanding-bright: #009dff;
+		--nt-fill-outstanding-dark: #005ed1;
+		--nt-fill-outstanding-light: rgba(0, 136, 255, 0.1);
+		--nt-fill-outstanding-lighthover: rgba(0, 136, 255, 0.16);
+		--nt-fill-outstanding-thin: rgba(0, 136, 255, 0.04);
+		--nt-fill-positive-base: #00ba5d;
+		--nt-fill-notice-base: #fea008;
+		--nt-fill-serious-base: #f0483e;
+		--nt-fill-serious-bright: #ff5252;
+		--nt-fill-purple-base: #7e41ff;
+		--nt-stroke-outstanding-base: #0080ff;
+		--nt-stroke-serious-base: #f0483e;
+		--nt-effect-button-shadow-push-button-cta: 0px 1px 2px 0px
+			rgba(44, 56, 82, 0.18);
+		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px
+			rgba(44, 56, 82, 0.18);
+		--nt-effect-dashboard-card-shadow-normal:
+			0px 0px 2.003px 0px rgba(107, 125, 153, 0.15),
+			0px 0px 16px 0px rgba(107, 125, 153, 0.08);
+		--nt-effect-dashboard-card-shadow-on-hover-float:
+			0px 8px 16px 0px rgba(10, 37, 85, 0.18),
+			0px 0px 4px -2px rgba(10, 37, 85, 0.18);
+		--nt-effect-menu-shadow-default:
+			0px 12px 40px 0px rgba(45, 58, 86, 0.3),
+			0px 0px 10px 0px rgba(107, 125, 153, 0.18);
+		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(29, 50, 108, 0.6);
+		--nt-outline-hover: 0px 0px 0px 4px rgba(225, 230, 241, 0.6);
+		--nt-outline-active-focus: 0px 0px 0px 4px rgba(0, 136, 255, 0.16);
+		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(255, 74, 74, 0.16);
+		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(254, 160, 8, 0.16);
+		--nt-font-family-sans:
+			Inter, "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+		--nt-font-family-mono:
+			"JetBrains Mono", "Fira Code", ui-monospace, "SF Mono", Menlo, Monaco,
+			monospace;
+		--nt-font-page-title: 700 32px / 40px var(--nt-font-family-sans);
+		--nt-font-section-title: 600 20px / 28px var(--nt-font-family-sans);
+		--nt-font-component-title: 600 16px / 24px var(--nt-font-family-sans);
+		--nt-font-body: 400 14px / 22px var(--nt-font-family-sans);
+		--nt-font-compact: 400 13px / 20px var(--nt-font-family-sans);
+		--nt-font-caption: 400 12px / 18px var(--nt-font-family-sans);
+		--nt-font-meta: 600 11px / 16px var(--nt-font-family-sans);
+		--nt-radius-button: 6px;
+		--nt-radius-input: 5px;
+		--nt-radius-checkbox: 3px;
+		--nt-radius-card: 10px;
+		--nt-motion-fast: 140ms ease;
+		--nt-motion-medium: 220ms ease;
+
+		--pagebackground-primary: var(--nt-pagebackground-primary);
+		--pagebackground-grouped: var(--nt-pagebackground-grouped);
+		--fill-neutral-white: var(--nt-fill-neutral-white);
+		--fill-neutral-opaque-1: var(--nt-fill-neutral-opaque-1);
+		--fill-neutral-opaque-2: var(--nt-fill-neutral-opaque-2);
+		--fill-neutral-opaque-3: var(--nt-fill-neutral-opaque-3);
+		--fill-neutral-trans-3: var(--nt-fill-neutral-trans-3);
+		--stroke-neutral-trans-2: var(--nt-stroke-neutral-trans-2);
+		--stroke-neutral-trans-3: var(--nt-stroke-neutral-trans-3);
+		--stroke-neutral-trans-4: var(--nt-stroke-neutral-trans-4);
+		--text-neutral-primary: var(--nt-text-neutral-primary);
+		--text-neutral-super: var(--nt-text-neutral-super);
+		--text-neutral-secondary: var(--nt-text-neutral-secondary);
+		--text-neutral-tertiary: var(--nt-text-neutral-tertiary);
+		--text-neutral-quaternary: var(--nt-text-neutral-quaternary);
+		--text-neutral-ontint: var(--nt-text-neutral-ontint);
+		--text-colorful-outstanding: var(--nt-text-colorful-outstanding);
+		--fill-outstanding-base: var(--nt-fill-outstanding-base);
+		--fill-outstanding-bright: var(--nt-fill-outstanding-bright);
+		--fill-outstanding-dark: var(--nt-fill-outstanding-dark);
+		--fill-outstanding-light: var(--nt-fill-outstanding-light);
+		--fill-outstanding-lighthover: var(--nt-fill-outstanding-lighthover);
+		--fill-outstanding-thin: var(--nt-fill-outstanding-thin);
+		--fill-positive-base: var(--nt-fill-positive-base);
+		--fill-notice-base: var(--nt-fill-notice-base);
+		--fill-serious-base: var(--nt-fill-serious-base);
+		--fill-serious-bright: var(--nt-fill-serious-bright);
+		--fill-purple-base: var(--nt-fill-purple-base);
+		--stroke-outstanding-base: var(--nt-stroke-outstanding-base);
+		--stroke-serious-base: var(--nt-stroke-serious-base);
+		--button-shadow-push-button-cta: var(
+			--nt-effect-button-shadow-push-button-cta
+		);
+		--button-shadow-push-button-ordinary: var(
+			--nt-effect-button-shadow-push-button-ordinary
+		);
+		--dashboard-card-shadow-normal: var(
+			--nt-effect-dashboard-card-shadow-normal
+		);
+		--dashboard-card-shadow-on-hover-float: var(
+			--nt-effect-dashboard-card-shadow-on-hover-float
+		);
+		--menu-shadow-default: var(--nt-effect-menu-shadow-default);
+		--tooltip-shadow: var(--nt-effect-tooltip-shadow);
+		--outline-hover: var(--nt-outline-hover);
+		--outline-active-focus: var(--nt-outline-active-focus);
+		--outline-active-focus-error: var(--nt-outline-active-focus-error);
+		--outline-active-focus-notice: var(--nt-outline-active-focus-notice);
 	}
 
 	.dark {
-		--background: 217.5 9.09% 17.25%;
-		--foreground: 334 34% 98%;
-		--muted: 210 9.09% 12.94%;
-		--muted-foreground: 334 0% 60.77%;
-		--popover: 210 9.09% 12.94%;
-		--popover-foreground: 334 34% 98%;
-		--card: 210 9.09% 12.94%;
-		--card-foreground: 334 34% 98%;
-		--border: 334 0% 18.46%;
-		--input: 214.29 5.04% 27.25%;
-		--primary: 226.73 58.43% 65.1%;
+		--background: 220 48.84% 8.43%;
+		--foreground: 217.5 53.33% 94.12%;
+		--muted: 216.77 43.66% 13.92%;
+		--muted-foreground: 217.5 35.71% 78.04%;
+		--popover: 217.71 43.21% 15.88%;
+		--popover-foreground: 217.5 53.33% 94.12%;
+		--card: 217.24 46.03% 12.35%;
+		--card-foreground: 217.5 53.33% 94.12%;
+		--border: 216 30% 34%;
+		--input: 216 32% 40%;
+		--primary: 210 100% 61.57%;
 		--primary-foreground: 0 0% 100%;
-		--secondary: 214.29 5.04% 27.25%;
-		--secondary-foreground: 334 0% 100%;
-		--accent: 217.5 9.09% 17.25%;
-		--accent-foreground: 226.73 58.43% 65.1%;
-		--destructive: 358.16 68.78% 53.53%;
+		--secondary: 216.77 43.66% 13.92%;
+		--secondary-foreground: 217.5 53.33% 94.12%;
+		--accent: 216.28 43.43% 19.41%;
+		--accent-foreground: 210 100% 61.57%;
+		--destructive: 3.8 100% 69.02%;
 		--destructive-foreground: 0 0% 100%;
-		--ring: 217.5 9.09% 17.25%;
-		--chart-1: 226.73 58.43% 65.1%;
-		--chart-2: 214.29 5.04% 27.25%;
-		--chart-3: 217.5 9.09% 17.25%;
-		--chart-4: 214.29 5.04% 30.25%;
-		--chart-5: 226.73 61.43% 65.1%;
+		--ring: 210 100% 61.57%;
+		--chart-1: 210 100% 61.57%;
+		--chart-2: 150 65.87% 49.41%;
+		--chart-3: 38.66 100% 61.96%;
+		--chart-4: 255.14 91.74% 76.27%;
+		--chart-5: 3.8 100% 69.02%;
+
+		--nt-pagebackground-primary: #111c2e;
+		--nt-pagebackground-grouped: #0b1220;
+		--nt-fill-neutral-white: #111c2e;
+		--nt-fill-neutral-opaque-1: #142033;
+		--nt-fill-neutral-opaque-2: #17243a;
+		--nt-fill-neutral-opaque-3: #1c2d47;
+		--nt-fill-neutral-trans-3: rgba(28, 45, 71, 0.72);
+		--nt-stroke-neutral-trans-2: rgba(179, 194, 219, 0.28);
+		--nt-stroke-neutral-trans-3: rgba(179, 194, 219, 0.5);
+		--nt-stroke-neutral-trans-4: rgba(179, 194, 219, 0.68);
+		--nt-text-neutral-primary: #e8eef8;
+		--nt-text-neutral-super: #f5f8fd;
+		--nt-text-neutral-secondary: rgba(208, 218, 235, 0.78);
+		--nt-text-neutral-tertiary: rgba(179, 194, 219, 0.62);
+		--nt-text-neutral-quaternary: rgba(179, 194, 219, 0.38);
+		--nt-text-neutral-ontint: #ffffff;
+		--nt-text-colorful-outstanding: #3b9dff;
+		--nt-fill-outstanding-base: #3b9dff;
+		--nt-fill-outstanding-bright: #66b7ff;
+		--nt-fill-outstanding-dark: #1d73d8;
+		--nt-fill-outstanding-light: rgba(59, 157, 255, 0.16);
+		--nt-fill-outstanding-lighthover: rgba(59, 157, 255, 0.22);
+		--nt-fill-outstanding-thin: rgba(59, 157, 255, 0.1);
+		--nt-fill-positive-base: #2bd17e;
+		--nt-fill-notice-base: #ffba3d;
+		--nt-fill-serious-base: #ff6b61;
+		--nt-fill-serious-bright: #ff8a82;
+		--nt-fill-purple-base: #a78bfa;
+		--nt-stroke-outstanding-base: #3b9dff;
+		--nt-stroke-serious-base: #ff6b61;
+		--nt-effect-button-shadow-push-button-cta: 0px 1px 2px 0px
+			rgba(0, 0, 0, 0.32);
+		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px
+			rgba(0, 0, 0, 0.32);
+		--nt-effect-dashboard-card-shadow-normal:
+			0px 0px 2px 0px rgba(0, 0, 0, 0.28), 0px 0px 16px 0px rgba(0, 0, 0, 0.18);
+		--nt-effect-dashboard-card-shadow-on-hover-float:
+			0px 8px 16px 0px rgba(0, 0, 0, 0.34), 0px 0px 4px -2px rgba(0, 0, 0, 0.28);
+		--nt-effect-menu-shadow-default:
+			0px 12px 40px 0px rgba(0, 0, 0, 0.42),
+			0px 0px 10px 0px rgba(0, 0, 0, 0.26);
+		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.5);
+		--nt-outline-hover: 0px 0px 0px 4px rgba(179, 194, 219, 0.14);
+		--nt-outline-active-focus: 0px 0px 0px 4px rgba(59, 157, 255, 0.2);
+		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(255, 107, 97, 0.2);
+		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(255, 186, 61, 0.2);
+		--nt-radius-button: 6px;
+		--nt-radius-input: 5px;
+		--nt-radius-checkbox: 3px;
+		--nt-radius-card: 10px;
+		--nt-motion-fast: 140ms ease;
+		--nt-motion-medium: 220ms ease;
 	}
 }
 

@@ -1,5 +1,4 @@
 import { useShow } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
@@ -29,13 +28,11 @@ export const WorkspacesShow = () => {
   const { metadata } = record;
 
   return (
-    <ShowPage record={record} canEdit={false}>
-      <MetadataCard metadata={metadata} />
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>{t("role_assignments.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <ShowPage record={record} canEdit={false} showCurrentBreadcrumb={false}>
+      <ShowPage.ObjectHeader title={metadata.name} />
+      <div className="mt-4 space-y-4">
+        <MetadataCard metadata={metadata} showName={false} />
+        <ShowPage.Section title={t("role_assignments.title")}>
           <Table
             refineCoreProps={{
               resource: "role_assignments",
@@ -80,8 +77,8 @@ export const WorkspacesShow = () => {
             {metadataColumns.update_timestamp}
             {metadataColumns.creation_timestamp}
           </Table>
-        </CardContent>
-      </Card>
+        </ShowPage.Section>
+      </div>
     </ShowPage>
   );
 };

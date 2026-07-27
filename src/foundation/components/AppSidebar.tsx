@@ -75,7 +75,7 @@ function AppSidebarMenuItem({ item, state }: AppSidebarMenuItemProps) {
                 }),
                 "justify-center w-full",
                 isActive
-                  ? "bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   : "",
               )}
             >
@@ -104,7 +104,7 @@ function AppSidebarMenuItem({ item, state }: AppSidebarMenuItemProps) {
             }),
             "justify-start w-full",
             isActive
-              ? "bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               : "",
           )}
         >

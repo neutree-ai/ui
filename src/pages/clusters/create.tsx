@@ -7,9 +7,7 @@ export const ClustersCreate = () => {
   const {
     form,
     metadataFields,
-    imageRegistryFields,
-    versionFields,
-    typeFields,
+    clusterConfigurationFields,
     providerFields,
     routerFields,
     acceleratorVirtualizationFields,
@@ -18,15 +16,15 @@ export const ClustersCreate = () => {
   } = useClusterForm({ action: "create" });
   return (
     <ResourceForm {...form} title={t("clusters.create")}>
-      {metadataFields}
-      {imageRegistryFields}
-      {typeFields}
-      {versionFields}
-      {providerFields}
-      {routerFields}
-      {acceleratorVirtualizationFields}
-      {authFields}
-      {modelCacheFields}
+      <div className="overflow-hidden rounded-lg border bg-card">
+        {metadataFields}
+        {clusterConfigurationFields}
+        {providerFields}
+        {authFields}
+        {routerFields}
+        {acceleratorVirtualizationFields}
+        {modelCacheFields}
+      </div>
     </ResourceForm>
   );
 };

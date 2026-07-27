@@ -103,39 +103,52 @@ export const ModelCatalogsShow = () => {
     .filter(Boolean);
 
   return (
-    <ShowPage record={record}>
-      <div className="overflow-auto h-full">
-        <MetadataCard metadata={record.metadata} />
-
-        <Card className="mt-4">
-          <CardContent>
-            <ShowPage.Row title={t("common.fields.status")}>
-              <ModelCatalogStatus {...record.status} />
-            </ShowPage.Row>
-            {verifiedHardware.length > 0 && (
-              <ShowPage.Row
-                title={t(
-                  "model_catalogs.recipe.verifiedHardware",
-                  "Verified hardware",
-                )}
-              >
-                <div className="flex flex-wrap gap-1.5">
-                  {verifiedHardware.map((hw) => (
-                    <Badge
-                      key={hw}
-                      variant="outline"
-                      className="border-green-600/40 text-green-700 dark:text-green-400"
-                    >
-                      ✓ {hw}
-                    </Badge>
-                  ))}
-                </div>
-              </ShowPage.Row>
+    <ShowPage record={record} showCurrentBreadcrumb={false}>
+      <ShowPage.ObjectHeader
+        title={record.metadata.name}
+        status={<ModelCatalogStatus {...record.status} />}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("common.fields.engine")}>
+              <EndpointEngine spec={record.spec} metadata={record.metadata} />
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("common.fields.model")}>
+              {heroModel ? (
+                <EndpointModel model={heroModel} />
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("common.fields.task")}>
+              <ModelTask task={heroModel?.task ?? ""} />
+            </ShowPage.Meta>
+          </span>
+        }
+      />
+      <div className="mt-4 space-y-4 overflow-auto">
+        <MetadataCard metadata={record.metadata} showName={false} />
+        {verifiedHardware.length > 0 && (
+          <ShowPage.Section
+            title={t(
+              "model_catalogs.recipe.verifiedHardware",
+              "Verified hardware",
             )}
-          </CardContent>
-        </Card>
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {verifiedHardware.map((hw) => (
+                <Badge
+                  key={hw}
+                  variant="outline"
+                  className="border-green-600/40 text-green-700 dark:text-green-400"
+                >
+                  ✓ {hw}
+                </Badge>
+              ))}
+            </div>
+          </ShowPage.Section>
+        )}
 
-        <Card className="mt-4">
+        <Card>
           <CardContent>
             {isRecipe && variantEntries.length > 0 && (
               <div className="mb-5">
@@ -204,11 +217,7 @@ export const ModelCatalogsShow = () => {
 
         {engineVersionSchema &&
           (isRecipe ? recipeAdvancedView : record.spec.variables) && (
-            <Collapsible
-              open={advancedOpen}
-              onOpenChange={setAdvancedOpen}
-              className="mt-4"
-            >
+            <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
               <Card>
                 <CollapsibleTrigger asChild>
                   <CardContent className="cursor-pointer py-3 flex items-center gap-2 hover:bg-accent/40">

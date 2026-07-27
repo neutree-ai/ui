@@ -9,11 +9,15 @@ import type {
 interface DeploymentConfigCardProps {
   replicas: ReplicaSpec | null;
   deploymentOptions: DeploymentOptions | null;
+  framed?: boolean;
+  className?: string;
 }
 
 export default function DeploymentConfigCard({
   replicas,
   deploymentOptions,
+  framed = true,
+  className,
 }: DeploymentConfigCardProps) {
   const { t } = useTranslation();
 
@@ -29,18 +33,31 @@ export default function DeploymentConfigCard({
     }
   };
 
+  const content = (
+    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <ShowPage.Row title={t("common.fields.replica")}>
+        {replicas?.num ?? 1}
+      </ShowPage.Row>
+      <ShowPage.Row title={t("common.fields.scheduler")}>
+        {getSchedulerText()}
+      </ShowPage.Row>
+    </div>
+  );
+
+  if (!framed) {
+    return (
+      <div className={className}>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          {t("endpoints.sections.deploymentConfig")}
+        </h3>
+        {content}
+      </div>
+    );
+  }
+
   return (
-    <Card className="mt-4">
-      <CardContent>
-        <div className="grid grid-cols-4 gap-8">
-          <ShowPage.Row title={t("common.fields.replica")}>
-            {replicas?.num ?? 1}
-          </ShowPage.Row>
-          <ShowPage.Row title={t("common.fields.scheduler")}>
-            {getSchedulerText()}
-          </ShowPage.Row>
-        </div>
-      </CardContent>
+    <Card className={className ?? "mt-4"}>
+      <CardContent>{content}</CardContent>
     </Card>
   );
 }

@@ -1,5 +1,4 @@
 import { useShow } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CurlExample from "@/domains/external-endpoint/components/CurlExample";
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
 import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
@@ -29,41 +28,52 @@ export const ExternalEndpointsShow = () => {
   const allModels = getExposedModels(record.spec);
 
   return (
-    <ShowPage record={record}>
-      <MetadataCard metadata={record.metadata} />
-      <Card className="mt-4">
-        <CardContent>
-          <ShowPage.Row title={t("common.fields.status")}>
-            <ExternalEndpointStatus {...record.status} />
-          </ShowPage.Row>
-          <div className="grid grid-cols-4 gap-8">
+    <ShowPage record={record} showCurrentBreadcrumb={false}>
+      <ShowPage.ObjectHeader
+        title={record.metadata.name}
+        status={<ExternalEndpointStatus {...record.status} />}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("external_endpoints.fields.type")}>
+              {t("external_endpoints.options.upstreamTypeExternal")}
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("external_endpoints.fields.models")}>
+              {allModels.length || "-"}
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("common.fields.workspace")}>
+              {record.metadata.workspace ?? "-"}
+            </ShowPage.Meta>
+          </span>
+        }
+      />
+
+      <div className="mt-4 space-y-4">
+        <MetadataCard metadata={record.metadata} showName={false} />
+        <ShowPage.Section
+          title={t("external_endpoints.sections.configuration")}
+        >
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
             <ShowPage.Row title={t("external_endpoints.fields.timeout")}>
               {formatTimeout(record.spec?.timeout)}
             </ShowPage.Row>
             {record.status?.service_url && (
-              <div className="col-span-3">
-                <ShowPage.Row title={t("external_endpoints.fields.serviceUrl")}>
-                  <ServiceUrls serviceUrl={record.status.service_url} />
-                </ShowPage.Row>
+              <div className="lg:col-span-3">
+                <ServiceUrls serviceUrl={record.status.service_url} />
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </ShowPage.Section>
 
-      {record.spec?.upstreams?.map((upstream, index) => (
-        <Card key={index} className="mt-4">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm">
-              {t("external_endpoints.sections.upstream", {
-                index: index + 1,
-              })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-8">
+        {record.spec?.upstreams?.map((upstream, index) => (
+          <ShowPage.Section
+            key={index}
+            title={t("external_endpoints.sections.upstream", {
+              index: index + 1,
+            })}
+          >
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
               {upstream.endpoint_ref ? (
-                <div className="col-span-3">
+                <div className="lg:col-span-3">
                   <ShowPage.Row
                     title={t("external_endpoints.fields.endpointRef")}
                   >
@@ -74,7 +84,7 @@ export const ExternalEndpointsShow = () => {
                 </div>
               ) : (
                 upstream.upstream?.url && (
-                  <div className="col-span-3">
+                  <div className="lg:col-span-3">
                     <ShowPage.Row
                       title={t("external_endpoints.fields.upstreamUrl")}
                     >
@@ -125,16 +135,16 @@ export const ExternalEndpointsShow = () => {
                   </div>
                 </div>
               )}
-          </CardContent>
-        </Card>
-      ))}
+          </ShowPage.Section>
+        ))}
 
-      {record.status?.phase === "Running" && record.status?.service_url && (
-        <CurlExample
-          serviceUrl={record.status.service_url}
-          models={allModels}
-        />
-      )}
+        {record.status?.phase === "Running" && record.status?.service_url && (
+          <CurlExample
+            serviceUrl={record.status.service_url}
+            models={allModels}
+          />
+        )}
+      </div>
     </ShowPage>
   );
 };

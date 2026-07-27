@@ -2,7 +2,7 @@ import { useShow } from "@refinedev/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -53,32 +53,38 @@ export const EnginesShow = () => {
   );
 
   return (
-    <ShowPage record={record} canDelete={false} canEdit={false}>
-      <MetadataCard metadata={record.metadata} />
-      <Card className="mt-4">
-        <CardContent>
-          <ShowPage.Row title={t("common.fields.status")}>
-            <EngineStatus {...record.status} />
-          </ShowPage.Row>
-          <ShowPage.Row title={t("engines.fields.supportedTasks")}>
-            {record.spec.supported_tasks.map((task) => {
-              return (
-                <div
-                  key={task}
-                  className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 px-2 py-1 mr-2 text-sm font-medium text-gray-700"
-                >
-                  {task}
-                </div>
-              );
-            })}
-          </ShowPage.Row>
-        </CardContent>
-      </Card>
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>{t("common.fields.versions")}</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <ShowPage
+      record={record}
+      canDelete={false}
+      canEdit={false}
+      showCurrentBreadcrumb={false}
+    >
+      <ShowPage.ObjectHeader
+        title={record.metadata.name}
+        status={<EngineStatus {...record.status} />}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("common.fields.versions")}>
+              {record.spec.versions.length}
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("engines.fields.supportedTasks")}>
+              {record.spec.supported_tasks.length}
+            </ShowPage.Meta>
+          </span>
+        }
+      />
+      <div className="mt-4 space-y-4">
+        <MetadataCard metadata={record.metadata} showName={false} />
+        <ShowPage.Section title={t("engines.fields.supportedTasks")}>
+          <div className="flex flex-wrap gap-1.5">
+            {record.spec.supported_tasks.map((task) => (
+              <Badge key={task} variant="outline">
+                {task}
+              </Badge>
+            ))}
+          </div>
+        </ShowPage.Section>
+        <ShowPage.Section title={t("common.fields.versions")}>
           <Select
             value={version}
             onValueChange={(v) => {
@@ -103,8 +109,8 @@ export const EnginesShow = () => {
               <JSONSchemaVisualizer schema={selectedVersion.values_schema} />
             </ShowPage.Row>
           )}
-        </CardContent>
-      </Card>
+        </ShowPage.Section>
+      </div>
     </ShowPage>
   );
 };

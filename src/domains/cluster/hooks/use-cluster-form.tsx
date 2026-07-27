@@ -63,6 +63,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const isEdit = action === "edit";
+  const sectionVariant = isEdit ? "card" : "section";
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
@@ -159,7 +160,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={t("common.sections.basicInformation")}>
+      <FormCardGrid
+        title={t("common.sections.basicInformation")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="metadata.name"
@@ -185,8 +189,95 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         </FormFieldGroup>
       </FormCardGrid>
     ),
+    clusterConfigurationFields: (
+      <FormCardGrid
+        title={t("clusters.sections.clusterConfiguration")}
+        variant={sectionVariant}
+      >
+        <FormFieldGroup
+          {...form}
+          name="spec.type"
+          label={t("common.fields.type")}
+        >
+          <FormSelect
+            options={[
+              {
+                label: t("clusters.options.multipleStaticNodes"),
+                value: "ssh",
+              },
+              { label: t("clusters.options.kubernetes"), value: "kubernetes" },
+            ]}
+            onChange={(value) => {
+              form.setValue("spec.type", value);
+              if (value === "ssh") {
+                form.setValue("spec.config", {
+                  ssh_config: {
+                    provider: {
+                      head_ip: "",
+                      worker_ips: [],
+                    },
+                    auth: {
+                      ssh_user: "",
+                      ssh_private_key: "",
+                    },
+                  },
+                  model_caches: [],
+                });
+                form.setValue("spec.accelerator_virtualization", undefined);
+              } else if (value === "kubernetes") {
+                form.setValue("spec.config", {
+                  kubernetes_config: {
+                    kubeconfig: "",
+                    router: {
+                      access_mode: "LoadBalancer",
+                      replicas: 2,
+                      resources: {
+                        cpu: "1",
+                        memory: "1Gi",
+                      },
+                    },
+                  },
+                  model_caches: [],
+                });
+                form.setValue("spec.accelerator_virtualization.enabled", false);
+              }
+            }}
+            disabled={isEdit}
+          />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="spec.image_registry"
+          label={t("common.fields.imageRegistry")}
+        >
+          <FormCombobox
+            placeholder={t("clusters.placeholders.selectImageRegistry")}
+            options={(imageRegistries.query.data?.data || []).map((item) => ({
+              label: item.metadata.name,
+              value: item.metadata.name,
+            }))}
+            disabled={imageRegistries.query.isLoading || isEdit}
+          />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="spec.version"
+          label={t("common.fields.version")}
+          rules={{ required: t("clusters.validation.versionRequired") }}
+        >
+          <FormCombobox
+            placeholder={t("clusters.placeholders.selectVersion")}
+            options={versionOptions.map((v) => ({
+              label: v,
+              value: v,
+            }))}
+            disabled={!versionsQueryEnabled || isLoadingVersions || isEdit}
+          />
+        </FormFieldGroup>
+      </FormCardGrid>
+    ),
     imageRegistryFields: (
-      <FormCardGrid>
+      <FormCardGrid variant={sectionVariant}>
         <FormFieldGroup
           {...form}
           name="spec.image_registry"
@@ -204,10 +295,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     versionFields: (
-      <FormCardGrid title={t("clusters.sections.clusterVersion")}>
+      <FormCardGrid
+        title={t("clusters.sections.clusterVersion")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="spec.version"
+          label={t("common.fields.version")}
           rules={{ required: t("clusters.validation.versionRequired") }}
         >
           <FormCombobox
@@ -222,7 +317,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     typeFields: (
-      <FormCardGrid title={t("clusters.sections.clusterType")}>
+      <FormCardGrid
+        title={t("clusters.sections.clusterType")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="spec.type"
@@ -277,13 +375,17 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     providerFields: (
-      <FormCardGrid title={t("clusters.sections.provider")}>
+      <FormCardGrid
+        title={t("clusters.sections.provider")}
+        variant={sectionVariant}
+      >
         {type === "ssh" && (
           <div className="col-span-4">
             <NodeIPsField
               control={form.control}
               name="spec.config.ssh_config.provider"
               headIpDisabled={isEdit}
+              variant={sectionVariant}
             />
           </div>
         )}
@@ -304,7 +406,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ),
     routerFields: isKubernetes ? (
-      <FormCardGrid title={t("clusters.sections.router")}>
+      <FormCardGrid
+        title={t("clusters.sections.router")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="spec.config.kubernetes_config.router.access_mode"
@@ -349,7 +454,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       </FormCardGrid>
     ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
-      <FormCardGrid title={t("clusters.sections.acceleratorVirtualization")}>
+      <FormCardGrid
+        title={t("clusters.sections.acceleratorVirtualization")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="spec.accelerator_virtualization.enabled"
@@ -381,13 +489,23 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     ) : null,
     modelCacheFields: (
       <div>
-        <FormCardGrid title={t("clusters.sections.modelCaches")}>
-          <ModelCacheFields form={form} disabled={isModelCacheDisabled} />
+        <FormCardGrid
+          title={t("clusters.sections.modelCaches")}
+          variant={sectionVariant}
+        >
+          <ModelCacheFields
+            form={form}
+            disabled={isModelCacheDisabled}
+            variant={sectionVariant}
+          />
         </FormCardGrid>
       </div>
     ),
     authFields: isKubernetes ? null : (
-      <FormCardGrid title={t("clusters.sections.nodeAuthentication")}>
+      <FormCardGrid
+        title={t("clusters.sections.nodeAuthentication")}
+        variant={sectionVariant}
+      >
         <FormFieldGroup
           {...form}
           name="spec.config.ssh_config.auth.ssh_user"

@@ -116,16 +116,18 @@ export const ResourceForm = <
     <FormUI {...props}>
       <ResourceFormSubmitContext.Provider value={submitContext}>
         <form {...formProps} onSubmit={onSubmit} data-testid="form">
-          <div>
+          <div className="mx-auto w-full max-w-[1280px] pb-6">
             {title && (
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {title}
-              </h2>
+              <div className="mb-4">
+                <h1 className="text-2xl font-semibold leading-8 text-foreground">
+                  {title}
+                </h1>
+              </div>
             )}
 
-            <div className="pt-6 space-y-4">{props.children}</div>
+            <div className="space-y-4">{props.children}</div>
 
-            <div className="flex justify-end gap-x-4 mt-4">
+            <div className="sticky bottom-0 z-10 mt-5 flex justify-end gap-x-3 border-t bg-background/90 px-1 py-4 backdrop-blur">
               {!props.hideCancel && (
                 <Button
                   type="button"

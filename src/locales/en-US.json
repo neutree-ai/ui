@@ -40,7 +40,8 @@
 			"message": "Message"
 		},
 		"sections": {
-			"basicInformation": "Basic Information"
+			"basicInformation": "Basic Information",
+			"configuration": "Configuration"
 		},
 		"messages": {
 			"grafanaNotConfigured": "Grafana monitoring is not configured.",
@@ -432,6 +433,7 @@
 			"amd_gpu": "AMD GPU"
 		},
 		"sections": {
+			"clusterConfiguration": "Cluster Configuration",
 			"clusterVersion": "Cluster Version",
 			"clusterType": "Cluster Type",
 			"provider": "Provider",
@@ -682,6 +684,8 @@
 	"endpoints": {
 		"endpoints": "endpoint",
 		"title": "Endpoints",
+		"create": "Create Endpoint",
+		"edit": "Edit Endpoint",
 		"fields": {
 			"serviceUrl": "Service URL",
 			"npu": "NPU",
@@ -753,7 +757,10 @@
 			"currentRequest": "Current Request",
 			"resourcePlan": "Resource Plan",
 			"virtualCardSplitResources": "Virtual card split resources",
+			"access": "Access",
+			"runtimeAllocation": "Runtime Allocation",
 			"requestedResources": "Requested Resources",
+			"deploymentConfig": "Deployment Config",
 			"allocatedResources": "Allocated Resources",
 			"clusterDeviceResources": "Cluster Resources",
 			"resourceSummary": "Resource Summary",
@@ -973,6 +980,10 @@
 	"roles": {
 		"roles": "role",
 		"title": "Roles",
+		"fields": {
+			"presetRole": "Preset",
+			"customRole": "Custom"
+		},
 		"placeholders": {
 			"roleName": "Role Name"
 		}

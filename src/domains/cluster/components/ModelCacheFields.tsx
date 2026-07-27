@@ -2,7 +2,6 @@ import type { UseFormReturnType } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -17,9 +16,14 @@ import type { Cluster } from "../types";
 interface ModelCacheFieldsProps {
   form: UseFormReturnType<Cluster>;
   disabled?: boolean;
+  variant?: "card" | "section";
 }
 
-export const ModelCacheFields = ({ form, disabled }: ModelCacheFieldsProps) => {
+export const ModelCacheFields = ({
+  form,
+  disabled,
+  variant = "card",
+}: ModelCacheFieldsProps) => {
   const { t } = useTranslation();
   const {
     fields,
@@ -36,6 +40,12 @@ export const ModelCacheFields = ({ form, disabled }: ModelCacheFieldsProps) => {
 
   const errorClass = (hasError: boolean, base?: string) =>
     cn(base, hasError && ["border-red-500", "focus:border-red-500"]);
+  const cacheItemClassName = cn(
+    "relative rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)]",
+    variant === "card"
+      ? "bg-[var(--nt-fill-neutral-white)]"
+      : "bg-[var(--nt-fill-neutral-opaque-1)]",
+  );
 
   return (
     <div className="col-span-full space-y-4">
@@ -43,27 +53,27 @@ export const ModelCacheFields = ({ form, disabled }: ModelCacheFieldsProps) => {
         const cacheType = getCacheType(index);
 
         return (
-          <Card key={fields[index]?.id} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">
+          <div key={fields[index]?.id} className={cacheItemClassName}>
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-3">
+              <div>
+                <h3 className="text-sm font-medium leading-5 text-[var(--nt-text-neutral-super)]">
                   #{index + 1} -{" "}
                   {t(`clusters.fields.modelCache.type.${cacheType}`)}
-                </CardTitle>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeCache(index)}
-                  className="text-red-500 hover:text-red-700"
-                  disabled={disabled}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                </h3>
               </div>
-            </CardHeader>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeCache(index)}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                disabled={disabled}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
 
-            <CardContent className="space-y-4">
+            <div className="space-y-4 p-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormFieldGroup
                   label={t("common.fields.name")}
@@ -193,13 +203,13 @@ export const ModelCacheFields = ({ form, disabled }: ModelCacheFieldsProps) => {
                   </>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
 
       {caches.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="rounded-[var(--nt-radius-card)] bg-[var(--nt-fill-neutral-opaque-1)] px-4 py-6 text-center text-sm text-[var(--nt-text-neutral-tertiary)]">
           {t("clusters.messages.noModelCaches")}
         </div>
       )}

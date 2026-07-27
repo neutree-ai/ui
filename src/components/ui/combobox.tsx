@@ -64,7 +64,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
         aria-expanded={open}
         className={cn(
           "w-full flex justify-between overflow-clip",
-          !value && "text-muted-foreground",
+          !value && "text-[var(--nt-text-neutral-quaternary)]",
           triggerClassName,
         )}
       >
@@ -82,7 +82,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
         </PopoverTrigger>
         <PopoverContent className={cn("w-[400px] p-0", popoverClassName)}>
           <Command
-            className="rounded-lg border shadow-md"
+            className="border border-[var(--nt-stroke-neutral-trans-2)] shadow-[var(--nt-effect-menu-shadow-default)]"
             ref={ref}
             shouldFilter={shouldFilter}
           >

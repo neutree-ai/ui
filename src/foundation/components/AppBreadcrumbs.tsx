@@ -20,12 +20,14 @@ import { Link } from "./Link";
 
 type BreadcrumbProps = RefineBreadcrumbProps & {
   record?: Record<string, any>;
+  showCurrent?: boolean;
 };
 
 export const AppBreadcrumbs: FC<BreadcrumbProps> = ({
   showHome = false,
   meta,
   record,
+  showCurrent = true,
 }) => {
   const { breadcrumbs } = useBreadcrumb({
     meta,
@@ -39,31 +41,41 @@ export const AppBreadcrumbs: FC<BreadcrumbProps> = ({
 
   const rootRouteResource = matchResourceFromRoute("/", resources);
 
-  const BreadCrumbItems = breadcrumbs.map(({ label: baseLabel, href }, key) => {
-    let label = baseLabel;
-    if (!href && baseLabel.toLowerCase() === "show" && record?.metadata?.name) {
-      label = record?.metadata?.name;
-    }
+  const visibleBreadcrumbs = showCurrent
+    ? breadcrumbs
+    : breadcrumbs.slice(0, -1);
 
-    return (
-      <Fragment key={key}>
-        <BreadcrumbItem>
-          {href ? (
-            <BreadcrumbLink asChild href={href}>
-              <Link href={href}>{label}</Link>
-            </BreadcrumbLink>
-          ) : (
-            <BreadcrumbPage
-              className={cn(key === breadcrumbs.length - 1 && "font-bold")}
-            >
-              {label}
-            </BreadcrumbPage>
-          )}
-        </BreadcrumbItem>
-        {key < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-      </Fragment>
-    );
-  });
+  const BreadCrumbItems = visibleBreadcrumbs.map(
+    ({ label: baseLabel, href }, key) => {
+      let label = baseLabel;
+      if (
+        !href &&
+        baseLabel.toLowerCase() === "show" &&
+        record?.metadata?.name
+      ) {
+        label = record?.metadata?.name;
+      }
+
+      return (
+        <Fragment key={key}>
+          <BreadcrumbItem>
+            {href ? (
+              <BreadcrumbLink asChild href={href}>
+                <Link href={href}>{label}</Link>
+              </BreadcrumbLink>
+            ) : (
+              <BreadcrumbPage
+                className={cn(key === breadcrumbs.length - 1 && "font-bold")}
+              >
+                {label}
+              </BreadcrumbPage>
+            )}
+          </BreadcrumbItem>
+          {key < visibleBreadcrumbs.length - 1 && <BreadcrumbSeparator />}
+        </Fragment>
+      );
+    },
+  );
 
   return (
     <Breadcrumb>

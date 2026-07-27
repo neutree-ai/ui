@@ -45,12 +45,12 @@ export function TableSearch({ field, table }: TableSearchProps) {
 
   return (
     <div className="relative">
-      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         placeholder={t("table.searchPlaceholder")}
         value={value}
         onChange={handleChange}
-        className="h-9 w-[200px] pl-8"
+        className="h-8 w-[200px] pl-8"
         data-testid="table-search"
       />
     </div>

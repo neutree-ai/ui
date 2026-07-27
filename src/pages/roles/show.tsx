@@ -1,5 +1,4 @@
 import { useShow } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PermissionsTree from "@/domains/role/components/PermissionsTree";
 import type { Role } from "@/domains/role/types";
 import { Loader } from "@/foundation/components/Loader";
@@ -25,17 +24,37 @@ export const RolesShow = () => {
   const isPreset = Boolean(record.spec.preset_key);
 
   return (
-    <ShowPage record={record} canDelete={!isPreset} canEdit={!isPreset}>
-      <div className="h-full overflow-auto">
-        <MetadataCard metadata={record.metadata} />
-        <Card className="mt-4" data-testid="permissions-card">
-          <CardHeader>
-            <CardTitle>{t("common.fields.permissions")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PermissionsTree permissions={record.spec.permissions} />
-          </CardContent>
-        </Card>
+    <ShowPage
+      record={record}
+      canDelete={!isPreset}
+      canEdit={!isPreset}
+      showCurrentBreadcrumb={false}
+    >
+      <ShowPage.ObjectHeader
+        title={record.metadata.name}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("common.fields.permissions")}>
+              {t("common.fields.permissionsCount", {
+                count: record.spec.permissions.length,
+              })}
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("common.fields.type")}>
+              {isPreset
+                ? t("roles.fields.presetRole")
+                : t("roles.fields.customRole")}
+            </ShowPage.Meta>
+          </span>
+        }
+      />
+      <div className="mt-4 space-y-4">
+        <MetadataCard metadata={record.metadata} showName={false} />
+        <ShowPage.Section
+          title={t("common.fields.permissions")}
+          data-testid="permissions-card"
+        >
+          <PermissionsTree permissions={record.spec.permissions} />
+        </ShowPage.Section>
       </div>
     </ShowPage>
   );

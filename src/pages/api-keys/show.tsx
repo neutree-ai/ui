@@ -22,10 +22,23 @@ export const ApiKeysShow = () => {
 
   return (
     <div className="w-full h-full">
-      <ShowPage record={record} canEdit={false}>
-        <MetadataCard metadata={record.metadata} />
+      <ShowPage record={record} canEdit={false} showCurrentBreadcrumb={false}>
+        <ShowPage.ObjectHeader
+          title={record.metadata.name}
+          description={
+            <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+              <ShowPage.Meta label={t("common.fields.workspace")}>
+                {record.metadata.workspace ?? "-"}
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("api_keys.fields.usage")}>
+                {record.status?.usage ?? "-"}
+              </ShowPage.Meta>
+            </span>
+          }
+        />
         {record.id && (
-          <>
+          <div className="mt-4 space-y-4">
+            <MetadataCard metadata={record.metadata} showName={false} />
             <ApiKeyPerformanceCard
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}
@@ -34,7 +47,7 @@ export const ApiKeysShow = () => {
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}
             />
-          </>
+          </div>
         )}
       </ShowPage>
     </div>
