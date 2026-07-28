@@ -97,7 +97,7 @@
   "src/foundation/lib/column-visibility-storage.ts": "1c01bd1a7acbeac08880f87e23fbfb51",
   "src/foundation/lib/constant.ts": "9065e6a19b4fe8499eae6b7ec59f495c",
   "src/foundation/lib/grafana-dashboard-configs.ts": "38cde7d922d8dfafbef218542b22f698",
-  "src/foundation/lib/i18n.ts": "7b321c9625deff3063bf3b7554a24f88",
+  "src/foundation/lib/i18n.ts": "7ca93a505420fdfee78bb9d88ffcc272",
   "src/foundation/lib/plural.ts": "5d10922518b7de7bf6db90ce2e078f5f",
   "src/foundation/lib/unit.ts": "17809cc71da9ff806c3a931de23155d5",
   "src/foundation/lib/utils.ts": "618d00bf4537ce84f9ba62c5b215fb30",
