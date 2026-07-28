@@ -97,7 +97,7 @@ const RayDashboardTab = ({
 };
 
 const detailTabTriggerClassName =
-  "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary";
+  "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
@@ -319,7 +319,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             <RayDashboardTab record={record} cluster={clusterData?.data?.[0]} />
           </TabsContent>
         )}
-        <TabsContent value="monitor" className="mt-0 flex-1 overflow-hidden">
+        <TabsContent
+          value="monitor"
+          className="mt-0 flex-1 overflow-hidden pt-4"
+        >
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
               {showSelector && (
@@ -381,7 +384,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="logs" className="mt-0 flex-1 overflow-hidden">
+        <TabsContent value="logs" className="mt-0 flex-1 overflow-hidden pt-4">
           <Suspense fallback={<Loader width="20" height="20" />}>
             <EndpointLogTabs endpoint={record} />
           </Suspense>
