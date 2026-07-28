@@ -40,6 +40,10 @@ import { StatusBadge } from "./status";
 
 const LIMIT = 50;
 
+// Traces are retained for at most 30 days, so a longer quick pick would only
+// ever return a partial window.
+const TRACE_RANGE_PRESETS = [7, 30];
+
 export const AITracesList = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
@@ -161,7 +165,11 @@ export const AITracesList = () => {
       <TraceStatsChart workspace={workspace} range={range} />
 
       <div className="flex flex-wrap gap-2 mb-4">
-        <DateRangePicker value={range} onChange={setRange} />
+        <DateRangePicker
+          value={range}
+          onChange={setRange}
+          presets={TRACE_RANGE_PRESETS}
+        />
         <Input
           className="w-[200px]"
           placeholder={t("ai_traces.filters.endpoint")}

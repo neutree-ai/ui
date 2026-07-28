@@ -16,7 +16,7 @@ import { cn } from "@/foundation/lib/utils";
 // start/end-of-day).
 export type DateRange = { start: string; end: string };
 
-const PRESETS = [7, 30, 90];
+const DEFAULT_PRESETS = [7, 30, 90];
 
 // trailingRange returns the inclusive window covering the last `days` days up to
 // and including today.
@@ -31,14 +31,18 @@ export function trailingRange(days: number): DateRange {
 // DateRangePicker is a reusable date-range control: quick presets plus a
 // shadcn calendar (react-day-picker), in a popover. Shared by the trace and
 // model-usage lists.
+// `presets` lets a caller narrow the quick picks to what its data actually
+// covers — e.g. access logs are only retained for 30 days.
 export function DateRangePicker({
   value,
   onChange,
   className,
+  presets = DEFAULT_PRESETS,
 }: {
   value: DateRange;
   onChange: (range: DateRange) => void;
   className?: string;
+  presets?: number[];
 }) {
   const { t } = useTranslation();
   const label = `${dayjs(value.start).format("MMM D")} – ${dayjs(value.end).format("MMM D")}`;
@@ -60,7 +64,7 @@ export function DateRangePicker({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-auto p-0">
         <div className="flex flex-wrap gap-1 border-b p-2">
-          {PRESETS.map((d) => (
+          {presets.map((d) => (
             <Button
               key={d}
               type="button"
