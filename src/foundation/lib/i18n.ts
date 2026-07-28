@@ -39,12 +39,33 @@ export const LOCALE_LABELS = AVAILABLE_LOCALES.reduce(
   {} as Record<string, string>,
 );
 
+const FALLBACK_LOCALE = "en-US";
+
+// The detector may return a locale this build does not ship (e.g. "fr" from the
+// browser, or a stale value in localStorage). Only ever write a locale we have
+// resources for, so document.documentElement.lang matches the rendered text.
+export function resolveSupportedLocale(locale?: string): string {
+  if (locale && AVAILABLE_LOCALES.includes(locale)) {
+    return locale;
+  }
+  return AVAILABLE_LOCALES.includes(FALLBACK_LOCALE)
+    ? FALLBACK_LOCALE
+    : (AVAILABLE_LOCALES[0] ?? FALLBACK_LOCALE);
+}
+
+export function syncDocumentLanguage(locale?: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+  document.documentElement.lang = resolveSupportedLocale(locale);
+}
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: "en-US",
+    fallbackLng: FALLBACK_LOCALE,
     debug: false,
     interpolation: {
       escapeValue: false,
@@ -53,5 +74,13 @@ i18n
       useSuspense: false,
     },
   });
+
+// index.html ships a static lang="en"; keep it in sync with the resolved
+// language on boot and on every switch so screen readers and browser
+// translation tools see the language the page is actually rendered in.
+syncDocumentLanguage(i18n.resolvedLanguage ?? i18n.language);
+i18n.on("languageChanged", (locale) =>
+  syncDocumentLanguage(i18n.resolvedLanguage ?? locale),
+);
 
 export { I18nextProvider, i18n, useTranslation };
