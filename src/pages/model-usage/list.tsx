@@ -268,7 +268,7 @@ export const ModelUsageList = () => {
         </Button>
       }
     >
-      <div className="border rounded-md p-4 mb-4">
+      <div className="mb-4 rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] p-4">
         <div className="flex items-baseline justify-between mb-2">
           <span className="text-sm font-medium">
             {groupByModel
@@ -370,8 +370,8 @@ export const ModelUsageList = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <DateRangePicker value={range} onChange={setRange} />
+      <div className="mb-4 flex flex-wrap items-center gap-2 [&>button]:h-8 [&_input]:h-8 [&_[role=combobox]]:h-8">
+        <DateRangePicker className="h-8" value={range} onChange={setRange} />
         <Select
           value={apiKeyId || "all"}
           onValueChange={(v) => {
@@ -425,8 +425,7 @@ export const ModelUsageList = () => {
           <Button
             type="button"
             variant="secondary"
-            size="sm"
-            className="h-9 gap-1 px-3 font-normal"
+            className="gap-1 px-3 font-normal"
             aria-label={t("model_usage.clearFocusDate")}
             title={t("model_usage.clearFocusDate")}
             onClick={() => setFocusDate("")}

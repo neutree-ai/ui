@@ -98,7 +98,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      "relative flex min-h-8 cursor-default select-none items-center rounded-[4px] py-1.5 pl-8 pr-2 text-sm text-[var(--nt-text-neutral-primary)] outline-none transition-colors hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus:bg-[var(--nt-fill-neutral-trans-3)] focus:text-[var(--nt-text-neutral-super)] data-[highlighted]:bg-[var(--nt-fill-neutral-trans-3)] data-[highlighted]:text-[var(--nt-text-neutral-super)] data-[state=checked]:bg-[var(--nt-fill-outstanding-thin)] data-[state=checked]:text-[var(--nt-text-neutral-super)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex min-h-8 cursor-default select-none items-center rounded-[4px] py-1.5 pl-8 pr-2 text-sm text-[var(--nt-text-neutral-primary)] outline-none transition-colors hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus:bg-[var(--nt-fill-neutral-trans-3)] focus:text-[var(--nt-text-neutral-super)] data-[highlighted]:bg-[var(--nt-fill-neutral-trans-3)] data-[highlighted]:text-[var(--nt-text-neutral-super)] data-[state=checked]:text-[var(--nt-text-neutral-super)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
     checked={checked}
@@ -122,7 +122,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex min-h-8 cursor-default select-none items-center rounded-[4px] py-1.5 pl-8 pr-2 text-sm text-[var(--nt-text-neutral-primary)] outline-none transition-colors hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus:bg-[var(--nt-fill-neutral-trans-3)] focus:text-[var(--nt-text-neutral-super)] data-[highlighted]:bg-[var(--nt-fill-neutral-trans-3)] data-[highlighted]:text-[var(--nt-text-neutral-super)] data-[state=checked]:bg-[var(--nt-fill-outstanding-thin)] data-[state=checked]:text-[var(--nt-text-neutral-super)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex min-h-8 cursor-default select-none items-center rounded-[4px] py-1.5 pl-8 pr-2 text-sm text-[var(--nt-text-neutral-primary)] outline-none transition-colors hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus:bg-[var(--nt-fill-neutral-trans-3)] focus:text-[var(--nt-text-neutral-super)] data-[highlighted]:bg-[var(--nt-fill-neutral-trans-3)] data-[highlighted]:text-[var(--nt-text-neutral-super)] data-[state=checked]:text-[var(--nt-text-neutral-super)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
     {...props}

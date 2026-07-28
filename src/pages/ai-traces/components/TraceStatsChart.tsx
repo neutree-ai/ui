@@ -45,7 +45,7 @@ export const TraceStatsChart = ({
   const tickInterval = days.length > 14 ? "preserveStartEnd" : 0;
 
   return (
-    <div className="border rounded-md p-4 mb-4">
+    <div className="mb-4 rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] p-4">
       <div className="flex items-baseline justify-between mb-2">
         <span className="text-sm font-medium">
           {t("ai_traces.stats.title")}

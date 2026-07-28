@@ -494,7 +494,7 @@ const DataTableViewOptions = <TData,>({
         </TooltipTrigger>
         <TooltipContent>{t("table.columns")}</TooltipContent>
       </Tooltip>
-      <DropdownMenuContent align="end" className="w-[150px]">
+      <DropdownMenuContent align="end" className="w-[220px]">
         <DropdownMenuLabel>{t("table.toggleColumns")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => {
