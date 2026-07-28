@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
@@ -71,12 +72,12 @@ export const ModelCatalogsList = () => {
       {isLoading ? (
         <Loader className="h-4 text-primary" />
       ) : catalogs.length === 0 ? (
-        <div className="text-sm text-muted-foreground py-12 text-center">
+        <EmptyState>
           {t(
             "model_catalogs.card.empty",
             "No model catalogs yet. Import one to get started.",
           )}
-        </div>
+        </EmptyState>
       ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {catalogs.map((catalog) => (

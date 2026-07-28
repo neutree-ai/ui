@@ -43,6 +43,7 @@ import {
   DateRangePicker,
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -315,9 +316,9 @@ export const ModelUsageList = () => {
               <Loader className="w-8 text-muted-foreground" />
             </div>
           ) : dailyData.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            <EmptyState className="flex h-full items-center justify-center">
               {t("model_usage.empty")}
-            </div>
+            </EmptyState>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               {chartType === "bar" ? (

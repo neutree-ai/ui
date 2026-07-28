@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { cn } from "@/foundation/lib/utils";
@@ -209,9 +210,7 @@ export const ModelCacheFields = ({
       })}
 
       {caches.length === 0 && (
-        <div className="rounded-[var(--nt-radius-card)] bg-[var(--nt-fill-neutral-opaque-1)] px-4 py-6 text-center text-sm text-[var(--nt-text-neutral-tertiary)]">
-          {t("clusters.messages.noModelCaches")}
-        </div>
+        <EmptyState>{t("clusters.messages.noModelCaches")}</EmptyState>
       )}
       {canAdd && !disabled && (
         <div className="flex gap-2 pt-2">

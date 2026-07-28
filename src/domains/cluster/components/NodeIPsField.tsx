@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { useNodeIps } from "../hooks/use-node-ips";
@@ -86,9 +87,9 @@ function NodeIPsField<T extends FieldValues>({
 
         <div className="space-y-2">
           {workerCount === 0 ? (
-            <div className="rounded-[var(--nt-radius-input)] bg-[var(--nt-fill-neutral-opaque-1)] px-3 py-2 text-sm text-[var(--nt-text-neutral-tertiary)]">
+            <EmptyState variant="inline">
               {t("clusters.messages.sshEmptyWorkerNodeIPs")}
-            </div>
+            </EmptyState>
           ) : (
             workerIps.map((ip, index) => (
               <div key={`${ip}-${index}`} className={listItemClassName}>

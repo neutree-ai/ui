@@ -50,6 +50,8 @@ type FormProps<
     submitBlocked?: boolean;
   };
 
+const formActionButtonClassName = "h-8 min-w-[88px] px-3 py-1";
+
 export const ResourceForm = <
   TQueryFnData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
@@ -134,6 +136,7 @@ export const ResourceForm = <
                   onClick={onBack}
                   disabled={props.refineCore.formLoading}
                   variant="outline"
+                  className={formActionButtonClassName}
                   data-testid="form-cancel"
                 >
                   {t("buttons.cancel")}
@@ -144,6 +147,7 @@ export const ResourceForm = <
                 type="submit"
                 loading={props.refineCore.formLoading}
                 disabled={submitBlocked}
+                className={formActionButtonClassName}
                 data-testid="form-submit"
               />
             </div>

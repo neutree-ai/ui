@@ -1,6 +1,5 @@
 import { type FC, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import {
 } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
 import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
 import type { Endpoint } from "@/domains/endpoint/types";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { LogViewer } from "./LogViewer";
 
 interface EndpointLogTabsProps {
@@ -127,13 +127,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   }
 
   if (!replicas.length || !availableLogs.length) {
-    return (
-      <Alert>
-        <AlertDescription>
-          {t("endpoints.logs.noLogsAvailable")}
-        </AlertDescription>
-      </Alert>
-    );
+    return <EmptyState>{t("endpoints.logs.noLogsAvailable")}</EmptyState>;
   }
 
   // Helper function to get tab label based on log type

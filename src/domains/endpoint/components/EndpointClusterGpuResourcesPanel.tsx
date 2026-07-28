@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   buildGpuCardResourceRows,
@@ -905,11 +906,7 @@ function EndpointVirtualizedNodeGpuResources({
   );
 
   if (nodeGroups.length === 0) {
-    return (
-      <div className="rounded-md border bg-background p-3 text-sm text-muted-foreground">
-        {t("clusters.messages.noGpuDevices")}
-      </div>
-    );
+    return <EmptyState>{t("clusters.messages.noGpuDevices")}</EmptyState>;
   }
 
   return (

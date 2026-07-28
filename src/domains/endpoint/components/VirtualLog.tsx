@@ -3,6 +3,7 @@ import { useTheme } from "next-themes";
 import { type FC, useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { cn } from "@/foundation/lib/utils";
 import { filterByTimestamp } from "../lib/log-helpers";
 import "./LogViewer.css";
@@ -304,9 +305,9 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   if (!processedLines.length) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <p className="text-muted-foreground text-sm">
+        <EmptyState className="w-full">
           {t("components.logViewer.noLogs")}
-        </p>
+        </EmptyState>
       </div>
     );
   }

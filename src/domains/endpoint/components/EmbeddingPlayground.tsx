@@ -25,6 +25,7 @@ import { PlaygroundLayout } from "@/domains/endpoint/components/PlaygroundLayout
 import { useDocumentList } from "@/domains/endpoint/hooks/use-document-list";
 import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
 import type { Endpoint } from "@/domains/endpoint/types";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { clientPostgrest } from "@/foundation/lib/api";
 
 const INITIAL_DOCUMENTS = [
@@ -290,9 +291,9 @@ export default function EmbeddingPlayground({
                       </ScatterChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <EmptyState>
                       {t("components.playground.embedding.noEmbeddingData")}
-                    </div>
+                    </EmptyState>
                   )}
                 </div>
               </TabsContent>

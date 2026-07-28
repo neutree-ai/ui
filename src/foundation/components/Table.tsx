@@ -188,6 +188,7 @@ export type RowActionProps = PropsWithChildren & {
   disabled?: boolean;
   icon?: ReactNode;
   onClick?: (event: React.MouseEvent) => void;
+  variant?: "default" | "destructive";
 };
 
 // ============================================================================
@@ -328,6 +329,8 @@ const Pagination = <TData extends BaseRecord = BaseRecord>({
 export const RowAction: FC<RowActionProps> = (props) => {
   return (
     <DropdownMenuItem
+      className={props.className}
+      data-variant={props.variant}
       disabled={props.disabled}
       asChild={!(!props.to || (!props.to && !props.children))}
       onClick={props.onClick}
@@ -396,6 +399,7 @@ export function DeleteAction({
       {...props}
       disabled={disabled}
       title={title}
+      variant="destructive"
       onClick={() =>
         deleteContext?.updateData({
           row,

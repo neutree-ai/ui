@@ -52,12 +52,19 @@
 		--nt-fill-outstanding-lighthover: rgba(0, 136, 255, 0.16);
 		--nt-fill-outstanding-thin: rgba(0, 136, 255, 0.04);
 		--nt-fill-positive-base: #00ba5d;
+		--nt-fill-positive-light: rgba(0, 186, 93, 0.1);
 		--nt-fill-notice-base: #fea008;
+		--nt-fill-notice-light: rgba(254, 160, 8, 0.1);
 		--nt-fill-serious-base: #f0483e;
 		--nt-fill-serious-bright: #ff5252;
+		--nt-fill-serious-light: rgba(240, 72, 62, 0.1);
 		--nt-fill-purple-base: #7e41ff;
 		--nt-stroke-outstanding-base: #0080ff;
+		--nt-stroke-outstanding-light: rgba(0, 128, 255, 0.34);
+		--nt-stroke-positive-light: rgba(0, 186, 93, 0.34);
+		--nt-stroke-notice-light: rgba(254, 160, 8, 0.34);
 		--nt-stroke-serious-base: #f0483e;
+		--nt-stroke-serious-light: rgba(240, 72, 62, 0.34);
 		--nt-effect-button-shadow-push-button-cta: 0px 1px 2px 0px
 			rgba(44, 56, 82, 0.18);
 		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px
@@ -119,12 +126,19 @@
 		--fill-outstanding-lighthover: var(--nt-fill-outstanding-lighthover);
 		--fill-outstanding-thin: var(--nt-fill-outstanding-thin);
 		--fill-positive-base: var(--nt-fill-positive-base);
+		--fill-positive-light: var(--nt-fill-positive-light);
 		--fill-notice-base: var(--nt-fill-notice-base);
+		--fill-notice-light: var(--nt-fill-notice-light);
 		--fill-serious-base: var(--nt-fill-serious-base);
 		--fill-serious-bright: var(--nt-fill-serious-bright);
+		--fill-serious-light: var(--nt-fill-serious-light);
 		--fill-purple-base: var(--nt-fill-purple-base);
 		--stroke-outstanding-base: var(--nt-stroke-outstanding-base);
+		--stroke-outstanding-light: var(--nt-stroke-outstanding-light);
+		--stroke-positive-light: var(--nt-stroke-positive-light);
+		--stroke-notice-light: var(--nt-stroke-notice-light);
 		--stroke-serious-base: var(--nt-stroke-serious-base);
+		--stroke-serious-light: var(--nt-stroke-serious-light);
 		--button-shadow-push-button-cta: var(
 			--nt-effect-button-shadow-push-button-cta
 		);
@@ -195,12 +209,19 @@
 		--nt-fill-outstanding-lighthover: rgba(59, 157, 255, 0.22);
 		--nt-fill-outstanding-thin: rgba(59, 157, 255, 0.1);
 		--nt-fill-positive-base: #2bd17e;
+		--nt-fill-positive-light: rgba(43, 209, 126, 0.14);
 		--nt-fill-notice-base: #ffba3d;
+		--nt-fill-notice-light: rgba(255, 186, 61, 0.14);
 		--nt-fill-serious-base: #ff6b61;
 		--nt-fill-serious-bright: #ff8a82;
+		--nt-fill-serious-light: rgba(255, 107, 97, 0.14);
 		--nt-fill-purple-base: #a78bfa;
 		--nt-stroke-outstanding-base: #3b9dff;
+		--nt-stroke-outstanding-light: rgba(59, 157, 255, 0.42);
+		--nt-stroke-positive-light: rgba(43, 209, 126, 0.42);
+		--nt-stroke-notice-light: rgba(255, 186, 61, 0.42);
 		--nt-stroke-serious-base: #ff6b61;
+		--nt-stroke-serious-light: rgba(255, 107, 97, 0.42);
 		--nt-effect-button-shadow-push-button-cta: 0px 1px 2px 0px
 			rgba(0, 0, 0, 0.32);
 		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px

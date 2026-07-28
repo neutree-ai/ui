@@ -19,6 +19,7 @@ import {
   TableRow,
   Table as UITable,
 } from "@/components/ui/table";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   buildGpuDeviceResourceRows,
@@ -352,7 +353,9 @@ export function GpuDeviceResourcesView({
     return (
       <div className={cn("rounded-md border p-4 text-sm", className)}>
         {showHeader && <div className="font-medium">{labels.title}</div>}
-        <div className="mt-2 text-muted-foreground">{labels.empty}</div>
+        <EmptyState className={showHeader ? "mt-3" : undefined}>
+          {labels.empty}
+        </EmptyState>
       </div>
     );
   }
