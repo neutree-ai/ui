@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import type {
   DeploymentOptions,
@@ -34,7 +34,7 @@ export default function DeploymentConfigCard({
   };
 
   const content = (
-    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-x-10 gap-y-5 sm:grid-cols-[repeat(2,minmax(0,220px))]">
       <ShowPage.Row title={t("common.fields.replica")}>
         {replicas?.num ?? 1}
       </ShowPage.Row>
@@ -56,7 +56,10 @@ export default function DeploymentConfigCard({
   }
 
   return (
-    <Card className={className ?? "mt-4"}>
+    <Card className={className}>
+      <CardHeader className="pb-3">
+        <CardTitle>{t("endpoints.sections.deploymentConfig")}</CardTitle>
+      </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>
   );

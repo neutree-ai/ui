@@ -2,7 +2,7 @@ import { useOne, useShow } from "@refinedev/core";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -13,7 +13,6 @@ import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
-import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import JSONSchemaValueVisualizer from "@/domains/engine/components/JsonSchemaValueVisualizer";
 import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
@@ -22,7 +21,7 @@ import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { isRecipeShape } from "@/foundation/recipe/normalize";
+import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
 import { FeaturesList } from "./components/FeaturesList";
 import { EnvCard, KeyConfigCard } from "./components/KeyConfigCard";
 import { VariantTable } from "./components/VariantTable";
@@ -60,22 +59,36 @@ export const ModelCatalogsShow = () => {
   const variantEntries = isRecipe
     ? Object.entries(record.spec.variants ?? {})
     : [];
-  // For Hero display in recipe mode we use the currently-selected variant.
-  const heroModel = isRecipe
-    ? (variantEntries.find(([k]) => k === selectedVariant)?.[1]?.model ??
-      variantEntries[0]?.[1]?.model ??
-      record.spec.model)
-    : record.spec.model;
-  const heroResources = isRecipe
-    ? (variantEntries.find(([k]) => k === selectedVariant)?.[1]?.resources ??
-      variantEntries[0]?.[1]?.resources ??
-      record.spec.resources)
-    : record.spec.resources;
   // The variant the page currently reflects (selected, or the first one).
   const activeVariantKey =
     variantEntries.find(([k]) => k === selectedVariant)?.[0] ??
+    variantEntries.find(([k]) => k === DEFAULT_VARIANT)?.[0] ??
     variantEntries[0]?.[0] ??
     "";
+  const activeVariant = isRecipe
+    ? record.spec.variants?.[activeVariantKey]
+    : null;
+  // For Hero display in recipe mode we use the currently-selected variant.
+  const heroModel = isRecipe
+    ? (activeVariant?.model ?? record.spec.model)
+    : record.spec.model;
+  const heroResources = isRecipe
+    ? (activeVariant?.resources ?? record.spec.resources)
+    : record.spec.resources;
+  const profileVariables = isRecipe
+    ? {
+        engine_args: {
+          ...(record.spec.base?.engine_args ?? {}),
+          ...(activeVariant?.engine_args ?? {}),
+        },
+      }
+    : record.spec.variables;
+  const profileEnv = isRecipe
+    ? {
+        ...(record.spec.base?.env ?? {}),
+        ...(activeVariant?.env ?? {}),
+      }
+    : (record.spec.env ?? null);
   // Advanced section for Recipe MC: union of base.engine_args + every
   // variant.engine_args + every feature.engine_args (presentation only).
   const buildRecipeAdvancedView = (): Record<string, unknown> | null => {
@@ -149,15 +162,18 @@ export const ModelCatalogsShow = () => {
         )}
 
         <Card>
-          <CardContent>
+          <CardHeader>
+            <CardTitle>
+              {t("model_catalogs.recipe.servingProfile", "Serving Profile")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
             {isRecipe && variantEntries.length > 0 && (
-              <div className="mb-5">
-                <VariantPicker
-                  variants={record.spec.variants ?? {}}
-                  value={activeVariantKey}
-                  onChange={setSelectedVariant}
-                />
-              </div>
+              <VariantTable
+                variants={record.spec.variants ?? {}}
+                selectedVariant={activeVariantKey}
+                onSelect={setSelectedVariant}
+              />
             )}
             <div className="grid grid-cols-4 gap-8">
               <ShowPage.Row title={t("common.fields.engine")}>
@@ -183,24 +199,27 @@ export const ModelCatalogsShow = () => {
                 </ShowPage.Row>
               </div>
             )}
+            {isRecipe ? (
+              <ResourcesCard
+                resources={heroResources}
+                titleTranslationKey="common.fields.resources"
+                framed={false}
+              />
+            ) : null}
           </CardContent>
         </Card>
 
-        <ResourcesCard
-          resources={heroResources}
-          titleTranslationKey="common.fields.resources"
-        />
+        {!isRecipe && (
+          <ResourcesCard
+            resources={heroResources}
+            titleTranslationKey="common.fields.resources"
+          />
+        )}
 
         {isRecipe ? (
           <>
-            <KeyConfigCard
-              variables={{ engine_args: record.spec.base?.engine_args ?? {} }}
-            />
-            <EnvCard env={record.spec.base?.env ?? null} />
-            <VariantTable
-              variants={record.spec.variants ?? {}}
-              base={record.spec.base ?? {}}
-            />
+            <KeyConfigCard variables={profileVariables} />
+            <EnvCard env={profileEnv} />
             <FeaturesList features={record.spec.features ?? []} />
           </>
         ) : (

@@ -36,6 +36,7 @@
 			"allReplicas": "All Replicas",
 			"version": "Version",
 			"description": "Description",
+			"intent": "Intent",
 			"reason": "Reason",
 			"message": "Message"
 		},
@@ -590,6 +591,10 @@
 		},
 		"recipe": {
 			"variants": "Variants",
+			"servingProfile": "Serving Profile",
+			"profile": "Profile",
+			"selectProfile": "Select {{profile}} profile",
+			"defaultProfile": "Default profile",
 			"features": "Features",
 			"variantKey": "Variant",
 			"argsOverrides": "Args overrides",
