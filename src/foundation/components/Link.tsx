@@ -7,7 +7,7 @@ type LinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
 };
 
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
-  ({ children, href, title, className, asChild }, ref) => {
+  ({ children, href, title, className, asChild, ...props }, ref) => {
     const { Link: LegacyLink } = useRouterContext();
     const routerType = useRouterType();
     const Link = useLink();
@@ -16,7 +16,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
     const Comp = asChild ? Slot : ActiveLink;
 
     return (
-      <Comp ref={ref} to={href} className={className} title={title}>
+      <Comp ref={ref} to={href} className={className} title={title} {...props}>
         {children}
       </Comp>
     );

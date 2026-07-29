@@ -109,8 +109,8 @@ export const ClustersList = () => {
                   variant="outline"
                   className={
                     enabled
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-gray-200 bg-gray-50 text-gray-500"
+                      ? "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]"
+                      : "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]"
                   }
                   title={t("clusters.fields.acceleratorVirtualization")}
                 >

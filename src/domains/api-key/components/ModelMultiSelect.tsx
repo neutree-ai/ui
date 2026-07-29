@@ -24,15 +24,24 @@ type Option = WorkspaceModelOption;
 
 const phaseClass = (phase: string | null) =>
   ({
-    Running: "border-green-200 bg-green-50 text-green-700",
-    Failed: "border-red-200 bg-red-50 text-red-700",
-    Pending: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    Deploying: "border-blue-200 bg-blue-50 text-blue-700",
-    ModelDownloading: "border-cyan-200 bg-cyan-50 text-cyan-700",
-    Deleting: "border-orange-200 bg-orange-50 text-orange-700",
-    Paused: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    Deleted: "border-gray-200 bg-gray-50 text-gray-700",
-  })[phase ?? ""] ?? "border-muted bg-muted text-muted-foreground";
+    Running:
+      "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
+    Failed:
+      "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
+    Pending:
+      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
+    Deploying:
+      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
+    ModelDownloading:
+      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
+    Deleting:
+      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
+    Paused:
+      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
+    Deleted:
+      "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
+  })[phase ?? ""] ??
+  "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]";
 
 // Multi-select dropdown for the allowed-models field: pick any number of models
 // from one dropdown (no per-row "Add model"); selections show as removable

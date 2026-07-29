@@ -5,10 +5,14 @@ export default function ModelCatalogStatus(status: BaseStatusType) {
   const { t } = useTranslation();
 
   const classMapping = {
-    Ready: "bg-green-100 text-green-800",
-    Failed: "bg-red-100 text-red-800",
-    Pending: "bg-yellow-100 text-yellow-800",
-    Deleted: "bg-gray-100 text-gray-800",
+    Ready:
+      "border border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
+    Failed:
+      "border border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
+    Pending:
+      "border border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
+    Deleted:
+      "border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
   }[status.phase ?? "-"];
 
   const translatedPhase = t(`status.phases.catalog.${status.phase}`);
