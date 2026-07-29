@@ -69,8 +69,8 @@ export const FormCombobox = forwardRef<
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full justify-between overflow-hidden text-[var(--nt-text-neutral-secondary)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
-              !value() && "text-muted-foreground",
+              "w-full justify-between overflow-hidden text-[var(--nt-text-neutral-primary)] hover:bg-[var(--nt-fill-neutral-white)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
+              !value() && "text-[var(--nt-text-neutral-quaternary)]",
             )}
           >
             <span className="truncate flex-1 text-left">
@@ -79,7 +79,7 @@ export const FormCombobox = forwardRef<
                     ?.label
                 : (props.placeholder ?? t("components.ui.combobox.select"))}
             </span>
-            <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 text-[var(--nt-text-neutral-tertiary)]" />
           </Button>
         </FormControl>
       </PopoverTrigger>

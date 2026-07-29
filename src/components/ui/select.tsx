@@ -17,14 +17,14 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-8 w-full items-center justify-between whitespace-nowrap rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] px-3 py-1 text-sm text-[var(--nt-text-neutral-secondary)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] [transition:border-color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] data-[placeholder]:text-[var(--nt-text-neutral-quaternary)] hover:border-[var(--nt-stroke-neutral-trans-4)] focus:border-[var(--nt-stroke-outstanding-base)] focus:outline-none focus:[box-shadow:var(--nt-outline-active-focus)] disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:[&>svg]:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:border-[var(--nt-stroke-neutral-trans-3)] data-[disabled]:bg-[var(--nt-fill-neutral-trans-3)] data-[disabled]:text-[var(--nt-text-neutral-tertiary)] data-[disabled]:shadow-none data-[disabled]:hover:border-[var(--nt-stroke-neutral-trans-3)] data-[disabled]:[&>svg]:opacity-50 [&>span]:line-clamp-1",
+      "flex h-8 w-full items-center justify-between whitespace-nowrap rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] px-3 py-1 text-sm text-[var(--nt-text-neutral-primary)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] [transition:border-color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] data-[placeholder]:text-[var(--nt-text-neutral-quaternary)] hover:border-[var(--nt-stroke-neutral-trans-4)] focus:border-[var(--nt-stroke-outstanding-base)] focus:outline-none focus:[box-shadow:var(--nt-outline-active-focus)] disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:[&>svg]:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:border-[var(--nt-stroke-neutral-trans-3)] data-[disabled]:bg-[var(--nt-fill-neutral-trans-3)] data-[disabled]:text-[var(--nt-text-neutral-tertiary)] data-[disabled]:shadow-none data-[disabled]:hover:border-[var(--nt-stroke-neutral-trans-3)] data-[disabled]:[&>svg]:opacity-50 [&>span]:line-clamp-1",
       className,
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
+      <ChevronDown className="h-4 w-4 text-[var(--nt-text-neutral-tertiary)]" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
