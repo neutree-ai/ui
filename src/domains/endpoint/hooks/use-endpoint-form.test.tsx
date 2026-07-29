@@ -2340,7 +2340,12 @@ describe("useEndpointForm", () => {
       expect(
         panel
           .getAllByTestId("endpoint-gpu-device-card")
-          .some((card) => card.className.includes("bg-emerald-50/60")),
+          .some(
+            (card) =>
+              card.className.includes(
+                "border-[var(--nt-stroke-positive-light)]",
+              ) && card.className.includes("bg-[var(--nt-fill-neutral-white)]"),
+          ),
       ).toBe(true);
       expect(panel.getAllByTestId("endpoint-node-gpu-card-grid")).toHaveLength(
         2,
@@ -2496,14 +2501,20 @@ describe("useEndpointForm", () => {
       const panel = within(screen.getByTestId("endpoint-resource-context"));
       const unavailableGpuCards = panel
         .getAllByTestId("endpoint-gpu-device-card")
-        .filter((card) => card.className.includes("border-amber-300"));
+        .filter((card) =>
+          card.className.includes("border-[var(--nt-stroke-notice-light)]"),
+        );
 
       expect(unavailableGpuCards.length).toBeGreaterThan(0);
       for (const progress of within(unavailableGpuCards[0]).getAllByTestId(
         "endpoint-gpu-resource-progress",
       )) {
-        expect(progress.className).toContain("bg-emerald-100");
-        expect(progress.className).not.toContain("bg-amber-100");
+        expect(progress.className).toContain(
+          "bg-[var(--nt-fill-positive-light)]",
+        );
+        expect(progress.className).not.toContain(
+          "bg-[var(--nt-fill-notice-light)]",
+        );
       }
     });
 

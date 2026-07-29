@@ -103,7 +103,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(container.firstElementChild?.className).toContain("border-t");
+    expect(container.firstElementChild?.className).toContain("space-y-4");
     expect(
       screen.getByText("endpoints.sections.allocatedResources"),
     ).toBeTruthy();
