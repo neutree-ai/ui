@@ -37,9 +37,9 @@ export const ModelCatalogsShow = () => {
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
-    id: record?.spec.engine.engine,
+    id: record?.spec.engine?.engine,
     queryOptions: {
-      enabled: Boolean(record?.spec.engine.engine),
+      enabled: Boolean(record?.spec.engine?.engine),
     },
   });
 
@@ -52,7 +52,7 @@ export const ModelCatalogsShow = () => {
   }
 
   const engineVersionSchema = engineData?.data?.spec.versions.find(
-    (v) => v.version === record.spec.engine.version,
+    (v) => v.version === record.spec.engine?.version,
   )?.values_schema;
 
   const isRecipe = isRecipeShape(record.spec);
