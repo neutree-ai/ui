@@ -1,4 +1,4 @@
-import { useCustomMutation, useInvalidate, useSelect } from "@refinedev/core";
+import { useCustomMutation, useInvalidate } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
@@ -19,6 +19,7 @@ import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 
 type FormValues = { name: string; workspace: string } & ApiKeyPolicyFormValues;
 
@@ -33,9 +34,10 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     },
   });
   const selectedWorkspace = form.watch("workspace");
-  const workspaces = useSelect({
-    resource: "workspaces",
-  });
+  // Shares the pickers' query so this form isn't stuck on refine's default
+  // first page of 10 workspaces either (NEU-505). FormCombobox filters what it
+  // is given locally, so the page size is the reach here.
+  const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceOptions();
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const { copy, copied } = useCopyToClipboard();
 
@@ -134,10 +136,10 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         >
           <FormCombobox
             placeholder={t("api_keys.placeholders.selectWorkspace")}
-            disabled={workspaces.query.isLoading}
-            options={(workspaces.query.data?.data || []).map((e) => ({
-              label: e.metadata.name,
-              value: e.metadata.name,
+            disabled={isLoadingWorkspaces}
+            options={workspaces.map((workspace) => ({
+              label: workspace.metadata.name,
+              value: workspace.metadata.name,
             }))}
           />
         </FormFieldGroup>

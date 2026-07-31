@@ -2,12 +2,17 @@ import { useGo, useResource, useResourceParams } from "@refinedev/core";
 import { useForm } from "react-hook-form";
 import { Combobox } from "@/components/ui/combobox";
 import { Form } from "@/components/ui/form";
-import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
+import {
+  ALL_WORKSPACES,
+  useWorkspace,
+  useWorkspaceSearch,
+} from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export default function WorkspaceSelect() {
   const { t } = useTranslation();
-  const { current, data } = useWorkspace();
+  const { current } = useWorkspace();
+  const { options, onSearchChange } = useWorkspaceSearch();
   const form = useForm({
     mode: "all",
     defaultValues: {
@@ -30,12 +35,10 @@ export default function WorkspaceSelect() {
             label: t("workspaces.options.allWorkspaces"),
             value: ALL_WORKSPACES,
           },
-        ].concat(
-          data.map((workspace) => ({
-            label: workspace.metadata.name,
-            value: workspace.metadata.name,
-          })),
-        )}
+          ...options,
+        ]}
+        shouldFilter={false}
+        onSearchChange={onSearchChange}
         triggerClassName="w-[280px]"
         placeholder={t("workspaces.placeholders.selectWorkspace")}
         value={current}

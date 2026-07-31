@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ALL_WORKSPACES } from "./use-workspace";
 
@@ -14,13 +14,16 @@ const mockWorkspaces = [
   { metadata: { name: "ws-beta" } },
 ];
 
+const mockUseList = vi.fn((_params?: Record<string, unknown>) => ({
+  data: { data: mockWorkspaces },
+  isLoading: false,
+}));
+
 vi.mock("@refinedev/core", () => ({
   useParsed: () => ({ params: mockParams }),
   useResourceParams: () => ({ action: mockAction }),
-  useList: () => ({
-    data: { data: mockWorkspaces },
-    isLoading: false,
-  }),
+  // Called lazily: vi.mock factories are hoisted above the declaration above.
+  useList: (params?: Record<string, unknown>) => mockUseList(params),
 }));
 
 vi.mock("react-use", () => ({
@@ -126,12 +129,96 @@ describe("useWorkspace", () => {
   });
 
   describe("returned data", () => {
-    it("returns workspace list and loading state", async () => {
+    it("reports the loading state", async () => {
       const { result } = await workspaceHook();
 
-      expect(result.current.data).toEqual(mockWorkspaces);
       expect(result.current.isLoading).toBe(false);
     });
+  });
+});
+
+describe("useWorkspaceOptions", () => {
+  it("queries a page big enough to cover a real deployment", async () => {
+    const { useWorkspaceOptions } = await import("./use-workspace");
+    const { result } = renderHook(() => useWorkspaceOptions());
+
+    expect(mockUseList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resource: "workspaces",
+        pagination: { pageSize: 100 },
+      }),
+    );
+    expect(result.current.workspaces).toEqual(mockWorkspaces);
+  });
+
+  it("sends the search to the server rather than filtering locally", async () => {
+    // The reported bug: the target workspace sat past the first page, so a
+    // client-side filter over what was already loaded could never find it.
+    const { useWorkspaceOptions } = await import("./use-workspace");
+    renderHook(() => useWorkspaceOptions("132455"));
+
+    expect(mockUseList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: [
+          {
+            field: "metadata->>name",
+            operator: "contains",
+            value: "132455",
+          },
+        ],
+      }),
+    );
+  });
+
+  it("sends no filter when nothing has been typed", async () => {
+    const { useWorkspaceOptions } = await import("./use-workspace");
+    renderHook(() => useWorkspaceOptions(""));
+
+    expect(mockUseList).toHaveBeenCalledWith(
+      expect.objectContaining({ filters: [] }),
+    );
+  });
+});
+
+describe("useWorkspaceSearch", () => {
+  it("queries once the typing pauses, not once per keystroke", async () => {
+    vi.useFakeTimers();
+    const { useWorkspaceSearch } = await import("./use-workspace");
+    const { result } = renderHook(() => useWorkspaceSearch());
+
+    const filteredCalls = () =>
+      mockUseList.mock.calls.filter(
+        ([params]) => ((params?.filters as unknown[]) ?? []).length > 0,
+      );
+
+    act(() => {
+      result.current.onSearchChange("1");
+      result.current.onSearchChange("13");
+      result.current.onSearchChange("132455");
+    });
+    expect(filteredCalls()).toHaveLength(0);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(filteredCalls()).not.toHaveLength(0);
+    expect(filteredCalls().at(-1)?.[0]).toMatchObject({
+      filters: [
+        { field: "metadata->>name", operator: "contains", value: "132455" },
+      ],
+    });
+    vi.useRealTimers();
+  });
+
+  it("exposes options shaped for the combobox", async () => {
+    const { useWorkspaceSearch } = await import("./use-workspace");
+    const { result } = renderHook(() => useWorkspaceSearch());
+
+    expect(result.current.options).toEqual([
+      { label: "ws-alpha", value: "ws-alpha" },
+      { label: "ws-beta", value: "ws-beta" },
+    ]);
   });
 });
 
