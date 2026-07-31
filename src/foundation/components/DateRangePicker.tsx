@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { CalendarDays } from "lucide-react";
+import { useState } from "react";
 import type { DateRange as RdpRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -45,14 +46,35 @@ export function DateRangePicker({
   presets?: number[];
 }) {
   const { t } = useTranslation();
+  // The first calendar click only anchors a new start; the committed `value`
+  // stays untouched until a second click closes the range. Without this draft,
+  // react-day-picker extends the existing range instead of starting a new one,
+  // so re-picking a narrower window inside the current one keeps the old start.
+  const [draftStart, setDraftStart] = useState<string | null>(null);
   const label = `${dayjs(value.start).format("MMM D")} – ${dayjs(value.end).format("MMM D")}`;
-  const selected: RdpRange = {
-    from: dayjs(value.start).toDate(),
-    to: dayjs(value.end).toDate(),
+  const selected: RdpRange = draftStart
+    ? { from: dayjs(draftStart).toDate(), to: undefined }
+    : { from: dayjs(value.start).toDate(), to: dayjs(value.end).toDate() };
+
+  const pickDay = (day: Date) => {
+    const picked = dayjs(day).format("YYYY-MM-DD");
+    if (!draftStart) {
+      setDraftStart(picked);
+      return;
+    }
+    setDraftStart(null);
+    // Backwards selections are normalised so the earlier day always wins.
+    onChange(
+      picked < draftStart
+        ? { start: picked, end: draftStart }
+        : { start: draftStart, end: picked },
+    );
   };
 
   return (
-    <Popover>
+    // A half-finished draft is discarded whenever the popover opens or closes,
+    // so every visit starts from the committed range.
+    <Popover onOpenChange={() => setDraftStart(null)}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -71,7 +93,10 @@ export function DateRangePicker({
               variant="ghost"
               size="sm"
               className="h-7 px-2 text-xs"
-              onClick={() => onChange(trailingRange(d))}
+              onClick={() => {
+                setDraftStart(null);
+                onChange(trailingRange(d));
+              }}
             >
               {t("common.dateRange.lastDays", { days: d })}
             </Button>
@@ -81,14 +106,9 @@ export function DateRangePicker({
           mode="range"
           defaultMonth={selected.from}
           selected={selected}
-          onSelect={(r: RdpRange | undefined) => {
-            if (r?.from) {
-              onChange({
-                start: dayjs(r.from).format("YYYY-MM-DD"),
-                end: dayjs(r.to ?? r.from).format("YYYY-MM-DD"),
-              });
-            }
-          }}
+          // The range react-day-picker computes is ignored; only the clicked day
+          // matters, since the draft above decides what it means.
+          onSelect={(_r: RdpRange | undefined, day: Date) => pickDay(day)}
         />
       </PopoverContent>
     </Popover>
