@@ -16,6 +16,7 @@ import type { ResourceSpec } from "@/foundation/types/serving-types";
 type EndpointRuntimeResourcesCardProps = {
   configuredResources?: ResourceSpec | null;
   resources: EndpointResourceStatus | null | undefined;
+  className?: string;
 };
 
 type AcceleratorWithFlatVirtualization = NonNullable<
@@ -65,20 +66,16 @@ const getConfiguredCorePercent = (
   return parsePositiveNumber(value);
 };
 
-// Metrics truncate so rows keep an even height, but identifiers the user came
-// here to read — the GPU product above all — pass `wrap` and get the whole
-// string. A plain string value always carries a title so a clipped one stays
-// readable on hover.
+// Values truncate so rows keep an even height. A plain string value carries a
+// title so a clipped one stays readable on hover.
 const ResourceValue = ({
   label,
   value,
   className,
-  wrap = false,
 }: {
   label: string;
   value: ReactNode;
   className?: string;
-  wrap?: boolean;
 }) => (
   <div
     className={cn(
@@ -88,10 +85,7 @@ const ResourceValue = ({
   >
     <span className="text-xs leading-4 text-muted-foreground">{label}</span>
     <strong
-      className={cn(
-        "min-w-0 text-sm font-semibold leading-5",
-        wrap ? "break-words" : "truncate",
-      )}
+      className="min-w-0 truncate text-sm font-semibold leading-5"
       title={typeof value === "string" ? value : undefined}
     >
       {value}
@@ -102,6 +96,7 @@ const ResourceValue = ({
 export default function EndpointRuntimeResourcesCard({
   configuredResources,
   resources,
+  className,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
@@ -123,7 +118,7 @@ export default function EndpointRuntimeResourcesCard({
   }
 
   return (
-    <div className="mt-6 space-y-4 border-t pt-4">
+    <div className={cn("space-y-4", className)}>
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div className="min-w-0">
           <div className="text-sm font-medium">
@@ -147,10 +142,10 @@ export default function EndpointRuntimeResourcesCard({
         <div className="grid gap-2" data-testid="runtime-resource-summary">
           {summaryRows.map((row) => (
             <div
-              className="grid min-w-0 gap-2 md:grid-cols-[minmax(180px,1.2fr)_repeat(2,minmax(120px,1fr))]"
+              className="grid min-w-0 gap-4 rounded-md border px-3 py-2 md:grid-cols-[minmax(180px,1.2fr)_repeat(2,minmax(120px,1fr))] md:items-center"
               key={row.product}
             >
-              <div className="flex min-w-0 items-center gap-3 rounded-md border bg-background px-3 py-2">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary/10 text-xs font-bold text-primary">
                   {t("clusters.fields.gpuNumber")}
                 </div>
@@ -167,10 +162,12 @@ export default function EndpointRuntimeResourcesCard({
                 </div>
               </div>
               <ResourceValue
+                className="border-0 bg-transparent p-0"
                 label={t("clusters.fields.memoryUsage")}
                 value={formatMemoryGiB(row.memoryMiB)}
               />
               <ResourceValue
+                className="border-0 bg-transparent p-0"
                 label={t("clusters.fields.coreUsage")}
                 value={coreLimitText}
               />
@@ -180,7 +177,7 @@ export default function EndpointRuntimeResourcesCard({
       )}
 
       {replicaGroups.length > 0 && (
-        <div className="grid gap-2" data-testid="runtime-replica-groups">
+        <div className="grid gap-2.5" data-testid="runtime-replica-groups">
           <div className="text-sm font-medium">
             {t("endpoints.sections.replicaResources")}
           </div>
@@ -190,23 +187,26 @@ export default function EndpointRuntimeResourcesCard({
 
             return (
               <div
-                className="grid gap-2 rounded-md border bg-background p-3"
+                className="overflow-hidden rounded-md border bg-[var(--nt-fill-neutral-opaque-1)] dark:bg-[var(--nt-fill-neutral-opaque-2)]"
                 key={groupKey}
               >
-                <div className="flex min-w-0 flex-wrap items-start justify-between gap-2 border-b pb-2">
-                  <div className="min-w-0">
-                    <span className="block text-xs leading-4 text-muted-foreground">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 text-xs font-medium leading-4 text-muted-foreground">
                       {t("common.fields.replica")}
                     </span>
                     <strong
-                      className="block min-w-0 truncate text-sm font-semibold leading-5"
+                      className="min-w-0 truncate text-sm font-semibold leading-5"
                       title={replicaName}
                     >
                       {replicaName}
                     </strong>
                   </div>
-                  <div className="flex min-w-0 flex-wrap justify-end gap-1.5">
-                    <Badge variant="outline" className="bg-muted/40">
+                  <div className="flex min-w-0 flex-wrap justify-end gap-1">
+                    <Badge
+                      variant="outline"
+                      className="h-6 bg-card px-2 text-xs font-medium"
+                    >
                       {formatCount(
                         group.deviceCount,
                         "endpoints.fields.card",
@@ -214,23 +214,36 @@ export default function EndpointRuntimeResourcesCard({
                         t,
                       )}
                     </Badge>
-                    <Badge variant="outline" className="bg-muted/40">
+                    <Badge
+                      variant="outline"
+                      className="h-6 bg-card px-2 text-xs font-medium"
+                    >
                       {formatMemoryGiB(group.memoryMiB)}{" "}
                       {t("endpoints.fields.vgpuMemory")}
                     </Badge>
-                    <Badge variant="outline" className="bg-muted/40">
+                    <Badge
+                      variant="outline"
+                      className="h-6 bg-card px-2 text-xs font-medium"
+                    >
                       {t("endpoints.fields.vgpuCoreCapacity")} {coreLimitText}
                     </Badge>
                   </div>
                 </div>
 
-                <div className="grid gap-2">
+                <div className="overflow-x-auto">
+                  <div className="grid min-w-[760px] grid-cols-[96px_minmax(180px,1.2fr)_minmax(96px,0.6fr)_minmax(72px,0.45fr)_minmax(140px,0.75fr)] gap-3 border-b px-3 py-2 text-xs font-medium leading-4 text-muted-foreground">
+                    <span>{t("clusters.fields.gpuNumber")}</span>
+                    <span>{t("common.fields.acceleratorProduct")}</span>
+                    <span>{t("clusters.fields.memoryUsage")}</span>
+                    <span>{t("clusters.fields.coreUsage")}</span>
+                    <span>{t("clusters.fields.nodeName")}</span>
+                  </div>
                   {group.devices.map((device, index) => {
                     const gpuNumber = device.order ?? index + 1;
 
                     return (
                       <div
-                        className="grid min-w-0 gap-2 rounded-md border bg-muted/30 p-2 lg:grid-cols-[72px_minmax(110px,0.9fr)_minmax(86px,0.6fr)_minmax(76px,0.5fr)_minmax(120px,0.8fr)] lg:items-center"
+                        className="grid min-w-[760px] grid-cols-[96px_minmax(180px,1.2fr)_minmax(96px,0.6fr)_minmax(72px,0.45fr)_minmax(140px,0.75fr)] items-center gap-3 border-b px-3 py-2.5 text-sm last:border-b-0"
                         key={`${groupKey}:${device.uuid || index}`}
                       >
                         <Button
@@ -239,7 +252,7 @@ export default function EndpointRuntimeResourcesCard({
                           size="sm"
                           title={t("clusters.actions.copyUuid")}
                           aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
-                          className="-ml-2 h-7 min-w-0 justify-start px-2 text-xs"
+                          className="-ml-2 h-7 min-w-0 justify-start px-2 text-sm font-medium"
                           onClick={() =>
                             copy(device.uuid, {
                               successMessage: t(
@@ -252,32 +265,30 @@ export default function EndpointRuntimeResourcesCard({
                           }
                         >
                           {t("clusters.fields.gpuNumber")} {gpuNumber}
-                          <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                           <span className="sr-only">
                             {t("clusters.actions.copyUuid")}
                           </span>
                         </Button>
-                        <ResourceValue
-                          className="border-0 bg-transparent p-0"
-                          label={t("common.fields.acceleratorProduct")}
-                          value={device.product || "-"}
-                          wrap
-                        />
-                        <ResourceValue
-                          className="border-0 bg-transparent p-0"
-                          label={t("clusters.fields.memoryUsage")}
-                          value={formatMemoryGiB(device.memoryMiB)}
-                        />
-                        <ResourceValue
-                          className="border-0 bg-transparent p-0"
-                          label={t("clusters.fields.coreUsage")}
-                          value={coreLimitText}
-                        />
-                        <ResourceValue
-                          className="border-0 bg-transparent p-0"
-                          label={t("clusters.fields.nodeName")}
-                          value={device.nodeId || "-"}
-                        />
+                        {/* The row keeps one line so the columns stay aligned,
+                            so the clipped values carry a title instead — a GPU
+                            model must never be unreadable (NEU-571). */}
+                        <span
+                          className="min-w-0 truncate font-semibold"
+                          title={device.product}
+                        >
+                          {device.product || "-"}
+                        </span>
+                        <span className="font-semibold">
+                          {formatMemoryGiB(device.memoryMiB)}
+                        </span>
+                        <span className="font-semibold">{coreLimitText}</span>
+                        <span
+                          className="min-w-0 truncate font-semibold"
+                          title={device.nodeId}
+                        >
+                          {device.nodeId || "-"}
+                        </span>
                       </div>
                     );
                   })}

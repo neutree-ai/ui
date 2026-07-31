@@ -23,11 +23,11 @@ import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard
 import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
+import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 
@@ -96,6 +96,9 @@ const RayDashboardTab = ({
   );
 };
 
+const detailTabTriggerClassName =
+  "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
+
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
   const { grafanaUrl } = useSystemApi();
@@ -157,46 +160,70 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   return (
     <ShowPage
       record={record}
+      showCurrentBreadcrumb={false}
       extraActions={() => <EndpointPauseAction endpoint={record} />}
     >
-      <Tabs defaultValue="basic" className="h-full">
-        <TabsList>
-          <TabsTrigger value="basic">{t("common.tabs.basic")}</TabsTrigger>
+      <Tabs defaultValue="basic" className="flex h-full flex-col">
+        <ShowPage.ObjectHeader
+          title={record.metadata.name}
+          description={
+            <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+              <ShowPage.Meta label={t("common.fields.model")}>
+                <EndpointModel model={record.spec.model} />
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("common.fields.task")}>
+                <ModelTask task={record.spec.model.task} />
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("common.fields.engine")}>
+                <EndpointEngine {...record} />
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("common.fields.cluster")}>
+                <ShowButton
+                  recordItemId={record.spec.cluster}
+                  meta={{
+                    workspace: record.metadata.workspace,
+                  }}
+                  variant="link"
+                  resource="clusters"
+                >
+                  {record.spec.cluster}
+                </ShowButton>
+              </ShowPage.Meta>
+            </span>
+          }
+          status={<EndpointStatus {...record.status} />}
+        />
+        <TabsList className="relative h-11 w-full items-end justify-start gap-8 rounded-none border-0 bg-transparent p-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-border">
+          <TabsTrigger value="basic" className={detailTabTriggerClassName}>
+            {t("common.tabs.basic")}
+          </TabsTrigger>
           {shouldShowRayDashboard && (
-            <TabsTrigger value="ray">
+            <TabsTrigger value="ray" className={detailTabTriggerClassName}>
               {t("common.tabs.rayDashboard")}
             </TabsTrigger>
           )}
           {showMonitorTab && (
-            <TabsTrigger value="monitor">
+            <TabsTrigger value="monitor" className={detailTabTriggerClassName}>
               {t("common.tabs.monitor")}
             </TabsTrigger>
           )}
-          <TabsTrigger value="logs">{t("common.tabs.logs")}</TabsTrigger>
-          <TabsTrigger value="playground">
+          <TabsTrigger value="logs" className={detailTabTriggerClassName}>
+            {t("common.tabs.logs")}
+          </TabsTrigger>
+          <TabsTrigger value="playground" className={detailTabTriggerClassName}>
             {t("endpoints.tabs.playground")}
           </TabsTrigger>
         </TabsList>
         <TabsContent
           value="basic"
-          className="overflow-auto h-[calc(100%-theme('spacing.11'))]"
+          className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
         >
-          <MetadataCard metadata={record.metadata} />
-          <Card className="mt-4">
-            <CardContent>
-              <div className="grid grid-cols-4 gap-8">
+          <div className="space-y-4">
+            <ShowPage.Section title={t("common.sections.basicInformation")}>
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <ShowPage.Row title={t("common.fields.status")}>
                   <EndpointStatus {...record.status} />
                 </ShowPage.Row>
-                {url && (
-                  <div className="col-span-3">
-                    <ShowPage.Row title={t("endpoints.fields.serviceUrl")}>
-                      <ServiceUrls serviceUrl={url} />
-                    </ShowPage.Row>
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-4 gap-8">
                 <ShowPage.Row title={t("common.fields.cluster")}>
                   <ShowButton
                     recordItemId={record.spec.cluster}
@@ -212,37 +239,57 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 <ShowPage.Row title={t("common.fields.engine")}>
                   <EndpointEngine {...record} />
                 </ShowPage.Row>
-                <div>
-                  <ShowPage.Row title={t("common.fields.model")}>
-                    <EndpointModel model={record.spec.model} />
-                  </ShowPage.Row>
-                </div>
-                <div>
-                  <ShowPage.Row title={t("common.fields.task")}>
-                    <ModelTask task={record.spec.model.task} />
-                  </ShowPage.Row>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-8">
+                <ShowPage.Row title={t("common.fields.model")}>
+                  <EndpointModel model={record.spec.model} />
+                </ShowPage.Row>
+                <ShowPage.Row title={t("common.fields.task")}>
+                  <ModelTask task={record.spec.model.task} />
+                </ShowPage.Row>
                 <ShowPage.Row title={t("endpoints.fields.modelFile")}>
-                  {record.spec.model.file}
+                  {record.spec.model.file || "-"}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("common.fields.workspace")}>
+                  {record.metadata.workspace ?? "-"}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("common.fields.createdAt")}>
+                  <Timestamp timestamp={record.metadata.creation_timestamp} />
+                </ShowPage.Row>
+                <ShowPage.Row title={t("common.fields.updatedAt")}>
+                  <Timestamp timestamp={record.metadata.update_timestamp} />
                 </ShowPage.Row>
               </div>
-              <EndpointRuntimeResourcesCard
-                configuredResources={record.spec.resources}
-                resources={record.status?.resources}
-              />
-            </CardContent>
-          </Card>
-          <ResourcesCard
-            resources={record.spec.resources}
-            showGpuConditionally={true}
-            titleTranslationKey="endpoints.sections.requestedResources"
-          />
-          <DeploymentConfigCard
-            replicas={record.spec.replicas}
-            deploymentOptions={record.spec.deployment_options}
-          />
+            </ShowPage.Section>
+
+            {url && (
+              <ShowPage.Section title={t("endpoints.sections.access")}>
+                <ServiceUrls serviceUrl={url} />
+              </ShowPage.Section>
+            )}
+
+            <ShowPage.Section title={t("endpoints.sections.runtimeAllocation")}>
+              <div className="space-y-6">
+                <EndpointRuntimeResourcesCard
+                  configuredResources={record.spec.resources}
+                  resources={record.status?.resources}
+                />
+                <div className="border-t pt-4">
+                  <ResourcesCard
+                    resources={record.spec.resources}
+                    showGpuConditionally={true}
+                    titleTranslationKey="endpoints.sections.requestedResources"
+                    framed={false}
+                  />
+                </div>
+                <div className="border-t pt-4">
+                  <DeploymentConfigCard
+                    replicas={record.spec.replicas}
+                    deploymentOptions={record.spec.deployment_options}
+                    framed={false}
+                  />
+                </div>
+              </div>
+            </ShowPage.Section>
+          </div>
           <EngineVariablesCard
             schema={engineVersionSchema}
             variables={record.spec.variables}
@@ -268,16 +315,13 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           )}
         </TabsContent>
         {shouldShowRayDashboard && (
-          <TabsContent
-            value="ray"
-            className="h-[calc(100%-theme('spacing.11'))]"
-          >
+          <TabsContent value="ray" className="mt-0 flex-1">
             <RayDashboardTab record={record} cluster={clusterData?.data?.[0]} />
           </TabsContent>
         )}
         <TabsContent
           value="monitor"
-          className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
+          className="mt-0 flex-1 overflow-hidden pt-4"
         >
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
@@ -340,18 +384,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent
-          value="logs"
-          className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
-        >
+        <TabsContent value="logs" className="mt-0 flex-1 overflow-hidden pt-4">
           <Suspense fallback={<Loader width="20" height="20" />}>
             <EndpointLogTabs endpoint={record} />
           </Suspense>
         </TabsContent>
-        <TabsContent
-          value="playground"
-          className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
-        >
+        <TabsContent value="playground" className="mt-0 flex-1 overflow-hidden">
           <Suspense
             fallback={<Loader className="w-16 text-muted-foreground" />}
           >

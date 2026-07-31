@@ -2,58 +2,277 @@
 
 @layer base {
 	:root {
-		--background: 0 0% 97.69%;
-		--foreground: 334 55% 1%;
-		--muted: 0 0% 93.85%;
-		--muted-foreground: 206.04 0% 50.77%;
+		--background: 222 38.46% 94.9%;
+		--foreground: 216.52 100% 9.02%;
+		--muted: 217.5 44.44% 96.47%;
+		--muted-foreground: 224.05 36% 38%;
 		--popover: 0 0% 100%;
-		--popover-foreground: 0 0% 10.2%;
+		--popover-foreground: 216.52 100% 9.02%;
 		--card: 0 0% 100%;
-		--card-foreground: 0 0% 13.73%;
-		--border: 0 0% 80.78%;
-		--input: 0 0% 80.78%;
-		--primary: 211.29 100% 50%;
+		--card-foreground: 216.52 100% 9.02%;
+		--border: 218.57 35% 92.16%;
+		--input: 218 31% 75%;
+		--primary: 209.88 100% 50%;
 		--primary-foreground: 0 0% 100%;
-		--secondary: 0 0% 85.49%;
-		--secondary-foreground: 334 0% 10%;
-		--accent: 211.29 100% 50%;
-		--accent-foreground: 334 0% 100%;
-		--destructive: 3.19 100% 59.41%;
-		--destructive-foreground: 18 0% 100%;
-		--ring: 0 0% 60%;
-		--chart-1: 211.29 100% 50%;
-		--chart-2: 0 0% 85.49%;
-		--chart-3: 211.29 100% 50%;
-		--chart-4: 0 0% 88.49%;
-		--chart-5: 211.29 103% 50%;
-		--radius: 0.5rem;
+		--secondary: 217.5 44.44% 96.47%;
+		--secondary-foreground: 224.05 57.66% 26.86%;
+		--accent: 208.8 100% 95.1%;
+		--accent-foreground: 224.05 57.66% 26.86%;
+		--destructive: 3.37 85.58% 59.22%;
+		--destructive-foreground: 0 0% 100%;
+		--ring: 209.88 100% 50%;
+		--chart-1: 209.88 100% 50%;
+		--chart-2: 150 100% 36.47%;
+		--chart-3: 37.07 99.19% 51.37%;
+		--chart-4: 255.14 91.74% 76.27%;
+		--chart-5: 3.37 85.58% 59.22%;
+		--radius: 0.375rem;
+
+		--nt-pagebackground-primary: #ffffff;
+		--nt-pagebackground-grouped: #edf0f7;
+		--nt-fill-neutral-white: #ffffff;
+		--nt-fill-neutral-opaque-1: #f2f5fa;
+		--nt-fill-neutral-opaque-2: #edf0f7;
+		--nt-fill-neutral-opaque-3: #e4e9f2;
+		--nt-fill-neutral-trans-3: rgba(211, 218, 235, 0.6);
+		--nt-stroke-neutral-trans-2: rgba(211, 218, 235, 0.6);
+		--nt-stroke-neutral-trans-3: rgba(172, 186, 211, 0.6);
+		--nt-stroke-neutral-trans-4: rgba(107, 128, 167, 0.6);
+		--nt-text-neutral-primary: #00122e;
+		--nt-text-neutral-super: #1d326c;
+		--nt-text-neutral-secondary: rgba(44, 56, 82, 0.75);
+		--nt-text-neutral-tertiary: rgba(44, 56, 82, 0.6);
+		--nt-text-neutral-quaternary: rgba(0, 21, 64, 0.3);
+		--nt-text-neutral-ontint: #ffffff;
+		--nt-text-colorful-outstanding: #0080ff;
+		--nt-fill-outstanding-base: #0080ff;
+		--nt-fill-outstanding-bright: #009dff;
+		--nt-fill-outstanding-dark: #005ed1;
+		--nt-fill-outstanding-light: rgba(0, 136, 255, 0.1);
+		--nt-fill-outstanding-lighthover: rgba(0, 136, 255, 0.16);
+		--nt-fill-outstanding-thin: rgba(0, 136, 255, 0.04);
+		--nt-gradient-sidebar-selected: linear-gradient(
+			90deg,
+			var(--nt-fill-outstanding-base) 0%,
+			var(--nt-fill-outstanding-dark) 100%
+		);
+		--nt-fill-positive-base: #00ba5d;
+		--nt-fill-positive-light: rgba(0, 186, 93, 0.1);
+		--nt-text-colorful-positive: #147a43;
+		--nt-fill-notice-base: #fea008;
+		--nt-fill-notice-light: rgba(254, 160, 8, 0.1);
+		--nt-text-colorful-notice: #8a5a00;
+		--nt-fill-serious-base: #f0483e;
+		--nt-fill-serious-bright: #ff5252;
+		--nt-fill-serious-light: rgba(240, 72, 62, 0.1);
+		--nt-text-colorful-serious: #b42318;
+		--nt-fill-purple-base: #7e41ff;
+		--nt-fill-purple-light: rgba(126, 65, 255, 0.11);
+		--nt-text-colorful-purple: #5a2fc2;
+		--nt-stroke-outstanding-base: #0080ff;
+		--nt-stroke-outstanding-light: rgba(0, 128, 255, 0.34);
+		--nt-stroke-positive-light: rgba(0, 186, 93, 0.34);
+		--nt-stroke-notice-light: rgba(254, 160, 8, 0.34);
+		--nt-stroke-serious-base: #f0483e;
+		--nt-stroke-serious-light: rgba(240, 72, 62, 0.34);
+		--nt-effect-button-shadow-push-button-cta: 0px 1px 2px 0px
+			rgba(44, 56, 82, 0.18);
+		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px
+			rgba(44, 56, 82, 0.18);
+		--nt-effect-sidebar-selected-shadow: 0px 1px 2px 0px
+			rgba(184, 192, 204, 0.6);
+		--nt-effect-dashboard-card-shadow-normal:
+			0px 0px 2.003px 0px rgba(107, 125, 153, 0.15),
+			0px 0px 16px 0px rgba(107, 125, 153, 0.08);
+		--nt-effect-dashboard-card-shadow-on-hover-float:
+			0px 8px 16px 0px rgba(10, 37, 85, 0.18),
+			0px 0px 4px -2px rgba(10, 37, 85, 0.18);
+		--nt-effect-menu-shadow-default:
+			0px 12px 40px 0px rgba(45, 58, 86, 0.3),
+			0px 0px 10px 0px rgba(107, 125, 153, 0.18);
+		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(29, 50, 108, 0.6);
+		--nt-outline-hover: 0px 0px 0px 4px rgba(225, 230, 241, 0.6);
+		--nt-outline-active-focus: 0px 0px 0px 4px rgba(0, 136, 255, 0.16);
+		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(255, 74, 74, 0.16);
+		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(254, 160, 8, 0.16);
+		--nt-font-family-sans:
+			Inter, "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+		--nt-font-family-mono:
+			"JetBrains Mono", "Fira Code", ui-monospace, "SF Mono", Menlo, Monaco,
+			monospace;
+		--nt-font-page-title: 700 32px / 40px var(--nt-font-family-sans);
+		--nt-font-section-title: 600 20px / 28px var(--nt-font-family-sans);
+		--nt-font-component-title: 600 16px / 24px var(--nt-font-family-sans);
+		--nt-font-body: 400 14px / 22px var(--nt-font-family-sans);
+		--nt-font-compact: 400 13px / 20px var(--nt-font-family-sans);
+		--nt-font-caption: 400 12px / 18px var(--nt-font-family-sans);
+		--nt-font-meta: 600 11px / 16px var(--nt-font-family-sans);
+		--nt-radius-button: 6px;
+		--nt-radius-input: 5px;
+		--nt-radius-checkbox: 3px;
+		--nt-radius-card: 10px;
+		--nt-motion-fast: 140ms ease;
+		--nt-motion-medium: 220ms ease;
+
+		--pagebackground-primary: var(--nt-pagebackground-primary);
+		--pagebackground-grouped: var(--nt-pagebackground-grouped);
+		--fill-neutral-white: var(--nt-fill-neutral-white);
+		--fill-neutral-opaque-1: var(--nt-fill-neutral-opaque-1);
+		--fill-neutral-opaque-2: var(--nt-fill-neutral-opaque-2);
+		--fill-neutral-opaque-3: var(--nt-fill-neutral-opaque-3);
+		--fill-neutral-trans-3: var(--nt-fill-neutral-trans-3);
+		--stroke-neutral-trans-2: var(--nt-stroke-neutral-trans-2);
+		--stroke-neutral-trans-3: var(--nt-stroke-neutral-trans-3);
+		--stroke-neutral-trans-4: var(--nt-stroke-neutral-trans-4);
+		--text-neutral-primary: var(--nt-text-neutral-primary);
+		--text-neutral-super: var(--nt-text-neutral-super);
+		--text-neutral-secondary: var(--nt-text-neutral-secondary);
+		--text-neutral-tertiary: var(--nt-text-neutral-tertiary);
+		--text-neutral-quaternary: var(--nt-text-neutral-quaternary);
+		--text-neutral-ontint: var(--nt-text-neutral-ontint);
+		--text-colorful-outstanding: var(--nt-text-colorful-outstanding);
+		--fill-outstanding-base: var(--nt-fill-outstanding-base);
+		--fill-outstanding-bright: var(--nt-fill-outstanding-bright);
+		--fill-outstanding-dark: var(--nt-fill-outstanding-dark);
+		--fill-outstanding-light: var(--nt-fill-outstanding-light);
+		--fill-outstanding-lighthover: var(--nt-fill-outstanding-lighthover);
+		--fill-outstanding-thin: var(--nt-fill-outstanding-thin);
+		--fill-positive-base: var(--nt-fill-positive-base);
+		--fill-positive-light: var(--nt-fill-positive-light);
+		--text-colorful-positive: var(--nt-text-colorful-positive);
+		--fill-notice-base: var(--nt-fill-notice-base);
+		--fill-notice-light: var(--nt-fill-notice-light);
+		--text-colorful-notice: var(--nt-text-colorful-notice);
+		--fill-serious-base: var(--nt-fill-serious-base);
+		--fill-serious-bright: var(--nt-fill-serious-bright);
+		--fill-serious-light: var(--nt-fill-serious-light);
+		--text-colorful-serious: var(--nt-text-colorful-serious);
+		--fill-purple-base: var(--nt-fill-purple-base);
+		--fill-purple-light: var(--nt-fill-purple-light);
+		--text-colorful-purple: var(--nt-text-colorful-purple);
+		--stroke-outstanding-base: var(--nt-stroke-outstanding-base);
+		--stroke-outstanding-light: var(--nt-stroke-outstanding-light);
+		--stroke-positive-light: var(--nt-stroke-positive-light);
+		--stroke-notice-light: var(--nt-stroke-notice-light);
+		--stroke-serious-base: var(--nt-stroke-serious-base);
+		--stroke-serious-light: var(--nt-stroke-serious-light);
+		--button-shadow-push-button-cta: var(
+			--nt-effect-button-shadow-push-button-cta
+		);
+		--button-shadow-push-button-ordinary: var(
+			--nt-effect-button-shadow-push-button-ordinary
+		);
+		--dashboard-card-shadow-normal: var(
+			--nt-effect-dashboard-card-shadow-normal
+		);
+		--dashboard-card-shadow-on-hover-float: var(
+			--nt-effect-dashboard-card-shadow-on-hover-float
+		);
+		--menu-shadow-default: var(--nt-effect-menu-shadow-default);
+		--tooltip-shadow: var(--nt-effect-tooltip-shadow);
+		--outline-hover: var(--nt-outline-hover);
+		--outline-active-focus: var(--nt-outline-active-focus);
+		--outline-active-focus-error: var(--nt-outline-active-focus-error);
+		--outline-active-focus-notice: var(--nt-outline-active-focus-notice);
 	}
 
 	.dark {
-		--background: 217.5 9.09% 17.25%;
-		--foreground: 334 34% 98%;
-		--muted: 210 9.09% 12.94%;
-		--muted-foreground: 334 0% 60.77%;
-		--popover: 210 9.09% 12.94%;
-		--popover-foreground: 334 34% 98%;
-		--card: 210 9.09% 12.94%;
-		--card-foreground: 334 34% 98%;
-		--border: 334 0% 18.46%;
-		--input: 214.29 5.04% 27.25%;
-		--primary: 226.73 58.43% 65.1%;
+		--background: 216.52 58.97% 7.65%;
+		--foreground: 215.29 51.52% 93.53%;
+		--muted: 214.74 44.19% 16.86%;
+		--muted-foreground: 215 38% 79.61%;
+		--popover: 215.63 45.71% 13.73%;
+		--popover-foreground: 215.29 51.52% 93.53%;
+		--card: 215.63 45.71% 13.73%;
+		--card-foreground: 215.29 51.52% 93.53%;
+		--border: 215.56 39.13% 27.06%;
+		--input: 215.56 39.13% 27.06%;
+		--primary: 211.52 100% 57.45%;
 		--primary-foreground: 0 0% 100%;
-		--secondary: 214.29 5.04% 27.25%;
-		--secondary-foreground: 334 0% 100%;
-		--accent: 217.5 9.09% 17.25%;
-		--accent-foreground: 226.73 58.43% 65.1%;
-		--destructive: 358.16 68.78% 53.53%;
+		--secondary: 214.74 44.19% 16.86%;
+		--secondary-foreground: 217.5 80% 98.04%;
+		--accent: 214.88 40.19% 20.98%;
+		--accent-foreground: 211.56 100% 73.53%;
+		--destructive: 3.72 82.86% 65.69%;
 		--destructive-foreground: 0 0% 100%;
-		--ring: 217.5 9.09% 17.25%;
-		--chart-1: 226.73 58.43% 65.1%;
-		--chart-2: 214.29 5.04% 27.25%;
-		--chart-3: 217.5 9.09% 17.25%;
-		--chart-4: 214.29 5.04% 30.25%;
-		--chart-5: 226.73 61.43% 65.1%;
+		--ring: 211.52 100% 57.45%;
+		--chart-1: 211.52 100% 57.45%;
+		--chart-2: 150 65.87% 49.41%;
+		--chart-3: 38.66 100% 61.96%;
+		--chart-4: 255.14 91.74% 76.27%;
+		--chart-5: 3.72 82.86% 65.69%;
+
+		--nt-pagebackground-primary: #0d1828;
+		--nt-pagebackground-grouped: #08111f;
+		--nt-fill-neutral-white: #132033;
+		--nt-fill-neutral-opaque-1: #18283e;
+		--nt-fill-neutral-opaque-2: #20324b;
+		--nt-fill-neutral-opaque-3: #2a4060;
+		--nt-fill-neutral-trans-3: rgba(158, 179, 214, 0.18);
+		--nt-stroke-neutral-trans-2: rgba(173, 192, 224, 0.16);
+		--nt-stroke-neutral-trans-3: rgba(173, 192, 224, 0.28);
+		--nt-stroke-neutral-trans-4: rgba(173, 192, 224, 0.42);
+		--nt-text-neutral-primary: #e6edf7;
+		--nt-text-neutral-super: #f6f9fe;
+		--nt-text-neutral-secondary: rgba(213, 223, 239, 0.74);
+		--nt-text-neutral-tertiary: rgba(182, 199, 224, 0.58);
+		--nt-text-neutral-quaternary: rgba(182, 199, 224, 0.36);
+		--nt-text-neutral-ontint: #ffffff;
+		--nt-text-colorful-outstanding: #78b8ff;
+		--nt-fill-outstanding-base: #268dff;
+		--nt-fill-outstanding-bright: #4ca6ff;
+		--nt-fill-outstanding-dark: #1672d8;
+		--nt-fill-outstanding-light: rgba(38, 141, 255, 0.1);
+		--nt-fill-outstanding-lighthover: rgba(38, 141, 255, 0.16);
+		--nt-fill-outstanding-thin: rgba(38, 141, 255, 0.06);
+		--nt-gradient-sidebar-selected: linear-gradient(
+			90deg,
+			var(--nt-fill-outstanding-base) 0%,
+			var(--nt-fill-outstanding-dark) 100%
+		);
+		--nt-fill-positive-base: #23bf72;
+		--nt-fill-positive-light: rgba(35, 191, 114, 0.11);
+		--nt-text-colorful-positive: #89dfb4;
+		--nt-fill-notice-base: #eaa23a;
+		--nt-fill-notice-light: rgba(234, 162, 58, 0.12);
+		--nt-text-colorful-notice: #f0c474;
+		--nt-fill-serious-base: #f0685f;
+		--nt-fill-serious-bright: #ff8179;
+		--nt-fill-serious-light: rgba(240, 104, 95, 0.12);
+		--nt-text-colorful-serious: #ffaaa3;
+		--nt-fill-purple-base: #9b7cf2;
+		--nt-fill-purple-light: rgba(155, 124, 242, 0.11);
+		--nt-text-colorful-purple: #c0adff;
+		--nt-stroke-outstanding-base: #268dff;
+		--nt-stroke-outstanding-light: rgba(38, 141, 255, 0.32);
+		--nt-stroke-positive-light: rgba(35, 191, 114, 0.32);
+		--nt-stroke-notice-light: rgba(234, 162, 58, 0.32);
+		--nt-stroke-serious-base: #f0685f;
+		--nt-stroke-serious-light: rgba(240, 104, 95, 0.32);
+		--nt-effect-button-shadow-push-button-cta: 0px 1px 2px 0px
+			rgba(0, 0, 0, 0.32);
+		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px
+			rgba(0, 0, 0, 0.32);
+		--nt-effect-sidebar-selected-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.32);
+		--nt-effect-dashboard-card-shadow-normal:
+			inset 0px 1px 0px rgba(255, 255, 255, 0.03),
+			0px 8px 20px 0px rgba(0, 0, 0, 0.16);
+		--nt-effect-dashboard-card-shadow-on-hover-float:
+			0px 8px 16px 0px rgba(0, 0, 0, 0.34), 0px 0px 4px -2px rgba(0, 0, 0, 0.28);
+		--nt-effect-menu-shadow-default:
+			0px 18px 42px 0px rgba(0, 0, 0, 0.48),
+			0px 0px 0px 1px rgba(173, 192, 224, 0.12);
+		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.5);
+		--nt-outline-hover: 0px 0px 0px 4px rgba(158, 179, 214, 0.14);
+		--nt-outline-active-focus: 0px 0px 0px 4px rgba(38, 141, 255, 0.18);
+		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(240, 104, 95, 0.18);
+		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(234, 162, 58, 0.18);
+		--nt-radius-button: 6px;
+		--nt-radius-input: 5px;
+		--nt-radius-checkbox: 3px;
+		--nt-radius-card: 10px;
+		--nt-motion-fast: 140ms ease;
+		--nt-motion-medium: 220ms ease;
 	}
 }
 

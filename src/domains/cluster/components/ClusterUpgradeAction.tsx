@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import {
@@ -214,11 +215,13 @@ function UpgradeDialog({
               />
             )}
           </div>
-          <div className="rounded-md border p-3 text-sm text-muted-foreground">
-            {cluster.spec.type === "ssh"
-              ? t("clusters.messages.upgradeWarningSSH")
-              : t("clusters.messages.upgradeWarningK8s")}
-          </div>
+          <Alert variant={cluster.spec.type === "ssh" ? "warning" : "info"}>
+            <AlertDescription>
+              {cluster.spec.type === "ssh"
+                ? t("clusters.messages.upgradeWarningSSH")
+                : t("clusters.messages.upgradeWarningK8s")}
+            </AlertDescription>
+          </Alert>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

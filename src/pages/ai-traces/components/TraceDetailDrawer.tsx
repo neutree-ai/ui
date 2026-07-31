@@ -294,7 +294,7 @@ const BodySection = ({
                     : t("ai_traces.detail.expandAll")}
                 </Button>
               )}
-              <div className="flex rounded-md border p-0.5">
+              <div className="inline-flex items-center gap-0.5 rounded-[calc(var(--nt-radius-button)+2px)] bg-[var(--nt-fill-neutral-opaque-1)] p-0.5 text-[var(--nt-text-neutral-secondary)]">
                 <ToggleChip
                   active={effectiveView === "formatted"}
                   onClick={() => setView("formatted")}
@@ -422,12 +422,13 @@ const ToggleChip = ({
 }) => (
   <button
     type="button"
+    aria-pressed={active}
     onClick={onClick}
     className={cn(
-      "rounded px-2 py-0.5 text-xs transition-colors",
+      "rounded-[var(--nt-radius-button)] px-2 py-0.5 text-xs font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)]",
       active
-        ? "bg-secondary text-secondary-foreground font-medium"
-        : "text-muted-foreground hover:text-foreground",
+        ? "bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-primary)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] hover:bg-[var(--nt-fill-neutral-white)]"
+        : "text-[var(--nt-text-neutral-secondary)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)]",
     )}
   >
     {label}

@@ -4,24 +4,24 @@
 
 @layer base {
 	:root {
-		--sidebar-background: 0 0% 98%;
-		--sidebar-foreground: 240 5.3% 26.1%;
-		--sidebar-primary: 240 5.9% 10%;
-		--sidebar-primary-foreground: 0 0% 98%;
-		--sidebar-accent: 240 4.8% 95.9%;
-		--sidebar-accent-foreground: 240 5.9% 10%;
-		--sidebar-border: 220 13% 91%;
-		--sidebar-ring: 217.2 91.2% 59.8%;
+		--sidebar-background: 0 0% 100%;
+		--sidebar-foreground: 224.05 36% 38%;
+		--sidebar-primary: 209.88 100% 50%;
+		--sidebar-primary-foreground: 0 0% 100%;
+		--sidebar-accent: 217.5 44.44% 96.47%;
+		--sidebar-accent-foreground: 209.88 100% 50%;
+		--sidebar-border: 218.57 35% 92.16%;
+		--sidebar-ring: 209.88 100% 50%;
 	}
 	.dark {
-		--sidebar-background: 240 5.9% 10%;
-		--sidebar-foreground: 240 4.8% 95.9%;
-		--sidebar-primary: 224.3 76.3% 48%;
+		--sidebar-background: 215.63 45.71% 13.73%;
+		--sidebar-foreground: 215 38% 79.61%;
+		--sidebar-primary: 211.52 100% 57.45%;
 		--sidebar-primary-foreground: 0 0% 100%;
-		--sidebar-accent: 240 3.7% 15.9%;
-		--sidebar-accent-foreground: 240 4.8% 95.9%;
-		--sidebar-border: 240 3.7% 15.9%;
-		--sidebar-ring: 217.2 91.2% 59.8%;
+		--sidebar-accent: 214.88 40.19% 20.98%;
+		--sidebar-accent-foreground: 211.56 100% 73.53%;
+		--sidebar-border: 215.56 39.13% 27.06%;
+		--sidebar-ring: 211.52 100% 57.45%;
 	}
 }
 

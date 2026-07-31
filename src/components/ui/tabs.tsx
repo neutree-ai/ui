@@ -12,7 +12,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+      "inline-flex h-9 items-center justify-center rounded-[calc(var(--nt-radius-button)+2px)] bg-[var(--nt-fill-neutral-opaque-1)] p-1 text-[var(--nt-text-neutral-secondary)]",
       className,
     )}
     {...props}
@@ -27,7 +27,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-[var(--nt-radius-button)] px-3 py-1 text-sm font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)] disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[var(--nt-fill-neutral-white)] data-[state=active]:text-[var(--nt-text-neutral-primary)] data-[state=active]:shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] data-[state=active]:hover:bg-[var(--nt-fill-neutral-white)]",
       className,
     )}
     {...props}

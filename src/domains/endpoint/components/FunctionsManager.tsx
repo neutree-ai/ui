@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { cn } from "@/foundation/lib/utils";
 import type { ChatFunction } from "@/foundation/types/chat-types";
 import { FunctionDialog } from "./FunctionDialog";
@@ -88,13 +89,7 @@ export function FunctionsManager({
 
       <div className="space-y-2">
         {functions.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground text-center">
-                {t("components.playground.chat.noFunctions")}
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState>{t("components.playground.chat.noFunctions")}</EmptyState>
         ) : (
           functions.map((func) => (
             <Card

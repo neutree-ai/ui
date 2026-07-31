@@ -1,5 +1,4 @@
 import { useMenu, useResourceParams } from "@refinedev/core";
-import { buttonVariants } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -8,20 +7,15 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import {
   buildMenuItemPaths,
   isMenuItemActive,
 } from "@/foundation/lib/sidebar-active";
-import { cn } from "@/foundation/lib/utils";
 
 type TreeMenuItem = ReturnType<typeof useMenu>["menuItems"][number];
 
@@ -31,9 +25,9 @@ import { Link } from "./Link";
 
 const GetIcon = (item: TreeMenuItem) => {
   const icon = item.meta?.icon;
-  if (React.isValidElement(icon)) {
-    return React.cloneElement<any>(icon, {
-      className: "mr-1 w-4 h-4",
+  if (React.isValidElement<{ className?: string }>(icon)) {
+    return React.cloneElement(icon, {
+      className: "size-4",
     });
   }
   return null;
@@ -41,7 +35,6 @@ const GetIcon = (item: TreeMenuItem) => {
 
 type AppSidebarMenuItemProps = {
   item: TreeMenuItem;
-  key: React.Key;
   state: "collapsed" | "expanded";
 };
 
@@ -64,53 +57,34 @@ function AppSidebarMenuItem({ item, state }: AppSidebarMenuItemProps) {
   return (
     <SidebarMenuItem className="px-1">
       {state === "collapsed" ? (
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <Link
-              href={route ?? "/#"}
-              title={item.meta?.title ?? item.name}
-              className={cn(
-                buttonVariants({
-                  variant: "ghost",
-                }),
-                "justify-center w-full",
-                isActive
-                  ? "bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
-                  : "",
+        <SidebarMenuButton
+          asChild
+          isActive={isActive}
+          tooltip={
+            <span className="flex items-center gap-4">
+              {item.label}
+              {item.meta?.label && (
+                <span className="ml-auto text-muted-foreground">
+                  {item.meta?.label}
+                </span>
               )}
-            >
-              {item.meta?.icon}
-              <span className="sr-only">
-                {item.meta?.title ?? item.label} {item.list ? "List" : "Create"}
-              </span>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="flex items-center gap-4">
-            {item.label}
-            {item.meta?.label && (
-              <span className="ml-auto text-muted-foreground">
-                {item.meta?.label}
-              </span>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <Link
-          href={route ?? "/#"}
-          title={item.meta?.title ?? item.name}
-          className={cn(
-            buttonVariants({
-              variant: "ghost",
-            }),
-            "justify-start w-full",
-            isActive
-              ? "bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
-              : "",
-          )}
+            </span>
+          }
         >
-          {GetIcon(item)}
-          {item.meta?.title ?? item.name}
-        </Link>
+          <Link href={route ?? "/#"} title={item.meta?.title ?? item.name}>
+            {GetIcon(item)}
+            <span className="sr-only">
+              {item.meta?.title ?? item.label} {item.list ? "List" : "Create"}
+            </span>
+          </Link>
+        </SidebarMenuButton>
+      ) : (
+        <SidebarMenuButton asChild isActive={isActive}>
+          <Link href={route ?? "/#"} title={item.meta?.title ?? item.name}>
+            {GetIcon(item)}
+            <span>{item.meta?.title ?? item.name}</span>
+          </Link>
+        </SidebarMenuButton>
       )}
     </SidebarMenuItem>
   );
@@ -165,7 +139,15 @@ export function AppSidebar({ logo }: AppSidebarProps) {
                 );
               }
 
-              return <AppSidebarMenuItem key={key} item={item} state={state} />;
+              return (
+                <SidebarGroup key={key}>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <AppSidebarMenuItem item={item} state={state} />
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              );
             })}
         </SidebarMenu>
       </SidebarContent>

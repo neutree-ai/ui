@@ -64,7 +64,7 @@ export default function BaseStatus({
           )}
         </span>
       </TooltipTrigger>
-      <TooltipContent className={cn(className, "max-w-lg")}>
+      <TooltipContent className="max-w-lg">
         <div className="gap-2 flex flex-col">
           {error_message && (
             <pre className="overflow-auto max-h-96 max-w-lg whitespace-pre-wrap break-words">

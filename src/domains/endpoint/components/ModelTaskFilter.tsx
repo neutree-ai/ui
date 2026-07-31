@@ -94,9 +94,9 @@ export function ModelTaskFilter({ filters, setFilters }: ModelTaskFilterProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="h-8">
           {selectedTaskLabel}
-          <ChevronDown className="ml-2 h-4 w-4" />
+          <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[200px]" align="start">

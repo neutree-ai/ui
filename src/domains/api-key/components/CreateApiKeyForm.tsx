@@ -74,9 +74,8 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   if (apiKey) {
     return (
       <div className="space-y-4">
-        <Alert className="border-green-200 bg-green-50">
-          <Check className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+        <Alert variant="success">
+          <AlertDescription>
             {t("api_keys.messages.createSuccess")}
           </AlertDescription>
         </Alert>

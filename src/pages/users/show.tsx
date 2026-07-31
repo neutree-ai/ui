@@ -1,5 +1,4 @@
 import { useShow } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { UserProfile } from "@/domains/user/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
@@ -27,21 +26,23 @@ export const UsersShow = () => {
   }
 
   return (
-    <ShowPage record={record}>
-      <MetadataCard metadata={record.metadata} />
-      <Card className="mt-4">
-        <CardContent className="pt-6">
-          <ShowPage.Row
-            title={t("common.fields.email")}
-            children={record.spec.email}
-          />
-        </CardContent>
-      </Card>
-      <Card className="mt-4" data-testid="global-roles-card">
-        <CardHeader>
-          <CardTitle>{t("user_profiles.sections.globalRoles")}</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <ShowPage record={record} showCurrentBreadcrumb={false}>
+      <ShowPage.ObjectHeader
+        title={record.metadata.name}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("common.fields.email")}>
+              {record.spec.email}
+            </ShowPage.Meta>
+          </span>
+        }
+      />
+      <div className="mt-4 space-y-4">
+        <MetadataCard metadata={record.metadata} showName={false} />
+        <ShowPage.Section
+          title={t("user_profiles.sections.globalRoles")}
+          data-testid="global-roles-card"
+        >
           <Table
             refineCoreProps={{
               resource: "role_assignments",
@@ -82,13 +83,8 @@ export const UsersShow = () => {
             />
             {metadataColumns.creation_timestamp}
           </Table>
-        </CardContent>
-      </Card>
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>{t("user_profiles.sections.joinedWorkspaces")}</CardTitle>
-        </CardHeader>
-        <CardContent>
+        </ShowPage.Section>
+        <ShowPage.Section title={t("user_profiles.sections.joinedWorkspaces")}>
           <Table
             refineCoreProps={{
               resource: "role_assignments",
@@ -159,8 +155,8 @@ export const UsersShow = () => {
             />
             {metadataColumns.creation_timestamp}
           </Table>
-        </CardContent>
-      </Card>
+        </ShowPage.Section>
+      </div>
     </ShowPage>
   );
 };

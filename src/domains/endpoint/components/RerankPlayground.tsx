@@ -20,6 +20,7 @@ import {
   type RankedDocument,
 } from "@/domains/endpoint/lib/rerank-helpers";
 import type { Endpoint } from "@/domains/endpoint/types";
+import { EmptyState } from "@/foundation/components/EmptyState";
 
 const INITIAL_DOCUMENTS = [
   { id: 1, text: "Paris is the capital and largest city of France." },
@@ -253,9 +254,9 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
                     );
                   })
                 ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground py-20">
+                  <EmptyState className="py-20">
                     {t("components.playground.rerank.noResults")}
-                  </div>
+                  </EmptyState>
                 )}
               </div>
             </ScrollArea>

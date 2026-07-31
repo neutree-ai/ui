@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   buildGpuCardResourceRows,
@@ -181,20 +182,24 @@ const hasNodeDeviceResources = (
 const getAcceleratorUsageClasses = (percent: number) =>
   percent >= ACCELERATOR_USAGE_WARNING_PERCENT
     ? {
-        progress: "bg-amber-100 [&>div]:bg-amber-500",
-        text: "text-amber-600",
+        progress:
+          "bg-[var(--nt-fill-notice-light)] [&>div]:bg-[var(--nt-fill-notice-base)]",
+        text: "text-[var(--nt-fill-notice-base)]",
       }
     : {
-        progress: "bg-emerald-100 [&>div]:bg-emerald-500",
-        text: "text-emerald-600",
+        progress:
+          "bg-[var(--nt-fill-positive-light)] [&>div]:bg-[var(--nt-fill-positive-base)]",
+        text: "text-[var(--nt-fill-positive-base)]",
       };
 
 const getGpuCardStateClasses = (usable: boolean, healthy: boolean) => {
   if (!healthy) {
-    return "border-destructive/40 bg-destructive/5";
+    return "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-neutral-white)]";
   }
 
-  return usable ? "border-emerald-300 bg-emerald-50/60" : "border-amber-300";
+  return usable
+    ? "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-neutral-white)]"
+    : "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-neutral-white)]";
 };
 
 const getSystemUsageClasses = () => ({
@@ -909,11 +914,7 @@ function EndpointVirtualizedNodeGpuResources({
   );
 
   if (nodeGroups.length === 0) {
-    return (
-      <div className="rounded-md border bg-background p-3 text-sm text-muted-foreground">
-        {t("clusters.messages.noGpuDevices")}
-      </div>
-    );
+    return <EmptyState>{t("clusters.messages.noGpuDevices")}</EmptyState>;
   }
 
   return (

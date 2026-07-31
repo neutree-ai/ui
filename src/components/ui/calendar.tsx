@@ -52,11 +52,14 @@ function Calendar({
           buttonVariants({ variant: "ghost" }),
           "size-8 p-0 font-normal aria-selected:opacity-100",
         ),
-        range_start: "rounded-l-md",
-        range_end: "rounded-r-md",
-        range_middle: "bg-accent text-accent-foreground",
+        range_start:
+          "rounded-l-md !bg-[var(--nt-fill-outstanding-base)] !text-[var(--nt-text-neutral-ontint)] [&>button]:!text-[var(--nt-text-neutral-ontint)]",
+        range_end:
+          "rounded-r-md !bg-[var(--nt-fill-outstanding-base)] !text-[var(--nt-text-neutral-ontint)] [&>button]:!text-[var(--nt-text-neutral-ontint)]",
+        range_middle:
+          "!bg-[var(--nt-fill-outstanding-light)] !text-[var(--nt-text-neutral-super)] hover:!bg-[var(--nt-fill-outstanding-lighthover)] [&>button]:!text-[var(--nt-text-neutral-super)]",
         selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+          "bg-[var(--nt-fill-outstanding-base)] text-[var(--nt-text-neutral-ontint)] hover:bg-[var(--nt-fill-outstanding-bright)] focus:bg-[var(--nt-fill-outstanding-base)] [&>button]:text-[var(--nt-text-neutral-ontint)]",
         // Only style "today" when it isn't part of the selection, otherwise its
         // full rounding/background fights the range boundary styles.
         today:

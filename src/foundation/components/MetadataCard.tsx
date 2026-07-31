@@ -1,5 +1,4 @@
 import { useTranslation } from "@refinedev/core";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -13,6 +12,7 @@ import Timestamp from "./Timestamp";
 
 type MetadataCardProps = {
   metadata: Metadata;
+  showName?: boolean;
 };
 
 type KeyValueTagsProps = {
@@ -63,57 +63,53 @@ function KeyValueTags({ data }: KeyValueTagsProps) {
   );
 }
 
-export default function MetadataCard({ metadata }: MetadataCardProps) {
+export default function MetadataCard({
+  metadata,
+  showName = true,
+}: MetadataCardProps) {
   const { translate } = useTranslation();
 
   return (
-    <Card>
-      <CardContent>
-        <div className="grid grid-cols-4 gap-8">
-          <ShowPage.Row
-            title={translate("common.fields.name")}
-            children={<span className="break-all">{metadata.name}</span>}
-          />
-          {metadata.workspace && (
-            <ShowPage.Row
-              title={translate("common.fields.workspace")}
-              children={
-                <ShowButton
-                  recordItemId={metadata.workspace}
-                  meta={{}}
-                  variant="link"
-                  resource="workspaces"
-                >
-                  {metadata.workspace}
-                </ShowButton>
-              }
-            />
-          )}
-        </div>
-        <div className="grid grid-cols-4 gap-8">
-          <ShowPage.Row
-            title={translate("common.fields.createdAt")}
-            children={<Timestamp timestamp={metadata.creation_timestamp} />}
-          />
-          <ShowPage.Row
-            title={translate("common.fields.updatedAt")}
-            children={<Timestamp timestamp={metadata.update_timestamp} />}
-          />
-        </div>
-        {metadata.labels && Object.keys(metadata.labels).length > 0 && (
-          <ShowPage.Row
-            title={translate("common.fields.labels")}
-            children={<KeyValueTags data={metadata.labels} />}
-          />
+    <ShowPage.Section title={translate("common.sections.basicInformation")}>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
+        {showName && (
+          <ShowPage.Row title={translate("common.fields.name")}>
+            <span className="break-all">{metadata.name}</span>
+          </ShowPage.Row>
         )}
-        {metadata.annotations &&
-          Object.keys(metadata.annotations).length > 0 && (
-            <ShowPage.Row
-              title={translate("common.fields.annotations")}
-              children={<KeyValueTags data={metadata.annotations} />}
-            />
-          )}
-      </CardContent>
-    </Card>
+        {metadata.workspace && (
+          <ShowPage.Row title={translate("common.fields.workspace")}>
+            <ShowButton
+              recordItemId={metadata.workspace}
+              meta={{}}
+              variant="link"
+              resource="workspaces"
+            >
+              {metadata.workspace}
+            </ShowButton>
+          </ShowPage.Row>
+        )}
+        <ShowPage.Row title={translate("common.fields.createdAt")}>
+          <Timestamp timestamp={metadata.creation_timestamp} />
+        </ShowPage.Row>
+        <ShowPage.Row title={translate("common.fields.updatedAt")}>
+          <Timestamp timestamp={metadata.update_timestamp} />
+        </ShowPage.Row>
+      </div>
+      {metadata.labels && Object.keys(metadata.labels).length > 0 && (
+        <div className="mt-5">
+          <ShowPage.Row title={translate("common.fields.labels")}>
+            <KeyValueTags data={metadata.labels} />
+          </ShowPage.Row>
+        </div>
+      )}
+      {metadata.annotations && Object.keys(metadata.annotations).length > 0 && (
+        <div className="mt-5">
+          <ShowPage.Row title={translate("common.fields.annotations")}>
+            <KeyValueTags data={metadata.annotations} />
+          </ShowPage.Row>
+        </div>
+      )}
+    </ShowPage.Section>
   );
 }

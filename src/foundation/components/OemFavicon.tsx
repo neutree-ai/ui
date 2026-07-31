@@ -7,7 +7,7 @@ export const OemFavicon = () => {
   useEffect(() => {
     const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (link) {
-      link.href = logoBase64 || "/favicon.svg";
+      link.href = logoBase64 || `${import.meta.env.BASE_URL}favicon.svg`;
     }
   }, [logoBase64]);
 

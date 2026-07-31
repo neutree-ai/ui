@@ -62,16 +62,17 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
         // biome-ignore lint/a11y/useSemanticElements: follow shadcn-ui
         role="combobox"
         aria-expanded={open}
+        disabled={disabled}
         className={cn(
-          "w-full flex justify-between overflow-clip",
-          !value && "text-muted-foreground",
+          "w-full flex justify-between overflow-clip text-[var(--nt-text-neutral-primary)] hover:bg-[var(--nt-fill-neutral-white)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
+          !value && "text-[var(--nt-text-neutral-quaternary)]",
           triggerClassName,
         )}
       >
         {value
           ? (options.find((item) => item.value === value)?.label ?? value)
           : defaultPlaceholder}
-        <ChevronsUpDown className="opacity-50" />
+        <ChevronsUpDown className="text-[var(--nt-text-neutral-tertiary)]" />
       </Button>
     );
 
@@ -94,7 +95,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
         </PopoverTrigger>
         <PopoverContent className={cn("w-[400px] p-0", popoverClassName)}>
           <Command
-            className="rounded-lg border shadow-md"
+            className="border border-[var(--nt-stroke-neutral-trans-2)] shadow-[var(--nt-effect-menu-shadow-default)]"
             ref={ref}
             shouldFilter={shouldFilter}
           >

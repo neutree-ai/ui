@@ -33,11 +33,11 @@ import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import type { Endpoint } from "@/domains/endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
+import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
@@ -57,6 +57,9 @@ const formatVramUsageRatio = (
   const totalGiB = formatMiBAsGiBValue(allocatable);
   return usedGiB && totalGiB ? `${usedGiB} / ${totalGiB} GiB` : "-";
 };
+
+const detailTabTriggerClassName =
+  "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
 
 export const ClustersShow = () => {
   const {
@@ -91,48 +94,59 @@ export const ClustersShow = () => {
     <ClusterUpgradeProvider>
       <ShowPage
         record={record}
+        showCurrentBreadcrumb={false}
         extraActions={(record) => (
           <ClusterUpgradeAction cluster={record as Cluster} />
         )}
       >
-        <Tabs defaultValue="basic" className="h-full">
-          <TabsList>
-            <TabsTrigger value="basic">{t("common.tabs.basic")}</TabsTrigger>
+        <Tabs defaultValue="basic" className="flex h-full flex-col">
+          <ShowPage.ObjectHeader
+            title={record.metadata.name}
+            description={
+              <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+                <ShowPage.Meta label={t("common.fields.type")}>
+                  <ClusterType type={record.spec.type} />
+                </ShowPage.Meta>
+                <ShowPage.Meta label={t("common.fields.version")}>
+                  <span>
+                    {record.status?.version ?? record.spec.version ?? "-"}
+                  </span>
+                </ShowPage.Meta>
+                <ShowPage.Meta label={t("common.fields.workspace")}>
+                  <span>{record.metadata.workspace ?? "-"}</span>
+                </ShowPage.Meta>
+              </span>
+            }
+            status={<ClusterStatus {...record.status} />}
+          />
+          <TabsList className="relative mt-0 h-11 w-full items-end justify-start gap-8 rounded-none border-0 bg-transparent p-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-border">
+            <TabsTrigger value="basic" className={detailTabTriggerClassName}>
+              {t("common.tabs.basic")}
+            </TabsTrigger>
             {showMonitorTab && (
-              <TabsTrigger value="monitor">
+              <TabsTrigger
+                value="monitor"
+                className={detailTabTriggerClassName}
+              >
                 {t("common.tabs.monitor")}
               </TabsTrigger>
             )}
             {record.spec.type === "ssh" && (
-              <TabsTrigger value="ray">
+              <TabsTrigger value="ray" className={detailTabTriggerClassName}>
                 {t("common.tabs.rayDashboard")}
               </TabsTrigger>
             )}
           </TabsList>
           <TabsContent
             value="basic"
-            className="h-[calc(100%-theme('spacing.11'))] overflow-auto"
+            className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
           >
-            <MetadataCard metadata={record.metadata} />
-            <Card className="mt-4">
-              <CardContent>
-                <ShowPage.Row title={t("common.fields.status")}>
-                  <ClusterStatus {...record.status} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.version")}>
-                  <span className="inline-flex items-center">
-                    {record.status?.version ?? "-"}
-                    {record.status?.phase === "Upgrading" &&
-                      record.spec.version && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          &rarr; {record.spec.version}
-                        </span>
-                      )}
-                    <ClusterUpgradeTip cluster={record} />
-                  </span>
-                </ShowPage.Row>
-                <div className="grid grid-cols-4 gap-8">
+            <div className="space-y-4">
+              <ShowPage.Section>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                  <ShowPage.Row title={t("common.fields.status")}>
+                    <ClusterStatus {...record.status} />
+                  </ShowPage.Row>
                   <ShowPage.Row title={t("common.fields.type")}>
                     <ClusterType type={record.spec.type} />
                   </ShowPage.Row>
@@ -145,6 +159,22 @@ export const ClustersShow = () => {
                         : t("common.options.disabled")}
                     </ShowPage.Row>
                   )}
+                  <ShowPage.Row title={t("common.fields.workspace")}>
+                    {record.metadata.workspace ?? "-"}
+                  </ShowPage.Row>
+                  <ShowPage.Row title={t("common.fields.version")}>
+                    <span className="inline-flex min-w-0 items-center">
+                      {record.status?.version ?? "-"}
+                      {record.status?.phase === "Upgrading" &&
+                        record.spec.version && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            &rarr; {record.spec.version}
+                          </span>
+                        )}
+                      <ClusterUpgradeTip cluster={record} />
+                    </span>
+                  </ShowPage.Row>
                   <ShowPage.Row title={t("common.fields.imageRegistry")}>
                     <ShowButton
                       recordItemId={record.spec.image_registry}
@@ -157,9 +187,15 @@ export const ClustersShow = () => {
                       {record.spec.image_registry}
                     </ShowButton>
                   </ShowPage.Row>
+                  <ShowPage.Row title={t("common.fields.createdAt")}>
+                    <Timestamp timestamp={record.metadata.creation_timestamp} />
+                  </ShowPage.Row>
+                  <ShowPage.Row title={t("common.fields.updatedAt")}>
+                    <Timestamp timestamp={record.metadata.update_timestamp} />
+                  </ShowPage.Row>
                 </div>
                 {record.spec.config.ssh_config && (
-                  <div>
+                  <div className="mt-5 grid gap-5 border-t pt-4 md:grid-cols-2">
                     <ShowPage.Row title={t("clusters.fields.headIp")}>
                       {record.spec.config.ssh_config.provider.head_ip ?? ""}
                     </ShowPage.Row>
@@ -171,115 +207,118 @@ export const ClustersShow = () => {
                   </div>
                 )}
                 {record.spec.config.kubernetes_config && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t("clusters.sections.router")}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-4 gap-8">
-                        <ShowPage.Row title={t("clusters.fields.accessMode")}>
-                          {getAccessModeLabel(
-                            record.spec.config.kubernetes_config.router
-                              ?.access_mode,
-                            t,
-                          )}
-                        </ShowPage.Row>
+                  <div className="mt-5 border-t pt-4">
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">
+                      {t("clusters.sections.router")}
+                    </h3>
+                    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                      <ShowPage.Row title={t("clusters.fields.accessMode")}>
+                        {getAccessModeLabel(
+                          record.spec.config.kubernetes_config.router
+                            ?.access_mode,
+                          t,
+                        )}
+                      </ShowPage.Row>
 
-                        <ShowPage.Row title={t("clusters.fields.replicas")}>
-                          {record.spec.config.kubernetes_config.router
-                            ?.replicas ?? ""}
-                        </ShowPage.Row>
+                      <ShowPage.Row title={t("clusters.fields.replicas")}>
+                        {record.spec.config.kubernetes_config.router
+                          ?.replicas ?? ""}
+                      </ShowPage.Row>
 
-                        <ShowPage.Row title={t("common.fields.cpu")}>
-                          {record.spec.config.kubernetes_config.router
-                            ?.resources?.cpu ?? ""}
-                        </ShowPage.Row>
+                      <ShowPage.Row title={t("common.fields.cpu")}>
+                        {record.spec.config.kubernetes_config.router?.resources
+                          ?.cpu ?? ""}
+                      </ShowPage.Row>
 
-                        <ShowPage.Row title={t("common.fields.memory")}>
-                          {record.spec.config.kubernetes_config.router
-                            ?.resources?.memory ?? ""}
-                        </ShowPage.Row>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      <ShowPage.Row title={t("common.fields.memory")}>
+                        {record.spec.config.kubernetes_config.router?.resources
+                          ?.memory ?? ""}
+                      </ShowPage.Row>
+                    </div>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
+              </ShowPage.Section>
+            </div>
             {record.status?.resource_info && (
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle>{t("common.fields.resources")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* CPU */}
-                    {record.status.resource_info.allocatable && (
-                      <ResourceProgressBar
-                        label={t("common.fields.cpu")}
-                        used={
-                          calcResourceUsage(
-                            record.status.resource_info.allocatable.cpu,
-                            record.status.resource_info.available?.cpu,
-                          ).used
-                        }
-                        total={record.status.resource_info.allocatable.cpu}
-                        unit="cores"
-                      />
-                    )}
+              <ShowPage.Section title={t("common.fields.resources")}>
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">
+                      {t("endpoints.sections.resourceSummary")}
+                    </h3>
+                    <div className="space-y-4">
+                      {record.status.resource_info.allocatable && (
+                        <ResourceProgressBar
+                          label={t("common.fields.cpu")}
+                          used={
+                            calcResourceUsage(
+                              record.status.resource_info.allocatable.cpu,
+                              record.status.resource_info.available?.cpu,
+                            ).used
+                          }
+                          total={record.status.resource_info.allocatable.cpu}
+                          unit="cores"
+                        />
+                      )}
 
-                    {/* Memory */}
-                    {record.status.resource_info.allocatable && (
-                      <ResourceProgressBar
-                        label={t("common.fields.memory")}
-                        used={
-                          calcResourceUsage(
-                            record.status.resource_info.allocatable.memory,
-                            record.status.resource_info.available?.memory,
-                          ).used
-                        }
-                        total={record.status.resource_info.allocatable.memory}
-                        unit="GiB"
-                      />
-                    )}
+                      {record.status.resource_info.allocatable && (
+                        <ResourceProgressBar
+                          label={t("common.fields.memory")}
+                          used={
+                            calcResourceUsage(
+                              record.status.resource_info.allocatable.memory,
+                              record.status.resource_info.available?.memory,
+                            ).used
+                          }
+                          total={record.status.resource_info.allocatable.memory}
+                          unit="GiB"
+                        />
+                      )}
 
-                    {/* Accelerators */}
-                    {record.status.resource_info.allocatable
-                      ?.accelerator_groups &&
-                      Object.entries(
-                        record.status.resource_info.allocatable
-                          .accelerator_groups,
-                      ).map(([type, allocatableGroup]) => {
-                        const availableGroup =
-                          record.status?.resource_info?.available
-                            ?.accelerator_groups?.[type];
-                        const { used } = calcResourceUsage(
-                          allocatableGroup.quantity,
-                          availableGroup?.quantity,
-                        );
+                      {record.status.resource_info.allocatable
+                        ?.accelerator_groups &&
+                        Object.entries(
+                          record.status.resource_info.allocatable
+                            .accelerator_groups,
+                        ).map(([type, allocatableGroup]) => {
+                          const availableGroup =
+                            record.status?.resource_info?.available
+                              ?.accelerator_groups?.[type];
+                          const { used } = calcResourceUsage(
+                            allocatableGroup.quantity,
+                            availableGroup?.quantity,
+                          );
 
-                        return (
-                          <div key={type}>
-                            <ResourceProgressBar
-                              label={t(`clusters.acceleratorTypes.${type}`, {
-                                defaultValue: type,
-                              })}
-                              used={used}
-                              total={allocatableGroup.quantity}
-                            />
-                            <ProductGroupsBreakdown
-                              allocatableGroups={getAcceleratorProductQuantities(
-                                allocatableGroup,
-                              )}
-                              availableGroups={getAcceleratorProductQuantities(
-                                availableGroup,
-                              )}
-                            />
-                          </div>
-                        );
-                      })}
-                    {acceleratorProductResourceRows.length > 0 && (
-                      <div className="rounded-md border">
-                        <div className="grid grid-cols-6 gap-4 border-b px-3 py-2 text-sm font-medium">
+                          return (
+                            <div key={type}>
+                              <ResourceProgressBar
+                                label={t(`clusters.acceleratorTypes.${type}`, {
+                                  defaultValue: type,
+                                })}
+                                used={used}
+                                total={allocatableGroup.quantity}
+                              />
+                              <ProductGroupsBreakdown
+                                allocatableGroups={getAcceleratorProductQuantities(
+                                  allocatableGroup,
+                                )}
+                                availableGroups={getAcceleratorProductQuantities(
+                                  availableGroup,
+                                )}
+                              />
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {acceleratorProductResourceRows.length > 0 && (
+                    <div className="border-t pt-4">
+                      <h3 className="mb-3 text-sm font-semibold text-foreground">
+                        {t("common.fields.acceleratorProduct")}
+                      </h3>
+                      <div className="overflow-x-auto rounded-md border">
+                        <div className="grid min-w-[880px] grid-cols-6 gap-4 border-b bg-muted/40 px-3 py-2 text-sm font-medium">
                           <span>{t("common.fields.acceleratorType")}</span>
                           <span>{t("common.fields.acceleratorProduct")}</span>
                           <span>{t("clusters.fields.physicalGpu")}</span>
@@ -294,7 +333,7 @@ export const ClustersShow = () => {
                         {acceleratorProductResourceRows.map((row) => (
                           <div
                             key={`${row.acceleratorType}:${row.product}`}
-                            className="grid grid-cols-6 gap-4 px-3 py-2 text-sm"
+                            className="grid min-w-[880px] grid-cols-6 gap-4 border-b px-3 py-2 text-sm last:border-b-0"
                           >
                             <span>
                               {t(
@@ -329,23 +368,32 @@ export const ClustersShow = () => {
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {record.status?.resource_info?.node_resources &&
-              Object.keys(record.status.resource_info.node_resources).length >
-                0 && (
-                <NodeResourcesTable
-                  nodeResources={record.status.resource_info.node_resources}
-                  acceleratorTypes={Object.keys(
-                    record.status?.resource_info?.allocatable
-                      ?.accelerator_groups || {},
+                    </div>
                   )}
-                  t={t}
-                />
-              )}
+
+                  {record.status.resource_info.node_resources &&
+                    Object.keys(record.status.resource_info.node_resources)
+                      .length > 0 && (
+                      <div className="border-t pt-4">
+                        <h3 className="mb-3 text-sm font-semibold text-foreground">
+                          {t("clusters.sections.nodes")}
+                        </h3>
+                        <NodeResourcesTable
+                          nodeResources={
+                            record.status.resource_info.node_resources
+                          }
+                          acceleratorTypes={Object.keys(
+                            record.status.resource_info.allocatable
+                              ?.accelerator_groups || {},
+                          )}
+                          t={t}
+                          framed={false}
+                        />
+                      </div>
+                    )}
+                </div>
+              </ShowPage.Section>
+            )}
             {Number(record.spec.config.model_caches?.length) > 0 ? (
               <Card className="mt-4">
                 <CardHeader>
@@ -521,7 +569,7 @@ export const ClustersShow = () => {
           {showMonitorTab && (
             <TabsContent
               value="monitor"
-              className="h-[calc(100%-theme('spacing.11'))] overflow-hidden"
+              className="mt-0 flex-1 overflow-hidden pt-4"
             >
               {grafanaUrl ? (
                 <div className="flex flex-col gap-4 h-full">
@@ -547,10 +595,7 @@ export const ClustersShow = () => {
             </TabsContent>
           )}
           {record.spec.type === "ssh" && (
-            <TabsContent
-              value="ray"
-              className="h-[calc(100%-theme('spacing.11'))]"
-            >
+            <TabsContent value="ray" className="mt-0 flex-1">
               {dashboardUrl && (
                 <iframe
                   src={dashboardUrl}

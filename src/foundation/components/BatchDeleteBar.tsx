@@ -83,12 +83,8 @@ export function BatchDeleteBar({
         description={t("dialogs.batchDelete.description")}
         onConfirm={handleConfirm}
       >
-        <Button
-          variant="destructive"
-          size="sm"
-          data-testid="batch-delete-button"
-        >
-          <Trash2 className="mr-1.5 h-4 w-4" />
+        <Button variant="destructive" data-testid="batch-delete-button">
+          <Trash2 className="h-4 w-4" />
           {t("table.batchDelete")}
         </Button>
       </DeleteConfirmDialog>

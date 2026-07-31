@@ -15,7 +15,7 @@ export const Logo: React.FC<LogoProps> = ({ collapsed = false }) => {
   const logoSrc =
     collapsed && logoCollapsedBase64
       ? logoCollapsedBase64
-      : logoBase64 || "/logo.svg";
+      : logoBase64 || `${import.meta.env.BASE_URL}logo.svg`;
 
   if (collapsed) {
     return <img alt="logo" src={logoSrc} className="h-6 w-auto block mr-1" />;

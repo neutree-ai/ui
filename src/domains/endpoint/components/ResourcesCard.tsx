@@ -14,12 +14,16 @@ interface ResourcesCardProps {
   resources: ResourceSpec | null;
   showGpuConditionally?: boolean;
   titleTranslationKey?: string;
+  framed?: boolean;
+  className?: string;
 }
 
 export default function ResourcesCard({
   resources,
   showGpuConditionally = false,
   titleTranslationKey = "common.fields.resources",
+  framed = true,
+  className,
 }: ResourcesCardProps) {
   const { t } = useTranslation();
   const displayResources = normalizeEndpointResourcesForForm(
@@ -44,52 +48,67 @@ export default function ResourcesCard({
       ? formatToDecimal(vgpuVirtualization.core_percent, 0)
       : "-";
 
+  const content = (
+    <>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        {shouldShowGpu && (
+          <ShowPage.Row title={t("common.fields.gpu")}>
+            {formatToDecimal(displayResources?.gpu) ?? "-"}
+          </ShowPage.Row>
+        )}
+        <ShowPage.Row title={t("common.fields.cpu")}>
+          {formatToDecimal(displayResources?.cpu) ?? "-"}
+        </ShowPage.Row>
+        <ShowPage.Row title={t("common.fields.memory")}>
+          {formatToDecimal(displayResources?.memory) ?? "-"}
+        </ShowPage.Row>
+      </div>
+
+      {hasAccelerator && displayResources?.accelerator && (
+        <div className="mt-5 grid gap-5 border-t pt-4 md:grid-cols-2 xl:grid-cols-4">
+          <ShowPage.Row title={t("common.fields.acceleratorType")}>
+            {t(
+              `clusters.acceleratorTypes.${displayResources.accelerator.type}`,
+              {
+                defaultValue: displayResources.accelerator.type,
+              },
+            )}
+          </ShowPage.Row>
+          <ShowPage.Row title={t("common.fields.acceleratorProduct")}>
+            {displayResources.accelerator.product}
+          </ShowPage.Row>
+          {isVgpu && (
+            <>
+              <ShowPage.Row title={t("endpoints.fields.requestedVgpuMemory")}>
+                {vgpuMemory ?? "-"}
+              </ShowPage.Row>
+              <ShowPage.Row title={t("endpoints.fields.vgpuCorePercent")}>
+                {vgpuCorePercent}
+              </ShowPage.Row>
+            </>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  if (!framed) {
+    return (
+      <div className={className}>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          {t(titleTranslationKey)}
+        </h3>
+        {content}
+      </div>
+    );
+  }
+
   return (
-    <Card className="mt-4">
+    <Card className={className ?? "mt-4"}>
       <CardHeader>
         <CardTitle>{t(titleTranslationKey)}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-4 gap-8">
-          {shouldShowGpu && (
-            <ShowPage.Row title={t("common.fields.gpu")}>
-              {formatToDecimal(displayResources?.gpu) ?? "-"}
-            </ShowPage.Row>
-          )}
-          <ShowPage.Row title={t("common.fields.cpu")}>
-            {formatToDecimal(displayResources?.cpu) ?? "-"}
-          </ShowPage.Row>
-          <ShowPage.Row title={t("common.fields.memory")}>
-            {formatToDecimal(displayResources?.memory) ?? "-"}
-          </ShowPage.Row>
-        </div>
-
-        {hasAccelerator && displayResources?.accelerator && (
-          <div className="mt-4">
-            <ShowPage.Row title={t("common.fields.acceleratorType")}>
-              {t(
-                `clusters.acceleratorTypes.${displayResources.accelerator.type}`,
-                {
-                  defaultValue: displayResources.accelerator.type,
-                },
-              )}
-            </ShowPage.Row>
-            <ShowPage.Row title={t("common.fields.acceleratorProduct")}>
-              {displayResources.accelerator.product}
-            </ShowPage.Row>
-            {isVgpu && (
-              <>
-                <ShowPage.Row title={t("endpoints.fields.requestedVgpuMemory")}>
-                  {vgpuMemory ?? "-"}
-                </ShowPage.Row>
-                <ShowPage.Row title={t("endpoints.fields.vgpuCorePercent")}>
-                  {vgpuCorePercent}
-                </ShowPage.Row>
-              </>
-            )}
-          </div>
-        )}
-      </CardContent>
+      <CardContent>{content}</CardContent>
     </Card>
   );
 }

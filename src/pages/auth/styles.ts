@@ -5,19 +5,19 @@ export const authStyles = {
     "min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--background))] to-[hsl(var(--secondary))]",
 
   button: cva(
-    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-[hsl(var(--background))]",
+    "inline-flex items-center justify-center rounded-[var(--nt-radius-button)] text-sm font-medium [transition:background-color_var(--nt-motion-fast),border-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)] disabled:opacity-50 disabled:pointer-events-none",
     {
       variants: {
         variant: {
           default:
-            "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90",
+            "bg-[var(--nt-fill-outstanding-base)] text-[var(--nt-text-neutral-ontint)] shadow-[var(--nt-effect-button-shadow-push-button-cta)] hover:bg-[var(--nt-fill-outstanding-bright)] active:bg-[var(--nt-fill-outstanding-dark)]",
           outline:
-            "border border-input bg-transparent hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]",
+            "border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-super)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] hover:border-[var(--nt-stroke-neutral-trans-4)] hover:bg-[var(--nt-fill-neutral-opaque-1)]",
         },
         size: {
           default: "h-10 py-2 px-4",
-          sm: "h-9 px-3 rounded-md",
-          lg: "h-11 px-8 rounded-md",
+          sm: "h-9 px-3",
+          lg: "h-11 px-8",
         },
       },
       defaultVariants: {
@@ -28,8 +28,8 @@ export const authStyles = {
   ),
 
   input:
-    "flex h-10 w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm placeholder:text-[hsl(var(--muted-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50",
+    "flex h-10 w-full rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] px-3 py-2 text-sm placeholder:text-[var(--nt-text-neutral-quaternary)] hover:border-[var(--nt-stroke-neutral-trans-4)] focus-visible:border-[var(--nt-stroke-outstanding-base)] focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)] disabled:cursor-not-allowed disabled:opacity-50",
 
   label:
-    "text-sm font-medium text-[hsl(var(--foreground))] leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+    "text-sm font-medium text-[var(--nt-text-neutral-primary)] leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
 };

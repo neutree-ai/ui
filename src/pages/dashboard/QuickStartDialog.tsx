@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Loader2, Rocket } from "lucide-react";
+import { Loader2, Rocket } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -198,8 +198,7 @@ export function QuickStartDialog({
             <ResourceResultList items={resultItems} />
 
             {state.phase === "done" && (
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
+              <Alert variant="success">
                 <AlertDescription>
                   {t("quick_start.messages.success")}
                 </AlertDescription>
@@ -208,7 +207,6 @@ export function QuickStartDialog({
 
             {state.phase === "error" && (
               <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   {t("quick_start.messages.error")}
                 </AlertDescription>

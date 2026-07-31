@@ -26,7 +26,7 @@ export const SaveButton: FC<SaveButtonProps> = ({
 
   return (
     <Button {...props} disabled={loading || props.disabled}>
-      <SaveIcon className="mr-2 w-4 h-4" />
+      <SaveIcon className="h-4 w-4" />
       {!hideText && (children ?? label)}
     </Button>
   );
