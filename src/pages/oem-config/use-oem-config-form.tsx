@@ -73,8 +73,6 @@ export const useOemConfigForm = ({ action }: { action: "create" | "edit" }) => {
 
   return {
     form,
-    handleFileUpload,
-    handleFileClear,
     formFields: (
       <>
         <FormFieldGroup

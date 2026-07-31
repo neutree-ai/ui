@@ -86,7 +86,6 @@ export const ModelCatalogsEdit = () => {
     <div className="flex flex-col h-full">
       <PageHeader
         title={t("model_catalogs.edit.title", "Edit model catalog")}
-        isBack
       />
       <div className="pt-4 grow overflow-auto">
         <Card>
