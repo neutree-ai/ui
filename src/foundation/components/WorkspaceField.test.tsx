@@ -74,6 +74,22 @@ describe("WorkspaceField", () => {
     expect(mockOnSearchChange).toHaveBeenCalledWith("132455");
   });
 
+  it("drops the search term when the popover closes", () => {
+    render(<WorkspaceField />);
+    openField();
+
+    fireEvent.change(screen.getByPlaceholderText(SELECT_A_WORKSPACE), {
+      target: { value: "132455" },
+    });
+    // Closing unmounts cmdk's input, so leaving the term set would reopen to a
+    // filtered list under a blank search box.
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
+
+    expect(mockOnSearchChange).toHaveBeenLastCalledWith("");
+  });
+
   it("keeps the selected workspace listed when a search excludes it", () => {
     mockUseWorkspaceSearch.mockReturnValue({
       options: options("ws-alpha"),
