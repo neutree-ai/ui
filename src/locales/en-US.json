@@ -629,7 +629,6 @@
 			"created": "Created",
 			"fetchFailed": "Failed to fetch URL: {{status}} {{statusText}}",
 			"noDocuments": "No model catalog documents found in the input.",
-			"wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\"",
 			"invalidResource": "Missing apiVersion, kind, or metadata.name.",
 			"unknownError": "Unknown error",
 			"alreadyExists": "A model catalog named \"{{name}}\" already exists — import does not overwrite it. Use Edit to update its spec.",
@@ -639,11 +638,15 @@
 		},
 		"edit": {
 			"title": "Edit model catalog",
-			"specLabel": "Spec (YAML)",
-			"specHint": "Edit the catalog spec — e.g. point the model at a locally-imported registry. Invalid recipes surface as a Failed status after saving.",
+			"specLabel": "Catalog (YAML)",
+			"specHint": "Edit the catalog, or paste a whole ModelCatalog document over it. Spec, labels and annotations are applied; name and workspace cannot change. Invalid recipes surface as a Failed status after saving.",
 			"saved": "Catalog updated",
-			"invalidSpec": "Spec must be a mapping"
-		}
+			"invalidSpec": "Spec must be a mapping",
+			"missingSpec": "This looks like a ModelCatalog document but has no spec. Paste the whole document, or just the spec body.",
+			"nameMismatch": "This document is for \"{{actual}}\", but you are editing \"{{expected}}\". Import it as a new catalog instead.",
+			"workspaceMismatch": "This document belongs to workspace \"{{actual}}\", but this catalog is in \"{{expected}}\"."
+		},
+		"wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\""
 	},
 	"image_registries": {
 		"image_registries": "image registry",

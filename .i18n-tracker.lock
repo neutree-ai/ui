@@ -314,7 +314,7 @@
   "src/domains/api-key/components/ModelMultiSelect.tsx": "b2714e00a0f2fe47201919d5ea1207c8",
   "src/domains/api-key/hooks/use-api-key-policy.ts": "40879be91a1121dc22f0dfc316033848",
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
-  "src/pages/model-catalogs/edit.tsx": "40869d6b24c4c2b8fc7cde0ba68a14ec",
+  "src/pages/model-catalogs/edit.tsx": "8daabed1328a4c65c0ae3a6017d2c91c",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
   "src/pages/model-catalogs/components/ImportDialog.tsx": "7146ac93e9178a146b240195698e8a6d",
   "src/pages/model-catalogs/components/KeyConfigCard.tsx": "a3e49d8166c2440bfa82b6d6b53cc2e1",
@@ -342,5 +342,5 @@
   "src/pages/ai-traces/status.tsx": "115ed148e0cb242ef1a5bc53c0408097",
   "src/pages/ai-traces/components/StatusCodeFilter.tsx": "9f36fc145c432c079c278378ba8cf882",
   "src/foundation/hooks/use-debounced-value.ts": "8aaf7d58884918d88f9685cf15f809b8",
-  "src/domains/model-catalog/lib/parse-catalog-spec-yaml.ts": "5ff4b9d8a586e78e4e9d5ab1530a8177"
+  "src/domains/model-catalog/lib/parse-catalog-spec-yaml.ts": "5d22573adb07670b680047a1c75453f7"
 }
