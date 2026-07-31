@@ -51,6 +51,11 @@
 		--nt-fill-outstanding-light: rgba(0, 136, 255, 0.1);
 		--nt-fill-outstanding-lighthover: rgba(0, 136, 255, 0.16);
 		--nt-fill-outstanding-thin: rgba(0, 136, 255, 0.04);
+		--nt-gradient-sidebar-selected: linear-gradient(
+			90deg,
+			var(--nt-fill-outstanding-base) 0%,
+			var(--nt-fill-outstanding-dark) 100%
+		);
 		--nt-fill-positive-base: #00ba5d;
 		--nt-fill-positive-light: rgba(0, 186, 93, 0.1);
 		--nt-text-colorful-positive: #147a43;
@@ -74,6 +79,8 @@
 			rgba(44, 56, 82, 0.18);
 		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px
 			rgba(44, 56, 82, 0.18);
+		--nt-effect-sidebar-selected-shadow: 0px 1px 2px 0px
+			rgba(184, 192, 204, 0.6);
 		--nt-effect-dashboard-card-shadow-normal:
 			0px 0px 2.003px 0px rgba(107, 125, 153, 0.15),
 			0px 0px 16px 0px rgba(107, 125, 153, 0.08);
@@ -218,6 +225,11 @@
 		--nt-fill-outstanding-light: rgba(38, 141, 255, 0.1);
 		--nt-fill-outstanding-lighthover: rgba(38, 141, 255, 0.16);
 		--nt-fill-outstanding-thin: rgba(38, 141, 255, 0.06);
+		--nt-gradient-sidebar-selected: linear-gradient(
+			90deg,
+			var(--nt-fill-outstanding-base) 0%,
+			var(--nt-fill-outstanding-dark) 100%
+		);
 		--nt-fill-positive-base: #23bf72;
 		--nt-fill-positive-light: rgba(35, 191, 114, 0.11);
 		--nt-text-colorful-positive: #89dfb4;
@@ -240,6 +252,8 @@
 		--nt-effect-button-shadow-push-button-cta: 0px 1px 2px 0px
 			rgba(0, 0, 0, 0.32);
 		--nt-effect-button-shadow-push-button-ordinary: 0px 1px 2px -1px
+			rgba(0, 0, 0, 0.32);
+		--nt-effect-sidebar-selected-shadow: 0px 1px 2px 0px
 			rgba(0, 0, 0, 0.32);
 		--nt-effect-dashboard-card-shadow-normal:
 			inset 0px 1px 0px rgba(255, 255, 255, 0.03),
