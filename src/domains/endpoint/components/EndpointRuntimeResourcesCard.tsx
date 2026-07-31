@@ -65,14 +65,20 @@ const getConfiguredCorePercent = (
   return parsePositiveNumber(value);
 };
 
+// Metrics truncate so rows keep an even height, but identifiers the user came
+// here to read — the GPU product above all — pass `wrap` and get the whole
+// string. A plain string value always carries a title so a clipped one stays
+// readable on hover.
 const ResourceValue = ({
   label,
   value,
   className,
+  wrap = false,
 }: {
   label: string;
   value: ReactNode;
   className?: string;
+  wrap?: boolean;
 }) => (
   <div
     className={cn(
@@ -81,7 +87,13 @@ const ResourceValue = ({
     )}
   >
     <span className="text-xs leading-4 text-muted-foreground">{label}</span>
-    <strong className="min-w-0 truncate text-sm font-semibold leading-5">
+    <strong
+      className={cn(
+        "min-w-0 text-sm font-semibold leading-5",
+        wrap ? "break-words" : "truncate",
+      )}
+      title={typeof value === "string" ? value : undefined}
+    >
       {value}
     </strong>
   </div>
@@ -146,7 +158,10 @@ export default function EndpointRuntimeResourcesCard({
                   <span className="block text-xs leading-4 text-muted-foreground">
                     {t("common.fields.acceleratorProduct")}
                   </span>
-                  <strong className="block truncate text-sm font-semibold leading-5">
+                  <strong
+                    className="block break-words text-sm font-semibold leading-5"
+                    title={row.product}
+                  >
                     {row.product || "-"}
                   </strong>
                 </div>
@@ -246,6 +261,7 @@ export default function EndpointRuntimeResourcesCard({
                           className="border-0 bg-transparent p-0"
                           label={t("common.fields.acceleratorProduct")}
                           value={device.product || "-"}
+                          wrap
                         />
                         <ResourceValue
                           className="border-0 bg-transparent p-0"
