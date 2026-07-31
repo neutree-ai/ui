@@ -4,8 +4,6 @@ import { cn } from "@/foundation/lib/utils";
 type PageHeaderProps = {
   title?: ReactNode;
   subTitle?: ReactNode;
-  isBack?: boolean;
-  onBack?: (e?: React.MouseEvent<HTMLElement>) => void;
   className?: string;
   breadcrumb?: ReactNode;
   extra?: ReactNode;

@@ -251,7 +251,6 @@ export const ShowPage: FC<ShowProps> & {
             </div>
           )
         }
-        isBack
       />
       <div
         data-testid="show-page"

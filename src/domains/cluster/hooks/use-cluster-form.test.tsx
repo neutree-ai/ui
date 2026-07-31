@@ -81,7 +81,7 @@ function CreateForm() {
   formInstance = result.form;
   const {
     form,
-    typeFields,
+    clusterConfigurationFields,
     providerFields,
     routerFields,
     acceleratorVirtualizationFields,
@@ -90,7 +90,7 @@ function CreateForm() {
   return (
     <FormProvider {...form}>
       <form>
-        {typeFields}
+        {clusterConfigurationFields}
         {providerFields}
         {routerFields}
         {acceleratorVirtualizationFields}
@@ -100,11 +100,13 @@ function CreateForm() {
   );
 }
 
-function VersionFieldsForm() {
-  const { form, versionFields } = useClusterForm({ action: "create" });
+function ClusterConfigurationForm() {
+  const { form, clusterConfigurationFields } = useClusterForm({
+    action: "create",
+  });
   return (
     <FormProvider {...form}>
-      <form>{versionFields}</form>
+      <form>{clusterConfigurationFields}</form>
     </FormProvider>
   );
 }
@@ -114,7 +116,7 @@ function EditForm() {
   formInstance = result.form;
   const {
     form,
-    typeFields,
+    clusterConfigurationFields,
     providerFields,
     routerFields,
     acceleratorVirtualizationFields,
@@ -123,7 +125,7 @@ function EditForm() {
   return (
     <FormProvider {...form}>
       <form>
-        {typeFields}
+        {clusterConfigurationFields}
         {providerFields}
         {routerFields}
         {acceleratorVirtualizationFields}
@@ -157,10 +159,15 @@ describe("useClusterForm", () => {
     formInstance = null;
   });
 
-  it("labels the version section as cluster version", () => {
-    render(<VersionFieldsForm />);
+  it("groups type, image registry and version under cluster configuration", () => {
+    render(<ClusterConfigurationForm />);
 
-    expect(screen.getByText("clusters.sections.clusterVersion")).toBeTruthy();
+    expect(
+      screen.getByText("clusters.sections.clusterConfiguration"),
+    ).toBeTruthy();
+    expect(screen.getByText("common.fields.type")).toBeTruthy();
+    expect(screen.getByText("common.fields.imageRegistry")).toBeTruthy();
+    expect(screen.getByText("common.fields.version")).toBeTruthy();
   });
 
   describe("edit mode — NodeIPsField props", () => {

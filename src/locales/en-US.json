@@ -435,18 +435,12 @@
 		},
 		"sections": {
 			"clusterConfiguration": "Cluster Configuration",
-			"clusterVersion": "Cluster Version",
-			"clusterType": "Cluster Type",
 			"provider": "Provider",
-			"headNode": "Head Node",
-			"workerNode": "Worker Node",
 			"router": "Router",
 			"acceleratorVirtualization": "Accelerator Virtualization",
 			"modelCaches": "Model Caches",
 			"nodeAuthentication": "Node Authentication",
 			"nodes": "Nodes",
-			"clusterResources": "Cluster Resources",
-			"nodeResources": "Node Resources",
 			"nodeDevices": "Node Devices"
 		},
 		"placeholders": {
@@ -569,9 +563,7 @@
 			"modelFile": "Model File"
 		},
 		"sections": {
-			"overview": "Overview",
 			"keyConfig": "Key Configuration",
-			"engineArgs": "Engine Arguments",
 			"env": "Environment Variables",
 			"advanced": "Advanced (all fields)"
 		},
@@ -746,17 +738,11 @@
 		"sections": {
 			"clusterSettings": "Cluster",
 			"modelAndReplicas": "Model & Replicas",
-			"templateSelection": "Template Selection",
-			"configuration": "Configuration",
-			"resourceSettings": "Resources",
 			"schedulingTargetResources": "Scheduling Target and Resource Selection",
 			"schedulingTarget": "Scheduling Target",
 			"customizeSettings": "Customize Settings",
 			"configurationDetails": "Configuration Details",
-			"modelSettings": "Model Settings",
 			"engineSettings": "Engine",
-			"replicaSettings": "Replica Settings",
-			"basicResources": "Basic Resources",
 			"advancedOptions": "Advanced Options",
 			"environmentVariables": "Environment Variables",
 			"currentRequest": "Current Request",
@@ -911,7 +897,6 @@
 		},
 		"sections": {
 			"configuration": "Configuration",
-			"upstreams": "Upstreams",
 			"upstream": "Upstream {{index}}"
 		},
 		"placeholders": {

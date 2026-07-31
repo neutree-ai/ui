@@ -30,7 +30,6 @@ export function useDocumentList(initialDocuments: DocumentItem[] = []) {
 
   return {
     documents,
-    setDocuments,
     addDocument,
     updateDocument,
     removeDocument,

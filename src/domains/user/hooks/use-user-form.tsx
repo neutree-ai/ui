@@ -55,8 +55,6 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
 
   return {
     form,
-    passwordField,
-    confirmPasswordField,
     registerFields:
       passwordField && confirmPasswordField ? (
         <FormCardGrid>
