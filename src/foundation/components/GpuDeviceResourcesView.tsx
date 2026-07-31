@@ -549,11 +549,13 @@ export function GpuDeviceResourcesView({
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                 <div className="min-w-0">
                   <div className="text-muted-foreground">{labels.node}</div>
-                  <div className="truncate font-medium">{row.nodeName}</div>
+                  <div className="truncate font-medium" title={row.nodeName}>
+                    {row.nodeName}
+                  </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-muted-foreground">{labels.product}</div>
-                  <div className="truncate font-medium">
+                  <div className="break-words font-medium" title={row.product}>
                     {row.product || "-"}
                   </div>
                 </div>
