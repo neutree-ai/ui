@@ -118,6 +118,20 @@ const resourceInfo: ClusterResourceInfo = {
   },
 };
 
+// Retags every device with `product`, leaving the rest of the fixture alone.
+const withProduct = (
+  info: ClusterResourceInfo,
+  product: string,
+): ClusterResourceInfo => ({
+  ...info,
+  node_resources: Object.fromEntries(
+    Object.entries(info.node_resources ?? {}).map(([nodeName, node]) => [
+      nodeName,
+      { ...node, devices: node.devices?.map((d) => ({ ...d, product })) },
+    ]),
+  ),
+});
+
 describe("EndpointClusterGpuResourcesPanel", () => {
   it("shows node GPU device cards when virtualization is disabled but devices exist", () => {
     render(
@@ -265,6 +279,30 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(
       within(coreCard).getByText((text) => text.includes("50.0 / 200.0")),
     ).toBeTruthy();
+  });
+
+  it("shows a long GPU product name in full on the device card", () => {
+    // The card is only ~180px wide, so a vendor-prefixed name used to be
+    // clipped with no way to read the rest of it.
+    const longProduct = "NVIDIA-GeForce-RTX-4090";
+
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={withProduct(resourceInfo, longProduct)}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: longProduct }}
+        virtualizationEnabled={false}
+        t={t}
+      />,
+    );
+
+    const [card] = screen.getAllByTestId("endpoint-gpu-device-card");
+    const productBadge = within(card).getByText(longProduct);
+
+    // jsdom does no layout, so the class is the only thing that can pin "wraps
+    // rather than clips"; the title is the hover fallback.
+    expect(productBadge.className).not.toContain("truncate");
+    expect(productBadge.getAttribute("title")).toBe(longProduct);
   });
 
   it("shows the cluster's reported GPU products in the header badge, not the preset product", () => {

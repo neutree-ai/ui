@@ -522,9 +522,13 @@ function GpuDeviceCard({
             <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
             <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
           </Button>
+          {/* Product names are long enough to overflow this card (e.g.
+              "NVIDIA-GeForce-RTX-4090"), so the badge wraps instead of
+              truncating — the model is the point of the card. */}
           <Badge
             variant="outline"
-            className="max-w-full min-w-0 truncate text-xs"
+            className="max-w-full min-w-0 break-words text-xs"
+            title={row.product}
           >
             {row.product || "-"}
           </Badge>

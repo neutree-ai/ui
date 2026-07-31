@@ -77,7 +77,19 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
     );
 
     return (
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          // Closing unmounts the popover content, so cmdk's input loses its
+          // text. Drop the caller's search term with it — otherwise the next
+          // open renders results still narrowed by a term the now-blank input
+          // no longer shows.
+          if (!next) {
+            onSearchChange?.("");
+          }
+        }}
+      >
         <PopoverTrigger disabled={disabled} asChild>
           {asField ? <FormControl>{trigger}</FormControl> : trigger}
         </PopoverTrigger>

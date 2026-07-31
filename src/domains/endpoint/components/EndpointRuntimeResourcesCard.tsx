@@ -66,6 +66,8 @@ const getConfiguredCorePercent = (
   return parsePositiveNumber(value);
 };
 
+// Values truncate so rows keep an even height. A plain string value carries a
+// title so a clipped one stays readable on hover.
 const ResourceValue = ({
   label,
   value,
@@ -82,7 +84,10 @@ const ResourceValue = ({
     )}
   >
     <span className="text-xs leading-4 text-muted-foreground">{label}</span>
-    <strong className="min-w-0 truncate text-sm font-semibold leading-5">
+    <strong
+      className="min-w-0 truncate text-sm font-semibold leading-5"
+      title={typeof value === "string" ? value : undefined}
+    >
       {value}
     </strong>
   </div>
@@ -148,7 +153,10 @@ export default function EndpointRuntimeResourcesCard({
                   <span className="block text-xs leading-4 text-muted-foreground">
                     {t("common.fields.acceleratorProduct")}
                   </span>
-                  <strong className="block truncate text-sm font-semibold leading-5">
+                  <strong
+                    className="block break-words text-sm font-semibold leading-5"
+                    title={row.product}
+                  >
                     {row.product || "-"}
                   </strong>
                 </div>
@@ -262,14 +270,23 @@ export default function EndpointRuntimeResourcesCard({
                             {t("clusters.actions.copyUuid")}
                           </span>
                         </Button>
-                        <span className="min-w-0 truncate font-semibold">
+                        {/* The row keeps one line so the columns stay aligned,
+                            so the clipped values carry a title instead — a GPU
+                            model must never be unreadable (NEU-571). */}
+                        <span
+                          className="min-w-0 truncate font-semibold"
+                          title={device.product}
+                        >
                           {device.product || "-"}
                         </span>
                         <span className="font-semibold">
                           {formatMemoryGiB(device.memoryMiB)}
                         </span>
                         <span className="font-semibold">{coreLimitText}</span>
-                        <span className="min-w-0 truncate font-semibold">
+                        <span
+                          className="min-w-0 truncate font-semibold"
+                          title={device.nodeId}
+                        >
                           {device.nodeId || "-"}
                         </span>
                       </div>
