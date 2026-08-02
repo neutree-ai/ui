@@ -79,6 +79,7 @@ import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { TableSearch } from "@/foundation/components/TableSearch";
 import { useColumnVisibility } from "@/foundation/hooks/use-column-visibility";
+import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import {
@@ -629,10 +630,7 @@ export function Table<
     ...props,
     enableRowSelection: enableBatchDelete,
     refineCoreProps: {
-      queryOptions: {
-        refetchInterval: 3_000,
-        refetchIntervalInBackground: true,
-      },
+      queryOptions: { ...LIST_POLL_QUERY_OPTIONS },
       ...props.refineCoreProps,
     },
     initialState: {

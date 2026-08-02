@@ -8,6 +8,7 @@ import { EmptyState } from "@/foundation/components/EmptyState";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
+import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { ImportDialog } from "./components/ImportDialog";
 import { ModelCatalogCard } from "./components/ModelCatalogCard";
@@ -28,7 +29,13 @@ export const ModelCatalogsList = () => {
     resource: "model_catalogs",
     pagination: { mode: "off" },
     meta: { workspace },
-    queryOptions: { enabled: Boolean(workspace) },
+    // This card grid bypasses the shared Table, so it has to opt into the same
+    // polling itself — without it a deleted catalog's card lingers, because the
+    // refetch fired on delete still lands inside the soft-delete window.
+    queryOptions: {
+      enabled: Boolean(workspace),
+      ...LIST_POLL_QUERY_OPTIONS,
+    },
   });
 
   const catalogs = useMemo(() => {

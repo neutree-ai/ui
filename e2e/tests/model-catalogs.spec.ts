@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { config } from "../config";
 import { expect, test } from "../fixtures/base";
 import { ApiHelper } from "../helpers/api-helper";
-import { MULTI_USER_TIMEOUT } from "../helpers/constants";
+import { DELETE_TIMEOUT, MULTI_USER_TIMEOUT } from "../helpers/constants";
 import { YamlImportHelper } from "../helpers/yaml-import";
 
 /** Build a ModelCatalog YAML document for import */
@@ -96,6 +96,12 @@ async function deleteCatalogCardByName(
   await dialog.waitFor({ state: "visible" });
   await dialog.getByRole("button", { name: /delete/i }).click();
   await dialog.waitFor({ state: "hidden" });
+
+  // Deletion is asynchronous; the card is removed by the list's polling
+  // refetch once the controller finishes, without a manual page reload.
+  await expect(catalogCard(page, name)).toHaveCount(0, {
+    timeout: DELETE_TIMEOUT,
+  });
 }
 
 // ── Shared test data for list + detail tests ──
@@ -564,7 +570,6 @@ test.describe("model catalogs delete", () => {
 
     await gotoCatalogList(modelCatalogs.page);
     await deleteCatalogCardByName(modelCatalogs.page, mcName);
-    await expect(catalogCard(modelCatalogs.page, mcName)).toHaveCount(0);
   });
 
   test("can delete from detail page action menu", {
@@ -585,7 +590,6 @@ test.describe("model catalogs delete", () => {
 
     await gotoCatalogList(modelCatalogs.page);
     await deleteCatalogCardByName(modelCatalogs.page, mcName);
-    await expect(catalogCard(modelCatalogs.page, mcName)).toHaveCount(0);
   });
 });
 
