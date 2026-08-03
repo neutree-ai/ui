@@ -1,5 +1,4 @@
 import { useShow, useUpdate } from "@refinedev/core";
-import yaml from "js-yaml";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -7,17 +6,63 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type ParseCatalogSpecError,
+  parseCatalogSpecYaml,
+} from "@/domains/model-catalog/lib/parse-catalog-spec-yaml";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  type ResourceEntity,
+  serializeToYaml,
+  transformEntityForExport,
+} from "@/foundation/lib/yaml-transform";
 
-// Catalog edit is a focused spec editor. Recipe MCs have a deeply nested
-// shape (base/variants/features) with no flat field form, so we expose the
-// spec as YAML — the same surface users author on import. Editing the model
-// reference (e.g. swapping a HuggingFace model for a locally-imported one)
-// is a single field change in that YAML. Identity (name/workspace) is
-// immutable and shown read-only; only `spec` is PATCHed.
+type Translate = ReturnType<typeof useTranslation>["t"];
+
+function describeParseError(e: ParseCatalogSpecError, t: Translate): string {
+  switch (e.type) {
+    case "syntax":
+      return e.message;
+    case "notAMapping":
+      return t("model_catalogs.edit.invalidSpec", "Spec must be a mapping");
+    case "missingSpec":
+      return t(
+        "model_catalogs.edit.missingSpec",
+        "This looks like a ModelCatalog document but has no spec. Paste the whole document, or just the spec body.",
+      );
+    case "wrongKind":
+      return t(
+        "model_catalogs.wrongKind",
+        'Expected kind ModelCatalog, got "{{kind}}"',
+        { kind: e.kind },
+      );
+    case "nameMismatch":
+      return t(
+        "model_catalogs.edit.nameMismatch",
+        'This document is for "{{actual}}", but you are editing "{{expected}}". Import it as a new catalog instead.',
+        { actual: e.actual, expected: e.expected },
+      );
+    case "workspaceMismatch":
+      return t(
+        "model_catalogs.edit.workspaceMismatch",
+        'This document belongs to workspace "{{actual}}", but this catalog is in "{{expected}}".',
+        { actual: e.actual, expected: e.expected },
+      );
+  }
+}
+
+// Catalog edit is a YAML editor over the whole document. Recipe MCs have a
+// deeply nested shape (base/variants/features) with no flat field form, and
+// every other catalog surface — import, export — speaks whole documents, so
+// the editor shows one too: what you see is what a save applies, and a
+// document copied from anywhere else pastes in as-is.
+//
+// A save carries back `spec` plus the metadata that is allowed to change
+// (labels, annotations). Identity is immutable — editing name or workspace is
+// rejected rather than ignored — and the timestamps are server-owned.
 export const ModelCatalogsEdit = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -36,7 +81,18 @@ export const ModelCatalogsEdit = () => {
 
   useEffect(() => {
     if (record) {
-      setSpecYaml(yaml.dump(record.spec, { sortKeys: false, lineWidth: 120 }));
+      // Seed through the export helpers so the editor round-trips with YAML
+      // export and import: no status, no ids, no server-owned timestamps.
+      setSpecYaml(
+        serializeToYaml([
+          transformEntityForExport(record as unknown as ResourceEntity, {
+            removeStatus: true,
+            removeIds: true,
+            removeTimestamps: true,
+            includeCredentials: true,
+          }),
+        ]),
+      );
     }
   }, [record]);
 
@@ -49,15 +105,12 @@ export const ModelCatalogsEdit = () => {
   }
 
   const handleSave = async () => {
-    let parsedSpec: ModelCatalog["spec"];
-    try {
-      parsedSpec = yaml.load(specYaml) as ModelCatalog["spec"];
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      return;
-    }
-    if (!parsedSpec || typeof parsedSpec !== "object") {
-      setError(t("model_catalogs.edit.invalidSpec", "Spec must be a mapping"));
+    const parsed = parseCatalogSpecYaml(specYaml, {
+      name: record.metadata.name,
+      workspace: record.metadata.workspace,
+    });
+    if (!parsed.ok) {
+      setError(describeParseError(parsed.error, t));
       return;
     }
     setError(null);
@@ -65,7 +118,11 @@ export const ModelCatalogsEdit = () => {
       await mutateAsync({
         resource: "model_catalogs",
         id: record.metadata.name,
-        values: { ...record, spec: parsedSpec },
+        values: {
+          ...record,
+          metadata: { ...record.metadata, ...parsed.metadata },
+          spec: parsed.spec,
+        },
         mutationMode: "pessimistic",
         meta: {
           idColumnName: "metadata->name",
@@ -109,12 +166,12 @@ export const ModelCatalogsEdit = () => {
 
             <div className="space-y-1.5">
               <div className="text-sm font-medium">
-                {t("model_catalogs.edit.specLabel", "Spec (YAML)")}
+                {t("model_catalogs.edit.specLabel", "Catalog (YAML)")}
               </div>
               <p className="text-xs text-muted-foreground">
                 {t(
                   "model_catalogs.edit.specHint",
-                  "Edit the catalog spec — e.g. point the model at a locally-imported registry. Invalid recipes surface as a Failed status after saving.",
+                  "Edit the catalog, or paste a whole ModelCatalog document over it. Spec, labels and annotations are applied; name and workspace cannot change. Invalid recipes surface as a Failed status after saving.",
                 )}
               </p>
               <Textarea

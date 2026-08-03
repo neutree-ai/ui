@@ -141,7 +141,7 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
 
         if (doc.kind && doc.kind !== "ModelCatalog") {
           item.error = t(
-            "model_catalogs.import.wrongKind",
+            "model_catalogs.wrongKind",
             'Expected kind ModelCatalog, got "{{kind}}"',
             { kind: doc.kind },
           );

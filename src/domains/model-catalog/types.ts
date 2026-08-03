@@ -28,12 +28,15 @@ import type {
 } from "@/foundation/recipe/types";
 
 export type ModelCatalogSpec = {
-  model: ModelSpec;
-  engine: EndpointEngineSpec;
+  // Recipe catalogs carry the model per variant and may leave the engine to the
+  // recipe layer, so neither is guaranteed at the top level — the recipe types
+  // (`NormalizedRecipe.engine`, `ComposedSpec.engine`) already say as much.
+  model?: ModelSpec | null;
+  engine?: EndpointEngineSpec | null;
   resources: ResourceSpec | null;
   replicas: ReplicaSpec | null;
   deployment_options: DeploymentOptions | null;
-  variables: Record<string, any> | null;
+  variables: Record<string, unknown> | null;
   env: Record<string, string> | null;
   // Recipe extension (all optional)
   base?: RecipeBase | null;
