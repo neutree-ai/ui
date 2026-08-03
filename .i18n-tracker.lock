@@ -346,5 +346,5 @@
   "src/domains/external-endpoint/components/FailedUpstreamAlert.tsx": "c4f1b8e4560bcb91d09dcd989fcf23ba",
   "src/domains/external-endpoint/components/UpstreamStatusBadge.tsx": "d03f3fa846d18e8f0f1ccae9495cab55",
   "src/domains/external-endpoint/lib/is-serving-phase.ts": "5c84904e77f2457c0fd42484a8da5f8a",
-  "src/domains/external-endpoint/lib/match-upstream-statuses.ts": "b476c5662275563b7fe8c8902510c809"
+  "src/domains/external-endpoint/lib/match-upstream-statuses.ts": "0b9e55ff58264d5c419e466235d303dc"
 }

@@ -68,6 +68,33 @@ describe("matchUpstreamStatuses", () => {
     ).toEqual([ready("https://api.openai.com/v1")]);
   });
 
+  it("matches the credential-stripped url the API reports back", () => {
+    // The API removes userinfo, query and fragment from the reference so no
+    // API key reaches the status, so the raw spec url never equals it.
+    const spec = makeSpec([
+      externalUpstream("https://user:pass@api.example.com/v1?api-key=secret"),
+      externalUpstream("https://api.cohere.com/v1#compat"),
+    ]);
+
+    expect(
+      matchUpstreamStatuses(spec, [
+        ready("https://api.example.com/v1"),
+        ready("https://api.cohere.com/v1"),
+      ]),
+    ).toEqual([
+      ready("https://api.example.com/v1"),
+      ready("https://api.cohere.com/v1"),
+    ]);
+  });
+
+  it("still drops a sanitized ref belonging to a different host", () => {
+    const spec = makeSpec([externalUpstream("https://api.example.com/v1?k=1")]);
+
+    expect(
+      matchUpstreamStatuses(spec, [ready("https://other.example.com/v1")]),
+    ).toEqual([null]);
+  });
+
   it("returns nulls when the status carries no upstream detail", () => {
     const spec = makeSpec([refUpstream("a")]);
 
