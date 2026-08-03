@@ -270,6 +270,27 @@ describe("compareWorkspaceModelOptions", () => {
     ]);
   });
 
+  it("ranks a Degraded external endpoint with the serving ones", () => {
+    // Degraded means some upstream is unavailable but the endpoint still
+    // serves, so its models stay near the top rather than sinking to Failed.
+    const failed = opt({
+      model: "a",
+      endpointName: "e1",
+      type: "external",
+      phase: "Failed",
+    });
+    const degraded = opt({
+      model: "z",
+      endpointName: "e2",
+      type: "external",
+      phase: "Degraded",
+    });
+    expect([failed, degraded].sort(compareWorkspaceModelOptions)).toEqual([
+      degraded,
+      failed,
+    ]);
+  });
+
   it("groups internal before external within the same status", () => {
     // Same status (Running), so a Running external model that sorts
     // alphabetically before an internal one must still land after every

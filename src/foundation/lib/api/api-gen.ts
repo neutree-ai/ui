@@ -749,6 +749,7 @@ export type Database = {
         service_url: string | null;
         last_transition_time: string | null;
         error_message: string | null;
+        upstream_status: Json | null;
       };
       engine_spec: {
         versions: Database["api"]["CompositeTypes"]["engine_version"][] | null;
