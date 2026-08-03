@@ -20,7 +20,7 @@ The dev server proxies `/api/v1` to `http://localhost`. Point it at another
 backend with `NODE_IP`, which may include a port:
 
 ```bash
-NODE_IP=192.168.1.10:3000 yarn dev
+NODE_IP=my-backend.example.com:3000 yarn dev
 ```
 
 When the dev server is reached through a hostname other than `localhost` — a
