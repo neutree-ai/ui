@@ -245,7 +245,7 @@
   "src/pages/external-endpoints/create.tsx": "bd5d137b2a4a49d077ea1891707f2988",
   "src/pages/external-endpoints/edit.tsx": "e6fdd4684d41f910da1e2ca2ddf4cbd9",
   "src/pages/external-endpoints/list.tsx": "1b58592b9a94b4853e701d9358b4394e",
-  "src/pages/external-endpoints/show.tsx": "6a14bbcac1129999fe9ed88dbf1e5647",
+  "src/pages/external-endpoints/show.tsx": "e5d38f6b54ba94c0a818ec682746f76e",
   "src/domains/external-endpoint/types.ts": "d32330e46c4c4eafc18a04bd0458cafe",
   "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "7feb6d9981b3007b977b04273226d906",
   "src/domains/external-endpoint/components/CurlExample.tsx": "5183a8958c58627f671b3d80313f016f",
@@ -346,5 +346,6 @@
   "src/domains/external-endpoint/components/FailedUpstreamAlert.tsx": "c4f1b8e4560bcb91d09dcd989fcf23ba",
   "src/domains/external-endpoint/components/UpstreamStatusBadge.tsx": "d03f3fa846d18e8f0f1ccae9495cab55",
   "src/domains/external-endpoint/lib/is-serving-phase.ts": "5c84904e77f2457c0fd42484a8da5f8a",
-  "src/domains/external-endpoint/lib/match-upstream-statuses.ts": "0b9e55ff58264d5c419e466235d303dc"
+  "src/domains/external-endpoint/lib/match-upstream-statuses.ts": "0b9e55ff58264d5c419e466235d303dc",
+  "src/domains/external-endpoint/lib/get-unavailable-models.ts": "e75dba909e0ca54c8cb6b4d10d5cbfe9"
 }

@@ -5,6 +5,7 @@ import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUp
 import UpstreamStatusBadge from "@/domains/external-endpoint/components/UpstreamStatusBadge";
 import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
+import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavailable-models";
 import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
@@ -35,6 +36,12 @@ export const ExternalEndpointsShow = () => {
     record.status?.upstream_status,
   );
   const isServing = isServingPhase(record.status?.phase);
+  // A degraded endpoint still serves, so the example must only offer models
+  // that are actually routable — not the ones its failed upstream dropped.
+  const unavailableModels = getUnavailableModels(upstreamStatuses);
+  const callableModels = allModels.filter(
+    (model) => !unavailableModels.has(model),
+  );
 
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
@@ -166,7 +173,7 @@ export const ExternalEndpointsShow = () => {
         {isServing && record.status?.service_url && (
           <CurlExample
             serviceUrl={record.status.service_url}
-            models={allModels}
+            models={callableModels}
           />
         )}
       </div>
