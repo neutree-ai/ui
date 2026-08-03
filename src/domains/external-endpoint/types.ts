@@ -1,6 +1,13 @@
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 
-type ExternalEndpointPhase = "Pending" | "Running" | "Failed" | "Deleted";
+type ExternalEndpointPhase =
+  | "Pending"
+  | "Running"
+  | "Degraded"
+  | "Failed"
+  | "Deleted";
+
+export type UpstreamStatusPhase = "Ready" | "Failed";
 
 export type AuthSpec = {
   type: string;
@@ -21,8 +28,22 @@ export type ExternalEndpointSpec = {
   upstreams: UpstreamSpec[];
 };
 
+/**
+ * Per-upstream resolution result. The API emits one entry per spec upstream,
+ * in spec order; `ref` is the internal endpoint name or the upstream URL and
+ * never carries the auth credential.
+ */
+export type UpstreamStatus = {
+  kind?: "endpoint_ref" | "external";
+  ref?: string;
+  models?: string[] | null;
+  phase?: UpstreamStatusPhase;
+  error_message?: string | null;
+};
+
 export type ExternalEndpointStatus = BaseStatus<ExternalEndpointPhase> & {
   service_url: string | null;
+  upstream_status?: UpstreamStatus[] | null;
 };
 
 export type ExternalEndpoint = {

@@ -58,7 +58,8 @@ const Section = ({
   contentClassName?: string;
   framed?: boolean;
 }> &
-  HTMLAttributes<HTMLDivElement>) => (
+  // `title` is a ReactNode here, not the DOM string attribute
+  Omit<HTMLAttributes<HTMLDivElement>, "title">) => (
   <div
     {...props}
     className={cn(
