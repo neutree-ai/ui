@@ -759,6 +759,10 @@
 		"title": "Endpoints",
 		"create": "Create Endpoint",
 		"edit": "Edit Endpoint",
+		"access": {
+			"summary": "Access · {{count}} URLs",
+			"hoverTitle": "Access URLs"
+		},
 		"fields": {
 			"serviceUrl": "Service URL",
 			"npu": "NPU",

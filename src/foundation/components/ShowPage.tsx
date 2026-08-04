@@ -127,12 +127,14 @@ const ObjectHeader = ({
   actions,
   children,
   className,
+  descriptionClassName,
 }: PropsWithChildren<{
   title: ReactNode;
   description?: ReactNode;
   status?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  descriptionClassName?: string;
 }>) => (
   <section className={cn("border-b pb-4", className)}>
     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -144,7 +146,12 @@ const ObjectHeader = ({
           {status}
         </div>
         {description && (
-          <div className="mt-1 max-w-4xl text-sm leading-6 text-foreground">
+          <div
+            className={cn(
+              "mt-1 max-w-4xl text-sm leading-6 text-foreground",
+              descriptionClassName,
+            )}
+          >
             {description}
           </div>
         )}

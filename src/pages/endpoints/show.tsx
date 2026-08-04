@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
+import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
@@ -24,7 +25,6 @@ import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
-import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -166,6 +166,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       <Tabs defaultValue="basic" className="flex h-full flex-col">
         <ShowPage.ObjectHeader
           title={record.metadata.name}
+          descriptionClassName="max-w-none"
           description={
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
               <ShowPage.Meta label={t("common.fields.model")}>
@@ -189,6 +190,21 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   {record.spec.cluster}
                 </ShowButton>
               </ShowPage.Meta>
+              <ShowPage.Meta label={t("endpoints.fields.modelFile")}>
+                {record.spec.model.file || "-"}
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("common.fields.workspace")}>
+                {record.metadata.workspace ?? "-"}
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("common.fields.createdAt")}>
+                <Timestamp timestamp={record.metadata.creation_timestamp} />
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("common.fields.updatedAt")}>
+                <Timestamp timestamp={record.metadata.update_timestamp} />
+              </ShowPage.Meta>
+              {url && (
+                <EndpointAccessSummary serviceUrl={url} className="shrink-0" />
+              )}
             </span>
           }
           status={<EndpointStatus {...record.status} />}
@@ -219,53 +235,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
         >
           <div className="space-y-4">
-            <ShowPage.Section title={t("common.sections.basicInformation")}>
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <ShowPage.Row title={t("common.fields.status")}>
-                  <EndpointStatus {...record.status} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.cluster")}>
-                  <ShowButton
-                    recordItemId={record.spec.cluster}
-                    meta={{
-                      workspace: record.metadata.workspace,
-                    }}
-                    variant="link"
-                    resource="clusters"
-                  >
-                    {record.spec.cluster}
-                  </ShowButton>
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.engine")}>
-                  <EndpointEngine {...record} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.model")}>
-                  <EndpointModel model={record.spec.model} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.task")}>
-                  <ModelTask task={record.spec.model.task} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("endpoints.fields.modelFile")}>
-                  {record.spec.model.file || "-"}
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.workspace")}>
-                  {record.metadata.workspace ?? "-"}
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.createdAt")}>
-                  <Timestamp timestamp={record.metadata.creation_timestamp} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.updatedAt")}>
-                  <Timestamp timestamp={record.metadata.update_timestamp} />
-                </ShowPage.Row>
-              </div>
-            </ShowPage.Section>
-
-            {url && (
-              <ShowPage.Section title={t("endpoints.sections.access")}>
-                <ServiceUrls serviceUrl={url} />
-              </ShowPage.Section>
-            )}
-
             <ShowPage.Section title={t("endpoints.sections.runtimeAllocation")}>
               <div className="space-y-6">
                 <EndpointRuntimeResourcesCard
