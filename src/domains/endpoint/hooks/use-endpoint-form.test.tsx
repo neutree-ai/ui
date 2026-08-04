@@ -90,8 +90,8 @@ vi.mock("@/foundation/components/VariablesInput", () => ({
 }));
 
 import { useSelect } from "@refinedev/core";
-import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
+import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useEndpointForm } from "./use-endpoint-form";
 
 // --- Fixtures ---
