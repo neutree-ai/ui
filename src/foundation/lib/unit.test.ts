@@ -85,7 +85,7 @@ describe("formatBytes", () => {
   it("scales into binary units", () => {
     expect(formatBytes(512)).toBe("512 B");
     expect(formatBytes(1024)).toBe("1.0 KiB");
-    expect(formatBytes(763366368)).toBe("727.9 MiB");
+    expect(formatBytes(763366368)).toBe("728.0 MiB");
     expect(formatBytes(5 * 1024 ** 4)).toBe("5.0 TiB");
   });
 

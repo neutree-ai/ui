@@ -62,7 +62,12 @@ vi.mock("@refinedev/react-hook-form", async () => {
 
 vi.mock("@refinedev/core", () => ({
   useSelect: vi.fn(),
-  useCustom: vi.fn(),
+}));
+
+// The registry-models listing is shared L1 infrastructure now, so the model
+// dropdown and the exact-name existence lookup are both mocked here.
+vi.mock("@/foundation/hooks/use-registry-models", () => ({
+  useRegistryModels: vi.fn(),
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
@@ -84,7 +89,8 @@ vi.mock("@/foundation/components/VariablesInput", () => ({
   ),
 }));
 
-import { useCustom, useSelect } from "@refinedev/core";
+import { useSelect } from "@refinedev/core";
+import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
 import { useEndpointForm } from "./use-endpoint-form";
 
@@ -893,10 +899,15 @@ function setupMocks(
     return defaultSelectResult;
   }) as unknown as typeof useSelect);
 
-  vi.mocked(useCustom).mockReturnValue({
-    data: null,
+  vi.mocked(useRegistryModels).mockReturnValue({
+    page: null,
+    models: [],
+    total: null,
+    isLoading: false,
     isFetching: false,
-  } as unknown as ReturnType<typeof useCustom>);
+    error: null,
+    refetch: vi.fn(),
+  } as unknown as ReturnType<typeof useRegistryModels>);
 }
 
 // --- Test components ---
@@ -4231,19 +4242,30 @@ describe("useEndpointForm", () => {
   // NEU-503: the model-exists check must be driven by an exact-name lookup,
   // not by whatever page the dropdown's search last fetched.
   describe("model existence validation (NEU-503)", () => {
-    // The hook issues two useCustom model queries: the dropdown list (keyed
-    // by modelSearch) and the exact-name existence lookup. Route by URL so
+    // The hook issues two registry-models queries: the dropdown list (keyed by
+    // modelSearch) and the exact-name existence lookup. Route by search term so
     // the dropdown list stays empty while the existence lookup is controlled.
+    // A null page is "no answer yet", which is what the resolver must not read
+    // as "the model does not exist".
     function mockModelQueries(existenceModels: { name: string }[] | null) {
-      vi.mocked(useCustom).mockImplementation(((opts: { url: string }) => {
-        if (opts.url.includes(`search=${encodeURIComponent("llama-3")}`)) {
-          return {
-            data: existenceModels ? { data: existenceModels } : null,
-            isFetching: false,
-          };
-        }
-        return { data: null, isFetching: false };
-      }) as unknown as typeof useCustom);
+      vi.mocked(useRegistryModels).mockImplementation(((opts: {
+        search?: string;
+      }) => {
+        const page =
+          opts.search === "llama-3" && existenceModels
+            ? { models: existenceModels, total: existenceModels.length }
+            : null;
+
+        return {
+          page,
+          models: page?.models ?? [],
+          total: page?.total ?? null,
+          isLoading: false,
+          isFetching: false,
+          error: null,
+          refetch: vi.fn(),
+        };
+      }) as unknown as typeof useRegistryModels);
     }
 
     it("surfaces model-not-found when the exact-name lookup has no match", async () => {
