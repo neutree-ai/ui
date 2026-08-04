@@ -20,6 +20,27 @@ describe("getUpgradeVersions", () => {
     ).toEqual(["v1.2.0-rc.1", "v1.2.0"]);
   });
 
+  it("orders nightly, rc, and stable releases while rejecting prerelease downgrades", () => {
+    expect(
+      getUpgradeVersions(
+        ["v1.2.0", "v1.2.0-rc.1", "v1.2.0-nightly.1", "v1.1.0"],
+        "v1.1.0",
+      ),
+    ).toEqual(["v1.2.0-nightly.1", "v1.2.0-rc.1", "v1.2.0"]);
+    expect(
+      getUpgradeVersions(
+        ["v1.2.0", "v1.2.0-rc.1", "v1.2.0-nightly.1"],
+        "v1.2.0-rc.1",
+      ),
+    ).toEqual(["v1.2.0"]);
+  });
+
+  it("accepts a prerelease from a higher minor version", () => {
+    expect(
+      getUpgradeVersions(["v1.2.0-rc.1", "v1.2.0-nightly.1"], "v1.1.0"),
+    ).toEqual(["v1.2.0-nightly.1", "v1.2.0-rc.1"]);
+  });
+
   it("drops invalid candidate versions", () => {
     expect(
       getUpgradeVersions(["v1.2.0", "not-a-version", "v1.0.1"], "v1.0.1"),
