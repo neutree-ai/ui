@@ -69,7 +69,11 @@ describe("resolveFieldValue", () => {
     // different statement from "we looked and could not tell".
     expect(
       resolveFieldValue(
-        { is_moe: false, field_sources: { is_moe: "auto" }, missing_fields: [] },
+        {
+          is_moe: false,
+          field_sources: { is_moe: "auto" },
+          missing_fields: [],
+        },
         { key: "num_experts", labelKey: "numExperts", kind: "integer" },
       ),
     ).toEqual({ state: "notApplicable" });
@@ -79,7 +83,10 @@ describe("resolveFieldValue", () => {
     // A hand-written catalog carries neither list, so nothing can be concluded
     // from a field's absence beyond "not known".
     expect(
-      resolveFieldValue({ parameter_count: "7B" }, { ...textField, kind: "text" }),
+      resolveFieldValue(
+        { parameter_count: "7B" },
+        { ...textField, kind: "text" },
+      ),
     ).toEqual({ state: "unknown" });
   });
 });
@@ -133,7 +140,9 @@ describe("ModelInfoFields", () => {
     );
 
     const cell = screen.getByTestId("model-info-parameter_count");
-    expect(cell.textContent).toContain("model_registries.models.sources.manual");
+    expect(cell.textContent).toContain(
+      "model_registries.models.sources.manual",
+    );
     expect(cell.textContent).toContain("7,000,000,000");
   });
 

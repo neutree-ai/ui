@@ -155,7 +155,10 @@ export const ModelDeleteDialog = ({
         ) : null}
 
         {failure ? (
-          <p className="text-sm text-destructive" data-testid="model-delete-error">
+          <p
+            className="text-sm text-destructive"
+            data-testid="model-delete-error"
+          >
             {failure}
           </p>
         ) : null}

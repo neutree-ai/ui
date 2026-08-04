@@ -309,9 +309,7 @@ export const ModelEditDialog = ({
                     htmlFor={`model-info-${field.key}`}
                     className="text-xs font-normal text-muted-foreground"
                   >
-                    {t(
-                      `model_registries.models.fields.${field.labelKey}`,
-                    )}
+                    {t(`model_registries.models.fields.${field.labelKey}`)}
                   </Label>
                   <Input
                     id={`model-info-${field.key}`}
@@ -329,9 +327,7 @@ export const ModelEditDialog = ({
                     htmlFor={`model-info-${field.key}`}
                     className="text-xs font-normal text-muted-foreground"
                   >
-                    {t(
-                      `model_registries.models.fields.${field.labelKey}`,
-                    )}
+                    {t(`model_registries.models.fields.${field.labelKey}`)}
                   </Label>
                   <Input
                     id={`model-info-${field.key}`}
@@ -374,7 +370,10 @@ export const ModelEditDialog = ({
           </div>
 
           {failure ? (
-            <p className="text-sm text-destructive" data-testid="model-edit-error">
+            <p
+              className="text-sm text-destructive"
+              data-testid="model-edit-error"
+            >
               {failure}
             </p>
           ) : null}

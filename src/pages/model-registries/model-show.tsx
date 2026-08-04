@@ -111,9 +111,7 @@ export const ModelRegistryModelShow = () => {
               <ShowPage.Meta label={t("common.fields.version")}>
                 {model.name}
               </ShowPage.Meta>
-              <ShowPage.Meta
-                label={t("model_registries.fields.modelRegistry")}
-              >
+              <ShowPage.Meta label={t("model_registries.fields.modelRegistry")}>
                 {registry}
               </ShowPage.Meta>
             </span>
