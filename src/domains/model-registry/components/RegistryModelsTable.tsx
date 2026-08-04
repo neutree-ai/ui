@@ -177,9 +177,14 @@ export const RegistryModelsTable = ({
 
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          {total === null
-            ? t("model_registries.models.totalUnknown")
-            : t("table.pagination.totalItems", { total })}
+          {/* Before a page arrives there is nothing to say about the total.
+              "Unknown" is a statement about the registry — that it cannot count
+              what matched — and it must not be made while still asking. */}
+          {isLoading || error
+            ? null
+            : total === null
+              ? t("model_registries.models.totalUnknown")
+              : t("table.pagination.totalItems", { total })}
         </div>
         <div className="flex items-center gap-2">
           <Button

@@ -68,6 +68,10 @@ export const useRegistryModels = ({
     enabled: canQuery,
     keepPreviousData,
     staleTime,
+    // A refusal from this route is a stated answer — a public registry cannot
+    // page, a registry cannot be reached — so retrying it three times only
+    // delays telling the user. One retry still absorbs a transient blip.
+    retry: 1,
   });
 
   return {
