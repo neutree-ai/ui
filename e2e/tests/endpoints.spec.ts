@@ -7,6 +7,7 @@ import { ResourcePage } from "../helpers/resource-page";
 // ── Shared test data created once in beforeAll ──
 const irName = { value: "" }; // Image registry for cluster dependency
 const clusterName = { value: "" };
+const alternateClusterName = { value: "" };
 const engineName = { value: "" };
 const nonLlmEngineName = { value: "" };
 const mrName = { value: "" };
@@ -26,6 +27,7 @@ test.describe("endpoints", () => {
     const ts = Date.now();
     irName.value = `test-ep-ir-${ts}`;
     clusterName.value = `test-ep-cl-${ts}`;
+    alternateClusterName.value = `test-ep-alt-cl-${ts}`;
     engineName.value = `test-ep-engine-${ts}`;
     nonLlmEngineName.value = `test-ep-non-llm-engine-${ts}`;
     mrName.value = `test-ep-mr-${ts}`;
@@ -39,6 +41,10 @@ test.describe("endpoints", () => {
     // Create dependency resources first
     await api.createImageRegistry(irName.value);
     await api.createCluster(clusterName.value, {
+      type: "ssh",
+      imageRegistry: irName.value,
+    });
+    await api.createCluster(alternateClusterName.value, {
       type: "ssh",
       imageRegistry: irName.value,
     });
@@ -100,6 +106,9 @@ test.describe("endpoints", () => {
     // Then dependencies in parallel (cluster + model registry + model catalog)
     await Promise.all([
       api.deleteCluster(clusterName.value, { force: true }).catch(() => {}),
+      api
+        .deleteCluster(alternateClusterName.value, { force: true })
+        .catch(() => {}),
       api.deleteEngine(engineName.value, { force: true }).catch(() => {}),
       api.deleteEngine(nonLlmEngineName.value, { force: true }).catch(() => {}),
       api.deleteModelRegistry(mrName.value, { force: true }).catch(() => {}),
@@ -1093,25 +1102,44 @@ test.describe("endpoints", () => {
       await expect(endpoints.form.field("-model-catalog")).toBeHidden();
     });
 
-    test("edit: cluster and registry editable", { tag: "@C2613287" }, async ({
-      endpoints,
-    }) => {
+    test("edit: cluster immutable and registry editable", {
+      tag: "@C2613287",
+    }, async ({ endpoints, apiHelper }) => {
       await endpoints.goToEdit(epNames.base);
       await expect(
         endpoints.page.locator('[data-testid="form-submit"]'),
       ).toBeEnabled();
 
-      // Cluster combobox should be enabled
+      // Existing endpoints keep their deployment cluster.
       const clusterButton = endpoints.form
         .field("spec.cluster")
-        .locator("button");
-      await expect(clusterButton).toBeEnabled();
+        .locator('button[role="combobox"]');
+      await expect(clusterButton).toBeDisabled();
 
       // Model registry combobox should be enabled
       const registryButton = endpoints.form
         .field("spec.model.registry")
         .locator("button");
       await expect(registryButton).toBeEnabled();
+
+      const patch = await apiHelper.request<{ code: string }>(
+        "PATCH",
+        `/endpoints?metadata->>name=eq.${epNames.base}&metadata->>workspace=eq.default`,
+        { spec: { cluster: alternateClusterName.value } },
+        { probe: true },
+      );
+      expect(patch.status).toBe(400);
+      expect(patch.body).toMatchObject({ code: "10225" });
+
+      const endpoint = await apiHelper.request<
+        Array<{ spec: { cluster: string } }>
+      >(
+        "GET",
+        `/endpoints?metadata->>name=eq.${epNames.base}&metadata->>workspace=eq.default`,
+      );
+      expect(endpoint.ok).toBe(true);
+      expect(endpoint.body).toHaveLength(1);
+      expect(endpoint.body[0]?.spec.cluster).toBe(clusterName.value);
     });
 
     test("edit: model registry visible in configuration details", {
