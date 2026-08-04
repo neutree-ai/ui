@@ -8,6 +8,11 @@ import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
@@ -168,7 +173,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           title={record.metadata.name}
           descriptionClassName="max-w-none"
           description={
-            <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <ShowPage.Meta label={t("common.fields.model")}>
                 <EndpointModel model={record.spec.model} />
               </ShowPage.Meta>
@@ -190,21 +195,28 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   {record.spec.cluster}
                 </ShowButton>
               </ShowPage.Meta>
-              <ShowPage.Meta label={t("endpoints.fields.modelFile")}>
-                {record.spec.model.file || "-"}
-              </ShowPage.Meta>
               <ShowPage.Meta label={t("common.fields.workspace")}>
                 {record.metadata.workspace ?? "-"}
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.createdAt")}>
-                <Timestamp timestamp={record.metadata.creation_timestamp} />
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.updatedAt")}>
-                <Timestamp timestamp={record.metadata.update_timestamp} />
               </ShowPage.Meta>
               {url && (
                 <EndpointAccessSummary serviceUrl={url} className="shrink-0" />
               )}
+              <ShowPage.Meta label={t("endpoints.fields.modelFile")}>
+                {record.spec.model.file || "-"}
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("common.fields.updatedAt")}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Timestamp timestamp={record.metadata.update_timestamp} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("common.fields.createdAt")}:{" "}
+                    <Timestamp timestamp={record.metadata.creation_timestamp} />
+                  </TooltipContent>
+                </Tooltip>
+              </ShowPage.Meta>
             </span>
           }
           status={<EndpointStatus {...record.status} />}
