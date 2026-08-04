@@ -5,7 +5,7 @@ import {
   type RegistryModelPage,
 } from "@/foundation/lib/api/registry-models";
 
-export type UseRegistryModelsParams = {
+type UseRegistryModelsParams = {
   workspace?: string | null;
   registry?: string | null;
   search?: string;

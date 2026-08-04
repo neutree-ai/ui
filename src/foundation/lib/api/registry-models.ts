@@ -21,7 +21,7 @@ import type { ModelInfo } from "@/foundation/types/serving-types";
 /** The error code the server uses for "something still references this model". */
 export const MODEL_REFERENCED_CODE = "10131";
 
-export type RegistryModelsQuery = {
+type RegistryModelsQuery = {
   workspace: string;
   registry: string;
   search?: string;
@@ -41,7 +41,7 @@ export type RegistryModelPage = {
 
 /** The error bodies these routes answer with. Every field is optional: which
  * ones arrive depends on why the call failed. */
-export type RegistryModelErrorBody = {
+type RegistryModelErrorBody = {
   message?: string;
   /** Present on a rejected delete; MODEL_REFERENCED_CODE when it was blocked. */
   code?: string;
@@ -72,9 +72,9 @@ function modelsBaseUrl(workspace: string, registry: string): string {
   )}/model_registries/${encodeURIComponent(registry)}/models`;
 }
 
-/** Builds the listing URL. Exported for the callers that pass it to refine's
- * `useCustom`, which takes a URL relative to REST_URL. */
-export function registryModelsPath(query: RegistryModelsQuery): string {
+/** Builds the listing path, relative to REST_URL. An unset limit is left to the
+ * server, and offset 0 is omitted so the common case sends no offset at all. */
+function registryModelsPath(query: RegistryModelsQuery): string {
   const params = new URLSearchParams();
 
   if (query.search) {

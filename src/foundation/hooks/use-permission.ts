@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { clientPostgrest } from "@/foundation/lib/api";
 import type { Database } from "@/foundation/lib/api/api-gen";
 
-export type PermissionAction = Database["api"]["Enums"]["permission_action"];
+type PermissionAction = Database["api"]["Enums"]["permission_action"];
 
 /**
  * Asks the server whether the signed-in user holds a permission in a workspace.

@@ -24,7 +24,7 @@ export type ModelRegistrySpec = {
  * measure at all. Absent is therefore "not counted", which is not the same
  * statement as a count of zero.
  */
-export type ModelRegistryStats = {
+type ModelRegistryStats = {
   model_count: number;
   storage_bytes: number;
   /** When the counters above were last refreshed (RFC3339). */
