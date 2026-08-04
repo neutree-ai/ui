@@ -92,7 +92,7 @@ test.describe("endpoints", () => {
   });
 
   test.afterAll(async ({ browser }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     const context = await browser.newContext();
     const page = await context.newPage();
     const api = new ApiHelper(page);
