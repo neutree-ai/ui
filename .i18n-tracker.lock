@@ -352,11 +352,11 @@
   "src/foundation/types/model-types.ts": "80a78a25a6c7c804da328542b039310c",
   "src/foundation/lib/api/registry-models.ts": "b3ce9d5892a1f3db0a323621c6fd6269",
   "src/foundation/hooks/use-permission.ts": "f76f7e0ae9ff7eb0544c7b5261c9b94a",
-  "src/foundation/hooks/use-registry-models.ts": "37b980f02b64cb51e54a9172bfd35e04",
-  "src/domains/model-registry/hooks/use-registry-model.ts": "a49cc9e13c64f3672115d395c5119061",
+  "src/foundation/hooks/use-registry-models.ts": "23e285261f0c1ce0da03f0290e3d17c2",
+  "src/domains/model-registry/hooks/use-registry-model.ts": "f3b7ffee95c0336e5c4415b3c434a871",
   "src/domains/model-registry/components/ModelDeleteDialog.tsx": "2d14d8d26632fcca6b7bbc1eda1ed67a",
   "src/domains/model-registry/components/ModelEditDialog.tsx": "392345513769707531c77d2dff95d0c4",
   "src/domains/model-registry/components/ModelInfoFields.tsx": "4de75c3f06118f24d2b1538af84786e8",
   "src/domains/model-registry/components/ModelRegistryStats.tsx": "207d63a6478d660945c1e7c3a9fdc52a",
-  "src/domains/model-registry/components/RegistryModelsTable.tsx": "9e08ea6d46c94b06d7a15d085f8272e9"
+  "src/domains/model-registry/components/RegistryModelsTable.tsx": "a6b23d8f39ef052668bd5554866f601d"
 }
