@@ -68,6 +68,9 @@ export const RegistryModelsTable = ({
     search: debouncedSearch || undefined,
     limit: PAGE_SIZE,
     offset,
+    // Paging is the case this exists for: without it the table empties itself
+    // on every page change and the rows jump back in a moment later.
+    keepPreviousData: true,
   });
 
   const rows: Row[] = models.flatMap((model) =>
