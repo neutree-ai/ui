@@ -129,7 +129,7 @@ export const LogViewer: FC<LogViewerProps> = ({
    * Toolbar component
    */
   const Toolbar = (
-    <div className="flex flex-wrap items-center gap-2 p-3 border-b bg-muted/30">
+    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/30 p-3">
       {/* Search Input */}
       <div className="flex items-center gap-2">
         <Search className="h-4 w-4 text-muted-foreground" />
@@ -264,7 +264,7 @@ export const LogViewer: FC<LogViewerProps> = ({
 
   return (
     <div
-      className="flex flex-col border rounded-lg bg-background"
+      className="flex min-h-0 flex-col overflow-hidden rounded-lg border bg-background"
       style={{ height }}
     >
       {Toolbar}

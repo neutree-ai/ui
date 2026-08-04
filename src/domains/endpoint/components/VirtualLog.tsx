@@ -1,6 +1,13 @@
 import { createLowlight } from "lowlight";
 import { useTheme } from "next-themes";
-import { type FC, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  type FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 import { EmptyState } from "@/foundation/components/EmptyState";
@@ -118,6 +125,8 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   // the dark background).
   const { resolvedTheme } = useTheme();
   const listRef = useRef<List>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
 
   /**
    * Tracks whether the user is currently pinned to the bottom of the log.
@@ -242,8 +251,28 @@ export const VirtualLog: FC<VirtualLogProps> = ({
 
   /** Calculate dimensions */
   const lineHeight = fontSize + 6; // padding included
-  const listHeight =
-    typeof window === "undefined" ? 600 : window.innerHeight * 0.6;
+  const listHeight = Math.max(1, containerHeight);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateHeight = () => {
+      setContainerHeight(container.getBoundingClientRect().height);
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateHeight);
+      return () => window.removeEventListener("resize", updateHeight);
+    }
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   /**
    * Handle scroll to detect when user reaches bottom/top for infinite loading
@@ -304,7 +333,7 @@ export const VirtualLog: FC<VirtualLogProps> = ({
 
   if (!processedLines.length) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex min-h-0 flex-1 items-center justify-center p-8">
         <EmptyState className="w-full">
           {t("components.logViewer.noLogs")}
         </EmptyState>
@@ -313,7 +342,10 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   }
 
   return (
-    <div className={cn("flex-1 virtual-log-container", hlThemeClass)}>
+    <div
+      ref={containerRef}
+      className={cn("min-h-0 flex-1 virtual-log-container", hlThemeClass)}
+    >
       {/* @ts-ignore - react-window type compatibility issue */}
       <List
         ref={listRef}
