@@ -42,7 +42,12 @@ describe("ReferenceList", () => {
     render(
       <ReferenceList
         references={[
-          { kind: "Endpoint", name: "a", workspace: "default", phase: "Pending" },
+          {
+            kind: "Endpoint",
+            name: "a",
+            workspace: "default",
+            phase: "Pending",
+          },
         ]}
       />,
     );
