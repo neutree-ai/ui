@@ -623,7 +623,6 @@
 				"description": "{{name}}:{{version}} will be removed from the registry. This cannot be undone.",
 				"blocked": "This model cannot be deleted while the following objects still reference it:",
 				"variant": "variant: {{variant}}",
-				"comingUp": "{{phase}} — still coming up",
 				"success": "Model deleted"
 			}
 		}

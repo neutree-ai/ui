@@ -24,15 +24,32 @@ import type { ModelReference } from "@/foundation/types/model-types";
  * points at it, lists what.
  *
  * The list is the whole point: a count tells a user they are blocked, the names
- * tell them what to go and change. Endpoints that are still coming up are
- * flagged with their phase, because "this is mid-deployment" is a different
- * problem from "this is serving traffic" and the server distinguishes the two.
+ * tell them what to go and change. An endpoint's phase is shown alongside it,
+ * because "this is mid-deployment" is a different problem from "this is serving
+ * traffic" and the server distinguishes the two.
  */
 
-/** Phases that mean the endpoint is on its way up rather than already running. */
-const COMING_UP_PHASES = ["Deploying", "ModelDownloading"];
+/**
+ * The one phase in which an endpoint is serving traffic. Everything else —
+ * coming up, paused, failed, on its way out — is marked, and marking is decided
+ * by what a phase is *not*, so a phase added on the server shows up as worth a
+ * second look rather than silently reading as "in service".
+ *
+ * Nothing here interprets what the other phases mean; the server's own word for
+ * the phase is what gets rendered.
+ */
+const SERVING_PHASE = "Running";
 
-const ReferenceList = ({ references }: { references: ModelReference[] }) => {
+export const referencePhaseClassName = (phase: string) =>
+  phase === SERVING_PHASE
+    ? "ml-2 text-muted-foreground"
+    : "ml-2 text-amber-600 dark:text-amber-500";
+
+export const ReferenceList = ({
+  references,
+}: {
+  references: ModelReference[];
+}) => {
   const { t } = useTranslation();
 
   return (
@@ -58,17 +75,10 @@ const ReferenceList = ({ references }: { references: ModelReference[] }) => {
           ) : null}
           {reference.phase ? (
             <span
-              className={
-                COMING_UP_PHASES.includes(reference.phase)
-                  ? "ml-2 text-amber-600 dark:text-amber-500"
-                  : "ml-2 text-muted-foreground"
-              }
+              className={referencePhaseClassName(reference.phase)}
+              data-testid={`model-delete-reference-phase-${reference.phase}`}
             >
-              {COMING_UP_PHASES.includes(reference.phase)
-                ? t("model_registries.models.delete.comingUp", {
-                    phase: reference.phase,
-                  })
-                : reference.phase}
+              {reference.phase}
             </span>
           ) : null}
         </li>
