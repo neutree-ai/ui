@@ -353,7 +353,7 @@
   "src/foundation/lib/api/registry-models.ts": "a3fd93794fdf8c6dfecebe7e6df3a3d3",
   "src/foundation/hooks/use-registry-models.ts": "23e285261f0c1ce0da03f0290e3d17c2",
   "src/domains/model-registry/hooks/use-registry-model.ts": "f3b7ffee95c0336e5c4415b3c434a871",
-  "src/domains/model-registry/components/ModelDeleteDialog.tsx": "2d14d8d26632fcca6b7bbc1eda1ed67a",
+  "src/domains/model-registry/components/ModelDeleteDialog.tsx": "da9e104a5a857cd6e06232feacb6ebbc",
   "src/domains/model-registry/components/ModelEditDialog.tsx": "392345513769707531c77d2dff95d0c4",
   "src/domains/model-registry/components/ModelInfoFields.tsx": "4de75c3f06118f24d2b1538af84786e8",
   "src/domains/model-registry/components/ModelRegistryStats.tsx": "207d63a6478d660945c1e7c3a9fdc52a",
