@@ -8,11 +8,6 @@ import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
@@ -29,10 +24,11 @@ import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard
 import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 
@@ -195,28 +191,13 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   {record.spec.cluster}
                 </ShowButton>
               </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.workspace")}>
-                {record.metadata.workspace ?? "-"}
-              </ShowPage.Meta>
               {url && (
                 <EndpointAccessSummary serviceUrl={url} className="shrink-0" />
               )}
               <ShowPage.Meta label={t("endpoints.fields.modelFile")}>
                 {record.spec.model.file || "-"}
               </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.updatedAt")}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Timestamp timestamp={record.metadata.update_timestamp} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t("common.fields.createdAt")}:{" "}
-                    <Timestamp timestamp={record.metadata.creation_timestamp} />
-                  </TooltipContent>
-                </Tooltip>
-              </ShowPage.Meta>
+              <MetadataTimestampMeta metadata={record.metadata} />
             </span>
           }
           status={<EndpointStatus {...record.status} />}
@@ -294,6 +275,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               </CardContent>
             </Card>
           )}
+          <MetadataDisclosure metadata={record.metadata} className="mt-4" />
         </TabsContent>
         {shouldShowRayDashboard && (
           <TabsContent value="ray" className="mt-0 flex-1">

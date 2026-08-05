@@ -33,11 +33,11 @@ import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import type { Endpoint } from "@/domains/endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
@@ -112,9 +112,7 @@ export const ClustersShow = () => {
                     {record.status?.version ?? record.spec.version ?? "-"}
                   </span>
                 </ShowPage.Meta>
-                <ShowPage.Meta label={t("common.fields.workspace")}>
-                  <span>{record.metadata.workspace ?? "-"}</span>
-                </ShowPage.Meta>
+                <MetadataTimestampMeta metadata={record.metadata} />
               </span>
             }
             status={<ClusterStatus {...record.status} />}
@@ -159,9 +157,6 @@ export const ClustersShow = () => {
                         : t("common.options.disabled")}
                     </ShowPage.Row>
                   )}
-                  <ShowPage.Row title={t("common.fields.workspace")}>
-                    {record.metadata.workspace ?? "-"}
-                  </ShowPage.Row>
                   <ShowPage.Row title={t("common.fields.version")}>
                     <span className="inline-flex min-w-0 items-center">
                       {record.status?.version ?? "-"}
@@ -186,12 +181,6 @@ export const ClustersShow = () => {
                     >
                       {record.spec.image_registry}
                     </ShowButton>
-                  </ShowPage.Row>
-                  <ShowPage.Row title={t("common.fields.createdAt")}>
-                    <Timestamp timestamp={record.metadata.creation_timestamp} />
-                  </ShowPage.Row>
-                  <ShowPage.Row title={t("common.fields.updatedAt")}>
-                    <Timestamp timestamp={record.metadata.update_timestamp} />
                   </ShowPage.Row>
                 </div>
                 {record.spec.config.ssh_config && (

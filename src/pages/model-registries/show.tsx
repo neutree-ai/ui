@@ -7,6 +7,7 @@ import { RegistryModelsTable } from "@/domains/model-registry/components/Registr
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -46,9 +47,7 @@ export const ModelRegistriesShow = () => {
               <ShowPage.Meta label={t("common.fields.type")}>
                 <ModelRegistryType type={record.spec.type} />
               </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.workspace")}>
-                {record.metadata.workspace ?? "-"}
-              </ShowPage.Meta>
+              <MetadataTimestampMeta metadata={record.metadata} />
             </span>
           }
         />
@@ -64,7 +63,12 @@ export const ModelRegistriesShow = () => {
           value="basic"
           className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
         >
-          <MetadataCard metadata={record.metadata} showName={false} />
+          <MetadataCard
+            metadata={record.metadata}
+            showName={false}
+            showWorkspace={false}
+            showTimestamps={false}
+          />
           <ShowPage.Section title={t("common.sections.configuration")}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
               <ShowPage.Row title={t("common.fields.type")}>

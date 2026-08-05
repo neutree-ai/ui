@@ -23,6 +23,19 @@ export default function WorkspaceSelect() {
   const { action } = useResourceParams();
   const go = useGo();
 
+  if (resource?.meta?.workspaced && action === "show") {
+    return (
+      <div className="flex h-9 max-w-[360px] min-w-0 items-center gap-2 text-sm">
+        <span className="shrink-0 font-semibold text-muted-foreground/80">
+          {t("common.fields.workspace")}:
+        </span>
+        <span className="min-w-0 truncate text-base font-semibold text-foreground">
+          {current}
+        </span>
+      </div>
+    );
+  }
+
   if (!resource?.meta?.workspaced || action !== "list") {
     return null;
   }

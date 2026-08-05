@@ -29,6 +29,7 @@
 			"password": "Password",
 			"permissions": "Permissions",
 			"permissionsCount": "{{count}} permissions",
+			"metadata": "Metadata",
 			"labels": "Labels",
 			"annotations": "Annotations",
 			"openaiUrl": "OpenAI Compatible URL",

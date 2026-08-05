@@ -3,6 +3,7 @@ import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
 import { Loader } from "@/foundation/components/Loader";
 import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -46,27 +47,18 @@ export const RoleAssignmentsShow = () => {
             <ShowPage.Meta label={t("common.fields.user")}>
               <UserCell id={record.spec.user_id} />
             </ShowPage.Meta>
+            <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
       />
       <div className="mt-4 space-y-4">
-        <MetadataCard metadata={record.metadata} showName={false} />
+        <MetadataCard
+          metadata={record.metadata}
+          showName={false}
+          showTimestamps={false}
+        />
         <ShowPage.Section title={t("role_assignments.fields.policy")}>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-            <ShowPage.Row title={t("common.fields.workspace")}>
-              {record.spec.global ? (
-                "*"
-              ) : record.spec.workspace ? (
-                <ShowButton
-                  recordItemId={record.spec.workspace}
-                  meta={{}}
-                  variant="link"
-                  resource="workspaces"
-                >
-                  {record.spec.workspace}
-                </ShowButton>
-              ) : null}
-            </ShowPage.Row>
             <ShowPage.Row title={t("common.fields.role")}>
               <ShowButton
                 recordItemId={record.spec.role}
