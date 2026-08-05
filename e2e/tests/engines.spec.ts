@@ -97,6 +97,7 @@ test.describe("engines list", () => {
 
     // vLLM exposes maintained versions in the builtin support window.
     const row = engines.table.rowWithText(ENGINE_VLLM);
+    await expect(row.getByText("v0.17.1")).toBeVisible();
     await expect(row.getByText("v0.24.0")).toBeVisible();
   });
 

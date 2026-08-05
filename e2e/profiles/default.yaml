@@ -29,7 +29,7 @@ kubernetes:
 
 engine:
   name: "vllm"
-  version: "v0.8.5"
+  version: "v0.24.0"
 
 model:
   name: "test-model"
