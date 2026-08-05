@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseContentRangeTotal } from "@/foundation/lib/api/registry-models";
+import {
+  describeErrorBody,
+  parseContentRangeTotal,
+} from "@/foundation/lib/api/registry-models";
 
 describe("parseContentRangeTotal", () => {
   it("reads the total out of a populated range", () => {
@@ -23,5 +26,33 @@ describe("parseContentRangeTotal", () => {
     expect(parseContentRangeTotal("")).toBeNull();
     expect(parseContentRangeTotal("0-1")).toBeNull();
     expect(parseContentRangeTotal("0-1/many")).toBeNull();
+  });
+});
+
+describe("describeErrorBody", () => {
+  it("uses the server's message when there is one", () => {
+    expect(describeErrorBody({ message: "no such model" }, "Not Found")).toBe(
+      "no such model",
+    );
+  });
+
+  it("reports a refusal in the permission check's own words", () => {
+    // That layer answers {error, required} rather than {message}. The UI does
+    // not decide who may write, so a refusal has to arrive with its reason
+    // rather than as a bare "Forbidden".
+    expect(
+      describeErrorBody(
+        { error: "insufficient permissions", required: "model:push" },
+        "Forbidden",
+      ),
+    ).toBe("insufficient permissions (model:push)");
+
+    expect(
+      describeErrorBody({ error: "insufficient permissions" }, "Forbidden"),
+    ).toBe("insufficient permissions");
+  });
+
+  it("falls back to the status line when the body says nothing", () => {
+    expect(describeErrorBody({}, "Bad Gateway")).toBe("Bad Gateway");
   });
 });

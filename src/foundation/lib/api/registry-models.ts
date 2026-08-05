@@ -43,6 +43,15 @@ export type RegistryModelPage = {
  * ones arrive depends on why the call failed. */
 type RegistryModelErrorBody = {
   message?: string;
+  /**
+   * What a refusal from the permission check is worded as. That layer answers
+   * `{error, required}` rather than `{message}`, and its wording is the honest
+   * thing to show — the UI does not decide who may write, so when the server
+   * says no it says why.
+   */
+  error?: string;
+  /** The permission a refused call would have needed. */
+  required?: string;
   /** Present on a rejected delete; MODEL_REFERENCED_CODE when it was blocked. */
   code?: string;
   hint?: string;
@@ -51,6 +60,23 @@ type RegistryModelErrorBody = {
   /** What already holds the alias, on a 409. */
   conflict?: ModelAliasConflict;
 };
+
+/** Picks the sentence to show for a failure, preferring whatever the server
+ * actually said over the bare status line. */
+export function describeErrorBody(
+  body: RegistryModelErrorBody,
+  statusText: string,
+): string {
+  if (body.message) {
+    return body.message;
+  }
+
+  if (body.error) {
+    return body.required ? `${body.error} (${body.required})` : body.error;
+  }
+
+  return statusText;
+}
 
 /** An unsuccessful response from the models sub-API, with its body kept intact
  * so a caller can render the conflict or the reference list it names. */
@@ -116,11 +142,10 @@ async function errorFrom(res: Response): Promise<RegistryModelError> {
     // A body that is not JSON leaves us with the status alone.
   }
 
-  if (!body.message) {
-    body = { ...body, message: res.statusText };
-  }
-
-  return new RegistryModelError(res.status, body);
+  return new RegistryModelError(res.status, {
+    ...body,
+    message: describeErrorBody(body, res.statusText),
+  });
 }
 
 /**

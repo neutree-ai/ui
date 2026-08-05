@@ -18,7 +18,6 @@ import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
-import { useHasPermission } from "@/foundation/hooks/use-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**
@@ -27,6 +26,10 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * Every value on this page comes from the server as-is. Where the server could
  * not establish a field it says so, and the page says so too — see
  * ModelInfoFields, which is where that decision is written down.
+ *
+ * The edit and delete controls are offered to everyone, as everything else in
+ * this UI is: the API is what decides who may write, and a refusal is reported
+ * where the action was taken rather than pre-empted here.
  */
 export const ModelRegistryModelShow = () => {
   const { t } = useTranslation();
@@ -41,9 +44,6 @@ export const ModelRegistryModelShow = () => {
 
   const modelRef = { workspace, registry, model: modelName, version };
   const { model, isLoading, error, refetch } = useRegistryModel(modelRef);
-
-  const canEdit = useHasPermission("model:push", workspace);
-  const canDelete = useHasPermission("model:delete", workspace);
 
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -118,24 +118,20 @@ export const ModelRegistryModelShow = () => {
           }
           actions={
             <>
-              {canEdit.allowed ? (
-                <Button
-                  variant="outline"
-                  onClick={() => setEditing(true)}
-                  data-testid="model-edit-open"
-                >
-                  {t("model_registries.models.actions.edit")}
-                </Button>
-              ) : null}
-              {canDelete.allowed ? (
-                <Button
-                  variant="outline"
-                  onClick={() => setDeleting(true)}
-                  data-testid="model-delete-open"
-                >
-                  {t("buttons.delete")}
-                </Button>
-              ) : null}
+              <Button
+                variant="outline"
+                onClick={() => setEditing(true)}
+                data-testid="model-edit-open"
+              >
+                {t("model_registries.models.actions.edit")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDeleting(true)}
+                data-testid="model-delete-open"
+              >
+                {t("buttons.delete")}
+              </Button>
             </>
           }
         />
