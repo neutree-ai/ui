@@ -1093,7 +1093,9 @@ test.describe("endpoints", () => {
       await expect(endpoints.form.field("-model-catalog")).toBeHidden();
     });
 
-    test("edit: cluster immutable and registry editable", async ({ endpoints }) => {
+    test("edit: cluster immutable and registry editable", async ({
+      endpoints,
+    }) => {
       await endpoints.goToEdit(epNames.base);
       await expect(
         endpoints.page.locator('[data-testid="form-submit"]'),
