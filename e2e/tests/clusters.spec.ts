@@ -392,7 +392,7 @@ test.describe("clusters", () => {
       await expect(irButton).toBeDisabled();
     });
 
-    test("SSH edit: provider, auth, and cache fields disabled", {
+    test("SSH edit: immutable fields and caches disabled; worker IPs and private key can update", {
       tag: "@C2612829",
     }, async ({ clusters }) => {
       await clusters.goToEdit(clNames.ssh);
@@ -405,12 +405,10 @@ test.describe("clusters", () => {
         clusters.page.getByPlaceholder("e.g 192.168.1.1"),
       ).toBeDisabled();
 
-      // Provider: Worker IP "Add" section should be hidden (disabled hides it)
+      // Provider: Worker IP controls remain available for node changes.
       await expect(
-        clusters.page.getByRole("button", { name: /add/i }).filter({
-          has: clusters.page.locator("svg"),
-        }),
-      ).toBeHidden();
+        clusters.page.getByPlaceholder("Add New Worker Node IP"),
+      ).toBeEnabled();
 
       // Auth: ssh_user disabled
       const sshUserInput = clusters.form
@@ -418,24 +416,34 @@ test.describe("clusters", () => {
         .locator("input");
       await expect(sshUserInput).toBeDisabled();
 
-      // Auth: ssh_private_key disabled
+      // Auth: ssh_private_key is blank and editable for rotation.
       const sshKeyTextarea = clusters.form
         .field("spec.config.ssh_config.auth.ssh_private_key")
         .locator("textarea");
-      await expect(sshKeyTextarea).toBeDisabled();
+      await expect(sshKeyTextarea).toBeEnabled();
+      await expect(sshKeyTextarea).toHaveValue("");
 
       // Auth: "Leave empty to keep" message
       await expect(
         clusters.page.getByText(/leave empty to keep/i).first(),
       ).toBeVisible();
 
-      // Cache: "Add Model Cache" button should not be visible when disabled
+      // Existing model cache fields are disabled in SSH edit mode.
+      await clusters.goToEdit(clNames.sshWithCache);
+      await expect(
+        clusters.form.field("spec.config.model_caches.0.name").locator("input"),
+      ).toBeDisabled();
+      await expect(
+        clusters.form
+          .field("spec.config.model_caches.0.host_path.path")
+          .locator("input"),
+      ).toBeDisabled();
       await expect(
         clusters.page.getByRole("button", { name: /add model cache/i }),
       ).toBeHidden();
     });
 
-    test("K8s edit: name, workspace, type disabled; kubeconfig disabled", {
+    test("K8s edit: name, workspace, type disabled; kubeconfig can rotate", {
       tag: "@C2613080",
     }, async ({ clusters }) => {
       await clusters.goToEdit(clNames.k8s);
@@ -459,11 +467,12 @@ test.describe("clusters", () => {
         .locator('button[role="combobox"]');
       await expect(typeButton).toBeDisabled();
 
-      // Kubeconfig disabled
+      // Kubeconfig is blank and editable for rotation.
       const kubeconfigTextarea = clusters.form
         .field("spec.config.kubernetes_config.kubeconfig")
         .locator("textarea");
-      await expect(kubeconfigTextarea).toBeDisabled();
+      await expect(kubeconfigTextarea).toBeEnabled();
+      await expect(kubeconfigTextarea).toHaveValue("");
 
       // "Leave empty to keep" message
       await expect(
