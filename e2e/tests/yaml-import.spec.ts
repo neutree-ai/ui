@@ -29,7 +29,7 @@ spec:
     file: model.safetensors
   engine:
     engine: vllm
-    version: v0.8.5
+    version: v0.24.0
   resources:
     cpu: 1
     memory: 1

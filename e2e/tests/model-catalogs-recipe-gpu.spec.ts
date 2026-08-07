@@ -52,7 +52,7 @@ async function pickAccelerator(page: Page): Promise<void> {
  * cover the three VRAM-check outcomes on a ~15 GB card. */
 function hwRecipeSpec(registry: string): Record<string, unknown> {
   return {
-    engine: { engine: "vllm", version: "v0.8.5" },
+    engine: { engine: "vllm", version: "v0.24.0" },
     base: { engine_args: { enable_prefix_caching: true, dtype: "half" } },
     variants: {
       default: {

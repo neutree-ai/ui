@@ -95,9 +95,10 @@ test.describe("engines list", () => {
     await engines.table.waitForLoaded();
     await expect(engines.table.headerCell(/versions/i)).toBeVisible();
 
-    // vllm has multiple versions
+    // vLLM exposes maintained versions in the builtin support window.
     const row = engines.table.rowWithText(ENGINE_VLLM);
-    await expect(row.getByText("v0.8.5")).toBeVisible();
+    await expect(row.getByText("v0.17.1")).toBeVisible();
+    await expect(row.getByText("v0.24.0")).toBeVisible();
   });
 
   test("can sort by updated time", {
@@ -205,7 +206,7 @@ test.describe("engines detail", () => {
   test("can switch version in detail page", {
     tag: "@C2613211",
   }, async ({ engines }) => {
-    // vllm has multiple versions (v0.8.5, v0.11.2)
+    // vLLM has multiple maintained versions (v0.17.1, v0.24.0).
     await engines.goToShow(ENGINE_VLLM);
 
     const showPage = engines.page.locator('[data-testid="show-page"]');
