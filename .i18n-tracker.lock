@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "80007cdbc2f2ecd902d6485b6774cf2b",
   "src/pages/endpoints/edit.tsx": "f985a843fe494b31594f2291e8bcfee8",
   "src/pages/endpoints/list.tsx": "aa1f159a45560783cd05531e54829a02",
-  "src/pages/endpoints/show.tsx": "aac23e165a08c9c5a16cc1f14c37e57b",
+  "src/pages/endpoints/show.tsx": "3361cccbba6f2909fb6ab83721b4c7b3",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "fd2b1c7affa795305445f8e307dea099",
   "src/pages/clusters/edit.tsx": "d636f55fd8591fabd56759bf0f46963e",
@@ -167,7 +167,7 @@
   "src/domains/model-catalog/components/ModelCatalogStatus.tsx": "05b5724d20089c977c76c3ee2ddf1e22",
   "src/domains/image-registry/types.ts": "d63ecb27f4dd788187d49224d2ac2e0d",
   "src/domains/image-registry/components/ImageRegistryStatus.tsx": "177d04944d9cf0fd39c063698ac1fd46",
-  "src/domains/engine/types.ts": "3d7707317a940caec7f051551b6b9408",
+  "src/domains/engine/types.ts": "522162d43e3b3cfbb22d763412912325",
   "src/domains/engine/components/EngineStatus.tsx": "5bf9e785a7f7476a56b9c87c36ba3f18",
   "src/domains/engine/components/EngineVariablesCard.tsx": "bcb8238f540bf70deddf5296723f31e9",
   "src/domains/engine/components/EngineVersions.tsx": "46eb6987394db5f7c5cf8fed3204e074",
@@ -357,5 +357,6 @@
   "src/domains/model-registry/components/ModelEditDialog.tsx": "c9af4f5b1b5cae132240a0669762769a",
   "src/domains/model-registry/components/ModelInfoFields.tsx": "4de75c3f06118f24d2b1538af84786e8",
   "src/domains/model-registry/components/ModelRegistryStats.tsx": "207d63a6478d660945c1e7c3a9fdc52a",
-  "src/domains/model-registry/components/RegistryModelsTable.tsx": "3fbf89f317de15c16ed5515f4e34d9cc"
+  "src/domains/model-registry/components/RegistryModelsTable.tsx": "3fbf89f317de15c16ed5515f4e34d9cc",
+"src/domains/engine/lib/resolve-capabilities.ts": "9a444cc413dae9066a7983c28c1d0fba"
 }

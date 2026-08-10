@@ -20,6 +20,7 @@ import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
+import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
@@ -153,9 +154,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const engineVersionSchema = engineData?.data?.spec.versions.find(
+  const engineVersion = engineData?.data?.spec.versions.find(
     (v) => v.version === record.spec.engine.version,
-  )?.values_schema;
+  );
+  const engineVersionSchema = engineVersion?.values_schema;
+  const playground = resolvePlayground(engineVersion, record.spec.model.task);
 
   return (
     <ShowPage
@@ -210,9 +213,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <TabsTrigger value="logs" className={detailTabTriggerClassName}>
             {t("common.tabs.logs")}
           </TabsTrigger>
-          <TabsTrigger value="playground" className={detailTabTriggerClassName}>
-            {t("endpoints.tabs.playground")}
-          </TabsTrigger>
+          {playground.enabled && (
+            <TabsTrigger
+              value="playground"
+              className={detailTabTriggerClassName}
+            >
+              {t("endpoints.tabs.playground")}
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent
           value="basic"
@@ -389,19 +397,24 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             <EndpointLogTabs endpoint={record} />
           </Suspense>
         </TabsContent>
-        <TabsContent value="playground" className="mt-0 flex-1 overflow-hidden">
-          <Suspense
-            fallback={<Loader className="w-16 text-muted-foreground" />}
+        {playground.enabled && (
+          <TabsContent
+            value="playground"
+            className="mt-0 flex-1 overflow-hidden"
           >
-            {record.spec.model.task === "text-embedding" ? (
-              <EmbeddingPlayground endpoint={record} />
-            ) : record.spec.model.task === "text-rerank" ? (
-              <RerankPlayground endpoint={record} />
-            ) : (
-              <ChatPlayground endpoint={record} />
-            )}
-          </Suspense>
-        </TabsContent>
+            <Suspense
+              fallback={<Loader className="w-16 text-muted-foreground" />}
+            >
+              {playground.mode === "embedding" ? (
+                <EmbeddingPlayground endpoint={record} />
+              ) : playground.mode === "rerank" ? (
+                <RerankPlayground endpoint={record} />
+              ) : (
+                <ChatPlayground endpoint={record} />
+              )}
+            </Suspense>
+          </TabsContent>
+        )}
       </Tabs>
     </ShowPage>
   );
