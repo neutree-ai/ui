@@ -1,7 +1,8 @@
 import { useShow } from "@refinedev/core";
 import type { UserProfile } from "@/domains/user/types";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -34,11 +35,12 @@ export const UsersShow = () => {
             <ShowPage.Meta label={t("common.fields.email")}>
               {record.spec.email}
             </ShowPage.Meta>
+            <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
       />
       <div className="mt-4 space-y-4">
-        <MetadataCard metadata={record.metadata} showName={false} />
+        <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section
           title={t("user_profiles.sections.globalRoles")}
           data-testid="global-roles-card"

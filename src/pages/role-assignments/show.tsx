@@ -2,7 +2,7 @@ import { useShow } from "@refinedev/core";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -52,11 +52,7 @@ export const RoleAssignmentsShow = () => {
         }
       />
       <div className="mt-4 space-y-4">
-        <MetadataCard
-          metadata={record.metadata}
-          showName={false}
-          showTimestamps={false}
-        />
+        <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section title={t("role_assignments.fields.policy")}>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
             <ShowPage.Row title={t("common.fields.role")}>

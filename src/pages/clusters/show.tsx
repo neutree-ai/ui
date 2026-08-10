@@ -33,11 +33,11 @@ import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import type { Endpoint } from "@/domains/endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
+import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
@@ -102,17 +102,47 @@ export const ClustersShow = () => {
         <Tabs defaultValue="basic" className="flex h-full flex-col">
           <ShowPage.ObjectHeader
             title={record.metadata.name}
+            descriptionClassName="max-w-none"
             description={
-              <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
                 <ShowPage.Meta label={t("common.fields.type")}>
                   <ClusterType type={record.spec.type} />
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.version")}>
-                  <span>
-                    {record.status?.version ?? record.spec.version ?? "-"}
+                  <span className="inline-flex min-w-0 items-center">
+                    {record.status?.version ?? "-"}
+                    {record.status?.phase === "Upgrading" &&
+                      record.spec.version && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          &rarr; {record.spec.version}
+                        </span>
+                      )}
+                    <ClusterUpgradeTip cluster={record} />
                   </span>
                 </ShowPage.Meta>
-                <MetadataTimestampMeta metadata={record.metadata} />
+                <ShowPage.Meta label={t("common.fields.imageRegistry")}>
+                  <ShowButton
+                    recordItemId={record.spec.image_registry}
+                    meta={{ workspace: record.metadata.workspace }}
+                    variant="link"
+                    resource="image_registries"
+                  >
+                    {record.spec.image_registry}
+                  </ShowButton>
+                </ShowPage.Meta>
+                {record.spec.type === "kubernetes" && (
+                  <ShowPage.Meta
+                    label={t("clusters.fields.acceleratorVirtualization")}
+                  >
+                    {acceleratorVirtualizationEnabled
+                      ? t("common.options.enabled")
+                      : t("common.options.disabled")}
+                  </ShowPage.Meta>
+                )}
+                <ShowPage.Meta label={t("common.fields.createdAt")}>
+                  <Timestamp timestamp={record.metadata.creation_timestamp} />
+                </ShowPage.Meta>
               </span>
             }
             status={<ClusterStatus {...record.status} />}
@@ -139,95 +169,44 @@ export const ClustersShow = () => {
             value="basic"
             className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
           >
-            <div className="space-y-4">
+            {record.spec.config.ssh_config && (
               <ShowPage.Section>
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                  <ShowPage.Row title={t("common.fields.status")}>
-                    <ClusterStatus {...record.status} />
+                <div className="grid gap-5 md:grid-cols-2">
+                  <ShowPage.Row title={t("clusters.fields.headIp")}>
+                    {record.spec.config.ssh_config.provider.head_ip ?? ""}
                   </ShowPage.Row>
-                  <ShowPage.Row title={t("common.fields.type")}>
-                    <ClusterType type={record.spec.type} />
-                  </ShowPage.Row>
-                  {record.spec.type === "kubernetes" && (
-                    <ShowPage.Row
-                      title={t("clusters.fields.acceleratorVirtualization")}
-                    >
-                      {acceleratorVirtualizationEnabled
-                        ? t("common.options.enabled")
-                        : t("common.options.disabled")}
-                    </ShowPage.Row>
-                  )}
-                  <ShowPage.Row title={t("common.fields.version")}>
-                    <span className="inline-flex min-w-0 items-center">
-                      {record.status?.version ?? "-"}
-                      {record.status?.phase === "Upgrading" &&
-                        record.spec.version && (
-                          <span className="text-muted-foreground">
-                            {" "}
-                            &rarr; {record.spec.version}
-                          </span>
-                        )}
-                      <ClusterUpgradeTip cluster={record} />
-                    </span>
-                  </ShowPage.Row>
-                  <ShowPage.Row title={t("common.fields.imageRegistry")}>
-                    <ShowButton
-                      recordItemId={record.spec.image_registry}
-                      meta={{
-                        workspace: record.metadata.workspace,
-                      }}
-                      variant="link"
-                      resource="image_registries"
-                    >
-                      {record.spec.image_registry}
-                    </ShowButton>
+                  <ShowPage.Row title={t("clusters.fields.workerIps")}>
+                    {(
+                      record.spec.config.ssh_config.provider.worker_ips || []
+                    )?.join(",")}
                   </ShowPage.Row>
                 </div>
-                {record.spec.config.ssh_config && (
-                  <div className="mt-5 grid gap-5 border-t pt-4 md:grid-cols-2">
-                    <ShowPage.Row title={t("clusters.fields.headIp")}>
-                      {record.spec.config.ssh_config.provider.head_ip ?? ""}
-                    </ShowPage.Row>
-                    <ShowPage.Row title={t("clusters.fields.workerIps")}>
-                      {(
-                        record.spec.config.ssh_config.provider.worker_ips || []
-                      )?.join(",")}
-                    </ShowPage.Row>
-                  </div>
-                )}
-                {record.spec.config.kubernetes_config && (
-                  <div className="mt-5 border-t pt-4">
-                    <h3 className="mb-3 text-sm font-semibold text-foreground">
-                      {t("clusters.sections.router")}
-                    </h3>
-                    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                      <ShowPage.Row title={t("clusters.fields.accessMode")}>
-                        {getAccessModeLabel(
-                          record.spec.config.kubernetes_config.router
-                            ?.access_mode,
-                          t,
-                        )}
-                      </ShowPage.Row>
-
-                      <ShowPage.Row title={t("clusters.fields.replicas")}>
-                        {record.spec.config.kubernetes_config.router
-                          ?.replicas ?? ""}
-                      </ShowPage.Row>
-
-                      <ShowPage.Row title={t("common.fields.cpu")}>
-                        {record.spec.config.kubernetes_config.router?.resources
-                          ?.cpu ?? ""}
-                      </ShowPage.Row>
-
-                      <ShowPage.Row title={t("common.fields.memory")}>
-                        {record.spec.config.kubernetes_config.router?.resources
-                          ?.memory ?? ""}
-                      </ShowPage.Row>
-                    </div>
-                  </div>
-                )}
               </ShowPage.Section>
-            </div>
+            )}
+            {record.spec.config.kubernetes_config && (
+              <ShowPage.Section title={t("clusters.sections.router")}>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                  <ShowPage.Row title={t("clusters.fields.accessMode")}>
+                    {getAccessModeLabel(
+                      record.spec.config.kubernetes_config.router?.access_mode,
+                      t,
+                    )}
+                  </ShowPage.Row>
+                  <ShowPage.Row title={t("clusters.fields.replicas")}>
+                    {record.spec.config.kubernetes_config.router?.replicas ??
+                      ""}
+                  </ShowPage.Row>
+                  <ShowPage.Row title={t("common.fields.cpu")}>
+                    {record.spec.config.kubernetes_config.router?.resources
+                      ?.cpu ?? ""}
+                  </ShowPage.Row>
+                  <ShowPage.Row title={t("common.fields.memory")}>
+                    {record.spec.config.kubernetes_config.router?.resources
+                      ?.memory ?? ""}
+                  </ShowPage.Row>
+                </div>
+              </ShowPage.Section>
+            )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>
                 <div className="space-y-5">

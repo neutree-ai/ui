@@ -2,7 +2,7 @@ import { useShow } from "@refinedev/core";
 import { useTranslation } from "react-i18next";
 import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard";
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 
@@ -37,12 +37,7 @@ export const ApiKeysShow = () => {
         />
         {record.id && (
           <div className="mt-4 space-y-4">
-            <MetadataCard
-              metadata={record.metadata}
-              showName={false}
-              showWorkspace={false}
-              showTimestamps={false}
-            />
+            <MetadataDisclosure metadata={record.metadata} />
             <ApiKeyPerformanceCard
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}

@@ -18,7 +18,7 @@ import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -141,12 +141,7 @@ export const ModelCatalogsShow = () => {
         }
       />
       <div className="mt-4 space-y-4 overflow-auto">
-        <MetadataCard
-          metadata={record.metadata}
-          showName={false}
-          showWorkspace={false}
-          showTimestamps={false}
-        />
+        <MetadataDisclosure metadata={record.metadata} />
         {verifiedHardware.length > 0 && (
           <ShowPage.Section
             title={t(

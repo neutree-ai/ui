@@ -10,7 +10,7 @@ import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -63,12 +63,7 @@ export const ExternalEndpointsShow = () => {
       />
 
       <div className="mt-4 space-y-4">
-        <MetadataCard
-          metadata={record.metadata}
-          showName={false}
-          showWorkspace={false}
-          showTimestamps={false}
-        />
+        <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section
           title={t("external_endpoints.sections.configuration")}
         >
