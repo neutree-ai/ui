@@ -43,7 +43,8 @@ export const ModelRegistryModelShow = () => {
   const version = searchParams.get("version") ?? undefined;
 
   const modelRef = { workspace, registry, model: modelName, version };
-  const { model, isLoading, error, refetch } = useRegistryModelVersion(modelRef);
+  const { model, isLoading, error, refetch } =
+    useRegistryModelVersion(modelRef);
 
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);

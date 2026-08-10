@@ -348,7 +348,7 @@
   "src/domains/external-endpoint/lib/is-serving-phase.ts": "5c84904e77f2457c0fd42484a8da5f8a",
   "src/domains/external-endpoint/lib/match-upstream-statuses.ts": "0b9e55ff58264d5c419e466235d303dc",
   "src/domains/external-endpoint/lib/get-unavailable-models.ts": "e75dba909e0ca54c8cb6b4d10d5cbfe9",
-  "src/pages/model-registries/model-show.tsx": "66186ddd0bfce9964ef062afc04d4569",
+  "src/pages/model-registries/model-show.tsx": "1a05321d2fb792136be4dba45e9e6412",
   "src/foundation/types/model-types.ts": "80a78a25a6c7c804da328542b039310c",
   "src/foundation/lib/api/registry-models.ts": "a3fd93794fdf8c6dfecebe7e6df3a3d3",
   "src/foundation/hooks/use-registry-models.ts": "17ec9212ef30e410b1a67421b27a9424",
