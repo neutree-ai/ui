@@ -1,3 +1,4 @@
+import { useInvalidate } from "@refinedev/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteRegistryModel,
@@ -8,6 +9,18 @@ import {
   type RegistryModelRef,
 } from "@/foundation/lib/api/registry-models";
 import type { RegistryModelVersion } from "@/foundation/types/model-types";
+
+/**
+ * One model version: reading its detail and writing the parts of it a user
+ * owns. Everything here is scoped to a single `name:version` and goes to
+ * `.../models/:model?version=`.
+ *
+ * Its counterpart is `useRegistryModels` in `@/foundation/hooks` — the *listing*
+ * of a registry's models, read-only, paged. That one lives in foundation rather
+ * than beside this file because `domains/endpoint` consumes it too and
+ * `.dependency-cruiser.cjs` forbids one L2 domain importing another. Nothing
+ * outside this domain reads a single version, so this half stays here.
+ */
 
 const detailKey = (ref: Partial<RegistryModelRef>) => [
   "registry-model",
@@ -37,7 +50,7 @@ const refIdentity = (ref: Partial<RegistryModelRef>) =>
  * about one checkpoint, so showing the previous model's parameter count under
  * the next model's name is worse than showing nothing at all.
  */
-export const useRegistryModel = (ref: Partial<RegistryModelRef>) => {
+export const useRegistryModelVersion = (ref: Partial<RegistryModelRef>) => {
   const enabled = Boolean(ref.workspace && ref.registry && ref.model);
   const identity = refIdentity(ref);
 
@@ -68,16 +81,31 @@ export const useRegistryModel = (ref: Partial<RegistryModelRef>) => {
 };
 
 /**
- * Invalidates everything that shows a model: its own detail, the listing it
- * appears in, and the registry row carrying the counters.
+ * Invalidates what a write to a model makes stale: the version's own detail, the
+ * listing it appears in, and the registry row that carries the counters.
+ *
+ * The counters will not have moved by the time the row is refetched. The control
+ * plane measures a registry out of band and only re-walks it once the figures it
+ * holds are older than its stale window, so a read straight after a delete
+ * returns whatever was last measured; the new count lands on a later reconcile.
+ * Invalidating is still worth doing — it is what makes the page pick those
+ * figures up on its own instead of showing the pre-write numbers until something
+ * else happens to refetch.
  */
 const useInvalidateModel = () => {
   const queryClient = useQueryClient();
+  // Refine owns the key shape for its own resources, so let it do that half.
+  const invalidate = useInvalidate();
 
   return (ref: RegistryModelRef) => {
     queryClient.invalidateQueries({ queryKey: detailKey(ref) });
     queryClient.invalidateQueries({
       queryKey: ["registry-models", ref.workspace, ref.registry],
+    });
+    invalidate({
+      resource: "model_registries",
+      invalidates: ["list", "detail"],
+      id: ref.registry,
     });
   };
 };
@@ -88,7 +116,7 @@ const useInvalidateModel = () => {
  * The server states provenance itself: everything sent here is recorded as
  * hand-filled, whatever the body claims.
  */
-export const useUpdateRegistryModel = () => {
+export const useUpdateRegistryModelVersion = () => {
   const invalidate = useInvalidateModel();
 
   return useMutation<
@@ -106,7 +134,7 @@ export const useUpdateRegistryModel = () => {
  * points at the model comes back as a RegistryModelError whose body names the
  * referring objects.
  */
-export const useDeleteRegistryModel = () => {
+export const useDeleteRegistryModelVersion = () => {
   const invalidate = useInvalidateModel();
 
   return useMutation<void, RegistryModelError, RegistryModelRef>({

@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LoadingIcon } from "@/components/ui/loading";
-import { useDeleteRegistryModel } from "@/domains/model-registry/hooks/use-registry-model";
+import { useDeleteRegistryModelVersion } from "@/domains/model-registry/hooks/use-registry-model-version";
 import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import {
   MODEL_REFERENCED_CODE,
@@ -103,7 +103,7 @@ export const ModelDeleteDialog = ({
   onDeleted,
 }: Props) => {
   const { t } = useTranslation();
-  const remove = useDeleteRegistryModel();
+  const remove = useDeleteRegistryModelVersion();
   const [references, setReferences] = useState<ModelReference[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 

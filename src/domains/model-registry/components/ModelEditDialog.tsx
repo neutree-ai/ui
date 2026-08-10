@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useUpdateRegistryModel } from "@/domains/model-registry/hooks/use-registry-model";
+import { useUpdateRegistryModelVersion } from "@/domains/model-registry/hooks/use-registry-model-version";
 import type {
   PatchRegistryModelBody,
   RegistryModelRef,
@@ -166,7 +166,7 @@ export const ModelEditDialog = ({
   info,
 }: Props) => {
   const { t } = useTranslation();
-  const update = useUpdateRegistryModel();
+  const update = useUpdateRegistryModelVersion();
 
   const baseline = useMemo(() => initialState(info), [info]);
   const [state, setState] = useState<FormState>(() => ({

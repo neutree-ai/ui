@@ -1,4 +1,4 @@
-import { useShow } from "@refinedev/core";
+import { useParsed, useShow } from "@refinedev/core";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
@@ -15,6 +15,7 @@ const detailTabTriggerClassName =
 
 export const ModelRegistriesShow = () => {
   const { t } = useTranslation();
+  const { params } = useParsed();
   const {
     query: { data, isLoading },
   } = useShow<ModelRegistry>();
@@ -28,7 +29,11 @@ export const ModelRegistriesShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const workspace = record.metadata.workspace ?? "";
+  // The route names the workspace, so read it from there. The record's own
+  // field is nullable, and defaulting it to "" would leave the models tab
+  // querying nothing and silently showing an empty list — an outcome with no
+  // symptom, which is the one thing worse than an error.
+  const workspace = (params?.workspace as string | undefined) ?? "";
 
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>

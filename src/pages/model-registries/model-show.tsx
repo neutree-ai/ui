@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ModelDeleteDialog } from "@/domains/model-registry/components/ModelDeleteDialog";
 import { ModelEditDialog } from "@/domains/model-registry/components/ModelEditDialog";
 import { ModelInfoFields } from "@/domains/model-registry/components/ModelInfoFields";
-import { useRegistryModel } from "@/domains/model-registry/hooks/use-registry-model";
+import { useRegistryModelVersion } from "@/domains/model-registry/hooks/use-registry-model-version";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -43,7 +43,7 @@ export const ModelRegistryModelShow = () => {
   const version = searchParams.get("version") ?? undefined;
 
   const modelRef = { workspace, registry, model: modelName, version };
-  const { model, isLoading, error, refetch } = useRegistryModel(modelRef);
+  const { model, isLoading, error, refetch } = useRegistryModelVersion(modelRef);
 
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);

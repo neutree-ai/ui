@@ -25,6 +25,13 @@ type UseRegistryModelsParams = {
 /**
  * Lists the models of one registry.
  *
+ * Its counterpart is `useRegistryModelVersion` in
+ * `@/domains/model-registry/hooks` — a *single* `name:version`, including the
+ * writes to it. This half sits in foundation only because `domains/endpoint`
+ * needs the listing too and `.dependency-cruiser.cjs` forbids one L2 domain
+ * importing another; the single-version half has no such caller and stays in
+ * the domain.
+ *
  * The single place the models listing is fetched from — the endpoint form's
  * model picker and the registry's own model list both come through here, so the
  * URL, the paging parameters and the `Content-Range` total are defined once.
