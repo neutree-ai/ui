@@ -117,7 +117,6 @@ export const RoleAssignmentsList = () => {
         {roleAssignmentColumns.workspace}
         {roleAssignmentColumns.role}
         {roleAssignmentColumns.user}
-        {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
         {roleAssignmentColumns.action}
       </Table>

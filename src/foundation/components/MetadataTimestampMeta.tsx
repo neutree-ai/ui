@@ -8,7 +8,7 @@ export function MetadataTimestampMeta({ metadata }: { metadata: Metadata }) {
 
   return (
     <ShowPage.Meta label={t("common.fields.createdAt")}>
-      <Timestamp timestamp={metadata.creation_timestamp} />
+      <Timestamp timestamp={metadata.creation_timestamp} relative />
     </ShowPage.Meta>
   );
 }

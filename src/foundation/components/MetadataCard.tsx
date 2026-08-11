@@ -116,14 +116,9 @@ export default function MetadataCard({
             </ShowPage.Row>
           )}
           {hasTimestamps && (
-            <>
-              <ShowPage.Row title={translate("common.fields.createdAt")}>
-                <Timestamp timestamp={metadata.creation_timestamp} />
-              </ShowPage.Row>
-              <ShowPage.Row title={translate("common.fields.updatedAt")}>
-                <Timestamp timestamp={metadata.update_timestamp} />
-              </ShowPage.Row>
-            </>
+            <ShowPage.Row title={translate("common.fields.createdAt")}>
+              <Timestamp timestamp={metadata.creation_timestamp} relative />
+            </ShowPage.Row>
           )}
         </div>
       )}

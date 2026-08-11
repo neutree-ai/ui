@@ -141,7 +141,10 @@ export const ClustersShow = () => {
                   </ShowPage.Meta>
                 )}
                 <ShowPage.Meta label={t("common.fields.createdAt")}>
-                  <Timestamp timestamp={record.metadata.creation_timestamp} />
+                  <Timestamp
+                    timestamp={record.metadata.creation_timestamp}
+                    relative
+                  />
                 </ShowPage.Meta>
               </span>
             }
@@ -528,7 +531,6 @@ export const ClustersShow = () => {
                       <EndpointEngine {...(row.original as Endpoint)} />
                     )}
                   />
-                  {metadataColumns.update_timestamp}
                   {metadataColumns.creation_timestamp}
                 </Table>
               </CardContent>

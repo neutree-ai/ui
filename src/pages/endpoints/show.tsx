@@ -222,7 +222,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Meta>
               )}
               <ShowPage.Meta label={t("common.fields.createdAt")}>
-                <Timestamp timestamp={record.metadata.creation_timestamp} />
+                <Timestamp
+                  timestamp={record.metadata.creation_timestamp}
+                  relative
+                />
               </ShowPage.Meta>
             </span>
           }

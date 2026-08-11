@@ -82,7 +82,6 @@ export const WorkspacesShow = () => {
               enableHiding
               cell={({ row }) => <UserCell id={row.original.spec.user_id} />}
             />
-            {metadataColumns.update_timestamp}
             {metadataColumns.creation_timestamp}
           </Table>
         </ShowPage.Section>

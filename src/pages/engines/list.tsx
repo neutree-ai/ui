@@ -46,7 +46,6 @@ export const EnginesList = () => {
             );
           }}
         />
-        {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
       </Table>
     </ListPage>

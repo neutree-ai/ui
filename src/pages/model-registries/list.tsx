@@ -67,7 +67,6 @@ export const ModelRegistriesList = () => {
             <ModelRegistryStorage registry={row.original as ModelRegistry} />
           )}
         />
-        {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
         {metadataColumns.action}
       </Table>
