@@ -793,6 +793,7 @@
 			"scheduling": "Scheduling",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
+			"parameterValue": "Value",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"accelerator": "Accelerator",
@@ -870,6 +871,7 @@
 			"resume": "Resume"
 		},
 		"messages": {
+			"parameterCount": "{{count}} parameters",
 			"rayDashboardNotAvailable": "Ray dashboard is not available.",
 			"fetching": "fetching...",
 			"modelNotFoundInRegistry": "Model not found in selected registry",

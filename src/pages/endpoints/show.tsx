@@ -1,15 +1,15 @@
 import {
   type IResourceComponentsProps,
   useList,
-  useOne,
   useShow,
 } from "@refinedev/core";
 import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
+import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
@@ -19,8 +19,6 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import type { Endpoint } from "@/domains/endpoint/types";
-import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
-import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
@@ -121,14 +119,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   } = useShow<Endpoint>();
   const record = data?.data;
 
-  const { data: engineData } = useOne<Engine>({
-    resource: "engines",
-    id: record?.spec.engine.engine,
-    queryOptions: {
-      enabled: Boolean(record?.spec.engine.engine),
-    },
-  });
-
   const { data: clusterData } = useList({
     resource: "clusters",
     filters: [
@@ -167,9 +157,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const engineVersionSchema = engineData?.data?.spec.versions.find(
-    (v) => v.version === record.spec.engine.version,
-  )?.values_schema;
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
   const schedulerText = getSchedulerText(
@@ -274,29 +261,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               </div>
             </ShowPage.Section>
           </div>
-          <EngineVariablesCard
-            schema={engineVersionSchema}
-            variables={record.spec.variables}
-            useNestedPath={true}
+          <EndpointAdvancedParameters
+            engineParameters={
+              record.spec.variables?.engine_args as
+                | Record<string, unknown>
+                | undefined
+            }
+            environmentVariables={record.spec.env}
           />
-          {record.spec.env && Object.keys(record.spec.env).length > 0 && (
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>
-                  {t("endpoints.sections.environmentVariables")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(record.spec.env).map(([key, value]) => (
-                    <ShowPage.Row key={key} title={key}>
-                      {value}
-                    </ShowPage.Row>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
           <MetadataDisclosure metadata={record.metadata} className="mt-4" />
         </TabsContent>
         {shouldShowRayDashboard && (
