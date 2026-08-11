@@ -23,6 +23,17 @@ export type ApiKey = {
   metadata: Metadata;
   spec: ApiKeySpec;
   status: ApiKeyStatus | null;
+  project_id: string;
+  description: string | null;
+};
+
+export type Project = {
+  id: string;
+  workspace: string;
+  name: string;
+  description: string | null;
+  status: "enabled" | "disabled";
+  is_default?: boolean;
 };
 
 export type ApiKeySpec = {

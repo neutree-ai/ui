@@ -18,10 +18,14 @@ import {
   useApiKeyDisable,
   useWorkspaceModelMap,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import type { ApiKey, ApiKeyLimits } from "@/domains/api-key/types";
+import type { ApiKey, ApiKeyLimits, Project } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { defaultSorters, RowAction, Table } from "@/foundation/components/Table";
+import {
+  defaultSorters,
+  RowAction,
+  Table,
+} from "@/foundation/components/Table";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -37,8 +41,7 @@ export const ApiKeysList = () => {
   // These aggregates are per-workspace RPCs; ALL_WORKSPACES (`_all_`) is a
   // UI-only sentinel, not a real workspace, so gate them to a concrete value
   // (the hooks no-op on undefined) instead of firing p_workspace="_all_".
-  const scopedWorkspace =
-    workspace === ALL_WORKSPACES ? undefined : workspace;
+  const scopedWorkspace = workspace === ALL_WORKSPACES ? undefined : workspace;
   const usageByKey = useAllApiKeyUsage(scopedWorkspace);
   const trafficByKey = useAllApiKeyTraffic(scopedWorkspace);
   const modelMap = useWorkspaceModelMap(scopedWorkspace);
@@ -60,6 +63,22 @@ export const ApiKeysList = () => {
     meta: { workspace, workspaced: true },
     queryOptions: { enabled: Boolean(workspace) },
   });
+  const { data: projectsData } = useList<Project>({
+    resource: "projects",
+    pagination: { mode: "off" },
+    filters:
+      workspace && workspace !== ALL_WORKSPACES
+        ? [{ field: "workspace", operator: "eq", value: workspace }]
+        : [],
+    queryOptions: { enabled: Boolean(workspace) },
+  });
+  const projectNames = useMemo(
+    () =>
+      new Map(
+        (projectsData?.data ?? []).map((project) => [project.id, project.name]),
+      ),
+    [projectsData?.data],
+  );
   const rankingKeys = useMemo(() => {
     const rows = keysData?.data ?? [];
     return rows
@@ -67,7 +86,10 @@ export const ApiKeysList = () => {
         (k) =>
           workspace === ALL_WORKSPACES || k.metadata?.workspace === workspace,
       )
-      .map((k) => ({ id: String(k.id), name: k.metadata?.name ?? String(k.id) }));
+      .map((k) => ({
+        id: String(k.id),
+        name: k.metadata?.name ?? String(k.id),
+      }));
   }, [keysData, workspace]);
 
   // Limits live on the key itself (spec.limits) — read straight off each row,
@@ -102,7 +124,11 @@ export const ApiKeysList = () => {
               <div
                 className={cn(
                   "h-full",
-                  over ? "bg-destructive" : warn ? "bg-amber-500" : "bg-primary",
+                  over
+                    ? "bg-destructive"
+                    : warn
+                      ? "bg-amber-500"
+                      : "bg-primary",
                 )}
                 style={{ width: `${pct}%` }}
               />
@@ -293,6 +319,17 @@ export const ApiKeysList = () => {
           sorters: defaultSorters,
         }}
       >
+        <Table.Column
+          accessorKey="project_id"
+          id="project"
+          header="Project"
+          cell={({ row: { original } }) => (
+            <span className="font-medium">
+              {projectNames.get(String((original as ApiKey).project_id)) ??
+                "Default"}
+            </span>
+          )}
+        />
         {metadataColumns.name}
         {metadataColumns.workspace}
         {statusColumn}
