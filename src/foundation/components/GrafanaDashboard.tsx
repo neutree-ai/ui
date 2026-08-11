@@ -5,6 +5,10 @@ import {
   type GrafanaDashboardConfig,
 } from "@/foundation/lib/grafana-dashboard-url";
 
+const DEFAULT_GRAFANA_CSS = `
+  body { background-color: pink; }
+`;
+
 export type { GrafanaDashboardConfig };
 
 export interface GrafanaDashboardProps {
@@ -33,13 +37,17 @@ export default function GrafanaDashboard({
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleIframeLoad = useCallback(() => {
-    if (!iframeRef.current || !customCSS) return;
+    if (!iframeRef.current) return;
+
+    const cssToInject = customCSS
+      ? `${DEFAULT_GRAFANA_CSS}\n${customCSS}`
+      : DEFAULT_GRAFANA_CSS;
 
     try {
       const iframeDoc = iframeRef.current.contentDocument;
       if (iframeDoc) {
         const style = iframeDoc.createElement("style");
-        style.textContent = customCSS;
+        style.textContent = cssToInject;
         iframeDoc.head.appendChild(style);
       }
     } catch (_) {
@@ -73,7 +81,7 @@ export default function GrafanaDashboard({
     <iframe
       ref={iframeRef}
       src={dashboardUrl}
-      className={`w-full border-0 bg-background ${className || ""}`}
+      className={`w-full border-0 ${className || ""}`}
       title={`Grafana Dashboard ${dashboardConfig.dashboardId}`}
       onLoad={handleIframeLoad}
     />
