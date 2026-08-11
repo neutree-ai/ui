@@ -24,10 +24,10 @@ function AccessUrlRow({ label, url }: AccessUrlRowProps) {
   const { copy, copied } = useCopyToClipboard();
 
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_28px] items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/60">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_28px] items-start gap-2 rounded-md px-2 py-1.5 hover:bg-muted/60">
       <div className="min-w-0">
         <div className="text-xs font-medium text-muted-foreground">{label}</div>
-        <code className="block min-w-0 truncate font-mono text-xs text-foreground">
+        <code className="block min-w-0 whitespace-normal break-words font-mono text-xs leading-5 text-foreground [overflow-wrap:anywhere]">
           {url}
         </code>
       </div>

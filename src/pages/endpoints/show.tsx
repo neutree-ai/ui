@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -25,10 +24,10 @@ import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
+import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 
@@ -100,6 +99,20 @@ const RayDashboardTab = ({
 const detailTabTriggerClassName =
   "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
 
+const getSchedulerText = (
+  schedulerType: string | null | undefined,
+  t: (key: string) => string,
+) => {
+  switch (schedulerType) {
+    case "consistent_hash":
+      return t("models.scheduler.consistentHashing");
+    case "roundrobin":
+      return t("models.scheduler.roundRobin");
+    default:
+      return t("models.scheduler.unavailable");
+  }
+};
+
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
   const { grafanaUrl } = useSystemApi();
@@ -157,6 +170,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const engineVersionSchema = engineData?.data?.spec.versions.find(
     (v) => v.version === record.spec.engine.version,
   )?.values_schema;
+  const replicaCount = record.spec.replicas?.num ?? 1;
+  const shouldShowScheduler = replicaCount > 1;
+  const schedulerText = getSchedulerText(
+    record.spec.deployment_options?.scheduler?.type,
+    t,
+  );
 
   return (
     <ShowPage
@@ -194,10 +213,17 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               {url && (
                 <EndpointAccessSummary serviceUrl={url} className="shrink-0" />
               )}
-              <ShowPage.Meta label={t("endpoints.fields.modelFile")}>
-                {record.spec.model.file || "-"}
+              <ShowPage.Meta label={t("endpoints.fields.replicas")}>
+                {replicaCount}
               </ShowPage.Meta>
-              <MetadataTimestampMeta metadata={record.metadata} />
+              {shouldShowScheduler && (
+                <ShowPage.Meta label={t("common.fields.scheduler")}>
+                  {schedulerText}
+                </ShowPage.Meta>
+              )}
+              <ShowPage.Meta label={t("common.fields.createdAt")}>
+                <Timestamp timestamp={record.metadata.creation_timestamp} />
+              </ShowPage.Meta>
             </span>
           }
           status={<EndpointStatus {...record.status} />}
@@ -239,13 +265,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     resources={record.spec.resources}
                     showGpuConditionally={true}
                     titleTranslationKey="endpoints.sections.requestedResources"
-                    framed={false}
-                  />
-                </div>
-                <div className="border-t pt-4">
-                  <DeploymentConfigCard
-                    replicas={record.spec.replicas}
-                    deploymentOptions={record.spec.deployment_options}
                     framed={false}
                   />
                 </div>
