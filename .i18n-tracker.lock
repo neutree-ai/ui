@@ -356,6 +356,6 @@
   "src/domains/model-registry/components/ModelEditDialog.tsx": "c9af4f5b1b5cae132240a0669762769a",
   "src/domains/model-registry/components/ModelInfoFields.tsx": "4de75c3f06118f24d2b1538af84786e8",
   "src/domains/model-registry/components/ModelRegistryStats.tsx": "207d63a6478d660945c1e7c3a9fdc52a",
-  "src/domains/model-registry/components/RegistryModelsTable.tsx": "cd0fa01301c565f3161da4c2dd05d301",
+  "src/domains/model-registry/components/RegistryModelsTable.tsx": "3fbf89f317de15c16ed5515f4e34d9cc",
   "src/domains/model-registry/hooks/use-registry-model-version.ts": "5e9134237ade3f72379814587d843188"
 }

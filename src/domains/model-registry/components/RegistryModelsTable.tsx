@@ -36,6 +36,25 @@ type Row = {
 
 const rowKey = (row: Row) => `${row.model}:${row.version.name}`;
 
+/**
+ * Whether there is a next page to ask for.
+ *
+ * A registry that cannot say how many models matched is a registry that cannot
+ * be read from an offset either — both come from the same limitation in the
+ * upstream API, so an unknown total is the fact to read here. Offering a next
+ * page in that case promises something the server answers with a 400; a short
+ * page is not evidence either way, because such a registry has no last page to
+ * reach.
+ *
+ * This asks the server's own answer, not which provider is behind the registry:
+ * nothing in this file knows or should know that.
+ */
+export const canPageForward = (
+  total: number | null,
+  offset: number,
+  pageSize: number = PAGE_SIZE,
+) => (total === null ? false : offset + pageSize < total);
+
 type Props = {
   workspace: string;
   registry: string;
@@ -77,10 +96,7 @@ export const RegistryModelsTable = ({
     model.versions.map((version) => ({ model: model.name, version })),
   );
 
-  // A short page is the end of the listing. When the registry cannot report a
-  // total this is the only end-of-list signal there is.
-  const hasNextPage =
-    total === null ? models.length >= PAGE_SIZE : offset + PAGE_SIZE < total;
+  const hasNextPage = canPageForward(total, offset);
 
   const body = () => {
     if (error) {
@@ -195,6 +211,7 @@ export const RegistryModelsTable = ({
             className="h-8 w-8 p-0"
             disabled={offset === 0}
             onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+            data-testid="registry-models-prev"
           >
             <span className="sr-only">
               {t("table.pagination.goToPreviousPage")}
@@ -206,6 +223,7 @@ export const RegistryModelsTable = ({
             className="h-8 w-8 p-0"
             disabled={!hasNextPage}
             onClick={() => setOffset(offset + PAGE_SIZE)}
+            data-testid="registry-models-next"
           >
             <span className="sr-only">
               {t("table.pagination.goToNextPage")}
