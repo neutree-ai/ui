@@ -552,6 +552,79 @@
 		"validation": {
 			"urlRequired": "URL is required",
 			"mustUseNfsProtocol": "File system registry must use nfs:// protocol"
+		},
+		"tabs": {
+			"models": "Models"
+		},
+		"stats": {
+			"modelCount": "Models",
+			"storage": "Storage",
+			"collecting": "Collecting…",
+			"notApplicableHint": "Not counted: this registry's contents are not stored by the control plane.",
+			"updatedAt": "Updated {{time}}"
+		},
+		"models": {
+			"empty": "No models in this registry.",
+			"searchPlaceholder": "Search models",
+			"totalUnknown": "Total: unknown",
+			"fields": {
+				"alias": "Alias",
+				"size": "Size",
+				"parameterCount": "Parameters",
+				"architecture": "Architecture",
+				"parameterDtype": "Precision",
+				"quantization": "Quantization",
+				"quantizationBits": "Quantization bits",
+				"contextLength": "Context length",
+				"maxPositionEmbeddings": "Max position embeddings",
+				"numHiddenLayers": "Hidden layers",
+				"numAttentionHeads": "Attention heads",
+				"numKeyValueHeads": "Key/value heads",
+				"headDim": "Head dimension",
+				"isMoe": "Mixture of experts",
+				"numExperts": "Experts",
+				"numExpertsPerToken": "Experts per token"
+			},
+			"values": {
+				"unknown": "Unknown",
+				"notApplicable": "Not applicable",
+				"yes": "Yes",
+				"no": "No"
+			},
+			"sources": {
+				"manual": "Hand-filled",
+				"derived": "Derived"
+			},
+			"sourceHints": {
+				"manual": "Typed in by a user, not read from the checkpoint.",
+				"derived": "Computed from other checkpoint values by a documented convention."
+			},
+			"detail": {
+				"infoSection": "Model information",
+				"infoHint": "Values the registry reports for this checkpoint. A field it could not establish is shown as unknown."
+			},
+			"actions": {
+				"edit": "Edit metadata"
+			},
+			"edit": {
+				"title": "Edit model metadata",
+				"description": "{{name}}:{{version}}. The model's name, version and storage path do not change.",
+				"aliasPlaceholder": "No alias",
+				"aliasHint": "A display name only. It is never the name the model is served under.",
+				"conflictModel": "This alias is already used by {{name}}:{{version}} in this registry.",
+				"conflictModelName": "This alias is the name of the model {{name}} in this registry, which would make model selection ambiguous.",
+				"manualSection": "Hand-filled metadata",
+				"manualHint": "Values entered here are recorded as hand-filled and replace the previously recorded set. Leave a field empty to leave it to the checkpoint.",
+				"unset": "Leave to the checkpoint",
+				"success": "Model metadata updated"
+			},
+			"delete": {
+				"title": "Delete this model?",
+				"description": "{{name}}:{{version}} will be removed from the registry. This cannot be undone.",
+				"blocked": "This model cannot be deleted while the following objects still reference it:",
+				"variant": "variant: {{variant}}",
+				"success": "Model deleted"
+			}
 		}
 	},
 	"model_catalogs": {

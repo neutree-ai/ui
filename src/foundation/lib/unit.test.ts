@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatBytes,
   formatMiBAsGiB,
   formatMiBAsGiBValue,
   formatToDecimal,
@@ -77,5 +78,26 @@ describe("formatMiBAsGiB", () => {
     expect(formatMiBAsGiB(null)).toBeNull();
     expect(formatMiBAsGiB(undefined)).toBeNull();
     expect(formatMiBAsGiB("")).toBeNull();
+  });
+});
+
+describe("formatBytes", () => {
+  it("scales into binary units", () => {
+    expect(formatBytes(512)).toBe("512 B");
+    expect(formatBytes(1024)).toBe("1.0 KiB");
+    expect(formatBytes(763366368)).toBe("728.0 MiB");
+    expect(formatBytes(5 * 1024 ** 4)).toBe("5.0 TiB");
+  });
+
+  it("does not put a fraction on a raw byte count", () => {
+    expect(formatBytes(3)).toBe("3 B");
+  });
+
+  it("keeps zero distinct from absent", () => {
+    // A measured zero is a fact; a missing measurement is not, and the caller
+    // decides how to word that.
+    expect(formatBytes(0)).toBe("0 B");
+    expect(formatBytes(null)).toBeNull();
+    expect(formatBytes(undefined)).toBeNull();
   });
 });

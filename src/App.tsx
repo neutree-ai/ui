@@ -178,6 +178,11 @@ const ModelRegistriesShow = lazy(() =>
     default: m.ModelRegistriesShow,
   })),
 );
+const ModelRegistryModelShow = lazy(() =>
+  import("./pages/model-registries/model-show").then((m) => ({
+    default: m.ModelRegistryModelShow,
+  })),
+);
 const ModelRegistriesEdit = lazy(() =>
   import("./pages/model-registries/edit").then((m) => ({
     default: m.ModelRegistriesEdit,
@@ -584,6 +589,12 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route path="/:workspace/model-registries">
                   <Route index element={<ModelRegistriesList />} />
                   <Route path="show/:id" element={<ModelRegistriesShow />} />
+                  {/* A model is not a resource of its own — it lives inside the
+                      registry that holds it, and that is what its route says. */}
+                  <Route
+                    path="show/:id/models/:model"
+                    element={<ModelRegistryModelShow />}
+                  />
                   <Route path="edit/:id" element={<ModelRegistriesEdit />} />
                   <Route path="create" element={<ModelRegistriesCreate />} />
                 </Route>

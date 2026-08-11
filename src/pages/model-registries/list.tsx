@@ -1,5 +1,10 @@
+import {
+  ModelRegistryModelCount,
+  ModelRegistryStorage,
+} from "@/domains/model-registry/components/ModelRegistryStats";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
+import type { ModelRegistry } from "@/domains/model-registry/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
@@ -43,6 +48,24 @@ export const ModelRegistriesList = () => {
             const value = String(getValue());
             return <ModelRegistryType type={value} />;
           }}
+        />
+        <Table.Column
+          header={t("model_registries.stats.modelCount")}
+          accessorKey="status.stats.model_count"
+          id="model_count"
+          enableHiding
+          cell={({ row }) => (
+            <ModelRegistryModelCount registry={row.original as ModelRegistry} />
+          )}
+        />
+        <Table.Column
+          header={t("model_registries.stats.storage")}
+          accessorKey="status.stats.storage_bytes"
+          id="storage_bytes"
+          enableHiding
+          cell={({ row }) => (
+            <ModelRegistryStorage registry={row.original as ModelRegistry} />
+          )}
         />
         {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}

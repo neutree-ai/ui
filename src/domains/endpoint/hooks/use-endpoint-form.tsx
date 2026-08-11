@@ -1,4 +1,4 @@
-import { useCustom, useSelect } from "@refinedev/core";
+import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, CircleHelp, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -54,6 +54,7 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import {
   isValidWorkspace,
@@ -96,6 +97,10 @@ type AcceleratorVirtualization = NonNullable<
   ResourceSpec["accelerator"]
 >["virtualization"];
 type GpuAllocationMode = "full" | "vgpu";
+
+/** How many models the picker asks for. The dropdown searches server side, so
+ * this bounds one response rather than the registry. */
+const MODEL_PICKER_PAGE_SIZE = 20;
 
 const hasVgpuVirtualizationValues = (
   virtualization: AcceleratorVirtualization | undefined,
@@ -782,12 +787,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const effectiveModelSearch = modelSearch || "";
 
-  const modelsData = useCustom({
-    url: `/workspaces/${workspace}/model_registries/${currentRegistry}/models?${effectiveModelSearch ? `search=${effectiveModelSearch}` : ""}&limit=20`,
-    method: "get",
-    queryOptions: {
-      enabled: Boolean(currentRegistry),
-    },
+  const modelsData = useRegistryModels({
+    workspace,
+    registry: currentRegistry,
+    search: effectiveModelSearch || undefined,
+    limit: MODEL_PICKER_PAGE_SIZE,
   });
 
   // Existence lookup for the currently selected model, keyed by the exact
@@ -797,21 +801,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // deploys failed with "Model not found in selected registry" for models
   // that exist upstream). While this query is loading or failed the resolver
   // skips the containment check instead of blocking submit.
-  const modelExistenceQuery = useCustom({
-    url: `/workspaces/${workspace}/model_registries/${currentRegistry}/models?search=${encodeURIComponent(currentModelName)}&limit=20`,
-    method: "get",
-    queryOptions: {
-      enabled: Boolean(
-        action === "create" && currentRegistry && currentModelName,
-      ),
-    },
+  const modelExistenceQuery = useRegistryModels({
+    workspace,
+    registry: currentRegistry,
+    search: currentModelName,
+    limit: MODEL_PICKER_PAGE_SIZE,
+    enabled: Boolean(action === "create" && currentModelName),
   });
   const modelExistenceNames = useMemo<string[] | null>(() => {
-    const models = modelExistenceQuery.data?.data as
-      | { name: string }[]
-      | undefined;
-    return models ? models.map((m) => m.name) : null;
-  }, [modelExistenceQuery.data?.data]);
+    // null while there is no answer, which is what makes the resolver skip the
+    // containment check instead of deciding the model does not exist.
+    return modelExistenceQuery.page
+      ? modelExistenceQuery.page.models.map((m) => m.name)
+      : null;
+  }, [modelExistenceQuery.page]);
 
   // The resolver only runs on form events, so a lookup result landing after
   // the last user interaction would never surface (or clear) the
@@ -1304,14 +1307,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     </CommandLoading>
                   ) : null
                 }
-                options={(modelsData.data?.data || []).map(
-                  (e: { name: string }) => {
-                    return {
-                      label: e.name,
-                      value: e.name,
-                    };
-                  },
-                )}
+                options={modelsData.models.map((e) => ({
+                  label: e.name,
+                  value: e.name,
+                }))}
                 shouldFilter={false}
                 onSearchChange={setModelSearch}
                 triggerClassName="w-full"
