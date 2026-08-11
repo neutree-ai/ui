@@ -96,6 +96,7 @@ const Timestamp: React.FC<TimestampProps> = ({
   relative = false,
 }) => {
   const { i18n } = useTranslation();
+  const resolvedLanguage = i18n?.resolvedLanguage;
   const formattedTime = useMemo(() => {
     return formatTimestamp(timestamp, format);
   }, [timestamp, format]);
@@ -109,10 +110,10 @@ const Timestamp: React.FC<TimestampProps> = ({
         : timestamp < 10000000000
           ? dayjs.unix(timestamp)
           : dayjs(timestamp);
-    const locale = i18n.resolvedLanguage?.startsWith("zh") ? "zh-cn" : "en";
+    const locale = resolvedLanguage?.startsWith("zh") ? "zh-cn" : "en";
 
     return value.isValid() ? value.locale(locale).fromNow() : "Invalid date";
-  }, [i18n.resolvedLanguage, relative, timestamp]);
+  }, [resolvedLanguage, relative, timestamp]);
 
   if (!formattedTime) {
     return <span className={className}>-</span>;
