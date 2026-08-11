@@ -982,6 +982,39 @@ describe("useEndpointForm", () => {
     formInstance = null;
   });
 
+  it("locks the cluster when editing but keeps it selectable when creating", async () => {
+    setupMocks([catalogA, catalogB], [virtualizedKubernetesClusterWithDevices]);
+    const editRender = render(<EditForm />);
+
+    const editClusterButton = await within(
+      await screen.findByTestId("field-spec.cluster"),
+    ).findByRole("combobox");
+    expect(editClusterButton.hasAttribute("disabled")).toBe(true);
+
+    editRender.unmount();
+    render(<CreateForm />);
+
+    const createClusterButton = await within(
+      await screen.findByTestId("field-spec.cluster"),
+    ).findByRole("combobox");
+    expect(createClusterButton.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("keeps an edit cluster visible when it is absent from cluster options", async () => {
+    setupMocks([catalogA, catalogB], [virtualizedKubernetesClusterWithDevices]);
+    render(<EditForm />);
+
+    await waitFor(() => expect(formInstance).not.toBeNull());
+    act(() => {
+      formInstance?.setValue("spec.cluster", "unlisted-existing-cluster");
+    });
+
+    const clusterButton = await within(
+      screen.getByTestId("field-spec.cluster"),
+    ).findByRole("combobox");
+    expect(clusterButton.textContent).toContain("unlisted-existing-cluster");
+  });
+
   it("places cluster-only scheduling target inside resource selection", async () => {
     setupMocks([catalogA, catalogB], [virtualizedKubernetesClusterWithDevices]);
     const { container } = render(<CreateForm />);

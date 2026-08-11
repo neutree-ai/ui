@@ -85,7 +85,7 @@ async function closeMcImportDialog(page: Page) {
 // create form resolves the variant's model against it. ──
 function recipeSpec(registry = "huggingface"): Record<string, unknown> {
   return {
-    engine: { engine: "vllm", version: "v0.8.5" },
+    engine: { engine: "vllm", version: "v0.24.0" },
     base: { engine_args: { enable_prefix_caching: true } },
     variants: {
       default: {
@@ -221,7 +221,7 @@ metadata:
   annotations:
     recipe.vllm.ai/hardware-verified: "L20"
 spec:
-  engine: { engine: vllm, version: v0.8.5 }
+  engine: { engine: vllm, version: v0.24.0 }
   base: { engine_args: { enable_prefix_caching: true } }
   variants:
     default:
@@ -289,7 +289,7 @@ spec:
 kind: ModelCatalog
 metadata: { name: ${name}, workspace: default }
 spec:
-  engine: { engine: vllm, version: v0.8.5 }
+  engine: { engine: vllm, version: v0.24.0 }
   model: { registry: huggingface, name: top-level-model, task: text-generation }
   variants:
     default:
@@ -315,7 +315,7 @@ spec:
 kind: ModelCatalog
 metadata: { name: ${name}, workspace: default }
 spec:
-  engine: { engine: vllm, version: v0.8.5 }
+  engine: { engine: vllm, version: v0.24.0 }
   variants:
     default:
       model: { registry: huggingface, name: Neutree/Test-27B, task: text-generation }
@@ -344,7 +344,7 @@ spec:
 kind: ModelCatalog
 metadata: { name: ${name}, workspace: default }
 spec:
-  engine: { engine: vllm, version: v0.8.5 }
+  engine: { engine: vllm, version: v0.24.0 }
   variants:
     default:
       model: { registry: huggingface, name: Neutree/Test-27B, task: text-generation }
@@ -370,7 +370,7 @@ spec:
 kind: ModelCatalog
 metadata: { name: ${name}, workspace: default }
 spec:
-  engine: { engine: vllm, version: v0.8.5 }
+  engine: { engine: vllm, version: v0.24.0 }
   variants:
     default:
       model: { registry: huggingface, name: Neutree/Test-27B, task: text-generation }
@@ -759,7 +759,7 @@ test.describe("recipe model catalog: import permissions", () => {
 kind: ModelCatalog
 metadata: { name: ${name}, workspace: default }
 spec:
-  engine: { engine: vllm, version: v0.8.5 }
+  engine: { engine: vllm, version: v0.24.0 }
   variants:
     default:
       model: { registry: huggingface, name: Neutree/Test-27B, task: text-generation }`);

@@ -86,7 +86,7 @@ test.describe("endpoints", () => {
   });
 
   test.afterAll(async ({ browser }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     const context = await browser.newContext();
     const page = await context.newPage();
     const api = new ApiHelper(page);
@@ -1093,7 +1093,7 @@ test.describe("endpoints", () => {
       await expect(endpoints.form.field("-model-catalog")).toBeHidden();
     });
 
-    test("edit: cluster and registry editable", { tag: "@C2613287" }, async ({
+    test("edit: cluster immutable and registry editable", async ({
       endpoints,
     }) => {
       await endpoints.goToEdit(epNames.base);
@@ -1101,11 +1101,11 @@ test.describe("endpoints", () => {
         endpoints.page.locator('[data-testid="form-submit"]'),
       ).toBeEnabled();
 
-      // Cluster combobox should be enabled
+      // Existing endpoints keep their deployment cluster.
       const clusterButton = endpoints.form
         .field("spec.cluster")
-        .locator("button");
-      await expect(clusterButton).toBeEnabled();
+        .locator('button[role="combobox"]');
+      await expect(clusterButton).toBeDisabled();
 
       // Model registry combobox should be enabled
       const registryButton = endpoints.form

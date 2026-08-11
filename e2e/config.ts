@@ -138,7 +138,7 @@ function buildConfig(raw: Record<string, any>): E2eConfig {
     },
     engine: {
       name: eng.name ?? "vllm",
-      version: eng.version ?? "v0.8.5",
+      version: eng.version ?? "v0.24.0",
     },
     model: {
       name: model.name ?? "test-model",

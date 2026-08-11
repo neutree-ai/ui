@@ -304,6 +304,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const isEdit = action === "edit";
   const sectionVariant = "section";
 
+  const clusterOptions = useMemo(() => {
+    const options = (clusters.query?.data?.data || []).map((cluster) => ({
+      label: cluster.metadata.name,
+      value: cluster.metadata.name,
+    }));
+
+    if (
+      !isEdit ||
+      !currentCluster ||
+      options.some((option) => option.value === currentCluster)
+    ) {
+      return options;
+    }
+
+    return [{ label: currentCluster, value: currentCluster }, ...options];
+  }, [clusters.query?.data?.data, currentCluster, isEdit]);
+
   const selectedVirtualization = selectedAccelerator?.virtualization;
   const isSelectedClusterVgpuEnabled =
     selectedCluster?.spec.type === "kubernetes" &&
@@ -1663,14 +1680,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   className="w-full max-w-[280px]"
                 >
                   <FormCombobox
-                    disabled={clusters.query.isLoading}
+                    disabled={isEdit || clusters.query.isLoading}
                     placeholder={t("endpoints.placeholders.selectCluster")}
-                    options={(clusters.query?.data?.data || []).map((e) => {
-                      return {
-                        label: e.metadata.name,
-                        value: e.metadata.name,
-                      };
-                    })}
+                    options={clusterOptions}
                   />
                 </FormFieldGroup>
                 <div

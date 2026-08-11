@@ -151,9 +151,13 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-        <div className="flex items-center gap-4 pb-2">
+    <div className="flex h-full min-h-0 flex-col">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex h-full min-h-0 flex-col"
+      >
+        <div className="flex shrink-0 items-center gap-4 pb-2">
           {availableTabKeys.length > 1 && (
             <TabsList className={`grid flex-1 ${getGridClass()}`}>
               {availableTabKeys.map((logType) => (
@@ -194,7 +198,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
           <TabsContent
             key={logType}
             value={logType}
-            className="h-[calc(100%-theme('spacing.10'))] mt-4"
+            className="mt-2 min-h-0 flex-1 overflow-hidden"
           >
             <LogViewer
               source={
