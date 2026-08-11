@@ -37,12 +37,56 @@ export type RegistryModelPage = {
    * than inventing one, so null means unknown — not zero.
    */
   total: number | null;
+  /** How old the answer is; see RegistryDataFreshness. */
+  freshness: RegistryDataFreshness;
 };
+
+/**
+ * When the data in a response was read from the registry, as stated by the
+ * server rather than measured here.
+ *
+ * A listing the server served from its cache describes the registry as of when
+ * it was fetched, not as of when it was asked for. `X-Neutree-Data-Timestamp`
+ * carries that moment and `X-Neutree-Data-Cached` says the answer was reused,
+ * so this is reported, never timed locally — a clock in the browser would be
+ * measuring the wrong event on the wrong machine.
+ */
+export type RegistryDataFreshness = {
+  /** The moment the data was read from the registry (RFC3339), or null when the
+   * response did not say. */
+  timestamp: string | null;
+  /** Whether the server answered from its cache rather than asking again. */
+  cached: boolean;
+};
+
+function freshnessFrom(headers: Headers): RegistryDataFreshness {
+  return {
+    timestamp: headers.get("X-Neutree-Data-Timestamp"),
+    cached: headers.get("X-Neutree-Data-Cached") === "true",
+  };
+}
+
+/**
+ * Why a call was refused, in a form that can be branched on.
+ *
+ * The server names the refusal so a client does not have to match on prose:
+ * `not_supported` is "this registry cannot be asked that" (paging from an
+ * offset, a model card from a registry that serves none), `not_found` is "it
+ * answered, and there is nothing there".
+ */
+type RegistryModelErrorReason =
+  | "not_supported"
+  | "not_found"
+  | "registry_unauthorized"
+  | "rate_limited"
+  | "unavailable";
 
 /** The error bodies these routes answer with. Every field is optional: which
  * ones arrive depends on why the call failed. */
 type RegistryModelErrorBody = {
   message?: string;
+  /** The machine-readable refusal, where the route sends one. */
+  reason?: RegistryModelErrorReason;
   /**
    * What a refusal from the permission check is worded as. That layer answers
    * `{error, required}` rather than `{message}`, and its wording is the honest
@@ -90,6 +134,10 @@ export class RegistryModelError extends Error {
     this.status = status;
     this.body = body;
   }
+
+  get reason(): RegistryModelErrorReason | undefined {
+    return this.body.reason;
+  }
 }
 
 function modelsBaseUrl(workspace: string, registry: string): string {
@@ -122,7 +170,9 @@ function registryModelsPath(query: RegistryModelsQuery): string {
   }`;
 }
 
-function authHeaders(): Record<string, string> {
+/** Shared with `./model-registries`, which calls a registry-level route the same
+ * way and reports its failures with the same error type. */
+export function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
   const auth = clientPostgrest.headers.Authorization;
 
@@ -133,7 +183,7 @@ function authHeaders(): Record<string, string> {
   return headers;
 }
 
-async function errorFrom(res: Response): Promise<RegistryModelError> {
+export async function errorFrom(res: Response): Promise<RegistryModelError> {
   let body: RegistryModelErrorBody = {};
 
   try {
@@ -178,12 +228,13 @@ export async function fetchRegistryModels(
     throw await errorFrom(res);
   }
 
-  // The body is a bare array; the count lives in the header.
+  // The body is a bare array; the count and the age live in the headers.
   const models = (await res.json()) as RegistryModel[] | null;
 
   return {
     models: models ?? [],
     total: parseContentRangeTotal(res.headers.get("Content-Range")),
+    freshness: freshnessFrom(res.headers),
   };
 }
 
@@ -215,6 +266,45 @@ export async function fetchRegistryModel(
   }
 
   return (await res.json()) as RegistryModelVersion;
+}
+
+/** A model card, exactly as the registry stores it. */
+export type RegistryModelReadme = {
+  /** Markdown source. Never HTML: the server does not render it, and neither
+   * does anything between here and the screen — see ModelReadme. */
+  content: string;
+  /** Whether the server stopped reading at its size cap. */
+  truncated: boolean;
+};
+
+/**
+ * Reads a model's card.
+ *
+ * Whether a registry serves cards at all is a capability, not a property of
+ * public versus private: a registry that serves none refuses with
+ * `not_supported`, and one that serves them but has none for this model answers
+ * `not_found`. Both are answers about the registry and are left for the caller
+ * to render as such.
+ */
+export async function fetchRegistryModelReadme(
+  ref: RegistryModelRef,
+  signal?: AbortSignal,
+): Promise<RegistryModelReadme> {
+  const res = await fetch(
+    `${modelsBaseUrl(ref.workspace, ref.registry)}/${encodeURIComponent(
+      ref.model,
+    )}/readme${versionQuery(ref.version)}`,
+    { headers: authHeaders(), signal },
+  );
+
+  if (!res.ok) {
+    throw await errorFrom(res);
+  }
+
+  return {
+    content: await res.text(),
+    truncated: res.headers.get("X-Neutree-Content-Truncated") === "true",
+  };
 }
 
 export type PatchRegistryModelBody = {

@@ -1,3 +1,4 @@
+import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
 import type { RecipeFeature } from "@/foundation/recipe/types";
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 import type {
@@ -134,4 +135,10 @@ export type EndpointModelCatalogRef = {
 /** Minimal model registry shape — only needs metadata.name */
 export type EndpointModelRegistryRef = {
   metadata: Metadata;
+  /**
+   * Whether the registry's models are already on local storage. Optional
+   * because it is a computed field the request has to name — see
+   * MODEL_REGISTRY_SELECT.
+   */
+  visibility?: ModelRegistryVisibility;
 };

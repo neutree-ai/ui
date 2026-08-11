@@ -1,9 +1,7 @@
-import {
-  isPrivateModelRegistry,
-  type ModelRegistry,
-} from "@/domains/model-registry/types";
+import type { ModelRegistry } from "@/domains/model-registry/types";
 import { formatTimestamp } from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { registryContentsAreMeasured } from "@/foundation/lib/model-registry-visibility";
 import { formatBytes } from "@/foundation/lib/unit";
 
 /**
@@ -19,6 +17,12 @@ import { formatBytes } from "@/foundation/lib/unit";
  * The last of those is why an absent block is never rendered as 0. A registry
  * that has not been walked yet and a registry that is genuinely empty are
  * different facts, and only one of them is worth acting on.
+ *
+ * Which of the three applies is decided by the server's `visibility`, not by the
+ * registry's type — so a caller must select that field. A response that omits it
+ * leaves the registry unclassified, and then an absent block is read as
+ * "collecting", the reading that resolves itself rather than the one that
+ * asserts a measurement will never come.
  */
 
 const NotCounted = () => {
@@ -63,7 +67,7 @@ export const ModelRegistryModelCount = ({
 }: {
   registry: ModelRegistry;
 }) => {
-  if (!isPrivateModelRegistry(registry.spec)) {
+  if (!registryContentsAreMeasured(registry.visibility)) {
     return <NotCounted />;
   }
 
@@ -86,7 +90,7 @@ export const ModelRegistryStorage = ({
 }: {
   registry: ModelRegistry;
 }) => {
-  if (!isPrivateModelRegistry(registry.spec)) {
+  if (!registryContentsAreMeasured(registry.visibility)) {
     return <NotCounted />;
   }
 

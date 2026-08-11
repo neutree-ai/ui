@@ -3,13 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
+import { RegistryAvailabilityNotice } from "@/domains/model-registry/components/RegistryAvailabilityNotice";
 import { RegistryModelsTable } from "@/domains/model-registry/components/RegistryModelsTable";
+import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { MODEL_REGISTRY_SELECT } from "@/foundation/lib/model-registry-visibility";
 
 const detailTabTriggerClassName =
   "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
@@ -19,7 +22,11 @@ export const ModelRegistriesShow = () => {
   const { params } = useParsed();
   const {
     query: { data, isLoading },
-  } = useShow<ModelRegistry>();
+  } = useShow<ModelRegistry>({
+    // `visibility` decides what this page offers, and it is a computed field —
+    // absent unless it is named. See MODEL_REGISTRY_SELECT.
+    meta: { select: MODEL_REGISTRY_SELECT },
+  });
   const record = data?.data;
 
   if (isLoading) {
@@ -47,10 +54,23 @@ export const ModelRegistriesShow = () => {
               <ShowPage.Meta label={t("common.fields.type")}>
                 <ModelRegistryType type={record.spec.type} />
               </ShowPage.Meta>
+              {/* main (#372) replaced the inline workspace meta with the
+                  created-at one; kept as it landed. Visibility is added beside
+                  it rather than in place of it. */}
               <MetadataTimestampMeta metadata={record.metadata} />
+              <ShowPage.Meta label={t("model_registries.fields.visibility")}>
+                <RegistryVisibility visibility={record.visibility} />
+              </ShowPage.Meta>
             </span>
           }
         />
+        {/* Above the tabs, not inside one: an unreachable registry is the
+            explanation for both an empty model list and a stale-looking
+            configuration, so it should not be something you have to switch tab
+            to find. */}
+        <div className="mb-3 empty:hidden">
+          <RegistryAvailabilityNotice workspace={workspace} registry={record} />
+        </div>
         <TabsList className="relative mt-0 h-11 w-full items-end justify-start gap-8 rounded-none border-0 bg-transparent p-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-border">
           <TabsTrigger value="basic" className={detailTabTriggerClassName}>
             {t("common.tabs.basic")}
@@ -85,7 +105,7 @@ export const ModelRegistriesShow = () => {
         >
           <RegistryModelsTable
             workspace={workspace}
-            registry={record.metadata.name}
+            registry={record}
             modelHref={(model, version) =>
               `/${workspace}/model-registries/show/${encodeURIComponent(
                 record.metadata.name,

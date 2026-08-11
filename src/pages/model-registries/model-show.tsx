@@ -1,3 +1,4 @@
+import { useOne } from "@refinedev/core";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +14,18 @@ import { Button } from "@/components/ui/button";
 import { ModelDeleteDialog } from "@/domains/model-registry/components/ModelDeleteDialog";
 import { ModelEditDialog } from "@/domains/model-registry/components/ModelEditDialog";
 import { ModelInfoFields } from "@/domains/model-registry/components/ModelInfoFields";
+import { ModelReadme } from "@/domains/model-registry/components/ModelReadme";
 import { useRegistryModelVersion } from "@/domains/model-registry/hooks/use-registry-model-version";
+import type { ModelRegistry } from "@/domains/model-registry/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  MODEL_REGISTRY_SELECT,
+  registryAcceptsWrites,
+} from "@/foundation/lib/model-registry-visibility";
 
 /**
  * One model version inside a registry.
@@ -30,6 +37,11 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * The edit and delete controls are offered to everyone, as everything else in
  * this UI is: the API is what decides who may write, and a refusal is reported
  * where the action was taken rather than pre-empted here.
+ *
+ * They are, however, only offered where writing is *possible*. A read-only
+ * registry refuses every write there is, so the controls are absent rather than
+ * present-and-doomed — a different judgement from permissions, and made from the
+ * registry's stated capability rather than from what kind of registry it is.
  */
 export const ModelRegistryModelShow = () => {
   const { t } = useTranslation();
@@ -45,6 +57,24 @@ export const ModelRegistryModelShow = () => {
   const modelRef = { workspace, registry, model: modelName, version };
   const { model, isLoading, error, refetch } =
     useRegistryModelVersion(modelRef);
+
+  // The registry decides what this page may offer, and only says so when
+  // `visibility` is selected — see MODEL_REGISTRY_SELECT.
+  const { data: registryData } = useOne<ModelRegistry>({
+    resource: "model_registries",
+    id: registry,
+    meta: { select: MODEL_REGISTRY_SELECT, workspaced: true, workspace },
+    queryOptions: { enabled: Boolean(workspace && registry) },
+  });
+  const registryRecord = registryData?.data;
+  // Fail closed, in both directions. No answer yet means no controls — showing
+  // them and taking them away again is worse than showing them a moment late —
+  // and a registry that answered *without* stating its visibility means the
+  // request forgot to select the field, which loses two buttons rather than
+  // offering a dialogue whose only outcome is a refusal.
+  const canWrite =
+    registryRecord?.visibility !== undefined &&
+    registryAcceptsWrites(registryRecord.visibility);
 
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -118,22 +148,24 @@ export const ModelRegistryModelShow = () => {
             </span>
           }
           actions={
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setEditing(true)}
-                data-testid="model-edit-open"
-              >
-                {t("model_registries.models.actions.edit")}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setDeleting(true)}
-                data-testid="model-delete-open"
-              >
-                {t("buttons.delete")}
-              </Button>
-            </>
+            canWrite ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditing(true)}
+                  data-testid="model-edit-open"
+                >
+                  {t("model_registries.models.actions.edit")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleting(true)}
+                  data-testid="model-delete-open"
+                >
+                  {t("buttons.delete")}
+                </Button>
+              </>
+            ) : null
           }
         />
 
@@ -154,7 +186,18 @@ export const ModelRegistryModelShow = () => {
                 )}
               </ShowPage.Row>
               <ShowPage.Row title={t("common.fields.createdAt")}>
-                <Timestamp timestamp={model.creation_time} />
+                {/* A registry that relays somebody else's catalogue does not
+                    always know when a revision was created, and answers with an
+                    empty string. Unknown is the honest reading; handing "" to a
+                    date formatter renders "Invalid date", which reads as a bug in
+                    this page rather than as a gap in what the registry knows. */}
+                {model.creation_time ? (
+                  <Timestamp timestamp={model.creation_time} />
+                ) : (
+                  <span className="text-muted-foreground">
+                    {t("model_registries.models.values.unknown")}
+                  </span>
+                )}
               </ShowPage.Row>
               <ShowPage.Row title={t("common.fields.labels")}>
                 {labels.length === 0 ? (
@@ -178,10 +221,14 @@ export const ModelRegistryModelShow = () => {
           >
             <ModelInfoFields info={model.info} />
           </ShowPage.Section>
+
+          <ModelReadme modelRef={{ ...modelRef, version: model.name }} />
         </div>
 
+        {/* Not rendered at all where writing is impossible, so there is no
+            dialogue to open by other means either. */}
         <ModelEditDialog
-          open={editing}
+          open={canWrite && editing}
           onOpenChange={setEditing}
           modelRef={{ ...modelRef, version: model.name }}
           modelName={modelName}
@@ -189,7 +236,7 @@ export const ModelRegistryModelShow = () => {
           info={model.info}
         />
         <ModelDeleteDialog
-          open={deleting}
+          open={canWrite && deleting}
           onOpenChange={setDeleting}
           modelRef={{ ...modelRef, version: model.name }}
           modelName={modelName}

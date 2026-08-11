@@ -533,7 +533,8 @@
 		"fields": {
 			"modelRegistry": "Model Registry",
 			"url": "URL",
-			"credentials": "Credentials"
+			"credentials": "Credentials",
+			"visibility": "Visibility"
 		},
 		"placeholders": {
 			"registryName": "Model Registry Name",
@@ -567,6 +568,14 @@
 			"empty": "No models in this registry.",
 			"searchPlaceholder": "Search models",
 			"totalUnknown": "Total: unknown",
+			"noMatches": "No models match “{{search}}”.",
+			"registryUnreachable": "The registry cannot be reached, so its models cannot be listed.",
+			"registryDisabled": "This registry has been removed, so its models cannot be listed.",
+			"showMore": "Show more",
+			"listingEnd": "End of the listing.",
+			"windowCapped": "Showing the first {{count}}. This registry cannot be paged, so narrow the search to find a specific model.",
+			"dataAsOf": "Registry read at {{time}}",
+			"dataAsOfCached": "Cached registry data from {{time}}",
 			"fields": {
 				"alias": "Alias",
 				"size": "Size",
@@ -624,7 +633,29 @@
 				"blocked": "This model cannot be deleted while the following objects still reference it:",
 				"variant": "variant: {{variant}}",
 				"success": "Model deleted"
+			},
+			"readme": {
+				"title": "Model card",
+				"none": "This model has no card.",
+				"truncated": "This card is long and has been shortened."
 			}
+		},
+		"visibility": {
+			"public": "Public",
+			"private": "Private",
+			"filterTitle": "Filter by visibility"
+		},
+		"availability": {
+			"unreachable": "This registry cannot be reached",
+			"lastChecked": "Last checked {{time}}",
+			"lastCheckedUnknown": "Not checked yet",
+			"retry": "Retry connection",
+			"retryHint": "The control plane keeps retrying on its own. Checking now also clears the cached results held for this registry, so the model list is re-read rather than replayed.",
+			"retrySucceeded": "Registry reached",
+			"retryStillFailing": "The registry still cannot be reached",
+			"retryNotRun": "The check could not be run",
+			"disabled": "This registry has been removed",
+			"disabledHint": "It is being torn down and no longer serves models."
 		}
 	},
 	"model_catalogs": {
@@ -899,7 +930,9 @@
 			"memoryResourcesInsufficient": "Requested memory exceeds the currently available capacity for this cluster.",
 			"noRunningVgpuPods": "No running virtual accelerator pods",
 			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared",
-			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting"
+			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting",
+			"runtimeDownloadHint": "Models in a public registry are downloaded when the endpoint starts: the first start takes noticeably longer, and it cannot start at all without access to the registry.",
+			"runtimeDownloadUnknown": "This registry did not report whether it stores its models locally, so whether they are downloaded when the endpoint starts is unknown."
 		},
 		"tabs": {
 			"playground": "Playground"
