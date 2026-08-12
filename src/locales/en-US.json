@@ -1088,7 +1088,8 @@
 			"model": "Model",
 			"promptTokens": "Prompt Tokens",
 			"completionTokens": "Completion Tokens",
-			"usage": "Total Tokens"
+			"usage": "Total Tokens",
+			"actions": "Actions"
 		},
 		"placeholders": {
 			"selectWorkspace": "Select A Workspace"
@@ -1189,6 +1190,18 @@
 			"instanceLabel": "Inference instance: {{name}}",
 			"endpointLabel": "Endpoint: {{name}}"
 		}
+	},
+	"projects": {
+		"projects": "Project",
+		"title": "Projects",
+		"create": "Create Project",
+		"edit": "Edit Project",
+		"project": "Project",
+		"select": "Select a project",
+		"empty": "No projects found",
+		"default": "Default",
+		"status": { "enabled": "Enabled", "disabled": "Disabled" },
+		"actions": { "enable": "Enable", "disable": "Disable" }
 	},
 	"infrastructure": {
 		"title": "Infrastructure"

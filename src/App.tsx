@@ -60,6 +60,9 @@ const AITracesList = lazy(() =>
 const ApiKeysList = lazy(() =>
   import("./pages/api-keys/list").then((m) => ({ default: m.ApiKeysList })),
 );
+const ProjectsList = lazy(() =>
+  import("./pages/projects/list").then((m) => ({ default: m.ProjectsList })),
+);
 const ModelUsageList = lazy(() =>
   import("./pages/model-usage/list").then((m) => ({
     default: m.ModelUsageList,
@@ -447,6 +450,15 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "projects",
+    list: "/projects",
+    meta: {
+      icon: <Layers />,
+      workspaced: true,
+      parent: "access_control",
+    },
+  },
+  {
     name: "settings",
   },
   // {
@@ -646,6 +658,9 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route path="/:workspace/api-keys">
                   <Route index element={<ApiKeysList />} />
                   <Route path="show/:id" element={<ApiKeysShow />} />
+                </Route>
+                <Route path="/projects">
+                  <Route index element={<ProjectsList />} />
                 </Route>
                 <Route path="/:workspace/ai-traces">
                   <Route index element={<AITracesList />} />

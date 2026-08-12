@@ -1,4 +1,4 @@
-import { useCustomMutation, useInvalidate } from "@refinedev/core";
+import { useCustomMutation, useInvalidate, useList } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
@@ -21,7 +21,7 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 
-type FormValues = { name: string; workspace: string } & ApiKeyPolicyFormValues;
+type FormValues = { name: string; workspace: string; project_id: string; description: string } & ApiKeyPolicyFormValues;
 
 export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   const { t } = useTranslation();
@@ -30,10 +30,19 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     defaultValues: {
       name: "",
       workspace: "",
+      project_id: "",
+      description: "",
       ...apiKeyPolicyDefaults(),
     },
   });
   const selectedWorkspace = form.watch("workspace");
+  const { data: projectData, isLoading: isLoadingProjects } = useList<{ id: string; name: string; status: string }>({
+    resource: "projects",
+    pagination: { mode: "off" },
+    meta: { workspace: selectedWorkspace, workspaced: true },
+    queryOptions: { enabled: Boolean(selectedWorkspace) },
+  });
+  const projects = (projectData?.data ?? []).filter((project) => project.status === "enabled");
   // Shares the pickers' query so this form isn't stuck on refine's default
   // first page of 10 workspaces either (NEU-505). FormCombobox filters what it
   // is given locally, so the page size is the reach here.
@@ -62,6 +71,8 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         p_name: formValue.name,
         p_quota: 0,
         p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
+        p_project_id: formValue.project_id || null,
+        p_description: formValue.description || null,
       },
     });
     invalidate({
@@ -143,6 +154,12 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
           />
         </FormFieldGroup>
         <FormFieldGroup {...form} name="name" label={t("common.fields.name")}>
+          <Input />
+        </FormFieldGroup>
+        <FormFieldGroup {...form} name="project_id" label={t("projects.project")}>
+          <FormCombobox disabled={!selectedWorkspace || isLoadingProjects} placeholder={t("projects.select")} options={projects.map((project) => ({ label: project.name, value: project.id }))} />
+        </FormFieldGroup>
+        <FormFieldGroup {...form} name="description" label={t("common.fields.description")}>
           <Input />
         </FormFieldGroup>
 

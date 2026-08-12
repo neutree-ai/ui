@@ -34,6 +34,8 @@ export type ApiKey = {
   metadata: Metadata;
   spec: ApiKeySpec;
   status: ApiKeyStatus | null;
+  project_id?: string | null;
+  description?: string | null;
 };
 
 export type ApiKeySpec = {
