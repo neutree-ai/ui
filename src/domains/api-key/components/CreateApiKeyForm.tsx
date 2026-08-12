@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
 import {
@@ -156,6 +157,32 @@ export const CreateApiKeyForm = ({
           </AlertDescription>
         </Alert>
 
+        <div className="space-y-1 rounded-md border bg-muted/20 p-3 text-sm">
+          <div className="flex gap-2">
+            <span className="shrink-0 text-muted-foreground">
+              {t("projects.project")}:
+            </span>
+            <span className="truncate font-medium">
+              {projects.data?.data?.find((p) => String(p.id) === String(apiKey.project_id))
+                ?.name ?? "Default"}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <span className="shrink-0 text-muted-foreground">
+              {t("common.fields.name")}:
+            </span>
+            <span className="truncate font-medium">{apiKey.metadata.name}</span>
+          </div>
+          {apiKey.description && (
+            <div className="flex gap-2">
+              <span className="shrink-0 text-muted-foreground">
+                {t("common.fields.description")}:
+              </span>
+              <span className="truncate">{apiKey.description}</span>
+            </div>
+          )}
+        </div>
+
         <div className="space-y-2">
           <div className="text-sm font-medium">
             {t("api_keys.fields.secretKey")}:
@@ -218,27 +245,20 @@ export const CreateApiKeyForm = ({
             }))}
           />
         </FormFieldGroup>
-        <FormFieldGroup {...form} name="project_id" label="Project">
-          <FormCombobox
-            placeholder="Select Project"
+        <div className="space-y-2">
+          <Label>{t("projects.project")}</Label>
+          <ProjectPicker
+            projects={projects.data?.data ?? []}
+            value={form.watch("project_id") || null}
+            onChange={(id) =>
+              form.setValue("project_id", id ?? "", { shouldValidate: true })
+            }
             disabled={!selectedWorkspace || projects.isLoading}
-            options={[
-              ...(projects.data?.data ?? [])
-                .filter((project) => project.status === "enabled")
-                .map((project) => ({ label: project.name, value: project.id })),
-            ]}
+            placeholder={t("projects.selectPlaceholder")}
+            canCreate={Boolean(selectedWorkspace)}
+            onRequestCreate={() => setProjectFormOpen((v) => !v)}
           />
-        </FormFieldGroup>
-        {selectedWorkspace && !projectFormOpen && (
-          <Button
-            type="button"
-            variant="link"
-            className="h-auto px-0"
-            onClick={() => setProjectFormOpen(true)}
-          >
-            + Create Project
-          </Button>
-        )}
+        </div>
         {projectFormOpen && (
           <div className="space-y-3 rounded-md border bg-muted/30 p-3">
             <div className="flex items-center justify-between">

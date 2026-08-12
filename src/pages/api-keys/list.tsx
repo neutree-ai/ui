@@ -15,7 +15,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+dayjs.extend(relativeTime);
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -73,7 +77,7 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey, ApiKeyLimits, Project, ProjectGroup } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
-import Timestamp from "@/foundation/components/Timestamp";
+import { formatTimestamp } from "@/foundation/components/Timestamp";
 import { RowAction, Table } from "@/foundation/components/Table";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -89,6 +93,13 @@ type Group = {
 };
 
 const dash = <span className="text-muted-foreground">—</span>;
+
+// Spec: created-at column uses a uniform relative format (e.g. "21 days ago").
+const relativeTimeOf = (ts?: string | null): string => {
+  if (!ts) return "";
+  const d = dayjs(ts);
+  return d.isValid() ? d.fromNow() : "";
+};
 
 // A key is disabled when its limits carry the disabled flag; otherwise it is
 // enabled unless it has exhausted its current quota.
@@ -210,14 +221,12 @@ export const ApiKeysList = () => {
         q.length > 0 &&
         (g.project.name.toLowerCase().includes(q) ||
           (g.project.description ?? "").toLowerCase().includes(q));
-      if (projectHit) {
-        const keys =
-          statusFilter === "all"
-            ? g.keys
-            : g.keys.filter(
-                (k) => isKeyDisabled(k) === (statusFilter === "disabled"),
-              );
-        return [{ ...g, keys }];
+      // 7.1 Project hit -> show the whole Project; 7.2 Project status hit ->
+      // show all of that Project's API keys (key status is not applied).
+      const projectStatusHit =
+        statusFilter !== "all" && g.project.status === statusFilter;
+      if (projectHit || projectStatusHit) {
+        return [{ ...g, keys: g.keys }];
       }
       const keys = g.keys.filter((k) => {
         if (statusFilter !== "all" && isKeyDisabled(k) !== (statusFilter === "disabled")) {
@@ -540,19 +549,21 @@ export const ApiKeysList = () => {
                           <Pencil className="mr-2 h-4 w-4" />
                           {t("buttons.edit")}
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setCreateKeyPreset({
-                              workspace: project.workspace,
-                              projectId: project.id,
-                            });
-                            setCreateKeyOpen(true);
-                          }}
-                        >
-                          <KeyRound className="mr-2 h-4 w-4" />
-                          {t("projects.createKey")}
-                        </DropdownMenuItem>
+                        {project.status === "enabled" && (
+                          <DropdownMenuItem
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setCreateKeyPreset({
+                                workspace: project.workspace,
+                                projectId: project.id,
+                              });
+                              setCreateKeyOpen(true);
+                            }}
+                          >
+                            <KeyRound className="mr-2 h-4 w-4" />
+                            {t("projects.createKey")}
+                          </DropdownMenuItem>
+                        )}
                         {!project.is_default && (
                           <>
                             <DropdownMenuItem
@@ -649,7 +660,25 @@ export const ApiKeysList = () => {
                                 colSpan={9}
                                 className="px-3 py-6 text-center text-sm text-muted-foreground"
                               >
-                                {t("projects.noKeys")}
+                                <div className="flex flex-col items-center gap-2">
+                                  <span>{t("projects.noKeys")}</span>
+                                  {project.status === "enabled" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setCreateKeyPreset({
+                                          workspace: project.workspace,
+                                          projectId: project.id,
+                                        });
+                                        setCreateKeyOpen(true);
+                                      }}
+                                    >
+                                      <Plus className="mr-1 h-4 w-4" />
+                                      {t("projects.createKey")}
+                                    </Button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           )}
@@ -763,7 +792,15 @@ export const ApiKeysList = () => {
                                   )}
                                 </td>
                                 <td className="px-3 py-2 text-xs text-muted-foreground">
-                                  <Timestamp timestamp={key.metadata.creation_timestamp} />
+                                  <span
+                                    title={
+                                      key.metadata.creation_timestamp
+                                        ? formatTimestamp(key.metadata.creation_timestamp)
+                                        : undefined
+                                    }
+                                  >
+                                    {relativeTimeOf(key.metadata.creation_timestamp) || dash}
+                                  </span>
                                 </td>
                                 <td className="px-3 py-2">
                                   <Table.Actions>
@@ -822,7 +859,7 @@ export const ApiKeysList = () => {
                   disabled={safePage <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
-                  Previous
+                  {t("projects.previous")}
                 </Button>
                 <span className="text-muted-foreground">
                   {safePage} / {pageCount}
@@ -833,7 +870,7 @@ export const ApiKeysList = () => {
                   disabled={safePage >= pageCount}
                   onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
                 >
-                  Next
+                  {t("projects.next")}
                 </Button>
               </div>
             )}

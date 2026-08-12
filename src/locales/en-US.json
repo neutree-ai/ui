@@ -1583,6 +1583,12 @@
 		"deleteFailed": "Delete failed",
 		"deleted": "Project deleted",
 		"migrateRequiresWorkspace": "Select a workspace to migrate API keys.",
+		"selectPlaceholder": "Select Project",
+		"searchProject": "Search Project",
+		"noProjectsFound": "No projects found",
+		"createInline": "+ Create Project",
+		"previous": "Previous",
+		"next": "Next",
 		"project": "Project",
 		"migrate": "Migrate to Project",
 		"createKey": "Create API Key"

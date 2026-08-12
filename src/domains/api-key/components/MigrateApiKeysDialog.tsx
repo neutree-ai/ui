@@ -121,10 +121,12 @@ export const MigrateApiKeysDialog = ({
     setError(null);
     try {
       const ids = keys.map((k) => k.id);
-      await migrate(ids, target.id);
+      // Only keys that actually changed Project are counted; keys already in
+      // the target are skipped by the backend and not reported as migrated.
+      const migrated = await migrate(ids, target.id);
       toast.success(
         t("projects.migrateSuccess", {
-          count: ids.length,
+          count: migrated.length,
           project: target.name,
         }),
       );

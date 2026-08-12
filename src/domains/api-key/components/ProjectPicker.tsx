@@ -18,6 +18,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Project } from "@/domains/api-key/types";
 import { cn } from "@/foundation/lib/utils";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { useState } from "react";
 
 type ProjectPickerProps = {
@@ -42,10 +43,11 @@ export const ProjectPicker = ({
   onChange,
   onBlur,
   disabled,
-  placeholder = "Select Project",
+  placeholder,
   canCreate = false,
   onRequestCreate,
 }: ProjectPickerProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const selected = projects.find((p) => p.id === value);
 
@@ -74,9 +76,9 @@ export const ProjectPicker = ({
       </PopoverTrigger>
       <PopoverContent className="w-[400px] max-w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search Project" />
+          <CommandInput placeholder={t("projects.searchProject")} />
           <CommandList>
-            <CommandEmpty>No projects found</CommandEmpty>
+            <CommandEmpty>{t("projects.noProjectsFound")}</CommandEmpty>
             <CommandGroup heading="Projects">
               <ScrollArea className="max-h-52 overflow-y-auto">
                 {projects.map((project) => {
@@ -106,7 +108,7 @@ export const ProjectPicker = ({
                       </div>
                       {!selectable && (
                         <Badge variant="secondary" className="ml-2 shrink-0">
-                          Disabled
+                          {t("projects.statusDisabled")}
                         </Badge>
                       )}
                       {selectable && value === project.id && (
@@ -126,7 +128,7 @@ export const ProjectPicker = ({
                 }}
               >
                 <PlusIcon className="mr-2 h-4 w-4" />
-                + Create Project
+                {t("projects.createInline")}
               </CommandItem>
             )}
           </CommandList>
