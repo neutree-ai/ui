@@ -5,6 +5,9 @@ import { cleanInternalFields } from "./utils/clean-internal-fields";
 import { generateFilter } from "./utils/generate-filter";
 import { handleError } from "./utils/handle-error";
 
+const workspaceField = (meta?: Record<string, any>) =>
+  meta?.workspaceField ?? "metadata->workspace";
+
 export const dataProvider = (
   postgrestClient: PostgrestClient<any, any, any>,
 ): Required<DataProvider> => {
@@ -18,7 +21,7 @@ export const dataProvider = (
     if (meta?.idColumnName) {
       query.eq(meta.idColumnName as string, JSON.stringify(id));
       if (meta.workspaced) {
-        query.eq("metadata->workspace", JSON.stringify(meta.workspace));
+        query.eq(workspaceField(meta), JSON.stringify(meta.workspace));
       }
     } else {
       query.match({ id });
@@ -83,7 +86,7 @@ export const dataProvider = (
     if (meta?.idColumnName) {
       query.eq(meta.idColumnName as string, JSON.stringify(id));
       if (meta.workspaced) {
-        query.eq("metadata->workspace", JSON.stringify(meta.workspace));
+        query.eq(workspaceField(meta), JSON.stringify(meta.workspace));
       }
     } else {
       query.match({ id });
@@ -142,7 +145,7 @@ export const dataProvider = (
         generateFilter(
           {
             operator: "eq",
-            field: "metadata->workspace",
+            field: workspaceField(meta),
             value: JSON.stringify(meta.workspace),
           },
           query,
@@ -268,7 +271,7 @@ export const dataProvider = (
       if (meta?.idColumnName) {
         query.eq(meta.idColumnName as string, JSON.stringify(id));
         if (meta.workspaced) {
-          query.eq("metadata->workspace", JSON.stringify(meta.workspace));
+          query.eq(workspaceField(meta), JSON.stringify(meta.workspace));
         }
       } else {
         query.match({ id });
@@ -298,7 +301,7 @@ export const dataProvider = (
           if (meta?.idColumnName) {
             query.eq(meta.idColumnName as string, JSON.stringify(id));
             if (meta.workspaced) {
-              query.eq("metadata->workspace", JSON.stringify(meta.workspace));
+              query.eq(workspaceField(meta), JSON.stringify(meta.workspace));
             }
           } else {
             query.match({ id });

@@ -21,7 +21,12 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 
-type FormValues = { name: string; workspace: string; project_id: string; description: string } & ApiKeyPolicyFormValues;
+type FormValues = {
+  name: string;
+  workspace: string;
+  project_id: string;
+  description: string;
+} & ApiKeyPolicyFormValues;
 
 export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   const { t } = useTranslation();
@@ -36,13 +41,19 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     },
   });
   const selectedWorkspace = form.watch("workspace");
-  const { data: projectData, isLoading: isLoadingProjects } = useList<{ id: string; name: string; status: string }>({
+  const { data: projectData, isLoading: isLoadingProjects } = useList<{
+    id: string;
+    name: string;
+    status: string;
+  }>({
     resource: "projects",
     pagination: { mode: "off" },
     meta: { workspace: selectedWorkspace, workspaced: true },
     queryOptions: { enabled: Boolean(selectedWorkspace) },
   });
-  const projects = (projectData?.data ?? []).filter((project) => project.status === "enabled");
+  const projects = (projectData?.data ?? []).filter(
+    (project) => project.status === "enabled",
+  );
   // Shares the pickers' query so this form isn't stuck on refine's default
   // first page of 10 workspaces either (NEU-505). FormCombobox filters what it
   // is given locally, so the page size is the reach here.
@@ -156,10 +167,25 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         <FormFieldGroup {...form} name="name" label={t("common.fields.name")}>
           <Input />
         </FormFieldGroup>
-        <FormFieldGroup {...form} name="project_id" label={t("projects.project")}>
-          <FormCombobox disabled={!selectedWorkspace || isLoadingProjects} placeholder={t("projects.select")} options={projects.map((project) => ({ label: project.name, value: project.id }))} />
+        <FormFieldGroup
+          {...form}
+          name="project_id"
+          label={t("projects.project")}
+        >
+          <FormCombobox
+            disabled={!selectedWorkspace || isLoadingProjects}
+            placeholder={t("projects.select")}
+            options={projects.map((project) => ({
+              label: project.name,
+              value: project.id,
+            }))}
+          />
         </FormFieldGroup>
-        <FormFieldGroup {...form} name="description" label={t("common.fields.description")}>
+        <FormFieldGroup
+          {...form}
+          name="description"
+          label={t("common.fields.description")}
+        >
           <Input />
         </FormFieldGroup>
 
