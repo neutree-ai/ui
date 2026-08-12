@@ -275,7 +275,7 @@
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
   "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f",
   "src/domains/endpoint/lib/pause-action.ts": "3efa178458d6906c0cc81dad7c41e675",
-  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "b54d3549e3b8dfdb01636ee6a00ee5d3",
+  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "69bbf15ed8d1b0e68a235ada096065e9",
   "src/foundation/components/OemFavicon.tsx": "bb7648f90f369cb8a26439963f1966d1",
   "src/domains/external-endpoint/lib/get-endpoint-type.ts": "a5fec42612881e3206ee2e19ca3c820f",
   "src/domains/endpoint/hooks/use-document-list.ts": "7dc70792a61cc83271e61844abc90ec8",
@@ -358,5 +358,6 @@
   "src/domains/model-registry/components/ModelInfoFields.tsx": "4de75c3f06118f24d2b1538af84786e8",
   "src/domains/model-registry/components/ModelRegistryStats.tsx": "207d63a6478d660945c1e7c3a9fdc52a",
   "src/domains/model-registry/components/RegistryModelsTable.tsx": "3fbf89f317de15c16ed5515f4e34d9cc",
-"src/domains/engine/lib/resolve-capabilities.ts": "9a444cc413dae9066a7983c28c1d0fba"
+  "src/domains/engine/lib/resolve-capabilities.ts": "9a444cc413dae9066a7983c28c1d0fba",
+  "src/domains/cluster/lib/upgrade-versions.ts": "0b8da429b7f5a4c73d1ee2cada4556ae"
 }

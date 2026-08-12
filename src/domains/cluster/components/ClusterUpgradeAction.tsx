@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  getUpgradeVersions,
+  isUpgradeVersion,
+} from "@/domains/cluster/lib/upgrade-versions";
 import type { Cluster } from "@/domains/cluster/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -122,27 +127,33 @@ function UpgradeDialog({
       },
     });
 
-  const excludeVersions = new Set(
-    [cluster.spec.version, cluster.status?.version].filter(Boolean),
-  );
-  const availableVersions = (data?.data?.available_versions ?? []).filter(
-    (v) => !excludeVersions.has(v),
+  const availableVersions = useMemo(
+    () =>
+      getUpgradeVersions(
+        data?.data?.available_versions ?? [],
+        cluster.spec.version,
+      ),
+    [cluster.spec.version, data?.data?.available_versions],
   );
   const currentVersion = cluster.status?.version ?? "-";
 
   useEffect(() => {
-    if (availableVersions.length > 0 && !targetVersion) {
-      setTargetVersion(availableVersions[availableVersions.length - 1]);
+    if (!open) {
+      setTargetVersion("");
+      return;
     }
-  }, [availableVersions, targetVersion]);
 
-  // Reset when dialog opens
-  useEffect(() => {
-    if (open) setTargetVersion("");
-  }, [open]);
+    setTargetVersion((currentTarget) =>
+      availableVersions.includes(currentTarget)
+        ? currentTarget
+        : (availableVersions.at(-1) ?? ""),
+    );
+  }, [availableVersions, open]);
 
   const handleUpgrade = async () => {
-    if (!targetVersion || isUpdating) return;
+    if (!isUpgradeVersion(targetVersion, cluster.spec.version) || isUpdating) {
+      return;
+    }
     try {
       await mutateAsync({
         resource: "clusters",
