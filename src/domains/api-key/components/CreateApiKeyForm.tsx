@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
+import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
   type ApiKeyPolicyFormValues,
   apiKeyPolicyDefaults,
