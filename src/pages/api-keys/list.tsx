@@ -61,6 +61,7 @@ import {
 import { ProjectFormDialog } from "@/domains/api-key/components/ProjectFormDialog";
 import {
   rateSummary,
+  rpcErrorMessage,
   useAllApiKeyTraffic,
   useAllApiKeyUsage,
   useApiKeyDisable,
@@ -351,7 +352,7 @@ export const ApiKeysList = () => {
       setDeleteProjectTarget(null);
       void refetchGroups();
     } catch (e) {
-      setDeleteProjectError(e instanceof Error ? e.message : String(e));
+      setDeleteProjectError(rpcErrorMessage(e));
     } finally {
       setDeletingProject(false);
     }

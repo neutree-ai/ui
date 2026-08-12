@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
+  rpcErrorMessage,
   useMigrateApiKeys,
   useProjectMutations,
 } from "@/domains/api-key/hooks/use-api-key-projects";
@@ -110,7 +111,7 @@ export const MigrateApiKeysDialog = ({
       setCreateName("");
       setCreateDescription("");
     } catch (e) {
-      setCreateError(e instanceof Error ? e.message : String(e));
+      setCreateError(rpcErrorMessage(e));
     }
   };
 
@@ -133,7 +134,7 @@ export const MigrateApiKeysDialog = ({
       onMigrated?.(targetIdToExpand);
     } catch (e) {
       // Keep the dialog + selection + target open so the user can retry.
-      setError(e instanceof Error ? e.message : String(e));
+      setError(rpcErrorMessage(e));
     } finally {
       setSubmitting(false);
     }

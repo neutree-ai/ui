@@ -20,7 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useProjectMutations } from "@/domains/api-key/hooks/use-api-key-projects";
+import {
+  rpcErrorMessage,
+  useProjectMutations,
+} from "@/domains/api-key/hooks/use-api-key-projects";
 import type { Project } from "@/domains/api-key/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -95,7 +98,7 @@ export const ProjectFormDialog = ({
       onSaved?.(saved);
       onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(rpcErrorMessage(e));
     } finally {
       setSaving(false);
     }

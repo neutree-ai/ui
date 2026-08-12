@@ -11,6 +11,18 @@ import type { ApiKey, Project, ProjectGroup } from "@/domains/api-key/types";
  * query — never one request per Project.
  */
 
+// Refine's data provider rejects with an HttpError ({ message, statusCode });
+// render its message (e.g. the RPC's RAISE EXCEPTION text) instead of the raw
+// object when it leaks to a UI catch block.
+export const rpcErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  const candidate = error as { message?: unknown };
+  if (typeof candidate.message === "string" && candidate.message.length > 0) {
+    return candidate.message;
+  }
+  return String(error);
+};
+
 const num = (v: unknown): number | undefined => {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
@@ -58,6 +70,7 @@ export function useProjectGroups(
         url: "/rpc/group_projects",
         method: "post",
         values: { p_workspace: workspace },
+        errorNotification: false,
       });
       const rows = (res.data as GroupProjectsRow[] | null) ?? [];
       setData(
@@ -127,6 +140,7 @@ export function useProjectMutations(): ProjectMutations {
           p_name: input.name.trim(),
           p_description: input.description?.trim() || null,
         },
+        errorNotification: false,
       });
       refresh();
       return res.data as Project;
@@ -151,6 +165,7 @@ export function useProjectMutations(): ProjectMutations {
         url: "/rpc/update_project",
         method: "post",
         values,
+        errorNotification: false,
       });
       refresh();
       return res.data as Project;
@@ -164,6 +179,7 @@ export function useProjectMutations(): ProjectMutations {
         url: "/rpc/delete_project",
         method: "post",
         values: { p_project_id: projectId },
+        errorNotification: false,
       });
       refresh();
     },
@@ -188,6 +204,7 @@ export function useMigrateApiKeys() {
           p_api_key_ids: apiKeyIds,
           p_project_id: projectId,
         },
+        errorNotification: false,
       });
       void invalidate({ resource: "api_keys", invalidates: ["list"] });
       void invalidate({ resource: "projects", invalidates: ["list"] });
