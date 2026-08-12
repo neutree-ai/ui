@@ -1,7 +1,8 @@
-import { useInvalidate, useList, useNavigation } from "@refinedev/core";
+import { useGo, useInvalidate, useList, useNavigation } from "@refinedev/core";
 import {
   ChevronDown,
   ChevronRight,
+  Eye,
   FolderKanban,
   KeyRound,
   Loader,
@@ -126,11 +127,6 @@ export const ApiKeysList = () => {
     meta: { workspace, workspaced: true },
     queryOptions: { enabled: Boolean(workspace) },
   });
-  const { data: allProjectsData } = useList<Project>({
-    resource: "projects",
-    pagination: { mode: "off" },
-    queryOptions: { enabled: Boolean(workspace) },
-  });
   const {
     data: groupedProjects,
     loading: groupsLoading,
@@ -149,19 +145,9 @@ export const ApiKeysList = () => {
     [keysData],
   );
 
-  // Projects with aggregates: from the batched RPC when scoped; computed
-  // client-side (counts only) in the all-workspaces view.
-  const projects: ProjectGroup[] = useMemo(() => {
-    if (scopedWorkspace) return groupedProjects;
-    const counts = new Map<string, number>();
-    for (const k of allKeys) {
-      counts.set(String(k.project_id), (counts.get(String(k.project_id)) ?? 0) + 1);
-    }
-    return (allProjectsData?.data ?? []).map((p) => ({
-      ...p,
-      api_key_count: counts.get(String(p.id)) ?? 0,
-    }));
-  }, [scopedWorkspace, groupedProjects, allProjectsData, allKeys]);
+  // Projects with aggregates (API key count + current-cycle usage) come from
+  // the single batched api.group_projects RPC, scoped or all-workspaces.
+  const projects: ProjectGroup[] = groupedProjects;
 
   const projectById = useMemo(
     () => new Map(projects.map((p) => [String(p.id), p])),
@@ -322,12 +308,23 @@ export const ApiKeysList = () => {
     [allKeys, selected],
   );
 
+  const [migrateWorkspace, setMigrateWorkspace] = useState<string>("");
+
   const openMigrate = (keys: ApiKey[]) => {
     if (keys.length === 0) return;
-    if (!scopedWorkspace) {
+    // Migration stays inside one Workspace (spec: no cross-workspace move);
+    // derive it from the selected keys so the all-workspaces view can migrate
+    // without first switching Workspace.
+    const ws = keys[0]?.metadata?.workspace;
+    if (!ws) {
       toast.error(t("projects.migrateRequiresWorkspace"));
       return;
     }
+    if (keys.some((k) => k.metadata?.workspace !== ws)) {
+      toast.error(t("projects.migrateMixedWorkspaces"));
+      return;
+    }
+    setMigrateWorkspace(ws);
     setMigrateDialog({
       open: true,
       keys: keys.map((k) => ({
@@ -502,11 +499,11 @@ export const ApiKeysList = () => {
                       <span className="truncate font-medium">{project.name}</span>
                       {project.description && (
                         <span
-                          className="hidden min-w-0 max-w-64 truncate text-xs text-muted-foreground sm:block"
-                          title={project.description}
-                        >
-                          {project.description}
-                        </span>
+                        className="min-w-0 max-w-64 truncate text-xs text-muted-foreground"
+                        title={project.description}
+                      >
+                        {project.description}
+                      </span>
                       )}
                     </div>
                     <Badge variant="outline" className="shrink-0 font-normal">
@@ -540,6 +537,18 @@ export const ApiKeysList = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            go({
+                              to: `/${project.workspace}/api-keys`,
+                              type: "push",
+                            });
+                          }}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t("projects.viewProject")}
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(event) => {
                             event.stopPropagation();
@@ -827,16 +836,16 @@ export const ApiKeysList = () => {
                                       }
                                       onClick={() => void toggleKeyDisabled(key)}
                                     />
-                                    <RowAction
-                                      title={t("projects.migrate")}
-                                      icon={<FolderKanban size={16} />}
-                                      onClick={() => openMigrate([key])}
-                                    />
                                     <Table.DeleteAction
                                       title={t("buttons.delete")}
                                       row={key}
                                       resource="api_keys"
                                       icon={<Trash2 size={16} />}
+                                    />
+                                    <RowAction
+                                      title={t("projects.migrate")}
+                                      icon={<FolderKanban size={16} />}
+                                      onClick={() => openMigrate([key])}
                                     />
                                   </Table.Actions>
                                 </td>
@@ -911,8 +920,8 @@ export const ApiKeysList = () => {
         <MigrateApiKeysDialog
           open={migrateDialog.open}
           onOpenChange={(open) => setMigrateDialog((m) => ({ ...m, open }))}
-          workspace={scopedWorkspace ?? ""}
-          projects={projects}
+          workspace={migrateWorkspace}
+          projects={projects.filter((p) => p.workspace === migrateWorkspace)}
           keys={migrateDialog.keys}
           onMigrated={handleMigrated}
         />

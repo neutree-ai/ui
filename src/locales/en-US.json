@@ -1583,6 +1583,8 @@
 		"deleteFailed": "Delete failed",
 		"deleted": "Project deleted",
 		"migrateRequiresWorkspace": "Select a workspace to migrate API keys.",
+		"migrateMixedWorkspaces": "Selected API keys span multiple workspaces; migrate them one workspace at a time.",
+		"viewProject": "View",
 		"selectPlaceholder": "Select Project",
 		"searchProject": "Search Project",
 		"noProjectsFound": "No projects found",

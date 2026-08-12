@@ -30,6 +30,7 @@ const num = (v: unknown): number | undefined => {
 
 type GroupProjectsRow = {
   id: string;
+  workspace: string;
   name: string;
   description: string | null;
   status: "enabled" | "disabled";
@@ -46,9 +47,9 @@ type ProjectGroupState = {
   refetch: () => Promise<void>;
 };
 
-// Batched Project rows (count + current-cycle usage) for one workspace via
-// api.group_projects. Returns an empty, loading=false state for the
-// all-workspaces sentinel (the caller aggregates client-side instead).
+// Batched Project rows (count + current-cycle usage) via api.group_projects.
+// A specific workspace narrows the query; undefined (all-workspaces view)
+// returns every readable Project in the same single call.
 export function useProjectGroups(
   workspace: string | undefined,
 ): ProjectGroupState {
@@ -58,25 +59,22 @@ export function useProjectGroups(
   const [error, setError] = useState<Error | null>(null);
 
   const refetch = useCallback(async () => {
-    if (!workspace) {
-      setData([]);
-      setError(null);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
       const res = await mutateAsync({
         url: "/rpc/group_projects",
         method: "post",
-        values: { p_workspace: workspace },
+        // undefined workspace (all-workspaces view) -> every Project the user
+        // can read, still in one batched call.
+        values: { p_workspace: workspace ?? null },
         errorNotification: false,
       });
       const rows = (res.data as GroupProjectsRow[] | null) ?? [];
       setData(
         rows.map((r) => ({
           id: r.id,
-          workspace,
+          workspace: r.workspace,
           name: r.name,
           description: r.description,
           status: r.status,
