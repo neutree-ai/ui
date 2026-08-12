@@ -1584,7 +1584,6 @@
 		"deleted": "Project deleted",
 		"migrateRequiresWorkspace": "Select a workspace to migrate API keys.",
 		"migrateMixedWorkspaces": "Selected API keys span multiple workspaces; migrate them one workspace at a time.",
-		"viewProject": "View",
 		"selectPlaceholder": "Select Project",
 		"searchProject": "Search Project",
 		"noProjectsFound": "No projects found",
@@ -1593,6 +1592,8 @@
 		"next": "Next",
 		"project": "Project",
 		"migrate": "Migrate to Project",
-		"createKey": "Create API Key"
+		"createKey": "Create API Key",
+		"backToList": "Back to Project list",
+		"currentDisabledHint": "This Project is disabled. API keys can only be moved to an enabled Project."
 	}
 }

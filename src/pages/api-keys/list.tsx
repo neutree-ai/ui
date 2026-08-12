@@ -1,8 +1,7 @@
-import { useGo, useInvalidate, useList, useNavigation } from "@refinedev/core";
+import { useInvalidate, useList, useNavigation } from "@refinedev/core";
 import {
   ChevronDown,
   ChevronRight,
-  Eye,
   FolderKanban,
   KeyRound,
   Loader,
@@ -110,7 +109,6 @@ const isKeyDisabled = (key: ApiKey): boolean =>
 export const ApiKeysList = () => {
   const { t } = useTranslation();
   const { show } = useNavigation();
-  const go = useGo();
   const invalidate = useInvalidate();
   const refresh = useCallback(
     () => invalidate({ resource: "api_keys", invalidates: ["list"] }),
@@ -538,18 +536,6 @@ export const ApiKeysList = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            go({
-                              to: `/${project.workspace}/api-keys`,
-                              type: "push",
-                            });
-                          }}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          {t("projects.viewProject")}
-                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(event) => {
                             event.stopPropagation();
