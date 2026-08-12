@@ -538,6 +538,20 @@ const templateModeVirtualizedKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
+// Empty supported-resources list with a present capability block: backend
+// slices.Contains never matches, so every virtualization key is rejected.
+const emptyResourcesVirtualizedKubernetesClusterWithDevices = {
+  ...virtualizedKubernetesClusterWithDevices,
+  metadata: metadata("empty-resources-k8s-devices"),
+  status: {
+    ...virtualizedKubernetesClusterWithDevices.status,
+    accelerator_virtualization: {
+      mode: "template",
+      supported_resources: [],
+    },
+  },
+} satisfies EndpointClusterRef;
+
 const virtualizedKubernetesClusterWithoutDeviceDetails = {
   metadata: metadata("virtualized-k8s-no-device-details"),
   spec: {
@@ -4108,6 +4122,49 @@ describe("useEndpointForm", () => {
         expect(
           formInstance?.getValues("spec.resources.accelerator.virtualization"),
         ).toEqual({ memory_mib: 8192 });
+      });
+    });
+
+    it("disables and clears both split inputs when the cluster reports an empty supported-resources list", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [emptyResourcesVirtualizedKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "empty-resources-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(true);
+      expect(memoryInput.disabled).toBe(true);
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toBeUndefined();
       });
     });
   });

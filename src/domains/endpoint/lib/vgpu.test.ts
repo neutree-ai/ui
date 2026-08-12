@@ -175,7 +175,7 @@ describe("endpoint vgpu helpers", () => {
     );
   });
 
-  it("treats a missing supported-resources list as supporting every resource", () => {
+  it("treats a missing virtualization capability block as supporting every resource", () => {
     expect(
       isVgpuVirtualizationResourceSupported(
         undefined,
@@ -186,12 +186,6 @@ describe("endpoint vgpu helpers", () => {
       isVgpuVirtualizationResourceSupported(
         null,
         VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
-      ),
-    ).toBe(true);
-    expect(
-      isVgpuVirtualizationResourceSupported(
-        [],
-        VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
       ),
     ).toBe(true);
   });
@@ -218,6 +212,21 @@ describe("endpoint vgpu helpers", () => {
     expect(
       isVgpuVirtualizationResourceSupported(
         [VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY],
+        VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+      ),
+    ).toBe(false);
+  });
+
+  it("reports resources as unsupported when the capability block has an empty list", () => {
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        [],
+        VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
+      ),
+    ).toBe(false);
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        [],
         VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
       ),
     ).toBe(false);

@@ -21,15 +21,18 @@ export const VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY =
 
 /**
  * Whether a virtualization resource is legal under the cluster's effective
- * accelerator virtualization mode. An empty/missing supported-resources list
- * (stale cluster status) falls back to supporting everything, mirroring the
- * backend's shape-only validation fallback.
+ * accelerator virtualization mode. Mirrors the backend
+ * validateEndpointVGPUResourcesSupported:
+ * - null/undefined capability block (stale cluster) falls back to shape-only
+ *   validation, so every resource is treated as supported;
+ * - a present block is authoritative: a resource is supported only when it
+ *   appears in supported_resources, so an empty list supports nothing.
  */
 export function isVgpuVirtualizationResourceSupported(
   supportedResources: string[] | null | undefined,
   resourceKey: string,
 ): boolean {
-  if (!supportedResources || supportedResources.length === 0) {
+  if (supportedResources === null || supportedResources === undefined) {
     return true;
   }
   return supportedResources.includes(resourceKey);
