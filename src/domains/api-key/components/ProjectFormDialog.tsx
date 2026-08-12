@@ -22,7 +22,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectMutations } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { Project } from "@/domains/api-key/types";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type ProjectFormDialogProps = {
@@ -120,16 +119,22 @@ export const ProjectFormDialog = ({
           {!editing && (
             <div className="space-y-2">
               <Label>{t("common.fields.workspace")}</Label>
-              <FormCombobox
-                placeholder={t("api_keys.placeholders.selectWorkspace")}
-                disabled={Boolean(workspace) || workspaces.query.isLoading}
+              <Select
                 value={workspaceValue}
-                onChange={(value) => setWorkspaceValue(String(value))}
-                options={(workspaces.query.data?.data ?? []).map((e) => ({
-                  label: e.metadata.name,
-                  value: e.metadata.name,
-                }))}
-              />
+                disabled={Boolean(workspace) || workspaces.query.isLoading}
+                onValueChange={setWorkspaceValue}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t("api_keys.placeholders.selectWorkspace")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(workspaces.query.data?.data ?? []).map((e) => (
+                    <SelectItem key={e.metadata.name} value={e.metadata.name}>
+                      {e.metadata.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 

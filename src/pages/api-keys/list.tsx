@@ -16,7 +16,6 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDebounce } from "react-use";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -61,6 +60,7 @@ import {
 } from "@/domains/api-key/components/MigrateApiKeysDialog";
 import { ProjectFormDialog } from "@/domains/api-key/components/ProjectFormDialog";
 import {
+  rateSummary,
   useAllApiKeyTraffic,
   useAllApiKeyUsage,
   useApiKeyDisable,
@@ -192,7 +192,11 @@ export const ApiKeysList = () => {
 
   // ---- search / filter (client-side; keys are already fully loaded) ----
   const [searchRaw, setSearchRaw] = useState("");
-  const [search] = useDebounce(searchRaw, 300);
+  const [search, setSearch] = useState(searchRaw);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchRaw), 300);
+    return () => clearTimeout(timer);
+  }, [searchRaw]);
   const [statusFilter, setStatusFilter] = useState<"all" | "enabled" | "disabled">("all");
 
   const filtering = search.trim().length > 0 || statusFilter !== "all";
@@ -222,7 +226,7 @@ export const ApiKeysList = () => {
         return (
           k.metadata.name.toLowerCase().includes(q) ||
           (k.description ?? "").toLowerCase().includes(q) ||
-          k.metadata.workspace.toLowerCase().includes(q)
+          (k.metadata.workspace ?? "").toLowerCase().includes(q)
         );
       });
       return keys.length > 0 ? [{ ...g, keys }] : [];
@@ -675,7 +679,7 @@ export const ApiKeysList = () => {
                                     </div>
                                   )}
                                 </td>
-                                <td className="max-w-40 truncate px-3 py-2 text-xs text-muted-foreground" title={key.metadata.workspace}>
+                                <td className="max-w-40 truncate px-3 py-2 text-xs text-muted-foreground" title={key.metadata.workspace ?? undefined}>
                                   {key.metadata.workspace}
                                 </td>
                                 <td className="px-3 py-2">
