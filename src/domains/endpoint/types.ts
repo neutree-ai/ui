@@ -73,6 +73,15 @@ export type EndpointClusterRef = {
     ready_nodes?: number;
     desired_nodes?: number;
     resource_info?: ClusterResourceInfo | null;
+    /**
+     * Effective accelerator virtualization mode and the resource keys legal
+     * under it (e.g. ["virtualization.memory_mib", "virtualization.core_percent"]).
+     * Mirrors the backend AcceleratorVirtualizationStatus contract.
+     */
+    accelerator_virtualization?: {
+      mode?: string;
+      supported_resources?: string[];
+    } | null;
   } | null;
 };
 

@@ -38,7 +38,10 @@ import {
   formatVgpuMemoryGiBInputValue,
   getEffectiveVgpuMemoryMiB,
   getRoundedVgpuMemoryGiBValue,
+  isVgpuVirtualizationResourceSupported,
   normalizeVgpuMemoryGiBInput,
+  VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+  VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "@/domains/endpoint/lib/vgpu";
 import type {
   Endpoint,
@@ -332,6 +335,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     isSelectedClusterVgpuEnabled &&
       selectedAccelerator?.type &&
       selectedAccelerator?.product,
+  );
+  // The cluster's accelerator virtualization mode reports which shaping
+  // resources are legal (backend AcceleratorVirtualizationStatus). Inputs for
+  // resources outside the supported set are disabled so the form cannot build
+  // a spec the backend would reject (e.g. core_percent under mode template).
+  const supportedVirtualizationResources =
+    selectedCluster?.status?.accelerator_virtualization?.supported_resources;
+  const isVgpuMemoryResourceSupported = isVgpuVirtualizationResourceSupported(
+    supportedVirtualizationResources,
+    VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
+  );
+  const isVgpuCoreResourceSupported = isVgpuVirtualizationResourceSupported(
+    supportedVirtualizationResources,
+    VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
   );
   const selectedClusterNodeCount = useMemo(() => {
     const nodeResources =
@@ -1959,7 +1976,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             min={0}
                             max={vgpuMemoryGiBMaxValue ?? undefined}
                             step={0.5}
-                            disabled={!showVgpuFields}
+                            disabled={
+                              !showVgpuFields || !isVgpuMemoryResourceSupported
+                            }
                             placeholder="GiB"
                             className="h-9"
                           />
@@ -1988,7 +2007,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             min={0}
                             max={100}
                             step={1}
-                            disabled={!showVgpuFields}
+                            disabled={
+                              !showVgpuFields || !isVgpuCoreResourceSupported
+                            }
                             placeholder={
                               showVgpuFields
                                 ? "0"

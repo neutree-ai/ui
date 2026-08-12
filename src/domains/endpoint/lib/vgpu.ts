@@ -10,6 +10,31 @@ type VgpuAccelerator = NonNullable<ResourceSpec["accelerator"]> &
 
 const MIB_PER_GIB = 1024;
 
+// Resource keys a cluster's accelerator virtualization mode may support,
+// matching the backend AcceleratorVirtualizationResourceKey constants.
+// The cluster status lists the legal subset in
+// status.accelerator_virtualization.supported_resources.
+export const VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY =
+  "virtualization.memory_mib";
+export const VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY =
+  "virtualization.core_percent";
+
+/**
+ * Whether a virtualization resource is legal under the cluster's effective
+ * accelerator virtualization mode. An empty/missing supported-resources list
+ * (stale cluster status) falls back to supporting everything, mirroring the
+ * backend's shape-only validation fallback.
+ */
+export function isVgpuVirtualizationResourceSupported(
+  supportedResources: string[] | null | undefined,
+  resourceKey: string,
+): boolean {
+  if (!supportedResources || supportedResources.length === 0) {
+    return true;
+  }
+  return supportedResources.includes(resourceKey);
+}
+
 const toOptionalNumber = (value: unknown): number | undefined => {
   if (value === null || value === undefined || value === "") return undefined;
   const numberValue = Number(value);

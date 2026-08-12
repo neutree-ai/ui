@@ -524,6 +524,20 @@ const virtualizedKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
+// Template virtualization mode (e.g. Ascend) only supports memory_mib
+// shaping; core_percent is rejected by backend admission (NEU-645).
+const templateModeVirtualizedKubernetesClusterWithDevices = {
+  ...virtualizedKubernetesClusterWithDevices,
+  metadata: metadata("template-mode-k8s-devices"),
+  status: {
+    ...virtualizedKubernetesClusterWithDevices.status,
+    accelerator_virtualization: {
+      mode: "template",
+      supported_resources: ["virtualization.memory_mib"],
+    },
+  },
+} satisfies EndpointClusterRef;
+
 const virtualizedKubernetesClusterWithoutDeviceDetails = {
   metadata: metadata("virtualized-k8s-no-device-details"),
   spec: {
@@ -3900,6 +3914,120 @@ describe("useEndpointForm", () => {
           "spec.resources.accelerator.virtualization.core_percent",
         ),
       ).toBe(50);
+    });
+
+    it("disables the core limit input when the cluster mode does not support core virtualization", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [templateModeVirtualizedKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "template-mode-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(true);
+      expect(memoryInput.disabled).toBe(false);
+    });
+
+    it("keeps both split inputs enabled when the cluster mode supports core virtualization", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(false);
+      expect(memoryInput.disabled).toBe(false);
+    });
+
+    it("keeps both split inputs enabled when the cluster reports no virtualization mode", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithoutDeviceDetails],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue(
+          "spec.cluster",
+          "virtualized-k8s-no-device-details",
+        );
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(false);
+      expect(memoryInput.disabled).toBe(false);
     });
   });
 
