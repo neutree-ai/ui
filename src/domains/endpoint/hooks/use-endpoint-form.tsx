@@ -693,6 +693,53 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedVirtualization,
   ]);
 
+  // Clear virtualization values the cluster's effective mode no longer
+  // supports (backend AcceleratorVirtualizationStatus.supported_resources).
+  // Disabling the input alone would still submit a stale value that backend
+  // admission rejects (e.g. core_percent under mode template) and would keep
+  // the stale value driving the capacity math.
+  useEffect(() => {
+    if (!hasResolvedClusterSelection || !selectedVirtualization) return;
+
+    const next = { ...selectedVirtualization };
+    let changed = false;
+
+    if (!isVgpuCoreResourceSupported) {
+      const corePercent = (selectedVirtualization as Record<string, unknown>)
+        .core_percent;
+      if (
+        corePercent !== undefined &&
+        corePercent !== null &&
+        corePercent !== ""
+      ) {
+        delete next.core_percent;
+        changed = true;
+      }
+    }
+    if (!isVgpuMemoryResourceSupported) {
+      const memoryMiB = (selectedVirtualization as Record<string, unknown>)
+        .memory_mib;
+      if (memoryMiB !== undefined && memoryMiB !== null && memoryMiB !== "") {
+        delete next.memory_mib;
+        changed = true;
+      }
+    }
+
+    if (!changed) return;
+
+    form.setValue(
+      "spec.resources.accelerator.virtualization",
+      Object.keys(next).length > 0 ? next : undefined,
+      { shouldDirty: true, shouldValidate: true },
+    );
+  }, [
+    form,
+    hasResolvedClusterSelection,
+    isVgpuCoreResourceSupported,
+    isVgpuMemoryResourceSupported,
+    selectedVirtualization,
+  ]);
+
   useEffect(() => {
     const currentMemoryMiB = Number(selectedVirtualization?.memory_mib);
     if (
@@ -2011,7 +2058,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               !showVgpuFields || !isVgpuCoreResourceSupported
                             }
                             placeholder={
-                              showVgpuFields
+                              showVgpuFields && isVgpuCoreResourceSupported
                                 ? "0"
                                 : t("common.options.disabled")
                             }

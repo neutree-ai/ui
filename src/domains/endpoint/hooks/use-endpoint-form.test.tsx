@@ -4029,6 +4029,87 @@ describe("useEndpointForm", () => {
       expect(coreInput.disabled).toBe(false);
       expect(memoryInput.disabled).toBe(false);
     });
+
+    it("clears the core limit value when the cluster mode stops supporting it", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [
+          virtualizedKubernetesClusterWithDevices,
+          templateModeVirtualizedKubernetesClusterWithDevices,
+        ],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      // On the core-supporting cluster both split values are present.
+      expect(
+        formInstance?.getValues("spec.resources.accelerator.virtualization"),
+      ).toEqual({ memory_mib: 8192, core_percent: 50 });
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "template-mode-k8s-devices");
+      });
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toEqual({ memory_mib: 8192 });
+      });
+    });
+
+    it("clears an unsupported core limit on load in edit mode", async () => {
+      queryDataRef.current = {
+        spec: {
+          cluster: "template-mode-k8s-devices",
+          resources: {
+            cpu: "2",
+            memory: "8Gi",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "8192",
+              "virtualization.core_percent": "50",
+            },
+          },
+        },
+      };
+      setupMocks(
+        [catalogA, catalogB],
+        [templateModeVirtualizedKubernetesClusterWithDevices],
+      );
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "template-mode-k8s-devices");
+      });
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toEqual({ memory_mib: 8192 });
+      });
+    });
   });
 
   describe("submit transform", () => {
