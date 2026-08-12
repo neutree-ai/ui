@@ -33,15 +33,26 @@ type FormValues = {
   project_id: string;
 } & ApiKeyPolicyFormValues;
 
-export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
+type CreateApiKeyFormProps = {
+  onClose?: () => void;
+  /** Preselect a workspace (and lock the field) when creating from a Project row. */
+  initialWorkspace?: string;
+  initialProjectId?: string;
+};
+
+export const CreateApiKeyForm = ({
+  onClose,
+  initialWorkspace,
+  initialProjectId,
+}: CreateApiKeyFormProps) => {
   const { t } = useTranslation();
   const form = useForm<FormValues>({
     mode: "all",
     defaultValues: {
       name: "",
       description: "",
-      workspace: "",
-      project_id: "",
+      workspace: initialWorkspace ?? "",
+      project_id: initialProjectId ?? "",
       ...apiKeyPolicyDefaults(),
     },
   });
@@ -95,6 +106,10 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     });
     invalidate({
       resource: "api_keys",
+      invalidates: ["list"],
+    });
+    invalidate({
+      resource: "projects",
       invalidates: ["list"],
     });
     setApiKey(data as ApiKey);
@@ -196,7 +211,7 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         >
           <FormCombobox
             placeholder={t("api_keys.placeholders.selectWorkspace")}
-            disabled={workspaces.query.isLoading}
+            disabled={Boolean(initialWorkspace) || workspaces.query.isLoading}
             options={(workspaces.query.data?.data || []).map((e) => ({
               label: e.metadata.name,
               value: e.metadata.name,

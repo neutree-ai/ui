@@ -36,7 +36,8 @@
 			"allReplicas": "All Replicas",
 			"version": "Version",
 			"reason": "Reason",
-			"message": "Message"
+			"message": "Message",
+			"description": "Description"
 		},
 		"sections": {
 			"basicInformation": "Basic Information"
@@ -68,7 +69,8 @@
 			"to": "To"
 		},
 		"validation": {
-			"workspaceRequired": "Please select a workspace before creating the resource"
+			"workspaceRequired": "Please select a workspace before creating the resource",
+			"required": "This field is required"
 		}
 	},
 	"appearance": {
@@ -1546,5 +1548,43 @@
 			"line": "Line chart",
 			"bar": "Bar chart"
 		}
+	},
+	"projects": {
+		"createTitle": "Create Project",
+		"createDescription": "Projects group API keys so each key carries clear business context.",
+		"createButton": "Create",
+		"createAndSelect": "Create and select",
+		"editTitle": "Edit Project",
+		"editDescription": "Update the Project name, description or status.",
+		"defaultLockHint": "The Default Project cannot be renamed or disabled.",
+		"statusEnabled": "Enabled",
+		"statusDisabled": "Disabled",
+		"migrateTitle": "Migrate API Keys",
+		"migrateDescription": "Move {{count}} selected API key(s) to another Project.",
+		"selectedKeys": "Selected API keys ({{count}})",
+		"targetProject": "Target Project",
+		"selectTargetPlaceholder": "Select Project",
+		"migrateButton": "Migrate",
+		"migrateSuccess": "Migrated {{count}} API key(s) to {{project}}",
+		"allAlreadyInTarget": "The selected API keys already belong to this Project.",
+		"searchPlaceholder": "Search Project / API key / description / workspace",
+		"filterAll": "All statuses",
+		"filterEnabled": "Enabled",
+		"filterDisabled": "Disabled",
+		"projectStatus": "Project status",
+		"keys": "{{count}} key(s)",
+		"usageColumn": "Usage",
+		"noProjects": "No Projects yet. Create one to start grouping API keys.",
+		"noKeys": "No API keys in this Project.",
+		"noResults": "No results match your search or filter.",
+		"deleteTitle": "Delete Project",
+		"deleteDescription": "Deleting a Project cannot be undone. API keys inside it must be migrated or deleted first.",
+		"deleteConfirm": "Delete",
+		"deleteFailed": "Delete failed",
+		"deleted": "Project deleted",
+		"migrateRequiresWorkspace": "Select a workspace to migrate API keys.",
+		"project": "Project",
+		"migrate": "Migrate to Project",
+		"createKey": "Create API Key"
 	}
 }

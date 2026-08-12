@@ -36,6 +36,15 @@ export type Project = {
   is_default?: boolean;
 };
 
+// Project row enriched by the batched api.group_projects RPC (or computed
+// client-side in the all-workspaces view): API key count and the sum of each
+// key's current-cycle usage/limit.
+export type ProjectGroup = Project & {
+  api_key_count?: number;
+  usage_used?: number;
+  usage_limit?: number;
+};
+
 export type ApiKeySpec = {
   quota: number;
   // Quota + access limits for the key. Optional: keys with no limits have none.
