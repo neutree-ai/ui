@@ -892,7 +892,8 @@
 			"cpuResourcesInsufficient": "Requested CPU exceeds the currently available capacity for this cluster.",
 			"memoryResourcesInsufficient": "Requested memory exceeds the currently available capacity for this cluster.",
 			"noRunningVgpuPods": "No running virtual accelerator pods",
-			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared"
+			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared",
+			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting"
 		},
 		"tabs": {
 			"playground": "Playground"

@@ -3965,6 +3965,12 @@ describe("useEndpointForm", () => {
 
       expect(coreInput.disabled).toBe(true);
       expect(memoryInput.disabled).toBe(false);
+      expect(
+        screen.getByText("endpoints.messages.vgpuCoreLimitUnsupportedMode"),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText("endpoints.messages.vgpuCoreLimitUnlimitedHint"),
+      ).toBeNull();
     });
 
     it("keeps both split inputs enabled when the cluster mode supports core virtualization", async () => {
@@ -4002,6 +4008,12 @@ describe("useEndpointForm", () => {
 
       expect(coreInput.disabled).toBe(false);
       expect(memoryInput.disabled).toBe(false);
+      expect(
+        screen.getByText("endpoints.messages.vgpuCoreLimitUnlimitedHint"),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText("endpoints.messages.vgpuCoreLimitUnsupportedMode"),
+      ).toBeNull();
     });
 
     it("keeps both split inputs enabled when the cluster reports no virtualization mode", async () => {

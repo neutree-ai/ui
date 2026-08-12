@@ -2036,7 +2036,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           name="spec.resources.accelerator.virtualization.core_percent"
                           label={t("endpoints.fields.vgpuCoreLimit")}
                           description={t(
-                            "endpoints.messages.vgpuCoreLimitUnlimitedHint",
+                            isVgpuCoreResourceSupported
+                              ? "endpoints.messages.vgpuCoreLimitUnlimitedHint"
+                              : "endpoints.messages.vgpuCoreLimitUnsupportedMode",
                           )}
                           className="col-span-1"
                         >
