@@ -110,6 +110,7 @@ const isKeyDisabled = (key: ApiKey): boolean =>
 export const ApiKeysList = () => {
   const { t } = useTranslation();
   const { show } = useNavigation();
+  const go = useGo();
   const invalidate = useInvalidate();
   const refresh = useCallback(
     () => invalidate({ resource: "api_keys", invalidates: ["list"] }),
