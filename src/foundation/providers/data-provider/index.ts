@@ -5,8 +5,8 @@ import { cleanInternalFields } from "./utils/clean-internal-fields";
 import { generateFilter } from "./utils/generate-filter";
 import { handleError } from "./utils/handle-error";
 
-const workspaceField = (meta?: Record<string, any>) =>
-  meta?.workspaceField ?? "metadata->workspace";
+const workspaceField = (meta?: Record<string, any>): string =>
+  String(meta?.workspaceField ?? "metadata->workspace");
 
 export const dataProvider = (
   postgrestClient: PostgrestClient<any, any, any>,
