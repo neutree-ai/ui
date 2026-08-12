@@ -592,6 +592,7 @@ export const ApiKeysList = () => {
                               className="text-destructive focus:text-destructive"
                               onClick={(event) => {
                                 event.stopPropagation();
+                                setDeleteProjectError(null);
                                 setDeleteProjectTarget(project);
                               }}
                             >
@@ -920,7 +921,10 @@ export const ApiKeysList = () => {
         <AlertDialog
           open={Boolean(deleteProjectTarget)}
           onOpenChange={(open) => {
-            if (!open) setDeleteProjectTarget(null);
+            if (!open) {
+              setDeleteProjectTarget(null);
+              setDeleteProjectError(null);
+            }
           }}
         >
           <AlertDialogContent>
