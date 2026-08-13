@@ -853,7 +853,11 @@
 			"mib": "MiB",
 			"gib": "GiB",
 			"percent": "%",
-			"shared": "Shared"
+			"shared": "Shared",
+			"virtualizationModes": {
+				"template": "template",
+				"core": "core"
+			}
 		},
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
@@ -893,7 +897,8 @@
 			"memoryResourcesInsufficient": "Requested memory exceeds the currently available capacity for this cluster.",
 			"noRunningVgpuPods": "No running virtual accelerator pods",
 			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared",
-			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting"
+			"vgpuCoreLimitUnsupportedMode": "The {{mode}} virtualization mode does not support compute splitting",
+			"vgpuCoreLimitUnsupportedModeGeneric": "The cluster virtualization mode does not support compute splitting"
 		},
 		"tabs": {
 			"playground": "Playground"
