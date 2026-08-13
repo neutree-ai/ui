@@ -366,7 +366,7 @@ export function useWorkspaceModels(
 }
 
 // One API key's aggregated 24h traffic, derived from inference traces.
-type ApiKeyTraffic = {
+export type ApiKeyTraffic = {
   requests: number;
   tokens: number;
   success: number;
