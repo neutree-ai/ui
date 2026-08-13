@@ -78,17 +78,19 @@ export const ApiKeysList = () => {
   });
   const grouped = groupsQuery.data.map((group) => ({ project: group.project, all: group.api_keys, shown: group.api_keys, visible: true, count: group.api_key_count, usage: group.current_usage }));
   const projects = grouped.map((group) => group.project);
+  const firstProjectId = projects[0]?.id;
+  const groupedProjectIds = grouped.map((group) => group.project.id).join(",");
   const pageCount = Math.max(1, Math.ceil((groupsQuery.data[0]?.total_projects ?? 0) / pageSize));
 
   useEffect(() => {
-    if (projects.length && expanded.size === 0 && !query)
-      setExpanded(new Set([projects[0].id]));
-  }, [projects.length]);
+    if (firstProjectId && expanded.size === 0 && !query)
+      setExpanded(new Set([firstProjectId]));
+  }, [firstProjectId, expanded.size, query]);
   const pageGroups = grouped;
 
   useEffect(() => {
-    if (query) setExpanded(new Set(grouped.map((g) => g.project.id)));
-  }, [query]);
+    if (query) setExpanded(new Set(groupedProjectIds.split(",").filter(Boolean)));
+  }, [query, groupedProjectIds]);
   const refresh = async () => {
     await groupsQuery.refetch();
   };
@@ -176,16 +178,18 @@ export const ApiKeysList = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <label className="block text-sm font-medium">
+            <label htmlFor="project-name" className="block text-sm font-medium">
               Name
               <Input
+                id="project-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
               />
             </label>
-            <label className="block text-sm font-medium">
+            <label htmlFor="project-description" className="block text-sm font-medium">
               Description
               <Textarea
+                id="project-description"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
               />
@@ -287,12 +291,13 @@ export const ApiKeysList = () => {
             No matching Projects or API keys
           </div>
         )}
-        {pageGroups.map(({ project, all, shown, count, usage: total }) => {
+        {pageGroups.map(({ project, shown, count, usage: total }) => {
           const isOpen = expanded.has(project.id);
           return (
             <div key={project.id} className="border-b last:border-b-0">
               <div className="grid grid-cols-[minmax(240px,2fr)_100px_120px_140px_48px] items-center gap-4 px-4 py-3">
                 <button
+                  type="button"
                   className="flex min-w-0 items-center gap-2 text-left"
                   onClick={() =>
                     setExpanded((old) => {
