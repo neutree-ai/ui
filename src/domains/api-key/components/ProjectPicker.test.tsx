@@ -27,8 +27,9 @@ describe("ProjectPicker", () => {
 
   it("shows disabled projects but prevents selecting them", () => {
     render(<ProjectPicker workspace="default" value="" onChange={vi.fn()} />);
-    const option = screen.getByRole("option", { name: /Disabled.*History.*Disabled/ });
-    expect((option as HTMLOptionElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("combobox"));
+    const option = screen.getByRole("option", { name: /Disabled.*History/ });
+    expect(option).toHaveAttribute("aria-disabled", "true");
   });
 
   it("creates a project inline, refreshes, and selects it", async () => {
