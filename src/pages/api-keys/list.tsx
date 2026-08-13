@@ -1,4 +1,9 @@
-import { useCustomMutation, useDelete, useNavigation } from "@refinedev/core";
+import {
+  useCustomMutation,
+  useDelete,
+  useList,
+  useNavigation,
+} from "@refinedev/core";
 import {
   ChevronDown,
   ChevronLeft,
@@ -11,7 +16,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,14 +35,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ApiKeyRankingOverview } from "@/domains/api-key/components/ApiKeyRankingOverview";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
   rateSummary,
+  useAllApiKeyTraffic,
   useApiKeyDisable,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useApiKeyProjectGroups } from "@/domains/api-key/hooks/use-api-key-project-groups";
-import type { ApiKeyProject } from "@/domains/api-key/types";
+import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import RelativeTimestamp from "@/foundation/components/RelativeTimestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
@@ -66,6 +73,27 @@ export const ApiKeysList = () => {
   const { show } = useNavigation();
   const { mutateAsync: deleteKey } = useDelete();
   const { disable, enable } = useApiKeyDisable();
+  const trafficByKey = useAllApiKeyTraffic(scoped);
+  const { data: keysData } = useList<ApiKey>({
+    resource: "api_keys",
+    pagination: { mode: "off" },
+    meta: { workspace, workspaced: true },
+    queryOptions: { enabled: Boolean(workspace) },
+  });
+  const rankingKeys = useMemo(
+    () =>
+      (keysData?.data ?? [])
+        .filter(
+          (key) =>
+            workspace === ALL_WORKSPACES ||
+            key.metadata?.workspace === workspace,
+        )
+        .map((key) => ({
+          id: String(key.id),
+          name: key.metadata?.name ?? String(key.id),
+        })),
+    [keysData, workspace],
+  );
   const [debouncedQuery, setDebouncedQuery] = useState("");
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
@@ -155,6 +183,7 @@ export const ApiKeysList = () => {
 
   return (
     <ListPage createButtonProps={{ onClick: () => createKey() }}>
+      <ApiKeyRankingOverview keys={rankingKeys} traffic={trafficByKey} />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
