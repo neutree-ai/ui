@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import type { ApiKeyProject } from "@/domains/api-key/types";
 
-export function useProjects(workspace?: string) {
+function useProjects(workspace?: string) {
   return useList<ApiKeyProject>({
     resource: "api_key_projects",
     pagination: { mode: "off" },
