@@ -6,7 +6,6 @@ import {
 } from "@refinedev/core";
 import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
@@ -303,39 +302,37 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
               {showSelector && (
-                <Card className="p-4">
-                  <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center">
-                    <SegmentedControl
-                      ariaLabel={t("common.tabs.monitor")}
-                      items={panels.map((panel) => ({
-                        value: panel,
-                        label:
-                          panel === "overview"
-                            ? t("endpoints.monitor.overviewMetrics")
-                            : panel === "latency"
-                              ? t("endpoints.monitor.latencyMetrics")
-                              : panel === "throughput"
-                                ? t("endpoints.monitor.throughputMetrics")
-                                : panel === "queue"
-                                  ? t("endpoints.monitor.queueMetrics")
-                                  : t("endpoints.monitor.cacheMetrics"),
-                      }))}
-                      onValueChange={setSelectedPanel}
-                      value={selectedPanel || undefined}
-                    />
-                    <p className="min-w-0 text-sm text-muted-foreground lg:text-right">
-                      {selectedPanel === "latency"
-                        ? t("endpoints.monitor.latencyDescription")
-                        : selectedPanel === "throughput"
-                          ? t("endpoints.monitor.throughputDescription")
-                          : selectedPanel === "queue"
-                            ? t("endpoints.monitor.queueDescription")
-                            : selectedPanel === "cache"
-                              ? t("endpoints.monitor.cacheDescription")
-                              : t("endpoints.monitor.overviewDescription")}
-                    </p>
-                  </div>
-                </Card>
+                <div className="flex justify-center border-b border-border/70 pb-2">
+                  <SegmentedControl
+                    ariaLabel={t("common.tabs.monitor")}
+                    className="shrink-0"
+                    items={panels.map((panel) => ({
+                      value: panel,
+                      description:
+                        panel === "latency"
+                          ? t("endpoints.monitor.latencyDescription")
+                          : panel === "throughput"
+                            ? t("endpoints.monitor.throughputDescription")
+                            : panel === "queue"
+                              ? t("endpoints.monitor.queueDescription")
+                              : panel === "cache"
+                                ? t("endpoints.monitor.cacheDescription")
+                                : t("endpoints.monitor.overviewDescription"),
+                      label:
+                        panel === "overview"
+                          ? t("endpoints.monitor.overviewMetrics")
+                          : panel === "latency"
+                            ? t("endpoints.monitor.latencyMetrics")
+                            : panel === "throughput"
+                              ? t("endpoints.monitor.throughputMetrics")
+                              : panel === "queue"
+                                ? t("endpoints.monitor.queueMetrics")
+                                : t("endpoints.monitor.cacheMetrics"),
+                    }))}
+                    onValueChange={setSelectedPanel}
+                    value={selectedPanel || undefined}
+                  />
+                </div>
               )}
 
               {selectedPanel ? (
