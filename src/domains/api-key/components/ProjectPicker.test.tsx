@@ -29,7 +29,7 @@ describe("ProjectPicker", () => {
     render(<ProjectPicker workspace="default" value="" onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("combobox"));
     const option = screen.getByRole("option", { name: /Disabled.*History/ });
-    expect(option).toHaveAttribute("aria-disabled", "true");
+    expect(option.getAttribute("aria-disabled")).toBe("true");
   });
 
   it("creates a project inline, refreshes, and selects it", async () => {
