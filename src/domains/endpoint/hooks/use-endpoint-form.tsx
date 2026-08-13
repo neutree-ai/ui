@@ -336,16 +336,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       selectedAccelerator?.type &&
       selectedAccelerator?.product,
   );
-  // The cluster's accelerator virtualization mode reports which shaping
-  // resources are legal (backend AcceleratorVirtualizationStatus). Inputs for
-  // resources outside the supported set are disabled so the form cannot build
-  // a spec the backend would reject (e.g. core_percent under mode template).
-  const acceleratorVirtualizationStatus =
-    selectedCluster?.status?.accelerator_virtualization;
+  // The cluster's accelerator virtualization status reports which virtualization
+  // resource keys its mode supports (backend AcceleratorVirtualizationStatus
+  // .supported_resources). Inputs for resources outside the supported set are
+  // disabled so the form cannot build a spec the backend would reject (e.g.
+  // core_percent when the list omits it). The UI gates on supported_resources
+  // only — not the mode name.
   const supportedVirtualizationResources =
-    acceleratorVirtualizationStatus?.supported_resources;
-  const selectedVirtualizationMode =
-    acceleratorVirtualizationStatus?.mode ?? "";
+    selectedCluster?.status?.accelerator_virtualization?.supported_resources;
   const isVgpuMemoryResourceSupported = isVgpuVirtualizationResourceSupported(
     supportedVirtualizationResources,
     VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
@@ -2039,28 +2037,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           {...form}
                           name="spec.resources.accelerator.virtualization.core_percent"
                           label={t("endpoints.fields.vgpuCoreLimit")}
-                          description={
+                          description={t(
                             isVgpuCoreResourceSupported
-                              ? t(
-                                  "endpoints.messages.vgpuCoreLimitUnlimitedHint",
-                                )
-                              : selectedVirtualizationMode
-                                ? t(
-                                    "endpoints.messages.vgpuCoreLimitUnsupportedMode",
-                                    {
-                                      mode: t(
-                                        `endpoints.options.virtualizationModes.${selectedVirtualizationMode}`,
-                                        {
-                                          defaultValue:
-                                            selectedVirtualizationMode,
-                                        },
-                                      ),
-                                    },
-                                  )
-                                : t(
-                                    "endpoints.messages.vgpuCoreLimitUnsupportedModeGeneric",
-                                  )
-                          }
+                              ? "endpoints.messages.vgpuCoreLimitUnlimitedHint"
+                              : "endpoints.messages.vgpuCoreLimitUnsupportedMode",
+                          )}
                           className="col-span-1"
                         >
                           <Input

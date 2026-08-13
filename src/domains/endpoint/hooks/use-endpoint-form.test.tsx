@@ -524,15 +524,14 @@ const virtualizedKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
-// Template virtualization mode only supports memory_mib shaping;
-// core_percent is rejected by backend admission (NEU-645).
-const templateModeVirtualizedKubernetesClusterWithDevices = {
+// A capability block whose supported_resources omits core_percent: backend
+// admission rejects it (NEU-645), so the UI must disable/clear it.
+const coreUnsupportedVirtualizedKubernetesClusterWithDevices = {
   ...virtualizedKubernetesClusterWithDevices,
-  metadata: metadata("template-mode-k8s-devices"),
+  metadata: metadata("core-unsupported-k8s-devices"),
   status: {
     ...virtualizedKubernetesClusterWithDevices.status,
     accelerator_virtualization: {
-      mode: "template",
       supported_resources: ["virtualization.memory_mib"],
     },
   },
@@ -546,7 +545,6 @@ const emptyResourcesVirtualizedKubernetesClusterWithDevices = {
   status: {
     ...virtualizedKubernetesClusterWithDevices.status,
     accelerator_virtualization: {
-      mode: "template",
       supported_resources: [],
     },
   },
@@ -3933,14 +3931,14 @@ describe("useEndpointForm", () => {
     it("disables the core limit input when the cluster mode does not support core virtualization", async () => {
       setupMocks(
         [catalogA, catalogB],
-        [templateModeVirtualizedKubernetesClusterWithDevices],
+        [coreUnsupportedVirtualizedKubernetesClusterWithDevices],
       );
       render(<CreateForm />);
 
       await waitFor(() => expect(formInstance).not.toBeNull());
 
       act(() => {
-        formInstance?.setValue("spec.cluster", "template-mode-k8s-devices");
+        formInstance?.setValue("spec.cluster", "core-unsupported-k8s-devices");
         formInstance?.setValue("spec.resources", {
           cpu: 2,
           memory: 8,
@@ -4061,7 +4059,7 @@ describe("useEndpointForm", () => {
         [catalogA, catalogB],
         [
           virtualizedKubernetesClusterWithDevices,
-          templateModeVirtualizedKubernetesClusterWithDevices,
+          coreUnsupportedVirtualizedKubernetesClusterWithDevices,
         ],
       );
       render(<CreateForm />);
@@ -4091,7 +4089,7 @@ describe("useEndpointForm", () => {
       ).toEqual({ memory_mib: 8192, core_percent: 50 });
 
       act(() => {
-        formInstance?.setValue("spec.cluster", "template-mode-k8s-devices");
+        formInstance?.setValue("spec.cluster", "core-unsupported-k8s-devices");
       });
 
       await waitFor(() => {
@@ -4104,7 +4102,7 @@ describe("useEndpointForm", () => {
     it("clears an unsupported core limit on load in edit mode", async () => {
       queryDataRef.current = {
         spec: {
-          cluster: "template-mode-k8s-devices",
+          cluster: "core-unsupported-k8s-devices",
           resources: {
             cpu: "2",
             memory: "8Gi",
@@ -4120,14 +4118,14 @@ describe("useEndpointForm", () => {
       };
       setupMocks(
         [catalogA, catalogB],
-        [templateModeVirtualizedKubernetesClusterWithDevices],
+        [coreUnsupportedVirtualizedKubernetesClusterWithDevices],
       );
       render(<EditForm />);
 
       await waitFor(() => expect(formInstance).not.toBeNull());
 
       act(() => {
-        formInstance?.setValue("spec.cluster", "template-mode-k8s-devices");
+        formInstance?.setValue("spec.cluster", "core-unsupported-k8s-devices");
       });
 
       await waitFor(() => {
