@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mutateAsync = vi.fn();
 const invalidate = vi.fn();
@@ -19,6 +19,14 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 import { ProjectPicker } from "./ProjectPicker";
+
+beforeAll(() => {
+  vi.stubGlobal("ResizeObserver", class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  });
+});
 
 describe("ProjectPicker", () => {
   beforeEach(() => {
