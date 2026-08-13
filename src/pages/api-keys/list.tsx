@@ -1,4 +1,4 @@
-import { useCustomMutation, useInvalidate, useList } from "@refinedev/core";
+import { useCustomMutation, useDelete, useNavigation } from "@refinedev/core";
 import {
   ChevronDown,
   ChevronLeft,
@@ -6,9 +6,12 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Power,
+  PowerOff,
   Search,
+  Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,9 +35,10 @@ import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm"
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
   rateSummary,
-  useAllApiKeyUsage,
+  useApiKeyDisable,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
+import { useApiKeyProjectGroups } from "@/domains/api-key/hooks/use-api-key-project-groups";
+import type { ApiKeyProject } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
@@ -55,90 +59,49 @@ export const ApiKeysList = () => {
   const [editing, setEditing] = useState<ApiKeyProject>();
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [deletingProject, setDeletingProject] = useState<ApiKeyProject>();
   const pageSize = 10;
-  const invalidate = useInvalidate();
   const { mutateAsync } = useCustomMutation();
-  const usage = useAllApiKeyUsage(scoped);
-  const projectsQuery = useList<ApiKeyProject>({
-    resource: "api_key_projects",
-    pagination: { mode: "off" },
-    filters: scoped
-      ? [{ field: "workspace", operator: "eq", value: scoped }]
-      : [],
+  const { show } = useNavigation();
+  const { mutateAsync: deleteKey } = useDelete();
+  const { disable, enable } = useApiKeyDisable();
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  useEffect(() => { const timer = window.setTimeout(() => setDebouncedQuery(query), 300); return () => window.clearTimeout(timer); }, [query]);
+  const groupsQuery = useApiKeyProjectGroups({
+    workspace: scoped,
+    search: debouncedQuery,
+    projectEnabled: projectStatus === "all" ? null : projectStatus === "active",
+    apiKeyDisabled: keyStatus === "all" ? null : keyStatus === "disabled",
+    page,
+    pageSize,
   });
-  const keysQuery = useList<ApiKey>({
-    resource: "api_keys",
-    pagination: { mode: "off" },
-    meta: { workspace, workspaced: true },
-  });
-  const projects = projectsQuery.data?.data ?? [];
-  const keys = keysQuery.data?.data ?? [];
+  const grouped = groupsQuery.data.map((group) => ({ project: group.project, all: group.api_keys, shown: group.api_keys, visible: true, count: group.api_key_count, usage: group.current_usage }));
+  const projects = grouped.map((group) => group.project);
+  const pageCount = Math.max(1, Math.ceil((groupsQuery.data[0]?.total_projects ?? 0) / pageSize));
 
   useEffect(() => {
     if (projects.length && expanded.size === 0 && !query)
       setExpanded(new Set([projects[0].id]));
   }, [projects.length]);
-  const grouped = useMemo(
-    () =>
-      projects
-        .filter(
-          (p) =>
-            projectStatus === "all" ||
-            p.enabled === (projectStatus === "active"),
-        )
-        .map((project) => {
-          const all = keys.filter((k) => k.project_id === project.id);
-          const q = query.trim().toLowerCase();
-          const projectMatch = !q || project.name.toLowerCase().includes(q);
-          const statusKeys = all.filter(
-            (k) =>
-              keyStatus === "all" ||
-              Boolean(k.spec.limits?.disabled) === (keyStatus === "disabled"),
-          );
-          const shown = projectMatch
-            ? statusKeys
-            : statusKeys.filter(
-                (k) =>
-                  k.metadata.name.toLowerCase().includes(q) ||
-                  k.description.toLowerCase().includes(q) ||
-                  k.metadata.workspace?.toLowerCase().includes(q),
-              );
-          return {
-            project,
-            all,
-            shown,
-            visible: projectMatch || shown.length > 0,
-          };
-        })
-        .filter((g) => g.visible),
-    [projects, keys, query, projectStatus, keyStatus],
-  );
-  const pageCount = Math.max(1, Math.ceil(grouped.length / pageSize));
-  const pageGroups = grouped.slice((page - 1) * pageSize, page * pageSize);
+  const pageGroups = grouped;
 
   useEffect(() => {
     if (query) setExpanded(new Set(grouped.map((g) => g.project.id)));
   }, [query]);
   const refresh = async () => {
-    await Promise.all([
-      invalidate({ resource: "api_key_projects", invalidates: ["list"] }),
-      invalidate({ resource: "api_keys", invalidates: ["list"] }),
-    ]);
+    await groupsQuery.refetch();
   };
   const createKey = (project?: string) => {
     setPresetProject(project);
     setOpen(true);
   };
   const migrate = async () => {
-    await mutateAsync({
-      url: "/rpc/move_api_keys_to_project",
-      method: "post",
-      values: { p_api_key_ids: [...selected], p_project_id: target },
-    });
-    setSelected(new Set());
-    setMoveOpen(false);
-    setExpanded((v) => new Set([...v, target]));
-    await refresh();
+    setActionError("");
+    try {
+      await mutateAsync({ url: "/rpc/move_api_keys_to_project", method: "post", values: { p_api_key_ids: [...selected], p_project_id: target } });
+      setSelected(new Set()); setMoveOpen(false); setExpanded((v) => new Set([...v, target])); await refresh();
+    } catch (cause) { setActionError(cause instanceof Error ? cause.message : String(cause)); }
   };
   const startEdit = (project: ApiKeyProject) => {
     setEditing(project);
@@ -147,7 +110,8 @@ export const ApiKeysList = () => {
   };
   const saveProject = async () => {
     if (!editing) return;
-    await mutateAsync({
+    setActionError("");
+    try { await mutateAsync({
       url: "/rpc/update_api_key_project",
       method: "post",
       values: {
@@ -155,9 +119,8 @@ export const ApiKeysList = () => {
         p_name: editName,
         p_description: editDescription,
       },
-    });
-    setEditing(undefined);
-    await refresh();
+    }); setEditing(undefined); await refresh();
+    } catch (cause) { setActionError(cause instanceof Error ? cause.message : String(cause)); }
   };
 
   return (
@@ -187,6 +150,7 @@ export const ApiKeysList = () => {
             value={target}
             onChange={setTarget}
           />
+          {actionError && <p className="text-sm text-destructive">{actionError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setMoveOpen(false)}>
               Cancel
@@ -240,6 +204,19 @@ export const ApiKeysList = () => {
           </div>
         </DialogContent>
       </Dialog>
+      <Dialog open={Boolean(deletingProject)} onOpenChange={(open) => !open && setDeletingProject(undefined)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Delete Project</DialogTitle><DialogDescription>Delete {deletingProject?.name}? Only an empty Project can be deleted.</DialogDescription></DialogHeader>
+          {actionError && <p className="text-sm text-destructive">{actionError}</p>}
+          <div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setDeletingProject(undefined)}>Cancel</Button><Button variant="destructive" onClick={() => {
+            if (!deletingProject) return;
+            setActionError("");
+            void mutateAsync({ url: "/rpc/delete_api_key_project", method: "post", values: { p_project_id: deletingProject.id } })
+              .then(async () => { setDeletingProject(undefined); await refresh(); })
+              .catch((cause) => setActionError(cause instanceof Error ? cause.message : String(cause)));
+          }}>Delete</Button></div>
+        </DialogContent>
+      </Dialog>
       <div className="mb-4 flex items-center gap-3">
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -247,8 +224,9 @@ export const ApiKeysList = () => {
             className="pl-9"
             placeholder="Search Project, API key, description, or workspace"
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
               if (!e.target.value)
                 setExpanded(
                   projects[0] ? new Set([projects[0].id]) : new Set(),
@@ -298,22 +276,19 @@ export const ApiKeysList = () => {
           <span>Current usage</span>
           <span />
         </div>
-        {(projectsQuery.isLoading || keysQuery.isLoading) && (
+        {groupsQuery.isLoading && (
           <div className="p-8 text-center text-muted-foreground">
             Loading...
           </div>
         )}
-        {!projectsQuery.isLoading && grouped.length === 0 && (
+        {groupsQuery.error && <div className="p-8 text-center text-destructive">{groupsQuery.error}</div>}
+        {!groupsQuery.isLoading && !groupsQuery.error && grouped.length === 0 && (
           <div className="p-8 text-center text-muted-foreground">
             No matching Projects or API keys
           </div>
         )}
-        {pageGroups.map(({ project, all, shown }) => {
+        {pageGroups.map(({ project, all, shown, count, usage: total }) => {
           const isOpen = expanded.has(project.id);
-          const total = all.reduce(
-            (sum, k) => sum + (usage.get(k.id)?.used ?? 0),
-            0,
-          );
           return (
             <div key={project.id} className="border-b last:border-b-0">
               <div className="grid grid-cols-[minmax(240px,2fr)_100px_120px_140px_48px] items-center gap-4 px-4 py-3">
@@ -344,7 +319,7 @@ export const ApiKeysList = () => {
                     </span>
                   </span>
                 </button>
-                <span>{all.length}</span>
+                <span>{count}</span>
                 <Badge variant={project.enabled ? "outline" : "secondary"}>
                   {project.enabled ? "Active" : "Disabled"}
                 </Badge>
@@ -367,7 +342,8 @@ export const ApiKeysList = () => {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
-                      onClick={() =>
+                      onClick={() => {
+                        setActionError("");
                         void mutateAsync({
                           url: "/rpc/update_api_key_project",
                           method: "post",
@@ -375,20 +351,14 @@ export const ApiKeysList = () => {
                             p_project_id: project.id,
                             p_enabled: !project.enabled,
                           },
-                        }).then(refresh)
-                      }
+                        }).then(refresh).catch((cause) => setActionError(cause instanceof Error ? cause.message : String(cause)));
+                      }}
                     >
                       {project.enabled ? "Disable" : "Enable"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive"
-                      onClick={() =>
-                        void mutateAsync({
-                          url: "/rpc/delete_api_key_project",
-                          method: "post",
-                          values: { p_project_id: project.id },
-                        }).then(refresh)
-                      }
+                      onClick={() => setDeletingProject(project)}
                     >
                       Delete
                     </DropdownMenuItem>
@@ -429,7 +399,6 @@ export const ApiKeysList = () => {
                         </thead>
                         <tbody>
                           {shown.map((key) => {
-                            const u = usage.get(key.id);
                             const limits = key.spec.limits ?? {};
                             return (
                               <tr key={key.id} className="border-t">
@@ -467,8 +436,8 @@ export const ApiKeysList = () => {
                                   </Badge>
                                 </td>
                                 <td className="tabular-nums">
-                                  {u
-                                    ? `${formatTokenQuota(u.used)} / ${formatTokenQuota(u.token_limit)}`
+                                  {limits.token_quota?.limit
+                                    ? `${formatTokenQuota(key.status?.usage ?? 0)} / ${formatTokenQuota(limits.token_quota.limit)}`
                                     : "Unlimited"}
                                 </td>
                                 <td>
@@ -484,19 +453,12 @@ export const ApiKeysList = () => {
                             timestamp={key.metadata.creation_timestamp}
                           />
                                 </td>
-                                <td>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    title="Move to Project"
-                                    onClick={() => {
-                                      setSelected(new Set([key.id]));
-                                      setMoveOpen(true);
-                                    }}
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </td>
+                                <td><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => show("api_keys", key.metadata.name, "push", { workspace: key.metadata.workspace })}><Pencil className="mr-2 h-4 w-4" />View and edit</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => void (limits.disabled ? enable(key.id) : disable(key.id)).then(refresh)}>{limits.disabled ? <Power className="mr-2 h-4 w-4" /> : <PowerOff className="mr-2 h-4 w-4" />}{limits.disabled ? "Enable" : "Disable"}</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => { setSelected(new Set([key.id])); setTarget(""); setMoveOpen(true); }}>Move to Project</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => { if (window.confirm(`Delete API key ${key.metadata.name}?`)) void deleteKey({ resource: "api_keys", id: key.id }).then(refresh); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                                </DropdownMenuContent></DropdownMenu></td>
                               </tr>
                             );
                           })}
@@ -511,7 +473,7 @@ export const ApiKeysList = () => {
         })}
       </div>
       <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-        <span>{grouped.length} Projects, paged by complete group</span>
+        <span>{groupsQuery.data[0]?.total_projects ?? 0} Projects, paged by complete group</span>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
