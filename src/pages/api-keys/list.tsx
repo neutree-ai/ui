@@ -1,413 +1,77 @@
-import { useInvalidate, useList, useNavigation } from "@refinedev/core";
-import { Pencil, Power, PowerOff, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCustomMutation, useInvalidate, useList, useUpdate } from "@refinedev/core";
+import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ApiKeyRankingOverview } from "@/domains/api-key/components/ApiKeyRankingOverview";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
-import {
-  rateSummary,
-  useAllApiKeyTraffic,
-  useAllApiKeyUsage,
-  useApiKeyDisable,
-  useWorkspaceModelMap,
-} from "@/domains/api-key/hooks/use-api-key-policy";
-import type {
-  AllowedModel,
-  ApiKey,
-  ApiKeyLimits,
-} from "@/domains/api-key/types";
+import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
+import { rateSummary, useAllApiKeyUsage } from "@/domains/api-key/hooks/use-api-key-policy";
+import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import {
-  defaultSorters,
-  RowAction,
-  Table,
-} from "@/foundation/components/Table";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
-import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
-import { cn } from "@/foundation/lib/utils";
-
-const endpointPhaseClass = (phase: string | null | undefined) =>
-  ({
-    Running:
-      "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-    Failed:
-      "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-    Pending:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Deploying:
-      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
-    ModelDownloading:
-      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
-    Deleting:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Paused:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Deleted:
-      "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
-  })[phase ?? ""] ??
-  "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]";
-
-// Number of allowed models rendered before the cell collapses the rest behind
-// a "show N more" toggle — keeps rows short when a key allows many models.
-const MODELS_COLLAPSED = 2;
-
-// Allowed-models table cell: renders each model (name + endpoint/type/phase) on
-// its own block, but only the first MODELS_COLLAPSED until expanded in place.
-function ModelsCell({
-  models,
-  modelMap,
-  scopedWorkspace,
-}: {
-  models: AllowedModel[];
-  modelMap: ReturnType<typeof useWorkspaceModelMap>;
-  scopedWorkspace: string | undefined;
-}) {
-  const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? models : models.slice(0, MODELS_COLLAPSED);
-  const hiddenCount = models.length - MODELS_COLLAPSED;
-
-  return (
-    <div className="flex flex-col gap-2">
-      {visible.map((m, i) => {
-        // A pinned entry shows only its one endpoint; a wildcard entry (migrated
-        // legacy, no type/endpoint_name) allows any endpoint serving the model.
-        const pinned = !!m.type && !!m.endpoint_name;
-        const servingEndpoint = pinned
-          ? modelMap
-              .get(m.model)
-              ?.endpoints.find(
-                (e) => e.name === m.endpoint_name && e.type === m.type,
-              )
-          : undefined;
-        return (
-          <div
-            key={`${m.type ?? ""}:${m.endpoint_name ?? ""}:${m.model}:${i}`}
-            className="flex min-w-0 flex-col gap-1"
-          >
-            <span className="truncate text-sm font-semibold" title={m.model}>
-              {m.model}
-            </span>
-            {pinned ? (
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="truncate max-w-[140px]">
-                  {m.endpoint_name}
-                </span>
-                <Badge variant="outline" className="h-5 font-normal">
-                  {t(`api_keys.models.${m.type}`)}
-                </Badge>
-                {servingEndpoint ? (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "h-5 font-normal",
-                      endpointPhaseClass(servingEndpoint.phase),
-                    )}
-                  >
-                    {servingEndpoint.phase
-                      ? t(`status.phases.endpoint.${servingEndpoint.phase}`)
-                      : t("api_keys.models.unknown")}
-                  </Badge>
-                ) : scopedWorkspace ? (
-                  <Badge variant="outline" className="h-5 font-normal">
-                    {t("api_keys.modelAccess.unavailable")}
-                  </Badge>
-                ) : null}
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {t("api_keys.models.anySource")}
-              </span>
-            )}
-          </div>
-        );
-      })}
-      {models.length > MODELS_COLLAPSED && (
-        <button
-          type="button"
-          onClick={(e) => {
-            // Don't trigger row navigation when toggling the cell.
-            e.stopPropagation();
-            setExpanded((v) => !v);
-          }}
-          className="self-start text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-        >
-          {expanded
-            ? t("api_keys.limits.showLess")
-            : t("api_keys.limits.showMore", { count: hiddenCount })}
-        </button>
-      )}
-    </div>
-  );
-}
 
 export const ApiKeysList = () => {
-  const { t } = useTranslation();
-  const { show } = useNavigation();
-  const [open, setOpen] = useState(false);
-  const metadataColumns = useMetadataColumns();
   const { current: workspace } = useWorkspace();
-  // These aggregates are per-workspace RPCs; ALL_WORKSPACES (`_all_`) is a
-  // UI-only sentinel, not a real workspace, so gate them to a concrete value
-  // (the hooks no-op on undefined) instead of firing p_workspace="_all_".
-  const scopedWorkspace = workspace === ALL_WORKSPACES ? undefined : workspace;
-  const usageByKey = useAllApiKeyUsage(scopedWorkspace);
-  const trafficByKey = useAllApiKeyTraffic(scopedWorkspace);
-  const modelMap = useWorkspaceModelMap(scopedWorkspace);
-  const { disable, enable } = useApiKeyDisable();
+  const scoped = workspace === ALL_WORKSPACES ? undefined : workspace;
+  const [open, setOpen] = useState(false);
+  const [presetProject, setPresetProject] = useState<string>();
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [target, setTarget] = useState("");
   const invalidate = useInvalidate();
-  const refresh = useCallback(
-    () => invalidate({ resource: "api_keys", invalidates: ["list"] }),
-    [invalidate],
-  );
+  const { mutateAsync } = useCustomMutation();
+  const { mutateAsync: update } = useUpdate();
+  const usage = useAllApiKeyUsage(scoped);
+  const projectsQuery = useList<ApiKeyProject>({ resource: "api_key_projects", pagination: { mode: "off" }, filters: scoped ? [{ field: "workspace", operator: "eq", value: scoped }] : [] });
+  const keysQuery = useList<ApiKey>({ resource: "api_keys", pagination: { mode: "off" }, meta: { workspace, workspaced: true } });
+  const projects = projectsQuery.data?.data ?? [];
+  const keys = keysQuery.data?.data ?? [];
 
-  // Keys (id -> name) for the ranking overview. Workspace-scoped via resource
-  // meta (matches the table query, no cross-workspace over-fetch) and
-  // unpaginated so no key is dropped from the ranking inputs.
-  const { data: keysData } = useList<ApiKey>({
-    resource: "api_keys",
-    pagination: { mode: "off" },
-    // workspaced: true is what the data provider checks to apply the
-    // metadata->workspace filter (resource meta isn't merged here).
-    meta: { workspace, workspaced: true },
-    queryOptions: { enabled: Boolean(workspace) },
-  });
-  const rankingKeys = useMemo(() => {
-    const rows = keysData?.data ?? [];
-    return rows
-      .filter(
-        (k) =>
-          workspace === ALL_WORKSPACES || k.metadata?.workspace === workspace,
-      )
-      .map((k) => ({
-        id: String(k.id),
-        name: k.metadata?.name ?? String(k.id),
-      }));
-  }, [keysData, workspace]);
+  useEffect(() => { if (projects.length && expanded.size === 0 && !query) setExpanded(new Set([projects[0].id])); }, [projects.length]);
+  const grouped = useMemo(() => projects.map((project) => {
+    const all = keys.filter((k) => k.project_id === project.id);
+    const q = query.trim().toLowerCase();
+    const projectMatch = !q || project.name.toLowerCase().includes(q);
+    const shown = projectMatch ? all : all.filter((k) => k.metadata.name.toLowerCase().includes(q) || k.description.toLowerCase().includes(q) || k.metadata.workspace?.toLowerCase().includes(q));
+    return { project, all, shown, visible: projectMatch || shown.length > 0 };
+  }).filter((g) => g.visible), [projects, keys, query]);
 
-  // Limits live on the key itself (spec.limits) — read straight off each row,
-  // no separate fetch.
-  const limitsOf = (original: ApiKey): ApiKeyLimits =>
-    (original.spec?.limits as ApiKeyLimits | undefined) ?? {};
+  useEffect(() => { if (query) setExpanded(new Set(grouped.map((g) => g.project.id))); }, [query]);
+  const refresh = async () => { await Promise.all([invalidate({ resource: "api_key_projects", invalidates: ["list"] }), invalidate({ resource: "api_keys", invalidates: ["list"] })]); };
+  const createKey = (project?: string) => { setPresetProject(project); setOpen(true); };
+  const migrate = async () => { await mutateAsync({ url: "/rpc/move_api_keys_to_project", method: "post", values: { p_api_key_ids: [...selected], p_project_id: target } }); setSelected(new Set()); setMoveOpen(false); setExpanded((v) => new Set([...v, target])); await refresh(); };
 
-  const dash = <span className="text-muted-foreground">—</span>;
-
-  // Token quota usage: used / limit with a progress bar (amber ≥80%, red over).
-  const usageColumn = (
-    <Table.Column
-      accessorKey="id"
-      id="usage"
-      header={t("api_keys.limits.usageColumn")}
-      cell={({ row: { original } }) => {
-        const u = usageByKey.get(String(original.id));
-        if (!u || u.token_limit <= 0) return dash;
-        const ratio = u.used / u.token_limit;
-        const pct = Math.max(0, Math.min(100, ratio * 100));
-        const over = u.used >= u.token_limit;
-        const warn = !over && ratio >= 0.8;
-        return (
-          <div className="flex w-40 flex-col gap-1">
-            <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-              <span>
-                {formatTokenQuota(u.used)} / {formatTokenQuota(u.token_limit)}
-              </span>
-              <span>{Math.round(pct)}%</span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
-              <div
-                className={cn(
-                  "h-full",
-                  over
-                    ? "bg-destructive"
-                    : warn
-                      ? "bg-amber-500"
-                      : "bg-primary",
-                )}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+  return <ListPage createButtonProps={{ onClick: () => createKey() }}>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Create API Key</DialogTitle><DialogDescription>Create a key in a Project.</DialogDescription></DialogHeader><CreateApiKeyForm initialProjectId={presetProject} onClose={() => setOpen(false)} /></DialogContent></Dialog>
+    <Dialog open={moveOpen} onOpenChange={setMoveOpen}><DialogContent><DialogHeader><DialogTitle>Move API keys</DialogTitle><DialogDescription>{selected.size} selected. The operation is atomic.</DialogDescription></DialogHeader><ProjectPicker workspace={scoped ?? ""} value={target} onChange={setTarget} /><div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setMoveOpen(false)}>Cancel</Button><Button disabled={!target || !selected.size} onClick={() => void migrate()}>Move</Button></div></DialogContent></Dialog>
+    <div className="mb-4 flex items-center gap-3">
+      <div className="relative max-w-md flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Search Project, API key, description, or workspace" value={query} onChange={(e) => { setQuery(e.target.value); if (!e.target.value) setExpanded(projects[0] ? new Set([projects[0].id]) : new Set()); }} /></div>
+      {selected.size > 0 && <><span className="text-sm">{selected.size} selected</span><Button onClick={() => setMoveOpen(true)}>Move to Project</Button><Button variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button></>}
+    </div>
+    <div className="overflow-hidden rounded-md border">
+      <div className="grid grid-cols-[minmax(240px,2fr)_100px_120px_140px_48px] gap-4 border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground"><span>Project / description</span><span>API keys</span><span>Status</span><span>Current usage</span><span /></div>
+      {(projectsQuery.isLoading || keysQuery.isLoading) && <div className="p-8 text-center text-muted-foreground">Loading...</div>}
+      {!projectsQuery.isLoading && grouped.length === 0 && <div className="p-8 text-center text-muted-foreground">No matching Projects or API keys</div>}
+      {grouped.map(({ project, all, shown }) => {
+        const isOpen = expanded.has(project.id); const total = all.reduce((sum, k) => sum + (usage.get(k.id)?.used ?? 0), 0);
+        return <div key={project.id} className="border-b last:border-b-0">
+          <div className="grid grid-cols-[minmax(240px,2fr)_100px_120px_140px_48px] items-center gap-4 px-4 py-3">
+            <button className="flex min-w-0 items-center gap-2 text-left" onClick={() => setExpanded((old) => { const n=new Set(old); n.has(project.id)?n.delete(project.id):n.add(project.id); return n; })}>{isOpen?<ChevronDown className="h-4 w-4 shrink-0"/>:<ChevronRight className="h-4 w-4 shrink-0"/>}<span className="min-w-0"><strong className="block truncate">{project.name}</strong><span className="block truncate text-xs text-muted-foreground" title={project.description}>{project.description || "No description"}</span></span></button>
+            <span>{all.length}</span><Badge variant={project.enabled?"outline":"secondary"}>{project.enabled?"Active":"Disabled"}</Badge><span className="tabular-nums">{formatTokenQuota(total)}</span>
+            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{project.enabled&&<DropdownMenuItem onClick={()=>createKey(project.id)}><Plus className="mr-2 h-4 w-4"/>Create API key</DropdownMenuItem>}<DropdownMenuItem onClick={()=>void update({resource:"api_key_projects",id:project.id,values:{enabled:!project.enabled}}).then(refresh)}>{project.enabled?"Disable":"Enable"}</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={()=>void mutateAsync({url:"/rpc/delete_api_key_project",method:"post",values:{p_project_id:project.id}}).then(refresh)}>Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
           </div>
-        );
-      }}
-    />
-  );
-
-  // Rate limits (RPS / RPM / concurrency).
-  const rateColumn = (
-    <Table.Column
-      accessorKey="id"
-      id="rate_limits"
-      header={t("api_keys.limits.rateColumn")}
-      cell={({ row: { original } }) => {
-        const rate = rateSummary(limitsOf(original as ApiKey));
-        return rate.length > 0 ? (
-          <span className="text-xs text-muted-foreground">
-            {rate.join(" · ")}
-          </span>
-        ) : (
-          dash
-        );
-      }}
-    />
-  );
-
-  // Supported (allowed) models — "All" when no allowlist.
-  const modelsColumn = (
-    <Table.Column
-      accessorKey="id"
-      id="supported_models"
-      header={t("api_keys.limits.modelsColumn")}
-      cell={({ row: { original } }) => {
-        const models = limitsOf(original as ApiKey).allowed_models ?? [];
-        if (models.length === 0) {
-          return (
-            <span className="text-xs text-muted-foreground">
-              {t("api_keys.limits.allModels")}
-            </span>
-          );
-        }
-        return (
-          <ModelsCell
-            models={models}
-            modelMap={modelMap}
-            scopedWorkspace={scopedWorkspace}
-          />
-        );
-      }}
-    />
-  );
-
-  // Status: Disabled (a 'disabled' access rule blocks the key) > Quota exceeded
-  // (current-period usage at/over the limit) > Active.
-  const statusColumn = (
-    <Table.Column
-      accessorKey="id"
-      id="status"
-      header={t("api_keys.limits.statusColumn")}
-      cell={({ row: { original } }) => {
-        const id = String(original.id);
-        if (limitsOf(original as ApiKey).disabled) {
-          return (
-            <Badge variant="destructive">
-              {t("api_keys.limits.statusDisabled")}
-            </Badge>
-          );
-        }
-        const u = usageByKey.get(id);
-        if (u && u.token_limit > 0 && u.used >= u.token_limit) {
-          return (
-            <Badge variant="destructive">
-              {t("api_keys.limits.statusQuotaExceeded")}
-            </Badge>
-          );
-        }
-        return (
-          <Badge variant="outline">{t("api_keys.limits.statusActive")}</Badge>
-        );
-      }}
-    />
-  );
-
-  const actionColumn = (
-    <Table.Column
-      accessorKey={"id"}
-      id={"actions"}
-      cell={({ row: { original } }) => {
-        const isDisabled = limitsOf(original as ApiKey).disabled;
-        return (
-          <Table.Actions>
-            <RowAction
-              title={t("buttons.edit")}
-              icon={<Pencil size={16} />}
-              onClick={() => {
-                const k = original as ApiKey;
-                // The api_keys show route is keyed by metadata.name (not the raw
-                // key id), and in the ALL_WORKSPACES view the row's own
-                // workspace must fill the :workspace route param.
-                if (k.metadata?.name) {
-                  show("api_keys", k.metadata.name, "push", {
-                    workspace: k.metadata.workspace,
-                  });
-                }
-              }}
-            />
-            <RowAction
-              title={
-                isDisabled
-                  ? t("api_keys.limits.enable")
-                  : t("api_keys.limits.disable")
-              }
-              icon={isDisabled ? <Power size={16} /> : <PowerOff size={16} />}
-              onClick={() => {
-                const id = String(original.id);
-                void (isDisabled ? enable(id) : disable(id))
-                  .then(() => refresh())
-                  .catch(() => {});
-              }}
-            />
-            <Table.DeleteAction
-              title={t("buttons.delete")}
-              row={original}
-              resource="api_keys"
-              icon={<Trash2 size={16} />}
-            />
-          </Table.Actions>
-        );
-      }}
-    />
-  );
-
-  return (
-    <ListPage
-      createButtonProps={{
-        onClick: () => {
-          setOpen(true);
-        },
-      }}
-    >
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t("api_keys.create")}</DialogTitle>
-            <DialogDescription>
-              {t("api_keys.messages.createDescription")}
-            </DialogDescription>
-          </DialogHeader>
-          <CreateApiKeyForm onClose={() => setOpen(false)} />
-        </DialogContent>
-      </Dialog>
-
-      <div className="mb-4">
-        <ApiKeyRankingOverview keys={rankingKeys} traffic={trafficByKey} />
-      </div>
-
-      <Table
-        enableSorting
-        enableFilters
-        enableBatchDelete
-        searchField="metadata->>name"
-        refineCoreProps={{
-          sorters: defaultSorters,
-        }}
-      >
-        {metadataColumns.name}
-        {metadataColumns.workspace}
-        {statusColumn}
-        {usageColumn}
-        {rateColumn}
-        {modelsColumn}
-        {metadataColumns.creation_timestamp}
-        {actionColumn}
-      </Table>
-    </ListPage>
-  );
+          {isOpen && <div className="border-t bg-muted/20 px-6 py-3">
+            {shown.length===0?<div className="py-8 text-center text-sm text-muted-foreground">This Project has no API keys{project.enabled&&<div><Button variant="link" onClick={()=>createKey(project.id)}>Create API key</Button></div>}</div>:<div className="overflow-x-auto"><table className="w-full min-w-[900px] text-sm"><thead><tr className="text-left text-xs text-muted-foreground"><th className="w-10"/><th className="py-2">API key / description</th><th>Workspace</th><th>Status</th><th>Usage</th><th>Rate limit</th><th>Models</th><th>Created</th></tr></thead><tbody>{shown.map((key)=>{const u=usage.get(key.id); const limits=key.spec.limits??{}; return <tr key={key.id} className="border-t"><td><Checkbox checked={selected.has(key.id)} onCheckedChange={(v)=>setSelected((old)=>{const n=new Set(old);v?n.add(key.id):n.delete(key.id);return n;})}/></td><td className="py-3"><strong>{key.metadata.name}</strong><div className="max-w-xs truncate text-xs text-muted-foreground" title={key.description}>{key.description||"No description"}</div></td><td>{key.metadata.workspace}</td><td><Badge variant={limits.disabled?"destructive":"outline"}>{limits.disabled?"Disabled":"Active"}</Badge></td><td className="tabular-nums">{u?`${formatTokenQuota(u.used)} / ${formatTokenQuota(u.token_limit)}`:"Unlimited"}</td><td>{rateSummary(limits).join(" · ")||"-"}</td><td>{limits.allowed_models?.map((m)=>m.model).join(", ")||"All"}</td><td>{new Date(key.metadata.creation_timestamp).toLocaleDateString()}</td></tr>})}</tbody></table></div>}
+          </div>}
+        </div>;
+      })}
+    </div>
+  </ListPage>;
 };
