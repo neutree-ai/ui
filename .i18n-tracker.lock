@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "80007cdbc2f2ecd902d6485b6774cf2b",
   "src/pages/endpoints/edit.tsx": "f985a843fe494b31594f2291e8bcfee8",
   "src/pages/endpoints/list.tsx": "99588f5a2ac8fd9ed967190a5019a7dc",
-  "src/pages/endpoints/show.tsx": "9d5e2f5e3981d4263af57cb23a3ead95",
+  "src/pages/endpoints/show.tsx": "f702a1c2baa97ed68dd9caea68f0d325",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "fd2b1c7affa795305445f8e307dea099",
   "src/pages/clusters/edit.tsx": "d636f55fd8591fabd56759bf0f46963e",
@@ -167,7 +167,7 @@
   "src/domains/model-catalog/components/ModelCatalogStatus.tsx": "05b5724d20089c977c76c3ee2ddf1e22",
   "src/domains/image-registry/types.ts": "d63ecb27f4dd788187d49224d2ac2e0d",
   "src/domains/image-registry/components/ImageRegistryStatus.tsx": "177d04944d9cf0fd39c063698ac1fd46",
-  "src/domains/engine/types.ts": "3d7707317a940caec7f051551b6b9408",
+  "src/domains/engine/types.ts": "522162d43e3b3cfbb22d763412912325",
   "src/domains/engine/components/EngineStatus.tsx": "5bf9e785a7f7476a56b9c87c36ba3f18",
   "src/domains/engine/components/EngineVersions.tsx": "46eb6987394db5f7c5cf8fed3204e074",
   "src/domains/engine/components/JsonSchemaValueVisualizer.tsx": "803cf91cd6e73b7c54d736e5cf6a7283",
@@ -274,7 +274,7 @@
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
   "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f",
   "src/domains/endpoint/lib/pause-action.ts": "3efa178458d6906c0cc81dad7c41e675",
-  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "b54d3549e3b8dfdb01636ee6a00ee5d3",
+  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "69bbf15ed8d1b0e68a235ada096065e9",
   "src/foundation/components/OemFavicon.tsx": "bb7648f90f369cb8a26439963f1966d1",
   "src/domains/external-endpoint/lib/get-endpoint-type.ts": "a5fec42612881e3206ee2e19ca3c820f",
   "src/domains/endpoint/hooks/use-document-list.ts": "7dc70792a61cc83271e61844abc90ec8",
@@ -360,5 +360,7 @@
   "src/foundation/components/MetadataDisclosure.tsx": "fcd34b1b25e3041e747bca4331decf82",
   "src/foundation/components/MetadataTimestampMeta.tsx": "159be54605a2a4bf9da4204a4c00dfd9",
   "src/domains/endpoint/components/EndpointAccessSummary.tsx": "bfc5d6c12fe0d59695aece9c31360a35",
-  "src/domains/endpoint/components/EndpointAdvancedParameters.tsx": "747ce1445ef75df6316c942332856247"
+  "src/domains/endpoint/components/EndpointAdvancedParameters.tsx": "747ce1445ef75df6316c942332856247",
+  "src/domains/engine/lib/resolve-capabilities.ts": "9a444cc413dae9066a7983c28c1d0fba",
+  "src/domains/cluster/lib/upgrade-versions.ts": "0b8da429b7f5a4c73d1ee2cada4556ae"
 }

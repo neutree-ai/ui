@@ -6,6 +6,7 @@ const irName = { value: "" };
 const clNames = {
   ssh: "",
   k8s: "",
+  upgrade: "",
 };
 
 test.describe("clusters - upgrade", () => {
@@ -18,6 +19,7 @@ test.describe("clusters - upgrade", () => {
     irName.value = `test-upg-ir-${ts}`;
     clNames.ssh = `test-upg-ssh-${ts}`;
     clNames.k8s = `test-upg-k8s-${ts}`;
+    clNames.upgrade = `test-upg-guard-${ts}`;
 
     await api.createImageRegistry(irName.value);
     await api.createCluster(clNames.ssh, {
@@ -27,6 +29,11 @@ test.describe("clusters - upgrade", () => {
     await api.createCluster(clNames.k8s, {
       type: "kubernetes",
       imageRegistry: irName.value,
+    });
+    await api.createCluster(clNames.upgrade, {
+      type: "ssh",
+      imageRegistry: irName.value,
+      version: "v1.1.0",
     });
 
     await context.close();
@@ -119,6 +126,75 @@ test.describe("clusters - upgrade", () => {
       const cancelBtn = dialog.getByRole("button", { name: /cancel/i });
       await expect(cancelBtn).toBeVisible();
       await cancelBtn.click();
+    });
+
+    test("only submits a strictly newer version from an unsorted response", async ({
+      clusters,
+    }) => {
+      await clusters.page.route(
+        "**/api/v1/clusters/available_versions?**",
+        async (route) => {
+          await route.fulfill({
+            contentType: "application/json",
+            body: JSON.stringify({
+              available_versions: ["v1.2.0", "v1.0.2", "v1.1.0", "v1.0.1"],
+            }),
+          });
+        },
+      );
+      await clusters.page.route("**/api/v1/clusters?**", async (route) => {
+        if (route.request().method() !== "PATCH") {
+          await route.continue();
+          return;
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          headers: { "content-range": "0-0/1" },
+          body: JSON.stringify([{}]),
+        });
+      });
+
+      await clusters.goToList();
+      await clusters.table.waitForLoaded();
+
+      const row = clusters.table.rowWithText(clNames.upgrade);
+      await row.locator('[data-testid="row-actions-trigger"]').click();
+      await clusters.page.getByRole("menuitem", { name: /upgrade/i }).click();
+
+      const dialog = clusters.page.getByRole("dialog");
+      const targetVersion = dialog.locator('button[role="combobox"]');
+      await expect(targetVersion).toHaveText("v1.2.0");
+      await targetVersion.click();
+      await expect(
+        clusters.page.getByRole("option", { name: "v1.2.0" }),
+      ).toBeVisible();
+      await expect(
+        clusters.page.getByRole("option", { name: "v1.1.0" }),
+      ).toHaveCount(0);
+      await expect(
+        clusters.page.getByRole("option", { name: "v1.0.2" }),
+      ).toHaveCount(0);
+      await expect(
+        clusters.page.getByRole("option", { name: "v1.0.1" }),
+      ).toHaveCount(0);
+      await clusters.page.keyboard.press("Escape");
+
+      const updateRequest = clusters.page.waitForRequest(
+        (request) =>
+          request.url().includes("/api/v1/clusters?") &&
+          request.method() === "PATCH",
+      );
+      await dialog
+        .getByRole("button", { name: "Upgrade", exact: true })
+        .click();
+      const request = await updateRequest;
+
+      expect(JSON.parse(request.postData() ?? "{}").spec?.version).toBe(
+        "v1.2.0",
+      );
+      await expect(dialog).not.toBeVisible();
     });
 
     test("K8s cluster upgrade dialog shows rolling update message", async ({

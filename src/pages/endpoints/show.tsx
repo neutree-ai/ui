@@ -1,6 +1,7 @@
 import {
   type IResourceComponentsProps,
   useList,
+  useOne,
   useShow,
 } from "@refinedev/core";
 import { lazy, Suspense, useCallback, useRef } from "react";
@@ -19,6 +20,8 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import type { Endpoint } from "@/domains/endpoint/types";
+import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
+import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
@@ -119,6 +122,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   } = useShow<Endpoint>();
   const record = data?.data;
 
+  const { data: engineData } = useOne<Engine>({
+    resource: "engines",
+    id: record?.spec.engine.engine,
+    queryOptions: {
+      enabled: Boolean(record?.spec.engine.engine),
+    },
+  });
+
   const { data: clusterData } = useList({
     resource: "clusters",
     filters: [
@@ -163,6 +174,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     record.spec.deployment_options?.scheduler?.type,
     t,
   );
+  const engineVersion = engineData?.data?.spec.versions.find(
+    (v) => v.version === record.spec.engine.version,
+  );
+  const playground = resolvePlayground(engineVersion, record.spec.model.task);
 
   return (
     <ShowPage
@@ -235,9 +250,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           <TabsTrigger value="logs" className={detailTabTriggerClassName}>
             {t("common.tabs.logs")}
           </TabsTrigger>
-          <TabsTrigger value="playground" className={detailTabTriggerClassName}>
-            {t("endpoints.tabs.playground")}
-          </TabsTrigger>
+          {playground.enabled && (
+            <TabsTrigger
+              value="playground"
+              className={detailTabTriggerClassName}
+            >
+              {t("endpoints.tabs.playground")}
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent
           value="basic"
@@ -346,19 +366,24 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             <EndpointLogTabs endpoint={record} />
           </Suspense>
         </TabsContent>
-        <TabsContent value="playground" className="mt-0 flex-1 overflow-hidden">
-          <Suspense
-            fallback={<Loader className="w-16 text-muted-foreground" />}
+        {playground.enabled && (
+          <TabsContent
+            value="playground"
+            className="mt-0 flex-1 overflow-hidden"
           >
-            {record.spec.model.task === "text-embedding" ? (
-              <EmbeddingPlayground endpoint={record} />
-            ) : record.spec.model.task === "text-rerank" ? (
-              <RerankPlayground endpoint={record} />
-            ) : (
-              <ChatPlayground endpoint={record} />
-            )}
-          </Suspense>
-        </TabsContent>
+            <Suspense
+              fallback={<Loader className="w-16 text-muted-foreground" />}
+            >
+              {playground.mode === "embedding" ? (
+                <EmbeddingPlayground endpoint={record} />
+              ) : playground.mode === "rerank" ? (
+                <RerankPlayground endpoint={record} />
+              ) : (
+                <ChatPlayground endpoint={record} />
+              )}
+            </Suspense>
+          </TabsContent>
+        )}
       </Tabs>
     </ShowPage>
   );
