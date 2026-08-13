@@ -695,11 +695,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedVirtualization,
   ]);
 
-  // Clear virtualization values the cluster's effective mode no longer
-  // supports (backend AcceleratorVirtualizationStatus.supported_resources).
+  // Clear virtualization values the cluster's supported_resources no longer
+  // includes (backend AcceleratorVirtualizationStatus.supported_resources).
   // Disabling the input alone would still submit a stale value that backend
-  // admission rejects (e.g. core_percent under mode template) and would keep
-  // the stale value driving the capacity math.
+  // admission rejects (e.g. core_percent when the list omits it) and would
+  // keep the stale value driving the capacity math.
   useEffect(() => {
     if (!hasResolvedClusterSelection || !selectedVirtualization) return;
 

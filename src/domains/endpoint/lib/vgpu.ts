@@ -10,19 +10,18 @@ type VgpuAccelerator = NonNullable<ResourceSpec["accelerator"]> &
 
 const MIB_PER_GIB = 1024;
 
-// Resource keys a cluster's accelerator virtualization mode may support,
-// matching the backend AcceleratorVirtualizationResourceKey constants.
-// The cluster status lists the legal subset in
-// status.accelerator_virtualization.supported_resources.
+// Virtualization resource keys, matching the backend
+// AcceleratorVirtualizationResourceKey constants. The cluster status lists
+// the legal subset in status.accelerator_virtualization.supported_resources.
 export const VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY =
   "virtualization.memory_mib";
 export const VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY =
   "virtualization.core_percent";
 
 /**
- * Whether a virtualization resource is legal under the cluster's effective
- * accelerator virtualization mode. Mirrors the backend
- * validateEndpointVGPUResourcesSupported:
+ * Whether a virtualization resource is legal for the selected cluster,
+ * judged solely by the backend's supported_resources contract
+ * (validateEndpointVGPUResourcesSupported):
  * - null/undefined capability block (stale cluster) falls back to shape-only
  *   validation, so every resource is treated as supported;
  * - a present block is authoritative: a resource is supported only when it
