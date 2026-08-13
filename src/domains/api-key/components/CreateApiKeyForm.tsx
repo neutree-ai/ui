@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
+import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
   type ApiKeyPolicyFormValues,
   apiKeyPolicyDefaults,
@@ -21,15 +23,17 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 
-type FormValues = { name: string; workspace: string } & ApiKeyPolicyFormValues;
+type FormValues = { name: string; workspace: string; project_id: string; description: string } & ApiKeyPolicyFormValues;
 
-export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
+export const CreateApiKeyForm = ({ onClose, initialProjectId = "" }: { onClose?: () => void; initialProjectId?: string }) => {
   const { t } = useTranslation();
   const form = useForm<FormValues>({
     mode: "all",
     defaultValues: {
       name: "",
       workspace: "",
+      project_id: initialProjectId,
+      description: "",
       ...apiKeyPolicyDefaults(),
     },
   });
@@ -60,6 +64,8 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
       values: {
         p_workspace: formValue.workspace,
         p_name: formValue.name,
+        p_project_id: formValue.project_id,
+        p_description: formValue.description,
         p_quota: 0,
         p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
       },
@@ -142,8 +148,14 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
             }))}
           />
         </FormFieldGroup>
+        <FormFieldGroup {...form} name="project_id" label="Project">
+          <ProjectPicker workspace={selectedWorkspace} value={form.watch("project_id")} onChange={(id) => form.setValue("project_id", id, { shouldValidate: true })} />
+        </FormFieldGroup>
         <FormFieldGroup {...form} name="name" label={t("common.fields.name")}>
           <Input />
+        </FormFieldGroup>
+        <FormFieldGroup {...form} name="description" label="Description">
+          <Textarea />
         </FormFieldGroup>
 
         <div className="pt-1 text-sm font-medium">
