@@ -26,6 +26,7 @@ beforeAll(() => {
     unobserve() {}
     disconnect() {}
   });
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 describe("ProjectPicker", () => {
