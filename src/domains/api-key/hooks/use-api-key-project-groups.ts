@@ -2,7 +2,7 @@ import { useCustomMutation } from "@refinedev/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
 
-export type ApiKeyProjectGroup = {
+type ApiKeyProjectGroup = {
   project: ApiKeyProject;
   api_keys: ApiKey[];
   api_key_count: number;
