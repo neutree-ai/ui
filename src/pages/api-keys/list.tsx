@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import RelativeTimestamp from "@/foundation/components/RelativeTimestamp";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
@@ -40,6 +39,7 @@ import {
 import { useApiKeyProjectGroups } from "@/domains/api-key/hooks/use-api-key-project-groups";
 import type { ApiKeyProject } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
+import RelativeTimestamp from "@/foundation/components/RelativeTimestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
@@ -67,7 +67,10 @@ export const ApiKeysList = () => {
   const { mutateAsync: deleteKey } = useDelete();
   const { disable, enable } = useApiKeyDisable();
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  useEffect(() => { const timer = window.setTimeout(() => setDebouncedQuery(query), 300); return () => window.clearTimeout(timer); }, [query]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
   const groupsQuery = useApiKeyProjectGroups({
     workspace: scoped,
     search: debouncedQuery,
@@ -76,11 +79,21 @@ export const ApiKeysList = () => {
     page,
     pageSize,
   });
-  const grouped = groupsQuery.data.map((group) => ({ project: group.project, all: group.api_keys, shown: group.api_keys, visible: true, count: group.api_key_count, usage: group.current_usage }));
+  const grouped = groupsQuery.data.map((group) => ({
+    project: group.project,
+    all: group.api_keys,
+    shown: group.api_keys,
+    visible: true,
+    count: group.api_key_count,
+    usage: group.current_usage,
+  }));
   const projects = grouped.map((group) => group.project);
   const firstProjectId = projects[0]?.id;
   const groupedProjectIds = grouped.map((group) => group.project.id).join(",");
-  const pageCount = Math.max(1, Math.ceil((groupsQuery.data[0]?.total_projects ?? 0) / pageSize));
+  const pageCount = Math.max(
+    1,
+    Math.ceil((groupsQuery.data[0]?.total_projects ?? 0) / pageSize),
+  );
 
   useEffect(() => {
     if (firstProjectId && expanded.size === 0 && !query)
@@ -89,7 +102,8 @@ export const ApiKeysList = () => {
   const pageGroups = grouped;
 
   useEffect(() => {
-    if (query) setExpanded(new Set(groupedProjectIds.split(",").filter(Boolean)));
+    if (query)
+      setExpanded(new Set(groupedProjectIds.split(",").filter(Boolean)));
   }, [query, groupedProjectIds]);
   const refresh = async () => {
     await groupsQuery.refetch();
@@ -101,9 +115,18 @@ export const ApiKeysList = () => {
   const migrate = async () => {
     setActionError("");
     try {
-      await mutateAsync({ url: "/rpc/move_api_keys_to_project", method: "post", values: { p_api_key_ids: [...selected], p_project_id: target } });
-      setSelected(new Set()); setMoveOpen(false); setExpanded((v) => new Set([...v, target])); await refresh();
-    } catch (cause) { setActionError(cause instanceof Error ? cause.message : String(cause)); }
+      await mutateAsync({
+        url: "/rpc/move_api_keys_to_project",
+        method: "post",
+        values: { p_api_key_ids: [...selected], p_project_id: target },
+      });
+      setSelected(new Set());
+      setMoveOpen(false);
+      setExpanded((v) => new Set([...v, target]));
+      await refresh();
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    }
   };
   const startEdit = (project: ApiKeyProject) => {
     setEditing(project);
@@ -113,16 +136,21 @@ export const ApiKeysList = () => {
   const saveProject = async () => {
     if (!editing) return;
     setActionError("");
-    try { await mutateAsync({
-      url: "/rpc/update_api_key_project",
-      method: "post",
-      values: {
-        p_project_id: editing.id,
-        p_name: editName,
-        p_description: editDescription,
-      },
-    }); setEditing(undefined); await refresh();
-    } catch (cause) { setActionError(cause instanceof Error ? cause.message : String(cause)); }
+    try {
+      await mutateAsync({
+        url: "/rpc/update_api_key_project",
+        method: "post",
+        values: {
+          p_project_id: editing.id,
+          p_name: editName,
+          p_description: editDescription,
+        },
+      });
+      setEditing(undefined);
+      await refresh();
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    }
   };
 
   return (
@@ -152,7 +180,9 @@ export const ApiKeysList = () => {
             value={target}
             onChange={setTarget}
           />
-          {actionError && <p className="text-sm text-destructive">{actionError}</p>}
+          {actionError && (
+            <p className="text-sm text-destructive">{actionError}</p>
+          )}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setMoveOpen(false)}>
               Cancel
@@ -186,7 +216,10 @@ export const ApiKeysList = () => {
                 onChange={(e) => setEditName(e.target.value)}
               />
             </label>
-            <label htmlFor="project-description" className="block text-sm font-medium">
+            <label
+              htmlFor="project-description"
+              className="block text-sm font-medium"
+            >
               Description
               <Textarea
                 id="project-description"
@@ -208,17 +241,52 @@ export const ApiKeysList = () => {
           </div>
         </DialogContent>
       </Dialog>
-      <Dialog open={Boolean(deletingProject)} onOpenChange={(open) => !open && setDeletingProject(undefined)}>
+      <Dialog
+        open={Boolean(deletingProject)}
+        onOpenChange={(open) => !open && setDeletingProject(undefined)}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>Delete Project</DialogTitle><DialogDescription>Delete {deletingProject?.name}? Only an empty Project can be deleted.</DialogDescription></DialogHeader>
-          {actionError && <p className="text-sm text-destructive">{actionError}</p>}
-          <div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setDeletingProject(undefined)}>Cancel</Button><Button variant="destructive" onClick={() => {
-            if (!deletingProject) return;
-            setActionError("");
-            void mutateAsync({ url: "/rpc/delete_api_key_project", method: "post", values: { p_project_id: deletingProject.id } })
-              .then(async () => { setDeletingProject(undefined); await refresh(); })
-              .catch((cause) => setActionError(cause instanceof Error ? cause.message : String(cause)));
-          }}>Delete</Button></div>
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+            <DialogDescription>
+              Delete {deletingProject?.name}? Only an empty Project can be
+              deleted.
+            </DialogDescription>
+          </DialogHeader>
+          {actionError && (
+            <p className="text-sm text-destructive">{actionError}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setDeletingProject(undefined)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!deletingProject) return;
+                setActionError("");
+                void mutateAsync({
+                  url: "/rpc/delete_api_key_project",
+                  method: "post",
+                  values: { p_project_id: deletingProject.id },
+                })
+                  .then(async () => {
+                    setDeletingProject(undefined);
+                    await refresh();
+                  })
+                  .catch((cause) =>
+                    setActionError(
+                      cause instanceof Error ? cause.message : String(cause),
+                    ),
+                  );
+              }}
+            >
+              Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
       <div className="mb-4 flex items-center gap-3">
@@ -228,9 +296,9 @@ export const ApiKeysList = () => {
             className="pl-9"
             placeholder="Search Project, API key, description, or workspace"
             value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
               if (!e.target.value)
                 setExpanded(
                   projects[0] ? new Set([projects[0].id]) : new Set(),
@@ -285,12 +353,18 @@ export const ApiKeysList = () => {
             Loading...
           </div>
         )}
-        {groupsQuery.error && <div className="p-8 text-center text-destructive">{groupsQuery.error}</div>}
-        {!groupsQuery.isLoading && !groupsQuery.error && grouped.length === 0 && (
-          <div className="p-8 text-center text-muted-foreground">
-            No matching Projects or API keys
+        {groupsQuery.error && (
+          <div className="p-8 text-center text-destructive">
+            {groupsQuery.error}
           </div>
         )}
+        {!groupsQuery.isLoading &&
+          !groupsQuery.error &&
+          grouped.length === 0 && (
+            <div className="p-8 text-center text-muted-foreground">
+              No matching Projects or API keys
+            </div>
+          )}
         {pageGroups.map(({ project, shown, count, usage: total }) => {
           const isOpen = expanded.has(project.id);
           return (
@@ -356,7 +430,15 @@ export const ApiKeysList = () => {
                             p_project_id: project.id,
                             p_enabled: !project.enabled,
                           },
-                        }).then(refresh).catch((cause) => setActionError(cause instanceof Error ? cause.message : String(cause)));
+                        })
+                          .then(refresh)
+                          .catch((cause) =>
+                            setActionError(
+                              cause instanceof Error
+                                ? cause.message
+                                : String(cause),
+                            ),
+                          );
                       }}
                     >
                       {project.enabled ? "Disable" : "Enable"}
@@ -454,16 +536,78 @@ export const ApiKeysList = () => {
                                     .join(", ") || "All"}
                                 </td>
                                 <td>
-                          <RelativeTimestamp
-                            timestamp={key.metadata.creation_timestamp}
-                          />
+                                  <RelativeTimestamp
+                                    timestamp={key.metadata.creation_timestamp}
+                                  />
                                 </td>
-                                <td><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => show("api_keys", key.metadata.name, "push", { workspace: key.metadata.workspace })}><Pencil className="mr-2 h-4 w-4" />View and edit</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => void (limits.disabled ? enable(key.id) : disable(key.id)).then(refresh)}>{limits.disabled ? <Power className="mr-2 h-4 w-4" /> : <PowerOff className="mr-2 h-4 w-4" />}{limits.disabled ? "Enable" : "Disable"}</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => { setSelected(new Set([key.id])); setTarget(""); setMoveOpen(true); }}>Move to Project</DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive" onClick={() => { if (window.confirm(`Delete API key ${key.metadata.name}?`)) void deleteKey({ resource: "api_keys", id: key.id }).then(refresh); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-                                </DropdownMenuContent></DropdownMenu></td>
+                                <td>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          show(
+                                            "api_keys",
+                                            key.metadata.name,
+                                            "push",
+                                            {
+                                              workspace: key.metadata.workspace,
+                                            },
+                                          )
+                                        }
+                                      >
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        View and edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          void (
+                                            limits.disabled
+                                              ? enable(key.id)
+                                              : disable(key.id)
+                                          ).then(refresh)
+                                        }
+                                      >
+                                        {limits.disabled ? (
+                                          <Power className="mr-2 h-4 w-4" />
+                                        ) : (
+                                          <PowerOff className="mr-2 h-4 w-4" />
+                                        )}
+                                        {limits.disabled ? "Enable" : "Disable"}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setSelected(new Set([key.id]));
+                                          setTarget("");
+                                          setMoveOpen(true);
+                                        }}
+                                      >
+                                        Move to Project
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-destructive"
+                                        onClick={() => {
+                                          if (
+                                            window.confirm(
+                                              `Delete API key ${key.metadata.name}?`,
+                                            )
+                                          )
+                                            void deleteKey({
+                                              resource: "api_keys",
+                                              id: key.id,
+                                            }).then(refresh);
+                                        }}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </td>
                               </tr>
                             );
                           })}
@@ -478,7 +622,10 @@ export const ApiKeysList = () => {
         })}
       </div>
       <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-        <span>{groupsQuery.data[0]?.total_projects ?? 0} Projects, paged by complete group</span>
+        <span>
+          {groupsQuery.data[0]?.total_projects ?? 0} Projects, paged by complete
+          group
+        </span>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"

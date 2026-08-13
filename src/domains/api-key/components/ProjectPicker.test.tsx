@@ -9,7 +9,12 @@ vi.mock("@refinedev/core", () => ({
     data: {
       data: [
         { id: "active", name: "Active", description: "Ready", enabled: true },
-        { id: "disabled", name: "Disabled", description: "History", enabled: false },
+        {
+          id: "disabled",
+          name: "Disabled",
+          description: "History",
+          enabled: false,
+        },
       ],
     },
     isLoading: false,
@@ -21,11 +26,14 @@ vi.mock("@refinedev/core", () => ({
 import { ProjectPicker } from "./ProjectPicker";
 
 beforeAll(() => {
-  vi.stubGlobal("ResizeObserver", class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  });
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
   Element.prototype.scrollIntoView = vi.fn();
 });
 
@@ -47,12 +55,24 @@ describe("ProjectPicker", () => {
     render(<ProjectPicker workspace="default" value="" onChange={onChange} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Create Project/ }));
-    fireEvent.change(screen.getByPlaceholderText("Project name"), { target: { value: "New" } });
-    fireEvent.change(screen.getByPlaceholderText("Description (optional)"), { target: { value: "Calls" } });
+    fireEvent.change(screen.getByPlaceholderText("Project name"), {
+      target: { value: "New" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Description (optional)"), {
+      target: { value: "Calls" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Create and select" }));
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith("new"));
-    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ values: { p_workspace: "default", p_name: "New", p_description: "Calls" } }));
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: {
+          p_workspace: "default",
+          p_name: "New",
+          p_description: "Calls",
+        },
+      }),
+    );
     expect(invalidate).toHaveBeenCalled();
   });
 });
