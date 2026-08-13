@@ -51,7 +51,15 @@ export function useApiKeyProjectGroups(params: {
     } finally {
       if (current === request.current) setIsLoading(false);
     }
-  }, [mutateAsync, params.workspace, params.search, params.projectEnabled, params.apiKeyDisabled, params.page, params.pageSize]);
+  }, [
+    mutateAsync,
+    params.workspace,
+    params.search,
+    params.projectEnabled,
+    params.apiKeyDisabled,
+    params.page,
+    params.pageSize,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchGroups(), 300);
