@@ -524,8 +524,8 @@ const virtualizedKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
-// Template virtualization mode (e.g. Ascend) only supports memory_mib
-// shaping; core_percent is rejected by backend admission (NEU-645).
+// Template virtualization mode only supports memory_mib shaping;
+// core_percent is rejected by backend admission (NEU-645).
 const templateModeVirtualizedKubernetesClusterWithDevices = {
   ...virtualizedKubernetesClusterWithDevices,
   metadata: metadata("template-mode-k8s-devices"),
