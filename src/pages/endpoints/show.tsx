@@ -302,7 +302,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
               {showSelector && (
-                <div className="flex justify-center border-b border-border/70 pb-2">
+                <div className="flex justify-start pb-2">
                   <SegmentedControl
                     ariaLabel={t("common.tabs.monitor")}
                     className="shrink-0"

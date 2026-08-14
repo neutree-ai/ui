@@ -143,7 +143,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="relative flex min-h-9 shrink-0 items-center justify-center border-b border-border/70 pb-2">
+      <div className="relative flex min-h-9 shrink-0 items-center justify-start pb-2">
         {availableTabKeys.length > 1 && (
           <SegmentedControl
             ariaLabel={t("common.tabs.logs")}
@@ -159,7 +159,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
         {replicas.length > 1 && (
           <div className="absolute right-0 flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {t("common.fields.replica")} ({replicas.length})
+              {t("common.fields.replica")}
             </span>
             <Select
               value={activeReplicaId ?? replicas[0]?.replica_id}
