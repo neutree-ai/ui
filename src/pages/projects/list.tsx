@@ -33,9 +33,9 @@ export const ProjectsList = () => {
       <Table.Column id="description" accessorKey="spec.description" header="Description" />
       <Table.Column id="status" accessorKey="spec.disabled" header="Status" cell={({ row: { original } }) => original.spec?.disabled ? "Disabled" : "Enabled"} />
       <Table.Column id="actions" accessorKey="id" header="" cell={({ row: { original } }) => <Table.Actions>
-        <RowAction icon={<Pencil size={16} />} title="Edit" onClick={() => { setEditing(original); setDraft({ name: original.metadata.name, description: original.spec?.description ?? "" }); setOpen(true); }} />
-        <RowAction icon={original.spec?.disabled ? <Power size={16} /> : <PowerOff size={16} />} title={original.spec?.disabled ? "Enable" : "Disable"} onClick={() => update(original, !original.spec?.disabled)} />
-        {!original.spec?.default && <RowAction icon={<Trash2 size={16} />} title="Delete" variant="destructive" onClick={() => remove(original)} />}
+        <RowAction icon={<Pencil size={16} />} title="Edit" onClick={() => { const project = original as Project; setEditing(project); setDraft({ name: project.metadata.name, description: project.spec?.description ?? "" }); setOpen(true); }} />
+        <RowAction icon={(original as Project).spec?.disabled ? <Power size={16} /> : <PowerOff size={16} />} title={(original as Project).spec?.disabled ? "Enable" : "Disable"} onClick={() => update(original as Project, !(original as Project).spec?.disabled)} />
+        {!(original as Project).spec?.default && <RowAction icon={<Trash2 size={16} />} title="Delete" variant="destructive" onClick={() => remove(original as Project)} />}
       </Table.Actions>} />
     </Table>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>{editing ? "Edit project" : "Create project"}</DialogTitle></DialogHeader><div className="space-y-3"><Input value={draft.name} placeholder="Name" onChange={(e) => setDraft({ ...draft, name: e.target.value })} /><Input value={draft.description} placeholder="Description" onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></div><DialogFooter><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={save} disabled={!draft.name.trim()}>Save</Button></DialogFooter></DialogContent></Dialog>
