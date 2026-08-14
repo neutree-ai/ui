@@ -764,9 +764,26 @@ export const ApiKeysList = () => {
                                               `Delete API key ${key.metadata.name}?`,
                                             )
                                           ) {
+                                            const keyWorkspace =
+                                              key.metadata.workspace;
+                                            if (!keyWorkspace) {
+                                              setActionError(
+                                                "API key workspace is missing. Refresh and try again.",
+                                              );
+                                              return;
+                                            }
                                             const [variables] =
                                               buildBatchDeleteVariables(
-                                                [{ original: key }],
+                                                [
+                                                  {
+                                                    original: {
+                                                      metadata: {
+                                                        ...key.metadata,
+                                                        workspace: keyWorkspace,
+                                                      },
+                                                    },
+                                                  },
+                                                ],
                                                 "api_keys",
                                                 false,
                                               );
