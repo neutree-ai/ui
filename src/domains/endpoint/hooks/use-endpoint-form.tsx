@@ -38,7 +38,10 @@ import {
   formatVgpuMemoryGiBInputValue,
   getEffectiveVgpuMemoryMiB,
   getRoundedVgpuMemoryGiBValue,
+  isVgpuVirtualizationResourceSupported,
   normalizeVgpuMemoryGiBInput,
+  VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+  VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "@/domains/endpoint/lib/vgpu";
 import type {
   Endpoint,
@@ -332,6 +335,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     isSelectedClusterVgpuEnabled &&
       selectedAccelerator?.type &&
       selectedAccelerator?.product,
+  );
+  // The cluster's accelerator virtualization status reports which virtualization
+  // resource keys its mode supports (backend AcceleratorVirtualizationStatus
+  // .supported_resources). Inputs for resources outside the supported set are
+  // disabled so the form cannot build a spec the backend would reject (e.g.
+  // core_percent when the list omits it). The UI gates on supported_resources
+  // only — not the mode name.
+  const supportedVirtualizationResources =
+    selectedCluster?.status?.accelerator_virtualization?.supported_resources;
+  const isVgpuMemoryResourceSupported = isVgpuVirtualizationResourceSupported(
+    supportedVirtualizationResources,
+    VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
+  );
+  const isVgpuCoreResourceSupported = isVgpuVirtualizationResourceSupported(
+    supportedVirtualizationResources,
+    VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
   );
   const selectedClusterNodeCount = useMemo(() => {
     const nodeResources =
@@ -673,6 +692,53 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form,
     hasResolvedClusterSelection,
     isSelectedClusterVgpuEnabled,
+    selectedVirtualization,
+  ]);
+
+  // Clear virtualization values the cluster's supported_resources no longer
+  // includes (backend AcceleratorVirtualizationStatus.supported_resources).
+  // Disabling the input alone would still submit a stale value that backend
+  // admission rejects (e.g. core_percent when the list omits it) and would
+  // keep the stale value driving the capacity math.
+  useEffect(() => {
+    if (!hasResolvedClusterSelection || !selectedVirtualization) return;
+
+    const next = { ...selectedVirtualization };
+    let changed = false;
+
+    if (!isVgpuCoreResourceSupported) {
+      const corePercent = (selectedVirtualization as Record<string, unknown>)
+        .core_percent;
+      if (
+        corePercent !== undefined &&
+        corePercent !== null &&
+        corePercent !== ""
+      ) {
+        delete next.core_percent;
+        changed = true;
+      }
+    }
+    if (!isVgpuMemoryResourceSupported) {
+      const memoryMiB = (selectedVirtualization as Record<string, unknown>)
+        .memory_mib;
+      if (memoryMiB !== undefined && memoryMiB !== null && memoryMiB !== "") {
+        delete next.memory_mib;
+        changed = true;
+      }
+    }
+
+    if (!changed) return;
+
+    form.setValue(
+      "spec.resources.accelerator.virtualization",
+      Object.keys(next).length > 0 ? next : undefined,
+      { shouldDirty: true, shouldValidate: true },
+    );
+  }, [
+    form,
+    hasResolvedClusterSelection,
+    isVgpuCoreResourceSupported,
+    isVgpuMemoryResourceSupported,
     selectedVirtualization,
   ]);
 
@@ -1959,7 +2025,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             min={0}
                             max={vgpuMemoryGiBMaxValue ?? undefined}
                             step={0.5}
-                            disabled={!showVgpuFields}
+                            disabled={
+                              !showVgpuFields || !isVgpuMemoryResourceSupported
+                            }
                             placeholder="GiB"
                             className="h-9"
                           />
@@ -1970,7 +2038,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           name="spec.resources.accelerator.virtualization.core_percent"
                           label={t("endpoints.fields.vgpuCoreLimit")}
                           description={t(
-                            "endpoints.messages.vgpuCoreLimitUnlimitedHint",
+                            isVgpuCoreResourceSupported
+                              ? "endpoints.messages.vgpuCoreLimitUnlimitedHint"
+                              : "endpoints.messages.vgpuCoreLimitUnsupportedMode",
                           )}
                           className="col-span-1"
                         >
@@ -1988,9 +2058,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             min={0}
                             max={100}
                             step={1}
-                            disabled={!showVgpuFields}
+                            disabled={
+                              !showVgpuFields || !isVgpuCoreResourceSupported
+                            }
                             placeholder={
-                              showVgpuFields
+                              showVgpuFields && isVgpuCoreResourceSupported
                                 ? "0"
                                 : t("common.options.disabled")
                             }

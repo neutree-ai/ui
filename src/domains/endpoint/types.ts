@@ -73,6 +73,15 @@ export type EndpointClusterRef = {
     ready_nodes?: number;
     desired_nodes?: number;
     resource_info?: ClusterResourceInfo | null;
+    /**
+     * The virtualization resource keys the cluster's accelerator virtualization
+     * mode supports (e.g. ["virtualization.memory_mib", "virtualization.core_percent"]).
+     * Mirrors the backend AcceleratorVirtualizationStatus.supported_resources;
+     * the UI gates virtualization inputs on this list only.
+     */
+    accelerator_virtualization?: {
+      supported_resources?: string[];
+    } | null;
   } | null;
 };
 

@@ -524,6 +524,32 @@ const virtualizedKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
+// A capability block whose supported_resources omits core_percent: backend
+// admission rejects it (NEU-645), so the UI must disable/clear it.
+const coreUnsupportedVirtualizedKubernetesClusterWithDevices = {
+  ...virtualizedKubernetesClusterWithDevices,
+  metadata: metadata("core-unsupported-k8s-devices"),
+  status: {
+    ...virtualizedKubernetesClusterWithDevices.status,
+    accelerator_virtualization: {
+      supported_resources: ["virtualization.memory_mib"],
+    },
+  },
+} satisfies EndpointClusterRef;
+
+// Empty supported-resources list with a present capability block: backend
+// slices.Contains never matches, so every virtualization key is rejected.
+const emptyResourcesVirtualizedKubernetesClusterWithDevices = {
+  ...virtualizedKubernetesClusterWithDevices,
+  metadata: metadata("empty-resources-k8s-devices"),
+  status: {
+    ...virtualizedKubernetesClusterWithDevices.status,
+    accelerator_virtualization: {
+      supported_resources: [],
+    },
+  },
+} satisfies EndpointClusterRef;
+
 const virtualizedKubernetesClusterWithoutDeviceDetails = {
   metadata: metadata("virtualized-k8s-no-device-details"),
   spec: {
@@ -3900,6 +3926,256 @@ describe("useEndpointForm", () => {
           "spec.resources.accelerator.virtualization.core_percent",
         ),
       ).toBe(50);
+    });
+
+    it("disables the core limit input when the cluster mode does not support core virtualization", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [coreUnsupportedVirtualizedKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "core-unsupported-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(true);
+      expect(memoryInput.disabled).toBe(false);
+      expect(
+        screen.getByText("endpoints.messages.vgpuCoreLimitUnsupportedMode"),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText("endpoints.messages.vgpuCoreLimitUnlimitedHint"),
+      ).toBeNull();
+    });
+
+    it("keeps both split inputs enabled when the cluster mode supports core virtualization", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(false);
+      expect(memoryInput.disabled).toBe(false);
+      expect(
+        screen.getByText("endpoints.messages.vgpuCoreLimitUnlimitedHint"),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText("endpoints.messages.vgpuCoreLimitUnsupportedMode"),
+      ).toBeNull();
+    });
+
+    it("keeps both split inputs enabled when the cluster reports no virtualization mode", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [virtualizedKubernetesClusterWithoutDeviceDetails],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue(
+          "spec.cluster",
+          "virtualized-k8s-no-device-details",
+        );
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(false);
+      expect(memoryInput.disabled).toBe(false);
+    });
+
+    it("clears the core limit value when the cluster mode stops supporting it", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [
+          virtualizedKubernetesClusterWithDevices,
+          coreUnsupportedVirtualizedKubernetesClusterWithDevices,
+        ],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      // On the core-supporting cluster both split values are present.
+      expect(
+        formInstance?.getValues("spec.resources.accelerator.virtualization"),
+      ).toEqual({ memory_mib: 8192, core_percent: 50 });
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "core-unsupported-k8s-devices");
+      });
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toEqual({ memory_mib: 8192 });
+      });
+    });
+
+    it("clears an unsupported core limit on load in edit mode", async () => {
+      queryDataRef.current = {
+        spec: {
+          cluster: "core-unsupported-k8s-devices",
+          resources: {
+            cpu: "2",
+            memory: "8Gi",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "8192",
+              "virtualization.core_percent": "50",
+            },
+          },
+        },
+      };
+      setupMocks(
+        [catalogA, catalogB],
+        [coreUnsupportedVirtualizedKubernetesClusterWithDevices],
+      );
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "core-unsupported-k8s-devices");
+      });
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toEqual({ memory_mib: 8192 });
+      });
+    });
+
+    it("disables and clears both split inputs when the cluster reports an empty supported-resources list", async () => {
+      setupMocks(
+        [catalogA, catalogB],
+        [emptyResourcesVirtualizedKubernetesClusterWithDevices],
+      );
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "empty-resources-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const coreInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.vgpuCoreLimit/i,
+      })) as HTMLInputElement;
+      const memoryInput = (await screen.findByRole("spinbutton", {
+        name: /endpoints.fields.singleCardMemory/i,
+      })) as HTMLInputElement;
+
+      expect(coreInput.disabled).toBe(true);
+      expect(memoryInput.disabled).toBe(true);
+
+      await waitFor(() => {
+        expect(
+          formInstance?.getValues("spec.resources.accelerator.virtualization"),
+        ).toBeUndefined();
+      });
     });
   });
 

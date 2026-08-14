@@ -7,8 +7,11 @@ import {
   getVgpuMemoryDisplay,
   getVgpuVirtualization,
   hasVgpuResources,
+  isVgpuVirtualizationResourceSupported,
   normalizeVgpuMemoryGiBInput,
   normalizeVgpuVirtualization,
+  VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+  VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "./vgpu";
 
 describe("endpoint vgpu helpers", () => {
@@ -170,5 +173,62 @@ describe("endpoint vgpu helpers", () => {
     expect(normalizeVgpuMemoryGiBInput(Number.POSITIVE_INFINITY, 46068)).toBe(
       undefined,
     );
+  });
+
+  it("treats a missing virtualization capability block as supporting every resource", () => {
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        undefined,
+        VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+      ),
+    ).toBe(true);
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        null,
+        VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
+      ),
+    ).toBe(true);
+  });
+
+  it("reports a resource as supported when it appears in the list", () => {
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        [
+          VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
+          VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+        ],
+        VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+      ),
+    ).toBe(true);
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        [VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY],
+        VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
+      ),
+    ).toBe(true);
+  });
+
+  it("reports a resource as unsupported when it is missing from the list", () => {
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        [VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY],
+        VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+      ),
+    ).toBe(false);
+  });
+
+  it("reports resources as unsupported when the capability block has an empty list", () => {
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        [],
+        VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
+      ),
+    ).toBe(false);
+    expect(
+      isVgpuVirtualizationResourceSupported(
+        [],
+        VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
+      ),
+    ).toBe(false);
   });
 });
