@@ -1,4 +1,4 @@
-import { useCustomMutation, useInvalidate } from "@refinedev/core";
+import { useCustomMutation, useInvalidate, useList } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
@@ -15,13 +15,13 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import type { ApiKey } from "@/domains/api-key/types";
+import type { ApiKey, Project } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 
-type FormValues = { name: string; workspace: string } & ApiKeyPolicyFormValues;
+type FormValues = { name: string; workspace: string; project_id: string; description: string } & ApiKeyPolicyFormValues;
 
 export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   const { t } = useTranslation();
@@ -30,10 +30,19 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     defaultValues: {
       name: "",
       workspace: "",
+		project_id: "",
+		description: "",
       ...apiKeyPolicyDefaults(),
     },
   });
   const selectedWorkspace = form.watch("workspace");
+	const { data: projectsData, isLoading: isLoadingProjects } = useList<Project>({
+		resource: "projects",
+		pagination: { mode: "off" },
+		filters: selectedWorkspace ? [{ field: "metadata->>workspace", operator: "eq", value: selectedWorkspace }] : [],
+		queryOptions: { enabled: Boolean(selectedWorkspace) },
+	});
+	const projects = (projectsData?.data ?? []).filter((project) => !project.spec?.disabled);
   // Shares the pickers' query so this form isn't stuck on refine's default
   // first page of 10 workspaces either (NEU-505). FormCombobox filters what it
   // is given locally, so the page size is the reach here.
@@ -62,6 +71,8 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         p_name: formValue.name,
         p_quota: 0,
         p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
+		p_project_id: formValue.project_id || null,
+		p_description: formValue.description,
       },
     });
     invalidate({
@@ -145,6 +156,16 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
         <FormFieldGroup {...form} name="name" label={t("common.fields.name")}>
           <Input />
         </FormFieldGroup>
+		<FormFieldGroup {...form} name="project_id" label="Project">
+		  <FormCombobox
+			placeholder={selectedWorkspace ? "Select a project" : "Select a workspace first"}
+			disabled={!selectedWorkspace || isLoadingProjects}
+			options={projects.map((project) => ({ label: project.spec?.description ? `${project.metadata.name} - ${project.spec.description}` : project.metadata.name, value: project.id }))}
+		  />
+		</FormFieldGroup>
+		<FormFieldGroup {...form} name="description" label="Description">
+		  <Input />
+		</FormFieldGroup>
 
         <div className="pt-1 text-sm font-medium">
           {t("api_keys.limits.sectionTitle")}

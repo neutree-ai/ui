@@ -34,6 +34,17 @@ export type ApiKey = {
   metadata: Metadata;
   spec: ApiKeySpec;
   status: ApiKeyStatus | null;
+	project_id: string;
+	description: string;
+};
+
+export type Project = {
+  id: string;
+  api_version: "v1";
+  kind: "Project";
+  metadata: Metadata;
+  spec: { description?: string; disabled?: boolean; default?: boolean };
+  status: { phase?: string; error_message?: string } | null;
 };
 
 export type ApiKeySpec = {
