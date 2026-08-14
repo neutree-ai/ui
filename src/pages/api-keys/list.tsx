@@ -59,6 +59,7 @@ export const ApiKeysList = () => {
     workspace: "",
     projectId: "",
   });
+  const [createKeySession, setCreateKeySession] = useState(0);
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -161,6 +162,7 @@ export const ApiKeysList = () => {
       workspace: project?.workspace ?? scoped ?? "",
       projectId: project?.id ?? "",
     });
+    setCreateKeySession((session) => session + 1);
     setOpen(true);
   };
   const createProject = async () => {
@@ -240,6 +242,7 @@ export const ApiKeysList = () => {
             <DialogDescription>Create a key in a Project.</DialogDescription>
           </DialogHeader>
           <CreateApiKeyForm
+            key={createKeySession}
             initialWorkspace={createKeyPreset.workspace}
             initialProjectId={createKeyPreset.projectId}
             onClose={() => setOpen(false)}
