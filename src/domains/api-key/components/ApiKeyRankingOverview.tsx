@@ -49,7 +49,9 @@ const RankingPanel = ({
                 {pie.map((entry, index) => (
                   <Cell
                     key={entry.name}
-                    fill={SLICE_COLORS[Math.min(index, SLICE_COLORS.length - 1)]}
+                    fill={
+                      SLICE_COLORS[Math.min(index, SLICE_COLORS.length - 1)]
+                    }
                   />
                 ))}
               </Pie>
