@@ -60,13 +60,20 @@ export const registryContentsAreMeasured = (
  * dialogue whose only possible outcome is an error, which is why the acceptance
  * for this is "no write entry points", not "writes fail gracefully".
  *
+ * **Fails closed inside the helper**, so `undefined` is not writable. Asking
+ * "is it not public?" would answer yes for a registry that never said what it is —
+ * a caller that forgot `MODEL_REGISTRY_SELECT` would then get write controls on a
+ * public registry, which is precisely the acceptance this exists to hold. The cost
+ * of the safe direction is two missing buttons, which somebody notices; the cost of
+ * the other one is a dialogue that cannot succeed.
+ *
  * This is not permission checking. Who may write is the server's to decide and is
  * reported where the action was taken; this is what the registry is capable of at
  * all.
  */
 export const registryAcceptsWrites = (
   visibility: ModelRegistryVisibility | undefined,
-) => visibility !== "public";
+) => visibility === "private";
 
 /**
  * When the models in this registry reach the serving node.

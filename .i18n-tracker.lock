@@ -347,7 +347,7 @@
   "src/domains/external-endpoint/lib/is-serving-phase.ts": "5c84904e77f2457c0fd42484a8da5f8a",
   "src/domains/external-endpoint/lib/match-upstream-statuses.ts": "0b9e55ff58264d5c419e466235d303dc",
   "src/domains/external-endpoint/lib/get-unavailable-models.ts": "e75dba909e0ca54c8cb6b4d10d5cbfe9",
-  "src/pages/model-registries/model-show.tsx": "e17881b442071b92e2e8b8d796486b52",
+  "src/pages/model-registries/model-show.tsx": "6ae56ec7248a7deb27ab636171d480af",
   "src/foundation/types/model-types.ts": "80a78a25a6c7c804da328542b039310c",
   "src/foundation/lib/api/registry-models.ts": "e3beaecb8c8e29539b4e5a69a386e314",
   "src/foundation/hooks/use-registry-models.ts": "17ec9212ef30e410b1a67421b27a9424",
@@ -372,5 +372,5 @@
   "src/domains/model-registry/lib/capabilities.ts": "b544757b2e8cddba755eca02c8ab5cde",
   "src/domains/model-registry/lib/model-card.ts": "6614d0a004271fa9e0524e8d0e656e97",
   "src/foundation/lib/api/model-registries.ts": "63aabfb75c7df819933df76333e6f67b",
-  "src/foundation/lib/model-registry-visibility.ts": "fff4ba0526c2e49057f4919d47037993"
+  "src/foundation/lib/model-registry-visibility.ts": "24550d054dd3e6365f09c526b829302a"
 }

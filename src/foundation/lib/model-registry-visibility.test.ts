@@ -43,6 +43,14 @@ describe("visibility rules", () => {
     expect(registryContentsAreMeasured(undefined)).toBe(true);
   });
 
+  it("does not call a registry writable on the strength of a missing field", () => {
+    // Fails closed: "not public" would be true here, and a caller that forgot
+    // the select would get write controls on a public registry — the acceptance
+    // this predicate exists to hold. Two missing buttons is the cheaper wrong
+    // answer, and the one somebody notices.
+    expect(registryAcceptsWrites(undefined)).toBe(false);
+  });
+
   it("refuses to say where models come from when nobody said", () => {
     // Not folded into "already-local". That answer would take the deploy-time
     // warning off the screen and leave no trace that it had — the one failure

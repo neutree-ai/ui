@@ -66,15 +66,12 @@ export const ModelRegistryModelShow = () => {
     meta: { select: MODEL_REGISTRY_SELECT, workspaced: true, workspace },
     queryOptions: { enabled: Boolean(workspace && registry) },
   });
-  const registryRecord = registryData?.data;
-  // Fail closed, in both directions. No answer yet means no controls — showing
-  // them and taking them away again is worse than showing them a moment late —
-  // and a registry that answered *without* stating its visibility means the
-  // request forgot to select the field, which loses two buttons rather than
-  // offering a dialogue whose only outcome is a refusal.
-  const canWrite =
-    registryRecord?.visibility !== undefined &&
-    registryAcceptsWrites(registryRecord.visibility);
+  // Fails closed in both directions, and both of them live in
+  // `registryAcceptsWrites`: no answer yet and an answer that did not state a
+  // visibility are equally "not known to be writable". Showing the controls a
+  // moment late costs nothing; offering a dialogue whose only outcome is a
+  // refusal is the acceptance criterion violated.
+  const canWrite = registryAcceptsWrites(registryData?.data?.visibility);
 
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
