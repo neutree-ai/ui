@@ -69,10 +69,12 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
           triggerClassName,
         )}
       >
-        {value
-          ? (options.find((item) => item.value === value)?.label ?? value)
-          : defaultPlaceholder}
-        <ChevronsUpDown className="text-[var(--nt-text-neutral-tertiary)]" />
+        <span className="min-w-0 flex-1 truncate text-left">
+          {value
+            ? (options.find((item) => item.value === value)?.label ?? value)
+            : defaultPlaceholder}
+        </span>
+        <ChevronsUpDown className="size-4 shrink-0 text-[var(--nt-text-neutral-tertiary)]" />
       </Button>
     );
 
@@ -119,10 +121,12 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
                         setOpen(false);
                       }}
                     >
-                      {item.label}
+                      <span className="min-w-0 flex-1 truncate">
+                        {item.label}
+                      </span>
                       <Check
                         className={cn(
-                          "ml-auto",
+                          "ml-auto size-4 shrink-0",
                           value === item.value ? "opacity-100" : "opacity-0",
                         )}
                       />

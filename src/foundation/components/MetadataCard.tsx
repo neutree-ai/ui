@@ -1,25 +1,15 @@
-import { useTranslation } from "@refinedev/core";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import type { Metadata } from "@/foundation/types/basic-types";
-import Timestamp from "./Timestamp";
-
-type MetadataCardProps = {
-  metadata: Metadata;
-  showName?: boolean;
-};
 
 type KeyValueTagsProps = {
   data: Record<string, string>;
 };
 
-function KeyValueTags({ data }: KeyValueTagsProps) {
+export function KeyValueTags({ data }: KeyValueTagsProps) {
   const MAX_VALUE_LENGTH = 30;
 
   const truncateValue = (value: string) => {
@@ -38,9 +28,9 @@ function KeyValueTags({ data }: KeyValueTagsProps) {
           return (
             <span
               key={key}
-              className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-md"
+              className="inline-flex items-center rounded-md border border-border/70 bg-background/40 px-2 py-1 text-xs text-foreground shadow-[0_1px_0_rgba(15,23,42,0.03)]"
             >
-              <span className="font-medium">{key}:</span>
+              <span className="font-medium text-muted-foreground">{key}:</span>
               {shouldTruncate ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -60,56 +50,5 @@ function KeyValueTags({ data }: KeyValueTagsProps) {
         })}
       </div>
     </TooltipProvider>
-  );
-}
-
-export default function MetadataCard({
-  metadata,
-  showName = true,
-}: MetadataCardProps) {
-  const { translate } = useTranslation();
-
-  return (
-    <ShowPage.Section title={translate("common.sections.basicInformation")}>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-        {showName && (
-          <ShowPage.Row title={translate("common.fields.name")}>
-            <span className="break-all">{metadata.name}</span>
-          </ShowPage.Row>
-        )}
-        {metadata.workspace && (
-          <ShowPage.Row title={translate("common.fields.workspace")}>
-            <ShowButton
-              recordItemId={metadata.workspace}
-              meta={{}}
-              variant="link"
-              resource="workspaces"
-            >
-              {metadata.workspace}
-            </ShowButton>
-          </ShowPage.Row>
-        )}
-        <ShowPage.Row title={translate("common.fields.createdAt")}>
-          <Timestamp timestamp={metadata.creation_timestamp} />
-        </ShowPage.Row>
-        <ShowPage.Row title={translate("common.fields.updatedAt")}>
-          <Timestamp timestamp={metadata.update_timestamp} />
-        </ShowPage.Row>
-      </div>
-      {metadata.labels && Object.keys(metadata.labels).length > 0 && (
-        <div className="mt-5">
-          <ShowPage.Row title={translate("common.fields.labels")}>
-            <KeyValueTags data={metadata.labels} />
-          </ShowPage.Row>
-        </div>
-      )}
-      {metadata.annotations && Object.keys(metadata.annotations).length > 0 && (
-        <div className="mt-5">
-          <ShowPage.Row title={translate("common.fields.annotations")}>
-            <KeyValueTags data={metadata.annotations} />
-          </ShowPage.Row>
-        </div>
-      )}
-    </ShowPage.Section>
   );
 }

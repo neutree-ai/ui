@@ -93,7 +93,6 @@ export const RolesList = () => {
         {roleColumns.name}
         {roleColumns.permissions}
 
-        {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
         {roleColumns.action}
       </Table>

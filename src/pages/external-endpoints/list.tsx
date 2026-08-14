@@ -82,7 +82,6 @@ export const ExternalEndpointsList = () => {
             );
           }}
         />
-        {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
         {metadataColumns.action}
       </Table>

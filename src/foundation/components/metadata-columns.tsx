@@ -71,20 +71,7 @@ export const useMetadataColumns = (options?: MetadataColumnOptions) => {
         enableHiding
         cell={({ row }) => {
           const { creation_timestamp } = row.original.metadata;
-          return <Timestamp timestamp={creation_timestamp} />;
-        }}
-      />
-    ),
-    update_timestamp: (
-      <Table.Column
-        header={translate("common.fields.updatedAt")}
-        accessorKey="metadata.update_timestamp"
-        id="metadata->update_timestamp"
-        enableSorting
-        enableHiding
-        cell={({ row }) => {
-          const { update_timestamp } = row.original.metadata;
-          return <Timestamp timestamp={update_timestamp} />;
+          return <Timestamp timestamp={creation_timestamp} relative />;
         }}
       />
     ),

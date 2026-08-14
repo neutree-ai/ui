@@ -37,7 +37,6 @@ export const UsersList = () => {
         {userColumns.email}
 
         {metadataColumns.creation_timestamp}
-        {metadataColumns.update_timestamp}
 
         {metadataColumns.action}
       </Table>

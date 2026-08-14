@@ -44,7 +44,6 @@ export const WorkspacesList = () => {
         }}
       >
         {metadataColumns.name}
-        {metadataColumns.update_timestamp}
         {metadataColumns.creation_timestamp}
         {workspaceColumns.action}
       </Table>

@@ -6,10 +6,10 @@ import {
 } from "@refinedev/core";
 import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
+import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
+import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
@@ -19,13 +19,12 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import type { Endpoint } from "@/domains/endpoint/types";
-import EngineVariablesCard from "@/domains/engine/components/EngineVariablesCard";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
-import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -100,6 +99,20 @@ const RayDashboardTab = ({
 const detailTabTriggerClassName =
   "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
 
+const getSchedulerText = (
+  schedulerType: string | null | undefined,
+  t: (key: string) => string,
+) => {
+  switch (schedulerType) {
+    case "consistent_hash":
+      return t("models.scheduler.consistentHashing");
+    case "roundrobin":
+      return t("models.scheduler.roundRobin");
+    default:
+      return t("models.scheduler.unavailable");
+  }
+};
+
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
   const { grafanaUrl } = useSystemApi();
@@ -154,10 +167,15 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
+  const replicaCount = record.spec.replicas?.num ?? 1;
+  const shouldShowScheduler = replicaCount > 1;
+  const schedulerText = getSchedulerText(
+    record.spec.deployment_options?.scheduler?.type,
+    t,
+  );
   const engineVersion = engineData?.data?.spec.versions.find(
     (v) => v.version === record.spec.engine.version,
   );
-  const engineVersionSchema = engineVersion?.values_schema;
   const playground = resolvePlayground(engineVersion, record.spec.model.task);
 
   return (
@@ -169,8 +187,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       <Tabs defaultValue="basic" className="flex h-full flex-col">
         <ShowPage.ObjectHeader
           title={record.metadata.name}
+          descriptionClassName="max-w-none"
           description={
-            <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <ShowPage.Meta label={t("common.fields.model")}>
                 <EndpointModel model={record.spec.model} />
               </ShowPage.Meta>
@@ -191,6 +210,23 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 >
                   {record.spec.cluster}
                 </ShowButton>
+              </ShowPage.Meta>
+              {url && (
+                <EndpointAccessSummary serviceUrl={url} className="shrink-0" />
+              )}
+              <ShowPage.Meta label={t("endpoints.fields.replicas")}>
+                {replicaCount}
+              </ShowPage.Meta>
+              {shouldShowScheduler && (
+                <ShowPage.Meta label={t("common.fields.scheduler")}>
+                  {schedulerText}
+                </ShowPage.Meta>
+              )}
+              <ShowPage.Meta label={t("common.fields.createdAt")}>
+                <Timestamp
+                  timestamp={record.metadata.creation_timestamp}
+                  relative
+                />
               </ShowPage.Meta>
             </span>
           }
@@ -227,53 +263,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
         >
           <div className="space-y-4">
-            <ShowPage.Section title={t("common.sections.basicInformation")}>
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <ShowPage.Row title={t("common.fields.status")}>
-                  <EndpointStatus {...record.status} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.cluster")}>
-                  <ShowButton
-                    recordItemId={record.spec.cluster}
-                    meta={{
-                      workspace: record.metadata.workspace,
-                    }}
-                    variant="link"
-                    resource="clusters"
-                  >
-                    {record.spec.cluster}
-                  </ShowButton>
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.engine")}>
-                  <EndpointEngine {...record} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.model")}>
-                  <EndpointModel model={record.spec.model} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.task")}>
-                  <ModelTask task={record.spec.model.task} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("endpoints.fields.modelFile")}>
-                  {record.spec.model.file || "-"}
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.workspace")}>
-                  {record.metadata.workspace ?? "-"}
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.createdAt")}>
-                  <Timestamp timestamp={record.metadata.creation_timestamp} />
-                </ShowPage.Row>
-                <ShowPage.Row title={t("common.fields.updatedAt")}>
-                  <Timestamp timestamp={record.metadata.update_timestamp} />
-                </ShowPage.Row>
-              </div>
-            </ShowPage.Section>
-
-            {url && (
-              <ShowPage.Section title={t("endpoints.sections.access")}>
-                <ServiceUrls serviceUrl={url} />
-              </ShowPage.Section>
-            )}
-
             <ShowPage.Section title={t("endpoints.sections.runtimeAllocation")}>
               <div className="space-y-6">
                 <EndpointRuntimeResourcesCard
@@ -288,39 +277,18 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     framed={false}
                   />
                 </div>
-                <div className="border-t pt-4">
-                  <DeploymentConfigCard
-                    replicas={record.spec.replicas}
-                    deploymentOptions={record.spec.deployment_options}
-                    framed={false}
-                  />
-                </div>
               </div>
             </ShowPage.Section>
           </div>
-          <EngineVariablesCard
-            schema={engineVersionSchema}
-            variables={record.spec.variables}
-            useNestedPath={true}
+          <EndpointAdvancedParameters
+            engineParameters={
+              record.spec.variables?.engine_args as
+                | Record<string, unknown>
+                | undefined
+            }
+            environmentVariables={record.spec.env}
           />
-          {record.spec.env && Object.keys(record.spec.env).length > 0 && (
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>
-                  {t("endpoints.sections.environmentVariables")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(record.spec.env).map(([key, value]) => (
-                    <ShowPage.Row key={key} title={key}>
-                      {value}
-                    </ShowPage.Row>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <MetadataDisclosure metadata={record.metadata} className="mt-4" />
         </TabsContent>
         {shouldShowRayDashboard && (
           <TabsContent value="ray" className="mt-0 flex-1">
@@ -334,39 +302,37 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           {grafanaUrl ? (
             <div className="flex flex-col gap-4 h-full">
               {showSelector && (
-                <Card className="p-4">
-                  <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center">
-                    <SegmentedControl
-                      ariaLabel={t("common.tabs.monitor")}
-                      items={panels.map((panel) => ({
-                        value: panel,
-                        label:
-                          panel === "overview"
-                            ? t("endpoints.monitor.overviewMetrics")
-                            : panel === "latency"
-                              ? t("endpoints.monitor.latencyMetrics")
-                              : panel === "throughput"
-                                ? t("endpoints.monitor.throughputMetrics")
-                                : panel === "queue"
-                                  ? t("endpoints.monitor.queueMetrics")
-                                  : t("endpoints.monitor.cacheMetrics"),
-                      }))}
-                      onValueChange={setSelectedPanel}
-                      value={selectedPanel || undefined}
-                    />
-                    <p className="min-w-0 text-sm text-muted-foreground lg:text-right">
-                      {selectedPanel === "latency"
-                        ? t("endpoints.monitor.latencyDescription")
-                        : selectedPanel === "throughput"
-                          ? t("endpoints.monitor.throughputDescription")
-                          : selectedPanel === "queue"
-                            ? t("endpoints.monitor.queueDescription")
-                            : selectedPanel === "cache"
-                              ? t("endpoints.monitor.cacheDescription")
-                              : t("endpoints.monitor.overviewDescription")}
-                    </p>
-                  </div>
-                </Card>
+                <div className="flex justify-start pb-2">
+                  <SegmentedControl
+                    ariaLabel={t("common.tabs.monitor")}
+                    className="shrink-0"
+                    items={panels.map((panel) => ({
+                      value: panel,
+                      description:
+                        panel === "latency"
+                          ? t("endpoints.monitor.latencyDescription")
+                          : panel === "throughput"
+                            ? t("endpoints.monitor.throughputDescription")
+                            : panel === "queue"
+                              ? t("endpoints.monitor.queueDescription")
+                              : panel === "cache"
+                                ? t("endpoints.monitor.cacheDescription")
+                                : t("endpoints.monitor.overviewDescription"),
+                      label:
+                        panel === "overview"
+                          ? t("endpoints.monitor.overviewMetrics")
+                          : panel === "latency"
+                            ? t("endpoints.monitor.latencyMetrics")
+                            : panel === "throughput"
+                              ? t("endpoints.monitor.throughputMetrics")
+                              : panel === "queue"
+                                ? t("endpoints.monitor.queueMetrics")
+                                : t("endpoints.monitor.cacheMetrics"),
+                    }))}
+                    onValueChange={setSelectedPanel}
+                    value={selectedPanel || undefined}
+                  />
+                </div>
               )}
 
               {selectedPanel ? (

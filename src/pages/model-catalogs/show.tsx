@@ -18,7 +18,8 @@ import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
@@ -135,11 +136,12 @@ export const ModelCatalogsShow = () => {
             <ShowPage.Meta label={t("common.fields.task")}>
               <ModelTask task={heroModel?.task ?? ""} />
             </ShowPage.Meta>
+            <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
       />
       <div className="mt-4 space-y-4 overflow-auto">
-        <MetadataCard metadata={record.metadata} showName={false} />
+        <MetadataDisclosure metadata={record.metadata} />
         {verifiedHardware.length > 0 && (
           <ShowPage.Section
             title={t(

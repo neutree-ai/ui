@@ -142,7 +142,6 @@ export const ClustersList = () => {
               );
             }}
           />
-          {metadataColumns.update_timestamp}
           {metadataColumns.creation_timestamp}
           {metadataColumns.action}
         </Table>

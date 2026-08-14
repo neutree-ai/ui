@@ -10,7 +10,8 @@ import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -56,15 +57,13 @@ export const ExternalEndpointsShow = () => {
             <ShowPage.Meta label={t("external_endpoints.fields.models")}>
               {allModels.length || "-"}
             </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.workspace")}>
-              {record.metadata.workspace ?? "-"}
-            </ShowPage.Meta>
+            <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
       />
 
       <div className="mt-4 space-y-4">
-        <MetadataCard metadata={record.metadata} showName={false} />
+        <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section
           title={t("external_endpoints.sections.configuration")}
         >

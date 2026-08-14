@@ -1,17 +1,29 @@
 import dayjs, { type Dayjs } from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import type React from "react";
 import { useMemo } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+
+import "dayjs/locale/zh-cn";
 
 // Extend dayjs with timezone support
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(relativeTime);
 
 interface TimestampProps {
   timestamp: number | string | null | undefined; // Unix timestamp (seconds or milliseconds) or ISO string
   format?: string; // Optional custom format
   className?: string; // Optional CSS class
+  relative?: boolean; // Display relative time with the absolute time on hover
 }
 
 /**
@@ -81,16 +93,51 @@ const Timestamp: React.FC<TimestampProps> = ({
   timestamp,
   format = "YYYY-MM-DD HH:mm", // Default format: year-month-day hour:minute
   className,
+  relative = false,
 }) => {
+  const { i18n } = useTranslation();
+  const resolvedLanguage = i18n?.resolvedLanguage;
   const formattedTime = useMemo(() => {
     return formatTimestamp(timestamp, format);
   }, [timestamp, format]);
+
+  const relativeTimestamp = useMemo(() => {
+    if (!relative || timestamp == null) return "";
+
+    const value =
+      typeof timestamp === "string"
+        ? dayjs(normalizeTimestampString(timestamp))
+        : timestamp < 10000000000
+          ? dayjs.unix(timestamp)
+          : dayjs(timestamp);
+    const locale = resolvedLanguage?.startsWith("zh") ? "zh-cn" : "en";
+
+    return value.isValid() ? value.locale(locale).fromNow() : "Invalid date";
+  }, [resolvedLanguage, relative, timestamp]);
 
   if (!formattedTime) {
     return <span className={className}>-</span>;
   }
 
-  return <span className={className}>{formattedTime}</span>;
+  if (!relative) {
+    return <span className={className}>{formattedTime}</span>;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn(
+            "cursor-help border-b border-dashed border-muted-foreground/50",
+            className,
+          )}
+        >
+          {relativeTimestamp}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{formattedTime}</TooltipContent>
+    </Tooltip>
+  );
 };
 
 export default Timestamp;

@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getBackendReplicas,
   useEndpointLogSources,
@@ -15,6 +14,7 @@ import {
 import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { LogViewer } from "./LogViewer";
 
 interface EndpointLogTabsProps {
@@ -141,80 +141,64 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     return labels[logType] || logType;
   };
 
-  // Get appropriate grid class based on number of tabs
-  const getGridClass = () => {
-    const count = availableTabKeys.length;
-    if (count === 1) return "grid-cols-1";
-    if (count === 2) return "grid-cols-2";
-    if (count === 3) return "grid-cols-3";
-    return "grid-cols-4";
-  };
-
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex h-full min-h-0 flex-col"
-      >
-        <div className="flex shrink-0 items-center gap-4 pb-2">
-          {availableTabKeys.length > 1 && (
-            <TabsList className={`grid flex-1 ${getGridClass()}`}>
-              {availableTabKeys.map((logType) => (
-                <TabsTrigger key={logType} value={logType}>
-                  {getTabLabel(logType)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          )}
-          {replicas.length > 1 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                {t("common.fields.replica")} ({replicas.length})
-              </span>
-              <Select
-                value={activeReplicaId ?? replicas[0]?.replica_id}
-                onValueChange={(value) => setActiveReplicaId(value)}
-              >
-                <SelectTrigger className="w-[260px]">
-                  <SelectValue placeholder={t("common.fields.replica")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {replicas.map((replica) => (
-                    <SelectItem
-                      key={replica.replica_id}
-                      value={replica.replica_id}
-                    >
-                      {replica.replica_id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
+      <div className="relative flex min-h-9 shrink-0 items-center justify-start pb-2">
+        {availableTabKeys.length > 1 && (
+          <SegmentedControl
+            ariaLabel={t("common.tabs.logs")}
+            className="shrink-0"
+            items={availableTabKeys.map((logType) => ({
+              value: logType,
+              label: getTabLabel(logType),
+            }))}
+            onValueChange={setActiveTab}
+            value={activeTab}
+          />
+        )}
+        {replicas.length > 1 && (
+          <div className="absolute right-0 flex items-center gap-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              {t("common.fields.replica")}
+            </span>
+            <Select
+              value={activeReplicaId ?? replicas[0]?.replica_id}
+              onValueChange={(value) => setActiveReplicaId(value)}
+            >
+              <SelectTrigger className="w-[260px]">
+                <SelectValue placeholder={t("common.fields.replica")} />
+              </SelectTrigger>
+              <SelectContent>
+                {replicas.map((replica) => (
+                  <SelectItem
+                    key={replica.replica_id}
+                    value={replica.replica_id}
+                  >
+                    {replica.replica_id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
 
-        {availableTabKeys.map((logType) => (
-          <TabsContent
-            key={logType}
-            value={logType}
-            className="mt-2 min-h-0 flex-1 overflow-hidden"
-          >
-            <LogViewer
-              source={
-                isLoadingLogs
-                  ? t("endpoints.logs.loading")
-                  : logsError
-                    ? `Error: ${logsError}`
-                    : streamedLogs || t("endpoints.logs.noLogsAvailable")
-              }
-              downloadUrl={logTypeMap[logType]?.downloadUrl}
-              height="100%"
-              onRefresh={handleRefresh}
-            />
-          </TabsContent>
-        ))}
-      </Tabs>
+      {activeLogInfo && (
+        <div className="mt-2 min-h-0 flex-1 overflow-hidden">
+          <LogViewer
+            source={
+              isLoadingLogs
+                ? t("endpoints.logs.loading")
+                : logsError
+                  ? `Error: ${logsError}`
+                  : streamedLogs || t("endpoints.logs.noLogsAvailable")
+            }
+            downloadUrl={activeLogInfo.downloadUrl}
+            height="100%"
+            onRefresh={handleRefresh}
+          />
+        </div>
+      )}
     </div>
   );
 };

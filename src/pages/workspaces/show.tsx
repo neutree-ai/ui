@@ -2,7 +2,8 @@ import { useShow } from "@refinedev/core";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
-import MetadataCard from "@/foundation/components/MetadataCard";
+import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
+import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -29,9 +30,16 @@ export const WorkspacesShow = () => {
 
   return (
     <ShowPage record={record} canEdit={false} showCurrentBreadcrumb={false}>
-      <ShowPage.ObjectHeader title={metadata.name} />
+      <ShowPage.ObjectHeader
+        title={metadata.name}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <MetadataTimestampMeta metadata={metadata} />
+          </span>
+        }
+      />
       <div className="mt-4 space-y-4">
-        <MetadataCard metadata={metadata} showName={false} />
+        <MetadataDisclosure metadata={metadata} />
         <ShowPage.Section title={t("role_assignments.title")}>
           <Table
             refineCoreProps={{
@@ -74,7 +82,6 @@ export const WorkspacesShow = () => {
               enableHiding
               cell={({ row }) => <UserCell id={row.original.spec.user_id} />}
             />
-            {metadataColumns.update_timestamp}
             {metadataColumns.creation_timestamp}
           </Table>
         </ShowPage.Section>

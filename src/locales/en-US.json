@@ -14,7 +14,6 @@
 			"name": "Name",
 			"workspace": "Workspace",
 			"createdAt": "Created at",
-			"updatedAt": "Updated at",
 			"type": "Type",
 			"imageRegistry": "Image Registry",
 			"status": "Status",
@@ -29,6 +28,7 @@
 			"password": "Password",
 			"permissions": "Permissions",
 			"permissionsCount": "{{count}} permissions",
+			"metadata": "Metadata",
 			"labels": "Labels",
 			"annotations": "Annotations",
 			"openaiUrl": "OpenAI Compatible URL",
@@ -759,6 +759,10 @@
 		"title": "Endpoints",
 		"create": "Create Endpoint",
 		"edit": "Edit Endpoint",
+		"access": {
+			"summary": "Access · {{count}} URLs",
+			"hoverTitle": "Access URLs"
+		},
 		"fields": {
 			"serviceUrl": "Service URL",
 			"npu": "NPU",
@@ -789,6 +793,7 @@
 			"scheduling": "Scheduling",
 			"schedulerType": "Scheduler Type",
 			"engineVariables": "Engine Variables",
+			"parameterValue": "Value",
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"accelerator": "Accelerator",
@@ -866,6 +871,7 @@
 			"resume": "Resume"
 		},
 		"messages": {
+			"parameterCount": "{{count}} parameters",
 			"rayDashboardNotAvailable": "Ray dashboard is not available.",
 			"fetching": "fetching...",
 			"modelNotFoundInRegistry": "Model not found in selected registry",
