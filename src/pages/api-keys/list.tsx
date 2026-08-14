@@ -391,7 +391,7 @@ export const ApiKeysList = () => {
         <ApiKeyRankingOverview keys={rankingKeys} traffic={trafficByKey} />
       </div>
 
-      <ApiKeyProjectGroups workspace={workspace} />
+      <ApiKeyProjectGroups workspace={workspace} usageByKey={usageByKey} />
     </ListPage>
   );
 };

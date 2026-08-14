@@ -9,11 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ApiKey, Project } from "@/domains/api-key/types";
 import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
-import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
+import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
 const PAGE_SIZE = 10;
 
-export function ApiKeyProjectGroups({ workspace }: { workspace: string }) {
+export function ApiKeyProjectGroups({ workspace, usageByKey }: { workspace: string; usageByKey: Map<string, { used: number }> }) {
   const { show } = useNavigation();
   const { mutateAsync } = useCustomMutation();
   const invalidate = useInvalidate();
@@ -46,9 +46,9 @@ export function ApiKeyProjectGroups({ workspace }: { workspace: string }) {
       <Button variant="outline" disabled={!selected.size} onClick={() => setMoveOpen(true)}><FolderInput className="mr-2 h-4 w-4" />Move ({selected.size})</Button>
     </div>
     <Table><TableHeader><TableRow><TableHead className="w-10" /><TableHead>Project / API key</TableHead><TableHead>Description</TableHead><TableHead>Status</TableHead><TableHead>Workspace</TableHead></TableRow></TableHeader><TableBody>
-      {visible.map(({ project, keys: projectKeys }, groupIndex) => { const open = expanded.has(project.id) || (!q && groupIndex === 0 && page === 0); return <>
-        <TableRow key={project.id} className="bg-muted/40"><TableCell><button type="button" onClick={() => setExpanded((current) => { const next = new Set(current); next.has(project.id) ? next.delete(project.id) : next.add(project.id); return next; })}>{open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</button></TableCell><TableCell className="font-semibold">{project.metadata.name} <span className="ml-2 text-xs font-normal text-muted-foreground">{projectKeys.length} keys</span></TableCell><TableCell>{project.spec?.description}</TableCell><TableCell>{project.spec?.disabled ? "Disabled" : "Enabled"}</TableCell><TableCell>{project.metadata.workspace}</TableCell></TableRow>
-        {open && projectKeys.map((key) => <TableRow key={key.id}><TableCell><Checkbox checked={selected.has(key.id)} onCheckedChange={() => toggle(key.id)} /></TableCell><TableCell><button className="text-left hover:underline" onClick={() => show("api_keys", key.metadata.name, "push", { workspace: key.metadata.workspace })}>{key.metadata.name}</button></TableCell><TableCell>{key.description || "-"}</TableCell><TableCell>{key.spec?.limits?.disabled ? "Disabled" : "Enabled"}</TableCell><TableCell>{key.metadata.workspace}</TableCell></TableRow>)}
+      {visible.map(({ project, keys: projectKeys }, groupIndex) => { const open = expanded.has(project.id) || (!q && groupIndex === 0 && page === 0); const usage = projectKeys.reduce((total, key) => total + (usageByKey.get(key.id)?.used ?? 0), 0); return <>
+        <TableRow key={project.id} className="bg-muted/40"><TableCell><button type="button" onClick={() => setExpanded((current) => { const next = new Set(current); next.has(project.id) ? next.delete(project.id) : next.add(project.id); return next; })}>{open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</button></TableCell><TableCell className="font-semibold">{project.metadata.name} <span className="ml-2 text-xs font-normal text-muted-foreground">{projectKeys.length} keys · {formatTokenQuota(usage)} tokens</span></TableCell><TableCell>{project.spec?.description}</TableCell><TableCell>{project.spec?.disabled ? "Disabled" : "Enabled"}</TableCell><TableCell>{project.metadata.workspace}</TableCell></TableRow>
+        {open && projectKeys.map((key) => <TableRow key={key.id}><TableCell><Checkbox checked={selected.has(key.id)} onCheckedChange={() => toggle(key.id)} /></TableCell><TableCell><button className="text-left hover:underline" onClick={() => show("api_keys", key.metadata.name, "push", { workspace: key.metadata.workspace })}>{key.metadata.name} <span className="ml-2 text-xs text-muted-foreground">{formatTokenQuota(usageByKey.get(key.id)?.used ?? 0)} tokens</span></button></TableCell><TableCell>{key.description || "-"}</TableCell><TableCell>{key.spec?.limits?.disabled ? "Disabled" : "Enabled"}</TableCell><TableCell>{key.metadata.workspace}</TableCell></TableRow>)}
       </>; })}
     </TableBody></Table>
     <div className="flex items-center justify-end gap-2 text-sm"><Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</Button><span>{page + 1} / {pages}</span><Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</Button></div>
