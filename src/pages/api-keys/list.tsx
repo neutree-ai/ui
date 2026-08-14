@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ApiKeyRankingOverview } from "@/domains/api-key/components/ApiKeyRankingOverview";
+import { ApiKeyProjectGroups } from "@/domains/api-key/components/ApiKeyProjectGroups";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
 import {
   rateSummary,
@@ -390,24 +391,7 @@ export const ApiKeysList = () => {
         <ApiKeyRankingOverview keys={rankingKeys} traffic={trafficByKey} />
       </div>
 
-      <Table
-        enableSorting
-        enableFilters
-        enableBatchDelete
-        searchField="metadata->>name"
-        refineCoreProps={{
-          sorters: defaultSorters,
-        }}
-      >
-        {metadataColumns.name}
-        {metadataColumns.workspace}
-        {statusColumn}
-        {usageColumn}
-        {rateColumn}
-        {modelsColumn}
-        {metadataColumns.creation_timestamp}
-        {actionColumn}
-      </Table>
+      <ApiKeyProjectGroups workspace={workspace} />
     </ListPage>
   );
 };
