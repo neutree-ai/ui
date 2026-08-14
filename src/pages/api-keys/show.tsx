@@ -33,6 +33,9 @@ export const ApiKeysShow = () => {
               <ShowPage.Meta label={t("api_keys.fields.usage")}>
                 {record.status?.usage ?? "-"}
               </ShowPage.Meta>
+			  <ShowPage.Meta label="Description">
+				{record.description || "-"}
+			  </ShowPage.Meta>
             </span>
           }
         />

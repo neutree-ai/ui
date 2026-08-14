@@ -1,6 +1,6 @@
 import { useCustomMutation, useInvalidate, useList } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Plus } from "lucide-react";
 import { useState } from "react";
 import type { FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -48,6 +48,9 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
   // is given locally, so the page size is the reach here.
   const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceOptions();
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
+	const [newProjectName, setNewProjectName] = useState("");
+	const [newProjectDescription, setNewProjectDescription] = useState("");
+	const [creatingProject, setCreatingProject] = useState(false);
   const { copy, copied } = useCopyToClipboard();
 
   const { mutateAsync } = useCustomMutation();
@@ -81,6 +84,24 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
     });
     setApiKey(data as ApiKey);
   };
+
+	const createProject = async () => {
+		const { data } = await mutateAsync({
+			url: "/rpc/create_project",
+			method: "post",
+			values: {
+				p_workspace: selectedWorkspace,
+				p_name: newProjectName,
+				p_description: newProjectDescription,
+			},
+		});
+		const project = data as Project;
+		await invalidate({ resource: "projects", invalidates: ["list"] });
+		form.setValue("project_id", project.id, { shouldValidate: true });
+		setNewProjectName("");
+		setNewProjectDescription("");
+		setCreatingProject(false);
+	};
 
   if (apiKey) {
     return (
@@ -163,6 +184,18 @@ export const CreateApiKeyForm = ({ onClose }: { onClose?: () => void }) => {
 			options={projects.map((project) => ({ label: project.spec?.description ? `${project.metadata.name} - ${project.spec.description}` : project.metadata.name, value: project.id }))}
 		  />
 		</FormFieldGroup>
+		{selectedWorkspace && (
+		  <div className="border-l-2 border-muted pl-3 space-y-2">
+			<Button type="button" variant="ghost" size="sm" onClick={() => setCreatingProject((value) => !value)}>
+			  <Plus className="mr-2 h-4 w-4" />Create project
+			</Button>
+			{creatingProject && <div className="grid gap-2 sm:grid-cols-2">
+			  <Input value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="Project name" />
+			  <Input value={newProjectDescription} onChange={(event) => setNewProjectDescription(event.target.value)} placeholder="Description" />
+			  <div className="sm:col-span-2 flex gap-2"><Button type="button" size="sm" disabled={!newProjectName.trim()} onClick={() => void createProject()}>Create project</Button><Button type="button" variant="ghost" size="sm" onClick={() => setCreatingProject(false)}>Cancel</Button></div>
+			</div>}
+		  </div>
+		)}
 		<FormFieldGroup {...form} name="description" label="Description">
 		  <Input />
 		</FormFieldGroup>
