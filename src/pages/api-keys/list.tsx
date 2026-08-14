@@ -94,8 +94,9 @@ export const ApiKeysList = () => {
       (keysData?.data ?? [])
         .filter(
           (key) =>
-            workspace === ALL_WORKSPACES ||
-            key.metadata?.workspace === workspace,
+            !key.metadata?.deletion_timestamp &&
+            (workspace === ALL_WORKSPACES ||
+              key.metadata?.workspace === workspace),
         )
         .map((key) => ({
           id: String(key.id),
