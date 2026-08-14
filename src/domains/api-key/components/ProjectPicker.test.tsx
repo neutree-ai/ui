@@ -2,25 +2,27 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mutateAsync = vi.fn();
-const invalidate = vi.fn();
+const refetch = vi.fn();
 
 vi.mock("@refinedev/core", () => ({
-  useList: () => ({
-    data: {
-      data: [
-        { id: "active", name: "Active", description: "Ready", enabled: true },
-        {
-          id: "disabled",
-          name: "Disabled",
-          description: "History",
-          enabled: false,
-        },
-      ],
-    },
-    isLoading: false,
-  }),
   useCustomMutation: () => ({ mutateAsync }),
-  useInvalidate: () => invalidate,
+}));
+
+vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
+  useApiKeyProjects: () => ({
+    data: [
+      { id: "active", name: "Active", description: "Ready", enabled: true },
+      {
+        id: "disabled",
+        name: "Disabled",
+        description: "History",
+        enabled: false,
+      },
+    ],
+    isLoading: false,
+    error: "",
+    refetch,
+  }),
 }));
 
 import { ProjectPicker } from "./ProjectPicker";
@@ -73,6 +75,6 @@ describe("ProjectPicker", () => {
         },
       }),
     );
-    expect(invalidate).toHaveBeenCalled();
+    expect(refetch).toHaveBeenCalled();
   });
 });

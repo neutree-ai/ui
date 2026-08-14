@@ -1,4 +1,4 @@
-import { useCustomMutation, useInvalidate, useList } from "@refinedev/core";
+import { useCustomMutation } from "@refinedev/core";
 import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,18 +17,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKeyProject } from "@/domains/api-key/types";
-
-function useProjects(workspace?: string) {
-  return useList<ApiKeyProject>({
-    resource: "api_key_projects",
-    pagination: { mode: "off" },
-    filters: workspace
-      ? [{ field: "workspace", operator: "eq", value: workspace }]
-      : [],
-    queryOptions: { enabled: Boolean(workspace) },
-  });
-}
 
 export function ProjectPicker({
   workspace,
@@ -39,8 +29,12 @@ export function ProjectPicker({
   value: string;
   onChange: (id: string) => void;
 }) {
-  const { data, isLoading } = useProjects(workspace);
-  const projects = data?.data ?? [];
+  const {
+    data: projects,
+    isLoading,
+    error: loadError,
+    refetch,
+  } = useApiKeyProjects(workspace);
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -49,7 +43,6 @@ export function ProjectPicker({
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync } = useCustomMutation();
-  const invalidate = useInvalidate();
   useEffect(() => {
     if (creating) inputRef.current?.focus();
   }, [creating]);
@@ -68,7 +61,7 @@ export function ProjectPicker({
         },
       });
       const project = created as ApiKeyProject;
-      await invalidate({ resource: "api_key_projects", invalidates: ["list"] });
+      await refetch();
       onChange(project.id);
       setCreating(false);
       setName("");
@@ -156,6 +149,7 @@ export function ProjectPicker({
           </div>
         </PopoverContent>
       </Popover>
+      {loadError && <p className="text-sm text-destructive">{loadError}</p>}
       {!creating && (
         <Button
           type="button"

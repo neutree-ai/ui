@@ -1,7 +1,7 @@
 import { useCustomMutation, useInvalidate } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Check, Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -23,9 +23,22 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 
-type FormValues = { name: string; workspace: string; project_id: string; description: string } & ApiKeyPolicyFormValues;
+type FormValues = {
+  name: string;
+  workspace: string;
+  project_id: string;
+  description: string;
+} & ApiKeyPolicyFormValues;
 
-export const CreateApiKeyForm = ({ onClose, initialProjectId = "" }: { onClose?: () => void; initialProjectId?: string }) => {
+export const CreateApiKeyForm = ({
+  onClose,
+  initialProjectId = "",
+  onCreated,
+}: {
+  onClose?: () => void;
+  initialProjectId?: string;
+  onCreated?: () => void | Promise<void>;
+}) => {
   const { t } = useTranslation();
   const form = useForm<FormValues>({
     mode: "all",
@@ -38,11 +51,23 @@ export const CreateApiKeyForm = ({ onClose, initialProjectId = "" }: { onClose?:
     },
   });
   const selectedWorkspace = form.watch("workspace");
+  const previousWorkspace = useRef("");
+
+  useEffect(() => {
+    if (
+      previousWorkspace.current &&
+      previousWorkspace.current !== selectedWorkspace
+    ) {
+      form.setValue("project_id", "", { shouldValidate: true });
+    }
+    previousWorkspace.current = selectedWorkspace;
+  }, [form, selectedWorkspace]);
   // Shares the pickers' query so this form isn't stuck on refine's default
   // first page of 10 workspaces either (NEU-505). FormCombobox filters what it
   // is given locally, so the page size is the reach here.
   const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceOptions();
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
+  const [submitError, setSubmitError] = useState("");
   const { copy, copied } = useCopyToClipboard();
 
   const { mutateAsync } = useCustomMutation();
@@ -58,23 +83,29 @@ export const CreateApiKeyForm = ({ onClose, initialProjectId = "" }: { onClose?:
   const onSubmit = async (formValue: FieldValues) => {
     // Create with limits in one atomic call — quota + access live on the key's
     // spec.limits, so create_api_key takes the whole limits object.
-    const { data } = await mutateAsync({
-      url: "/rpc/create_api_key",
-      method: "post",
-      values: {
-        p_workspace: formValue.workspace,
-        p_name: formValue.name,
-        p_project_id: formValue.project_id,
-        p_description: formValue.description,
-        p_quota: 0,
-        p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
-      },
-    });
-    invalidate({
-      resource: "api_keys",
-      invalidates: ["list"],
-    });
-    setApiKey(data as ApiKey);
+    setSubmitError("");
+    try {
+      const { data } = await mutateAsync({
+        url: "/rpc/create_api_key",
+        method: "post",
+        values: {
+          p_workspace: formValue.workspace,
+          p_name: formValue.name,
+          p_project_id: formValue.project_id,
+          p_description: formValue.description,
+          p_quota: 0,
+          p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
+        },
+      });
+      await invalidate({
+        resource: "api_keys",
+        invalidates: ["list"],
+      });
+      await onCreated?.();
+      setApiKey(data as ApiKey);
+    } catch (cause) {
+      setSubmitError(cause instanceof Error ? cause.message : String(cause));
+    }
   };
 
   if (apiKey) {
@@ -148,8 +179,19 @@ export const CreateApiKeyForm = ({ onClose, initialProjectId = "" }: { onClose?:
             }))}
           />
         </FormFieldGroup>
-        <FormFieldGroup {...form} name="project_id" label="Project">
-          <ProjectPicker workspace={selectedWorkspace} value={form.watch("project_id")} onChange={(id) => form.setValue("project_id", id, { shouldValidate: true })} />
+        <FormFieldGroup
+          {...form}
+          name="project_id"
+          label="Project"
+          rules={{ required: "Project is required" }}
+        >
+          <ProjectPicker
+            workspace={selectedWorkspace}
+            value={form.watch("project_id")}
+            onChange={(id) =>
+              form.setValue("project_id", id, { shouldValidate: true })
+            }
+          />
         </FormFieldGroup>
         <FormFieldGroup {...form} name="name" label={t("common.fields.name")}>
           <Input />
@@ -162,6 +204,10 @@ export const CreateApiKeyForm = ({ onClose, initialProjectId = "" }: { onClose?:
           {t("api_keys.limits.sectionTitle")}
         </div>
         <ApiKeyPolicyFields form={form} workspace={selectedWorkspace} />
+
+        {submitError && (
+          <p className="text-sm text-destructive">{submitError}</p>
+        )}
 
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={onClose}>

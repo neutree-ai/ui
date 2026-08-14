@@ -1,10 +1,11 @@
-import { useList, useNavigation, useShow } from "@refinedev/core";
+import { useNavigation, useShow } from "@refinedev/core";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard";
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
-import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
+import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
+import type { ApiKey } from "@/domains/api-key/types";
 import MetadataCard from "@/foundation/components/MetadataCard";
 import { ShowPage } from "@/foundation/components/ShowPage";
 
@@ -15,15 +16,10 @@ export const ApiKeysShow = () => {
   } = useShow();
   const record = data?.data;
   const { list } = useNavigation();
-  const { data: projects } = useList<ApiKeyProject>({
-    resource: "api_key_projects",
-    pagination: { mode: "off" },
-    filters: record?.project_id
-      ? [{ field: "id", operator: "eq", value: record.project_id }]
-      : [],
-    queryOptions: { enabled: Boolean(record?.project_id) },
-  });
-  const project = projects?.data?.[0];
+  const { data: projects } = useApiKeyProjects(record?.metadata.workspace);
+  const project = projects.find(
+    (candidate) => candidate.id === record?.project_id,
+  );
 
   if (isLoading) {
     return <div>{t("api_keys.messages.loading")}</div>;
@@ -35,10 +31,18 @@ export const ApiKeysShow = () => {
 
   return (
     <div className="w-full h-full">
-      <Button variant="ghost" className="mb-2 px-0" onClick={() => list("api_keys")}>
+      <Button
+        variant="ghost"
+        className="mb-2 px-0"
+        onClick={() => list("api_keys")}
+      >
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
       </Button>
-      <ShowPage record={record as ApiKey} canEdit={false} showCurrentBreadcrumb={false}>
+      <ShowPage
+        record={record as ApiKey}
+        canEdit={false}
+        showCurrentBreadcrumb={false}
+      >
         <ShowPage.ObjectHeader
           title={record.metadata.name}
           description={
@@ -56,7 +60,9 @@ export const ApiKeysShow = () => {
           }
         />
         {project?.description && (
-          <p className="mt-2 text-sm text-muted-foreground">{project.description}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {project.description}
+          </p>
         )}
         {record.id && (
           <div className="mt-4 space-y-4">

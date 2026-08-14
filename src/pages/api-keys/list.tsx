@@ -68,6 +68,10 @@ export const ApiKeysList = () => {
   const [editDescription, setEditDescription] = useState("");
   const [actionError, setActionError] = useState("");
   const [deletingProject, setDeletingProject] = useState<ApiKeyProject>();
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [createProjectName, setCreateProjectName] = useState("");
+  const [createProjectDescription, setCreateProjectDescription] = useState("");
+  const [creatingProject, setCreatingProject] = useState(false);
   const pageSize = 10;
   const { mutateAsync } = useCustomMutation();
   const { show } = useNavigation();
@@ -140,6 +144,32 @@ export const ApiKeysList = () => {
     setPresetProject(project);
     setOpen(true);
   };
+  const createProject = async () => {
+    if (!scoped || !createProjectName.trim()) return;
+    setActionError("");
+    setCreatingProject(true);
+    try {
+      const response = await mutateAsync({
+        url: "/rpc/create_api_key_project",
+        method: "post",
+        values: {
+          p_workspace: scoped,
+          p_name: createProjectName.trim(),
+          p_description: createProjectDescription.trim(),
+        },
+      });
+      const project = response.data as ApiKeyProject;
+      setCreateProjectOpen(false);
+      setCreateProjectName("");
+      setCreateProjectDescription("");
+      setExpanded((current) => new Set([...current, project.id]));
+      await refresh();
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setCreatingProject(false);
+    }
+  };
   const migrate = async () => {
     setActionError("");
     try {
@@ -193,7 +223,67 @@ export const ApiKeysList = () => {
           <CreateApiKeyForm
             initialProjectId={presetProject}
             onClose={() => setOpen(false)}
+            onCreated={refresh}
           />
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={createProjectOpen}
+        onOpenChange={(nextOpen) => {
+          setCreateProjectOpen(nextOpen);
+          setActionError("");
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Project</DialogTitle>
+            <DialogDescription>
+              Create a Project in workspace {scoped}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label
+              htmlFor="new-project-name"
+              className="block text-sm font-medium"
+            >
+              Name
+              <Input
+                id="new-project-name"
+                value={createProjectName}
+                onChange={(event) => setCreateProjectName(event.target.value)}
+              />
+            </label>
+            <label
+              htmlFor="new-project-description"
+              className="block text-sm font-medium"
+            >
+              Description
+              <Textarea
+                id="new-project-description"
+                value={createProjectDescription}
+                onChange={(event) =>
+                  setCreateProjectDescription(event.target.value)
+                }
+              />
+            </label>
+          </div>
+          {actionError && (
+            <p className="text-sm text-destructive">{actionError}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setCreateProjectOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={!createProjectName.trim() || creatingProject}
+              onClick={() => void createProject()}
+            >
+              {creatingProject ? "Creating..." : "Create Project"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog open={moveOpen} onOpenChange={setMoveOpen}>
@@ -359,6 +449,14 @@ export const ApiKeysList = () => {
           <option value="active">Active API keys</option>
           <option value="disabled">Disabled API keys</option>
         </select>
+        <Button
+          variant="outline"
+          disabled={!scoped}
+          onClick={() => setCreateProjectOpen(true)}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          Create Project
+        </Button>
         {selected.size > 0 && (
           <>
             <span className="text-sm">{selected.size} selected</span>
