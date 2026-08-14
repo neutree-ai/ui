@@ -48,6 +48,7 @@ import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import RelativeTimestamp from "@/foundation/components/RelativeTimestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
+import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
 export const ApiKeysList = () => {
@@ -762,11 +763,18 @@ export const ApiKeysList = () => {
                                             window.confirm(
                                               `Delete API key ${key.metadata.name}?`,
                                             )
-                                          )
-                                            void deleteKey({
-                                              resource: "api_keys",
-                                              id: key.id,
-                                            }).then(refresh);
+                                          ) {
+                                            const [variables] =
+                                              buildBatchDeleteVariables(
+                                                [{ original: key }],
+                                                "api_keys",
+                                                false,
+                                              );
+                                            if (variables)
+                                              void deleteKey(variables).then(
+                                                refresh,
+                                              );
+                                          }
                                         }}
                                       >
                                         <Trash2 className="mr-2 h-4 w-4" />

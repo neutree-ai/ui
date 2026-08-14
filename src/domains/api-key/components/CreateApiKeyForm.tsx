@@ -56,6 +56,12 @@ export const CreateApiKeyForm = ({
   const previousWorkspace = useRef("");
 
   useEffect(() => {
+    previousWorkspace.current = initialWorkspace;
+    form.setValue("workspace", initialWorkspace);
+    form.setValue("project_id", initialProjectId, { shouldValidate: true });
+  }, [form, initialProjectId, initialWorkspace]);
+
+  useEffect(() => {
     if (
       previousWorkspace.current &&
       previousWorkspace.current !== selectedWorkspace
