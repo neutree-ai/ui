@@ -54,7 +54,10 @@ export const ApiKeysList = () => {
   const { current: workspace } = useWorkspace();
   const scoped = workspace === ALL_WORKSPACES ? undefined : workspace;
   const [open, setOpen] = useState(false);
-  const [presetProject, setPresetProject] = useState<string>();
+  const [createKeyPreset, setCreateKeyPreset] = useState({
+    workspace: "",
+    projectId: "",
+  });
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -119,6 +122,18 @@ export const ApiKeysList = () => {
     count: group.api_key_count,
     usage: group.current_usage,
   }));
+  const selectedKeys = (keysData?.data ?? []).filter((key) =>
+    selected.has(key.id),
+  );
+  const selectedWorkspaces = [
+    ...new Set(
+      selectedKeys
+        .map((key) => key.metadata.workspace)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ];
+  const moveWorkspace =
+    selectedWorkspaces.length === 1 ? selectedWorkspaces[0] : "";
   const projects = grouped.map((group) => group.project);
   const firstProjectId = projects[0]?.id;
   const groupedProjectIds = grouped.map((group) => group.project.id).join(",");
@@ -140,8 +155,11 @@ export const ApiKeysList = () => {
   const refresh = async () => {
     await groupsQuery.refetch();
   };
-  const createKey = (project?: string) => {
-    setPresetProject(project);
+  const createKey = (project?: ApiKeyProject) => {
+    setCreateKeyPreset({
+      workspace: project?.workspace ?? scoped ?? "",
+      projectId: project?.id ?? "",
+    });
     setOpen(true);
   };
   const createProject = async () => {
@@ -200,7 +218,7 @@ export const ApiKeysList = () => {
         method: "post",
         values: {
           p_project_id: editing.id,
-          p_name: editName,
+          p_name: editing.name === "Default" ? null : editName,
           p_description: editDescription,
         },
       });
@@ -221,7 +239,8 @@ export const ApiKeysList = () => {
             <DialogDescription>Create a key in a Project.</DialogDescription>
           </DialogHeader>
           <CreateApiKeyForm
-            initialProjectId={presetProject}
+            initialWorkspace={createKeyPreset.workspace}
+            initialProjectId={createKeyPreset.projectId}
             onClose={() => setOpen(false)}
             onCreated={refresh}
           />
@@ -295,10 +314,16 @@ export const ApiKeysList = () => {
             </DialogDescription>
           </DialogHeader>
           <ProjectPicker
-            workspace={scoped ?? ""}
+            workspace={moveWorkspace}
             value={target}
             onChange={setTarget}
           />
+          {selectedWorkspaces.length > 1 && (
+            <p className="text-sm text-destructive">
+              Selected API keys span multiple workspaces. Move one workspace at
+              a time.
+            </p>
+          )}
           {actionError && (
             <p className="text-sm text-destructive">{actionError}</p>
           )}
@@ -307,7 +332,9 @@ export const ApiKeysList = () => {
               Cancel
             </Button>
             <Button
-              disabled={!target || !selected.size}
+              disabled={
+                !target || !selected.size || selectedWorkspaces.length !== 1
+              }
               onClick={() => void migrate()}
             >
               Move
@@ -332,6 +359,7 @@ export const ApiKeysList = () => {
               <Input
                 id="project-name"
                 value={editName}
+                disabled={editing?.name === "Default"}
                 onChange={(e) => setEditName(e.target.value)}
               />
             </label>
@@ -352,7 +380,7 @@ export const ApiKeysList = () => {
               Cancel
             </Button>
             <Button
-              disabled={!editName.trim()}
+              disabled={editing?.name !== "Default" && !editName.trim()}
               onClick={() => void saveProject()}
             >
               Save
@@ -460,7 +488,15 @@ export const ApiKeysList = () => {
         {selected.size > 0 && (
           <>
             <span className="text-sm">{selected.size} selected</span>
-            <Button onClick={() => setMoveOpen(true)}>Move to Project</Button>
+            <Button
+              onClick={() => {
+                setActionError("");
+                setTarget("");
+                setMoveOpen(true);
+              }}
+            >
+              Move to Project
+            </Button>
             <Button variant="ghost" onClick={() => setSelected(new Set())}>
               Clear
             </Button>
@@ -542,40 +578,44 @@ export const ApiKeysList = () => {
                       Edit Project
                     </DropdownMenuItem>
                     {project.enabled && (
-                      <DropdownMenuItem onClick={() => createKey(project.id)}>
+                      <DropdownMenuItem onClick={() => createKey(project)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Create API key
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setActionError("");
-                        void mutateAsync({
-                          url: "/rpc/update_api_key_project",
-                          method: "post",
-                          values: {
-                            p_project_id: project.id,
-                            p_enabled: !project.enabled,
-                          },
-                        })
-                          .then(refresh)
-                          .catch((cause) =>
-                            setActionError(
-                              cause instanceof Error
-                                ? cause.message
-                                : String(cause),
-                            ),
-                          );
-                      }}
-                    >
-                      {project.enabled ? "Disable" : "Enable"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => setDeletingProject(project)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
+                    {project.name !== "Default" && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setActionError("");
+                          void mutateAsync({
+                            url: "/rpc/update_api_key_project",
+                            method: "post",
+                            values: {
+                              p_project_id: project.id,
+                              p_enabled: !project.enabled,
+                            },
+                          })
+                            .then(refresh)
+                            .catch((cause) =>
+                              setActionError(
+                                cause instanceof Error
+                                  ? cause.message
+                                  : String(cause),
+                              ),
+                            );
+                        }}
+                      >
+                        {project.enabled ? "Disable" : "Enable"}
+                      </DropdownMenuItem>
+                    )}
+                    {project.name !== "Default" && (
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => setDeletingProject(project)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -588,7 +628,7 @@ export const ApiKeysList = () => {
                         <div>
                           <Button
                             variant="link"
-                            onClick={() => createKey(project.id)}
+                            onClick={() => createKey(project)}
                           >
                             Create API key
                           </Button>

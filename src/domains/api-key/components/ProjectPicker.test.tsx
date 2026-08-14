@@ -11,6 +11,7 @@ vi.mock("@refinedev/core", () => ({
 vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
   useApiKeyProjects: () => ({
     data: [
+      { id: "default", name: "Default", description: "", enabled: true },
       { id: "active", name: "Active", description: "Ready", enabled: true },
       {
         id: "disabled",
@@ -49,6 +50,20 @@ describe("ProjectPicker", () => {
     fireEvent.click(screen.getByRole("combobox"));
     const option = screen.getByRole("option", { name: /Disabled.*History/ });
     expect(option.getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("selects the Default project for create forms", async () => {
+    const onChange = vi.fn();
+    render(
+      <ProjectPicker
+        workspace="default"
+        value=""
+        onChange={onChange}
+        selectDefaultWhenEmpty
+      />,
+    );
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("default"));
   });
 
   it("creates a project inline, refreshes, and selects it", async () => {
