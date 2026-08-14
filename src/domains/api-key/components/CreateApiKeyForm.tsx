@@ -32,10 +32,12 @@ type FormValues = {
 
 export const CreateApiKeyForm = ({
   onClose,
+  initialWorkspace = "",
   initialProjectId = "",
   onCreated,
 }: {
   onClose?: () => void;
+  initialWorkspace?: string;
   initialProjectId?: string;
   onCreated?: () => void | Promise<void>;
 }) => {
@@ -44,7 +46,7 @@ export const CreateApiKeyForm = ({
     mode: "all",
     defaultValues: {
       name: "",
-      workspace: "",
+      workspace: initialWorkspace,
       project_id: initialProjectId,
       description: "",
       ...apiKeyPolicyDefaults(),
@@ -172,7 +174,7 @@ export const CreateApiKeyForm = ({
         >
           <FormCombobox
             placeholder={t("api_keys.placeholders.selectWorkspace")}
-            disabled={isLoadingWorkspaces}
+            disabled={Boolean(initialWorkspace) || isLoadingWorkspaces}
             options={workspaces.map((workspace) => ({
               label: workspace.metadata.name,
               value: workspace.metadata.name,
@@ -191,6 +193,7 @@ export const CreateApiKeyForm = ({
             onChange={(id) =>
               form.setValue("project_id", id, { shouldValidate: true })
             }
+            selectDefaultWhenEmpty
           />
         </FormFieldGroup>
         <FormFieldGroup {...form} name="name" label={t("common.fields.name")}>

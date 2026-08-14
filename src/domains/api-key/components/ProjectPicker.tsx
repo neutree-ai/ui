@@ -24,10 +24,12 @@ export function ProjectPicker({
   workspace,
   value,
   onChange,
+  selectDefaultWhenEmpty = false,
 }: {
   workspace: string;
   value: string;
   onChange: (id: string) => void;
+  selectDefaultWhenEmpty?: boolean;
 }) {
   const {
     data: projects,
@@ -46,6 +48,13 @@ export function ProjectPicker({
   useEffect(() => {
     if (creating) inputRef.current?.focus();
   }, [creating]);
+  useEffect(() => {
+    if (!selectDefaultWhenEmpty || value || isLoading) return;
+    const defaultProject = projects.find(
+      (project) => project.name === "Default" && project.enabled,
+    );
+    if (defaultProject) onChange(defaultProject.id);
+  }, [isLoading, onChange, projects, selectDefaultWhenEmpty, value]);
 
   const create = async () => {
     setError("");
