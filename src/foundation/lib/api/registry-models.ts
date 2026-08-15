@@ -37,6 +37,16 @@ export type RegistryModelPage = {
    * than inventing one, so null means unknown — not zero.
    */
   total: number | null;
+  /**
+   * The `limit` this page was fetched with, or null when the caller left it to
+   * the server.
+   *
+   * Carried with the page so "did this come back short?" can be answered from
+   * the page itself. A caller that compares against whatever it is asking for
+   * *now* gets the wrong answer for the whole flight of a widening request, and
+   * a permanently wrong one if that request fails.
+   */
+  limit: number | null;
   /** How old the answer is; see RegistryDataFreshness. */
   freshness: RegistryDataFreshness;
 };
@@ -234,6 +244,7 @@ export async function fetchRegistryModels(
   return {
     models: models ?? [],
     total: parseContentRangeTotal(res.headers.get("Content-Range")),
+    limit: query.limit ?? null,
     freshness: freshnessFrom(res.headers),
   };
 }

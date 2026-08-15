@@ -74,6 +74,7 @@ const answerWith = (
   build: (call: Call) => {
     page: RegistryModelPage | null;
     isLoading?: boolean;
+    isFetching?: boolean;
     error?: RegistryModelError | null;
   },
 ) => {
@@ -86,21 +87,28 @@ const answerWith = (
       models: result.page?.models ?? [],
       total: result.page?.total ?? null,
       isLoading: result.isLoading ?? false,
-      isFetching: false,
+      isFetching: result.isFetching ?? false,
       error: result.error ?? null,
       refetch: vi.fn(),
     };
   }) as unknown as typeof useRegistryModels);
 };
 
+/** A page as the API layer builds one: rows, the total the server reported, and
+ * the limit this page was fetched with. `limit` defaults to the component's first
+ * window, which is what an untouched table asks for. */
 const page = (
   rows: number,
   total: number | null,
-  freshness?: { timestamp: string | null; cached: boolean },
+  options?: {
+    limit?: number;
+    freshness?: { timestamp: string | null; cached: boolean };
+  },
 ): RegistryModelPage => ({
   models: models(rows),
   total,
-  freshness: freshness ?? { timestamp: null, cached: false },
+  limit: options?.limit ?? 20,
+  freshness: options?.freshness ?? { timestamp: null, cached: false },
 });
 
 const renderTable = (reg: ModelRegistry) =>
@@ -192,7 +200,9 @@ describe("paging follows what the registry can do", () => {
   });
 
   it("widens the window instead of moving it, and never sends an offset", () => {
-    answerWith((call) => ({ page: page(call.limit ?? 20, null) }));
+    answerWith((call) => ({
+      page: page(call.limit ?? 20, null, { limit: call.limit }),
+    }));
 
     renderTable(registry({ visibility: "public" }));
     fireEvent.click(screen.getByTestId("registry-models-show-more"));
@@ -217,7 +227,9 @@ describe("paging follows what the registry can do", () => {
   });
 
   it("stops widening at the cap and says so instead of quietly capping", () => {
-    answerWith((call) => ({ page: page(call.limit ?? 20, null) }));
+    answerWith((call) => ({
+      page: page(call.limit ?? 20, null, { limit: call.limit }),
+    }));
 
     renderTable(registry({ visibility: "public" }));
 
@@ -231,14 +243,57 @@ describe("paging follows what the registry can do", () => {
     );
   });
 
+  it("does not announce the end of the listing while a wider one is in flight", () => {
+    // The bug this pins. `keepPreviousData` holds the previous 20 rows while 40
+    // are being fetched, so anything comparing rows against the *requested*
+    // window reads 20 >= 40 as "nothing more" and flashes "End of the listing"
+    // through every widening.
+    answerWith(() => ({
+      page: page(20, null, { limit: 20 }),
+      isFetching: true,
+    }));
+
+    renderTable(registry({ visibility: "public" }));
+
+    expect(screen.queryByTestId("registry-models-window-end")).toBeNull();
+    // The control stays, disabled, rather than being replaced by a conclusion.
+    expect(
+      screen.getByTestId("registry-models-show-more").hasAttribute("disabled"),
+    ).toBe(true);
+  });
+
+  it("reports a failed widening as an error, never as the end of the listing", () => {
+    // The worse half of the same bug: when the widening fails the held-over page
+    // never catches up with the window, so the wrong conclusion stopped being a
+    // flash and became permanent — a retryable error dressed as a settled fact.
+    answerWith(() => ({
+      page: page(20, null, { limit: 20 }),
+      error: new RegistryModelError(500, {
+        message: "failed to connect to model registry",
+      }),
+    }));
+
+    renderTable(registry({ visibility: "public" }));
+
+    expect(screen.getByTestId("registry-models-error").textContent).toBe(
+      "failed to connect to model registry",
+    );
+    expect(screen.queryByTestId("registry-models-window-end")).toBeNull();
+    expect(screen.queryByTestId("registry-models-show-more")).toBeNull();
+  });
+
   it("reports the end of a listing that ran short", () => {
-    answerWith(() => ({ page: page(3, null) }));
+    // A page that came back with fewer rows than it asked for. This is the only
+    // end-of-list evidence an uncountable registry ever gives, and it is a fact
+    // about the page in hand rather than about the window being requested.
+    answerWith(() => ({ page: page(3, null, { limit: 20 }) }));
 
     renderTable(registry({ visibility: "public" }));
 
     expect(screen.getByTestId("registry-models-window-end").textContent).toBe(
       "model_registries.models.listingEnd",
     );
+    expect(screen.queryByTestId("registry-models-show-more")).toBeNull();
   });
 });
 
@@ -314,7 +369,9 @@ describe("states", () => {
 describe("how old the rows are", () => {
   it("shows the moment the server read the registry", () => {
     answerWith(() => ({
-      page: page(2, null, { timestamp: "2026-08-10T04:29:19Z", cached: false }),
+      page: page(2, null, {
+        freshness: { timestamp: "2026-08-10T04:29:19Z", cached: false },
+      }),
     }));
 
     renderTable(registry({ visibility: "public" }));
@@ -326,7 +383,9 @@ describe("how old the rows are", () => {
 
   it("says so when the answer was replayed from the server's cache", () => {
     answerWith(() => ({
-      page: page(2, null, { timestamp: "2026-08-10T04:29:19Z", cached: true }),
+      page: page(2, null, {
+        freshness: { timestamp: "2026-08-10T04:29:19Z", cached: true },
+      }),
     }));
 
     renderTable(registry({ visibility: "public" }));

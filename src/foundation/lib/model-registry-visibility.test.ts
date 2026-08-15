@@ -11,6 +11,7 @@ import {
 const page = (total: number | null): RegistryModelPage => ({
   models: [],
   total,
+  limit: 20,
   freshness: { timestamp: null, cached: false },
 });
 

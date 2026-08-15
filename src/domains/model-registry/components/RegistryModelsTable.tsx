@@ -181,13 +181,23 @@ export const RegistryModelsTable = ({
   );
 
   const hasNextPage = canPageForward(total, offset, windowSize);
-  // Widening is a different action from paging, so it needs its own end signal.
+  // Widening is a different action from paging, so it needs its own end signal:
   // `canPageForward` says false for an uncountable registry on purpose — paging
-  // really is impossible there — but a full window still suggests the catalogue
-  // holds more, and a short one is the only end-of-list evidence such a registry
-  // ever gives.
-  const windowMayHaveMore = models.length >= windowSize;
-  const canWiden = windowMayHaveMore && windowSize < MAX_WINDOW;
+  // really is impossible there — while a short page is the only end-of-list
+  // evidence such a registry ever gives.
+  //
+  // Read from the page **in hand**, against the limit *it* was fetched with, and
+  // never against `windowSize`. With `keepPreviousData` the two disagree for the
+  // whole flight of a "show more" — 20 rows held over while 40 is being asked
+  // for — and comparing them would announce "end of the listing" during every
+  // widening, then keep announcing it if that request failed: a retryable error
+  // dressed up as a settled fact. Null while no page has arrived, so nothing is
+  // claimed before there is something to claim it about.
+  const arrivedWindowIsFull =
+    page === null || page.limit === null
+      ? null
+      : page.models.length >= page.limit;
+  const canWiden = arrivedWindowIsFull === true && windowSize < MAX_WINDOW;
 
   const freshness = page?.freshness;
 
@@ -333,6 +343,12 @@ export const RegistryModelsTable = ({
       return null;
     }
 
+    // A failed request says nothing about where the listing ends. The body
+    // reports it; this half stays quiet rather than concluding anything.
+    if (error) {
+      return null;
+    }
+
     if (pagesFromOffset) {
       return (
         <div className="flex items-center gap-2">
@@ -365,8 +381,9 @@ export const RegistryModelsTable = ({
     }
 
     // The registry cannot be asked to start at row N, so there is no next page
-    // to go to — only a wider first one.
-    if (rows.length === 0) {
+    // to go to — only a wider first one. Both statements need a page to have
+    // arrived first.
+    if (rows.length === 0 || arrivedWindowIsFull === null) {
       return null;
     }
 
@@ -387,7 +404,7 @@ export const RegistryModelsTable = ({
             className="text-sm text-muted-foreground"
             data-testid="registry-models-window-end"
           >
-            {windowMayHaveMore
+            {arrivedWindowIsFull
               ? t("model_registries.models.windowCapped", {
                   count: windowSize,
                 })
