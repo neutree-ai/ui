@@ -634,7 +634,7 @@ describe("usePermissionDependencies", () => {
       expect(called).not.toContain("model:read");
     });
 
-    it("NEU-396: model:push should not auto-select model:read", () => {
+    it("NEU-674: model:push should auto-select model:read and model_registry:read", () => {
       const onChange = vi.fn();
       const { result } = renderHook(() =>
         usePermissionDependencies({
@@ -650,8 +650,73 @@ describe("usePermissionDependencies", () => {
 
       const called = onChange.mock.calls[0][0] as string[];
       expect(called).toContain("model:push");
+      expect(called).toContain("model:read");
       expect(called).toContain("model_registry:read");
-      expect(called).not.toContain("model:read");
+    });
+
+    it("NEU-674: model:read should be locked while model:push is selected", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["model:push", "model:read", "model_registry:read"],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      expect(result.current.getActionDependents("model", "read")).toEqual([
+        "model:push",
+      ]);
+
+      act(() => {
+        result.current.togglePermission("model", "read");
+      });
+
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("NEU-674: unselecting model:push releases model:read", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["model:push", "model:read", "model_registry:read"],
+          allPermissions: TEST_PERMISSIONS,
+          onChange,
+        }),
+      );
+
+      act(() => {
+        result.current.togglePermission("model", "push");
+      });
+
+      const called = onChange.mock.calls[0][0] as string[];
+      expect(called).not.toContain("model:push");
+      expect(called).toContain("model:read");
+    });
+
+    it("NEU-674: reports model:read as missing for a push-only role", () => {
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["model:push"],
+          allPermissions: TEST_PERMISSIONS,
+        }),
+      );
+
+      expect(result.current.missingDependencies).toContain("model:read");
+      expect(result.current.missingDependencies).toContain(
+        "model_registry:read",
+      );
+    });
+
+    it("NEU-674: reports no missing dependencies for a complete permission set", () => {
+      const { result } = renderHook(() =>
+        usePermissionDependencies({
+          value: ["model:push", "model:read", "model_registry:read"],
+          allPermissions: TEST_PERMISSIONS,
+        }),
+      );
+
+      expect(result.current.missingDependencies).toEqual([]);
     });
 
     it("NEU-396: model:pull should not auto-select model:read", () => {

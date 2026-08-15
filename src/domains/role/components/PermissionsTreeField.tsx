@@ -25,8 +25,9 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -34,6 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePermissionDependencies } from "@/domains/role/hooks/use-permission-dependencies";
+import { formatPermission } from "@/domains/role/lib/format-permission";
 import { getResourcePlural } from "@/foundation/lib/plural";
 import { cn } from "@/foundation/lib/utils";
 
@@ -75,9 +77,11 @@ const PermissionsTreeField = React.forwardRef<
   HTMLDivElement,
   PermissionsTreeFieldProps
 >(({ value = [], onChange, disabled = false, className }, ref) => {
+  const { t } = useTranslation();
   const {
     permissionTree,
     sortedResources,
+    missingDependencies,
     togglePermission,
     toggleAllResourcePermissions,
     getActionDependents,
@@ -86,8 +90,33 @@ const PermissionsTreeField = React.forwardRef<
     onChange,
   });
 
+  // A role saved before a dependency rule existed (e.g. a push-only role from
+  // before NEU-674) loads with unmet dependencies — backfill them and tell the
+  // user what was added, so saving cannot produce an invalid combination.
+  const [backfilled, setBackfilled] = useState<string[]>([]);
+  useEffect(() => {
+    if (disabled || !onChange || missingDependencies.length === 0) return;
+    setBackfilled(missingDependencies);
+    onChange([...value, ...missingDependencies]);
+  }, [disabled, onChange, value, missingDependencies]);
+
   return (
     <div className={cn("w-full max-w-3xl mx-auto", className)} ref={ref}>
+      {backfilled.length > 0 && (
+        <Alert
+          variant="info"
+          className="mb-2"
+          data-testid="permission-backfill-notice"
+        >
+          <AlertDescription>
+            {t("permissions.dependenciesAdded", {
+              actions: backfilled
+                .map((permission) => formatPermission(t, permission))
+                .join(", "),
+            })}
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="space-y-2">
         {sortedResources.map((resource) => (
           <ResourceNode
@@ -230,10 +259,7 @@ const ActionNode = ({
 
   const actionIcon = actionIcons[action] || <Eye className="h-4 w-4" />;
 
-  const plural = getResourcePlural(resource);
-  const fullPermission = ["system"].includes(resource)
-    ? t(`permissions.${resource}_${action}`)
-    : `${t(`${plural}.title`)}:${t(`permissions.${action}`)}`;
+  const fullPermission = formatPermission(t, `${resource}:${action}`);
 
   const locked = dependents.length > 0;
   const isDisabled = disabled || (locked && isSelected);
@@ -271,11 +297,7 @@ const ActionNode = ({
         >
           {t("permissions.requiredBy", {
             actions: dependents
-              .map((perm) => {
-                const [res, act] = perm.split(":");
-                const p = getResourcePlural(res);
-                return `${t(`${p}.title`)}:${t(`permissions.${act}`)}`;
-              })
+              .map((perm) => formatPermission(t, perm))
               .join(", "),
           })}
         </TooltipContent>

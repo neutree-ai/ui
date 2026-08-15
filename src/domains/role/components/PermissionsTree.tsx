@@ -20,6 +20,7 @@ import type React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
+import { formatPermission } from "@/domains/role/lib/format-permission";
 import type { Role } from "@/domains/role/types";
 import { getResourcePlural } from "@/foundation/lib/plural";
 
@@ -160,10 +161,7 @@ const ActionNode = ({
 
   const actionIcon = actionIcons[action] || <Eye className="h-4 w-4" />;
 
-  const plural = getResourcePlural(resource);
-  const fullPermission = ["system"].includes(resource)
-    ? t(`permissions.${resource}_${action}`)
-    : `${t(`${plural}.title`)}:${t(`permissions.${action}`)}`;
+  const fullPermission = formatPermission(t, `${resource}:${action}`);
 
   return (
     <div className="flex items-center p-2 rounded bg-card border border-border text-card-foreground">

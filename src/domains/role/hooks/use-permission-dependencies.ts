@@ -24,9 +24,13 @@ const ALL_RULES: PermissionDependencyRule[] = [
   { action: "create", deps: ["read"] },
   { action: "update", deps: ["read"] },
   { action: "delete", deps: ["read"] },
-  // model:delete/push/pull depend on model_registry:read, NOT model:read
+  // model:delete/pull depend on model_registry:read, NOT model:read
   { action: "model:delete", deps: ["model_registry:read"] },
-  { action: "model:push", deps: ["model_registry:read"] },
+  // NEU-674: pushing a model updates its alias, which is only visible under
+  // model_aliases RLS when the identity can also read models. Without
+  // model:read the UPDATE silently affects 0 rows, so model:push must
+  // auto-select and lock model:read.
+  { action: "model:push", deps: ["model_registry:read", "model:read"] },
   { action: "model:pull", deps: ["model_registry:read"] },
   // model:read depends on model_registry:read
   { action: "model:read", deps: ["model_registry:read"] },
@@ -141,6 +145,39 @@ function getDepsForAction(
 }
 
 /**
+ * Collect every dependency (transitively) required by `selectedPermissions`
+ * but not present in it. Only permissions that actually exist are returned.
+ */
+function findMissingDeps(
+  selectedPermissions: string[],
+  rules: PermissionDependencyRule[],
+  allPermissionsSet: Set<string>,
+  workspacedResources: Set<string> = WORKSPACED_RESOURCES,
+): string[] {
+  const known = new Set(selectedPermissions);
+  const missing: string[] = [];
+  // The queue only grows, so an index cursor also visits deps appended below.
+  const queue = [...selectedPermissions];
+
+  for (let i = 0; i < queue.length; i++) {
+    const [resource, action] = queue[i].split(":");
+    for (const dep of getDepsForAction(
+      resource,
+      action,
+      rules,
+      workspacedResources,
+    )) {
+      if (known.has(dep) || !allPermissionsSet.has(dep)) continue;
+      known.add(dep);
+      missing.push(dep);
+      queue.push(dep);
+    }
+  }
+
+  return missing;
+}
+
+/**
  * Find all selected permissions that depend on resource:action.
  * Returns full permission strings, e.g. ["endpoint:create"].
  */
@@ -212,6 +249,17 @@ export function usePermissionDependencies(options: {
     [permissionTree],
   );
 
+  /** Commit a selection together with everything it transitively requires. */
+  const commitWithDeps = useCallback(
+    (permissions: string[]) => {
+      onChange?.([
+        ...permissions,
+        ...findMissingDeps(permissions, rules, allPermissionsSet),
+      ]);
+    },
+    [allPermissionsSet, rules, onChange],
+  );
+
   const togglePermission = useCallback(
     (resource: string, action: string) => {
       const perm = `${resource}:${action}`;
@@ -223,18 +271,10 @@ export function usePermissionDependencies(options: {
         }
         onChange?.(value.filter((p) => p !== perm));
       } else {
-        const deps = getDepsForAction(resource, action, rules);
-        const newPerms = new Set(value);
-        for (const dep of deps) {
-          if (allPermissionsSet.has(dep)) {
-            newPerms.add(dep);
-          }
-        }
-        newPerms.add(perm);
-        onChange?.([...newPerms]);
+        commitWithDeps([...value, perm]);
       }
     },
-    [value, allPermissionsSet, rules, onChange],
+    [value, rules, onChange, commitWithDeps],
   );
 
   const toggleAllResourcePermissions = useCallback(
@@ -243,17 +283,12 @@ export function usePermissionDependencies(options: {
       if (!resourceData) return;
 
       if (selectAll) {
-        const newPerms = new Set(value);
-        for (const action of resourceData.actions) {
-          newPerms.add(`${resource}:${action}`);
-          // Also add cross-resource deps for each action
-          for (const dep of getDepsForAction(resource, action, rules)) {
-            if (allPermissionsSet.has(dep)) {
-              newPerms.add(dep);
-            }
-          }
-        }
-        onChange?.([...newPerms]);
+        commitWithDeps([
+          ...new Set([
+            ...value,
+            ...resourceData.actions.map((a) => `${resource}:${a}`),
+          ]),
+        ]);
       } else {
         // Remove all this resource's permissions first, then check which
         // are still needed by OTHER resources' selected permissions.
@@ -276,7 +311,7 @@ export function usePermissionDependencies(options: {
         onChange?.([...valueWithoutResource, ...lockedPerms]);
       }
     },
-    [permissionTree, value, allPermissionsSet, rules, onChange],
+    [permissionTree, value, rules, onChange, commitWithDeps],
   );
 
   const getActionDependents = useCallback(
@@ -286,9 +321,18 @@ export function usePermissionDependencies(options: {
     [value, rules],
   );
 
+  /** Dependencies required by `value` but missing from it — non-empty only for
+   *  permission sets built outside this hook, e.g. an existing role loaded into
+   *  the edit form before a new dependency rule was introduced (NEU-674). */
+  const missingDependencies = useMemo(
+    () => findMissingDeps(value, rules, allPermissionsSet),
+    [value, rules, allPermissionsSet],
+  );
+
   return {
     permissionTree,
     sortedResources,
+    missingDependencies,
     togglePermission,
     toggleAllResourcePermissions,
     getActionDependents,
