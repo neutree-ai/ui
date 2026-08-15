@@ -141,50 +141,56 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
     return labels[logType] || logType;
   };
 
+  const showToolbar = availableTabKeys.length > 1 || replicas.length > 1;
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="relative flex min-h-9 shrink-0 items-center justify-start pb-2">
-        {availableTabKeys.length > 1 && (
-          <SegmentedControl
-            ariaLabel={t("common.tabs.logs")}
-            className="shrink-0"
-            items={availableTabKeys.map((logType) => ({
-              value: logType,
-              label: getTabLabel(logType),
-            }))}
-            onValueChange={setActiveTab}
-            value={activeTab}
-          />
-        )}
-        {replicas.length > 1 && (
-          <div className="absolute right-0 flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {t("common.fields.replica")}
-            </span>
-            <Select
-              value={activeReplicaId ?? replicas[0]?.replica_id}
-              onValueChange={(value) => setActiveReplicaId(value)}
-            >
-              <SelectTrigger className="w-[260px]">
-                <SelectValue placeholder={t("common.fields.replica")} />
-              </SelectTrigger>
-              <SelectContent>
-                {replicas.map((replica) => (
-                  <SelectItem
-                    key={replica.replica_id}
-                    value={replica.replica_id}
-                  >
-                    {replica.replica_id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </div>
+      {showToolbar && (
+        <div className="relative flex min-h-9 shrink-0 items-center justify-start pb-2">
+          {availableTabKeys.length > 1 && (
+            <SegmentedControl
+              ariaLabel={t("common.tabs.logs")}
+              className="shrink-0"
+              items={availableTabKeys.map((logType) => ({
+                value: logType,
+                label: getTabLabel(logType),
+              }))}
+              onValueChange={setActiveTab}
+              value={activeTab}
+            />
+          )}
+          {replicas.length > 1 && (
+            <div className="absolute right-0 flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {t("common.fields.replica")}
+              </span>
+              <Select
+                value={activeReplicaId ?? replicas[0]?.replica_id}
+                onValueChange={(value) => setActiveReplicaId(value)}
+              >
+                <SelectTrigger className="w-[260px]">
+                  <SelectValue placeholder={t("common.fields.replica")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {replicas.map((replica) => (
+                    <SelectItem
+                      key={replica.replica_id}
+                      value={replica.replica_id}
+                    >
+                      {replica.replica_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
 
       {activeLogInfo && (
-        <div className="mt-2 min-h-0 flex-1 overflow-hidden">
+        <div
+          className={`${showToolbar ? "mt-2 " : ""}min-h-0 flex-1 overflow-hidden`}
+        >
           <LogViewer
             source={
               isLoadingLogs
