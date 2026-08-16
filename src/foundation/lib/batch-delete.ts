@@ -1,12 +1,11 @@
 // Batch delete threads each selected row's OWN metadata into its delete call.
 //
-// Neutree resources are keyed by `metadata->name` AND (for workspaced resources)
-// `metadata->workspace`; the data provider's soft-delete first re-reads the
-// record by that composite key before stamping `deletion_timestamp`. A batch
-// delete therefore cannot share a single `meta` across rows: each row may live
-// in a different workspace. Passing only the names (and dropping the workspace)
-// makes the re-read match zero rows, and the provider then dereferences an
-// undefined record -> "Cannot read properties of undefined (reading 'metadata')".
+// Most Neutree resources are keyed by `metadata->name` and, for workspaced
+// resources, `metadata->workspace`. API keys are the exception: names can
+// repeat across Projects, so they use their UUID. The data provider's
+// soft-delete first re-reads the record before stamping `deletion_timestamp`.
+// A batch delete therefore cannot share a single `meta` across rows because
+// each row may live in a different workspace.
 //
 // This builds one delete variable object per row, carrying that row's full
 // metadata (so `workspace` reaches the provider), merging the force-delete flag,
@@ -19,7 +18,7 @@ type RowMetadata = {
 } & Record<string, unknown>;
 
 export type BatchDeleteRow = {
-  original: { metadata?: RowMetadata };
+  original: { id?: string; metadata?: RowMetadata };
 };
 
 type BatchDeleteVariable = {
@@ -35,14 +34,18 @@ export function buildBatchDeleteVariables(
   forceDelete: boolean,
 ): BatchDeleteVariable[] {
   return rows
-    .map((row) => row.original.metadata ?? {})
-    .filter(
-      (metadata): metadata is RowMetadata & { name: string } =>
-        typeof metadata.name === "string" && metadata.name.length > 0,
+    .map((row) => ({
+      id: row.original.id,
+      metadata: row.original.metadata ?? {},
+    }))
+    .filter(({ id, metadata }) =>
+      resource === "api_keys"
+        ? typeof id === "string" && id.length > 0
+        : typeof metadata.name === "string" && metadata.name.length > 0,
     )
-    .map((metadata) => ({
+    .map(({ id, metadata }) => ({
       resource,
-      id: metadata.name,
+      id: resource === "api_keys" ? (id as string) : (metadata.name as string),
       meta: forceDelete ? { ...metadata, forceDelete: true } : { ...metadata },
       successNotification: false,
     }));

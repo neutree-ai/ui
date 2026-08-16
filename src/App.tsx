@@ -442,7 +442,6 @@ const resources: ResourceProps[] = [
     meta: {
       icon: <Key />,
       workspaced: true,
-      idColumnName: "metadata->name",
       parent: "access_control",
     },
   },
