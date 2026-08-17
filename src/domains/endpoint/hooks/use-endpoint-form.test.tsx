@@ -914,6 +914,10 @@ function setupMocks(
     spec: Record<string, unknown>;
   }> = [catalogA, catalogB],
   clusters: EndpointClusterRef[] = [],
+  registries: Array<{
+    metadata: { name: string };
+    visibility?: "public" | "private";
+  }> = [],
 ) {
   vi.mocked(useSelect).mockImplementation(((opts: { resource: string }) => {
     if (opts.resource === "model_catalogs") {
@@ -921,6 +925,9 @@ function setupMocks(
     }
     if (opts.resource === "clusters") {
       return { query: { data: { data: clusters }, isLoading: false } };
+    }
+    if (opts.resource === "model_registries") {
+      return { query: { data: { data: registries }, isLoading: false } };
     }
     return defaultSelectResult;
   }) as unknown as typeof useSelect);
@@ -4619,5 +4626,76 @@ describe("useEndpointForm", () => {
         screen.queryByText("endpoints.messages.modelNotFoundInRegistry"),
       ).toBeNull();
     });
+  });
+});
+
+describe("what the chosen registry costs at deploy time", () => {
+  const withRegistry = async (
+    registries: Array<{
+      metadata: { name: string };
+      visibility?: "public" | "private";
+    }>,
+    name: string,
+  ) => {
+    setupMocks([catalogA, catalogB], [], registries);
+    // This block sits outside the suite that resets it in `beforeEach`, and a
+    // stale instance would let the wait below pass against the previous test's
+    // form.
+    formInstance = null;
+    render(<CreateForm />);
+
+    await waitFor(() => expect(formInstance).not.toBeNull());
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", name);
+    });
+  };
+
+  it("warns when the registry's models are fetched as the endpoint starts", async () => {
+    await withRegistry(
+      [{ metadata: { name: "hub" }, visibility: "public" }],
+      "hub",
+    );
+
+    expect(screen.getByTestId("endpoint-runtime-download-hint")).toBeDefined();
+    expect(
+      screen.queryByTestId("endpoint-runtime-download-unknown"),
+    ).toBeNull();
+  });
+
+  it("says nothing for a registry whose models are already on local storage", async () => {
+    await withRegistry(
+      [{ metadata: { name: "nfs" }, visibility: "private" }],
+      "nfs",
+    );
+
+    expect(screen.queryByTestId("endpoint-runtime-download-hint")).toBeNull();
+    expect(
+      screen.queryByTestId("endpoint-runtime-download-unknown"),
+    ).toBeNull();
+  });
+
+  it("says something when the registry did not state which it is", async () => {
+    // The regression this exists for. `visibility` is a computed field, so a
+    // request here that drops MODEL_REGISTRY_SELECT gets `undefined` rather than
+    // an error — and the honest failure is loud, not a warning that quietly
+    // stops appearing and is reported months later as a slow first start nobody
+    // was told about.
+    await withRegistry([{ metadata: { name: "unstated" } }], "unstated");
+
+    expect(
+      screen.getByTestId("endpoint-runtime-download-unknown"),
+    ).toBeDefined();
+    expect(screen.queryByTestId("endpoint-runtime-download-hint")).toBeNull();
+  });
+
+  it("claims nothing before the registry list has arrived", async () => {
+    // No record is "no answer yet", which is not the same as an answer with the
+    // field missing; neither notice belongs on screen for it.
+    await withRegistry([], "not-loaded-yet");
+
+    expect(screen.queryByTestId("endpoint-runtime-download-hint")).toBeNull();
+    expect(
+      screen.queryByTestId("endpoint-runtime-download-unknown"),
+    ).toBeNull();
   });
 });

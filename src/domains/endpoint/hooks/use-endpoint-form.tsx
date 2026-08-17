@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
@@ -71,6 +72,10 @@ import {
   countFullCardAvailableDevicesByProduct,
   sumMatchingDeviceAvailableResources,
 } from "@/foundation/lib/gpu-device-resources";
+import {
+  MODEL_REGISTRY_SELECT,
+  registryModelDelivery,
+} from "@/foundation/lib/model-registry-visibility";
 import { cn } from "@/foundation/lib/utils";
 import {
   composeEndpointSpec,
@@ -281,8 +286,28 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const modelRegistries = useSelect<EndpointModelRegistryRef>({
     resource: "model_registries",
-    meta,
+    // `visibility` says whether the chosen registry's models are already on
+    // local storage or fetched when the endpoint starts, which is worth knowing
+    // before deploying rather than after. It is a computed field, so it only
+    // arrives when named — see MODEL_REGISTRY_SELECT.
+    meta: { ...meta, select: MODEL_REGISTRY_SELECT },
   });
+
+  // What the chosen registry costs at deploy time. Read from the registry's
+  // stated visibility rather than its type, so a second public provider inherits
+  // the warning instead of needing a branch added here.
+  //
+  // A registry that has not arrived yet is not an answer, so nothing is claimed
+  // until one is in hand — the same distinction model-show.tsx draws before
+  // deciding whether to offer write controls. Once one *is* in hand and still
+  // says nothing, that is the forgotten-`select` case, and it gets said out loud
+  // below rather than silently reading as "already local".
+  const selectedRegistry = (modelRegistries.query.data?.data ?? []).find(
+    (candidate) => candidate.metadata.name === currentRegistry,
+  );
+  const selectedModelDelivery = selectedRegistry
+    ? registryModelDelivery(selectedRegistry.visibility)
+    : null;
 
   const modelCatalogs = useSelect<EndpointModelCatalogRef>({
     resource: "model_catalogs",
@@ -1386,6 +1411,33 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   form.setValue("spec.model.name", value);
                 }}
               />
+              {/* Said here rather than in release notes: a model that is not on
+                  local storage is fetched when the endpoint starts, so the first
+                  start is slow and an air-gapped site cannot start it at all.
+                  Keyed off the registry's stated capability, so a second public
+                  provider inherits the warning without being named. */}
+              {selectedModelDelivery === "at-deploy-time" && (
+                <Alert data-testid="endpoint-runtime-download-hint">
+                  <AlertDescription>
+                    {t("endpoints.messages.runtimeDownloadHint")}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {/* The registry answered without saying which kind it is, which
+                  only happens when a request here drops MODEL_REGISTRY_SELECT.
+                  Rendering nothing would take the warning above away with no
+                  symptom at all; this makes the omission visible to whoever is
+                  looking at the screen. */}
+              {selectedModelDelivery === "unknown" && (
+                <Alert
+                  variant="warning"
+                  data-testid="endpoint-runtime-download-unknown"
+                >
+                  <AlertDescription>
+                    {t("endpoints.messages.runtimeDownloadUnknown")}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </FormFieldGroup>
           {showFull && (

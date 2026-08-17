@@ -4,11 +4,17 @@ import {
 } from "@/domains/model-registry/components/ModelRegistryStats";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
+import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
+import { RegistryVisibilityFilter } from "@/domains/model-registry/components/RegistryVisibilityFilter";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  MODEL_REGISTRY_SELECT,
+  MODEL_REGISTRY_VISIBILITY_FIELD,
+} from "@/foundation/lib/model-registry-visibility";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ModelRegistriesList = () => {
@@ -24,7 +30,14 @@ export const ModelRegistriesList = () => {
         searchField="metadata->>name"
         refineCoreProps={{
           sorters: defaultSorters,
+          // `visibility` is a computed field: filterable and selectable, and
+          // absent from `select=*`. Both the column and the counters below read
+          // it, so it has to be asked for by name.
+          meta: { select: MODEL_REGISTRY_SELECT },
         }}
+        filters={({ filters, setFilters }) => (
+          <RegistryVisibilityFilter filters={filters} setFilters={setFilters} />
+        )}
       >
         {metadataColumns.name}
         {metadataColumns.workspace}
@@ -38,6 +51,17 @@ export const ModelRegistriesList = () => {
               <ModelRegistryStatus {...(getValue() as unknown as BaseStatus)} />
             );
           }}
+        />
+        <Table.Column
+          header={t("model_registries.fields.visibility")}
+          accessorKey={MODEL_REGISTRY_VISIBILITY_FIELD}
+          id="visibility"
+          enableHiding
+          cell={({ row }) => (
+            <RegistryVisibility
+              visibility={(row.original as ModelRegistry).visibility}
+            />
+          )}
         />
         <Table.Column
           header={t("common.fields.type")}
