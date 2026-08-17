@@ -128,7 +128,7 @@
   "src/foundation/components/FormCombobox.tsx": "3833451177ba8156237120c06191e192",
   "src/foundation/components/FormFieldGroup.tsx": "61c7bb99bbac125942d48333ccac58bf",
   "src/foundation/components/FormSelect.tsx": "618e22e639296354f6024ed7fd0ab009",
-  "src/foundation/components/GrafanaDashboard.tsx": "3457d67eb811bf6419e1900b7258f900",
+  "src/foundation/components/GrafanaDashboard.tsx": "d8a570ee759b74fbd5444243c7dd0857",
   "src/foundation/components/Link.tsx": "274ab18e160e72304ff04329e14e15e9",
   "src/foundation/components/ListPage.tsx": "1da4d606467cf4f42bf55d8215350d5b",
   "src/foundation/components/Loader.tsx": "c79f9710029a86a58fd583de991a879f",

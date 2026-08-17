@@ -31,6 +31,7 @@ function GrafanaIframe({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeLoadedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
+  const [isCrossOrigin, setIsCrossOrigin] = useState(false);
 
   const isThemeApplied = useCallback(() => {
     const iframe = iframeRef.current;
@@ -77,19 +78,31 @@ function GrafanaIframe({
     const iframe = iframeRef.current;
     if (!iframe) return;
 
+    const revealCrossOriginWhenPainted = () => {
+      setIsCrossOrigin(true);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setIsReady(true));
+      });
+    };
+
     const cssToInject = customCSS
       ? `${DEFAULT_GRAFANA_CSS}\n${customCSS}`
       : DEFAULT_GRAFANA_CSS;
 
     try {
       const iframeDoc = iframe.contentDocument;
-      if (iframeDoc) {
-        const style = iframeDoc.createElement("style");
-        style.textContent = cssToInject;
-        iframeDoc.head.appendChild(style);
+      if (!iframeDoc) {
+        revealCrossOriginWhenPainted();
+        return;
       }
+
+      setIsCrossOrigin(false);
+      const style = iframeDoc.createElement("style");
+      style.textContent = cssToInject;
+      iframeDoc.head.appendChild(style);
     } catch {
       // Cross-origin iframe — CSS injection not possible.
+      revealCrossOriginWhenPainted();
     }
   }, [customCSS]);
 
@@ -104,7 +117,9 @@ function GrafanaIframe({
       />
       <div
         aria-hidden={isReady}
-        className={`absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-150 ${
+        className={`absolute inset-0 z-10 flex items-center justify-center ${
+          isCrossOrigin ? "" : "transition-opacity duration-150"
+        } ${
           isReady
             ? "pointer-events-none opacity-0"
             : "pointer-events-auto opacity-100"
