@@ -1732,7 +1732,8 @@
 		"read-credentials": "Read Credentials",
 		"trace-read": "Access Log Read",
 		"usage-read": "Usage Read",
-		"requiredBy": "Required by: {{actions}}"
+		"requiredBy": "Required by: {{actions}}",
+		"dependenciesAdded": "Added required permissions: {{actions}}"
 	},
 	"systems": {
 		"title": "Systems"

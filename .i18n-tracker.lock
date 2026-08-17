@@ -157,9 +157,9 @@
   "src/domains/role-assignment/types.ts": "ef54639c9b39af1db44d8956f4fc1759",
   "src/domains/role-assignment/components/UserCell.tsx": "9e9d51d5c0092c6a09c3d5bc41f18ac0",
   "src/domains/role/types.ts": "f1deba5219d3585096cac00c81e20051",
-  "src/domains/role/hooks/use-permission-dependencies.ts": "a0ce8deadf5afb2c083b70ab50cf6f2c",
-  "src/domains/role/components/PermissionsTree.tsx": "4b0fdb1357674f14988b7b23f80e4185",
-  "src/domains/role/components/PermissionsTreeField.tsx": "9771eb340eef413aafd9e1d56ca81da8",
+  "src/domains/role/hooks/use-permission-dependencies.ts": "febea7795d55ad4d539fe58665eedd24",
+  "src/domains/role/components/PermissionsTree.tsx": "10389743bd5a6c0269d6a5199fd88715",
+  "src/domains/role/components/PermissionsTreeField.tsx": "36e4bfeaa54682f3cf53812813843e2a",
   "src/domains/model-registry/types.ts": "c66adc9129353fb8c1478f1f71c37dd0",
   "src/domains/model-registry/components/ModelRegistryStatus.tsx": "74e59bea4562ddc782a0043ec1865be8",
   "src/domains/model-registry/components/ModelRegistryType.tsx": "7fc4fbd98b503e3a5cfc795cbe847193",
@@ -372,5 +372,6 @@
   "src/domains/model-registry/lib/capabilities.ts": "b544757b2e8cddba755eca02c8ab5cde",
   "src/domains/model-registry/lib/model-card.ts": "6614d0a004271fa9e0524e8d0e656e97",
   "src/foundation/lib/api/model-registries.ts": "63aabfb75c7df819933df76333e6f67b",
-  "src/foundation/lib/model-registry-visibility.ts": "24550d054dd3e6365f09c526b829302a"
+  "src/foundation/lib/model-registry-visibility.ts": "24550d054dd3e6365f09c526b829302a",
+  "src/domains/role/lib/format-permission.ts": "9f2b7f7a698e51dc6ba8188a808db44b"
 }
