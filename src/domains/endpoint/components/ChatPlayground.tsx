@@ -359,8 +359,8 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
           </ChatSidebar>
 
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col min-w-0 ">
-            <div className="flex-1 relative overflow-hidden bg-card">
+          <div className="flex-1 flex flex-col min-w-0 bg-card">
+            <div className="flex-1 relative overflow-hidden">
               <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">

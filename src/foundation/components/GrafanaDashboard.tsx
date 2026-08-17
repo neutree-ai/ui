@@ -1,5 +1,6 @@
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Loader } from "@/foundation/components/Loader";
 import {
   buildGrafanaDashboardUrl,
   type GrafanaDashboardConfig,
@@ -93,17 +94,31 @@ function GrafanaIframe({
   }, [customCSS]);
 
   return (
-    <iframe
-      ref={iframeRef}
-      src={dashboardUrl}
-      className={`w-full border-0 transition-opacity duration-150 ${className || ""}`}
-      style={{
-        opacity: isReady ? 1 : 0,
-        visibility: isReady ? "visible" : "hidden",
-      }}
-      title={dashboardTitle}
-      onLoad={handleIframeLoad}
-    />
+    <div className={`relative h-full w-full ${className || ""}`}>
+      <iframe
+        ref={iframeRef}
+        src={dashboardUrl}
+        className="absolute inset-0 h-full w-full border-0"
+        title={dashboardTitle}
+        onLoad={handleIframeLoad}
+      />
+      <div
+        aria-hidden={isReady}
+        className={`absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-150 ${
+          isReady
+            ? "pointer-events-none opacity-0"
+            : "pointer-events-auto opacity-100"
+        }`}
+        style={{ backgroundColor: "var(--nt-pagebackground-grouped)" }}
+      >
+        <span className="sr-only">{dashboardTitle}</span>
+        <Loader
+          aria-hidden="true"
+          className="w-16"
+          style={{ color: "var(--nt-text-neutral-tertiary)" }}
+        />
+      </div>
+    </div>
   );
 }
 
