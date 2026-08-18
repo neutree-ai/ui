@@ -134,11 +134,7 @@ export const ApiKeyLimitsCard = ({
             <CardTitle className="text-xl font-semibold">Project</CardTitle>
           </CardHeader>
           <CardContent>
-            <FormFieldGroup
-              {...form}
-              name="project_id"
-              label="API key Project"
-            >
+            <FormFieldGroup {...form} name="project_id" label="API key Project">
               <ProjectPicker
                 workspace={workspace}
                 value={form.watch("project_id")}

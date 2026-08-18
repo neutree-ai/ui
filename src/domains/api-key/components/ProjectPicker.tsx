@@ -131,9 +131,7 @@ export function ProjectPicker({
                       className={`mr-2 h-4 w-4 ${value === p.id ? "opacity-100" : "opacity-0"}`}
                     />
                     <span className="min-w-0">
-                      <span className="block truncate">
-                        {p.name}
-                      </span>
+                      <span className="block truncate">{p.name}</span>
                       {p.description && (
                         <span className="block truncate text-xs text-muted-foreground">
                           {p.description}

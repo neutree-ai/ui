@@ -371,11 +371,7 @@ export const ApiKeysList = () => {
       setSelected(new Set());
       setMoveOpen(false);
       setExpanded(
-        (v) =>
-          new Set([
-            ...v,
-            target || `__ungrouped__:${moveWorkspace}`,
-          ]),
+        (v) => new Set([...v, target || `__ungrouped__:${moveWorkspace}`]),
       );
       openNotification?.({
         type: "success",
@@ -579,7 +575,8 @@ export const ApiKeysList = () => {
                   </span>
                   <span className="min-w-0 truncate text-muted-foreground">
                     {key.project_id
-                      ? (moveProjectNames.get(key.project_id) ?? "Unknown Project")
+                      ? (moveProjectNames.get(key.project_id) ??
+                        "Unknown Project")
                       : "Ungrouped"}
                   </span>
                 </div>
@@ -1101,9 +1098,7 @@ export const ApiKeysList = () => {
                                             "api_keys",
                                             key.metadata.name,
                                             "push",
-                                            {
-                                            workspace: key.metadata.workspace,
-                                            },
+                                            { workspace: key.metadata.workspace },
                                           )
                                         }
                                       >

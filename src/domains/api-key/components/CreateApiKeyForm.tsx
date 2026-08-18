@@ -182,11 +182,7 @@ export const CreateApiKeyForm = ({
             }))}
           />
         </FormFieldGroup>
-        <FormFieldGroup
-          {...form}
-          name="project_id"
-          label="Project"
-        >
+        <FormFieldGroup {...form} name="project_id" label="Project">
           <ProjectPicker
             workspace={selectedWorkspace}
             value={form.watch("project_id")}
