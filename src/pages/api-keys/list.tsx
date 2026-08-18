@@ -805,7 +805,7 @@ export const ApiKeysList = () => {
         )}
       </div>
       <div className="overflow-hidden rounded-md border">
-        <div className="grid grid-cols-[minmax(240px,2fr)_100px_120px_48px] gap-4 border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground">
+        <div className="grid grid-cols-[minmax(240px,2fr)_100px_48px] gap-4 border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground">
           <span className="flex items-center gap-3">
             <Checkbox
               aria-label="Select all API keys on this page"
@@ -824,7 +824,6 @@ export const ApiKeysList = () => {
             Project / description
           </span>
           <span>API keys</span>
-          <span>Status</span>
           <span />
         </div>
         {groupsQuery.isLoading && (
@@ -858,7 +857,7 @@ export const ApiKeysList = () => {
                 : "indeterminate";
           return (
             <div key={project.id} className="border-b last:border-b-0">
-              <div className="grid grid-cols-[minmax(240px,2fr)_100px_120px_48px] items-center gap-4 px-4 py-3">
+              <div className="grid grid-cols-[minmax(240px,2fr)_100px_48px] items-center gap-4 px-4 py-3">
                 <button
                   type="button"
                   className="flex min-w-0 items-center gap-2 text-left"
@@ -888,7 +887,6 @@ export const ApiKeysList = () => {
                   </span>
                 </button>
                 <span className="text-sm">{count}</span>
-                <span />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
