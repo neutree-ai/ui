@@ -1098,7 +1098,9 @@ export const ApiKeysList = () => {
                                             "api_keys",
                                             key.metadata.name,
                                             "push",
-                                            { workspace: key.metadata.workspace },
+                                            {
+                                              workspace: key.metadata.workspace,
+                                            },
                                           )
                                         }
                                       >
