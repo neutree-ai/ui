@@ -549,7 +549,10 @@ export function validateEndpointValues(
     const gpuRaw = spec.resources?.gpu;
     if (gpuRaw !== undefined && gpuRaw !== null && gpuRaw !== "") {
       const gpu = Number(gpuRaw);
-      if (Number.isFinite(gpu) && !isGpuCountPrecisionValid(gpu, context.clusterType)) {
+      if (
+        Number.isFinite(gpu) &&
+        !isGpuCountPrecisionValid(gpu, context.clusterType)
+      ) {
         errors["spec.resources.gpu"] = {
           type: "manual",
           message: t(
