@@ -49,7 +49,7 @@ export const ApiKeysShow = () => {
         showCurrentBreadcrumb={false}
       >
         <ShowPage.ObjectHeader
-          title={record.metadata.name}
+          title={record.metadata.display_name ?? record.metadata.name}
           description={
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
               <ShowPage.Meta label={t("common.fields.workspace")}>

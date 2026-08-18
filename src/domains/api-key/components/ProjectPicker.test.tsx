@@ -12,25 +12,9 @@ vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
   useApiKeyProjects: () => ({
     data: [
       {
-        id: "default",
-        name: "Default",
-        description: "",
-        enabled: true,
-        is_default: true,
-      },
-      {
         id: "active",
         name: "Active",
         description: "Ready",
-        enabled: true,
-        is_default: false,
-      },
-      {
-        id: "disabled",
-        name: "Disabled",
-        description: "History",
-        enabled: false,
-        is_default: false,
       },
     ],
     isLoading: false,
@@ -58,30 +42,14 @@ describe("ProjectPicker", () => {
     vi.clearAllMocks();
   });
 
-  it("shows disabled projects but prevents selecting them", () => {
-    render(<ProjectPicker workspace="default" value="" onChange={vi.fn()} />);
-    fireEvent.click(screen.getByRole("combobox"));
-    const option = screen.getByRole("option", { name: /Disabled.*History/ });
-    expect(option.getAttribute("aria-disabled")).toBe("true");
-  });
-
-  it("selects the Default project for create forms", async () => {
+  it("offers an ungrouped option", () => {
     const onChange = vi.fn();
     render(
-      <ProjectPicker
-        workspace="default"
-        value=""
-        onChange={onChange}
-        selectDefaultWhenEmpty
-      />,
+      <ProjectPicker workspace="default" value="active" onChange={onChange} />,
     );
-
-    await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith(
-        "default",
-        expect.objectContaining({ id: "default", name: "Default" }),
-      ),
-    );
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: "Ungrouped" }));
+    expect(onChange).toHaveBeenCalledWith("");
   });
 
   it("creates a project inline, refreshes, and selects it", async () => {

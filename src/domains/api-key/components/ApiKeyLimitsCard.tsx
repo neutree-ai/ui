@@ -42,7 +42,7 @@ export const ApiKeyLimitsCard = ({
 }: {
   apiKeyId: string;
   workspace: string;
-  projectId: string;
+  projectId: string | null;
 }) => {
   const { t } = useTranslation();
   const { load } = useApiKeyLimits();
@@ -52,7 +52,7 @@ export const ApiKeyLimitsCard = ({
   const [limits, setLimits] = useState<ApiKeyLimits>({});
   const form = useForm<ApiKeyPolicyFormValues & { project_id: string }>({
     mode: "all",
-    defaultValues: { ...apiKeyPolicyDefaults(), project_id: projectId },
+    defaultValues: { ...apiKeyPolicyDefaults(), project_id: projectId ?? "" },
   });
 
   // Load (and re-load after save) the key's current limits. Keyed only on
@@ -63,7 +63,7 @@ export const ApiKeyLimitsCard = ({
   const refresh = useCallback(async () => {
     const next = await load(apiKeyId);
     setLimits(next);
-    form.reset({ ...limitsToForm(next), project_id: projectId });
+    form.reset({ ...limitsToForm(next), project_id: projectId ?? "" });
   }, [apiKeyId, projectId]);
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export const ApiKeyLimitsCard = ({
       method: "post",
       values: {
         p_api_key_id: apiKeyId,
-        p_project_id: values.project_id,
+        p_project_id: values.project_id || null,
         p_limits: buildApiKeyLimits(values as ApiKeyPolicyFormValues, {
           disabled,
         }),
@@ -138,7 +138,6 @@ export const ApiKeyLimitsCard = ({
               {...form}
               name="project_id"
               label="API key Project"
-              rules={{ required: "Project is required" }}
             >
               <ProjectPicker
                 workspace={workspace}

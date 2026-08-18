@@ -24,12 +24,12 @@ export function ProjectPicker({
   workspace,
   value,
   onChange,
-  selectDefaultWhenEmpty = false,
+  allowUngrouped = true,
 }: {
   workspace: string;
   value: string;
   onChange: (id: string, project?: ApiKeyProject) => void;
-  selectDefaultWhenEmpty?: boolean;
+  allowUngrouped?: boolean;
 }) {
   const {
     data: projects,
@@ -48,14 +48,6 @@ export function ProjectPicker({
   useEffect(() => {
     if (creating) inputRef.current?.focus();
   }, [creating]);
-  useEffect(() => {
-    if (!selectDefaultWhenEmpty || value || isLoading) return;
-    const defaultProject = projects.find(
-      (project) => project.is_default && project.enabled,
-    );
-    if (defaultProject) onChange(defaultProject.id, defaultProject);
-  }, [isLoading, onChange, projects, selectDefaultWhenEmpty, value]);
-
   const create = async () => {
     setError("");
     setSaving(true);
@@ -100,7 +92,8 @@ export function ProjectPicker({
             className="w-full justify-between font-normal"
           >
             <span className="truncate">
-              {projects.find((p) => p.id === value)?.name ?? "Select a Project"}
+              {projects.find((p) => p.id === value)?.name ??
+                (allowUngrouped ? "Ungrouped" : "Select a Project")}
             </span>
             <ChevronsUpDown className="h-4 w-4 opacity-50" />
           </Button>
@@ -111,16 +104,27 @@ export function ProjectPicker({
             <CommandList>
               <CommandEmpty>No Projects found.</CommandEmpty>
               <CommandGroup>
+                {allowUngrouped && (
+                  <CommandItem
+                    value="Ungrouped"
+                    onSelect={() => {
+                      onChange("");
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={`mr-2 h-4 w-4 ${value ? "opacity-0" : "opacity-100"}`}
+                    />
+                    Ungrouped
+                  </CommandItem>
+                )}
                 {projects.map((p) => (
                   <CommandItem
                     key={p.id}
                     value={`${p.name} ${p.description}`}
-                    disabled={!p.enabled}
                     onSelect={() => {
-                      if (p.enabled) {
-                        onChange(p.id, p);
-                        setOpen(false);
-                      }
+                      onChange(p.id, p);
+                      setOpen(false);
                     }}
                   >
                     <Check
@@ -129,7 +133,6 @@ export function ProjectPicker({
                     <span className="min-w-0">
                       <span className="block truncate">
                         {p.name}
-                        {!p.enabled ? " (Disabled)" : ""}
                       </span>
                       {p.description && (
                         <span className="block truncate text-xs text-muted-foreground">

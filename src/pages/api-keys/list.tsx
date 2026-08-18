@@ -199,7 +199,6 @@ export const ApiKeysList = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [moveOpen, setMoveOpen] = useState(false);
   const [target, setTarget] = useState("");
-  const [projectStatus, setProjectStatus] = useState("all");
   const [keyStatus, setKeyStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ApiKeyProject>();
@@ -240,8 +239,10 @@ export const ApiKeysList = () => {
         .map((key) => ({
           id: String(key.id),
           name: key.description
-            ? `${key.metadata?.name ?? key.id} - ${key.description}`
-            : (key.metadata?.name ?? String(key.id)),
+            ? `${key.metadata?.display_name ?? key.metadata?.name ?? key.id} - ${key.description}`
+            : (key.metadata?.display_name ??
+              key.metadata?.name ??
+              String(key.id)),
         })),
     [keysData, workspace],
   );
@@ -253,7 +254,6 @@ export const ApiKeysList = () => {
   const groupsQuery = useApiKeyProjectGroups({
     workspace: scoped,
     search: debouncedQuery,
-    projectEnabled: projectStatus === "all" ? null : projectStatus === "active",
     apiKeyDisabled: keyStatus === "all" ? null : keyStatus === "disabled",
     page,
     pageSize,
@@ -278,7 +278,7 @@ export const ApiKeysList = () => {
   const moveWorkspace =
     selectedWorkspaces.length === 1 ? selectedWorkspaces[0] : "";
   const movableKeyCount = selectedKeys.filter(
-    (key) => key.project_id !== target,
+    (key) => (key.project_id ?? "") !== target,
   ).length;
   const { data: moveProjects } = useApiKeyProjects(moveWorkspace);
   const projects = grouped.map((group) => group.project);
@@ -289,7 +289,6 @@ export const ApiKeysList = () => {
   const expansionContext = [
     scoped,
     debouncedQuery,
-    projectStatus,
     keyStatus,
     page,
     pageSize,
@@ -362,7 +361,10 @@ export const ApiKeysList = () => {
       const response = await mutateAsync({
         url: "/rpc/move_api_keys_to_project",
         method: "post",
-        values: { p_api_key_ids: [...selected], p_project_id: target },
+        values: {
+          p_api_key_ids: [...selected],
+          p_project_id: target || null,
+        },
         successNotification: false,
         errorNotification: false,
       });
@@ -418,7 +420,6 @@ export const ApiKeysList = () => {
     const variables = buildBatchDeleteVariables(
       deletingKeys.map((key) => ({
         original: {
-          id: key.id,
           metadata: {
             ...key.metadata,
             workspace: key.metadata.workspace ?? undefined,
@@ -568,10 +569,12 @@ export const ApiKeysList = () => {
                   className="grid grid-cols-2 gap-4 border-b px-3 py-2 text-sm last:border-b-0"
                 >
                   <span className="min-w-0 truncate font-medium">
-                    {key.metadata.name}
+                    {key.metadata.display_name ?? key.metadata.name}
                   </span>
                   <span className="min-w-0 truncate text-muted-foreground">
-                    {moveProjectNames.get(key.project_id) ?? "Unknown Project"}
+                    {key.project_id
+                      ? (moveProjectNames.get(key.project_id) ?? "Unknown Project")
+                      : "Ungrouped"}
                   </span>
                 </div>
               ))}
@@ -588,7 +591,7 @@ export const ApiKeysList = () => {
               a time.
             </p>
           )}
-          {target && movableKeyCount === 0 && (
+          {movableKeyCount === 0 && (
             <p className="text-sm text-muted-foreground">
               The selected API keys already belong to this Project.
             </p>
@@ -602,7 +605,6 @@ export const ApiKeysList = () => {
             </Button>
             <Button
               disabled={
-                !target ||
                 !selected.size ||
                 selectedWorkspaces.length !== 1 ||
                 movableKeyCount === 0
@@ -738,22 +740,6 @@ export const ApiKeysList = () => {
             }}
           />
         </div>
-        <Select
-          value={projectStatus}
-          onValueChange={(value) => {
-            setProjectStatus(value);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            <SelectItem value="active">Active Projects</SelectItem>
-            <SelectItem value="disabled">Disabled Projects</SelectItem>
-          </SelectContent>
-        </Select>
         <Select
           value={keyStatus}
           onValueChange={(value) => {
@@ -899,12 +885,7 @@ export const ApiKeysList = () => {
                   </span>
                 </button>
                 <span className="text-sm">{count}</span>
-                <Badge
-                  className="w-fit"
-                  variant={project.enabled ? "outline" : "destructive"}
-                >
-                  {project.enabled ? "Active" : "Disabled"}
-                </Badge>
+                <span />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -912,45 +893,19 @@ export const ApiKeysList = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => startEdit(project)}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit Project
-                    </DropdownMenuItem>
-                    {project.enabled && (
+                    {!project.is_ungrouped && (
+                      <DropdownMenuItem onClick={() => startEdit(project)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit Project
+                      </DropdownMenuItem>
+                    )}
+                    {!project.is_ungrouped && (
                       <DropdownMenuItem onClick={() => createKey(project)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Create API key
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setActionError("");
-                        void mutateAsync({
-                          url: "/rpc/update_api_key_project",
-                          method: "post",
-                          values: {
-                            p_project_id: project.id,
-                            p_enabled: !project.enabled,
-                          },
-                        })
-                          .then(refresh)
-                          .catch((cause) =>
-                            setActionError(
-                              cause instanceof Error
-                                ? cause.message
-                                : String(cause),
-                            ),
-                          );
-                      }}
-                    >
-                      {project.enabled ? (
-                        <PowerOff className="mr-2 h-4 w-4" />
-                      ) : (
-                        <Power className="mr-2 h-4 w-4" />
-                      )}
-                      {project.enabled ? "Disable" : "Enable"}
-                    </DropdownMenuItem>
-                    {!project.is_default && (
+                    {!project.is_ungrouped && (
                       <DropdownMenuItem
                         className="text-destructive"
                         disabled={count > 0}
@@ -973,7 +928,7 @@ export const ApiKeysList = () => {
                   {shown.length === 0 ? (
                     <div className="py-8 text-center text-sm text-muted-foreground">
                       This Project has no API keys
-                      {project.enabled && (
+                      {!project.is_ungrouped && (
                         <div>
                           <Button
                             variant="link"
@@ -1045,7 +1000,10 @@ export const ApiKeysList = () => {
                                   />
                                 </td>
                                 <td className="py-3">
-                                  <strong>{key.metadata.name}</strong>
+                                  <strong>
+                                    {key.metadata.display_name ??
+                                      key.metadata.name}
+                                  </strong>
                                   <div
                                     className="max-w-xs truncate text-xs text-muted-foreground"
                                     title={key.description}
@@ -1137,9 +1095,14 @@ export const ApiKeysList = () => {
                                     <DropdownMenuContent align="end">
                                       <DropdownMenuItem
                                         onClick={() =>
-                                          show("api_keys", key.id, "push", {
+                                          show(
+                                            "api_keys",
+                                            key.metadata.name,
+                                            "push",
+                                            {
                                             workspace: key.metadata.workspace,
-                                          })
+                                            },
+                                          )
                                         }
                                       >
                                         <Pencil className="mr-2 h-4 w-4" />

@@ -93,8 +93,9 @@ export const CreateApiKeyForm = ({
         method: "post",
         values: {
           p_workspace: formValue.workspace,
-          p_name: formValue.name,
-          p_project_id: formValue.project_id,
+          p_name: `apikey-${crypto.randomUUID()}`,
+          p_display_name: formValue.name,
+          p_project_id: formValue.project_id || null,
           p_description: formValue.description,
           p_quota: 0,
           p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
@@ -185,7 +186,6 @@ export const CreateApiKeyForm = ({
           {...form}
           name="project_id"
           label="Project"
-          rules={{ required: "Project is required" }}
         >
           <ProjectPicker
             workspace={selectedWorkspace}
@@ -193,7 +193,6 @@ export const CreateApiKeyForm = ({
             onChange={(id) => {
               form.setValue("project_id", id, { shouldValidate: true });
             }}
-            selectDefaultWhenEmpty
           />
         </FormFieldGroup>
         <FormFieldGroup

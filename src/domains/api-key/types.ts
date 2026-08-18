@@ -34,7 +34,7 @@ export type ApiKey = {
   metadata: Metadata;
   spec: ApiKeySpec;
   status: ApiKeyStatus | null;
-  project_id: string;
+  project_id: string | null;
   description: string;
 };
 
@@ -43,9 +43,8 @@ export type ApiKeyProject = {
   name: string;
   description: string;
   workspace: string;
-  enabled: boolean;
-  is_default: boolean;
-  user_id: string;
+  created_by: string | null;
+  is_ungrouped?: boolean;
   created_at: string;
   updated_at: string;
 };

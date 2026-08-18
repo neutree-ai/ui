@@ -858,12 +858,11 @@ const WorkspaceLink = ({ name }: { name?: string }) => {
 };
 
 const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
-  // Fetch the workspace's keys to resolve the display name. The detail route
-  // uses the UUID because API key names are display labels and may repeat.
+  // Resolve the technical name used by the resource detail route and retain
+  // the user-facing display name for the link label.
   const { data } = useList<{
     id: string;
-    description?: string;
-    metadata?: { name?: string };
+    metadata?: { name?: string; display_name?: string };
   }>({
     resource: "api_keys",
     pagination: { mode: "off" },
@@ -886,12 +885,12 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
   return (
     <ShowButton
       resource="api_keys"
-      recordItemId={id}
+      recordItemId={name}
       meta={{ workspace }}
       variant="link"
       className="!h-auto !p-0 font-mono text-xs"
     >
-      {apiKey.description ? `${name} - ${apiKey.description}` : name}
+      {apiKey.metadata?.display_name ?? name}
     </ShowButton>
   );
 };
