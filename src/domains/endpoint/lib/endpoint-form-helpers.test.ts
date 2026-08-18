@@ -753,8 +753,9 @@ describe("validateEndpointValues GPU count precision", () => {
     );
   };
 
-  it("allows ssh 0 as unassigned", () => {
-    expect(validate(0, "ssh")).toEqual({});
+  it("rejects ssh 0 when an accelerator is declared", () => {
+    const errors = validate(0, "ssh");
+    expect(errors["spec.resources.gpu"]).toBeDefined();
   });
 
   it("allows ssh one-decimal counts below one", () => {

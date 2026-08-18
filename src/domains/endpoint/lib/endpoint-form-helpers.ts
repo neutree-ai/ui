@@ -226,24 +226,22 @@ const parseOptionalValidationNumber = (value: unknown): number | undefined => {
 
 /**
  * Whether an accelerator card count satisfies the precision rule for a cluster
- * type. SSH clusters preserve 0 as unassigned, allow one-decimal counts below
- * one (0.1-0.9), and allow integers at or above one. Kubernetes clusters allow
- * positive integers only.
+ * type. Declaring an accelerator (selecting a type and product) requires a
+ * count strictly greater than zero on both cluster types — "no accelerator" is
+ * expressed by not selecting an accelerator, not by a zero count. SSH clusters
+ * additionally allow one-decimal counts below one (0.1-0.9) and integers at or
+ * above one; Kubernetes clusters allow integers only.
  */
 const isGpuCountPrecisionValid = (
   gpu: number,
   clusterType: "ssh" | "kubernetes",
 ): boolean => {
-  if (clusterType === "kubernetes") {
-    return Number.isInteger(gpu) && gpu >= 1;
-  }
-
-  if (gpu < 0) {
+  if (gpu <= 0) {
     return false;
   }
 
-  if (gpu === 0) {
-    return true; // unassigned
+  if (clusterType === "kubernetes") {
+    return Number.isInteger(gpu);
   }
 
   if (gpu >= 1) {
