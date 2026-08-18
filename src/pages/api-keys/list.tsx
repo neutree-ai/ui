@@ -324,7 +324,7 @@ export const ApiKeysList = () => {
   const createKey = (project?: ApiKeyProject) => {
     setCreateKeyPreset({
       workspace: project?.workspace ?? scoped ?? "",
-      projectId: project?.id ?? "",
+      projectId: project?.is_ungrouped ? "" : (project?.id ?? ""),
     });
     setCreateKeySession((session) => session + 1);
     setOpen(true);
@@ -899,12 +899,10 @@ export const ApiKeysList = () => {
                         Edit Project
                       </DropdownMenuItem>
                     )}
-                    {!project.is_ungrouped && (
-                      <DropdownMenuItem onClick={() => createKey(project)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create API key
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem onClick={() => createKey(project)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create API key
+                    </DropdownMenuItem>
                     {!project.is_ungrouped && (
                       <DropdownMenuItem
                         className="text-destructive"
@@ -928,16 +926,14 @@ export const ApiKeysList = () => {
                   {shown.length === 0 ? (
                     <div className="py-8 text-center text-sm text-muted-foreground">
                       This Project has no API keys
-                      {!project.is_ungrouped && (
-                        <div>
-                          <Button
-                            variant="link"
-                            onClick={() => createKey(project)}
-                          >
-                            Create API key
-                          </Button>
-                        </div>
-                      )}
+                      <div>
+                        <Button
+                          variant="link"
+                          onClick={() => createKey(project)}
+                        >
+                          Create API key
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
