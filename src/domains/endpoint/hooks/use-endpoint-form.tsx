@@ -184,6 +184,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           currentRegistry,
           currentModelName,
           availableModelNames: modelExistenceNames,
+          clusterType,
         },
         t,
       );
@@ -328,6 +329,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     currentUsage,
     t,
   });
+
+  const clusterType: "ssh" | "kubernetes" | undefined =
+    selectedCluster?.spec?.type === "ssh"
+      ? "ssh"
+      : selectedCluster?.spec?.type === "kubernetes"
+        ? "kubernetes"
+        : undefined;
 
   const isEdit = action === "edit";
   const sectionVariant = "section";
@@ -2028,7 +2036,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             userSetValueOptions,
                           )
                         }
-                        min={0}
+                        min={isVgpuAllocationMode ? 0 : gpuStep === 1 ? 1 : 0}
                         max={
                           isVgpuAllocationMode
                             ? totalVirtualCardCapacity

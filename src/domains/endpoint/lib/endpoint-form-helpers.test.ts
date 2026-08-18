@@ -719,6 +719,114 @@ describe("validateEndpointValues", () => {
   });
 });
 
+describe("validateEndpointValues GPU count precision", () => {
+  const mockT = (key: string) => key;
+
+  const scheduler = {
+    deployment_options: { scheduler: { type: "consistent_hash" } },
+  };
+
+  const validate = (
+    gpu: number | null,
+    clusterType: "ssh" | "kubernetes" | undefined,
+    accelerator?: { type?: string; product?: string } | null,
+  ) => {
+    return validateEndpointValues(
+      {
+        ...scheduler,
+        resources: {
+          gpu,
+          accelerator:
+            accelerator === undefined
+              ? { type: "npu", product: "HUAWEI_Ascend310P" }
+              : accelerator,
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+        clusterType,
+      },
+      mockT,
+    );
+  };
+
+  it("allows ssh 0 as unassigned", () => {
+    expect(validate(0, "ssh")).toEqual({});
+  });
+
+  it("allows ssh one-decimal counts below one", () => {
+    for (const gpu of [0.1, 0.5, 0.9]) {
+      expect(validate(gpu, "ssh")).toEqual({});
+    }
+  });
+
+  it("allows ssh integer counts at or above one", () => {
+    for (const gpu of [1, 2, 8]) {
+      expect(validate(gpu, "ssh")).toEqual({});
+    }
+  });
+
+  it("rejects ssh multi-decimal counts below one", () => {
+    for (const gpu of [0.01, 0.15]) {
+      const errors = validate(gpu, "ssh");
+      expect(errors["spec.resources.gpu"]).toEqual({
+        type: "manual",
+        message: "endpoints.messages.gpuCountPrecisionSsh",
+      });
+    }
+  });
+
+  it("rejects ssh non-integer counts at or above one", () => {
+    for (const gpu of [1.1, 1.5]) {
+      const errors = validate(gpu, "ssh");
+      expect(errors["spec.resources.gpu"]).toBeDefined();
+    }
+  });
+
+  it("rejects ssh negative counts", () => {
+    const errors = validate(-1, "ssh");
+    expect(errors["spec.resources.gpu"]).toBeDefined();
+  });
+
+  it("allows kubernetes positive integer counts only", () => {
+    for (const gpu of [1, 2, 8]) {
+      expect(validate(gpu, "kubernetes")).toEqual({});
+    }
+  });
+
+  it("rejects kubernetes zero count", () => {
+    const errors = validate(0, "kubernetes");
+    expect(errors["spec.resources.gpu"]).toBeDefined();
+  });
+
+  it("rejects kubernetes fractional counts", () => {
+    for (const gpu of [0.5, 1.5]) {
+      const errors = validate(gpu, "kubernetes");
+      expect(errors["spec.resources.gpu"]).toBeDefined();
+    }
+  });
+
+  it("rejects kubernetes negative counts", () => {
+    const errors = validate(-1, "kubernetes");
+    expect(errors["spec.resources.gpu"]).toBeDefined();
+  });
+
+  it("skips precision validation when no accelerator is selected", () => {
+    expect(validate(1.5, "ssh", null)).toEqual({});
+  });
+
+  it("skips precision validation when accelerator product is missing", () => {
+    expect(validate(1.5, "ssh", { type: "npu", product: "" })).toEqual({});
+  });
+
+  it("skips precision validation when cluster type is unknown", () => {
+    expect(validate(1.5, undefined)).toEqual({});
+  });
+});
+
 describe("buildCatalogMergedSpec", () => {
   it("returns defaults (excluding cluster) when catalogSpec is null", () => {
     const result = buildCatalogMergedSpec(null);

@@ -919,6 +919,8 @@
 			"noAcceleratorSelected": "No accelerator selected",
 			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
 			"schedulerTypeRequired": "Scheduler type is required",
+			"gpuCountPrecisionSsh": "Accelerator card count must be 0, a one-decimal value below 1, or an integer at or above 1",
+			"gpuCountPrecisionK8s": "Accelerator card count must be a positive integer",
 			"vgpuMemoryMutuallyExclusive": "Use either virtual card memory amount or memory percent, not both",
 			"vgpuMemoryMiBPositive": "Virtual card memory must be greater than 0",
 			"vgpuMemoryPercentRange": "Virtual card memory percent must be between 1 and 100",
