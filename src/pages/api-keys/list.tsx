@@ -370,7 +370,13 @@ export const ApiKeysList = () => {
       });
       setSelected(new Set());
       setMoveOpen(false);
-      setExpanded((v) => new Set([...v, target]));
+      setExpanded(
+        (v) =>
+          new Set([
+            ...v,
+            target || `__ungrouped__:${moveWorkspace}`,
+          ]),
+      );
       openNotification?.({
         type: "success",
         message: `${Number(response.data) || 0} API key${Number(response.data) === 1 ? "" : "s"} moved`,
