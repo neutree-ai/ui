@@ -4464,7 +4464,7 @@ describe("useEndpointForm", () => {
       ).toBeTruthy();
     });
 
-    it("shows a GPU count error for a zero count on a kubernetes cluster", async () => {
+    it("allows a zero count on a kubernetes cluster as the unselect value", async () => {
       setupMocks([catalogA, catalogB], [plainKubernetesCluster]);
       render(<CreateForm />);
       await waitFor(() => expect(formInstance).not.toBeNull());
@@ -4476,8 +4476,8 @@ describe("useEndpointForm", () => {
       });
 
       expect(
-        screen.getByText("endpoints.messages.gpuCountPrecisionK8s"),
-      ).toBeTruthy();
+        screen.queryByText("endpoints.messages.gpuCountPrecisionK8s"),
+      ).toBeNull();
     });
 
     it("allows an integer count on a kubernetes cluster", async () => {

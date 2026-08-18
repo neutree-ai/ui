@@ -226,17 +226,21 @@ const parseOptionalValidationNumber = (value: unknown): number | undefined => {
 
 /**
  * Whether an accelerator card count satisfies the precision rule for a cluster
- * type. Declaring an accelerator (selecting a type and product) requires a
- * count strictly greater than zero on both cluster types — "no accelerator" is
- * expressed by not selecting an accelerator, not by a zero count. SSH clusters
- * additionally allow one-decimal counts below one (0.1-0.9) and integers at or
- * above one; Kubernetes clusters allow integers only.
+ * type. A zero count is always allowed: the UI has no way to remove an
+ * accidentally selected accelerator, so 0 acts as the "unselect" value and the
+ * accelerator declaration is stripped on submit. SSH clusters additionally
+ * allow one-decimal counts below one (0.1-0.9) and integers at or above one;
+ * Kubernetes clusters allow integers only.
  */
 const isGpuCountPrecisionValid = (
   gpu: number,
   clusterType: "ssh" | "kubernetes",
 ): boolean => {
-  if (gpu <= 0) {
+  if (gpu === 0) {
+    return true; // unselect: the accelerator declaration is removed on submit
+  }
+
+  if (gpu < 0) {
     return false;
   }
 
@@ -397,6 +401,14 @@ export function transformEndpointValues(spec: {
       if (value != null) {
         (spec.resources as Record<string, unknown>)[field] = String(value);
       }
+    }
+
+    // A zero card count means "no accelerator": the UI has no way to remove an
+    // accidentally selected accelerator, so 0 acts as the unselect value and
+    // the accelerator declaration is stripped before submit. The backend
+    // rejects a declared accelerator without a strictly positive count.
+    if ((spec.resources as Record<string, unknown>).gpu === "0") {
+      (spec.resources as Record<string, unknown>).accelerator = null;
     }
 
     const accelerator = spec.resources.accelerator as

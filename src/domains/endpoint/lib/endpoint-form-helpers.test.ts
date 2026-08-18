@@ -245,6 +245,24 @@ describe("transformEndpointValues", () => {
     expect(spec.resources.accelerator).toBeNull();
   });
 
+  it("removes the accelerator declaration when the card count is zero", () => {
+    const spec = {
+      resources: {
+        gpu: 0,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.gpu).toBe("0");
+    expect(spec.resources.accelerator).toBeNull();
+  });
+
   it("normalizes vGPU virtualization before submission", () => {
     const spec = {
       resources: {
@@ -753,9 +771,12 @@ describe("validateEndpointValues GPU count precision", () => {
     );
   };
 
-  it("rejects ssh 0 when an accelerator is declared", () => {
-    const errors = validate(0, "ssh");
-    expect(errors["spec.resources.gpu"]).toBeDefined();
+  it("allows ssh 0 as the unselect value", () => {
+    expect(validate(0, "ssh")).toEqual({});
+  });
+
+  it("allows kubernetes 0 as the unselect value", () => {
+    expect(validate(0, "kubernetes")).toEqual({});
   });
 
   it("allows ssh one-decimal counts below one", () => {
@@ -796,11 +817,6 @@ describe("validateEndpointValues GPU count precision", () => {
     for (const gpu of [1, 2, 8]) {
       expect(validate(gpu, "kubernetes")).toEqual({});
     }
-  });
-
-  it("rejects kubernetes zero count", () => {
-    const errors = validate(0, "kubernetes");
-    expect(errors["spec.resources.gpu"]).toBeDefined();
   });
 
   it("rejects kubernetes fractional counts", () => {
