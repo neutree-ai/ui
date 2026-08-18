@@ -6,13 +6,12 @@ const row = (name: string, workspace?: string): BatchDeleteRow => ({
 });
 
 describe("buildBatchDeleteVariables", () => {
-  it("uses stable IDs for API keys whose names can repeat across Projects", () => {
+  it("uses the unique technical name for API keys", () => {
     const vars = buildBatchDeleteVariables(
       [
         {
           original: {
-            id: "key-id",
-            metadata: { name: "shared-name", workspace: "default" },
+            metadata: { name: "apikey-a8f31c2d", workspace: "default" },
           },
         },
       ],
@@ -23,8 +22,8 @@ describe("buildBatchDeleteVariables", () => {
     expect(vars).toEqual([
       {
         resource: "api_keys",
-        id: "key-id",
-        meta: { name: "shared-name", workspace: "default" },
+        id: "apikey-a8f31c2d",
+        meta: { name: "apikey-a8f31c2d", workspace: "default" },
         successNotification: false,
       },
     ]);
