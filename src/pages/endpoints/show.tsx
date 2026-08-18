@@ -23,7 +23,6 @@ import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -288,7 +287,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             }
             environmentVariables={record.spec.env}
           />
-          <MetadataDisclosure metadata={record.metadata} className="mt-4" />
         </TabsContent>
         {shouldShowRayDashboard && (
           <TabsContent value="ray" className="mt-0 flex-1">
