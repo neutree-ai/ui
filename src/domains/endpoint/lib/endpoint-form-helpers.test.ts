@@ -836,7 +836,9 @@ describe("validateEndpointValues GPU count precision", () => {
   });
 
   it("skips precision validation when accelerator product is missing", () => {
-    expect(validate(1.5, "ssh", { type: "nvidia_gpu", product: "" })).toEqual({});
+    expect(validate(1.5, "ssh", { type: "nvidia_gpu", product: "" })).toEqual(
+      {},
+    );
   });
 
   it("skips precision validation when cluster type is unknown", () => {
