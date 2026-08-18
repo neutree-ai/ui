@@ -756,7 +756,7 @@ describe("validateEndpointValues GPU count precision", () => {
           gpu,
           accelerator:
             accelerator === undefined
-              ? { type: "npu", product: "HUAWEI_Ascend310P" }
+              ? { type: "nvidia_gpu", product: "Tesla-T4" }
               : accelerator,
         },
       },
@@ -836,7 +836,7 @@ describe("validateEndpointValues GPU count precision", () => {
   });
 
   it("skips precision validation when accelerator product is missing", () => {
-    expect(validate(1.5, "ssh", { type: "npu", product: "" })).toEqual({});
+    expect(validate(1.5, "ssh", { type: "nvidia_gpu", product: "" })).toEqual({});
   });
 
   it("skips precision validation when cluster type is unknown", () => {
