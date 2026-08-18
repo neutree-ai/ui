@@ -29,7 +29,8 @@ export function useApiKeyProjectGroups(params: {
     setIsLoading(true);
     setError("");
     try {
-      const response = await mutateAsync({
+      const [response, countResponse] = await Promise.all([
+        mutateAsync({
           url: "/rpc/get_api_key_project_groups",
           method: "post",
           values: {
@@ -39,15 +40,20 @@ export function useApiKeyProjectGroups(params: {
             p_page: params.page,
             p_page_size: params.pageSize,
           },
-        });
+        }),
+        mutateAsync({
+          url: "/rpc/count_api_key_project_group_api_keys",
+          method: "post",
+          values: {
+            p_workspace: params.workspace ?? null,
+            p_search: params.search.trim() || null,
+            p_api_key_disabled: params.apiKeyDisabled,
+          },
+        }),
+      ]);
       if (current === request.current) {
         setData((response.data as ApiKeyProjectGroup[]) ?? []);
-        setTotalApiKeys(
-          ((response.data as ApiKeyProjectGroup[]) ?? []).reduce(
-            (sum, group) => sum + Number(group.api_key_count),
-            0,
-          ),
-        );
+        setTotalApiKeys(Number(countResponse.data) || 0);
       }
     } catch (cause) {
       if (current === request.current) {
