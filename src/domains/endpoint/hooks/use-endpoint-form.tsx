@@ -2036,13 +2036,19 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             userSetValueOptions,
                           )
                         }
-                        min={isVgpuAllocationMode ? 0 : gpuStep === 1 ? 1 : 0}
+                        min={gpuStep === 1 ? 1 : 0}
                         max={
                           isVgpuAllocationMode
                             ? totalVirtualCardCapacity
                             : Math.max(maxAvailable.gpu.available, gpuUsage)
                         }
-                        step={isVgpuAllocationMode ? 1 : gpuStep}
+                        // SSH clusters step by 0.1 below one card and by whole
+                        // cards at or above one, so the spinner never lands on
+                        // a value the precision rule rejects. Kubernetes (and
+                        // vGPU, which is Kubernetes-only) always step by 1.
+                        step={
+                          isVgpuAllocationMode || gpuUsage >= 1 ? 1 : gpuStep
+                        }
                         disabled={
                           !currentCluster ||
                           !selectedAccelerator?.type ||
