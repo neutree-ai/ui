@@ -65,10 +65,10 @@ export const ApiKeysShow = () => {
                 {!record.project_id
                   ? "Ungrouped"
                   : isProjectLoading
-                      ? "Loading..."
-                      : projectError
-                        ? "Unable to load Project"
-                        : (project?.name ?? "-")}
+                    ? "Loading..."
+                    : projectError
+                      ? "Unable to load Project"
+                      : (project?.name ?? "-")}
               </ShowPage.Meta>
               <MetadataTimestampMeta metadata={record.metadata} />
             </span>
