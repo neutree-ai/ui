@@ -524,6 +524,77 @@ const virtualizedKubernetesClusterWithDevices = {
   },
 } satisfies EndpointClusterRef;
 
+// One fully-usable card (7680 MiB / 100 core) plus two cards whose
+// remaining memory (2048 MiB) cannot fit a 4096 MiB vGPU card: the card
+// capacity is 1 while summed memory/core stay ample, so capacity warnings
+// on this cluster come from the card-count dimension alone.
+const multiReplicaVgpuCapacityCluster = {
+  metadata: metadata("multi-replica-vgpu-capacity"),
+  spec: {
+    type: "kubernetes",
+    accelerator_virtualization: { enabled: true },
+  },
+  status: {
+    resource_info: {
+      allocatable: {
+        cpu: 16,
+        memory: 64,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 3,
+            product_groups: null,
+            products: {
+              "Tesla-T4": { quantity: 3 },
+            },
+          },
+        },
+      },
+      available: {
+        cpu: 12,
+        memory: 48,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 1,
+            product_groups: null,
+            products: {
+              "Tesla-T4": { quantity: 1 },
+            },
+          },
+        },
+      },
+      node_resources: {
+        "node-a": {
+          allocatable: null,
+          available: null,
+          devices: [
+            {
+              uuid: "GPU-vgpu-capacity-a",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: { memory_mib: 15360, core_units: 100 },
+              available: { memory_mib: 7680, core_units: 100 },
+            },
+            {
+              uuid: "GPU-vgpu-capacity-b",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: { memory_mib: 8192, core_units: 100 },
+              available: { memory_mib: 2048, core_units: 100 },
+            },
+            {
+              uuid: "GPU-vgpu-capacity-c",
+              product: "Tesla-T4",
+              health: true,
+              allocatable: { memory_mib: 8192, core_units: 100 },
+              available: { memory_mib: 2048, core_units: 100 },
+            },
+          ],
+        },
+      },
+    },
+  },
+} satisfies EndpointClusterRef;
+
 // A capability block whose supported_resources omits core_percent: backend
 // admission rejects it (NEU-645), so the UI must disable/clear it.
 const coreUnsupportedVirtualizedKubernetesClusterWithDevices = {
@@ -1791,12 +1862,13 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("2.0 / 2.0");
-        expect(input.max).toBe("1");
+        // 2 replicas × 2 cards each now request 4 cards against a capacity
+        // of 2: the cross-replica total drives the over-capacity warning.
+        expect(getCurrentRequestText()).toContain("4.0 / 2.0");
       });
       expect(
-        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
-      ).toBeNull();
+        screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeTruthy();
 
       const cardCountInput = screen.getByRole("spinbutton", {
         name: /endpoints.fields.vgpuCount/i,
@@ -1808,7 +1880,7 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("3.0 / 2.0");
+        expect(getCurrentRequestText()).toContain("6.0 / 2.0");
       });
       expect(
         screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
@@ -1920,7 +1992,10 @@ describe("useEndpointForm", () => {
       });
 
       await waitFor(() => {
-        expect(getCurrentRequestText()).toContain("2.0 / 2.0");
+        // 3 replicas × 1 card each = 3 requested cards; the edited endpoint
+        // already holds all 3 (reusable), so no additional cards are needed
+        // and the request stays within capacity.
+        expect(getCurrentRequestText()).toContain("3.0 / 2.0");
         expect(
           getCurrentRequestMetricText("endpoints.fields.vgpuMemoryCapacity"),
         ).toBe("endpoints.fields.vgpuMemoryCapacityGiB66.0 / 74.0");
@@ -1931,6 +2006,120 @@ describe("useEndpointForm", () => {
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
       ).toBeNull();
+    });
+
+    it("warns when increasing replicas beyond reusable vGPU devices while editing", async () => {
+      // The endpoint holds 2 replicas sharing a single vGPU device; the
+      // unchanged request reuses that device, while scaling to 3 replicas
+      // needs 2 additional cards against 1 available physical card.
+      queryDataRef.current = {
+        metadata: metadata("reusing-shared-vgpu-device"),
+        spec: {
+          cluster: "multi-replica-vgpu-capacity",
+          replicas: { num: 2 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "4096",
+              "virtualization.core_percent": "100",
+            },
+          },
+        },
+        status: {
+          resources: {
+            replicas: [
+              {
+                instance_id: "shared-vgpu-a",
+                replica_id: "shared-vgpu-a",
+                node_id: "node-a",
+                devices: [
+                  {
+                    uuid: "GPU-vgpu-capacity-a",
+                    product: "Tesla-T4",
+                    memory_mib: 4096,
+                    core_units: 100,
+                    node_id: "node-a",
+                  },
+                ],
+              },
+              {
+                instance_id: "shared-vgpu-b",
+                replica_id: "shared-vgpu-b",
+                node_id: "node-a",
+                devices: [
+                  {
+                    uuid: "GPU-vgpu-capacity-a",
+                    product: "Tesla-T4",
+                    memory_mib: 4096,
+                    core_units: 100,
+                    node_id: "node-a",
+                  },
+                ],
+              },
+            ],
+            summary: {
+              products: {
+                "Tesla-T4": {
+                  memory_mib: 8192,
+                  core_units: 200,
+                },
+              },
+            },
+          },
+        },
+      };
+      setupMocks([catalogA, catalogB], [multiReplicaVgpuCapacityCluster]);
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "multi-replica-vgpu-capacity");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 100,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.virtualCardCount",
+        );
+      });
+      // Unchanged 2-replica request: the single shared device is reused, no
+      // additional cards needed, request stays within capacity.
+      expect(getCurrentRequestText()).toContain("2.0 / 2.0");
+      expect(
+        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
+      ).toBeNull();
+
+      act(() => {
+        formInstance?.setValue("spec.replicas.num", 3);
+      });
+
+      await waitFor(() => {
+        // 3 replicas × 1 card request 3 cards; only 1 of the 2 physical
+        // cards is available beyond the 1 reusable device, so the
+        // card-count dimension alone exceeds capacity.
+        expect(getCurrentRequestText()).toContain("3.0 / 2.0");
+        expect(
+          screen.getByText("endpoints.messages.vgpuResourcesInsufficient"),
+        ).toBeTruthy();
+      });
     });
 
     it("clamps values within the displayed remaining vGPU memory max", async () => {
@@ -3091,7 +3280,7 @@ describe("useEndpointForm", () => {
           "endpoints.fields.virtualCardCount",
         );
       });
-      expect(getCurrentRequestText()).toContain("2.0 / 1.0");
+      expect(getCurrentRequestText()).toContain("4.0 / 1.0");
       expect(
         screen.getByText("endpoints.messages.cardsAvailable").className,
       ).toContain("bg-amber-50");
@@ -3106,6 +3295,44 @@ describe("useEndpointForm", () => {
           "endpoints.messages.vgpuResourcesInsufficient",
         ),
       ).toBeNull();
+    });
+
+    it("blocks multi-replica vGPU card count that fits per-replica but exceeds total capacity", async () => {
+      setupMocks([catalogA, catalogB], [multiReplicaVgpuCapacityCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "multi-replica-vgpu-capacity");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 4096,
+              core_percent: 100,
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(getCurrentRequestText()).toContain(
+          "endpoints.fields.virtualCardCount",
+        );
+      });
+      // 2 replicas × 1 vGPU card each request 2 cards against a capacity of
+      // 1; the per-replica value (gpu=1) alone stays under capacity, so the
+      // multi-replica total must drive the over-capacity warning.
+      expect(getCurrentRequestText()).toContain("2.0 / 1.0");
+      expect(getAcceleratorCardText()).toContain(
+        "endpoints.messages.vgpuResourcesInsufficient",
+      );
     });
 
     it("falls back to aggregate vGPU pools when device details are unavailable", async () => {
@@ -3653,7 +3880,7 @@ describe("useEndpointForm", () => {
           "endpoints.fields.virtualCardCount",
         );
       });
-      expect(getCurrentRequestText()).toContain("1.0 / 1.0");
+      expect(getCurrentRequestText()).toContain("1.0 / 2.0");
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
       ).toBeNull();

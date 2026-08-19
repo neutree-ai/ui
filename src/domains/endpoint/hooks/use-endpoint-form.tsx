@@ -564,6 +564,48 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         )
       : Math.floor(reusableVgpuMemoryMiB / effectiveVgpuMemoryMiB)
     : 0;
+  // When device-level allocations are reused the memory/core are already
+  // added back into the node resources, so the summary-based card count is
+  // zero; count the endpoint's own allocated devices instead, otherwise the
+  // cross-replica capacity check below would flag an unchanged edit request
+  // as over capacity (NEU-528).
+  const reusableVgpuDeviceCards = useMemo(() => {
+    if (!canReuseCurrentEndpointDeviceAllocations) {
+      return 0;
+    }
+
+    const deviceIds = new Set<string>();
+    for (const replica of queryEndpoint?.status?.resources?.replicas ?? []) {
+      for (const device of replica.devices ?? []) {
+        if (
+          selectedAccelerator?.product &&
+          device.product !== selectedAccelerator.product
+        ) {
+          continue;
+        }
+
+        // addBackEndpointDeviceAllocationsToNodeResources also keys on uuid,
+        // so uuid-less devices are never added back; counting them here
+        // would diverge from the availability model (and deduplicating them
+        // across replicas without a stable key is impossible).
+        if (!device.uuid) {
+          continue;
+        }
+
+        deviceIds.add(device.uuid);
+      }
+    }
+
+    return deviceIds.size > 0 ? deviceIds.size : 0;
+  }, [
+    canReuseCurrentEndpointDeviceAllocations,
+    queryEndpoint?.status?.resources?.replicas,
+    selectedAccelerator?.product,
+  ]);
+  const reusableVgpuCards =
+    reusableVgpuDeviceCards > 0
+      ? reusableVgpuDeviceCards
+      : reusableVirtualCards;
   const hasRawAvailableVgpuMemoryMiB =
     hasSelectedDeviceResources ||
     Number.isFinite(selectedAcceleratorOption?.virtualizationMemoryMiB);
@@ -587,23 +629,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ? vgpuCardCapacity.totalCards
     : fallbackVgpuAvailablePhysicalCards;
   const uncappedVirtualCardCapacity =
-    availableVirtualPhysicalCards + reusableVirtualCards;
+    availableVirtualPhysicalCards + reusableVgpuCards;
   const totalVirtualCardCapacity =
     fallbackVgpuMaxPhysicalCards > 0
       ? Math.min(uncappedVirtualCardCapacity, fallbackVgpuMaxPhysicalCards)
       : uncappedVirtualCardCapacity;
-  const displayedVirtualCards = Math.min(
-    requestedVirtualCards,
-    Math.max(totalVirtualCardCapacity, gpuUsage),
-  );
+  // Cards are requested across replicas (gpu per replica × replica count),
+  // so the displayed request and the capacity check must compare totals:
+  // a per-replica value alone stays under capacity while the summed request
+  // would leave one or more replicas unschedulable (NEU-528).
+  const displayedVirtualCards = requestedVirtualCards;
   const rawVgpuMemoryBoundaryMiB = (() => {
     const rawMaxMiB =
       typeof selectedMemoryTotalMiB === "number" &&
       Number.isFinite(selectedMemoryTotalMiB)
         ? selectedMemoryTotalMiB
         : null;
-    const boundaryRequestedCardCount =
-      displayedVirtualCards > 0 ? displayedVirtualCards : requestedVirtualCards;
+    const boundaryRequestedCardCount = requestedVirtualCards;
     if (hasSelectedDeviceResources) {
       const deviceBoundaryMiB = calculateVgpuMemoryBoundaryMiB(
         reusableNodeResources,
@@ -660,10 +702,19 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentRequestCoreUnits = isVgpuAllocationMode
     ? requestedVgpuCoreUnits
     : 0;
-  const isSingleReplicaVgpuCardCapacityExceeded = Boolean(
+  // Cards are requested across replicas (gpu per replica × replica count);
+  // only the additional cards beyond what the edited endpoint already holds
+  // must fit the cluster's available capacity, mirroring the full-GPU check
+  // (NEU-528: a per-replica-only comparison lets multi-replica requests
+  // through that the scheduler cannot place).
+  const additionalVirtualCards = Math.max(
+    0,
+    requestedVirtualCards - reusableVgpuCards,
+  );
+  const isVgpuCardCapacityExceeded = Boolean(
     isVgpuAllocationMode &&
       selectedAccelerator?.product &&
-      gpuUsage > totalVirtualCardCapacity,
+      additionalVirtualCards > availableVirtualPhysicalCards,
   );
   const additionalVgpuMemoryMiB = Math.max(
     0,
@@ -676,7 +727,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const isVgpuCapacityExceeded = Boolean(
     isVgpuAllocationMode &&
       selectedAccelerator?.product &&
-      (isSingleReplicaVgpuCardCapacityExceeded ||
+      (isVgpuCardCapacityExceeded ||
         ((rawAvailableVgpuMemoryMiB > 0 || reusableVgpuMemoryMiB > 0) &&
           additionalVgpuMemoryMiB > rawAvailableVgpuMemoryMiB) ||
         ((rawAvailableVgpuCoreUnits > 0 || reusableVgpuCoreUnits > 0) &&
@@ -2057,7 +2108,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         min={0}
                         max={
                           isVgpuAllocationMode
-                            ? totalVirtualCardCapacity
+                            ? Math.max(
+                                Math.floor(
+                                  totalVirtualCardCapacity / replicaCount,
+                                ),
+                                gpuUsage,
+                              )
                             : Math.max(maxAvailable.gpu.available, gpuUsage)
                         }
                         // SSH clusters step by 0.1 below one card and by whole
