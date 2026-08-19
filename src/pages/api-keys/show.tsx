@@ -55,9 +55,11 @@ export const ApiKeysShow = () => {
               <ShowPage.Meta label={t("common.fields.workspace")}>
                 {record.metadata.workspace ?? "-"}
               </ShowPage.Meta>
-              <ShowPage.Meta label="Description">
-                {record.description || "-"}
-              </ShowPage.Meta>
+              {record.description && (
+                <ShowPage.Meta label="Description">
+                  {record.description}
+                </ShowPage.Meta>
+              )}
               <ShowPage.Meta label={t("api_keys.fields.usage")}>
                 {record.status?.usage ?? "-"}
               </ShowPage.Meta>

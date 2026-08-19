@@ -879,12 +879,14 @@ export const ApiKeysList = () => {
                   )}
                   <span className="min-w-0">
                     <strong className="block truncate">{project.name}</strong>
-                    <span
-                      className="block truncate text-xs text-muted-foreground"
-                      title={project.description}
-                    >
-                      {project.description || "No description"}
-                    </span>
+                    {project.description && (
+                      <span
+                        className="block truncate text-xs text-muted-foreground"
+                        title={project.description}
+                      >
+                        {project.description}
+                      </span>
+                    )}
                   </span>
                 </button>
                 <span className="text-sm">{count}</span>
@@ -1002,12 +1004,14 @@ export const ApiKeysList = () => {
                                     {key.metadata.display_name ??
                                       key.metadata.name}
                                   </strong>
-                                  <div
-                                    className="max-w-xs truncate text-xs text-muted-foreground"
-                                    title={key.description}
-                                  >
-                                    {key.description || "No description"}
-                                  </div>
+                                  {key.description && (
+                                    <div
+                                      className="max-w-xs truncate text-xs text-muted-foreground"
+                                      title={key.description}
+                                    >
+                                      {key.description}
+                                    </div>
+                                  )}
                                 </td>
                                 <td>{key.metadata.workspace}</td>
                                 <td>
