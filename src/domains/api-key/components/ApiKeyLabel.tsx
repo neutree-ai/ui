@@ -14,10 +14,10 @@ export function ApiKeyLabel({
   const label = displayName || name;
 
   return (
-    <div className={cn("min-w-0", className)}>
-      <div className="truncate">{label || "-"}</div>
+    <div className={cn("min-w-0 text-left", className)}>
+      <div className="truncate text-sm">{label || "-"}</div>
       {description ? (
-        <div className="truncate text-xs text-muted-foreground">
+        <div className="truncate text-xs font-normal text-muted-foreground">
           {description}
         </div>
       ) : null}

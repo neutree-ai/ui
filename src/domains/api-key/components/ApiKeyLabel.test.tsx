@@ -13,6 +13,8 @@ describe("ApiKeyLabel", () => {
     );
 
     expect(screen.getByText("Customer support")).toBeTruthy();
+    expect(screen.getByText("Customer support").className).toContain("text-sm");
+    expect(screen.getByText("Production calls").className).toContain("text-xs");
     expect(screen.getByText("Production calls").className).toContain(
       "text-muted-foreground",
     );

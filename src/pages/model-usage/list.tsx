@@ -69,7 +69,7 @@ type DailyRow = {
 
 // A chart series: stable `key` (used as the recharts dataKey + legend toggle
 // identity) and a human `name` for the legend/tooltip.
-type Series = { key: string; name: string };
+type Series = { key: string; name: string; description?: string | null };
 
 // Distinct colors for the per-series lines; cycles if there are more series
 // than colors.
@@ -192,6 +192,8 @@ export const ModelUsageList = () => {
   const totalTokens = filtered.reduce((sum, r) => sum + (r.usage ?? 0), 0);
   const seriesName = (key: string) =>
     series.find((s) => s.key === key)?.name ?? key;
+  const seriesDescription = (key: string) =>
+    series.find((s) => s.key === key)?.description;
 
   // Clicking a day in either chart focuses (or clears) the detail table.
   const onPick = (e: { activeLabel?: string | number }) => {
@@ -239,7 +241,15 @@ export const ModelUsageList = () => {
       fontSize={11}
       width={48}
     />,
-    <Tooltip key="tip" content={<UsageTooltip seriesName={seriesName} />} />,
+    <Tooltip
+      key="tip"
+      content={
+        <UsageTooltip
+          seriesName={seriesName}
+          seriesDescription={seriesDescription}
+        />
+      }
+    />,
     <Legend
       key="legend"
       wrapperStyle={{ fontSize: 11 }}
@@ -248,12 +258,18 @@ export const ModelUsageList = () => {
         const key = String(entry?.dataKey ?? "");
         return (
           <span
+            className="inline-flex flex-col align-middle leading-tight"
             style={{
               cursor: "pointer",
               opacity: hidden.has(key) ? 0.35 : 1,
             }}
           >
-            {seriesName(key)}
+            <span>{seriesName(key)}</span>
+            {seriesDescription(key) ? (
+              <span className="text-[10px] text-muted-foreground">
+                {seriesDescription(key)}
+              </span>
+            ) : null}
           </span>
         );
       }}
@@ -640,11 +656,13 @@ const UsageTooltip = ({
   payload,
   label,
   seriesName,
+  seriesDescription,
 }: {
   active?: boolean;
   payload?: Array<{ dataKey: string; value: number; color: string }>;
   label?: string;
   seriesName: (key: string) => string;
+  seriesDescription: (key: string) => string | null | undefined;
 }) => {
   const { t } = useTranslation();
   if (!active || !payload || payload.length === 0) return null;
@@ -663,8 +681,15 @@ const UsageTooltip = ({
             className="inline-block size-2 rounded-sm"
             style={{ backgroundColor: p.color }}
           />
-          <span className="truncate max-w-[160px]">
-            {seriesName(p.dataKey)}
+          <span className="max-w-[160px] truncate">
+            <span className="block truncate text-foreground">
+              {seriesName(p.dataKey)}
+            </span>
+            {seriesDescription(p.dataKey) ? (
+              <span className="block truncate text-[10px]">
+                {seriesDescription(p.dataKey)}
+              </span>
+            ) : null}
           </span>
           <span className="ml-auto font-mono">{formatTokens(p.value)}</span>
         </div>
@@ -687,12 +712,14 @@ function aggregateDaily(
   const byDate = new Map<string, Record<string, number>>();
   const totals = new Map<string, number>();
   const names = new Map<string, string>();
+  const descriptions = new Map<string, string | null | undefined>();
   for (const r of rows) {
     const key = byModel ? (r.model_name ?? "-") : r.api_key_id;
     const name = byModel
       ? (r.model_name ?? "-")
       : r.api_key_display_name || r.api_key_name;
     names.set(key, name);
+    if (!byModel) descriptions.set(key, r.api_key_description);
     const day = byDate.get(r.date) ?? {};
     day[key] = (day[key] ?? 0) + (r.usage ?? 0);
     byDate.set(r.date, day);
@@ -700,7 +727,11 @@ function aggregateDaily(
   }
   const series = [...totals.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([key]) => ({ key, name: names.get(key) ?? key }));
+    .map(([key]) => ({
+      key,
+      name: names.get(key) ?? key,
+      description: descriptions.get(key),
+    }));
   const data = [...byDate.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, perSeries]) => {

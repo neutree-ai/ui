@@ -218,7 +218,10 @@ export const ApiKeysList = () => {
   const { show } = useNavigation();
   const { mutateAsync: deleteKey } = useDelete();
   const { disable, enable } = useApiKeyDisable();
-  const trafficByKey = useAllApiKeyTraffic(scoped);
+  // The trace endpoint understands the UI's `_all_` sentinel and applies the
+  // caller's per-workspace permissions while aggregating. Passing `scoped`
+  // here would turn All Workspaces into undefined and skip the request.
+  const trafficByKey = useAllApiKeyTraffic(workspace);
   const usageByKey = useAllApiKeyUsage(scoped);
   const modelMap = useWorkspaceModelMap(scoped);
   const { data: keysData } = useList<ApiKey>({
