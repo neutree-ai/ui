@@ -720,7 +720,7 @@
 		"import": {
 			"button": "Import",
 			"title": "Import model catalogs",
-			"description": "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported.",
+			"description": "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported. A catalog that already exists in the same workspace is updated.",
 			"tabYaml": "Paste YAML",
 			"tabFile": "Upload file",
 			"tabUrl": "From URL",
@@ -735,10 +735,16 @@
 			"noDocuments": "No model catalog documents found in the input.",
 			"invalidResource": "Missing apiVersion, kind, or metadata.name.",
 			"unknownError": "Unknown error",
-			"alreadyExists": "A model catalog named \"{{name}}\" already exists — import does not overwrite it. Use Edit to update its spec.",
 			"successAll": "Imported {{count}} catalogs",
 			"failedAll": "All {{count}} imports failed",
-			"partial": "{{ok}} imported, {{failed}} failed"
+			"partial": "{{ok}} imported, {{failed}} failed",
+			"updated": "Updated",
+			"successAllWithUpdates": "Imported {{count}} catalogs ({{updated}} updated)",
+			"createdConcurrently": "A model catalog named \"{{name}}\" was created while this import was running. Import again to update it.",
+			"cancelled": "Import cancelled — nothing was changed.",
+			"typeChangeTitle": "This import changes the catalog type",
+			"typeChangeDescription": "{{names}} would switch between a recipe template and a plain catalog. Overwriting replaces the stored spec, including its variants and features. Nothing has been written yet.",
+			"typeChangeConfirm": "Overwrite"
 		},
 		"edit": {
 			"title": "Edit model catalog",

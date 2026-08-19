@@ -1,4 +1,4 @@
-import { useCreate } from "@refinedev/core";
+import { useCreate, useDataProvider, useUpdate } from "@refinedev/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, FileText, Link as LinkIcon, Loader2 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
@@ -16,6 +16,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type CatalogImportAction,
+  type CatalogImportCandidate,
+  runCatalogImport,
+} from "@/domains/model-catalog/lib/catalog-import";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -23,13 +28,13 @@ import {
   parseYamlDocuments,
   transformResourceForImport,
 } from "@/foundation/lib/yaml-transform";
+import type { RecipeVariant } from "@/foundation/recipe/types";
 
 type Source = "yaml" | "url" | "file";
 
-// A duplicate metadata.name collides with the (workspace, name) unique index.
-// PostgREST surfaces this as a 409 / Postgres unique_violation (code 23505).
-// Client-side import never upserts, so we translate it into actionable guidance
-// pointing at Edit rather than leaking the raw DB constraint message.
+// Each document is resolved against the store before writing, so a duplicate-name
+// collision means the catalog appeared between that read and the write. The unique
+// index catches it; this turns the raw constraint message into what happened.
 function isDuplicateNameError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const e = err as { statusCode?: number; code?: string; message?: string };
@@ -48,8 +53,23 @@ type ModelCatalogImportItem = {
   index: number;
   name?: string;
   ok: boolean;
+  // How the document landed. Absent on documents that never got written.
+  action?: CatalogImportAction;
   error?: string;
 };
+
+// Every catalog write is addressed by (workspace, name) rather than row id,
+// which is what makes re-importing the same document land on the same catalog.
+const catalogMeta = (workspace: string) => ({
+  idColumnName: "metadata->name",
+  workspace,
+  workspaced: true,
+});
+
+// Thrown when the user declines the type-change confirmation. Nothing has been
+// written at that point, so the whole import stops rather than applying a batch
+// the user did not agree to.
+class ImportCancelled extends Error {}
 
 interface ImportDialogProps {
   open: boolean;
@@ -73,6 +93,47 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
   const [results, setResults] = useState<ModelCatalogImportItem[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: createResource } = useCreate();
+  const { mutateAsync: updateResource } = useUpdate();
+  const dataProvider = useDataProvider();
+
+  // Names whose import would flip Recipe <-> plain catalog, plus the resolver
+  // that unblocks the in-flight import once the user answers. Held in a ref
+  // because the mutation awaits it from outside React's render cycle.
+  const [typeChangeNames, setTypeChangeNames] = useState<string[] | null>(null);
+  const confirmResolverRef = useRef<((confirmed: boolean) => void) | null>(
+    null,
+  );
+
+  const answerTypeChange = useCallback((confirmed: boolean) => {
+    setTypeChangeNames(null);
+    confirmResolverRef.current?.(confirmed);
+    confirmResolverRef.current = null;
+  }, []);
+
+  // Refine's HttpError is a plain object, not an Error instance, so read
+  // .message off any shape before giving up — otherwise every server-side
+  // validation reason surfaces as "Unknown error".
+  const describeError = useCallback(
+    (err: unknown, name: string): string => {
+      if (isDuplicateNameError(err)) {
+        return t(
+          "model_catalogs.import.createdConcurrently",
+          'A model catalog named "{{name}}" was created while this import was running. Import again to update it.',
+          { name },
+        );
+      }
+
+      const msg =
+        err instanceof Error
+          ? err.message
+          : (err as { message?: unknown } | null)?.message;
+
+      return typeof msg === "string" && msg
+        ? msg
+        : t("model_catalogs.import.unknownError", "Unknown error");
+    },
+    [t],
+  );
 
   const reset = useCallback(() => {
     setYamlText("");
@@ -128,76 +189,116 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
         );
       }
 
-      // Parse client-side and create each document through the normal,
-      // RLS-scoped create flow — same path as the global YAML import.
+      // Classify here, write in runCatalogImport. Writes go through the normal,
+      // RLS-scoped create / update flow — the path the recipe validation
+      // middleware guards.
       const items: ModelCatalogImportItem[] = [];
-      for (let index = 0; index < docs.length; index++) {
-        const doc = docs[index];
-        const item: ModelCatalogImportItem = {
-          index,
-          name: doc.metadata?.name,
-          ok: false,
-        };
+      const candidates: CatalogImportCandidate[] = [];
+
+      docs.forEach((doc, index) => {
+        const name = doc.metadata?.name;
 
         if (doc.kind && doc.kind !== "ModelCatalog") {
-          item.error = t(
-            "model_catalogs.wrongKind",
-            'Expected kind ModelCatalog, got "{{kind}}"',
-            { kind: doc.kind },
-          );
-          items.push(item);
-          continue;
-        }
-
-        if (!isValidYamlResource(doc)) {
-          item.error = t(
-            "model_catalogs.import.invalidResource",
-            "Missing apiVersion, kind, or metadata.name.",
-          );
-          items.push(item);
-          continue;
-        }
-
-        try {
-          const values = transformResourceForImport(
-            doc,
-            workspace || defaultWorkspace,
-          );
-          await createResource({
-            resource: "model_catalogs",
-            values,
-            meta: {
-              idColumnName: "metadata->name",
-              workspace: (values.metadata as { workspace?: string }).workspace,
-              workspaced: true,
-            },
-            successNotification: false,
-            errorNotification: false,
+          items.push({
+            index,
+            name,
+            ok: false,
+            error: t(
+              "model_catalogs.wrongKind",
+              'Expected kind ModelCatalog, got "{{kind}}"',
+              { kind: doc.kind },
+            ),
           });
-          item.ok = true;
-        } catch (err) {
-          if (isDuplicateNameError(err)) {
-            item.error = t(
-              "model_catalogs.import.alreadyExists",
-              'A model catalog named "{{name}}" already exists — import does not overwrite it. Use Edit to update its spec.',
-              { name: item.name ?? "" },
-            );
-          } else {
-            // Refine's HttpError is a plain object, not an Error instance, so
-            // read .message off any shape before giving up — otherwise every
-            // server-side validation reason surfaces as "Unknown error".
-            const msg =
-              err instanceof Error
-                ? err.message
-                : (err as { message?: unknown } | null)?.message;
-            item.error =
-              typeof msg === "string" && msg
-                ? msg
-                : t("model_catalogs.import.unknownError", "Unknown error");
-          }
+          return;
         }
-        items.push(item);
+
+        if (!isValidYamlResource(doc) || !name) {
+          items.push({
+            index,
+            name,
+            ok: false,
+            error: t(
+              "model_catalogs.import.invalidResource",
+              "Missing apiVersion, kind, or metadata.name.",
+            ),
+          });
+          return;
+        }
+
+        const values = transformResourceForImport(
+          doc,
+          workspace || defaultWorkspace,
+        );
+
+        candidates.push({
+          index,
+          name,
+          workspace: (values.metadata as { workspace: string }).workspace,
+          values,
+          spec: doc.spec,
+        });
+      });
+
+      const run = await runCatalogImport(candidates, {
+        readExisting: async (name, docWorkspace) => {
+          // getOne resolves with no data for a name that does not exist, so
+          // only a genuine transport / permission failure propagates.
+          const found = await dataProvider().getOne<{
+            metadata?: Record<string, unknown> | null;
+            spec?: { variants?: Record<string, RecipeVariant> | null } | null;
+          }>({
+            resource: "model_catalogs",
+            id: name,
+            meta: catalogMeta(docWorkspace),
+          });
+          return found.data ?? null;
+        },
+        write: ({ action, name, workspace: docWorkspace, values }) =>
+          action === "create"
+            ? createResource({
+                resource: "model_catalogs",
+                values,
+                meta: catalogMeta(docWorkspace),
+                successNotification: false,
+                errorNotification: false,
+              })
+            : updateResource({
+                resource: "model_catalogs",
+                id: name,
+                values,
+                mutationMode: "pessimistic",
+                meta: catalogMeta(docWorkspace),
+                successNotification: false,
+                errorNotification: false,
+              }),
+        confirmTypeChange: (names) =>
+          new Promise<boolean>((resolve) => {
+            confirmResolverRef.current = resolve;
+            setTypeChangeNames(names);
+          }),
+      });
+
+      if (run.cancelled) throw new ImportCancelled();
+
+      for (const outcome of run.outcomes) {
+        items.push(
+          outcome.status === "ok"
+            ? {
+                index: outcome.index,
+                name: outcome.name,
+                ok: true,
+                action: outcome.action,
+              }
+            : {
+                index: outcome.index,
+                name: outcome.name,
+                ok: false,
+                error: describeError(outcome.error, outcome.name),
+              },
+        );
       }
+
+      items.sort((a, b) => a.index - b.index);
 
       return items;
     },
@@ -205,11 +306,20 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
       setResults(items);
       const ok = items.filter((r) => r.ok).length;
       const failed = items.length - ok;
+      const updated = items.filter((r) => r.ok && r.action !== "create").length;
       if (failed === 0) {
         toast.success(
-          t("model_catalogs.import.successAll", "Imported {{count}} catalogs", {
-            count: ok,
-          }),
+          updated > 0
+            ? t(
+                "model_catalogs.import.successAllWithUpdates",
+                "Imported {{count}} catalogs ({{updated}} updated)",
+                { count: ok, updated },
+              )
+            : t(
+                "model_catalogs.import.successAll",
+                "Imported {{count}} catalogs",
+                { count: ok },
+              ),
         );
       } else if (ok === 0) {
         toast.error(
@@ -235,6 +345,15 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
       });
     },
     onError: (err: Error) => {
+      if (err instanceof ImportCancelled) {
+        toast.info(
+          t(
+            "model_catalogs.import.cancelled",
+            "Import cancelled — nothing was changed.",
+          ),
+        );
+        return;
+      }
       toast.error(err.message);
     },
   });
@@ -261,7 +380,7 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
           <DialogDescription>
             {t(
               "model_catalogs.import.description",
-              "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported.",
+              "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported. A catalog that already exists in the same workspace is updated.",
             )}
           </DialogDescription>
         </DialogHeader>
@@ -396,7 +515,9 @@ spec:
                     <td className="px-2 py-1 text-muted-foreground">
                       {r.error ||
                         (r.ok
-                          ? t("model_catalogs.import.created", "Created")
+                          ? r.action === "create"
+                            ? t("model_catalogs.import.created", "Created")
+                            : t("model_catalogs.import.updated", "Updated")
                           : "-")}
                     </td>
                   </tr>
@@ -417,6 +538,37 @@ spec:
             {t("model_catalogs.import.submit", "Import")}
           </Button>
         </DialogFooter>
+
+        {/* Rendered as an overlay inside this dialog rather than as a second
+            modal: stacking two Radix modals fights over the focus trap, and the
+            question belongs to the import that is already in flight. */}
+        {typeChangeNames && (
+          <div className="absolute inset-0 z-10 flex flex-col gap-4 rounded-lg bg-background p-6">
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">
+                {t(
+                  "model_catalogs.import.typeChangeTitle",
+                  "This import changes the catalog type",
+                )}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("model_catalogs.import.typeChangeDescription", {
+                  names: typeChangeNames.join(", "),
+                  defaultValue:
+                    "{{names}} would switch between a recipe template and a plain catalog. Overwriting replaces the stored spec, including its variants and features. Nothing has been written yet.",
+                })}
+              </p>
+            </div>
+            <div className="mt-auto flex justify-end gap-2">
+              <Button variant="outline" onClick={() => answerTypeChange(false)}>
+                {t("buttons.cancel", "Cancel")}
+              </Button>
+              <Button onClick={() => answerTypeChange(true)}>
+                {t("model_catalogs.import.typeChangeConfirm", "Overwrite")}
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
