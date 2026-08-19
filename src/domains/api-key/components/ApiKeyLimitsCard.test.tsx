@@ -11,9 +11,8 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 vi.mock("@refinedev/react-hook-form", async () => {
-  const form = await vi.importActual<typeof import("react-hook-form")>(
-    "react-hook-form",
-  );
+  const form =
+    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
   return { useForm: form.useForm };
 });
 

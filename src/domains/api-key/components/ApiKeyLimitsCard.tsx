@@ -176,11 +176,7 @@ export const ApiKeyLimitsCard = ({
             >
               <Input />
             </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="description"
-              label="Description"
-            >
+            <FormFieldGroup {...form} name="description" label="Description">
               <Textarea />
             </FormFieldGroup>
             <FormFieldGroup {...form} name="project_id" label="API key Project">
