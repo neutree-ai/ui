@@ -258,7 +258,7 @@ export const ModelUsageList = () => {
         const key = String(entry?.dataKey ?? "");
         return (
           <span
-            className="inline-flex flex-col align-middle leading-tight"
+            className="inline-flex items-baseline align-middle leading-tight"
             style={{
               cursor: "pointer",
               opacity: hidden.has(key) ? 0.35 : 1,
@@ -266,7 +266,7 @@ export const ModelUsageList = () => {
           >
             <span>{seriesName(key)}</span>
             {seriesDescription(key) ? (
-              <span className="ml-1 text-[10px] font-normal text-muted-foreground/70">
+              <span className="ml-1 text-[10px] font-normal">
                 - {seriesDescription(key)}
               </span>
             ) : null}
@@ -631,14 +631,7 @@ const UsageTable = ({
             rows.map((r) => (
               <TableRow key={r.key}>
                 <TableCell className="max-w-[160px]">
-                  <span className="block truncate text-sm">
-                    {r.name}
-                    {r.description ? (
-                      <span className="ml-1 text-[10px] font-normal text-muted-foreground/70">
-                        - {r.description}
-                      </span>
-                    ) : null}
-                  </span>
+                  <ApiKeyLabel name={r.name} description={r.description} />
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(r.prompt)}
