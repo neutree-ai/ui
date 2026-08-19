@@ -85,6 +85,10 @@ export const ApiKeysShow = () => {
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}
               projectId={record.project_id}
+              displayName={
+                record.metadata.display_name ?? record.metadata.name
+              }
+              description={record.description}
             />
           </div>
         )}

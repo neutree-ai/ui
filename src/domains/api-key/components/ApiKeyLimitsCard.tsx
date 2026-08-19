@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
@@ -39,10 +41,14 @@ export const ApiKeyLimitsCard = ({
   apiKeyId,
   workspace,
   projectId,
+  displayName,
+  description,
 }: {
   apiKeyId: string;
   workspace: string;
   projectId: string | null;
+  displayName: string;
+  description: string;
 }) => {
   const { t } = useTranslation();
   const { load } = useApiKeyLimits();
@@ -50,9 +56,20 @@ export const ApiKeyLimitsCard = ({
   const { mutateAsync } = useCustomMutation();
   const invalidate = useInvalidate();
   const [limits, setLimits] = useState<ApiKeyLimits>({});
-  const form = useForm<ApiKeyPolicyFormValues & { project_id: string }>({
+  const form = useForm<
+    ApiKeyPolicyFormValues & {
+      project_id: string;
+      display_name: string;
+      description: string;
+    }
+  >({
     mode: "all",
-    defaultValues: { ...apiKeyPolicyDefaults(), project_id: projectId ?? "" },
+    defaultValues: {
+      ...apiKeyPolicyDefaults(),
+      project_id: projectId ?? "",
+      display_name: displayName,
+      description,
+    },
   });
 
   // Load (and re-load after save) the key's current limits. Keyed only on
@@ -63,8 +80,13 @@ export const ApiKeyLimitsCard = ({
   const refresh = useCallback(async () => {
     const next = await load(apiKeyId);
     setLimits(next);
-    form.reset({ ...limitsToForm(next), project_id: projectId ?? "" });
-  }, [apiKeyId, projectId]);
+    form.reset({
+      ...limitsToForm(next),
+      project_id: projectId ?? "",
+      display_name: displayName,
+      description,
+    });
+  }, [apiKeyId, projectId, displayName, description]);
 
   useEffect(() => {
     // Load failures (network/auth) just leave the default empty state; swallow
@@ -82,6 +104,8 @@ export const ApiKeyLimitsCard = ({
       values: {
         p_api_key_id: apiKeyId,
         p_project_id: values.project_id || null,
+        p_display_name: values.display_name,
+        p_description: values.description,
         p_limits: buildApiKeyLimits(values as ApiKeyPolicyFormValues, {
           disabled,
         }),
@@ -131,9 +155,34 @@ export const ApiKeyLimitsCard = ({
       <form onSubmit={form.handleSubmit(onSave)} className="mt-4 space-y-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xl font-semibold">Project</CardTitle>
+            <CardTitle className="text-xl font-semibold">
+              API key details
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <FormFieldGroup
+              {...form}
+              name="display_name"
+              label="Name"
+              rules={{
+                required: "Name is required",
+                maxLength: {
+                  value: 63,
+                  message: "Name cannot exceed 63 characters",
+                },
+                validate: (value) =>
+                  value.trim().length > 0 || "Name is required",
+              }}
+            >
+              <Input />
+            </FormFieldGroup>
+            <FormFieldGroup
+              {...form}
+              name="description"
+              label="Description"
+            >
+              <Textarea />
+            </FormFieldGroup>
             <FormFieldGroup {...form} name="project_id" label="API key Project">
               <ProjectPicker
                 workspace={workspace}
