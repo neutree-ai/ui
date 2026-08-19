@@ -50,7 +50,7 @@ export const ApiKeyLimitsCard = ({
   projectId: string | null;
   displayName: string;
   description: string;
-  onSaved?: () => void | Promise<void>;
+  onSaved?: () => unknown;
 }) => {
   const { t } = useTranslation();
   const { load } = useApiKeyLimits();
