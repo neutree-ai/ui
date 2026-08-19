@@ -49,6 +49,7 @@ describe("ApiKeyLimitsCard", () => {
   });
 
   it("saves the edited display name and description with the configuration", async () => {
+    const onSaved = vi.fn();
     render(
       <ApiKeyLimitsCard
         apiKeyId="key-1"
@@ -56,6 +57,7 @@ describe("ApiKeyLimitsCard", () => {
         projectId="project-1"
         displayName="Old name"
         description="Old description"
+        onSaved={onSaved}
       />,
     );
 
@@ -78,5 +80,8 @@ describe("ApiKeyLimitsCard", () => {
         },
       }),
     );
+    expect(onSaved).toHaveBeenCalled();
+    expect(screen.getByDisplayValue("New name")).toBeTruthy();
+    expect(screen.getByDisplayValue("New description")).toBeTruthy();
   });
 });

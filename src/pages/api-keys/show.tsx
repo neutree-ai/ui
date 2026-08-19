@@ -13,7 +13,7 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 export const ApiKeysShow = () => {
   const { t } = useTranslation();
   const {
-    query: { data, isLoading },
+    query: { data, isLoading, refetch },
   } = useShow();
   const record = data?.data;
   const { list } = useNavigation();
@@ -87,6 +87,7 @@ export const ApiKeysShow = () => {
               projectId={record.project_id}
               displayName={record.metadata.display_name ?? record.metadata.name}
               description={record.description}
+              onSaved={refetch}
             />
           </div>
         )}

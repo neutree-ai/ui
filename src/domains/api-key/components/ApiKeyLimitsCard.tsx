@@ -43,12 +43,14 @@ export const ApiKeyLimitsCard = ({
   projectId,
   displayName,
   description,
+  onSaved,
 }: {
   apiKeyId: string;
   workspace: string;
   projectId: string | null;
   displayName: string;
   description: string;
+  onSaved?: () => void | Promise<void>;
 }) => {
   const { t } = useTranslation();
   const { load } = useApiKeyLimits();
@@ -115,7 +117,15 @@ export const ApiKeyLimitsCard = ({
       resource: "api_keys",
       invalidates: ["list", "detail"],
     });
-    await refresh();
+    await onSaved?.();
+    const next = await load(apiKeyId);
+    setLimits(next);
+    form.reset({
+      ...limitsToForm(next),
+      project_id: values.project_id,
+      display_name: values.display_name,
+      description: values.description,
+    });
   };
 
   const toggleDisabled = async () => {
