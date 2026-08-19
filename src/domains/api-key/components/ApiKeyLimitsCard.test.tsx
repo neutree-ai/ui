@@ -10,6 +10,13 @@ vi.mock("@refinedev/core", () => ({
   useInvalidate: () => invalidate,
 }));
 
+vi.mock("@refinedev/react-hook-form", async () => {
+  const form = await vi.importActual<typeof import("react-hook-form")>(
+    "react-hook-form",
+  );
+  return { useForm: form.useForm };
+});
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
