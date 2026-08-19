@@ -35,13 +35,11 @@ export const CreateApiKeyForm = ({
   onClose,
   initialWorkspace = "",
   initialProjectId = "",
-  initialProjectName = "Ungrouped",
   onCreated,
 }: {
   onClose?: () => void;
   initialWorkspace?: string;
   initialProjectId?: string;
-  initialProjectName?: string;
   onCreated?: () => void | Promise<void>;
 }) => {
   const { t } = useTranslation();
@@ -64,7 +62,6 @@ export const CreateApiKeyForm = ({
       previousWorkspace.current !== selectedWorkspace
     ) {
       form.setValue("project_id", "", { shouldValidate: true });
-      setCreatedProjectName("Ungrouped");
     }
     previousWorkspace.current = selectedWorkspace;
   }, [form, selectedWorkspace]);
@@ -73,8 +70,6 @@ export const CreateApiKeyForm = ({
   // is given locally, so the page size is the reach here.
   const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceOptions();
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
-  const [createdProjectName, setCreatedProjectName] =
-    useState(initialProjectName);
   const [submitError, setSubmitError] = useState("");
   const { copy, copied } = useCopyToClipboard();
 
@@ -127,15 +122,6 @@ export const CreateApiKeyForm = ({
             {t("api_keys.messages.createSuccess")}
           </AlertDescription>
         </Alert>
-
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="font-medium">Name</dt>
-          <dd>{apiKey.metadata.display_name ?? apiKey.metadata.name}</dd>
-          <dt className="font-medium">Project</dt>
-          <dd>{createdProjectName}</dd>
-          <dt className="font-medium">Description</dt>
-          <dd>{apiKey.description || "-"}</dd>
-        </dl>
 
         <div className="space-y-2">
           <div className="relative">
@@ -200,9 +186,8 @@ export const CreateApiKeyForm = ({
           <ProjectPicker
             workspace={selectedWorkspace}
             value={form.watch("project_id")}
-            onChange={(id, project) => {
+            onChange={(id) => {
               form.setValue("project_id", id, { shouldValidate: true });
-              setCreatedProjectName(project?.name ?? "Ungrouped");
             }}
           />
         </FormFieldGroup>

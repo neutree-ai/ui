@@ -75,6 +75,8 @@ export type ApiUsageRecord = {
   date: string;
   api_key_id: string;
   api_key_name: string;
+  api_key_display_name?: string | null;
+  api_key_description?: string;
   endpoint_type: string | null;
   endpoint_name: string;
   model_name: string | null;

@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import {
   type DateRange,
   DateRangePicker,
@@ -70,7 +71,8 @@ export const AITracesList = () => {
   // in the table cell.
   const { data: keysData } = useList<{
     id: string;
-    metadata?: { name?: string };
+    metadata?: { name?: string; display_name?: string };
+    description?: string;
   }>({
     resource: "api_keys",
     pagination: { mode: "off" },
@@ -78,10 +80,7 @@ export const AITracesList = () => {
     queryOptions: { enabled: Boolean(workspace) },
   });
   const keys = keysData?.data ?? [];
-  const keyName = (id?: string) => {
-    if (!id) return "";
-    return keys.find((k) => k.id === id)?.metadata?.name ?? "";
-  };
+  const keysById = new Map(keys.map((key) => [key.id, key]));
 
   const queryArgs = {
     workspace,
@@ -212,7 +211,11 @@ export const AITracesList = () => {
             </SelectItem>
             {keys.map((k) => (
               <SelectItem key={k.id} value={k.id}>
-                {k.metadata?.name ?? k.id}
+                <ApiKeyLabel
+                  name={k.metadata?.name ?? k.id}
+                  displayName={k.metadata?.display_name}
+                  description={k.description}
+                />
               </SelectItem>
             ))}
           </SelectContent>
@@ -335,10 +338,16 @@ export const AITracesList = () => {
                 <TableCell>
                   <StatusBadge status={row.response_status} />
                 </TableCell>
-                <TableCell className="text-sm truncate max-w-[140px]">
-                  {keyName(row.api_key_id) || (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                <TableCell className="max-w-[140px] text-sm">
+                  <ApiKeyLabel
+                    name={keysById.get(row.api_key_id ?? "")?.metadata?.name}
+                    displayName={
+                      keysById.get(row.api_key_id ?? "")?.metadata?.display_name
+                    }
+                    description={
+                      keysById.get(row.api_key_id ?? "")?.description
+                    }
+                  />
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(row.total_tokens) ?? "-"}

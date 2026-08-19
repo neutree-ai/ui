@@ -26,6 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -863,6 +864,7 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
   const { data } = useList<{
     id: string;
     metadata?: { name?: string; display_name?: string };
+    description?: string;
   }>({
     resource: "api_keys",
     pagination: { mode: "off" },
@@ -890,7 +892,11 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
       variant="link"
       className="!h-auto !p-0 font-mono text-xs"
     >
-      {apiKey.metadata?.display_name ?? name}
+      <ApiKeyLabel
+        name={name}
+        displayName={apiKey.metadata?.display_name}
+        description={apiKey.description}
+      />
     </ShowButton>
   );
 };

@@ -36,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
 import {
@@ -53,6 +54,7 @@ import { cn } from "@/foundation/lib/utils";
 type NamedTotals = {
   key: string;
   name: string;
+  description?: string | null;
   prompt: number;
   completion: number;
   total: number;
@@ -118,14 +120,20 @@ export const ModelUsageList = () => {
   // an empty view. Derived from usageData (not the key-filtered rows) so picking
   // a key never prunes the dropdown; sorted by name for a stable order.
   const keyOptions = useMemo(() => {
-    const byId = new Map<string, string>();
+    const byId = new Map<
+      string,
+      { name: string; description: string | null }
+    >();
     for (const r of usageData) {
       if (r.api_key_id && !byId.has(r.api_key_id)) {
-        byId.set(r.api_key_id, r.api_key_name || r.api_key_id);
+        byId.set(r.api_key_id, {
+          name: r.api_key_display_name || r.api_key_name || r.api_key_id,
+          description: r.api_key_description || null,
+        });
       }
     }
     return [...byId.entries()]
-      .map(([id, name]) => ({ id, name }))
+      .map(([id, value]) => ({ id, ...value }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [usageData]);
 
@@ -156,7 +164,8 @@ export const ModelUsageList = () => {
       aggregateBy(
         filtered,
         (r) => r.api_key_id,
-        (r) => r.api_key_name,
+        (r) => r.api_key_display_name || r.api_key_name,
+        (r) => r.api_key_description,
       ),
     [filtered],
   );
@@ -391,7 +400,7 @@ export const ModelUsageList = () => {
             </SelectItem>
             {keyOptions.map((k) => (
               <SelectItem key={k.id} value={k.id}>
-                {k.name}
+                <ApiKeyLabel name={k.name} description={k.description} />
               </SelectItem>
             ))}
           </SelectContent>
@@ -513,10 +522,12 @@ const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
                 <TableCell className="font-mono text-xs">
                   {formatTick(r.date)}
                 </TableCell>
-                <TableCell className="text-sm truncate max-w-[140px]">
-                  {r.api_key_name || (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                <TableCell className="max-w-[140px] text-sm">
+                  <ApiKeyLabel
+                    name={r.api_key_name}
+                    displayName={r.api_key_display_name}
+                    description={r.api_key_description}
+                  />
                 </TableCell>
                 <TableCell>
                   <EndpointTypeBadge type={r.endpoint_type} />
@@ -603,8 +614,8 @@ const UsageTable = ({
           ) : (
             rows.map((r) => (
               <TableRow key={r.key}>
-                <TableCell className="truncate max-w-[160px]">
-                  {r.name || <span className="text-muted-foreground">-</span>}
+                <TableCell className="max-w-[160px]">
+                  <ApiKeyLabel name={r.name} description={r.description} />
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(r.prompt)}
@@ -678,7 +689,9 @@ function aggregateDaily(
   const names = new Map<string, string>();
   for (const r of rows) {
     const key = byModel ? (r.model_name ?? "-") : r.api_key_id;
-    const name = byModel ? (r.model_name ?? "-") : r.api_key_name;
+    const name = byModel
+      ? (r.model_name ?? "-")
+      : r.api_key_display_name || r.api_key_name;
     names.set(key, name);
     const day = byDate.get(r.date) ?? {};
     day[key] = (day[key] ?? 0) + (r.usage ?? 0);
@@ -704,6 +717,7 @@ function aggregateBy(
   rows: ApiUsageRecord[],
   keyOf: (r: ApiUsageRecord) => string,
   nameOf: (r: ApiUsageRecord) => string,
+  descriptionOf?: (r: ApiUsageRecord) => string | null | undefined,
 ): NamedTotals[] {
   const byKey = new Map<string, NamedTotals>();
   for (const r of rows) {
@@ -711,6 +725,7 @@ function aggregateBy(
     const cur = byKey.get(k) ?? {
       key: k,
       name: nameOf(r),
+      description: descriptionOf?.(r),
       prompt: 0,
       completion: 0,
       total: 0,
