@@ -241,11 +241,9 @@ export const ApiKeysList = () => {
         )
         .map((key) => ({
           id: String(key.id),
-          name: key.description
-            ? `${key.metadata?.display_name ?? key.metadata?.name ?? key.id} - ${key.description}`
-            : (key.metadata?.display_name ??
-              key.metadata?.name ??
-              String(key.id)),
+          name:
+            key.metadata?.display_name ?? key.metadata?.name ?? String(key.id),
+          description: key.description,
         })),
     [keysData, workspace],
   );

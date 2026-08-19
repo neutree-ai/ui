@@ -17,7 +17,7 @@ export function ApiKeyLabel({
     <div className={cn("min-w-0 text-left", className)}>
       <div className="truncate text-sm">{label || "-"}</div>
       {description ? (
-        <div className="truncate text-xs font-normal text-muted-foreground">
+        <div className="truncate text-[10px] font-normal text-muted-foreground/70">
           {description}
         </div>
       ) : null}

@@ -266,8 +266,8 @@ export const ModelUsageList = () => {
           >
             <span>{seriesName(key)}</span>
             {seriesDescription(key) ? (
-              <span className="text-[10px] text-muted-foreground">
-                {seriesDescription(key)}
+              <span className="ml-1 text-[10px] font-normal text-muted-foreground/70">
+                - {seriesDescription(key)}
               </span>
             ) : null}
           </span>
@@ -631,7 +631,14 @@ const UsageTable = ({
             rows.map((r) => (
               <TableRow key={r.key}>
                 <TableCell className="max-w-[160px]">
-                  <ApiKeyLabel name={r.name} description={r.description} />
+                  <span className="block truncate text-sm">
+                    {r.name}
+                    {r.description ? (
+                      <span className="ml-1 text-[10px] font-normal text-muted-foreground/70">
+                        - {r.description}
+                      </span>
+                    ) : null}
+                  </span>
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(r.prompt)}
