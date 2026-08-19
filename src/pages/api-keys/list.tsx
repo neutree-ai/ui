@@ -192,6 +192,7 @@ export const ApiKeysList = () => {
   const [createKeyPreset, setCreateKeyPreset] = useState({
     workspace: "",
     projectId: "",
+    projectName: "Ungrouped",
   });
   const [createKeySession, setCreateKeySession] = useState(0);
   const [query, setQuery] = useState("");
@@ -325,6 +326,9 @@ export const ApiKeysList = () => {
     setCreateKeyPreset({
       workspace: project?.workspace ?? scoped ?? "",
       projectId: project?.is_ungrouped ? "" : (project?.id ?? ""),
+      projectName: project?.is_ungrouped
+        ? "Ungrouped"
+        : (project?.name ?? "Ungrouped"),
     });
     setCreateKeySession((session) => session + 1);
     setOpen(true);
@@ -487,6 +491,7 @@ export const ApiKeysList = () => {
             key={createKeySession}
             initialWorkspace={createKeyPreset.workspace}
             initialProjectId={createKeyPreset.projectId}
+            initialProjectName={createKeyPreset.projectName}
             onClose={() => setOpen(false)}
             onCreated={refresh}
           />
@@ -1159,7 +1164,7 @@ export const ApiKeysList = () => {
       </div>
       <div className="mt-4 flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
         <span>
-          {groupsQuery.data[0]?.total_projects ?? 0} Projects,{" "}
+          {groupsQuery.data[0]?.total_projects ?? 0} groups,{" "}
           {groupsQuery.totalApiKeys} API keys
         </span>
         <div className="flex flex-wrap items-center justify-center gap-6">

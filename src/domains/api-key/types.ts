@@ -43,7 +43,7 @@ export type ApiKeyProject = {
   name: string;
   description: string;
   workspace: string;
-  created_by: string | null;
+  user_id: string;
   is_ungrouped?: boolean;
   created_at: string;
   updated_at: string;

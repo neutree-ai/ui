@@ -62,7 +62,9 @@ export const ApiKeysShow = () => {
                 {record.status?.usage ?? "-"}
               </ShowPage.Meta>
               <ShowPage.Meta label="Project">
-                {isProjectLoading
+                {!record.project_id
+                  ? "Ungrouped"
+                  : isProjectLoading
                   ? "Loading..."
                   : projectError
                     ? "Unable to load Project"
