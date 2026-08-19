@@ -62,6 +62,64 @@ describe("checkVRAM", () => {
     const r = checkVRAM({ acceleratorProduct: "H100", gpuCount: 1 });
     expect(r.kind).toBe("unknown");
   });
+
+  it("judges on the rounded total the badge displays", () => {
+    // The badge renders formatGb(totalGb), rounded to one decimal — the UI's
+    // rule for available resources (cluster panels use toFixed(1)). The check
+    // compares that rounded total against the requirement, so a verdict can
+    // never contradict what the user sees. Notably 2 × 23.98828125 GiB =
+    // 47.9765625 GiB rounds to 48: a pair of 24 GB cards meets a 48 GB
+    // requirement, fixing the false "insufficient" verdict.
+    const cases: Array<[number, number, "sufficient" | "insufficient"]> = [
+      [47.9, 48, "insufficient"], // rounds to 47.9 < 48
+      [47.95, 48, "sufficient"], // rounds to 48 (half-up) == 48
+      [47.9765625, 48, "sufficient"], // 2×23.98828125 GiB RTX-4090 case
+      [47.5, 48, "insufficient"], // rounds to 47.5 < 48
+      [48.0001, 48, "sufficient"], // rounds to 48 == 48
+    ];
+    for (const [available, required, expected] of cases) {
+      const r = checkVRAM({
+        acceleratorProduct: "NVIDIA-GeForce-RTX-4090",
+        perGpuGb: available,
+        gpuCount: 1,
+        requiredGb: required,
+      });
+      expect(r.kind, `avail=${available} req=${required}`).toBe(expected);
+    }
+  });
+
+  it("compares the requirement as declared, not rounded", () => {
+    // Only the available total is rounded to display precision; the
+    // requirement is used verbatim. 48.04 GiB required stays 48.04 (not 48.0),
+    // so 48.03 GiB available (rounds to 48.0) is insufficient even though
+    // formatGb would show both as "48".
+    expect(
+      checkVRAM({
+        acceleratorProduct: "X",
+        perGpuGb: 48.03,
+        gpuCount: 1,
+        requiredGb: 48.04,
+      }).kind,
+    ).toBe("insufficient");
+    // A fractional requirement near a .1 boundary: 48.06 rounds to 48.1 which
+    // meets 48.09 as declared; 48.04 rounds to 48.0 which does not.
+    expect(
+      checkVRAM({
+        acceleratorProduct: "X",
+        perGpuGb: 48.06,
+        gpuCount: 1,
+        requiredGb: 48.09,
+      }).kind,
+    ).toBe("sufficient");
+    expect(
+      checkVRAM({
+        acceleratorProduct: "X",
+        perGpuGb: 48.04,
+        gpuCount: 1,
+        requiredGb: 48.09,
+      }).kind,
+    ).toBe("insufficient");
+  });
 });
 
 describe("formatGb", () => {
@@ -74,6 +132,14 @@ describe("formatGb", () => {
   it("keeps whole numbers clean (no trailing .0)", () => {
     expect(formatGb(140)).toBe("140");
     expect(formatGb(16)).toBe("16");
+    expect(formatGb(48)).toBe("48");
+  });
+
+  it("rounds a just-sufficient value up to show equal numbers (48.0001 -> 48)", () => {
+    // 48.0001 GiB is sufficient for a 48 GB floor; rounding shows "48 GB
+    // available, 48 GB required" beside a green check, which reads as "just
+    // enough" — consistent with the check judging on the same rounded value.
+    expect(formatGb(48.0001)).toBe("48");
   });
 
   it("preserves a meaningful single decimal", () => {

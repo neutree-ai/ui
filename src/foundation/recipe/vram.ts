@@ -112,8 +112,19 @@ export function checkVRAM(opts: {
     return { kind: "unknown", reason: "no GPUs selected yet" };
   }
   const totalGb = perGpu * count;
+  // The badge renders the same value it judges on: formatGb rounds the
+  // available total to one decimal (the UI's rule for available resources,
+  // e.g. cluster panels use toFixed(1)), and the check compares that rounded
+  // total against the requirement so the verdict always matches what the user
+  // sees. Rounding the available total to display precision means 2 ×
+  // 23.98828125 GiB = 47.9765625 GiB counts as meeting a 48 GB requirement —
+  // a pair of 24 GB cards genuinely provides that much, and showing a false
+  // "insufficient" was the bug. The requirement is compared as declared, not
+  // rounded; recipe vram_minimum_gb values are integers, so rounding it would
+  // be a no-op anyway.
+  const roundedTotalGb = Math.round(totalGb * 10) / 10;
   return {
-    kind: totalGb >= opts.requiredGb ? "sufficient" : "insufficient",
+    kind: roundedTotalGb >= opts.requiredGb ? "sufficient" : "insufficient",
     perGpuGb: perGpu,
     gpuCount: count,
     totalGb,
@@ -123,9 +134,11 @@ export function checkVRAM(opts: {
 
 // Format a VRAM amount (GB) for display. Live per-GPU memory reported by a
 // cluster is often fractional (e.g. 44.988 GiB × 2 = 89.9765625), which reads
-// as noise in the badge. Round to at most one decimal and drop a trailing
-// ".0" so whole numbers stay clean. Display-only — the sufficiency comparison
-// in checkVRAM still uses the exact value.
+// as noise in the badge. Round to one decimal and drop a trailing ".0" so whole
+// numbers stay clean. Rounding matches how the rest of the UI shows available
+// resources (cluster panels use toFixed(1)). Display-only — checkVRAM rounds
+// the available total the same way before comparing, so the verdict can never
+// contradict what the badge renders.
 export function formatGb(gb: number): string {
   const rounded = Math.round(gb * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
