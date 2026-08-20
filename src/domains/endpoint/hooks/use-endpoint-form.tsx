@@ -407,6 +407,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const effectiveGpuAllocationMode: GpuAllocationMode =
     showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
   const isVgpuAllocationMode = effectiveGpuAllocationMode === "vgpu";
+  let gpuInputStep = gpuStep;
+  if (isVgpuAllocationMode || gpuUsage >= 1) {
+    gpuInputStep = 1;
+  }
   const vgpuCoreUnitsPerCard = Number(
     selectedVirtualization?.core_percent || 0,
   );
@@ -2046,9 +2050,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         // cards at or above one, so the spinner never lands on
                         // a value the precision rule rejects. Kubernetes (and
                         // vGPU, which is Kubernetes-only) always step by 1.
-                        step={
-                          isVgpuAllocationMode || gpuUsage >= 1 ? 1 : gpuStep
-                        }
+                        step={gpuInputStep}
                         disabled={
                           !currentCluster ||
                           !selectedAccelerator?.type ||
