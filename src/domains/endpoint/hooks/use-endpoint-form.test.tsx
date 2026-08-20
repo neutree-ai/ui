@@ -4426,6 +4426,153 @@ describe("useEndpointForm", () => {
     });
   });
 
+  describe("GPU count precision (resolver)", () => {
+    beforeEach(() => {
+      setupMocks();
+      mockUseWorkspace.mockReset();
+    });
+
+    const selectKubernetesAccelerator = () => {
+      act(() => {
+        formInstance?.setValue("spec.cluster", "plain-k8s");
+        formInstance?.setValue("spec.resources", {
+          cpu: 1,
+          memory: 4,
+          gpu: 0,
+          accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+        });
+      });
+    };
+
+    it("shows a GPU count error for a fractional count on a kubernetes cluster", async () => {
+      setupMocks([catalogA, catalogB], [plainKubernetesCluster]);
+      render(<CreateForm />);
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      selectKubernetesAccelerator();
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 1.5);
+      });
+
+      await act(async () => {
+        await formInstance!.trigger("spec.resources.gpu");
+      });
+
+      expect(
+        screen.getByText("endpoints.messages.gpuCountPrecisionK8s"),
+      ).toBeTruthy();
+    });
+
+    it("allows a zero count on a kubernetes cluster as the unselect value", async () => {
+      setupMocks([catalogA, catalogB], [plainKubernetesCluster]);
+      render(<CreateForm />);
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      selectKubernetesAccelerator();
+
+      await act(async () => {
+        await formInstance!.trigger("spec.resources.gpu");
+      });
+
+      expect(
+        screen.queryByText("endpoints.messages.gpuCountPrecisionK8s"),
+      ).toBeNull();
+    });
+
+    it("allows an integer count on a kubernetes cluster", async () => {
+      setupMocks([catalogA, catalogB], [plainKubernetesCluster]);
+      render(<CreateForm />);
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      selectKubernetesAccelerator();
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 2);
+      });
+
+      await act(async () => {
+        await formInstance!.trigger("spec.resources.gpu");
+      });
+
+      expect(
+        screen.queryByText("endpoints.messages.gpuCountPrecisionK8s"),
+      ).toBeNull();
+    });
+
+    const selectSshAccelerator = () => {
+      act(() => {
+        formInstance?.setValue("spec.cluster", "static-node-resources");
+        formInstance?.setValue("spec.resources", {
+          cpu: 1,
+          memory: 4,
+          gpu: 0,
+          accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+        });
+      });
+    };
+
+    it("shows a GPU count error for a non-integer count at or above one on an ssh cluster", async () => {
+      setupMocks([catalogA, catalogB], [staticNodeClusterWithNodeResources]);
+      render(<CreateForm />);
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      selectSshAccelerator();
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 1.5);
+      });
+
+      await act(async () => {
+        await formInstance!.trigger("spec.resources.gpu");
+      });
+
+      expect(
+        screen.getByText("endpoints.messages.gpuCountPrecisionSsh"),
+      ).toBeTruthy();
+    });
+
+    it("allows a one-decimal count below one on an ssh cluster", async () => {
+      setupMocks([catalogA, catalogB], [staticNodeClusterWithNodeResources]);
+      render(<CreateForm />);
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      selectSshAccelerator();
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 0.5);
+      });
+
+      await act(async () => {
+        await formInstance!.trigger("spec.resources.gpu");
+      });
+
+      expect(
+        screen.queryByText("endpoints.messages.gpuCountPrecisionSsh"),
+      ).toBeNull();
+    });
+
+    it("shows a GPU count error for a multi-decimal count below one on an ssh cluster", async () => {
+      setupMocks([catalogA, catalogB], [staticNodeClusterWithNodeResources]);
+      render(<CreateForm />);
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      selectSshAccelerator();
+
+      act(() => {
+        formInstance?.setValue("spec.resources.gpu", 0.15);
+      });
+
+      await act(async () => {
+        await formInstance!.trigger("spec.resources.gpu");
+      });
+
+      expect(
+        screen.getByText("endpoints.messages.gpuCountPrecisionSsh"),
+      ).toBeTruthy();
+    });
+  });
+
   // Simplified recipe deploy hides advanced controls, but on a vGPU-enabled
   // cluster the virtual-card split (and its capacity feedback) is a deploy
   // essential — a partially used card can make full-card allocation

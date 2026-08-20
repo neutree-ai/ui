@@ -245,6 +245,24 @@ describe("transformEndpointValues", () => {
     expect(spec.resources.accelerator).toBeNull();
   });
 
+  it("removes the accelerator declaration when the card count is zero", () => {
+    const spec = {
+      resources: {
+        gpu: 0,
+        accelerator: {
+          type: "nvidia_gpu",
+          product: "Tesla-T4",
+        },
+      },
+      replicas: null,
+    };
+
+    transformEndpointValues(spec);
+
+    expect(spec.resources.gpu).toBe("0");
+    expect(spec.resources.accelerator).toBeNull();
+  });
+
   it("normalizes vGPU virtualization before submission", () => {
     const spec = {
       resources: {
@@ -716,6 +734,115 @@ describe("validateEndpointValues", () => {
     expect(
       errors["spec.resources.accelerator.virtualization.core_percent"]?.message,
     ).toBe("endpoints.messages.vgpuCorePercentRange");
+  });
+});
+
+describe("validateEndpointValues GPU count precision", () => {
+  const mockT = (key: string) => key;
+
+  const scheduler = {
+    deployment_options: { scheduler: { type: "consistent_hash" } },
+  };
+
+  const validate = (
+    gpu: number | null,
+    clusterType: "ssh" | "kubernetes" | undefined,
+    accelerator?: { type?: string; product?: string } | null,
+  ) => {
+    return validateEndpointValues(
+      {
+        ...scheduler,
+        resources: {
+          gpu,
+          accelerator:
+            accelerator === undefined
+              ? { type: "nvidia_gpu", product: "Tesla-T4" }
+              : accelerator,
+        },
+      },
+      {
+        action: "create",
+        currentRegistry: "",
+        currentModelName: "",
+        availableModelNames: [],
+        clusterType,
+      },
+      mockT,
+    );
+  };
+
+  it("allows ssh 0 as the unselect value", () => {
+    expect(validate(0, "ssh")).toEqual({});
+  });
+
+  it("allows kubernetes 0 as the unselect value", () => {
+    expect(validate(0, "kubernetes")).toEqual({});
+  });
+
+  it("allows ssh one-decimal counts below one", () => {
+    for (const gpu of [0.1, 0.5, 0.9]) {
+      expect(validate(gpu, "ssh")).toEqual({});
+    }
+  });
+
+  it("allows ssh integer counts at or above one", () => {
+    for (const gpu of [1, 2, 8]) {
+      expect(validate(gpu, "ssh")).toEqual({});
+    }
+  });
+
+  it("rejects ssh multi-decimal counts below one", () => {
+    for (const gpu of [0.01, 0.15]) {
+      const errors = validate(gpu, "ssh");
+      expect(errors["spec.resources.gpu"]).toEqual({
+        type: "manual",
+        message: "endpoints.messages.gpuCountPrecisionSsh",
+      });
+    }
+  });
+
+  it("rejects ssh non-integer counts at or above one", () => {
+    for (const gpu of [1.1, 1.5]) {
+      const errors = validate(gpu, "ssh");
+      expect(errors["spec.resources.gpu"]).toBeDefined();
+    }
+  });
+
+  it("rejects ssh negative counts", () => {
+    const errors = validate(-1, "ssh");
+    expect(errors["spec.resources.gpu"]).toBeDefined();
+  });
+
+  it("allows kubernetes positive integer counts only", () => {
+    for (const gpu of [1, 2, 8]) {
+      expect(validate(gpu, "kubernetes")).toEqual({});
+    }
+  });
+
+  it("rejects kubernetes fractional counts", () => {
+    for (const gpu of [0.5, 1.5]) {
+      const errors = validate(gpu, "kubernetes");
+      expect(errors["spec.resources.gpu"]).toBeDefined();
+    }
+  });
+
+  it("rejects kubernetes negative counts", () => {
+    const errors = validate(-1, "kubernetes");
+    expect(errors["spec.resources.gpu"]).toBeDefined();
+  });
+
+  it("skips precision validation when no accelerator is selected", () => {
+    expect(validate(1.5, "ssh", null)).toEqual({});
+  });
+
+  it("skips precision validation when accelerator product is missing", () => {
+    expect(validate(1.5, "ssh", { type: "nvidia_gpu", product: "" })).toEqual(
+      {},
+    );
+  });
+
+  it("skips precision validation when cluster type is unknown", () => {
+    expect(validate(1.5, undefined)).toEqual({});
   });
 });
 

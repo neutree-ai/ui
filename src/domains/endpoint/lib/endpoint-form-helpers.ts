@@ -225,6 +225,39 @@ const parseOptionalValidationNumber = (value: unknown): number | undefined => {
 };
 
 /**
+ * Whether an accelerator card count satisfies the precision rule for a cluster
+ * type. A zero count is always allowed: the UI has no way to remove an
+ * accidentally selected accelerator, so 0 acts as the "unselect" value and the
+ * accelerator declaration is stripped on submit. SSH clusters additionally
+ * allow one-decimal counts below one (0.1-0.9) and integers at or above one;
+ * Kubernetes clusters allow integers only.
+ */
+const isGpuCountPrecisionValid = (
+  gpu: number,
+  clusterType: "ssh" | "kubernetes",
+): boolean => {
+  if (gpu === 0) {
+    return true; // unselect: the accelerator declaration is removed on submit
+  }
+
+  if (gpu < 0) {
+    return false;
+  }
+
+  if (clusterType === "kubernetes") {
+    return Number.isInteger(gpu);
+  }
+
+  if (gpu >= 1) {
+    return Number.isInteger(gpu);
+  }
+
+  // 0 < gpu < 1: exactly one decimal place.
+  const scaled = gpu * 10;
+  return Math.abs(scaled - Math.round(scaled)) < 1e-9;
+};
+
+/**
  * Compute maximum available resources for the endpoint form sliders.
  *
  * When singleNodeMax is provided (accelerator selected), limits are based on
@@ -370,6 +403,14 @@ export function transformEndpointValues(spec: {
       }
     }
 
+    // A zero card count means "no accelerator": the UI has no way to remove an
+    // accidentally selected accelerator, so 0 acts as the unselect value and
+    // the accelerator declaration is stripped before submit. The backend
+    // rejects a declared accelerator without a strictly positive count.
+    if ((spec.resources as Record<string, unknown>).gpu === "0") {
+      (spec.resources as Record<string, unknown>).accelerator = null;
+    }
+
     const accelerator = spec.resources.accelerator as
       | (Record<string, unknown> & {
           virtualization?: Record<string, unknown> | null;
@@ -462,6 +503,7 @@ export function validateEndpointValues(
     replicas?: { num?: number } | null;
     deployment_options?: { scheduler?: { type?: string } | null } | null;
     resources?: {
+      gpu?: number | string | null;
       accelerator?: {
         type?: string;
         product?: string;
@@ -484,6 +526,14 @@ export function validateEndpointValues(
      * submit on unknown data.
      */
     availableModelNames: string[] | null;
+    /**
+     * The target cluster type ("ssh" or "kubernetes"). Determines the legal
+     * accelerator card-count precision: SSH clusters allow 0 (unassigned),
+     * one-decimal counts below one, and integers at or above one; Kubernetes
+     * clusters allow positive integers only. When absent, cluster-specific
+     * precision rules cannot be applied and the check is skipped.
+     */
+    clusterType?: "ssh" | "kubernetes";
   },
   t: (key: string) => string,
 ): Record<string, { type: string; message: string }> {
@@ -501,6 +551,28 @@ export function validateEndpointValues(
       type: "manual",
       message: t("endpoints.messages.schedulerTypeRequired"),
     };
+  }
+
+  const accelerator = spec.resources?.accelerator;
+  const hasAccelerator = Boolean(accelerator?.type && accelerator?.product);
+  if (hasAccelerator && context.clusterType) {
+    const gpuRaw = spec.resources?.gpu;
+    if (gpuRaw !== undefined && gpuRaw !== null && gpuRaw !== "") {
+      const gpu = Number(gpuRaw);
+      if (
+        Number.isFinite(gpu) &&
+        !isGpuCountPrecisionValid(gpu, context.clusterType)
+      ) {
+        errors["spec.resources.gpu"] = {
+          type: "manual",
+          message: t(
+            context.clusterType === "kubernetes"
+              ? "endpoints.messages.gpuCountPrecisionK8s"
+              : "endpoints.messages.gpuCountPrecisionSsh",
+          ),
+        };
+      }
+    }
   }
 
   const virtualization = spec.resources?.accelerator?.virtualization;

@@ -184,6 +184,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           currentRegistry,
           currentModelName,
           availableModelNames: modelExistenceNames,
+          clusterType,
         },
         t,
       );
@@ -329,6 +330,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     t,
   });
 
+  const clusterType: "ssh" | "kubernetes" | undefined =
+    selectedCluster?.spec?.type === "ssh"
+      ? "ssh"
+      : selectedCluster?.spec?.type === "kubernetes"
+        ? "kubernetes"
+        : undefined;
+
   const isEdit = action === "edit";
   const sectionVariant = "section";
 
@@ -399,6 +407,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const effectiveGpuAllocationMode: GpuAllocationMode =
     showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
   const isVgpuAllocationMode = effectiveGpuAllocationMode === "vgpu";
+  let gpuInputStep = gpuStep;
+  if (isVgpuAllocationMode || gpuUsage >= 1) {
+    gpuInputStep = 1;
+  }
   const vgpuCoreUnitsPerCard = Number(
     selectedVirtualization?.core_percent || 0,
   );
@@ -2034,7 +2046,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             ? totalVirtualCardCapacity
                             : Math.max(maxAvailable.gpu.available, gpuUsage)
                         }
-                        step={isVgpuAllocationMode ? 1 : gpuStep}
+                        // SSH clusters step by 0.1 below one card and by whole
+                        // cards at or above one, so the spinner never lands on
+                        // a value the precision rule rejects. Kubernetes (and
+                        // vGPU, which is Kubernetes-only) always step by 1.
+                        step={gpuInputStep}
                         disabled={
                           !currentCluster ||
                           !selectedAccelerator?.type ||
