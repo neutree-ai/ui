@@ -36,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
 import {
@@ -53,6 +54,7 @@ import { cn } from "@/foundation/lib/utils";
 type NamedTotals = {
   key: string;
   name: string;
+  description?: string | null;
   prompt: number;
   completion: number;
   total: number;
@@ -67,7 +69,7 @@ type DailyRow = {
 
 // A chart series: stable `key` (used as the recharts dataKey + legend toggle
 // identity) and a human `name` for the legend/tooltip.
-type Series = { key: string; name: string };
+type Series = { key: string; name: string; description?: string | null };
 
 // Distinct colors for the per-series lines; cycles if there are more series
 // than colors.
@@ -118,14 +120,20 @@ export const ModelUsageList = () => {
   // an empty view. Derived from usageData (not the key-filtered rows) so picking
   // a key never prunes the dropdown; sorted by name for a stable order.
   const keyOptions = useMemo(() => {
-    const byId = new Map<string, string>();
+    const byId = new Map<
+      string,
+      { name: string; description: string | null }
+    >();
     for (const r of usageData) {
       if (r.api_key_id && !byId.has(r.api_key_id)) {
-        byId.set(r.api_key_id, r.api_key_name || r.api_key_id);
+        byId.set(r.api_key_id, {
+          name: r.api_key_display_name || r.api_key_name || r.api_key_id,
+          description: r.api_key_description || null,
+        });
       }
     }
     return [...byId.entries()]
-      .map(([id, name]) => ({ id, name }))
+      .map(([id, value]) => ({ id, ...value }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [usageData]);
 
@@ -156,7 +164,8 @@ export const ModelUsageList = () => {
       aggregateBy(
         filtered,
         (r) => r.api_key_id,
-        (r) => r.api_key_name,
+        (r) => r.api_key_display_name || r.api_key_name,
+        (r) => r.api_key_description,
       ),
     [filtered],
   );
@@ -183,6 +192,8 @@ export const ModelUsageList = () => {
   const totalTokens = filtered.reduce((sum, r) => sum + (r.usage ?? 0), 0);
   const seriesName = (key: string) =>
     series.find((s) => s.key === key)?.name ?? key;
+  const seriesDescription = (key: string) =>
+    series.find((s) => s.key === key)?.description;
 
   // Clicking a day in either chart focuses (or clears) the detail table.
   const onPick = (e: { activeLabel?: string | number }) => {
@@ -230,7 +241,15 @@ export const ModelUsageList = () => {
       fontSize={11}
       width={48}
     />,
-    <Tooltip key="tip" content={<UsageTooltip seriesName={seriesName} />} />,
+    <Tooltip
+      key="tip"
+      content={
+        <UsageTooltip
+          seriesName={seriesName}
+          seriesDescription={seriesDescription}
+        />
+      }
+    />,
     <Legend
       key="legend"
       wrapperStyle={{ fontSize: 11 }}
@@ -239,12 +258,18 @@ export const ModelUsageList = () => {
         const key = String(entry?.dataKey ?? "");
         return (
           <span
+            className="inline-flex items-baseline align-middle leading-tight"
             style={{
               cursor: "pointer",
               opacity: hidden.has(key) ? 0.35 : 1,
             }}
           >
-            {seriesName(key)}
+            <span>{seriesName(key)}</span>
+            {seriesDescription(key) ? (
+              <span className="ml-1 text-[10px] font-normal">
+                - {seriesDescription(key)}
+              </span>
+            ) : null}
           </span>
         );
       }}
@@ -391,7 +416,7 @@ export const ModelUsageList = () => {
             </SelectItem>
             {keyOptions.map((k) => (
               <SelectItem key={k.id} value={k.id}>
-                {k.name}
+                <ApiKeyLabel name={k.name} description={k.description} />
               </SelectItem>
             ))}
           </SelectContent>
@@ -513,10 +538,12 @@ const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
                 <TableCell className="font-mono text-xs">
                   {formatTick(r.date)}
                 </TableCell>
-                <TableCell className="text-sm truncate max-w-[140px]">
-                  {r.api_key_name || (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                <TableCell className="max-w-[140px] text-sm">
+                  <ApiKeyLabel
+                    name={r.api_key_name}
+                    displayName={r.api_key_display_name}
+                    description={r.api_key_description}
+                  />
                 </TableCell>
                 <TableCell>
                   <EndpointTypeBadge type={r.endpoint_type} />
@@ -603,8 +630,8 @@ const UsageTable = ({
           ) : (
             rows.map((r) => (
               <TableRow key={r.key}>
-                <TableCell className="truncate max-w-[160px]">
-                  {r.name || <span className="text-muted-foreground">-</span>}
+                <TableCell className="max-w-[160px]">
+                  <ApiKeyLabel name={r.name} description={r.description} />
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(r.prompt)}
@@ -629,11 +656,13 @@ const UsageTooltip = ({
   payload,
   label,
   seriesName,
+  seriesDescription,
 }: {
   active?: boolean;
   payload?: Array<{ dataKey: string; value: number; color: string }>;
   label?: string;
   seriesName: (key: string) => string;
+  seriesDescription: (key: string) => string | null | undefined;
 }) => {
   const { t } = useTranslation();
   if (!active || !payload || payload.length === 0) return null;
@@ -652,8 +681,15 @@ const UsageTooltip = ({
             className="inline-block size-2 rounded-sm"
             style={{ backgroundColor: p.color }}
           />
-          <span className="truncate max-w-[160px]">
-            {seriesName(p.dataKey)}
+          <span className="max-w-[160px] truncate">
+            <span className="block truncate text-foreground">
+              {seriesName(p.dataKey)}
+            </span>
+            {seriesDescription(p.dataKey) ? (
+              <span className="block truncate text-[10px]">
+                {seriesDescription(p.dataKey)}
+              </span>
+            ) : null}
           </span>
           <span className="ml-auto font-mono">{formatTokens(p.value)}</span>
         </div>
@@ -676,10 +712,14 @@ function aggregateDaily(
   const byDate = new Map<string, Record<string, number>>();
   const totals = new Map<string, number>();
   const names = new Map<string, string>();
+  const descriptions = new Map<string, string | null | undefined>();
   for (const r of rows) {
     const key = byModel ? (r.model_name ?? "-") : r.api_key_id;
-    const name = byModel ? (r.model_name ?? "-") : r.api_key_name;
+    const name = byModel
+      ? (r.model_name ?? "-")
+      : r.api_key_display_name || r.api_key_name;
     names.set(key, name);
+    if (!byModel) descriptions.set(key, r.api_key_description);
     const day = byDate.get(r.date) ?? {};
     day[key] = (day[key] ?? 0) + (r.usage ?? 0);
     byDate.set(r.date, day);
@@ -687,7 +727,11 @@ function aggregateDaily(
   }
   const series = [...totals.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([key]) => ({ key, name: names.get(key) ?? key }));
+    .map(([key]) => ({
+      key,
+      name: names.get(key) ?? key,
+      description: descriptions.get(key),
+    }));
   const data = [...byDate.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, perSeries]) => {
@@ -704,6 +748,7 @@ function aggregateBy(
   rows: ApiUsageRecord[],
   keyOf: (r: ApiUsageRecord) => string,
   nameOf: (r: ApiUsageRecord) => string,
+  descriptionOf?: (r: ApiUsageRecord) => string | null | undefined,
 ): NamedTotals[] {
   const byKey = new Map<string, NamedTotals>();
   for (const r of rows) {
@@ -711,6 +756,7 @@ function aggregateBy(
     const cur = byKey.get(k) ?? {
       key: k,
       name: nameOf(r),
+      description: descriptionOf?.(r),
       prompt: 0,
       completion: 0,
       total: 0,
