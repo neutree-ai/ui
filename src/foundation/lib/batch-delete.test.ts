@@ -6,6 +6,29 @@ const row = (name: string, workspace?: string): BatchDeleteRow => ({
 });
 
 describe("buildBatchDeleteVariables", () => {
+  it("uses the unique technical name for API keys", () => {
+    const vars = buildBatchDeleteVariables(
+      [
+        {
+          original: {
+            metadata: { name: "apikey-a8f31c2d", workspace: "default" },
+          },
+        },
+      ],
+      "api_keys",
+      false,
+    );
+
+    expect(vars).toEqual([
+      {
+        resource: "api_keys",
+        id: "apikey-a8f31c2d",
+        meta: { name: "apikey-a8f31c2d", workspace: "default" },
+        successNotification: false,
+      },
+    ]);
+  });
+
   it("threads each row's OWN workspace into its delete meta", () => {
     // The regression: workspaced rows selected from different workspaces must
     // each carry their own workspace, not a single shared (or missing) one.
