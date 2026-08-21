@@ -315,7 +315,7 @@
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
   "src/pages/model-catalogs/edit.tsx": "8daabed1328a4c65c0ae3a6017d2c91c",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
-  "src/pages/model-catalogs/components/ImportDialog.tsx": "7146ac93e9178a146b240195698e8a6d",
+  "src/pages/model-catalogs/components/ImportDialog.tsx": "b1ab6fbe41db30738b9221029602e34f",
   "src/pages/model-catalogs/components/KeyConfigCard.tsx": "a3e49d8166c2440bfa82b6d6b53cc2e1",
   "src/pages/model-catalogs/components/ModelCatalogCard.tsx": "132f283f4613247531e4a7603d3b6d44",
   "src/pages/model-catalogs/components/VariantTable.tsx": "3cd5dd6edd452daa33e327aaf391a9b7",
@@ -373,5 +373,6 @@
   "src/domains/model-registry/lib/model-card.ts": "6614d0a004271fa9e0524e8d0e656e97",
   "src/foundation/lib/api/model-registries.ts": "63aabfb75c7df819933df76333e6f67b",
   "src/foundation/lib/model-registry-visibility.ts": "24550d054dd3e6365f09c526b829302a",
-  "src/domains/role/lib/format-permission.ts": "9f2b7f7a698e51dc6ba8188a808db44b"
+  "src/domains/role/lib/format-permission.ts": "9f2b7f7a698e51dc6ba8188a808db44b",
+  "src/domains/model-catalog/lib/catalog-import.ts": "0722a4c305e6f4066c9f70aed2e61ed0"
 }

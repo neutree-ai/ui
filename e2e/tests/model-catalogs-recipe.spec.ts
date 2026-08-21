@@ -71,6 +71,17 @@ async function mcImportPaste(page: Page, yaml: string) {
   return dialog;
 }
 
+/** Open the import dialog and submit, without waiting for a result table --
+ * a document that changes the catalog type stops at a confirmation first. */
+async function mcImportSubmit(page: Page, yaml: string) {
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor({ state: "visible" });
+  await dialog.locator("textarea").fill(yaml);
+  await dialog.getByRole("button", { name: "Import", exact: true }).click();
+  return dialog;
+}
+
 async function closeMcImportDialog(page: Page) {
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: /cancel/i }).click();
@@ -255,7 +266,7 @@ spec:
     await expect(catalogCard(modelCatalogs.page, name)).toBeVisible();
   });
 
-  test("re-importing an existing recipe catalog is rejected (no upsert)", {
+  test("re-importing an existing recipe catalog updates it in place", {
     tag: "@C2727742",
   }, async ({ modelCatalogs, apiHelper }) => {
     const name = `test-mc-recipe-dup-${Date.now()}`;
@@ -269,16 +280,70 @@ spec:
       modelCatalogs.page,
       validRecipeYaml(name),
     );
-    // Duplicate name violates the (workspace, name) unique index — import must
-    // fail and point the user at Edit rather than silently upserting.
-    await expect(dialog.getByText("FAIL")).toBeVisible();
-    await expect(dialog.getByText(/already exists/i)).toBeVisible();
-    await expect(dialog.getByText(/use edit/i)).toBeVisible();
+    // Same workspace, same name, same shape (recipe -> recipe): the import
+    // updates the stored catalog rather than requiring a delete first, and no
+    // type-change confirmation is asked for.
+    await expect(dialog.getByText("OK")).toBeVisible();
+    await expect(dialog.getByText("Updated")).toBeVisible();
     await closeMcImportDialog(modelCatalogs.page);
 
-    // Still exactly one card for this name.
+    // Updated, not duplicated.
     await gotoCatalogList(modelCatalogs.page);
     await expect(catalogCard(modelCatalogs.page, name)).toHaveCount(1);
+    await expect(
+      catalogCard(modelCatalogs.page, name).getByText(/2 variants/i),
+    ).toBeVisible();
+  });
+
+  test("importing over a recipe with a plain catalog asks before overwriting", {
+    tag: "@C2727742",
+  }, async ({ modelCatalogs, apiHelper }) => {
+    const name = `test-mc-recipe-type-${Date.now()}`;
+    created.push(name);
+    await apiHelper.createRecipeModelCatalog(name, recipeSpec(), {
+      annotations: { "recipe.vllm.ai/hardware-verified": "L20" },
+    });
+
+    const plainYaml = `apiVersion: v1
+kind: ModelCatalog
+metadata:
+  name: ${name}
+  workspace: default
+spec:
+  engine: { engine: vllm, version: v0.24.0 }
+  model: { registry: huggingface, name: Neutree/Test-27B, task: text-generation }`;
+
+    await gotoCatalogList(modelCatalogs.page);
+    await mcImportSubmit(modelCatalogs.page, plainYaml);
+
+    // Declining writes nothing: the catalog is still the recipe it was.
+    const confirm = modelCatalogs.page.getByRole("alertdialog");
+    await expect(confirm).toBeVisible();
+    await expect(confirm.getByText(name)).toBeVisible();
+    await confirm.getByRole("button", { name: /cancel/i }).click();
+    await closeMcImportDialog(modelCatalogs.page);
+
+    await gotoCatalogList(modelCatalogs.page);
+    await expect(
+      catalogCard(modelCatalogs.page, name).getByText(/variants/i),
+    ).toBeVisible();
+
+    // Confirming writes it.
+    await mcImportSubmit(modelCatalogs.page, plainYaml);
+    await modelCatalogs.page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: /overwrite/i })
+      .click();
+    const dialog = modelCatalogs.page.getByRole("dialog");
+    await dialog.locator("table").waitFor({ state: "visible" });
+    await expect(dialog.getByText("Updated")).toBeVisible();
+    await closeMcImportDialog(modelCatalogs.page);
+
+    // A plain catalog has no variants at all, so the recipe badge is gone.
+    await gotoCatalogList(modelCatalogs.page);
+    await expect(
+      catalogCard(modelCatalogs.page, name).getByText(/variants/i),
+    ).toBeHidden();
   });
 
   test("import fails when variants coexist with top-level model/resources", {
