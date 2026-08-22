@@ -125,13 +125,20 @@ export type ClusterResourceInfo = ResourceStatus & {
   node_resources: Record<string, NodeResourceStatus> | null;
 };
 
-type DeviceAllocation = {
+export type DeviceAllocation = {
   uuid: string;
   order?: number | null;
   product: string;
   memory_mib: number;
   core_units: number;
   node_id: string;
+  /**
+   * Physical resource pool for the allocated device. When present,
+   * allocatable.memory_mib is the physical VRAM and available.memory_mib is
+   * the remaining VRAM; actual usage is derived as allocatable - available.
+   */
+  allocatable?: DeviceResourcePool | null;
+  available?: DeviceResourcePool | null;
 };
 
 export type ReplicaDeviceAllocation = {
