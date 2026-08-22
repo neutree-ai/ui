@@ -46,6 +46,7 @@ const Row = ({
 const Section = ({
   title,
   description,
+  actions,
   children,
   className,
   contentClassName,
@@ -54,6 +55,7 @@ const Section = ({
 }: PropsWithChildren<{
   title?: ReactNode;
   description?: ReactNode;
+  actions?: ReactNode;
   className?: string;
   contentClassName?: string;
   framed?: boolean;
@@ -67,18 +69,26 @@ const Section = ({
       className,
     )}
   >
-    {(title || description) && (
-      <div className={cn(framed ? "px-5 pt-4" : "pb-3")}>
-        {title && (
-          <h2 className="text-base font-semibold leading-6 text-foreground">
-            {title}
-          </h2>
+    {(title || description || actions) && (
+      <div
+        className={cn(
+          "flex flex-wrap items-start justify-between gap-4",
+          framed ? "px-5 pt-4" : "pb-3",
         )}
-        {description && (
-          <p className="mt-1 text-sm leading-5 text-muted-foreground">
-            {description}
-          </p>
-        )}
+      >
+        <div className="min-w-0">
+          {title && (
+            <h2 className="text-base font-semibold leading-6 text-foreground">
+              {title}
+            </h2>
+          )}
+          {description && (
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">
+              {description}
+            </p>
+          )}
+        </div>
+        {actions && <div className="flex shrink-0 items-center">{actions}</div>}
       </div>
     )}
     <div className={cn(framed ? "p-5" : "", contentClassName)}>{children}</div>

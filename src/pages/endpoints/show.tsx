@@ -13,10 +13,11 @@ import { EndpointAdvancedParameters } from "@/domains/endpoint/components/Endpoi
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
-import EndpointRuntimeResourcesCard from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
+import EndpointRuntimeResourcesCard, {
+  EndpointRuntimeResourcesSummary,
+} from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
-import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
@@ -262,20 +263,19 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
         >
           <div className="space-y-4">
-            <ShowPage.Section title={t("endpoints.sections.runtimeAllocation")}>
-              <div className="space-y-6">
-                <EndpointRuntimeResourcesCard
-                  configuredResources={record.spec.resources}
+            <ShowPage.Section
+              title={t("endpoints.sections.runtimeAllocation")}
+              actions={
+                <EndpointRuntimeResourcesSummary
                   resources={record.status?.resources}
                 />
-                <div className="border-t pt-4">
-                  <ResourcesCard
-                    resources={record.spec.resources}
-                    showGpuConditionally={true}
-                    titleTranslationKey="endpoints.sections.requestedResources"
-                    framed={false}
-                  />
-                </div>
+              }
+            >
+              <div className="space-y-6">
+                <EndpointRuntimeResourcesCard
+                  resources={record.status?.resources}
+                  requestedResources={record.spec.resources}
+                />
               </div>
             </ShowPage.Section>
           </div>

@@ -1,30 +1,34 @@
-import { Copy } from "lucide-react";
-import type { ReactNode } from "react";
+import { CircleAlert, Copy, Layers, Server } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  type EndpointReplicaNodeResourceGroup,
+  type EndpointReplicaResourceGroup,
   getEndpointReplicaResourceGroups,
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
+import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
+import {
+  formatMiBAsGiB,
+  formatMiBAsGiBValue,
+  formatToDecimal,
+} from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 
 type EndpointRuntimeResourcesCardProps = {
-  configuredResources?: ResourceSpec | null;
   resources: EndpointResourceStatus | null | undefined;
+  requestedResources?: ResourceSpec | null;
   className?: string;
 };
-
-type AcceleratorWithFlatVirtualization = NonNullable<
-  ResourceSpec["accelerator"]
-> &
-  Record<string, unknown>;
-
-const FLAT_CORE_PERCENT_KEY = "virtualization.core_percent";
 
 const formatInteger = (value: number) => formatToDecimal(value, 0) ?? "-";
 
@@ -33,271 +37,513 @@ const formatCoreLimit = (value: number) =>
 
 const formatMemoryGiB = (value: number) => formatMiBAsGiB(value) ?? "-";
 
+const formatVramValue = (value: number | null) => {
+  if (value == null) return "—";
+  const formatted = formatMiBAsGiBValue(value);
+  return formatted == null ? "—" : formatted.replace(/\.0$/, "");
+};
+
 const formatCount = (
   count: number,
   singular: string,
   plural: string,
-  t: (key: string) => string,
+  t: (key: string, options?: Record<string, unknown>) => string,
 ) => `${count} ${t(count === 1 ? singular : plural)}`;
 
-const formatAllocatedCardCount = (count: number, t: (key: string) => string) =>
+const formatAllocatedCardCount = (
+  count: number,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) =>
   `${count} ${t(
     count === 1
       ? "endpoints.fields.allocatedCard"
       : "endpoints.fields.allocatedCards",
   )}`;
 
-const parsePositiveNumber = (value: unknown) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-};
+const VRAM_BAR_PERCENT_MAX = 100;
 
-const getConfiguredCorePercent = (
-  configuredResources: ResourceSpec | null | undefined,
-) => {
-  const accelerator = configuredResources?.accelerator as
-    | AcceleratorWithFlatVirtualization
-    | null
-    | undefined;
-  const value =
-    accelerator?.virtualization?.core_percent ??
-    accelerator?.[FLAT_CORE_PERCENT_KEY];
-
-  return parsePositiveNumber(value);
-};
-
-// Values truncate so rows keep an even height. A plain string value carries a
-// title so a clipped one stays readable on hover.
-const ResourceValue = ({
-  label,
-  value,
-  className,
+const VramBar = ({
+  requestedMiB,
+  actualMiB,
+  physicalMiB,
+  t,
 }: {
-  label: string;
-  value: ReactNode;
-  className?: string;
+  requestedMiB: number;
+  actualMiB: number | null;
+  physicalMiB: number | null;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) => {
+  const hasScale = physicalMiB != null && physicalMiB > 0;
+  const actualPercent =
+    hasScale && actualMiB != null
+      ? Math.min(
+          VRAM_BAR_PERCENT_MAX,
+          Math.max(0, (actualMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
+        )
+      : 0;
+  const requestedPercent = hasScale
+    ? Math.min(
+        VRAM_BAR_PERCENT_MAX,
+        Math.max(0, (requestedMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
+      )
+    : 0;
+  const overRequested = actualMiB != null && actualMiB > requestedMiB;
+
+  return (
+    <div className="min-w-0">
+      <div
+        data-testid="runtime-vram-bar"
+        className={cn(
+          "relative h-2 overflow-visible rounded-full border",
+          hasScale
+            ? overRequested
+              ? "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)]"
+              : "border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]"
+            : "border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent",
+        )}
+      >
+        {hasScale && actualMiB != null ? (
+          <div
+            className={cn(
+              "absolute inset-y-0 left-0 rounded-full",
+              overRequested
+                ? "bg-[var(--nt-fill-serious-base)]"
+                : "bg-[var(--nt-fill-outstanding-base)]",
+            )}
+            style={{ width: `${actualPercent}%` }}
+          />
+        ) : null}
+        {hasScale ? (
+          <div
+            className="absolute -bottom-0.5 -top-0.5 w-0.5 bg-[var(--nt-text-neutral-super)]"
+            style={{ left: `calc(${requestedPercent}% - 1px)` }}
+          />
+        ) : null}
+      </div>
+      <div
+        data-testid="runtime-vram-values"
+        className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] leading-4 tabular-nums text-muted-foreground"
+      >
+        <span
+          className={cn(
+            "font-semibold",
+            overRequested
+              ? "text-[var(--nt-text-colorful-serious)]"
+              : "text-[var(--nt-text-colorful-outstanding)]",
+          )}
+        >
+          {formatVramValue(actualMiB)}
+        </span>
+        <span>/</span>
+        <span className="font-semibold text-[var(--nt-text-neutral-super)]">
+          {formatVramValue(requestedMiB)}
+        </span>
+        <span>/</span>
+        <span>{formatVramValue(physicalMiB)}</span>
+        <span>GiB</span>
+      </div>
+      {overRequested && (
+        <div
+          data-testid="runtime-vram-over-requested"
+          className="mt-1 flex items-center gap-1 text-[11px] leading-4 text-[var(--nt-text-colorful-serious)]"
+        >
+          <CircleAlert className="h-3 w-3 shrink-0" />
+          <span>{t("endpoints.fields.vramExceedsRequested")}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Legend = ({
+  t,
+}: {
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) => (
-  <div
-    className={cn(
-      "grid min-w-0 content-center gap-1 rounded-md border bg-background px-3 py-2",
-      className,
-    )}
-  >
-    <span className="text-xs leading-4 text-muted-foreground">{label}</span>
-    <strong
-      className="min-w-0 truncate text-sm font-semibold leading-5"
-      title={typeof value === "string" ? value : undefined}
-    >
-      {value}
-    </strong>
+  <div className="flex items-center gap-3 text-[11px] leading-4 text-muted-foreground">
+    <span className="flex items-center gap-1.5">
+      <span className="h-2 w-2 rounded-sm bg-[var(--nt-fill-outstanding-base)]" />
+      {t("endpoints.fields.actualMemory")}
+    </span>
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-0.5 rounded-full bg-[var(--nt-text-neutral-super)]" />
+      {t("endpoints.fields.requestedMemory")}
+    </span>
+    <span className="flex items-center gap-1.5">
+      <span className="h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]" />
+      {t("endpoints.fields.physicalMemory")}
+    </span>
   </div>
 );
 
-export default function EndpointRuntimeResourcesCard({
-  configuredResources,
+export function EndpointRuntimeResourcesSummary({
   resources,
   className,
-}: EndpointRuntimeResourcesCardProps) {
+}: {
+  resources: EndpointResourceStatus | null | undefined;
+  className?: string;
+}) {
   const { t } = useTranslation();
-  const { copy } = useCopyToClipboard();
-  const configuredCorePercent = getConfiguredCorePercent(configuredResources);
-  const coreLimitText =
-    configuredCorePercent != null
-      ? formatCoreLimit(configuredCorePercent)
-      : "-";
-
-  const summaryRows = getEndpointResourceSummaryRows(resources);
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
   const allocatedDeviceCount = replicaGroups.reduce(
     (sum, group) => sum + group.deviceCount,
     0,
   );
 
+  if (allocatedDeviceCount === 0) {
+    return null;
+  }
+
+  return (
+    <span className={cn("text-xs text-muted-foreground", className)}>
+      {formatCount(
+        replicaGroups.length,
+        "endpoints.fields.replicaUnit",
+        "endpoints.fields.replicaUnits",
+        t,
+      )}{" "}
+      / {formatAllocatedCardCount(allocatedDeviceCount, t)}
+    </span>
+  );
+}
+
+export default function EndpointRuntimeResourcesCard({
+  resources,
+  requestedResources,
+  className,
+}: EndpointRuntimeResourcesCardProps) {
+  const { t } = useTranslation();
+  const { copy } = useCopyToClipboard();
+
+  const requestedCpu = formatToDecimal(requestedResources?.cpu) ?? "—";
+  const requestedMemory = formatToDecimal(requestedResources?.memory) ?? "—";
+  const requestedCorePerCard =
+    getVgpuVirtualization(requestedResources?.accelerator)?.core_percent ??
+    undefined;
+  const acceleratorType = requestedResources?.accelerator?.type
+    ? t(`clusters.acceleratorTypes.${requestedResources.accelerator.type}`, {
+        defaultValue: requestedResources.accelerator.type,
+      })
+    : null;
+
+  const summaryRows = getEndpointResourceSummaryRows(resources);
+  const replicaGroups = getEndpointReplicaResourceGroups(resources);
+
   if (summaryRows.length === 0 && replicaGroups.length === 0) {
     return null;
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">
-            {t("endpoints.sections.allocatedResources")}
+    <TooltipProvider>
+      <div className={cn("space-y-4", className)}>
+        {replicaGroups.length > 0 && (
+          <div className="divide-y divide-[var(--nt-stroke-neutral-trans-2)] border border-[var(--nt-stroke-neutral-trans-2)]">
+            {replicaGroups.map((group, groupIndex) => (
+              <Replica
+                key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
+                group={group}
+                groupIndex={groupIndex}
+                requestedCpu={requestedCpu}
+                requestedMemory={requestedMemory}
+                requestedCorePerCard={requestedCorePerCard}
+                acceleratorType={acceleratorType}
+                onCopyUuid={copy}
+                t={t}
+              />
+            ))}
           </div>
-          {allocatedDeviceCount > 0 && (
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {formatCount(
-                replicaGroups.length,
-                "endpoints.fields.replicaUnit",
-                "endpoints.fields.replicaUnits",
-                t,
-              )}{" "}
-              / {formatAllocatedCardCount(allocatedDeviceCount, t)}
-            </div>
-          )}
-        </div>
-      </div>
+        )}
 
-      {summaryRows.length > 0 && (
-        <div className="grid gap-2" data-testid="runtime-resource-summary">
-          {summaryRows.map((row) => (
-            <div
-              className="grid min-w-0 gap-4 rounded-md border px-3 py-2 md:grid-cols-[minmax(180px,1.2fr)_repeat(2,minmax(120px,1fr))] md:items-center"
-              key={row.product}
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary/10 text-xs font-bold text-primary">
-                  {t("clusters.fields.gpuNumber")}
-                </div>
+        {replicaGroups.length === 0 && summaryRows.length > 0 && (
+          <div className="space-y-2" data-testid="runtime-resource-summary">
+            {summaryRows.map((row) => (
+              <div
+                className="grid min-w-0 gap-4 rounded-md border px-3 py-2 md:grid-cols-[minmax(180px,1.2fr)_repeat(2,minmax(120px,1fr))] md:items-center"
+                key={row.product}
+              >
                 <div className="min-w-0">
                   <span className="block text-xs leading-4 text-muted-foreground">
                     {t("common.fields.acceleratorProduct")}
                   </span>
-                  <strong
-                    className="block break-words text-sm font-semibold leading-5"
+                  <span
+                    className="block truncate text-sm font-semibold leading-5"
                     title={row.product}
                   >
                     {row.product || "-"}
-                  </strong>
+                  </span>
+                </div>
+                <div className="grid gap-1">
+                  <span className="text-xs leading-4 text-muted-foreground">
+                    {t("clusters.fields.memoryUsage")}
+                  </span>
+                  <span className="text-sm font-semibold leading-5">
+                    {formatMemoryGiB(row.memoryMiB)}
+                  </span>
+                </div>
+                <div className="grid gap-1">
+                  <span className="text-xs leading-4 text-muted-foreground">
+                    {t("clusters.fields.coreUsage")}
+                  </span>
+                  <span className="text-sm font-semibold leading-5">
+                    {formatCoreLimit(row.coreUnits)}
+                  </span>
                 </div>
               </div>
-              <ResourceValue
-                className="border-0 bg-transparent p-0"
-                label={t("clusters.fields.memoryUsage")}
-                value={formatMemoryGiB(row.memoryMiB)}
-              />
-              <ResourceValue
-                className="border-0 bg-transparent p-0"
-                label={t("clusters.fields.coreUsage")}
-                value={coreLimitText}
-              />
+            ))}
+          </div>
+        )}
+      </div>
+    </TooltipProvider>
+  );
+}
+
+function Replica({
+  group,
+  groupIndex,
+  requestedCpu,
+  requestedMemory,
+  requestedCorePerCard,
+  acceleratorType,
+  onCopyUuid,
+  t,
+}: {
+  group: EndpointReplicaResourceGroup;
+  groupIndex: number;
+  requestedCpu: string;
+  requestedMemory: string;
+  requestedCorePerCard: number | undefined;
+  acceleratorType: string | null;
+  onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  const replicaName = group.replicaId || group.instanceId || "-";
+  const requestedCoreUnits =
+    requestedCorePerCard != null
+      ? requestedCorePerCard * group.deviceCount
+      : group.coreUnits;
+
+  return (
+    <section data-testid="runtime-replica" className="min-w-0">
+      <div className="sticky top-[-16px] z-10 border-b border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] px-4 py-3">
+        <div className="flex min-w-0 items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] text-muted-foreground">
+              <Layers aria-hidden="true" className="h-4 w-4" />
+            </span>
+            <div className="grid min-w-0 gap-0.5">
+              <div className="flex flex-wrap items-center gap-x-2 text-xs leading-4 text-muted-foreground">
+                <span>
+                  {t("common.fields.replica")} {groupIndex + 1}
+                </span>
+                {group.nodeCount > 1 && (
+                  <>
+                    <span>·</span>
+                    <span>
+                      {t("endpoints.fields.crossNodes", {
+                        count: group.nodeCount,
+                      })}
+                    </span>
+                  </>
+                )}
+              </div>
+              <span
+                className="min-w-0 truncate text-sm font-semibold leading-5"
+                title={replicaName}
+              >
+                {replicaName}
+              </span>
             </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs text-muted-foreground">
+            <span>
+              {formatCount(
+                group.deviceCount,
+                "endpoints.fields.card",
+                "endpoints.fields.cards",
+                t,
+              )}
+            </span>
+            <span>·</span>
+            <span>
+              {formatMemoryGiB(group.memoryMiB)}{" "}
+              {t("endpoints.fields.vgpuMemory")}
+            </span>
+            <span>·</span>
+            <span>
+              {t("clusters.fields.coreUsage")}{" "}
+              {formatCoreLimit(requestedCoreUnits)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 pb-4 pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">
+            {t("endpoints.sections.gpuAllocation")}
+          </span>
+          <Legend t={t} />
+        </div>
+        <div className="mt-3">
+          {group.nodes.map((node) => (
+            <Host
+              key={node.nodeId}
+              node={node}
+              maxCols={group.maxNodeDeviceCount}
+              requestedCpu={requestedCpu}
+              requestedMemory={requestedMemory}
+              acceleratorType={acceleratorType}
+              onCopyUuid={onCopyUuid}
+              t={t}
+            />
           ))}
         </div>
-      )}
+      </div>
+    </section>
+  );
+}
 
-      {replicaGroups.length > 0 && (
-        <div className="grid gap-2.5" data-testid="runtime-replica-groups">
-          <div className="text-sm font-medium">
-            {t("endpoints.sections.replicaResources")}
-          </div>
-          {replicaGroups.map((group, groupIndex) => {
-            const groupKey = `${group.instanceId}:${group.replicaId}:${groupIndex}`;
-            const replicaName = group.replicaId || group.instanceId || "-";
-
-            return (
-              <div
-                className="overflow-hidden rounded-md border bg-[var(--nt-fill-neutral-opaque-1)] dark:bg-[var(--nt-fill-neutral-opaque-2)]"
-                key={groupKey}
-              >
-                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="shrink-0 text-xs font-medium leading-4 text-muted-foreground">
-                      {t("common.fields.replica")}
-                    </span>
-                    <strong
-                      className="min-w-0 truncate text-sm font-semibold leading-5"
-                      title={replicaName}
-                    >
-                      {replicaName}
-                    </strong>
-                  </div>
-                  <div className="flex min-w-0 flex-wrap justify-end gap-1">
-                    <Badge
-                      variant="outline"
-                      className="h-6 bg-card px-2 text-xs font-medium"
-                    >
-                      {formatCount(
-                        group.deviceCount,
-                        "endpoints.fields.card",
-                        "endpoints.fields.cards",
-                        t,
-                      )}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="h-6 bg-card px-2 text-xs font-medium"
-                    >
-                      {formatMemoryGiB(group.memoryMiB)}{" "}
-                      {t("endpoints.fields.vgpuMemory")}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="h-6 bg-card px-2 text-xs font-medium"
-                    >
-                      {t("endpoints.fields.vgpuCoreCapacity")} {coreLimitText}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <div className="grid min-w-[760px] grid-cols-[96px_minmax(180px,1.2fr)_minmax(96px,0.6fr)_minmax(72px,0.45fr)_minmax(140px,0.75fr)] gap-3 border-b px-3 py-2 text-xs font-medium leading-4 text-muted-foreground">
-                    <span>{t("clusters.fields.gpuNumber")}</span>
-                    <span>{t("common.fields.acceleratorProduct")}</span>
-                    <span>{t("clusters.fields.memoryUsage")}</span>
-                    <span>{t("clusters.fields.coreUsage")}</span>
-                    <span>{t("clusters.fields.nodeName")}</span>
-                  </div>
-                  {group.devices.map((device, index) => {
-                    const gpuNumber = device.order ?? index + 1;
-
-                    return (
-                      <div
-                        className="grid min-w-[760px] grid-cols-[96px_minmax(180px,1.2fr)_minmax(96px,0.6fr)_minmax(72px,0.45fr)_minmax(140px,0.75fr)] items-center gap-3 border-b px-3 py-2.5 text-sm last:border-b-0"
-                        key={`${groupKey}:${device.uuid || index}`}
-                      >
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          title={t("clusters.actions.copyUuid")}
-                          aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
-                          className="-ml-2 h-7 min-w-0 justify-start px-2 text-sm font-medium"
-                          onClick={() =>
-                            copy(device.uuid, {
-                              successMessage: t(
-                                "clusters.messages.copyUuidSuccess",
-                              ),
-                              errorMessage: t(
-                                "clusters.messages.copyUuidFailed",
-                              ),
-                            })
-                          }
-                        >
-                          {t("clusters.fields.gpuNumber")} {gpuNumber}
-                          <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                          <span className="sr-only">
-                            {t("clusters.actions.copyUuid")}
-                          </span>
-                        </Button>
-                        {/* The row keeps one line so the columns stay aligned,
-                            so the clipped values carry a title instead — a GPU
-                            model must never be unreadable (NEU-571). */}
-                        <span
-                          className="min-w-0 truncate font-semibold"
-                          title={device.product}
-                        >
-                          {device.product || "-"}
-                        </span>
-                        <span className="font-semibold">
-                          {formatMemoryGiB(device.memoryMiB)}
-                        </span>
-                        <span className="font-semibold">{coreLimitText}</span>
-                        <span
-                          className="min-w-0 truncate font-semibold"
-                          title={device.nodeId}
-                        >
-                          {device.nodeId || "-"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+function Host({
+  node,
+  maxCols,
+  requestedCpu,
+  requestedMemory,
+  acceleratorType,
+  onCopyUuid,
+  t,
+}: {
+  node: EndpointReplicaNodeResourceGroup;
+  maxCols: number;
+  requestedCpu: string;
+  requestedMemory: string;
+  acceleratorType: string | null;
+  onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  return (
+    <div className="mb-3 last:mb-0">
+      <div data-testid="runtime-host" className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] text-muted-foreground">
+            <Server aria-hidden="true" className="h-4 w-4" />
+          </span>
+          <span
+            className="min-w-0 truncate text-sm font-semibold leading-5"
+            title={node.nodeId}
+          >
+            {node.nodeId || "-"}
+          </span>
+          <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
+            {t("common.fields.cpu")} {requestedCpu} ·{" "}
+            {t("common.fields.memory")} {requestedMemory} GiB ·{" "}
+            {formatCount(
+              node.deviceCount,
+              "endpoints.fields.card",
+              "endpoints.fields.cards",
+              t,
+            )}
+          </span>
         </div>
-      )}
+
+        <div className="mt-3 overflow-x-auto pb-1">
+          <div
+            className="grid divide-x divide-[var(--nt-stroke-neutral-trans-2)] overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
+            style={{
+              gridTemplateColumns: `repeat(${maxCols}, minmax(172px, 1fr))`,
+            }}
+          >
+            {node.devices.map((device, deviceIndex) => (
+              <GpuCell
+                key={device.uuid || deviceIndex}
+                device={device}
+                deviceIndex={deviceIndex}
+                acceleratorType={acceleratorType}
+                onCopyUuid={onCopyUuid}
+                t={t}
+              />
+            ))}
+            {Array.from({
+              length: Math.max(0, maxCols - node.deviceCount),
+            }).map((_, emptyIndex) => (
+              <div className="min-h-[96px]" key={`empty-${emptyIndex}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GpuCell({
+  device,
+  deviceIndex,
+  acceleratorType,
+  onCopyUuid,
+  t,
+}: {
+  device: EndpointReplicaResourceGroup["nodes"][number]["devices"][number];
+  deviceIndex: number;
+  acceleratorType: string | null;
+  onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  const gpuNumber = device.order ?? deviceIndex + 1;
+
+  return (
+    <div
+      data-testid="runtime-gpu-cell"
+      className="min-w-0 bg-[var(--nt-fill-neutral-opaque-1)] p-2.5"
+    >
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <span className="whitespace-nowrap text-sm font-semibold leading-5">
+          {t("clusters.fields.gpuNumber")} {gpuNumber}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          title={t("clusters.actions.copyUuid")}
+          aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
+          className="h-6 w-6 shrink-0 text-muted-foreground"
+          onClick={() =>
+            onCopyUuid(device.uuid, {
+              successMessage: t("clusters.messages.copyUuidSuccess"),
+              errorMessage: t("clusters.messages.copyUuidFailed"),
+            })
+          }
+        >
+          <Copy className="h-3.5 w-3.5" />
+          <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
+        </Button>
+      </div>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            data-testid="runtime-gpu-product"
+            className="mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground"
+          >
+            {acceleratorType && <>{acceleratorType} · </>}
+            {device.product || "-"}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          {[acceleratorType, device.product].filter(Boolean).join(" · ") || "-"}
+        </TooltipContent>
+      </Tooltip>
+
+      <div className="mt-2">
+        <VramBar
+          requestedMiB={device.memoryMiB}
+          actualMiB={device.actualMemoryMiB}
+          physicalMiB={device.physicalMemoryMiB}
+          t={t}
+        />
+      </div>
+
+      <div className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
+      </div>
     </div>
   );
 }

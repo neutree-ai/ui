@@ -851,7 +851,13 @@
 			"replicaUnit": "replica",
 			"replicaUnits": "replicas",
 			"instance": "Instance",
-			"nodeCount": "Node Count"
+			"nodeCount": "Node Count",
+			"restartCount": "Restarts",
+			"actualMemory": "Actual usage",
+			"requestedMemory": "Requested VRAM",
+			"physicalMemory": "Physical VRAM",
+			"vramExceedsRequested": "Usage exceeds requested VRAM",
+			"crossNodes": "Across {{count}} nodes"
 		},
 		"sections": {
 			"clusterSettings": "Cluster",
@@ -873,7 +879,8 @@
 			"allocatedResources": "Allocated Resources",
 			"clusterDeviceResources": "Cluster Resources",
 			"resourceSummary": "Resource Summary",
-			"replicaResources": "Replica Resources"
+			"replicaResources": "Replica Resources",
+			"gpuAllocation": "GPU Allocation & Usage"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",

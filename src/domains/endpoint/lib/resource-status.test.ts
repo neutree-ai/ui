@@ -38,7 +38,7 @@ describe("endpoint resource status helpers", () => {
     ]);
   });
 
-  it("builds replica device rows from endpoint resource status", () => {
+  it("builds replica device rows with actual/physical usage when pools exist", () => {
     const resourceStatus: EndpointResourceStatus = {
       summary: null,
       replicas: [
@@ -53,6 +53,8 @@ describe("endpoint resource status helpers", () => {
               memory_mib: 15360,
               core_units: 100,
               node_id: "node-1",
+              allocatable: { memory_mib: 16384, core_units: 100 },
+              available: { memory_mib: 4096, core_units: 80 },
             },
           ],
         },
@@ -82,6 +84,8 @@ describe("endpoint resource status helpers", () => {
         product: "Tesla-T4",
         memoryMiB: 15360,
         coreUnits: 100,
+        physicalMemoryMiB: 16384,
+        actualMemoryMiB: 12288,
       },
       {
         instanceId: "endpoint-def",
@@ -92,17 +96,19 @@ describe("endpoint resource status helpers", () => {
         product: "Tesla-T4",
         memoryMiB: 7680,
         coreUnits: 50,
+        physicalMemoryMiB: null,
+        actualMemoryMiB: null,
       },
     ]);
   });
 
-  it("groups replica device rows for multi-card replicas", () => {
+  it("groups replica devices by node for multi-node replicas", () => {
     const resourceStatus: EndpointResourceStatus = {
       summary: null,
       replicas: [
         {
           instance_id: "endpoint-abc",
-          replica_id: "endpoint-abc-xgpwv",
+          replica_id: "endpoint-abc-multi",
           node_id: "node-1",
           devices: [
             {
@@ -119,22 +125,8 @@ describe("endpoint resource status helpers", () => {
               core_units: 0,
               node_id: "node-1",
             },
-          ],
-        },
-        {
-          instance_id: "endpoint-abc",
-          replica_id: "endpoint-abc-rq2nl",
-          node_id: "node-2",
-          devices: [
             {
               uuid: "GPU-3",
-              product: "Tesla-T4",
-              memory_mib: 8192,
-              core_units: 0,
-              node_id: "node-2",
-            },
-            {
-              uuid: "GPU-4",
               product: "Tesla-T4",
               memory_mib: 8192,
               core_units: 0,
@@ -148,59 +140,64 @@ describe("endpoint resource status helpers", () => {
     expect(getEndpointReplicaResourceGroups(resourceStatus)).toEqual([
       {
         instanceId: "endpoint-abc",
-        replicaId: "endpoint-abc-xgpwv",
-        deviceCount: 2,
-        memoryMiB: 16384,
+        replicaId: "endpoint-abc-multi",
+        deviceCount: 3,
+        memoryMiB: 24576,
         coreUnits: 0,
-        devices: [
+        nodeCount: 2,
+        maxNodeDeviceCount: 2,
+        nodes: [
           {
-            instanceId: "endpoint-abc",
-            replicaId: "endpoint-abc-xgpwv",
             nodeId: "node-1",
-            uuid: "GPU-1",
-            order: null,
-            product: "Tesla-T4",
-            memoryMiB: 8192,
+            deviceCount: 2,
+            memoryMiB: 16384,
             coreUnits: 0,
+            devices: [
+              {
+                instanceId: "endpoint-abc",
+                replicaId: "endpoint-abc-multi",
+                nodeId: "node-1",
+                uuid: "GPU-1",
+                order: null,
+                product: "Tesla-T4",
+                memoryMiB: 8192,
+                coreUnits: 0,
+                physicalMemoryMiB: null,
+                actualMemoryMiB: null,
+              },
+              {
+                instanceId: "endpoint-abc",
+                replicaId: "endpoint-abc-multi",
+                nodeId: "node-1",
+                uuid: "GPU-2",
+                order: null,
+                product: "Tesla-T4",
+                memoryMiB: 8192,
+                coreUnits: 0,
+                physicalMemoryMiB: null,
+                actualMemoryMiB: null,
+              },
+            ],
           },
           {
-            instanceId: "endpoint-abc",
-            replicaId: "endpoint-abc-xgpwv",
-            nodeId: "node-1",
-            uuid: "GPU-2",
-            order: null,
-            product: "Tesla-T4",
-            memoryMiB: 8192,
-            coreUnits: 0,
-          },
-        ],
-      },
-      {
-        instanceId: "endpoint-abc",
-        replicaId: "endpoint-abc-rq2nl",
-        deviceCount: 2,
-        memoryMiB: 16384,
-        coreUnits: 0,
-        devices: [
-          {
-            instanceId: "endpoint-abc",
-            replicaId: "endpoint-abc-rq2nl",
             nodeId: "node-2",
-            uuid: "GPU-3",
-            order: null,
-            product: "Tesla-T4",
+            deviceCount: 1,
             memoryMiB: 8192,
             coreUnits: 0,
-          },
-          {
-            instanceId: "endpoint-abc",
-            replicaId: "endpoint-abc-rq2nl",
-            nodeId: "node-2",
-            uuid: "GPU-4",
-            order: null,
-            product: "Tesla-T4",
-            memoryMiB: 8192,
-            coreUnits: 0,
+            devices: [
+              {
+                instanceId: "endpoint-abc",
+                replicaId: "endpoint-abc-multi",
+                nodeId: "node-2",
+                uuid: "GPU-3",
+                order: null,
+                product: "Tesla-T4",
+                memoryMiB: 8192,
+                coreUnits: 0,
+                physicalMemoryMiB: null,
+                actualMemoryMiB: null,
+              },
+            ],
           },
         ],
       },
@@ -245,7 +242,7 @@ describe("endpoint resource status helpers", () => {
     };
 
     expect(
-      getEndpointReplicaResourceGroups(resourceStatus)[0].devices.map(
+      getEndpointReplicaResourceGroups(resourceStatus)[0].nodes[0].devices.map(
         (device) => ({
           order: device.order,
           uuid: device.uuid,
