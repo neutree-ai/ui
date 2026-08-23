@@ -942,13 +942,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const isFullGpuCapacityExceededWithPlacement = isFullGpuCapacityExceeded;
   // CPU / memory over-allocation: the request summed across replicas must fit
   // the target node's available budget (maxAvailable already adds back the
-  // edited endpoint's own usage). Mirrors the GPU capacity checks above.
+  // edited endpoint's own usage). A known combined placement failure has
+  // already proven that each dimension fits independently, so do not render a
+  // contradictory legacy maxAvailable warning for either one.
   const requestedCpuTotal = (normalizedResources?.cpu || 0) * replicaCount;
   const requestedMemoryTotal =
     (normalizedResources?.memory || 0) * replicaCount;
   const isCpuCapacityExceeded =
     Boolean(
       currentCluster &&
+        !hasCombinedNodePlacementCapacityExceeded &&
         isResourceRequestExceeded(
           requestedCpuTotal,
           maxAvailable.cpu.available,
@@ -960,6 +963,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const isMemoryCapacityExceeded =
     Boolean(
       currentCluster &&
+        !hasCombinedNodePlacementCapacityExceeded &&
         isResourceRequestExceeded(
           requestedMemoryTotal,
           maxAvailable.memory.available,

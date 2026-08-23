@@ -5083,6 +5083,55 @@ describe("useEndpointForm", () => {
       ).toBeNull();
     });
 
+    it("keeps an aggregate CPU shortage distinct from combined node placement", async () => {
+      const cpuInsufficientCluster = JSON.parse(
+        JSON.stringify(plainKubernetesClusterWithNodeResources),
+      ) as EndpointClusterRef;
+      cpuInsufficientCluster.metadata = metadata("cpu-insufficient-placement");
+      const resourceInfo = cpuInsufficientCluster.status?.resource_info;
+      if (!resourceInfo?.available || !resourceInfo.node_resources) {
+        throw new Error("resource fixture is incomplete");
+      }
+      resourceInfo.available.cpu = 2;
+
+      for (const node of Object.values(resourceInfo.node_resources)) {
+        if (!node.available) throw new Error("node fixture is incomplete");
+        node.available.cpu = 1;
+        for (const device of node.devices ?? []) {
+          device.available = device.allocatable;
+        }
+      }
+
+      setupMocks([catalogA, catalogB], [cpuInsufficientCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "cpu-insufficient-placement");
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 3,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => expect(submitBlockedState).toBe(true));
+      expect(
+        screen.getByText("endpoints.messages.cpuResourcesInsufficient"),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText(
+          "endpoints.messages.noNodeCanScheduleCombinedResourceRequest",
+        ),
+      ).toBeNull();
+    });
+
     it("explains node memory fragmentation independently from GPU capacity", async () => {
       const memoryFragmentedCluster = JSON.parse(
         JSON.stringify(plainKubernetesClusterWithNodeResources),
@@ -5182,6 +5231,12 @@ describe("useEndpointForm", () => {
           "endpoints.messages.noNodeCanScheduleCombinedResourceRequest",
         ),
       ).toBeTruthy();
+      expect(
+        screen.queryByText("endpoints.messages.cpuResourcesInsufficient"),
+      ).toBeNull();
+      expect(
+        screen.queryByText("endpoints.messages.memoryResourcesInsufficient"),
+      ).toBeNull();
     });
 
     it("adds back an edited endpoint's node CPU and memory without device allocations", async () => {
