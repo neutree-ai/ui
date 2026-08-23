@@ -5239,6 +5239,58 @@ describe("useEndpointForm", () => {
       ).toBeNull();
     });
 
+    it("keeps aggregate CPU and memory distinct when only GPU replica capacity is exhausted", async () => {
+      const gpuLimitedCluster = JSON.parse(
+        JSON.stringify(plainKubernetesClusterWithNodeResources),
+      ) as EndpointClusterRef;
+      gpuLimitedCluster.metadata = metadata("gpu-limited-replica-capacity");
+      const resourceInfo = gpuLimitedCluster.status?.resource_info;
+      if (!resourceInfo?.available || !resourceInfo.node_resources) {
+        throw new Error("resource fixture is incomplete");
+      }
+      resourceInfo.available.cpu = 16;
+      resourceInfo.available.memory = 64;
+
+      for (const node of Object.values(resourceInfo.node_resources)) {
+        if (!node.available) throw new Error("node fixture is incomplete");
+        node.available.cpu = 8;
+        node.available.memory = 32;
+        for (const device of node.devices ?? []) {
+          device.available = device.allocatable;
+        }
+      }
+
+      setupMocks([catalogA, catalogB], [gpuLimitedCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "gpu-limited-replica-capacity");
+        formInstance?.setValue("spec.replicas.num", 3);
+        formInstance?.setValue("spec.resources", {
+          cpu: 4,
+          memory: 20,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => expect(submitBlockedState).toBe(true));
+      expect(
+        screen.getByText("endpoints.messages.fullGpuResourcesInsufficient"),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText("endpoints.messages.cpuResourcesInsufficient"),
+      ).toBeNull();
+      expect(
+        screen.queryByText("endpoints.messages.memoryResourcesInsufficient"),
+      ).toBeNull();
+    });
+
     it("adds back an edited endpoint's node CPU and memory without device allocations", async () => {
       queryDataRef.current = {
         metadata: metadata("cpu-memory-edit"),

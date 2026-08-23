@@ -940,11 +940,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   );
   const isVgpuCapacityExceededWithPlacement = isVgpuCapacityExceeded;
   const isFullGpuCapacityExceededWithPlacement = isFullGpuCapacityExceeded;
-  // CPU / memory over-allocation: the request summed across replicas must fit
-  // the target node's available budget (maxAvailable already adds back the
-  // edited endpoint's own usage). A known combined placement failure has
-  // already proven that each dimension fits independently, so do not render a
-  // contradictory legacy maxAvailable warning for either one.
+  // For known node topology, placementCapacity computes aggregate CPU/memory
+  // across all nodes while keeping each replica on a GPU node. maxAvailable is
+  // intentionally a single-node input limit, so using it for all replicas
+  // would incorrectly report CPU/memory exhaustion when only GPU capacity is
+  // exhausted. Retain that legacy check only while placement is unavailable.
+  const shouldUseLegacyCpuCapacityCheck =
+    !placementCapacity || placementCapacity.cpu === "unknown";
+  const shouldUseLegacyMemoryCapacityCheck =
+    !placementCapacity || placementCapacity.memory === "unknown";
   const requestedCpuTotal = (normalizedResources?.cpu || 0) * replicaCount;
   const requestedMemoryTotal =
     (normalizedResources?.memory || 0) * replicaCount;
@@ -952,6 +956,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     Boolean(
       currentCluster &&
         !hasCombinedNodePlacementCapacityExceeded &&
+        shouldUseLegacyCpuCapacityCheck &&
         isResourceRequestExceeded(
           requestedCpuTotal,
           maxAvailable.cpu.available,
@@ -964,6 +969,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     Boolean(
       currentCluster &&
         !hasCombinedNodePlacementCapacityExceeded &&
+        shouldUseLegacyMemoryCapacityCheck &&
         isResourceRequestExceeded(
           requestedMemoryTotal,
           maxAvailable.memory.available,
