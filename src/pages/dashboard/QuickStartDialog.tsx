@@ -31,7 +31,14 @@ export function QuickStartDialog({
   onOpenChange,
 }: QuickStartDialogProps) {
   const { t } = useTranslation();
-  const { state, execute, isEnginesLoading } = useQuickStart();
+  const {
+    state,
+    execute,
+    isEnginesLoading,
+    isDefaultClusterVersionAvailable,
+    isLoadingVersions,
+    imageRegistryError,
+  } = useQuickStart({ versionsEnabled: open });
 
   const [headIp, setHeadIp] = useState("");
   const [sshUser, setSshUser] = useState("");
@@ -67,7 +74,13 @@ export function QuickStartDialog({
   };
 
   const handleDeploy = () => {
-    if (!validate()) return;
+    if (
+      !isDefaultClusterVersionAvailable ||
+      imageRegistryError ||
+      !validate()
+    ) {
+      return;
+    }
     execute({
       headIp: headIp.trim(),
       sshUser: sshUser.trim(),
@@ -175,9 +188,27 @@ export function QuickStartDialog({
               )}
             </div>
 
+            {!isLoadingVersions && imageRegistryError && (
+              <p className="text-xs text-destructive">
+                {t("quick_start.messages.registryUnavailable")}
+              </p>
+            )}
+            {!isLoadingVersions &&
+              !imageRegistryError &&
+              !isDefaultClusterVersionAvailable && (
+                <p className="text-xs text-muted-foreground">
+                  {t("quick_start.messages.defaultUnavailable")}
+                </p>
+              )}
+
             <Button
               onClick={handleDeploy}
-              disabled={isEnginesLoading}
+              disabled={
+                isEnginesLoading ||
+                isLoadingVersions ||
+                !!imageRegistryError ||
+                !isDefaultClusterVersionAvailable
+              }
               className="w-full"
             >
               {isEnginesLoading ? (

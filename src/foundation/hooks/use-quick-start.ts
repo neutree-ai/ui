@@ -1,6 +1,12 @@
-import { useCreate, useDataProvider, useSelect } from "@refinedev/core";
-import { useCallback, useMemo, useState } from "react";
+import {
+  useCreate,
+  useCustom,
+  useDataProvider,
+  useSelect,
+} from "@refinedev/core";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
+import { buildAvailableClusterVersionsURL } from "@/foundation/lib/api/available-cluster-versions";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 /** Inline type to avoid L1→L2 dependency on endpoint types */
@@ -30,6 +36,11 @@ type QuickStartPhase = "input" | "creating" | "done" | "error";
 interface QuickStartState {
   phase: QuickStartPhase;
   steps: QuickStartStep[];
+  error?: string;
+}
+
+interface QuickStartOptions {
+  versionsEnabled?: boolean;
 }
 
 const INITIAL_STEPS: QuickStartStep[] = [
@@ -86,7 +97,11 @@ function buildModelRegistryValues(workspace: string) {
   };
 }
 
-function buildClusterValues(workspace: string, input: QuickStartInput) {
+function buildClusterValues(
+  workspace: string,
+  input: QuickStartInput,
+  clusterVersion: string,
+) {
   let sshPrivateKey = input.sshPrivateKey;
   if (!sshPrivateKey.endsWith("\n")) {
     sshPrivateKey += "\n";
@@ -100,7 +115,7 @@ function buildClusterValues(workspace: string, input: QuickStartInput) {
     spec: {
       type: "ssh",
       image_registry: "public-docker",
-      version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION || "v1.0.0",
+      version: clusterVersion,
       config: {
         ssh_config: {
           provider: { head_ip: input.headIp, worker_ips: [] },
@@ -134,10 +149,41 @@ function buildEndpointValues(workspace: string, engineVersion: string) {
   };
 }
 
-export function useQuickStart() {
+function isNotFoundError(error: unknown): boolean {
+  if (error instanceof Error && /not found/i.test(error.message)) {
+    return true;
+  }
+
+  if (typeof error !== "object" || error === null) return false;
+
+  const candidate = error as {
+    code?: string | number;
+    message?: string;
+    statusCode?: number;
+  };
+  return (
+    candidate.statusCode === 404 ||
+    String(candidate.code) === "404" ||
+    /not found/i.test(candidate.message ?? "")
+  );
+}
+
+function getErrorMessage(error: unknown): string {
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String(error.message);
+  }
+
+  return "Unknown error";
+}
+
+export function useQuickStart({
+  versionsEnabled = true,
+}: QuickStartOptions = {}) {
   const { current: currentWorkspace } = useWorkspace();
   const { mutateAsync: createResource } = useCreate();
   const dataProvider = useDataProvider();
+  const dataProviderRef = useRef(dataProvider);
+  dataProviderRef.current = dataProvider;
 
   // `currentWorkspace` may be the `_all_` sentinel when no workspace is
   // selected (fresh session with empty localStorage). That value is invalid
@@ -147,6 +193,13 @@ export function useQuickStart() {
       ? currentWorkspace
       : "default";
 
+  const [isImageRegistryReady, setIsImageRegistryReady] = useState(false);
+  const [isPreparingImageRegistry, setIsPreparingImageRegistry] =
+    useState(false);
+  const [imageRegistryError, setImageRegistryError] = useState<string | null>(
+    null,
+  );
+
   const engines = useSelect<EngineRef>({
     resource: "engines",
     meta: {
@@ -155,6 +208,108 @@ export function useQuickStart() {
       workspaced: true,
     },
   });
+
+  const availableVersionsUrl = buildAvailableClusterVersionsURL(
+    "ssh",
+    workspace,
+    "public-docker",
+  );
+
+  // The availability endpoint validates the selected registry. Quick Start
+  // owns its public registry, so establish it before asking for versions.
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!versionsEnabled) {
+      setIsImageRegistryReady(false);
+      setIsPreparingImageRegistry(false);
+      setImageRegistryError(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsImageRegistryReady(false);
+    setIsPreparingImageRegistry(true);
+    setImageRegistryError(null);
+
+    const meta = {
+      idColumnName: "metadata->name",
+      workspace,
+      workspaced: true,
+    };
+
+    void (async () => {
+      try {
+        const provider = dataProviderRef.current();
+        let imageRegistryExists = false;
+        try {
+          const result = await provider.getOne({
+            resource: "image_registries",
+            id: "public-docker",
+            meta,
+          });
+          imageRegistryExists = !!result.data;
+        } catch (error) {
+          if (!isNotFoundError(error)) throw error;
+        }
+
+        if (!imageRegistryExists) {
+          try {
+            await provider.create({
+              resource: "image_registries",
+              variables: buildImageRegistryValues(workspace),
+              meta,
+            });
+          } catch (createError) {
+            // Another Quick Start may have created the registry between the
+            // initial read and this create. Confirm before treating it as an
+            // availability failure.
+            try {
+              const result = await provider.getOne({
+                resource: "image_registries",
+                id: "public-docker",
+                meta,
+              });
+              if (!result.data) throw createError;
+            } catch {
+              throw createError;
+            }
+          }
+        }
+
+        if (!cancelled) setIsImageRegistryReady(true);
+      } catch (error) {
+        if (!cancelled) setImageRegistryError(getErrorMessage(error));
+      } finally {
+        if (!cancelled) setIsPreparingImageRegistry(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [versionsEnabled, workspace]);
+
+  const { data: versionsData, isLoading: isLoadingVersions } = useCustom<{
+    available_versions: string[];
+    default_cluster_version: string | null;
+  }>({
+    url: availableVersionsUrl ?? "",
+    method: "get",
+    queryOptions: {
+      enabled:
+        versionsEnabled && isImageRegistryReady && !!availableVersionsUrl,
+    },
+  });
+  const availableVersions = versionsData?.data?.available_versions ?? [];
+  const defaultClusterVersion =
+    versionsData?.data?.default_cluster_version ?? null;
+  const clusterVersion = defaultClusterVersion ?? "";
+  const isDefaultClusterVersionAvailable =
+    isImageRegistryReady &&
+    !!clusterVersion &&
+    availableVersions.includes(clusterVersion);
 
   const llamaCppVersion = useMemo(() => {
     const llamaCpp = engines.query.data?.data?.find(
@@ -194,7 +349,7 @@ export function useQuickStart() {
   const execute = useCallback(
     async (input: QuickStartInput) => {
       const steps = INITIAL_STEPS.map((s) => ({ ...s }));
-      setState({ phase: "creating", steps });
+      setState({ phase: "creating", steps, error: undefined });
 
       const createMeta = {
         idColumnName: "metadata->name",
@@ -205,7 +360,6 @@ export function useQuickStart() {
       const valueBuilders: Record<string, () => Record<string, unknown>> = {
         "image-registry": () => buildImageRegistryValues(workspace),
         "model-registry": () => buildModelRegistryValues(workspace),
-        cluster: () => buildClusterValues(workspace, input),
         endpoint: () => buildEndpointValues(workspace, llamaCppVersion),
       };
 
@@ -213,6 +367,20 @@ export function useQuickStart() {
         const step = steps[i];
         step.status = "in-progress";
         setState({ phase: "creating", steps: [...steps] });
+
+        if (
+          step.id === "cluster" &&
+          (!clusterVersion || !isDefaultClusterVersionAvailable)
+        ) {
+          step.status = "error";
+          step.error = "default_cluster_version_unavailable";
+          setState({
+            phase: "error",
+            steps: [...steps],
+            error: "default_cluster_version_unavailable",
+          });
+          return;
+        }
 
         try {
           const exists = await checkResourceExists(
@@ -223,20 +391,24 @@ export function useQuickStart() {
           if (exists) {
             step.status = "skipped";
           } else {
-            const values = valueBuilders[step.id]();
-            await createResource({
-              resource: step.resourceTable,
-              values,
-              meta: createMeta,
-            });
+            if (step.id === "cluster") {
+              await createResource({
+                resource: step.resourceTable,
+                values: buildClusterValues(workspace, input, clusterVersion),
+                meta: createMeta,
+              });
+            } else {
+              await createResource({
+                resource: step.resourceTable,
+                values: valueBuilders[step.id](),
+                meta: createMeta,
+              });
+            }
             step.status = "success";
           }
         } catch (error) {
           step.status = "error";
-          step.error =
-            typeof error === "object" && error !== null && "message" in error
-              ? String(error.message)
-              : "Unknown error";
+          step.error = getErrorMessage(error);
           setState({ phase: "error", steps: [...steps] });
           return;
         }
@@ -246,7 +418,14 @@ export function useQuickStart() {
 
       setState({ phase: "done", steps: [...steps] });
     },
-    [workspace, llamaCppVersion, checkResourceExists, createResource],
+    [
+      workspace,
+      llamaCppVersion,
+      clusterVersion,
+      isDefaultClusterVersionAvailable,
+      checkResourceExists,
+      createResource,
+    ],
   );
 
   const reset = useCallback(() => {
@@ -261,5 +440,12 @@ export function useQuickStart() {
     execute,
     reset,
     isEnginesLoading: engines.query.isLoading,
+    defaultClusterVersion,
+    isDefaultClusterVersionAvailable,
+    isLoadingVersions:
+      isLoadingVersions ||
+      isPreparingImageRegistry ||
+      (versionsEnabled && !isImageRegistryReady && !imageRegistryError),
+    imageRegistryError,
   };
 }
