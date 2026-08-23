@@ -64,11 +64,11 @@ const resourceInfo: ClusterResourceInfo = {
     memory: 192,
     accelerator_groups: {
       nvidia_gpu: {
-        quantity: 2,
+        quantity: 1.5,
         product_groups: null,
         products: {
           "Tesla-T4": {
-            quantity: 2,
+            quantity: 1.5,
           },
         },
       },
@@ -165,7 +165,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toBeTruthy();
   });
 
-  it("counts only fully free devices as usable when no request context exists", () => {
+  it("uses aggregate capacity in the summary and fully free devices in cards", () => {
     render(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
@@ -176,6 +176,11 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
+    const summaryCards = screen.getAllByTestId(
+      "endpoint-resource-summary-card",
+    );
+    const cardCountCard = findByExactLabel(summaryCards, "Card Count");
+    expect(within(cardCountCard).getByText("Free 1.5")).toBeTruthy();
     expect(
       screen.getByText((_, node) => node?.textContent === "Usable 1"),
     ).toBeTruthy();
@@ -362,13 +367,10 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const cardCountCard = findByExactLabel(summaryCards, "Card Count");
     const vramCard = findByExactLabel(summaryCards, "Memory Usage");
 
-    expect(
-      within(cardCountCard).getByText((text) => text.includes("1.0 / 2.0")),
-    ).toBeTruthy();
+    expect(cardCountCard.textContent).toContain("Used 0.5 / 2.0");
+    expect(cardCountCard.textContent).toContain("Free 1.5");
     expect(cardCountCard.textContent).not.toContain("Used -");
-    expect(
-      within(vramCard).getByText((text) => text.includes("7.5 / 30.0")),
-    ).toBeTruthy();
+    expect(vramCard.textContent).toContain("Used 7.5 / 30.0");
     expect(vramCard.textContent).not.toContain("Used -");
   });
 });

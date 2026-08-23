@@ -597,9 +597,6 @@ export function buildGpuCardResourceRows(
   const devicePoolsByProduct = sumDevicePoolsByProduct(
     resourceInfo?.node_resources,
   );
-  const fullCardAvailableDevicesByProduct =
-    countFullCardAvailableDevicesByProduct(resourceInfo?.node_resources);
-
   return Object.entries(allocatableGroups).flatMap(
     ([acceleratorType, allocatableGroup]) => {
       const availableGroup =
@@ -607,16 +604,29 @@ export function buildGpuCardResourceRows(
       const metadataProducts =
         resourceInfo?.accelerator_metadata?.[acceleratorType]?.products ?? {};
 
-      const allocatableProducts = allocatableGroup.products;
+      const allocatableProductEntries = Object.entries(
+        allocatableGroup.products ?? {},
+      );
+      const allocatableProductGroupEntries = Object.entries(
+        allocatableGroup.product_groups ?? {},
+      );
+      const availableQuantityForProduct = (
+        product: string,
+        hasSingleProduct: boolean,
+      ) =>
+        availableGroup?.products?.[product]?.quantity ??
+        availableGroup?.product_groups?.[product] ??
+        (hasSingleProduct ? availableGroup?.quantity : undefined) ??
+        0;
       const products =
-        allocatableProducts && Object.keys(allocatableProducts).length > 0
-          ? Object.entries(allocatableProducts).map(([product, resources]) => ({
+        allocatableProductEntries.length > 0
+          ? allocatableProductEntries.map(([product, resources]) => ({
               product,
               quantity: resources.quantity ?? 0,
-              availableQuantity:
-                fullCardAvailableDevicesByProduct.get(product) ??
-                availableGroup?.products?.[product]?.quantity ??
-                0,
+              availableQuantity: availableQuantityForProduct(
+                product,
+                allocatableProductEntries.length === 1,
+              ),
               allocatableMemoryMiB: resources.virtualization?.memory_mib,
               availableMemoryMiB:
                 availableGroup?.products?.[product]?.virtualization?.memory_mib,
@@ -624,21 +634,19 @@ export function buildGpuCardResourceRows(
               availableCoreUnits:
                 availableGroup?.products?.[product]?.virtualization?.core_units,
             }))
-          : Object.keys(allocatableGroup.product_groups ?? {}).length > 0
-            ? Object.entries(allocatableGroup.product_groups ?? {}).map(
-                ([product, quantity]) => ({
+          : allocatableProductGroupEntries.length > 0
+            ? allocatableProductGroupEntries.map(([product, quantity]) => ({
+                product,
+                quantity,
+                availableQuantity: availableQuantityForProduct(
                   product,
-                  quantity,
-                  availableQuantity:
-                    fullCardAvailableDevicesByProduct.get(product) ??
-                    availableGroup?.product_groups?.[product] ??
-                    0,
-                  allocatableMemoryMiB: undefined,
-                  availableMemoryMiB: undefined,
-                  allocatableCoreUnits: undefined,
-                  availableCoreUnits: undefined,
-                }),
-              )
+                  allocatableProductGroupEntries.length === 1,
+                ),
+                allocatableMemoryMiB: undefined,
+                availableMemoryMiB: undefined,
+                allocatableCoreUnits: undefined,
+                availableCoreUnits: undefined,
+              }))
             : [
                 {
                   product: "",
