@@ -14,6 +14,7 @@ import {
 import { cn } from "@/foundation/lib/utils";
 import type {
   ClusterResourceInfo,
+  DeviceResource,
   NodeResourceStatus,
 } from "@/foundation/types/resource-types";
 
@@ -24,6 +25,7 @@ type SelectedAccelerator = {
 
 type EndpointClusterGpuResourcesPanelProps = {
   resourceInfo: ClusterResourceInfo | null | undefined;
+  schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   currentCluster?: string | null;
   selectedAccelerator?: SelectedAccelerator | null;
   virtualizationEnabled: boolean;
@@ -32,7 +34,10 @@ type EndpointClusterGpuResourcesPanelProps = {
 };
 
 type EndpointResourceRequestContext = {
-  allocationMode: "full" | "vgpu";
+  allocationMode: "full" | "fractional" | "vgpu";
+  gpuPerReplica?: number | null;
+  cpuPerReplica?: number | null;
+  memoryPerReplica?: number | null;
   requestedFullGpuCards: number;
   fullGpuCardCapacity: number;
   fullGpuCapacityExceeded: boolean;
@@ -662,9 +667,58 @@ function EndpointClusterResourceSummary({
   );
 }
 
+const getFiniteResourceValue = (
+  value: number | null | undefined,
+): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+const getDeviceResourceValue = (
+  device: DeviceResource | undefined,
+  field: "memory_mib" | "core_units",
+  fallback: number | null | undefined,
+) =>
+  getFiniteResourceValue(device?.available?.[field]) ??
+  getFiniteResourceValue(fallback) ??
+  0;
+
+const getDeviceAllocatableResourceValue = (
+  device: DeviceResource | undefined,
+  field: "memory_mib" | "core_units",
+  fallback: number | null | undefined,
+) =>
+  getFiniteResourceValue(device?.allocatable?.[field]) ??
+  getFiniteResourceValue(fallback);
+
+const isDeviceFullyAvailable = (
+  device: DeviceResource | undefined,
+  fallback: boolean,
+) => {
+  if (!device) return fallback;
+
+  const availableMemory = getFiniteResourceValue(device.available?.memory_mib);
+  const availableCore = getFiniteResourceValue(device.available?.core_units);
+  const allocatableMemory = getFiniteResourceValue(
+    device.allocatable?.memory_mib,
+  );
+  const allocatableCore = getFiniteResourceValue(
+    device.allocatable?.core_units,
+  );
+
+  return Boolean(
+    device.health &&
+      availableMemory != null &&
+      availableCore != null &&
+      allocatableMemory != null &&
+      allocatableCore != null &&
+      availableMemory >= allocatableMemory &&
+      availableCore >= allocatableCore,
+  );
+};
+
 const isDeviceUsableForRequest = (
   row: GpuDeviceResourceRow,
   request: EndpointResourceRequestContext | undefined,
+  schedulingNodeStatus?: NodeResourceStatus,
 ) => {
   if (!request) {
     return row.healthy && row.matchesSelectedAccelerator && row.fullFree;
@@ -674,14 +728,74 @@ const isDeviceUsableForRequest = (
     return false;
   }
 
+  const cpuPerReplica = Number(request.cpuPerReplica || 0);
+  const memoryPerReplica = Number(request.memoryPerReplica || 0);
+  const availableCpu = Number(schedulingNodeStatus?.available?.cpu);
+  const nodeAvailableMemory = Number(schedulingNodeStatus?.available?.memory);
+  if (
+    cpuPerReplica > 0 &&
+    Number.isFinite(availableCpu) &&
+    availableCpu < cpuPerReplica
+  ) {
+    return false;
+  }
+  if (
+    memoryPerReplica > 0 &&
+    Number.isFinite(nodeAvailableMemory) &&
+    nodeAvailableMemory < memoryPerReplica
+  ) {
+    return false;
+  }
+
+  const schedulingDevice = schedulingNodeStatus?.devices?.find(
+    (device) => device.uuid === row.uuid && device.product === row.product,
+  );
+  const availableMemory = getDeviceResourceValue(
+    schedulingDevice,
+    "memory_mib",
+    row.memory.available,
+  );
+  const availableCore = getDeviceResourceValue(
+    schedulingDevice,
+    "core_units",
+    row.core.available,
+  );
+
   if (request.allocationMode === "full") {
-    return row.fullFree;
+    return isDeviceFullyAvailable(schedulingDevice, row.fullFree);
+  }
+
+  if (request.allocationMode === "fractional") {
+    const gpuPerReplica = Number(request.gpuPerReplica || 0);
+    if (!(gpuPerReplica > 0 && gpuPerReplica < 1)) {
+      return false;
+    }
+
+    const totalMemory = getDeviceAllocatableResourceValue(
+      schedulingDevice,
+      "memory_mib",
+      row.memory.total,
+    );
+    const totalCore = getDeviceAllocatableResourceValue(
+      schedulingDevice,
+      "core_units",
+      row.core.total,
+    );
+    const requiredMemory =
+      totalMemory == null ? null : totalMemory * gpuPerReplica;
+    const requiredCore = totalCore == null ? null : totalCore * gpuPerReplica;
+    if (requiredMemory != null && availableMemory < requiredMemory) {
+      return false;
+    }
+    if (requiredCore != null && availableCore < requiredCore) {
+      return false;
+    }
+
+    return availableMemory > 0 && availableCore > 0;
   }
 
   const memoryMiBPerCard = Number(request.memoryMiBPerCard || 0);
   const coreUnitsPerCard = Number(request.coreUnitsPerCard || 0);
-  const availableMemory = Number(row.memory.available || 0);
-  const availableCore = Number(row.core.available || 0);
 
   if (memoryMiBPerCard > 0 && availableMemory < memoryMiBPerCard) {
     return false;
@@ -691,12 +805,16 @@ const isDeviceUsableForRequest = (
     return false;
   }
 
-  return availableMemory > 0 && availableCore > 0;
+  return availableMemory > 0 && (coreUnitsPerCard <= 0 || availableCore > 0);
 };
 
 const groupNodesWithGpuRows = (
   rows: GpuDeviceResourceRow[],
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  schedulingNodeResources:
+    | Record<string, NodeResourceStatus>
+    | null
+    | undefined,
   request: EndpointResourceRequestContext | undefined,
 ): Array<{
   availableCore: number | null;
@@ -735,6 +853,8 @@ const groupNodesWithGpuRows = (
   return nodeNames.map((nodeName) => {
     const nodeRows = groups.get(nodeName) ?? [];
     const nodeStatus = nodeResources?.[nodeName];
+    const schedulingNodeStatus =
+      schedulingNodeResources?.[nodeName] ?? nodeStatus;
     const cpuSummary = summarizeResourcePool(
       nodeStatus?.allocatable?.cpu,
       nodeStatus?.available?.cpu,
@@ -754,7 +874,7 @@ const groupNodesWithGpuRows = (
     const usedMemory = sumGpuDeviceRowPool(nodeRows, "memory", "used");
     const usedCore = sumGpuDeviceRowPool(nodeRows, "core", "used");
     const usableCount = nodeRows.filter((row) =>
-      isDeviceUsableForRequest(row, request),
+      isDeviceUsableForRequest(row, request, schedulingNodeStatus),
     ).length;
 
     return {
@@ -775,12 +895,14 @@ const groupNodesWithGpuRows = (
 
 function EndpointNodeResources({
   nodeResources,
+  schedulingNodeResources,
   selectedAccelerator,
   hasGpuResources,
   request,
   t,
 }: {
   nodeResources: ClusterResourceInfo["node_resources"];
+  schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   hasGpuResources: boolean;
   request?: EndpointResourceRequestContext;
@@ -803,6 +925,7 @@ function EndpointNodeResources({
   return (
     <EndpointVirtualizedNodeGpuResources
       nodeResources={nodeResources}
+      schedulingNodeResources={schedulingNodeResources}
       selectedAccelerator={selectedAccelerator}
       request={request}
       t={t}
@@ -889,11 +1012,13 @@ function EndpointNodeResourceSummaries({
 
 function EndpointVirtualizedNodeGpuResources({
   nodeResources,
+  schedulingNodeResources,
   selectedAccelerator,
   request,
   t,
 }: {
   nodeResources: ClusterResourceInfo["node_resources"];
+  schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   request?: EndpointResourceRequestContext;
   t: (key: string, options?: { defaultValue?: string }) => string;
@@ -909,8 +1034,14 @@ function EndpointVirtualizedNodeGpuResources({
     [nodeResources, selectedAccelerator],
   );
   const nodeGroups = useMemo(
-    () => groupNodesWithGpuRows(rows, nodeResources, request),
-    [nodeResources, request, rows],
+    () =>
+      groupNodesWithGpuRows(
+        rows,
+        nodeResources,
+        schedulingNodeResources,
+        request,
+      ),
+    [nodeResources, request, rows, schedulingNodeResources],
   );
 
   if (nodeGroups.length === 0) {
@@ -1008,7 +1139,12 @@ function EndpointVirtualizedNodeGpuResources({
                 className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,180px),220px))] justify-start gap-2 p-2.5"
               >
                 {group.rows.map((row) => {
-                  const usable = isDeviceUsableForRequest(row, request);
+                  const usable = isDeviceUsableForRequest(
+                    row,
+                    request,
+                    schedulingNodeResources?.[group.nodeName] ??
+                      nodeResources?.[group.nodeName],
+                  );
 
                   return (
                     <GpuDeviceCard
@@ -1031,6 +1167,7 @@ function EndpointVirtualizedNodeGpuResources({
 
 export function EndpointClusterGpuResourcesPanel({
   resourceInfo,
+  schedulingNodeResources,
   currentCluster,
   selectedAccelerator,
   virtualizationEnabled,
@@ -1103,6 +1240,7 @@ export function EndpointClusterGpuResourcesPanel({
       />
       <EndpointClusterGpuResourcesInlineContent
         resourceInfo={resourceInfo}
+        schedulingNodeResources={schedulingNodeResources}
         selectedAccelerator={selectedAccelerator}
         hasGpuResources={hasGpuResources}
         virtualizationEnabled={virtualizationEnabled}
@@ -1177,6 +1315,7 @@ function ClusterResourcesToolbar({
 
 function EndpointClusterGpuResourcesInlineContent({
   resourceInfo,
+  schedulingNodeResources,
   selectedAccelerator,
   hasGpuResources,
   virtualizationEnabled,
@@ -1185,6 +1324,7 @@ function EndpointClusterGpuResourcesInlineContent({
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
+  schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
@@ -1207,6 +1347,7 @@ function EndpointClusterGpuResourcesInlineContent({
         />
         <EndpointNodeResources
           nodeResources={resourceInfo.node_resources}
+          schedulingNodeResources={schedulingNodeResources}
           selectedAccelerator={selectedAccelerator}
           hasGpuResources={hasGpuResources}
           request={request}
