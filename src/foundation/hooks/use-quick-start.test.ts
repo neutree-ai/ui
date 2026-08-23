@@ -1,10 +1,12 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks ---
 
 const mockMutateAsync = vi.fn();
 const mockGetOne = vi.fn();
+const mockCreate = vi.fn();
+const mockUseCustom = vi.fn();
 
 const defaultEnginesData = [
   {
@@ -17,16 +19,30 @@ const defaultEnginesData = [
   },
 ];
 let mockEnginesData = defaultEnginesData;
+let mockAvailableVersions = ["v1.2.0"];
+let mockDefaultClusterVersion: string | null = "v1.2.0";
 
 vi.mock("@refinedev/core", () => ({
   useCreate: () => ({ mutateAsync: mockMutateAsync }),
-  useDataProvider: () => () => ({ getOne: mockGetOne }),
+  useDataProvider: () => () => ({
+    getOne: mockGetOne,
+    create: mockCreate,
+  }),
   useSelect: () => ({
     query: {
       data: { data: mockEnginesData },
       isLoading: false,
     },
   }),
+  useCustom: mockUseCustom.mockImplementation(() => ({
+    data: {
+      data: {
+        available_versions: mockAvailableVersions,
+        default_cluster_version: mockDefaultClusterVersion,
+      },
+    },
+    isLoading: false,
+  })),
 }));
 
 let mockCurrentWorkspace: string = "test-ws";
@@ -45,9 +61,18 @@ const TEST_INPUT = {
     "-----BEGIN OPENSSH PRIVATE KEY-----\ntest\n-----END OPENSSH PRIVATE KEY-----",
 };
 
-async function quickStartHook() {
+async function quickStartHook(
+  options?: { versionsEnabled?: boolean },
+  waitForVersions = true,
+) {
   const { useQuickStart } = await import("./use-quick-start");
-  return renderHook(() => useQuickStart());
+  const hook = renderHook(() => useQuickStart(options));
+  if (waitForVersions) {
+    await waitFor(() =>
+      expect(hook.result.current.isLoadingVersions).toBe(false),
+    );
+  }
+  return hook;
 }
 
 // --- Setup ---
@@ -55,9 +80,13 @@ async function quickStartHook() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockEnginesData = defaultEnginesData;
+  mockAvailableVersions = ["v1.2.0"];
+  mockDefaultClusterVersion = "v1.2.0";
   mockCurrentWorkspace = "test-ws";
   mockGetOne.mockRejectedValue(new Error("not found"));
+  mockCreate.mockResolvedValue({ data: {} });
   mockMutateAsync.mockResolvedValue({ data: {} });
+  mockUseCustom.mockClear();
 });
 
 // --- Tests ---
@@ -87,13 +116,108 @@ describe("useQuickStart", () => {
     });
   });
 
+  it("exposes the API default cluster version", async () => {
+    const { result } = await quickStartHook();
+
+    expect(result.current.defaultClusterVersion).toBe("v1.2.0");
+    await waitFor(() => {
+      expect(result.current.isDefaultClusterVersionAvailable).toBe(true);
+    });
+  });
+
+  it("does not expose the default version before the registry is ready", async () => {
+    let resolveLookup = (_result: { data: { id: number } }) => {};
+    mockGetOne.mockImplementationOnce(
+      () =>
+        new Promise<{ data: { id: number } }>((resolve) => {
+          resolveLookup = resolve;
+        }),
+    );
+
+    const { result } = await quickStartHook(undefined, false);
+
+    expect(result.current.isLoadingVersions).toBe(true);
+    expect(result.current.isDefaultClusterVersionAvailable).toBe(false);
+
+    resolveLookup({ data: { id: 1 } });
+    await waitFor(() => expect(result.current.isLoadingVersions).toBe(false));
+  });
+
+  it("prepares public-docker before querying available versions", async () => {
+    const { result } = await quickStartHook();
+
+    await waitFor(() => expect(result.current.isLoadingVersions).toBe(false));
+
+    expect(mockGetOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resource: "image_registries",
+        id: "public-docker",
+      }),
+    );
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resource: "image_registries",
+        variables: expect.objectContaining({
+          metadata: expect.objectContaining({ name: "public-docker" }),
+        }),
+      }),
+    );
+    expect(mockUseCustom).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        queryOptions: { enabled: true },
+      }),
+    );
+  });
+
+  it("creates public-docker when a lookup returns no data", async () => {
+    mockGetOne.mockResolvedValueOnce({ data: undefined });
+
+    const { result } = await quickStartHook();
+
+    await waitFor(() => {
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ resource: "image_registries" }),
+      );
+      expect(result.current.imageRegistryError).toBeNull();
+    });
+  });
+
+  it("rechecks public-docker after a concurrent create", async () => {
+    mockGetOne
+      .mockRejectedValueOnce({ statusCode: 404 })
+      .mockResolvedValueOnce({ data: { id: 1 } });
+    mockCreate.mockRejectedValueOnce({ statusCode: 409 });
+
+    const { result } = await quickStartHook();
+
+    await waitFor(() => {
+      expect(result.current.imageRegistryError).toBeNull();
+      expect(mockUseCustom).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          queryOptions: { enabled: true },
+        }),
+      );
+    });
+  });
+
+  it("uses the SSH release versions endpoint and respects dialog enablement", async () => {
+    await quickStartHook({ versionsEnabled: false });
+
+    expect(mockUseCustom).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "/clusters/available_versions?workspace=test-ws&image_registry=public-docker&cluster_type=ssh",
+        queryOptions: { enabled: false },
+      }),
+    );
+  });
+
   describe("execute", () => {
     it("creates all 4 resources sequentially when none exist", async () => {
       const { result } = await quickStartHook();
 
       await act(() => result.current.execute(TEST_INPUT));
 
-      expect(mockGetOne).toHaveBeenCalledTimes(4);
+      expect(mockGetOne).toHaveBeenCalledTimes(5);
       expect(mockMutateAsync).toHaveBeenCalledTimes(4);
       expect(result.current.state.phase).toBe("done");
       for (const step of result.current.state.steps) {
@@ -195,9 +319,60 @@ describe("useQuickStart", () => {
       expect(sshConfig.auth.ssh_user).toBe("root");
     });
 
+    it("uses the API default cluster version", async () => {
+      const { result } = await quickStartHook();
+
+      await act(() => result.current.execute(TEST_INPUT));
+
+      const clusterCall = mockMutateAsync.mock.calls.find(
+        (c) => c[0].resource === "clusters",
+      );
+      expect(clusterCall?.[0].values.spec.version).toBe("v1.2.0");
+    });
+
+    it("does not create a cluster when the API has no default version", async () => {
+      mockDefaultClusterVersion = null;
+      const { result } = await quickStartHook();
+
+      await act(() => result.current.execute(TEST_INPUT));
+
+      expect(
+        mockMutateAsync.mock.calls.some(
+          (call) => call[0].resource === "clusters",
+        ),
+      ).toBe(false);
+      expect(
+        mockMutateAsync.mock.calls.some(
+          (call) => call[0].resource === "endpoints",
+        ),
+      ).toBe(false);
+      expect(result.current.state.phase).toBe("error");
+      expect(result.current.state.error).toBe(
+        "default_cluster_version_unavailable",
+      );
+    });
+
+    it("does not create a cluster when the API default is not available", async () => {
+      mockAvailableVersions = [];
+      const { result } = await quickStartHook();
+
+      await act(() => result.current.execute(TEST_INPUT));
+
+      expect(
+        mockMutateAsync.mock.calls.some(
+          (call) => call[0].resource === "clusters",
+        ),
+      ).toBe(false);
+      expect(result.current.state.phase).toBe("error");
+      expect(result.current.state.error).toBe(
+        "default_cluster_version_unavailable",
+      );
+    });
+
     it("skips existing resources", async () => {
       // image_registries and model_registries exist
       mockGetOne
+        .mockResolvedValueOnce({ data: { id: 0 } }) // Quick Start registry preflight
         .mockResolvedValueOnce({ data: { id: 1 } }) // image_registries exists
         .mockResolvedValueOnce({ data: { id: 2 } }) // model_registries exists
         .mockRejectedValueOnce(new Error("not found")) // clusters doesn't

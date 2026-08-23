@@ -232,7 +232,7 @@
   "src/domains/model-registry/hooks/use-model-registry-form.tsx": "7209947c2079b41b6b83c9051a5235e2",
   "src/domains/image-registry/lib/transform-image-registry-values.ts": "8c26cafe14bf2883c1146e93f64ff9b4",
   "src/domains/image-registry/hooks/use-image-registry-form.tsx": "ca7795582e54f820a3fb26492a68c13c",
-  "src/domains/cluster/hooks/use-cluster-form.tsx": "5d4ca2e20acacb990501aed14cb69d75",
+  "src/domains/cluster/hooks/use-cluster-form.tsx": "83f339daf54ba7be2b7c07c78808d88e",
   "src/foundation/types/resource-types.ts": "6fecb3bc5fdd96313e1745a5defcfd87",
   "src/foundation/hooks/use-variables-input.ts": "4e7645dd01994e5fd252bc3e2ad7676f",
   "src/foundation/components/VariablesInput.tsx": "24057e155ee2272d6ba949b42639d752",
@@ -274,7 +274,7 @@
   "src/domains/external-endpoint/lib/find-overlapping-model-keys.ts": "c95ecffb5e8e3e0a45983f6e1f5d2ea4",
   "src/pages/auth/lib/validate-password-match.ts": "c113f0c5136ce533297e38cc20bf698f",
   "src/domains/endpoint/lib/pause-action.ts": "3efa178458d6906c0cc81dad7c41e675",
-  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "69bbf15ed8d1b0e68a235ada096065e9",
+  "src/domains/cluster/components/ClusterUpgradeAction.tsx": "12d36c4aa2e5ac304e0a038dfc59087d",
   "src/foundation/components/OemFavicon.tsx": "bb7648f90f369cb8a26439963f1966d1",
   "src/domains/external-endpoint/lib/get-endpoint-type.ts": "a5fec42612881e3206ee2e19ca3c820f",
   "src/domains/endpoint/hooks/use-document-list.ts": "7dc70792a61cc83271e61844abc90ec8",
@@ -282,8 +282,8 @@
   "src/domains/endpoint/components/DocumentListEditor.tsx": "397a5b14b2689352e678e44863b4e2f0",
   "src/domains/endpoint/components/PlaygroundLayout.tsx": "c4940cfc57dc4696b166ac65f5c769cb",
   "src/domains/cluster/components/ClusterUpgradeTip.tsx": "fd41e3d18ecd41c1efda9dc1d06da083",
-  "src/pages/dashboard/QuickStartDialog.tsx": "b22e8651e26203a5c62ceb9d249f8ef1",
-  "src/foundation/hooks/use-quick-start.ts": "04189be863e68f0769b650db5a60b985",
+  "src/pages/dashboard/QuickStartDialog.tsx": "5211801c3c58b8c9755b0bf71a279d30",
+  "src/foundation/hooks/use-quick-start.ts": "4a8e61679c598598782a5de445a4e987",
   "src/foundation/components/ResourceResultList.tsx": "5b87054f8939e64a98ac67e886b68c64",
   "src/foundation/hooks/use-refine-field-array.ts": "7dbaa5d3a0ea2c6db1c09da0863f1b74",
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "c4c97cc62ad41f004d08238c569e0054",
@@ -374,5 +374,6 @@
   "src/foundation/lib/api/model-registries.ts": "63aabfb75c7df819933df76333e6f67b",
   "src/foundation/lib/model-registry-visibility.ts": "24550d054dd3e6365f09c526b829302a",
   "src/domains/role/lib/format-permission.ts": "9f2b7f7a698e51dc6ba8188a808db44b",
-  "src/domains/model-catalog/lib/catalog-import.ts": "0722a4c305e6f4066c9f70aed2e61ed0"
+  "src/domains/model-catalog/lib/catalog-import.ts": "0722a4c305e6f4066c9f70aed2e61ed0",
+  "src/foundation/lib/api/available-cluster-versions.ts": "db03a13dc9debc8220e03be899b8d96e"
 }

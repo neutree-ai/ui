@@ -355,7 +355,9 @@
 		"messages": {
 			"creating": "Setting up your infrastructure...",
 			"success": "All resources created. Cluster provisioning may take several minutes. You can check progress on the Cluster detail page, and then the Endpoint detail page once the cluster is ready.",
-			"error": "Something went wrong. You can retry — already created resources will be skipped."
+			"error": "Something went wrong. You can retry — already created resources will be skipped.",
+			"defaultUnavailable": "The default cluster version is not available in the selected registry.",
+			"registryUnavailable": "The public image registry could not be prepared."
 		},
 		"validation": {
 			"invalidIp": "Please enter a valid IP address",

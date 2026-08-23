@@ -7,13 +7,11 @@ const mocks = vi.hoisted(() => ({
   availableVersions: [] as string[],
   invalidate: vi.fn(),
   mutateAsync: vi.fn(),
+  useCustom: vi.fn(),
 }));
 
 vi.mock("@refinedev/core", () => ({
-  useCustom: () => ({
-    data: { data: { available_versions: mocks.availableVersions } },
-    isLoading: false,
-  }),
+  useCustom: mocks.useCustom,
   useInvalidate: () => mocks.invalidate,
   useUpdate: () => ({ mutateAsync: mocks.mutateAsync, isLoading: false }),
 }));
@@ -127,6 +125,27 @@ describe("ClusterUpgradeAction", () => {
     mocks.availableVersions = [];
     mocks.invalidate.mockReset().mockResolvedValue(undefined);
     mocks.mutateAsync.mockReset().mockResolvedValue({});
+    mocks.useCustom.mockImplementation(() => ({
+      data: { data: { available_versions: mocks.availableVersions } },
+      isLoading: false,
+    }));
+    mocks.useCustom.mockClear();
+  });
+
+  it("requests versions for the cluster type when the dialog opens", async () => {
+    renderUpgradeAction();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.actions.upgrade" }),
+    );
+
+    await screen.findByRole("dialog");
+    expect(mocks.useCustom).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        url: "/clusters/available_versions?workspace=default&image_registry=registry-a&cluster_type=ssh",
+        queryOptions: { enabled: true },
+      }),
+    );
   });
 
   it("only offers newer versions and selects the highest result", async () => {

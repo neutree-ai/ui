@@ -1,6 +1,6 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
+import { buildAvailableClusterVersionsURL } from "@/foundation/lib/api/available-cluster-versions";
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -57,7 +58,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           },
           model_caches: [],
         },
-        version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
       },
     },
   });
@@ -78,6 +78,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const workspace = form.watch("metadata.workspace");
   const type = form.watch("spec.type");
+  const imageRegistry = form.watch("spec.image_registry");
   const isKubernetes = type === "kubernetes";
   const isSSH = type === "ssh";
   const isModelCacheDisabled = isEdit && isSSH;
@@ -89,16 +90,17 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
-  const imageRegistry = form.watch("spec.image_registry");
-
-  const versionsQueryEnabled = !!workspace && !!imageRegistry && !!type;
+  const availableVersionsUrl = buildAvailableClusterVersionsURL(
+    type,
+    workspace,
+    imageRegistry,
+  );
+  const versionsQueryEnabled = !!availableVersionsUrl;
 
   const { data: versionsData, isLoading: isLoadingVersions } = useCustom<{
     available_versions: string[];
   }>({
-    url: versionsQueryEnabled
-      ? `/clusters/available_versions?${new URLSearchParams({ workspace, image_registry: imageRegistry, cluster_type: type }).toString()}`
-      : "",
+    url: availableVersionsUrl ?? "",
     method: "get",
     queryOptions: {
       enabled: versionsQueryEnabled,
@@ -108,41 +110,47 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const availableVersions = versionsData?.data?.available_versions ?? [];
 
   const specVersion = form.watch("spec.version");
+  const previousVersionSource = useRef(availableVersionsUrl);
+
+  useEffect(() => {
+    const versionSourceChanged =
+      previousVersionSource.current !== availableVersionsUrl;
+    previousVersionSource.current = availableVersionsUrl;
+
+    if (
+      !isEdit &&
+      specVersion &&
+      (versionSourceChanged ||
+        (!isLoadingVersions &&
+          versionsQueryEnabled &&
+          !availableVersions.includes(specVersion)))
+    ) {
+      form.setValue("spec.version", undefined, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [
+    availableVersions,
+    availableVersionsUrl,
+    form,
+    isEdit,
+    isLoadingVersions,
+    specVersion,
+    versionsQueryEnabled,
+  ]);
+
   const acceleratorVirtualizationSupported =
     isKubernetes && isAcceleratorVirtualizationSupported(specVersion);
 
-  // In edit mode, ensure the current version appears in the options list
-  // even if the API doesn't return it (it only returns upgrade targets).
+  // In edit mode, retain the persisted version for display when it is no
+  // longer creatable by the current control plane.
   const versionOptions = (() => {
     if (isEdit && specVersion && !availableVersions.includes(specVersion)) {
       return [specVersion, ...availableVersions];
     }
     return availableVersions;
   })();
-
-  // Sync spec.version with available versions in create mode:
-  // - No versions available: clear spec.version
-  // - Version not set or not in list: select latest
-  // Skip in edit mode — the form already has the cluster's existing spec.version.
-  useEffect(() => {
-    if (isEdit) return;
-    const currentVersion = form.getValues("spec.version");
-    if (availableVersions.length === 0) {
-      if (currentVersion)
-        form.setValue("spec.version", "", {
-          shouldValidate: false,
-          shouldDirty: false,
-        });
-      return;
-    }
-    if (!currentVersion || !availableVersions.includes(currentVersion)) {
-      form.setValue(
-        "spec.version",
-        availableVersions[availableVersions.length - 1],
-        { shouldValidate: false, shouldDirty: false },
-      );
-    }
-  }, [isEdit, availableVersions, form]);
 
   useEffect(() => {
     if (

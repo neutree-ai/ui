@@ -39,14 +39,14 @@ vi.mock("@refinedev/react-hook-form", async () => {
   };
 });
 
+const { mockUseCustom } = vi.hoisted(() => ({ mockUseCustom: vi.fn() }));
+let mockAvailableVersions: string[] = [];
+
 vi.mock("@refinedev/core", () => ({
   useSelect: () => ({
     query: { data: { data: [] }, isLoading: false },
   }),
-  useCustom: () => ({
-    data: { data: { available_versions: [] } },
-    isLoading: false,
-  }),
+  useCustom: mockUseCustom,
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
@@ -104,6 +104,7 @@ function ClusterConfigurationForm() {
   const { form, clusterConfigurationFields } = useClusterForm({
     action: "create",
   });
+  formInstance = form;
   return (
     <FormProvider {...form}>
       <form>{clusterConfigurationFields}</form>
@@ -157,6 +158,12 @@ describe("useClusterForm", () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
     formInstance = null;
+    mockAvailableVersions = [];
+    mockUseCustom.mockImplementation(() => ({
+      data: { data: { available_versions: mockAvailableVersions } },
+      isLoading: false,
+    }));
+    mockUseCustom.mockClear();
   });
 
   it("groups type, image registry and version under cluster configuration", () => {
@@ -168,6 +175,119 @@ describe("useClusterForm", () => {
     expect(screen.getByText("common.fields.type")).toBeTruthy();
     expect(screen.getByText("common.fields.imageRegistry")).toBeTruthy();
     expect(screen.getByText("common.fields.version")).toBeTruthy();
+  });
+
+  it("does not preselect a version from available_versions", async () => {
+    mockAvailableVersions = ["v1.1.0", "v1.2.0"];
+
+    render(<ClusterConfigurationForm />);
+
+    await waitFor(() => {
+      expect(formInstance?.getValues("spec.version")).toBeFalsy();
+    });
+  });
+
+  it("waits for an image registry before querying available versions", async () => {
+    render(<ClusterConfigurationForm />);
+
+    expect(mockUseCustom).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        url: "",
+        queryOptions: { enabled: false },
+      }),
+    );
+
+    act(() => formInstance?.setValue("spec.image_registry", "registry-a"));
+
+    await waitFor(() => {
+      expect(mockUseCustom).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          url: "/clusters/available_versions?workspace=default&image_registry=registry-a&cluster_type=ssh",
+          queryOptions: { enabled: true },
+        }),
+      );
+    });
+  });
+
+  it("updates the version query when the cluster type changes", async () => {
+    render(<CreateForm />);
+
+    act(() => formInstance?.setValue("spec.image_registry", "registry-a"));
+    selectType("clusters.options.kubernetes");
+
+    await waitFor(() => {
+      expect(mockUseCustom).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          url: "/clusters/available_versions?workspace=default&image_registry=registry-a&cluster_type=kubernetes",
+          queryOptions: { enabled: true },
+        }),
+      );
+    });
+  });
+
+  it("clears a selected version when the registry no longer provides it", async () => {
+    mockAvailableVersions = ["v1.1.0"];
+    render(<ClusterConfigurationForm />);
+
+    act(() => formInstance?.setValue("spec.image_registry", "registry-a"));
+    await waitFor(() => {
+      expect(formInstance?.getValues("spec.version")).toBeFalsy();
+    });
+
+    act(() => {
+      formInstance?.setValue("spec.version", "v1.1.0");
+    });
+    expect(formInstance?.getValues("spec.version")).toBe("v1.1.0");
+    mockAvailableVersions = ["v1.2.0"];
+
+    act(() => formInstance?.setValue("spec.image_registry", "registry-b"));
+
+    await waitFor(() => {
+      expect(formInstance?.getValues("spec.version")).toBeFalsy();
+    });
+  });
+
+  it("clears a selected version when the cluster type changes", async () => {
+    mockAvailableVersions = ["v1.1.0"];
+    render(<CreateForm />);
+
+    act(() => formInstance?.setValue("spec.image_registry", "registry-a"));
+    act(() => formInstance?.setValue("spec.version", "v1.1.0"));
+    expect(formInstance?.getValues("spec.version")).toBe("v1.1.0");
+
+    selectType("clusters.options.kubernetes");
+
+    await waitFor(() => {
+      expect(formInstance?.getValues("spec.version")).toBeFalsy();
+    });
+  });
+
+  it("clears a selected version when the current source refreshes without it", async () => {
+    mockAvailableVersions = ["v1.1.0"];
+    const view = render(<ClusterConfigurationForm />);
+
+    act(() => formInstance?.setValue("spec.image_registry", "registry-a"));
+    act(() => formInstance?.setValue("spec.version", "v1.1.0"));
+    expect(formInstance?.getValues("spec.version")).toBe("v1.1.0");
+
+    mockAvailableVersions = [];
+    view.rerender(<ClusterConfigurationForm />);
+
+    await waitFor(() => {
+      expect(formInstance?.getValues("spec.version")).toBeFalsy();
+    });
+  });
+
+  it("does not query versions while workspace is not routable", () => {
+    mockUseWorkspace.mockReturnValue({ current: "_all_" });
+    render(<ClusterConfigurationForm />);
+
+    expect(mockUseCustom).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        url: "",
+        queryOptions: { enabled: false },
+      }),
+    );
   });
 
   describe("edit mode — NodeIPsField props", () => {
@@ -230,7 +350,6 @@ describe("useClusterForm", () => {
     });
 
     it("does not seed router version when switching to kubernetes", async () => {
-      vi.stubEnv("VITE_DEFAULT_CLUSTER_VERSION", "v1.0.1");
       render(<CreateForm />);
 
       selectType("clusters.options.kubernetes");

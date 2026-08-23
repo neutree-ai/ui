@@ -25,6 +25,7 @@ import {
   isUpgradeVersion,
 } from "@/domains/cluster/lib/upgrade-versions";
 import type { Cluster } from "@/domains/cluster/types";
+import { buildAvailableClusterVersionsURL } from "@/foundation/lib/api/available-cluster-versions";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type AvailableVersionsResponse = {
@@ -106,24 +107,17 @@ function UpgradeDialog({
   const { mutateAsync, isLoading: isUpdating } = useUpdate<Cluster>();
   const [targetVersion, setTargetVersion] = useState<string>("");
 
-  const upgradeVersionsUrl = (() => {
-    const params = new URLSearchParams({
-      workspace: cluster.metadata.workspace ?? "",
-      image_registry: cluster.spec.image_registry,
-      cluster_type: cluster.spec.type,
-    });
-    if (cluster.status?.accelerator_type) {
-      params.set("accelerator_type", cluster.status.accelerator_type);
-    }
-    return `/clusters/available_versions?${params.toString()}`;
-  })();
-
+  const upgradeVersionsUrl = buildAvailableClusterVersionsURL(
+    cluster.spec.type,
+    cluster.metadata.workspace,
+    cluster.spec.image_registry,
+  );
   const { data, isLoading: isLoadingVersions } =
     useCustom<AvailableVersionsResponse>({
-      url: upgradeVersionsUrl,
+      url: upgradeVersionsUrl ?? "",
       method: "get",
       queryOptions: {
-        enabled: open,
+        enabled: open && !!upgradeVersionsUrl,
       },
     });
 
