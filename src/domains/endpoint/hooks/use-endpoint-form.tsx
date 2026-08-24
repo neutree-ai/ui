@@ -35,6 +35,7 @@ import {
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
+import { engineNeedsModelSpec } from "@/domains/endpoint/lib/model-spec";
 import {
   formatVgpuMemoryGiBInputValue,
   getEffectiveVgpuMemoryMiB,
@@ -222,6 +223,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentRegistry = form.watch("spec.model.registry");
   const currentCluster = form.watch("spec.cluster");
   const engineSpec = form.watch("spec.engine");
+  // An engine that needs no spec.model has nothing to ask about: the registry,
+  // model, version, file and task fields are all hidden for it. spec.model.task
+  // is still set from the engine's declared tasks when the engine is picked, so
+  // the gateway keeps routing the endpoint as that task.
+  const hidesModelFields = !engineNeedsModelSpec(engineSpec?.engine);
 
   const selectedAccelerator = normalizedResources?.accelerator;
   const gpuUsage = normalizedResources?.gpu || 0;
@@ -1372,87 +1378,93 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </FormFieldGroup>
             </div>
           )}
-          {/* Model registry + name are shown by default (so a recipe deploy
+          {!hidesModelFields && (
+            <>
+              {/* Model registry + name are shown by default (so a recipe deploy
               surfaces which model/registry it resolves to); version + file are
               advanced and stay under "Show all options". */}
-          <FormFieldGroup
-            {...form}
-            name="spec.model.registry"
-            label={t("endpoints.fields.modelRegistry")}
-          >
-            <FormCombobox
-              placeholder={t("endpoints.placeholders.selectModelRegistry")}
-              disabled={modelRegistries.query.isLoading}
-              options={(modelRegistries.query.data?.data || []).map((e) => ({
-                label: e.metadata.name,
-                value: e.metadata.name,
-              }))}
-              onChange={(value) => {
-                form.setValue("spec.model.registry", value as string);
-                // Reset model name and search when registry changes
-                form.setValue("spec.model.name", "");
-                setModelSearch("");
-              }}
-            />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.model.name"
-            label={t("endpoints.fields.modelName")}
-          >
-            <div className="space-y-2">
-              <AsyncCombobox
-                placeholder={t("endpoints.placeholders.selectModel")}
-                loading={
-                  modelsData.isFetching ? (
-                    <CommandLoading className="px-2 py-1.5 text-muted-foreground">
-                      {t("endpoints.messages.fetching")}
-                    </CommandLoading>
-                  ) : null
-                }
-                options={modelsData.models.map((e) => ({
-                  label: e.name,
-                  value: e.name,
-                }))}
-                shouldFilter={false}
-                onSearchChange={setModelSearch}
-                triggerClassName="w-full"
-                disabled={!currentRegistry}
-                value={currentModelName}
-                onChange={(value: string) => {
-                  form.setValue("spec.model.name", value);
-                }}
-              />
-              {/* Said here rather than in release notes: a model that is not on
+              <FormFieldGroup
+                {...form}
+                name="spec.model.registry"
+                label={t("endpoints.fields.modelRegistry")}
+              >
+                <FormCombobox
+                  placeholder={t("endpoints.placeholders.selectModelRegistry")}
+                  disabled={modelRegistries.query.isLoading}
+                  options={(modelRegistries.query.data?.data || []).map(
+                    (e) => ({
+                      label: e.metadata.name,
+                      value: e.metadata.name,
+                    }),
+                  )}
+                  onChange={(value) => {
+                    form.setValue("spec.model.registry", value as string);
+                    // Reset model name and search when registry changes
+                    form.setValue("spec.model.name", "");
+                    setModelSearch("");
+                  }}
+                />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.model.name"
+                label={t("endpoints.fields.modelName")}
+              >
+                <div className="space-y-2">
+                  <AsyncCombobox
+                    placeholder={t("endpoints.placeholders.selectModel")}
+                    loading={
+                      modelsData.isFetching ? (
+                        <CommandLoading className="px-2 py-1.5 text-muted-foreground">
+                          {t("endpoints.messages.fetching")}
+                        </CommandLoading>
+                      ) : null
+                    }
+                    options={modelsData.models.map((e) => ({
+                      label: e.name,
+                      value: e.name,
+                    }))}
+                    shouldFilter={false}
+                    onSearchChange={setModelSearch}
+                    triggerClassName="w-full"
+                    disabled={!currentRegistry}
+                    value={currentModelName}
+                    onChange={(value: string) => {
+                      form.setValue("spec.model.name", value);
+                    }}
+                  />
+                  {/* Said here rather than in release notes: a model that is not on
                   local storage is fetched when the endpoint starts, so the first
                   start is slow and an air-gapped site cannot start it at all.
                   Keyed off the registry's stated capability, so a second public
                   provider inherits the warning without being named. */}
-              {selectedModelDelivery === "at-deploy-time" && (
-                <Alert data-testid="endpoint-runtime-download-hint">
-                  <AlertDescription>
-                    {t("endpoints.messages.runtimeDownloadHint")}
-                  </AlertDescription>
-                </Alert>
-              )}
-              {/* The registry answered without saying which kind it is, which
+                  {selectedModelDelivery === "at-deploy-time" && (
+                    <Alert data-testid="endpoint-runtime-download-hint">
+                      <AlertDescription>
+                        {t("endpoints.messages.runtimeDownloadHint")}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {/* The registry answered without saying which kind it is, which
                   only happens when a request here drops MODEL_REGISTRY_SELECT.
                   Rendering nothing would take the warning above away with no
                   symptom at all; this makes the omission visible to whoever is
                   looking at the screen. */}
-              {selectedModelDelivery === "unknown" && (
-                <Alert
-                  variant="warning"
-                  data-testid="endpoint-runtime-download-unknown"
-                >
-                  <AlertDescription>
-                    {t("endpoints.messages.runtimeDownloadUnknown")}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          </FormFieldGroup>
-          {showFull && (
+                  {selectedModelDelivery === "unknown" && (
+                    <Alert
+                      variant="warning"
+                      data-testid="endpoint-runtime-download-unknown"
+                    >
+                      <AlertDescription>
+                        {t("endpoints.messages.runtimeDownloadUnknown")}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </FormFieldGroup>
+            </>
+          )}
+          {showFull && !hidesModelFields && (
             <>
               <FormFieldGroup
                 {...form}
@@ -1528,25 +1540,27 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 }))}
               />
             </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="spec.model.task"
-              label={t("endpoints.fields.taskType")}
-            >
-              <FormCombobox
-                placeholder={t("endpoints.placeholders.selectTaskType")}
-                disabled={!form.getValues().spec.engine.engine}
-                options={(
-                  engineTasks[form.getValues().spec.engine.engine] || []
-                ).map((v) => ({
-                  label:
-                    t(`models.tasks.${v}`) === `models.tasks.${v}`
-                      ? formatTaskName(v)
-                      : t(`models.tasks.${v}`),
-                  value: v,
-                }))}
-              />
-            </FormFieldGroup>
+            {!hidesModelFields && (
+              <FormFieldGroup
+                {...form}
+                name="spec.model.task"
+                label={t("endpoints.fields.taskType")}
+              >
+                <FormCombobox
+                  placeholder={t("endpoints.placeholders.selectTaskType")}
+                  disabled={!form.getValues().spec.engine.engine}
+                  options={(
+                    engineTasks[form.getValues().spec.engine.engine] || []
+                  ).map((v) => ({
+                    label:
+                      t(`models.tasks.${v}`) === `models.tasks.${v}`
+                        ? formatTaskName(v)
+                        : t(`models.tasks.${v}`),
+                    value: v,
+                  }))}
+                />
+              </FormFieldGroup>
+            )}
           </FormCardGrid>
         )}
       </>
