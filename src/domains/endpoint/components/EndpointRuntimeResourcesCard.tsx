@@ -1,4 +1,4 @@
-import { CircleAlert, Copy, Layers, Server } from "lucide-react";
+import { Copy, Layers, Server } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,30 +72,18 @@ const VRAM_BAR_PERCENT_MAX = 100;
 
 const VramBar = ({
   requestedMiB,
-  actualMiB,
   physicalMiB,
-  t,
 }: {
   requestedMiB: number;
-  actualMiB: number | null;
   physicalMiB: number | null;
-  t: (key: string, options?: Record<string, unknown>) => string;
 }) => {
   const hasScale = physicalMiB != null && physicalMiB > 0;
-  const actualPercent =
-    hasScale && actualMiB != null
-      ? Math.min(
-          VRAM_BAR_PERCENT_MAX,
-          Math.max(0, (actualMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
-        )
-      : 0;
   const requestedPercent = hasScale
     ? Math.min(
         VRAM_BAR_PERCENT_MAX,
         Math.max(0, (requestedMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
       )
     : 0;
-  const overRequested = actualMiB != null && actualMiB > requestedMiB;
 
   return (
     <div className="min-w-0">
@@ -105,28 +93,20 @@ const VramBar = ({
           "relative overflow-visible",
           GPU_USAGE_BAR_CLASS,
           hasScale
-            ? overRequested
-              ? "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)]"
-              : GPU_USAGE_BAR_TRACK_CLASS
+            ? GPU_USAGE_BAR_TRACK_CLASS
             : "border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent",
         )}
       >
-        {hasScale && actualMiB != null ? (
-          <div
-            className={cn(
-              "absolute inset-y-0 left-0 rounded-full",
-              overRequested
-                ? "bg-[var(--nt-fill-serious-base)]"
-                : "bg-[var(--nt-chart-series-1)]",
-            )}
-            style={{ width: `${actualPercent}%` }}
-          />
-        ) : null}
         {hasScale ? (
-          <div
-            className="absolute -bottom-0.5 -top-0.5 w-0.5 bg-[var(--nt-text-neutral-super)]"
-            style={{ left: `calc(${requestedPercent}% - 1px)` }}
-          />
+          <>
+            <div
+              data-testid="runtime-vram-requested-fill"
+              className="absolute inset-y-0 left-0 rounded-full bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]"
+              style={{ width: `${requestedPercent}%` }}
+            />
+            {/* Restore a requested-VRAM boundary marker here when the bar once
+                again includes a separate real-time actual-usage fill. */}
+          </>
         ) : null}
       </div>
       <div
@@ -136,17 +116,6 @@ const VramBar = ({
           GPU_USAGE_TEXT_CLASS,
         )}
       >
-        <span
-          className={cn(
-            "font-semibold",
-            overRequested
-              ? "text-[var(--nt-text-colorful-serious)]"
-              : "text-[var(--nt-text-colorful-outstanding)]",
-          )}
-        >
-          {formatVramValue(actualMiB)}
-        </span>
-        <span>/</span>
         <span className="font-semibold text-[var(--nt-text-neutral-super)]">
           {formatVramValue(requestedMiB)}
         </span>
@@ -154,15 +123,6 @@ const VramBar = ({
         <span>{formatVramValue(physicalMiB)}</span>
         <span>GiB</span>
       </div>
-      {overRequested && (
-        <div
-          data-testid="runtime-vram-over-requested"
-          className="mt-1 flex items-center gap-1 text-[11px] leading-4 text-[var(--nt-text-colorful-serious)]"
-        >
-          <CircleAlert className="h-3 w-3 shrink-0" />
-          <span>{t("endpoints.fields.vramExceedsRequested")}</span>
-        </div>
-      )}
     </div>
   );
 };
@@ -176,13 +136,9 @@ const Legend = ({
     className="ml-0 text-[11px] leading-4"
     items={[
       {
-        label: t("endpoints.fields.actualMemory"),
-        markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
-      },
-      {
         label: t("endpoints.fields.requestedMemory"),
         markerClassName:
-          "h-2.5 w-0.5 rounded-full bg-[var(--nt-text-neutral-super)]",
+          "h-2 w-2 rounded-sm bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
       },
       {
         label: t("endpoints.fields.physicalMemory"),
@@ -547,9 +503,7 @@ function GpuCell({
       <div className="mt-2">
         <VramBar
           requestedMiB={device.memoryMiB}
-          actualMiB={device.actualMemoryMiB}
           physicalMiB={device.physicalMemoryMiB}
-          t={t}
         />
       </div>
 
