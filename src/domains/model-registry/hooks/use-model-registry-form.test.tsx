@@ -58,6 +58,11 @@ async function fillUrl(value: string) {
   fireEvent.blur(input);
 }
 
+function urlPlaceholder() {
+  const field = screen.getByTestId("field-spec.url");
+  return field.querySelector("input")?.getAttribute("placeholder");
+}
+
 describe("useModelRegistryForm", () => {
   describe("URL protocol validation", () => {
     it("shows error for non-NFS URL when bentoml type is selected", async () => {
@@ -95,6 +100,58 @@ describe("useModelRegistryForm", () => {
         expect(
           screen.queryByText("model_registries.validation.mustUseNfsProtocol"),
         ).toBeNull();
+      });
+    });
+
+    it("does not validate URL protocol for model-scope type", async () => {
+      render(<CreateForm />);
+
+      selectType("model_registries.types.modelScope");
+      await fillUrl("https://www.modelscope.cn");
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText("model_registries.validation.mustUseNfsProtocol"),
+        ).toBeNull();
+      });
+    });
+  });
+
+  describe("registry type", () => {
+    it("offers ModelScope", () => {
+      render(<CreateForm />);
+
+      const field = screen.getByTestId("field-spec.type");
+      const trigger = field.querySelector('button[role="combobox"]');
+      if (!trigger) throw new Error("select trigger not found");
+      fireEvent.click(trigger);
+
+      expect(
+        screen.getByRole("option", {
+          name: "model_registries.types.modelScope",
+        }),
+      ).toBeTruthy();
+    });
+
+    it("shows the example address of the kind that is selected", async () => {
+      render(<CreateForm />);
+
+      expect(urlPlaceholder()).toBe(
+        "model_registries.placeholders.huggingFaceUrl",
+      );
+
+      selectType("model_registries.types.modelScope");
+      await waitFor(() => {
+        expect(urlPlaceholder()).toBe(
+          "model_registries.placeholders.modelScopeUrl",
+        );
+      });
+
+      selectType("model_registries.types.fileSystem");
+      await waitFor(() => {
+        expect(urlPlaceholder()).toBe(
+          "model_registries.placeholders.fileSystemUrl",
+        );
       });
     });
   });

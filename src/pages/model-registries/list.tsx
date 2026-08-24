@@ -4,6 +4,7 @@ import {
 } from "@/domains/model-registry/components/ModelRegistryStats";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
+import { ModelRegistryWriteActions } from "@/domains/model-registry/components/ModelRegistryWriteActions";
 import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
 import { RegistryVisibilityFilter } from "@/domains/model-registry/components/RegistryVisibilityFilter";
 import type { ModelRegistry } from "@/domains/model-registry/types";
@@ -92,7 +93,15 @@ export const ModelRegistriesList = () => {
           )}
         />
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        <Table.Column
+          accessorKey="id"
+          id="actions"
+          cell={({ row }) => (
+            <ModelRegistryWriteActions
+              registry={row.original as ModelRegistry}
+            />
+          )}
+        />
       </Table>
     </ListPage>
   );
