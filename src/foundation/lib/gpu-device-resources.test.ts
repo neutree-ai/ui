@@ -432,10 +432,10 @@ describe("gpu device resource helpers", () => {
         matchesSelectedAccelerator: true,
         memoryTotalMiB: 15360,
         quantity: {
-          available: 0,
+          available: 1,
           total: 2,
-          used: 2,
-          percent: 100,
+          used: 1,
+          percent: 50,
         },
         memory: {
           available: 15360,
@@ -535,6 +535,43 @@ describe("gpu device resource helpers", () => {
     ]);
   });
 
+  it("uses group availability for a single product when its breakdown is missing", () => {
+    expect(
+      buildGpuCardResourceRows({
+        allocatable: {
+          cpu: 32,
+          memory: 128,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 2,
+              product_groups: null,
+              products: {
+                "Tesla-T4": { quantity: 2 },
+              },
+            },
+          },
+        },
+        available: {
+          cpu: 24,
+          memory: 96,
+          accelerator_groups: {
+            nvidia_gpu: {
+              quantity: 1.5,
+              product_groups: null,
+              products: null,
+            },
+          },
+        },
+        node_resources: null,
+      })[0].quantity,
+    ).toEqual({
+      available: 1.5,
+      total: 2,
+      used: 0.5,
+      percent: 25,
+    });
+  });
+
   it("builds a generic card row when product breakdown is missing", () => {
     expect(
       buildGpuCardResourceRows({
@@ -590,7 +627,7 @@ describe("gpu device resource helpers", () => {
     ]);
   });
 
-  it("counts only devices with no vGPU allocation as full-card available", () => {
+  it("uses aggregate available quantity for summary rows when cards are partially allocated", () => {
     expect(
       buildGpuCardResourceRows({
         allocatable: {
@@ -617,11 +654,11 @@ describe("gpu device resource helpers", () => {
           memory: 96,
           accelerator_groups: {
             nvidia_gpu: {
-              quantity: 2,
+              quantity: 1.5,
               product_groups: null,
               products: {
                 "Tesla-T4": {
-                  quantity: 2,
+                  quantity: 1.5,
                   virtualization: {
                     memory_mib: 23040,
                     core_units: 150,
@@ -675,14 +712,14 @@ describe("gpu device resource helpers", () => {
         },
       })[0].quantity,
     ).toEqual({
-      available: 1,
+      available: 1.5,
       total: 2,
-      used: 1,
-      percent: 50,
+      used: 0.5,
+      percent: 25,
     });
   });
 
-  it("does not fall back to product availability when device full-card signals are incomplete", () => {
+  it("falls back to aggregate availability when device details are incomplete", () => {
     expect(
       buildGpuCardResourceRows({
         allocatable: {
@@ -735,10 +772,10 @@ describe("gpu device resource helpers", () => {
         },
       })[0].quantity,
     ).toEqual({
-      available: 0,
+      available: 1,
       total: 1,
-      used: 1,
-      percent: 100,
+      used: 0,
+      percent: 0,
     });
   });
 
@@ -846,7 +883,6 @@ describe("gpu device resource helpers", () => {
       used: 90,
       percent: 90,
     });
-    expect(rows[0].quantity.available).toBe(0);
   });
 
   it("builds used-over-total GPU device rows from node resources", () => {
