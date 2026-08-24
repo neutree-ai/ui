@@ -1,4 +1,7 @@
-import { Progress } from "@/components/ui/progress";
+import {
+  MetricBar,
+  type MetricBarSeries,
+} from "@/foundation/components/MetricBar";
 import { formatToDecimal } from "@/foundation/lib/unit";
 
 interface ResourceProgressBarProps {
@@ -8,6 +11,7 @@ interface ResourceProgressBarProps {
   unit?: string;
   compact?: boolean;
   className?: string;
+  series?: MetricBarSeries;
 }
 
 export const ResourceProgressBar = ({
@@ -17,6 +21,7 @@ export const ResourceProgressBar = ({
   unit,
   compact = false,
   className,
+  series = "blue",
 }: ResourceProgressBarProps) => {
   const percent = total > 0 ? Math.round((used / total) * 100) : 0;
 
@@ -31,7 +36,7 @@ export const ResourceProgressBar = ({
             </span>
             <span className="tabular-nums">{percent}%</span>
           </div>
-          <Progress value={percent} className="h-1.5 bg-muted" />
+          <MetricBar value={percent} size="sm" series={series} />
         </div>
       </div>
     );
@@ -46,7 +51,7 @@ export const ResourceProgressBar = ({
           {unit ? ` ${unit}` : ""} ({percent}%)
         </span>
       </div>
-      <Progress value={percent} />
+      <MetricBar value={percent} series={series} />
     </div>
   );
 };

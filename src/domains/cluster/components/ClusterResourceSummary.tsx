@@ -1,9 +1,12 @@
-import { Progress } from "@/components/ui/progress";
 import {
   type AcceleratorProductResourceRow,
   getAcceleratorProductResourceRows,
 } from "@/domains/cluster/lib/accelerator-virtualization";
 import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
+import {
+  MetricBar,
+  type MetricBarSeries,
+} from "@/foundation/components/MetricBar";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 
@@ -14,7 +17,7 @@ type UsageMetricProps = {
   total: number;
   available?: number | null;
   unit?: string;
-  accentClassName?: string;
+  series?: MetricBarSeries;
   allocationLabels?: boolean;
   valueScale?: number;
   valuePrecision?: number;
@@ -46,7 +49,7 @@ const UsageMetric = ({
   total,
   available,
   unit,
-  accentClassName = "[&>div]:bg-primary",
+  series = "blue",
   allocationLabels = false,
   valueScale = 1,
   valuePrecision = 1,
@@ -97,7 +100,7 @@ const UsageMetric = ({
               key={index}
               className={`${
                 index < Math.round(used)
-                  ? "bg-[var(--nt-fill-purple-base)]"
+                  ? "bg-[var(--nt-chart-series-5)]"
                   : "bg-muted"
               } ${index === 0 ? "rounded-l-full" : ""} ${
                 index === Math.round(total) - 1 ? "rounded-r-full" : ""
@@ -106,10 +109,7 @@ const UsageMetric = ({
           ))}
         </div>
       ) : (
-        <Progress
-          value={percent}
-          className={`mt-3 h-1.5 bg-muted ${accentClassName}`}
-        />
+        <MetricBar value={percent} size="sm" series={series} className="mt-3" />
       )}
       <div className="mt-1.5 flex items-baseline justify-between gap-3 text-sm text-muted-foreground">
         <span className="min-w-0 truncate">
@@ -167,6 +167,7 @@ export function ClusterResourceSummary({
           total={allocatable.cpu}
           available={resourceInfo.available?.cpu}
           unit="cores"
+          series="green"
           t={t}
         />
         <UsageMetric
@@ -174,7 +175,7 @@ export function ClusterResourceSummary({
           total={allocatable.memory}
           available={resourceInfo.available?.memory}
           unit="GiB"
-          accentClassName="[&>div]:bg-[var(--nt-fill-positive-base)]"
+          series="purple"
           t={t}
         />
       </div>
@@ -192,7 +193,7 @@ export function ClusterResourceSummary({
               unit="cards"
               allocationLabels
               discrete
-              accentClassName="[&>div]:bg-[var(--nt-fill-purple-base)]"
+              series="amber"
               t={t}
             />
             {totalVram != null && (
@@ -204,7 +205,7 @@ export function ClusterResourceSummary({
                 valueScale={1 / 1024}
                 // VRAM and Core repeat per device in the Nodes table below, so
                 // they hold their series colour across both scales.
-                accentClassName="[&>div]:bg-[var(--nt-chart-series-1)]"
+                series="blue"
                 t={t}
               />
             )}
@@ -214,7 +215,7 @@ export function ClusterResourceSummary({
                 total={totalCore}
                 available={availableCore}
                 valuePrecision={0}
-                accentClassName="[&>div]:bg-[var(--nt-chart-series-2)]"
+                series="cyan"
                 t={t}
               />
             )}

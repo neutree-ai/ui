@@ -14,12 +14,11 @@ import {
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
+import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   GPU_CELL_CLASS,
-  GPU_USAGE_BAR_CLASS,
-  GPU_USAGE_BAR_TRACK_CLASS,
   GPU_USAGE_TEXT_CLASS,
   getGpuCellGridStyle,
 } from "@/foundation/lib/gpu-device-resources";
@@ -87,28 +86,14 @@ const VramBar = ({
 
   return (
     <div className="min-w-0">
-      <div
+      <MetricBar
         data-testid="runtime-vram-bar"
-        className={cn(
-          "relative overflow-visible",
-          GPU_USAGE_BAR_CLASS,
-          hasScale
-            ? GPU_USAGE_BAR_TRACK_CLASS
-            : "border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent",
-        )}
-      >
-        {hasScale ? (
-          <>
-            <div
-              data-testid="runtime-vram-requested-fill"
-              className="absolute inset-y-0 left-0 rounded-full bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]"
-              style={{ width: `${requestedPercent}%` }}
-            />
-            {/* Restore a requested-VRAM boundary marker here when the bar once
-                again includes a separate real-time actual-usage fill. */}
-          </>
-        ) : null}
-      </div>
+        value={requestedPercent}
+        series="neutral"
+        track={hasScale ? "outlined" : "unavailable"}
+      />
+      {/* Restore a requested-VRAM boundary marker here when the bar once again
+          includes a separate real-time actual-usage fill. */}
       <div
         data-testid="runtime-vram-values"
         className={cn(

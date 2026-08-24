@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -25,6 +24,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import {
+  MetricBar,
+  type MetricBarSeries,
+} from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   buildGpuDeviceResourceRows,
@@ -32,9 +35,6 @@ import {
   GPU_CELL_CLASS,
   GPU_CELL_INERT_CLASS,
   GPU_DEVICE_FILTER_ALL,
-  GPU_USAGE_BAR_CLASS,
-  GPU_USAGE_BAR_EMPTY_CLASS,
-  GPU_USAGE_BAR_TRACK_CLASS,
   GPU_USAGE_TEXT_CLASS,
   type GpuDeviceResourceRow,
   getGpuCellGridStyle,
@@ -195,6 +195,7 @@ const ResourceUsageCell = ({
   unit,
   valueScale,
   precision,
+  series,
 }: {
   label: string;
   remainingLabel: string;
@@ -202,13 +203,14 @@ const ResourceUsageCell = ({
   unit?: string;
   valueScale?: number;
   precision?: number;
+  series: MetricBarSeries;
 }) => (
   <div className="min-w-[150px] space-y-1">
     <div className="flex items-center justify-between gap-3 text-xs">
       <span className="text-muted-foreground">{label}</span>
       <span className="tabular-nums">{pool.percent}%</span>
     </div>
-    <Progress value={pool.percent} className="h-2" />
+    <MetricBar value={pool.percent} series={series} />
     <div className="text-xs tabular-nums text-muted-foreground">
       {formatUsage(pool, unit, valueScale, precision)}
     </div>
@@ -228,6 +230,7 @@ const ResourceUsageCard = ({
   unit,
   valueScale,
   precision,
+  series,
 }: {
   label: string;
   remainingLabel: string;
@@ -235,13 +238,14 @@ const ResourceUsageCard = ({
   unit?: string;
   valueScale?: number;
   precision?: number;
+  series: MetricBarSeries;
 }) => (
   <div className="space-y-1 rounded-md bg-muted/30 px-2 py-1.5">
     <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
       <span>{label}</span>
       <span className="tabular-nums">{pool.percent}%</span>
     </div>
-    <Progress value={pool.percent} className="h-1.5" />
+    <MetricBar value={pool.percent} size="sm" series={series} />
     <div className="flex items-center justify-between gap-2 text-xs">
       <span className="text-muted-foreground">{remainingLabel}</span>
       <span className="tabular-nums">
@@ -260,7 +264,7 @@ const GridResourceUsage = ({
   unit,
   valueScale,
   precision,
-  fillClassName = "[&>div]:bg-[var(--nt-chart-series-1)]",
+  series = "blue",
   unavailable = false,
 }: {
   label: string;
@@ -268,7 +272,7 @@ const GridResourceUsage = ({
   unit?: string;
   valueScale?: number;
   precision?: number;
-  fillClassName?: string;
+  series?: MetricBarSeries;
   /** The device is out of service, so its pools carry no measurement. */
   unavailable?: boolean;
 }) => (
@@ -287,13 +291,10 @@ const GridResourceUsage = ({
         {unavailable ? "—" : formatUsage(pool, unit, valueScale, precision)}
       </span>
     </div>
-    <Progress
+    <MetricBar
       value={unavailable ? 0 : pool.percent}
-      className={cn(
-        GPU_USAGE_BAR_CLASS,
-        unavailable ? GPU_USAGE_BAR_EMPTY_CLASS : GPU_USAGE_BAR_TRACK_CLASS,
-        unavailable ? "[&>div]:bg-transparent" : fillClassName,
-      )}
+      series={series}
+      track={unavailable ? "unavailable" : "outlined"}
     />
   </div>
 );
@@ -511,7 +512,11 @@ export function GpuDeviceResourcesView({
               <span>{labels.memoryUsage}</span>
               <span className="tabular-nums">{memorySummary.percent}%</span>
             </div>
-            <Progress value={memorySummary.percent} className="mt-2 h-2" />
+            <MetricBar
+              value={memorySummary.percent}
+              series="blue"
+              className="mt-2"
+            />
             <div className="mt-1 flex items-center justify-between gap-2 text-xs">
               <span className="text-muted-foreground">{labels.remaining}</span>
               <span className="tabular-nums">
@@ -529,7 +534,11 @@ export function GpuDeviceResourcesView({
               <span>{labels.coreUsage}</span>
               <span className="tabular-nums">{coreSummary.percent}%</span>
             </div>
-            <Progress value={coreSummary.percent} className="mt-2 h-2" />
+            <MetricBar
+              value={coreSummary.percent}
+              series="cyan"
+              className="mt-2"
+            />
             <div className="mt-1 flex items-center justify-between gap-2 text-xs">
               <span className="text-muted-foreground">{labels.remaining}</span>
               <span className="tabular-nums">
@@ -664,6 +673,7 @@ export function GpuDeviceResourcesView({
                   valueScale={VRAM_VALUE_SCALE}
                   precision={VRAM_VALUE_PRECISION}
                   unavailable={!row.healthy}
+                  series="blue"
                 />
                 <GridResourceUsage
                   label={labels.coreUsage}
@@ -671,7 +681,7 @@ export function GpuDeviceResourcesView({
                   // Core keeps its own fill: this cell carries two bars, and the
                   // Nodes legend colour-codes which is which. The endpoint cell
                   // has one bar and needs no such pairing.
-                  fillClassName="[&>div]:bg-[var(--nt-chart-series-2)]"
+                  series="cyan"
                   unavailable={!row.healthy}
                 />
               </div>
@@ -763,11 +773,13 @@ export function GpuDeviceResourcesView({
                   unit="GiB"
                   valueScale={VRAM_VALUE_SCALE}
                   precision={VRAM_VALUE_PRECISION}
+                  series="blue"
                 />
                 <ResourceUsageCard
                   label={labels.coreUsage}
                   remainingLabel={labels.remaining}
                   pool={row.core}
+                  series="cyan"
                 />
               </div>
             </div>
@@ -862,6 +874,7 @@ export function GpuDeviceResourcesView({
                       unit="GiB"
                       valueScale={VRAM_VALUE_SCALE}
                       precision={VRAM_VALUE_PRECISION}
+                      series="blue"
                     />
                   </TableCell>
                   <TableCell>
@@ -869,6 +882,7 @@ export function GpuDeviceResourcesView({
                       label={labels.usedSlashTotal}
                       remainingLabel={labels.remaining}
                       pool={row.core}
+                      series="cyan"
                     />
                   </TableCell>
                 </TableRow>

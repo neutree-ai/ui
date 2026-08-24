@@ -111,20 +111,6 @@ export const getGpuCellGridStyle = (columns: number) => ({
 export const GPU_CELL_CLASS =
   "min-w-0 bg-[var(--nt-fill-neutral-opaque-1)] p-2.5";
 
-/** Usage bar geometry. Height is deliberate: below 8px the fill of a
- * lightly-used device reads as a rendering artefact rather than a value. */
-export const GPU_USAGE_BAR_CLASS = "h-2 rounded-full border";
-
-/** Default (non-alerting) usage bar track. */
-export const GPU_USAGE_BAR_TRACK_CLASS =
-  "border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]";
-
-/** Track for a bar with no measurement behind it — an unhealthy card, or a
- * device the backend reported without a resource pool. A dashed, unfilled track
- * reads as "no reading", where a solid empty track reads as "zero used". */
-export const GPU_USAGE_BAR_EMPTY_CLASS =
-  "border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent";
-
 /** Chrome for a cell whose device is out of service. Uses the same disabled
  * fill and tertiary text as the shared form controls, so "inert" looks the same
  * here as everywhere else — and stays legible, unlike a blanket opacity drop. */

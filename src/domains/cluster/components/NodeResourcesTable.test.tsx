@@ -1,12 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { NodeResourcesTable } from "./NodeResourcesTable";
-
-vi.mock("@/components/ui/progress", () => ({
-  Progress: ({ value }: { value: number }) => (
-    <div data-testid="progress" data-value={value} />
-  ),
-}));
 
 const t = (key: string, options?: Record<string, unknown>) => {
   if (key === "clusters.actions.toggleNodeDevices") {
@@ -132,6 +126,9 @@ describe("NodeResourcesTable", () => {
     expect(screen.queryByText("clusters.options.unhealthy")).toBeNull();
     expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
     expect(screen.getByText("50 / 100")).toBeTruthy();
+    const nodeProgressBars = screen.getAllByRole("progressbar").slice(0, 2);
+    expect(nodeProgressBars[0].className).toContain("--nt-chart-series-4");
+    expect(nodeProgressBars[1].className).toContain("--nt-chart-series-3");
     expect(screen.getAllByRole("table")).toHaveLength(1);
     expect(screen.queryByText(/slot/i)).toBeNull();
     expect(screen.queryByText("GPU-2")).toBeNull();

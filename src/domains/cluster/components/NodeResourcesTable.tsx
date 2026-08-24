@@ -191,6 +191,7 @@ export const NodeResourcesTable = ({
                       used={cpu.used}
                       total={nodeStatus.allocatable?.cpu || 0}
                       compact
+                      series="green"
                     />
                   </TableCell>
                   <TableCell className="align-top">
@@ -200,6 +201,7 @@ export const NodeResourcesTable = ({
                       total={nodeStatus.allocatable?.memory || 0}
                       unit="GiB"
                       compact
+                      series="purple"
                     />
                   </TableCell>
                   {acceleratorTypes.map((accType) => {

@@ -212,14 +212,11 @@ describe("EndpointRuntimeResourcesCard", () => {
     const gpuCells = screen.getAllByTestId("runtime-gpu-cell");
     const firstVram = within(gpuCells[0]).getByTestId("runtime-vram-values");
     expect(firstVram.textContent?.replace(/\s/g, "")).toBe("8/80GiB");
-    const requestedFill = within(gpuCells[0]).getByTestId(
-      "runtime-vram-requested-fill",
-    );
-    expect(requestedFill.style.width).toBe("10%");
-    expect(requestedFill.className).toContain("--nt-fill-neutral-trans-7");
-    expect(requestedFill.className).toContain(
-      "dark:bg-[var(--nt-fill-neutral-trans-5)]",
-    );
+    const requestedBar = within(gpuCells[0]).getByTestId("runtime-vram-bar");
+    expect(requestedBar.getAttribute("aria-valuenow")).toBe("10");
+    expect(requestedBar.className).toContain("rounded-full");
+    expect(requestedBar.className).toContain("[&>div]:rounded-none");
+    expect(requestedBar.className).toContain("--nt-fill-neutral-trans-7");
     expect(screen.queryByText("Actual usage")).toBeNull();
     expect(screen.getAllByText("Requested VRAM")).toHaveLength(2);
     expect(screen.getAllByText("Physical VRAM")).toHaveLength(2);
