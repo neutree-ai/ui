@@ -9,7 +9,10 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-primary)] shadow-[var(--nt-effect-dashboard-card-shadow-normal)]",
+      // The `shadow:` hint is load-bearing. A bare `shadow-[var(…)]` is
+      // ambiguous, and Tailwind resolves it as a shadow *colour*, which leaves
+      // `--tw-shadow` unset and every card silently flat.
+      "rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-primary)] shadow-[shadow:var(--nt-effect-dashboard-card-shadow-normal)]",
       className,
     )}
     {...props}

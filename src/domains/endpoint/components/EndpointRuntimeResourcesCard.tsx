@@ -14,7 +14,15 @@ import {
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
+import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import {
+  GPU_CELL_CLASS,
+  GPU_USAGE_BAR_CLASS,
+  GPU_USAGE_BAR_TRACK_CLASS,
+  GPU_USAGE_TEXT_CLASS,
+  getGpuCellGridStyle,
+} from "@/foundation/lib/gpu-device-resources";
 import {
   formatMiBAsGiB,
   formatMiBAsGiBValue,
@@ -94,11 +102,12 @@ const VramBar = ({
       <div
         data-testid="runtime-vram-bar"
         className={cn(
-          "relative h-2 overflow-visible rounded-full border",
+          "relative overflow-visible",
+          GPU_USAGE_BAR_CLASS,
           hasScale
             ? overRequested
               ? "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)]"
-              : "border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]"
+              : GPU_USAGE_BAR_TRACK_CLASS
             : "border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent",
         )}
       >
@@ -108,7 +117,7 @@ const VramBar = ({
               "absolute inset-y-0 left-0 rounded-full",
               overRequested
                 ? "bg-[var(--nt-fill-serious-base)]"
-                : "bg-[var(--nt-fill-outstanding-base)]",
+                : "bg-[var(--nt-chart-series-1)]",
             )}
             style={{ width: `${actualPercent}%` }}
           />
@@ -122,7 +131,10 @@ const VramBar = ({
       </div>
       <div
         data-testid="runtime-vram-values"
-        className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] leading-4 tabular-nums text-muted-foreground"
+        className={cn(
+          "mt-1 flex items-center gap-1 whitespace-nowrap tabular-nums text-muted-foreground",
+          GPU_USAGE_TEXT_CLASS,
+        )}
       >
         <span
           className={cn(
@@ -160,20 +172,25 @@ const Legend = ({
 }: {
   t: (key: string, options?: Record<string, unknown>) => string;
 }) => (
-  <div className="flex items-center gap-3 text-[11px] leading-4 text-muted-foreground">
-    <span className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-sm bg-[var(--nt-fill-outstanding-base)]" />
-      {t("endpoints.fields.actualMemory")}
-    </span>
-    <span className="flex items-center gap-1.5">
-      <span className="h-2.5 w-0.5 rounded-full bg-[var(--nt-text-neutral-super)]" />
-      {t("endpoints.fields.requestedMemory")}
-    </span>
-    <span className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]" />
-      {t("endpoints.fields.physicalMemory")}
-    </span>
-  </div>
+  <ResourceUsageLegend
+    className="ml-0 text-[11px] leading-4"
+    items={[
+      {
+        label: t("endpoints.fields.actualMemory"),
+        markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
+      },
+      {
+        label: t("endpoints.fields.requestedMemory"),
+        markerClassName:
+          "h-2.5 w-0.5 rounded-full bg-[var(--nt-text-neutral-super)]",
+      },
+      {
+        label: t("endpoints.fields.physicalMemory"),
+        markerClassName:
+          "h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]",
+      },
+    ]}
+  />
 );
 
 export function EndpointRuntimeResourcesSummary({
@@ -448,9 +465,7 @@ function Host({
         <div className="mt-3 overflow-x-auto pb-1">
           <div
             className="grid divide-x divide-[var(--nt-stroke-neutral-trans-2)] overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
-            style={{
-              gridTemplateColumns: `repeat(${maxCols}, minmax(172px, 1fr))`,
-            }}
+            style={getGpuCellGridStyle(maxCols)}
           >
             {node.devices.map((device, deviceIndex) => (
               <GpuCell
@@ -490,11 +505,8 @@ function GpuCell({
   const gpuNumber = device.order ?? deviceIndex + 1;
 
   return (
-    <div
-      data-testid="runtime-gpu-cell"
-      className="min-w-0 bg-[var(--nt-fill-neutral-opaque-1)] p-2.5"
-    >
-      <div className="flex min-w-0 items-center justify-between gap-2">
+    <div data-testid="runtime-gpu-cell" className={GPU_CELL_CLASS}>
+      <div className="flex min-w-0 items-center gap-1">
         <span className="whitespace-nowrap text-sm font-semibold leading-5">
           {t("clusters.fields.gpuNumber")} {gpuNumber}
         </span>
@@ -541,7 +553,7 @@ function GpuCell({
         />
       </div>
 
-      <div className="mt-1 text-[11px] leading-4 text-muted-foreground">
+      <div className={cn("mt-1 text-muted-foreground", GPU_USAGE_TEXT_CLASS)}>
         {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
       </div>
     </div>

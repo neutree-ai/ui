@@ -1,6 +1,6 @@
 import { useShow, useTranslation } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
@@ -8,24 +8,12 @@ import {
   ClusterUpgradeProvider,
 } from "@/domains/cluster/components/ClusterUpgradeAction";
 import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
-import {
-  NodeResourcesTable,
-  ProductGroupsBreakdown,
-} from "@/domains/cluster/components/NodeResourcesTable";
-import { ResourceProgressBar } from "@/domains/cluster/components/ResourceProgressBar";
+import { NodeResourcesTable } from "@/domains/cluster/components/NodeResourcesTable";
 import { useClusterMonitorPanels } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
-import {
-  getAcceleratorProductResourceRows,
-  isAcceleratorVirtualizationEnabled,
-} from "@/domains/cluster/lib/accelerator-virtualization";
-import {
-  calcResourceUsage,
-  formatResourceUsageRatio,
-} from "@/domains/cluster/lib/calc-resource-usage";
+import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import { getAcceleratorProductQuantities } from "@/domains/cluster/lib/resource-status";
 import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -34,6 +22,7 @@ import type { Endpoint } from "@/domains/endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
@@ -41,22 +30,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
-import { formatMiBAsGiB, formatMiBAsGiBValue } from "@/foundation/lib/unit";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-
-const formatVramUsageRatio = (
-  allocatable: number | null | undefined,
-  available?: number | null,
-) => {
-  if (allocatable == null) {
-    return "-";
-  }
-
-  const { used } = calcResourceUsage(allocatable, available ?? undefined);
-  const usedGiB = formatMiBAsGiBValue(used);
-  const totalGiB = formatMiBAsGiBValue(allocatable);
-  return usedGiB && totalGiB ? `${usedGiB} / ${totalGiB} GiB` : "-";
-};
 
 const detailTabTriggerClassName =
   "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
@@ -86,10 +60,6 @@ export const ClustersShow = () => {
   const dashboardUrl = getRayDashboardProxy(data?.data);
   const acceleratorVirtualizationEnabled =
     isAcceleratorVirtualizationEnabled(record);
-  const acceleratorProductResourceRows = getAcceleratorProductResourceRows(
-    record.status?.resource_info,
-  );
-
   return (
     <ClusterUpgradeProvider>
       <ShowPage
@@ -170,7 +140,7 @@ export const ClustersShow = () => {
           </TabsList>
           <TabsContent
             value="basic"
-            className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
+            className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
             {record.spec.config.ssh_config && (
               <ShowPage.Section>
@@ -212,329 +182,205 @@ export const ClustersShow = () => {
             )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>
-                <div className="space-y-5">
-                  <div>
-                    <h3 className="mb-3 text-sm font-semibold text-foreground">
-                      {t("endpoints.sections.resourceSummary")}
-                    </h3>
-                    <div className="space-y-4">
-                      {record.status.resource_info.allocatable && (
-                        <ResourceProgressBar
-                          label={t("common.fields.cpu")}
-                          used={
-                            calcResourceUsage(
-                              record.status.resource_info.allocatable.cpu,
-                              record.status.resource_info.available?.cpu,
-                            ).used
-                          }
-                          total={record.status.resource_info.allocatable.cpu}
-                          unit="cores"
-                        />
-                      )}
-
-                      {record.status.resource_info.allocatable && (
-                        <ResourceProgressBar
-                          label={t("common.fields.memory")}
-                          used={
-                            calcResourceUsage(
-                              record.status.resource_info.allocatable.memory,
-                              record.status.resource_info.available?.memory,
-                            ).used
-                          }
-                          total={record.status.resource_info.allocatable.memory}
-                          unit="GiB"
-                        />
-                      )}
-
-                      {record.status.resource_info.allocatable
-                        ?.accelerator_groups &&
-                        Object.entries(
-                          record.status.resource_info.allocatable
-                            .accelerator_groups,
-                        ).map(([type, allocatableGroup]) => {
-                          const availableGroup =
-                            record.status?.resource_info?.available
-                              ?.accelerator_groups?.[type];
-                          const { used } = calcResourceUsage(
-                            allocatableGroup.quantity,
-                            availableGroup?.quantity,
-                          );
-
-                          return (
-                            <div key={type}>
-                              <ResourceProgressBar
-                                label={t(`clusters.acceleratorTypes.${type}`, {
-                                  defaultValue: type,
-                                })}
-                                used={used}
-                                total={allocatableGroup.quantity}
-                              />
-                              <ProductGroupsBreakdown
-                                allocatableGroups={getAcceleratorProductQuantities(
-                                  allocatableGroup,
-                                )}
-                                availableGroups={getAcceleratorProductQuantities(
-                                  availableGroup,
-                                )}
-                              />
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-
-                  {acceleratorProductResourceRows.length > 0 && (
-                    <div className="border-t pt-4">
-                      <h3 className="mb-3 text-sm font-semibold text-foreground">
-                        {t("common.fields.acceleratorProduct")}
-                      </h3>
-                      <div className="overflow-x-auto rounded-md border">
-                        <div className="grid min-w-[880px] grid-cols-6 gap-4 border-b bg-muted/40 px-3 py-2 text-sm font-medium">
-                          <span>{t("common.fields.acceleratorType")}</span>
-                          <span>{t("common.fields.acceleratorProduct")}</span>
-                          <span>{t("clusters.fields.physicalGpu")}</span>
-                          <span>{t("clusters.fields.singleCardVram")}</span>
-                          <span>
-                            {t("clusters.fields.acceleratorMemoryPool")}
-                          </span>
-                          <span>
-                            {t("clusters.fields.acceleratorCorePool")}
-                          </span>
-                        </div>
-                        {acceleratorProductResourceRows.map((row) => (
-                          <div
-                            key={`${row.acceleratorType}:${row.product}`}
-                            className="grid min-w-[880px] grid-cols-6 gap-4 border-b px-3 py-2 text-sm last:border-b-0"
-                          >
-                            <span>
-                              {t(
-                                `clusters.acceleratorTypes.${row.acceleratorType}`,
-                                {
-                                  defaultValue: row.acceleratorType,
-                                },
-                              )}
-                            </span>
-                            <span>{row.product}</span>
-                            <span>
-                              {formatResourceUsageRatio(
-                                row.quantity,
-                                row.availableQuantity,
-                              )}
-                            </span>
-                            <span>
-                              {formatMiBAsGiB(row.memoryTotalMiB) ?? "-"}
-                            </span>
-                            <span>
-                              {formatVramUsageRatio(
-                                row.allocatableMemoryMiB,
-                                row.availableMemoryMiB,
-                              )}
-                            </span>
-                            <span>
-                              {formatResourceUsageRatio(
-                                row.allocatableCoreUnits,
-                                row.availableCoreUnits,
-                              )}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {record.status.resource_info.node_resources &&
-                    Object.keys(record.status.resource_info.node_resources)
-                      .length > 0 && (
-                      <div className="border-t pt-4">
-                        <h3 className="mb-3 text-sm font-semibold text-foreground">
-                          {t("clusters.sections.nodes")}
-                        </h3>
-                        <NodeResourcesTable
-                          nodeResources={
-                            record.status.resource_info.node_resources
-                          }
-                          acceleratorTypes={Object.keys(
-                            record.status.resource_info.allocatable
-                              ?.accelerator_groups || {},
-                          )}
-                          t={t}
-                          framed={false}
-                        />
-                      </div>
-                    )}
-                </div>
+                <ClusterResourceSummary
+                  resourceInfo={record.status.resource_info}
+                  t={t}
+                />
               </ShowPage.Section>
             )}
+            {record.status?.resource_info?.node_resources &&
+              Object.keys(record.status.resource_info.node_resources).length >
+                0 && (
+                <ShowPage.Section
+                  title={t("clusters.sections.nodes")}
+                  actions={
+                    <ResourceUsageLegend
+                      items={[
+                        {
+                          label: t("clusters.fields.vramUsed"),
+                          markerClassName:
+                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
+                        },
+                        {
+                          label: t("clusters.fields.coreUsed"),
+                          markerClassName:
+                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-2)]",
+                        },
+                      ]}
+                    />
+                  }
+                >
+                  <NodeResourcesTable
+                    nodeResources={record.status.resource_info.node_resources}
+                    acceleratorTypes={Object.keys(
+                      record.status.resource_info.allocatable
+                        ?.accelerator_groups || {},
+                    )}
+                    t={t}
+                    framed={false}
+                  />
+                </ShowPage.Section>
+              )}
             {Number(record.spec.config.model_caches?.length) > 0 ? (
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle>
-                    {translate("clusters.fields.modelCache.title")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {(record.spec.config.model_caches || []).map(
-                      (cache, index) => {
-                        const cacheType = getCacheType(cache);
+              <ShowPage.Section
+                title={translate("clusters.fields.modelCache.title")}
+              >
+                <div className="space-y-4">
+                  {(record.spec.config.model_caches || []).map(
+                    (cache, index) => {
+                      const cacheType = getCacheType(cache);
 
-                        return (
-                          <Card key={index}>
-                            <CardHeader className="pb-3">
-                              <CardTitle className="text-sm font-medium flex items-center gap-1">
-                                <span className=" mr-1 py-1 rounded text-xs">
-                                  #{index + 1}
-                                </span>
-                                {cache.name ||
-                                  t(
-                                    `clusters.fields.modelCache.type.${cacheType}`,
-                                  )}
-                              </CardTitle>
-                            </CardHeader>
+                      return (
+                        // Nested surfaces step down a radius level. Repeating
+                        // the card radius inside a card reads as a seam rather
+                        // than as containment.
+                        <div
+                          key={index}
+                          className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)] p-4"
+                        >
+                          <div className="flex items-center gap-1 pb-3 text-sm font-medium leading-none text-[var(--nt-text-neutral-super)]">
+                            <span className="mr-1 text-xs">#{index + 1}</span>
+                            {cache.name ||
+                              t(`clusters.fields.modelCache.type.${cacheType}`)}
+                          </div>
 
-                            <CardContent className="space-y-4">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {cache.name && (
-                                  <ShowPage.Row title={t("common.fields.name")}>
-                                    {cache.name}
-                                  </ShowPage.Row>
-                                )}
-
-                                <ShowPage.Row
-                                  title={t(
-                                    "clusters.fields.modelCache.cacheType",
-                                  )}
-                                >
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                                    {cacheType === "nfs"
-                                      ? t("clusters.options.nfs")
-                                      : cacheType === "pvc"
-                                        ? t("clusters.options.pvc")
-                                        : t("clusters.options.hostPath")}
-                                  </span>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              {cache.name && (
+                                <ShowPage.Row title={t("common.fields.name")}>
+                                  {cache.name}
                                 </ShowPage.Row>
+                              )}
 
-                                {cache.nfs && (
-                                  <>
-                                    <ShowPage.Row
-                                      title={t(
-                                        "clusters.fields.modelCache.nfsServer",
-                                      )}
-                                    >
-                                      <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
-                                        {cache.nfs.server}
-                                      </code>
-                                    </ShowPage.Row>
-
-                                    <ShowPage.Row
-                                      title={t(
-                                        "clusters.fields.modelCache.cachePath",
-                                      )}
-                                    >
-                                      <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
-                                        {cache.nfs.path}
-                                      </code>
-                                    </ShowPage.Row>
-                                  </>
+                              <ShowPage.Row
+                                title={t(
+                                  "clusters.fields.modelCache.cacheType",
                                 )}
+                              >
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                                  {cacheType === "nfs"
+                                    ? t("clusters.options.nfs")
+                                    : cacheType === "pvc"
+                                      ? t("clusters.options.pvc")
+                                      : t("clusters.options.hostPath")}
+                                </span>
+                              </ShowPage.Row>
 
-                                {cache.host_path && (
+                              {cache.nfs && (
+                                <>
+                                  <ShowPage.Row
+                                    title={t(
+                                      "clusters.fields.modelCache.nfsServer",
+                                    )}
+                                  >
+                                    <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
+                                      {cache.nfs.server}
+                                    </code>
+                                  </ShowPage.Row>
+
                                   <ShowPage.Row
                                     title={t(
                                       "clusters.fields.modelCache.cachePath",
                                     )}
                                   >
                                     <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
-                                      {cache.host_path.path}
+                                      {cache.nfs.path}
                                     </code>
                                   </ShowPage.Row>
-                                )}
+                                </>
+                              )}
 
-                                {cache.pvc && (
-                                  <>
+                              {cache.host_path && (
+                                <ShowPage.Row
+                                  title={t(
+                                    "clusters.fields.modelCache.cachePath",
+                                  )}
+                                >
+                                  <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
+                                    {cache.host_path.path}
+                                  </code>
+                                </ShowPage.Row>
+                              )}
+
+                              {cache.pvc && (
+                                <>
+                                  <ShowPage.Row
+                                    title={t(
+                                      "clusters.fields.modelCache.storage",
+                                    )}
+                                  >
+                                    {cache.pvc.resources?.requests?.storage ??
+                                      ""}
+                                  </ShowPage.Row>
+
+                                  {cache.pvc.storageClassName && (
                                     <ShowPage.Row
                                       title={t(
-                                        "clusters.fields.modelCache.storage",
+                                        "clusters.fields.modelCache.storageClassName",
                                       )}
                                     >
-                                      {cache.pvc.resources?.requests?.storage ??
-                                        ""}
+                                      {cache.pvc.storageClassName}
                                     </ShowPage.Row>
-
-                                    {cache.pvc.storageClassName && (
-                                      <ShowPage.Row
-                                        title={t(
-                                          "clusters.fields.modelCache.storageClassName",
-                                        )}
-                                      >
-                                        {cache.pvc.storageClassName}
-                                      </ShowPage.Row>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      },
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>{translate("endpoints.title")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table
-                  refineCoreProps={{
-                    resource: "endpoints",
-                    filters: {
-                      permanent: [
-                        {
-                          field: "spec->cluster",
-                          operator: "eq",
-                          value: JSON.stringify(record.metadata.name),
-                        },
-                      ],
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
                     },
-                  }}
-                >
-                  {metadataColumns.name}
-                  <Table.Column
-                    header={t("common.fields.status")}
-                    accessorKey="status"
-                    id="status"
-                    enableHiding
-                    cell={({ getValue }) => (
-                      <EndpointStatus
-                        {...(getValue() as unknown as BaseStatus)}
-                      />
-                    )}
-                  />
-                  <Table.Column
-                    header={t("common.fields.model")}
-                    accessorKey="status"
-                    id="model"
-                    enableHiding
-                    cell={({ row }) => (
-                      <EndpointModel model={row.original.spec.model} />
-                    )}
-                  />
-                  <Table.Column
-                    header={t("common.fields.engine")}
-                    accessorKey="spec.engine.engine"
-                    id="engine"
-                    enableHiding
-                    cell={({ row }) => (
-                      <EndpointEngine {...(row.original as Endpoint)} />
-                    )}
-                  />
-                  {metadataColumns.creation_timestamp}
-                </Table>
-              </CardContent>
-            </Card>
+                  )}
+                </div>
+              </ShowPage.Section>
+            ) : null}
+            <ShowPage.Section title={translate("endpoints.title")}>
+              <Table
+                refineCoreProps={{
+                  resource: "endpoints",
+                  filters: {
+                    permanent: [
+                      {
+                        field: "spec->cluster",
+                        operator: "eq",
+                        value: JSON.stringify(record.metadata.name),
+                      },
+                    ],
+                  },
+                }}
+              >
+                {metadataColumns.name}
+                <Table.Column
+                  header={t("common.fields.status")}
+                  accessorKey="status"
+                  id="status"
+                  enableHiding
+                  cell={({ getValue }) => (
+                    <EndpointStatus
+                      {...(getValue() as unknown as BaseStatus)}
+                    />
+                  )}
+                />
+                <Table.Column
+                  header={t("common.fields.model")}
+                  accessorKey="status"
+                  id="model"
+                  enableHiding
+                  cell={({ row }) => (
+                    <EndpointModel model={row.original.spec.model} />
+                  )}
+                />
+                <Table.Column
+                  header={t("common.fields.engine")}
+                  accessorKey="spec.engine.engine"
+                  id="engine"
+                  enableHiding
+                  cell={({ row }) => (
+                    <EndpointEngine {...(row.original as Endpoint)} />
+                  )}
+                />
+                {metadataColumns.creation_timestamp}
+              </Table>
+            </ShowPage.Section>
           </TabsContent>
           {showMonitorTab && (
             <TabsContent

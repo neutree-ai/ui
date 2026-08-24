@@ -214,6 +214,36 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(firstVram.textContent?.replace(/\s/g, "")).toBe("5.5/8/80GiB");
   });
 
+  it("keeps the GPU row scrollable instead of clipping cards in a narrow container", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        resources={{
+          summary: null,
+          replicas: [
+            {
+              instance_id: "endpoint-abc",
+              replica_id: "endpoint-abc-single-node",
+              node_id: "gpu-node-01",
+              devices: [
+                t4,
+                { ...t4, uuid: "GPU-t4-02", order: 2 },
+                { ...t4, uuid: "GPU-t4-03", order: 3 },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    // The rounded frame around the cells clips its own overflow, so the grid
+    // has to claim the width its tracks demand. Without that the scroller
+    // around it sees nothing to scroll and the last cards are simply cut off.
+    const grid = screen.getAllByTestId("runtime-gpu-cell")[0]
+      .parentElement as HTMLElement;
+    expect(grid.style.minWidth).toBe("516px");
+    expect(grid.parentElement?.className).toContain("overflow-x-auto");
+  });
+
   it("falls back to dashes when actual and physical VRAM are unavailable", () => {
     render(
       <EndpointRuntimeResourcesCard

@@ -31,7 +31,7 @@ export const ResourceProgressBar = ({
             </span>
             <span className="tabular-nums">{percent}%</span>
           </div>
-          <Progress value={percent} className="h-2" />
+          <Progress value={percent} className="h-1.5 bg-muted" />
         </div>
       </div>
     );

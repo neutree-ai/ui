@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Server } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,32 +21,36 @@ import { ResourceProgressBar } from "./ResourceProgressBar";
 interface ProductGroupsBreakdownProps {
   allocatableGroups?: Record<string, number> | null;
   availableGroups?: Record<string, number> | null;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
-export const ProductGroupsBreakdown = ({
+const ProductGroupsBreakdown = ({
   allocatableGroups,
   availableGroups,
+  t,
 }: ProductGroupsBreakdownProps) => {
   if (!allocatableGroups || Object.keys(allocatableGroups).length === 0) {
     return null;
   }
 
+  const entries = Object.entries(allocatableGroups);
+  const usedByProduct = entries.map(([product, value]) => ({
+    product,
+    total: value,
+    used: Math.max(value - (availableGroups?.[product] || 0), 0),
+  }));
+
   return (
-    <div className="mt-2 ml-4 space-y-1">
-      {Object.entries(allocatableGroups).map(([product, total]) => {
-        const productUsed = total - (availableGroups?.[product] || 0);
-        return (
-          <div
-            key={product}
-            className="text-xs text-muted-foreground flex items-center justify-between"
-          >
-            <span>{product}</span>
-            <span>
-              {formatToDecimal(productUsed)} / {formatToDecimal(total)}
-            </span>
-          </div>
-        );
-      })}
+    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+      {usedByProduct.map((item) => (
+        <span key={item.product}>
+          {t("clusters.fields.cardUsageSummary", {
+            product: item.product,
+            used: formatToDecimal(item.used, 0),
+            total: formatToDecimal(item.total, 0),
+          })}
+        </span>
+      ))}
     </div>
   );
 };
@@ -66,8 +70,38 @@ export const NodeResourcesTable = ({
   framed = true,
   className,
 }: NodeResourcesTableProps) => {
+  const gpuGridColumns = Math.min(
+    4,
+    Math.max(
+      1,
+      ...Object.values(nodeResources).map((node) => node.devices?.length ?? 0),
+    ),
+  );
+  const sortedNodeEntries = Object.entries(nodeResources).sort(
+    ([, left], [, right]) => {
+      const leftHasGpu =
+        (left.devices?.length ?? 0) > 0 ||
+        Object.values(left.allocatable?.accelerator_groups ?? {}).some(
+          (group) => group.quantity > 0,
+        );
+      const rightHasGpu =
+        (right.devices?.length ?? 0) > 0 ||
+        Object.values(right.allocatable?.accelerator_groups ?? {}).some(
+          (group) => group.quantity > 0,
+        );
+      return Number(rightHasGpu) - Number(leftHasGpu);
+    },
+  );
+
   const [expandedNodeNames, setExpandedNodeNames] = useState<Set<string>>(
-    () => new Set(),
+    () =>
+      new Set(
+        sortedNodeEntries
+          .filter(([, node]) =>
+            (node.devices ?? []).some((device) => device.health),
+          )
+          .map(([name]) => name),
+      ),
   );
 
   const toggleNodeDevices = (nodeName: string) => {
@@ -107,7 +141,7 @@ export const NodeResourcesTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {Object.entries(nodeResources).map(([nodeName, nodeStatus]) => {
+          {sortedNodeEntries.map(([nodeName, nodeStatus]) => {
             const hasDevices = (nodeStatus.devices?.length ?? 0) > 0;
             const isExpanded = expandedNodeNames.has(nodeName);
             const cpu = calcResourceUsage(
@@ -145,6 +179,9 @@ export const NodeResourcesTable = ({
                       ) : (
                         <span className="h-7 w-7 shrink-0" />
                       )}
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] text-muted-foreground">
+                        <Server aria-hidden="true" className="h-4 w-4" />
+                      </span>
                       <span className="min-w-0 break-all pt-1">{nodeName}</span>
                     </div>
                   </TableCell>
@@ -171,23 +208,12 @@ export const NodeResourcesTable = ({
                     const availableAccGroup =
                       nodeStatus.available?.accelerator_groups?.[accType];
                     const accAllocatable = accGroup?.quantity || 0;
-                    const acc = calcResourceUsage(
-                      accAllocatable,
-                      availableAccGroup?.quantity,
-                    );
-
                     return (
-                      <TableCell key={accType} className="align-top">
+                      <TableCell key={accType} className="align-middle">
                         {accAllocatable === 0 ? (
                           <span className="text-muted-foreground">-</span>
                         ) : (
                           <div>
-                            <ResourceProgressBar
-                              label=""
-                              used={acc.used}
-                              total={accAllocatable}
-                              compact
-                            />
                             <ProductGroupsBreakdown
                               allocatableGroups={getAcceleratorProductQuantities(
                                 accGroup,
@@ -195,6 +221,7 @@ export const NodeResourcesTable = ({
                               availableGroups={getAcceleratorProductQuantities(
                                 availableAccGroup,
                               )}
+                              t={t}
                             />
                           </div>
                         )}
@@ -204,11 +231,8 @@ export const NodeResourcesTable = ({
                 </TableRow>
                 {isExpanded && hasDevices && (
                   <TableRow>
-                    <TableCell
-                      colSpan={3 + acceleratorTypes.length}
-                      className="bg-muted/30"
-                    >
-                      <div className="py-3 pl-9">
+                    <TableCell colSpan={3 + acceleratorTypes.length}>
+                      <div className="pl-9">
                         <GpuDeviceResourcesView
                           nodeResources={{ [nodeName]: nodeStatus }}
                           labels={{
@@ -253,7 +277,9 @@ export const NodeResourcesTable = ({
                           showFilters={false}
                           showSummary={false}
                           showNodeColumn={false}
-                          className="bg-background"
+                          showHeader={false}
+                          variant="grid"
+                          gridColumns={gpuGridColumns}
                         />
                       </div>
                     </TableCell>

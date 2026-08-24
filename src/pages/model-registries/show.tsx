@@ -91,7 +91,7 @@ export const ModelRegistriesShow = () => {
         </TabsList>
         <TabsContent
           value="basic"
-          className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
+          className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
         >
           <MetadataDisclosure metadata={record.metadata} />
           <ShowPage.Section title={t("common.sections.configuration")}>
@@ -111,7 +111,7 @@ export const ModelRegistriesShow = () => {
         </TabsContent>
         <TabsContent
           value="models"
-          className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
+          className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
         >
           <RegistryModelsTable
             workspace={workspace}

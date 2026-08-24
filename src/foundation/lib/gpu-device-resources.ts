@@ -79,6 +79,61 @@ type PhysicalCardUsageOptions = {
 
 export const GPU_DEVICE_FILTER_ALL = "__all__";
 
+/** Narrowest a GPU cell can get before its VRAM bar and labels stop being
+ * readable. Below this the row scrolls horizontally rather than compressing. */
+const GPU_GRID_MIN_COLUMN_WIDTH = 172;
+
+/** Style for a one-row-per-node grid of GPU cells.
+ *
+ * `minWidth` is not redundant with the track floor. A grid box sizes to its
+ * container, so tracks held at `minmax(172px, …)` overflow that box once the
+ * container is narrower than `columns * 172` — and the rounded frame clips them,
+ * which hides cards outright instead of letting an ancestor scroll to them.
+ * Growing the box with its tracks is what turns the overflow into scrolling, so
+ * the two numbers have to be derived together.
+ *
+ * `content-box` opts this one element out of the global border-box default so
+ * the frame's own border sits outside that width. Under border-box the border
+ * eats into it and the last cell loses its right edge to the same clip.
+ */
+export const getGpuCellGridStyle = (columns: number) => ({
+  gridTemplateColumns: `repeat(${columns}, minmax(${GPU_GRID_MIN_COLUMN_WIDTH}px, 1fr))`,
+  minWidth: `${columns * GPU_GRID_MIN_COLUMN_WIDTH}px`,
+  boxSizing: "content-box" as const,
+});
+
+/* A GPU cell is one card rendered by two callers: the cluster device grid and
+ * the endpoint runtime grid. They show different numbers, but they are the same
+ * card, and users compare them across pages. Holding the chrome here is what
+ * keeps one of them from drifting two pixels away from the other. */
+
+/** Cell surface and padding. */
+export const GPU_CELL_CLASS =
+  "min-w-0 bg-[var(--nt-fill-neutral-opaque-1)] p-2.5";
+
+/** Usage bar geometry. Height is deliberate: below 8px the fill of a
+ * lightly-used device reads as a rendering artefact rather than a value. */
+export const GPU_USAGE_BAR_CLASS = "h-2 rounded-full border";
+
+/** Default (non-alerting) usage bar track. */
+export const GPU_USAGE_BAR_TRACK_CLASS =
+  "border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]";
+
+/** Track for a bar with no measurement behind it — an unhealthy card, or a
+ * device the backend reported without a resource pool. A dashed, unfilled track
+ * reads as "no reading", where a solid empty track reads as "zero used". */
+export const GPU_USAGE_BAR_EMPTY_CLASS =
+  "border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent";
+
+/** Chrome for a cell whose device is out of service. Uses the same disabled
+ * fill and tertiary text as the shared form controls, so "inert" looks the same
+ * here as everywhere else — and stays legible, unlike a blanket opacity drop. */
+export const GPU_CELL_INERT_CLASS =
+  "bg-[var(--nt-fill-neutral-trans-3)] text-[var(--nt-text-neutral-tertiary)]";
+
+/** Supporting text under or beside a usage bar. */
+export const GPU_USAGE_TEXT_CLASS = "text-[11px] leading-4";
+
 const MIB_PER_GIB = 1024;
 const DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION = 1;
 

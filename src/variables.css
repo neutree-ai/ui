@@ -113,10 +113,18 @@
 		--nt-font-compact: 400 13px / 20px var(--nt-font-family-sans);
 		--nt-font-caption: 400 12px / 18px var(--nt-font-family-sans);
 		--nt-font-meta: 600 11px / 16px var(--nt-font-family-sans);
+		/* Chart series. Steps from the SmartX Style Guide chart palette
+		   (chart-blue-blue-5, chart-cyan-cyan-5). Categorical order is fixed and
+		   never cycled. Data series read from these; status tokens
+		   (positive/notice/serious) stay reserved for state, so a healthy metric is
+		   never painted in a warning colour. Validated for CVD separation and
+		   contrast against the bar track in both themes. */
+		--nt-chart-series-1: #008cff;
+		--nt-chart-series-2: #1aacb4;
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;
-		--nt-radius-card: 10px;
+		--nt-radius-card: 6px;
 		--nt-motion-fast: 140ms ease;
 		--nt-motion-medium: 220ms ease;
 
@@ -285,10 +293,18 @@
 		--nt-outline-active-focus: 0px 0px 0px 4px rgba(38, 141, 255, 0.18);
 		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(240, 104, 95, 0.18);
 		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(234, 162, 58, 0.18);
+		/* Chart series. Steps from the SmartX Style Guide chart palette
+		   (chart-blue-blue-5, chart-cyan-cyan-5). Categorical order is fixed and
+		   never cycled. Data series read from these; status tokens
+		   (positive/notice/serious) stay reserved for state, so a healthy metric is
+		   never painted in a warning colour. Validated for CVD separation and
+		   contrast against the bar track in both themes. */
+		--nt-chart-series-1: #008cff;
+		--nt-chart-series-2: #1aacb4;
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;
-		--nt-radius-card: 10px;
+		--nt-radius-card: 6px;
 		--nt-motion-fast: 140ms ease;
 		--nt-motion-medium: 220ms ease;
 	}

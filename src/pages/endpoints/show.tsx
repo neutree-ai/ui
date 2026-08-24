@@ -46,6 +46,19 @@ const RerankPlayground = lazy(
   () => import("@/domains/endpoint/components/RerankPlayground"),
 );
 
+/** Suspense fallback for a whole tab panel.
+ *
+ * The Loader is an inline SVG, so its own `mx-auto` does nothing: dropped
+ * straight into a Suspense fallback it lands in the top-left corner of the
+ * panel, on top of whatever the tab renders next. The panel owns the space, so
+ * the centring belongs to a wrapper here.
+ */
+const TabLoader = () => (
+  <div className="flex h-full items-center justify-center">
+    <Loader className="w-16 text-muted-foreground" />
+  </div>
+);
+
 const RayDashboardTab = ({
   record,
   cluster,
@@ -260,9 +273,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         </TabsList>
         <TabsContent
           value="basic"
-          className="mt-0 flex-1 space-y-4 overflow-auto pt-4"
+          className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             <ShowPage.Section
               title={t("endpoints.sections.runtimeAllocation")}
               actions={
@@ -357,7 +370,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           )}
         </TabsContent>
         <TabsContent value="logs" className="mt-0 flex-1 overflow-hidden pt-4">
-          <Suspense fallback={<Loader width="20" height="20" />}>
+          <Suspense fallback={<TabLoader />}>
             <EndpointLogTabs endpoint={record} />
           </Suspense>
         </TabsContent>
@@ -366,9 +379,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="playground"
             className="mt-0 flex-1 overflow-hidden"
           >
-            <Suspense
-              fallback={<Loader className="w-16 text-muted-foreground" />}
-            >
+            <Suspense fallback={<TabLoader />}>
               {playground.mode === "embedding" ? (
                 <EmbeddingPlayground endpoint={record} />
               ) : playground.mode === "rerank" ? (

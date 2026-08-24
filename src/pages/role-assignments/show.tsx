@@ -51,7 +51,7 @@ export const RoleAssignmentsShow = () => {
           </span>
         }
       />
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-3">
         <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section title={t("role_assignments.fields.policy")}>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">

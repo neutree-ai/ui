@@ -7,8 +7,8 @@ import { GpuDeviceResourcesView } from "./GpuDeviceResourcesView";
 const copyMock = vi.fn();
 
 vi.mock("@/components/ui/progress", () => ({
-  Progress: ({ value }: { value: number }) => (
-    <div data-testid="progress" data-value={value} />
+  Progress: ({ value, className }: { value: number; className?: string }) => (
+    <div data-testid="progress" data-value={value} className={className} />
   ),
 }));
 
@@ -366,6 +366,107 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.getByText("Usable")).toBeTruthy();
     const usageRow = screen.getByTestId("gpu-device-resource-usage-row");
     expect(usageRow.className).toContain("grid-cols-2");
+  });
+
+  it("renders an unhealthy card as out of service rather than idle", () => {
+    render(
+      <GpuDeviceResourcesView
+        nodeResources={{
+          "node-a": {
+            ...nodeResources["node-a"],
+            devices: [
+              {
+                uuid: "GPU-dead",
+                product: "Tesla-T4",
+                health: false,
+                // How the backend reports an unhealthy device: both pools zeroed.
+                allocatable: { memory_mib: 0, core_units: 0 },
+                available: { memory_mib: 0, core_units: 0 },
+              },
+            ],
+          },
+        }}
+        labels={labels}
+        variant="grid"
+        showHeader={false}
+        showFilters={false}
+        showSummary={false}
+        showNodeColumn={false}
+      />,
+    );
+
+    expect(screen.getByText("Unhealthy")).toBeTruthy();
+
+    // "0 / 0" would read as an idle card with capacity to spare. There is no
+    // reading at all, so both metrics show a dash.
+    expect(screen.queryByText("0.0 / 0.0 GiB")).toBeNull();
+    expect(screen.queryByText("0 / 0")).toBeNull();
+    expect(screen.getAllByText("\u2014")).toHaveLength(2);
+
+    // Bars carry no fill and use the dashed no-reading track.
+    const bars = screen.getAllByTestId("progress");
+    expect(bars).toHaveLength(2);
+    for (const bar of bars) {
+      expect(bar.getAttribute("data-value")).toBe("0");
+      expect(bar.className).toContain("border-dashed");
+      expect(bar.className).toContain("[&>div]:bg-transparent");
+    }
+
+    // The cell itself is dimmed by tokens, not by a blanket opacity that would
+    // also wash out the Unhealthy badge.
+    const cell = screen.getByText("GPU 1").closest("div")
+      ?.parentElement as HTMLElement;
+    expect(cell.className).toContain("var(--nt-fill-neutral-trans-3)");
+    expect(cell.className).not.toContain("opacity-");
+  });
+
+  it("renders a compact device grid for node details", () => {
+    render(
+      <GpuDeviceResourcesView
+        nodeResources={nodeResources}
+        labels={labels}
+        variant="grid"
+        showHeader={false}
+        showFilters={false}
+        showSummary={false}
+        showNodeColumn={false}
+      />,
+    );
+
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.getByText("GPU 1")).toBeTruthy();
+    expect(screen.getByText("Healthy")).toBeTruthy();
+    expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
+    expect(screen.getByText("50 / 100")).toBeTruthy();
+    expect(screen.getAllByTestId("progress")).toHaveLength(2);
+    expect(screen.queryByText("Tesla-T4")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "GPU 1 Copy UUID" }));
+    expect(copyMock).toHaveBeenCalledWith(
+      "GPU-11111111-2222-3333-4444-555555555555",
+      expect.any(Object),
+    );
+  });
+
+  it("pads a node device grid to the shared topology column count", () => {
+    render(
+      <GpuDeviceResourcesView
+        nodeResources={nodeResources}
+        labels={labels}
+        variant="grid"
+        gridColumns={4}
+        showHeader={false}
+        showFilters={false}
+        showSummary={false}
+        showNodeColumn={false}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("gpu-device-grid").style.gridTemplateColumns,
+    ).toBe("repeat(4, minmax(172px, 1fr))");
+    expect(screen.getAllByTestId("gpu-device-grid-empty-cell")).toHaveLength(3);
   });
 
   it("uses free and allocated labels when no request fit context is provided", () => {
