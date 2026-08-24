@@ -43,7 +43,10 @@ export function useApiKeyProjectGroups(params: GroupParams) {
     errorNotification: false,
   });
 
-  const total = useCustom<{ count: number }>({
+  // The count RPC answers with a bare scalar, which does not satisfy
+  // useCustom's BaseRecord constraint, so the response is read back through
+  // `unknown` rather than described as an object it never is.
+  const total = useCustom({
     url: "/rpc/count_api_key_project_group_api_keys",
     method: "post",
     config: { payload: filters },
@@ -59,7 +62,9 @@ export function useApiKeyProjectGroups(params: GroupParams) {
 
   return {
     data: failure ? [] : (groups.data?.data ?? []),
-    totalApiKeys: failure ? 0 : Number(total.data?.data) || 0,
+    totalApiKeys: failure
+      ? 0
+      : Number(total.data?.data as unknown as number) || 0,
     isLoading: groups.isLoading || total.isLoading,
     error: failure ? failure.message : "",
     refetch,
