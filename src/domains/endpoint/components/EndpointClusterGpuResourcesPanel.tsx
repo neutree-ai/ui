@@ -3,6 +3,11 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
@@ -502,6 +507,24 @@ function GpuDeviceCard({
       ? "text-emerald-600"
       : "text-amber-600"
     : "text-destructive";
+  const statusIndicator = (
+    <span
+      className={cn(
+        "flex h-5 w-5 shrink-0 items-center justify-center",
+        statusClassName,
+      )}
+      role="img"
+      aria-label={statusText}
+      title={row.healthy ? statusText : undefined}
+      tabIndex={row.healthy ? undefined : 0}
+    >
+      {row.healthy && usable ? (
+        <CircleCheck className="h-3.5 w-3.5 text-current" />
+      ) : (
+        <CircleAlert className="h-3.5 w-3.5 text-current" />
+      )}
+    </span>
+  );
 
   return (
     <div
@@ -539,21 +562,14 @@ function GpuDeviceCard({
             {row.product || "-"}
           </Badge>
         </div>
-        <span
-          className={cn(
-            "flex h-5 w-5 shrink-0 items-center justify-center",
-            statusClassName,
-          )}
-          role="img"
-          aria-label={statusText}
-          title={statusText}
-        >
-          {row.healthy && usable ? (
-            <CircleCheck className="h-3.5 w-3.5 text-current" />
-          ) : (
-            <CircleAlert className="h-3.5 w-3.5 text-current" />
-          )}
-        </span>
+        {row.healthy ? (
+          statusIndicator
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>{statusIndicator}</TooltipTrigger>
+            <TooltipContent>{statusText}</TooltipContent>
+          </Tooltip>
+        )}
       </div>
       <div className="grid gap-2">
         <GpuMeterRow

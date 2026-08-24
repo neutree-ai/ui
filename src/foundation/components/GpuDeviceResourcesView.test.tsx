@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import { GpuDeviceResourcesView } from "./GpuDeviceResourcesView";
 
@@ -180,6 +181,39 @@ describe("GpuDeviceResourcesView", () => {
     expect(
       screen.getByRole("img", { name: "Healthy" }).closest("td")?.className,
     ).toContain("text-center");
+  });
+
+  it("shows an unhealthy device tooltip in the cluster detail table", async () => {
+    const nodeA = nodeResources["node-a"];
+    if (!nodeA) throw new Error("node fixture is incomplete");
+
+    render(
+      <TooltipProvider delayDuration={0}>
+        <GpuDeviceResourcesView
+          nodeResources={{
+            "node-a": {
+              ...nodeA,
+              devices: nodeA.devices?.map((device) => ({
+                ...device,
+                health: false,
+              })),
+            },
+          }}
+          labels={labels}
+        />
+      </TooltipProvider>,
+    );
+
+    const unhealthyIndicator = screen.getByRole("img", {
+      name: "Unhealthy",
+    });
+    expect(unhealthyIndicator.getAttribute("title")).toBeNull();
+    expect(unhealthyIndicator.getAttribute("tabindex")).toBe("0");
+    expect(unhealthyIndicator.className).not.toContain("cursor-");
+
+    fireEvent.focus(unhealthyIndicator);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe("Unhealthy");
   });
 
   it("does not append a VRAM unit when summary remaining memory is unknown", () => {
