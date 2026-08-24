@@ -188,6 +188,243 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
   });
 
+  it("uses fractional card capacity when checking physical GPU requests", () => {
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        request={{
+          allocationMode: "fractional",
+          gpuPerReplica: 0.75,
+          cpuPerReplica: 1,
+          memoryPerReplica: 1,
+          requestedFullGpuCards: 0.75,
+          fullGpuCardCapacity: 1,
+          fullGpuCapacityExceeded: false,
+          requestedVirtualCards: 0,
+          totalVirtualCardCapacity: 0,
+          requestedVgpuMemoryMiB: 0,
+          availableVgpuMemoryMiB: 0,
+          requestedVgpuCoreUnits: 0,
+          availableVgpuCoreUnits: 0,
+          vgpuCapacityExceeded: false,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 1"),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Usable")).toHaveLength(1);
+    expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
+  });
+
+  it("uses core units instead of VRAM for fractional card usability", () => {
+    const nodeA = resourceInfo.node_resources?.["node-a"];
+    if (!nodeA) throw new Error("node fixture is incomplete");
+
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={{
+          ...resourceInfo,
+          node_resources: {
+            "node-a": {
+              ...nodeA,
+              devices: nodeA.devices?.map((device) =>
+                device.uuid === "GPU-partial"
+                  ? {
+                      ...device,
+                      available: { memory_mib: 1, core_units: 75 },
+                    }
+                  : device,
+              ),
+            },
+          },
+        }}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        request={{
+          allocationMode: "fractional",
+          gpuPerReplica: 0.75,
+          cpuPerReplica: 1,
+          memoryPerReplica: 1,
+          requestedFullGpuCards: 0.75,
+          fullGpuCardCapacity: 2,
+          fullGpuCapacityExceeded: false,
+          requestedVirtualCards: 0,
+          totalVirtualCardCapacity: 0,
+          requestedVgpuMemoryMiB: 0,
+          availableVgpuMemoryMiB: 0,
+          requestedVgpuCoreUnits: 0,
+          availableVgpuCoreUnits: 0,
+          vgpuCapacityExceeded: false,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 2"),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Usable")).toHaveLength(2);
+  });
+
+  it("marks GPU devices unusable when the same node cannot fit the request", () => {
+    const nodeA = resourceInfo.node_resources?.["node-a"];
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={{
+          ...resourceInfo,
+          node_resources: {
+            "node-a": {
+              allocatable: nodeA?.allocatable ?? null,
+              available: {
+                accelerator_groups:
+                  nodeA?.available?.accelerator_groups ?? null,
+                cpu: 1,
+                memory: 4,
+              },
+              devices: nodeA?.devices ?? [],
+            },
+          },
+        }}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={true}
+        request={{
+          allocationMode: "vgpu",
+          cpuPerReplica: 2,
+          memoryPerReplica: 8,
+          requestedFullGpuCards: 0,
+          fullGpuCardCapacity: 0,
+          fullGpuCapacityExceeded: false,
+          requestedVirtualCards: 1,
+          totalVirtualCardCapacity: 1,
+          requestedVgpuMemoryMiB: 4096,
+          availableVgpuMemoryMiB: 15360,
+          requestedVgpuCoreUnits: 50,
+          availableVgpuCoreUnits: 100,
+          memoryMiBPerCard: 4096,
+          coreUnitsPerCard: 50,
+          vgpuCapacityExceeded: false,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 0"),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Allocated")).toHaveLength(2);
+  });
+
+  it("shows original resources while using restored resources for edit scheduling", () => {
+    const rawNode = resourceInfo.node_resources?.["node-a"];
+    if (!rawNode?.available) throw new Error("node fixture is incomplete");
+
+    const schedulingNodeResources = {
+      "node-a": {
+        ...rawNode,
+        devices: rawNode.devices?.map((device) =>
+          device.uuid === "GPU-partial"
+            ? { ...device, available: device.allocatable }
+            : device,
+        ),
+      },
+    };
+
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        schedulingNodeResources={schedulingNodeResources}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={true}
+        request={{
+          allocationMode: "full",
+          gpuPerReplica: 1,
+          cpuPerReplica: 1,
+          memoryPerReplica: 1,
+          requestedFullGpuCards: 1,
+          fullGpuCardCapacity: 2,
+          fullGpuCapacityExceeded: false,
+          requestedVirtualCards: 0,
+          totalVirtualCardCapacity: 0,
+          requestedVgpuMemoryMiB: 0,
+          availableVgpuMemoryMiB: 0,
+          requestedVgpuCoreUnits: 0,
+          availableVgpuCoreUnits: 0,
+          vgpuCapacityExceeded: false,
+        }}
+        t={t}
+      />,
+    );
+
+    const nodeMetrics = screen.getAllByTestId("endpoint-node-resource-pill");
+    const memoryCard = findByExactLabel(nodeMetrics, "Memory Usage");
+    expect(
+      within(memoryCard)
+        .getAllByTestId("endpoint-node-resource-pill-value")
+        .map((value) => value.textContent),
+    ).toEqual(["30.0", "7.5", "22.5"]);
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 2"),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Usable")).toHaveLength(2);
+  });
+
+  it("uses restored device capacity for fractional edit scheduling", () => {
+    const rawNode = resourceInfo.node_resources?.["node-a"];
+    if (!rawNode?.available) throw new Error("node fixture is incomplete");
+
+    const schedulingNodeResources = {
+      "node-a": {
+        ...rawNode,
+        devices: rawNode.devices?.map((device) =>
+          device.uuid === "GPU-partial"
+            ? { ...device, available: device.allocatable }
+            : device,
+        ),
+      },
+    };
+
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        schedulingNodeResources={schedulingNodeResources}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        request={{
+          allocationMode: "fractional",
+          gpuPerReplica: 0.75,
+          cpuPerReplica: 1,
+          memoryPerReplica: 1,
+          requestedFullGpuCards: 0.75,
+          fullGpuCardCapacity: 2,
+          fullGpuCapacityExceeded: false,
+          requestedVirtualCards: 0,
+          totalVirtualCardCapacity: 0,
+          requestedVgpuMemoryMiB: 0,
+          availableVgpuMemoryMiB: 0,
+          requestedVgpuCoreUnits: 0,
+          availableVgpuCoreUnits: 0,
+          vgpuCapacityExceeded: false,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 2"),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Usable")).toHaveLength(2);
+  });
+
   it("falls back to compact node summaries when devices are missing", () => {
     render(
       <EndpointClusterGpuResourcesPanel

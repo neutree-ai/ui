@@ -273,6 +273,28 @@ const matchesSelectedAccelerator = (
 const toFiniteNumber = (value: number | null | undefined) =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
+export const getFractionalGpuCoreRequirement = (
+  gpuPerReplica: number | null | undefined,
+  totalCoreUnits: number | null | undefined,
+) => {
+  const normalizedGpuPerReplica = toFiniteNumber(gpuPerReplica);
+  const normalizedTotalCoreUnits = toFiniteNumber(totalCoreUnits);
+  if (
+    normalizedGpuPerReplica == null ||
+    normalizedTotalCoreUnits == null ||
+    normalizedGpuPerReplica <= 0 ||
+    normalizedGpuPerReplica >= 1 ||
+    normalizedTotalCoreUnits <= 0
+  ) {
+    return null;
+  }
+
+  const requiredCoreUnits = normalizedGpuPerReplica * normalizedTotalCoreUnits;
+  return Number.isFinite(requiredCoreUnits) && requiredCoreUnits > 0
+    ? requiredCoreUnits
+    : null;
+};
+
 const capResourceValue = (value: number, total: number | null | undefined) => {
   const normalizedTotal = toFiniteNumber(total);
   return normalizedTotal == null ? value : Math.min(value, normalizedTotal);
@@ -285,21 +307,49 @@ const getAllocationNodeId = (
   >[number],
 ) => device.node_id || replica.node_id || "";
 
+const getReplicaNodeId = (
+  replica: NonNullable<EndpointResourceStatus["replicas"]>[number],
+) => {
+  if (replica.node_id) return replica.node_id;
+
+  const deviceNodeIds = new Set(
+    (replica.devices ?? [])
+      .map((device) => device.node_id)
+      .filter((nodeId): nodeId is string => Boolean(nodeId)),
+  );
+
+  return deviceNodeIds.size === 1 ? [...deviceNodeIds][0] : null;
+};
+
+type EndpointResourceAddBackOptions = {
+  cpuPerReplica?: number | null;
+  memoryPerReplica?: number | null;
+};
+
 export function addBackEndpointDeviceAllocationsToNodeResources(
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,
   endpointResources: EndpointResourceStatus | null | undefined,
   selectedAccelerator?: SelectedAccelerator | null,
+  options?: EndpointResourceAddBackOptions,
 ): Record<string, NodeResourceStatus> | null | undefined {
   if (!nodeResources || !endpointResources?.replicas?.length) {
     return nodeResources;
   }
+
+  const replicas = endpointResources.replicas;
+  const cpuPerReplica = Math.max(0, Number(options?.cpuPerReplica || 0));
+  const memoryPerReplica = Math.max(0, Number(options?.memoryPerReplica || 0));
+  const replicaNodeIds = replicas.map(getReplicaNodeId);
+  // GPU-only replicas can request zero CPU and memory; node topology alone
+  // determines whether restoring their node-level allocation is safe.
+  const canRestoreNodeResources = replicaNodeIds.every(Boolean);
 
   const allocationsByDevice = new Map<
     string,
     { memoryMiB: number; coreUnits: number }
   >();
 
-  for (const replica of endpointResources.replicas) {
+  for (const replica of replicas) {
     for (const allocation of replica.devices ?? []) {
       const nodeId = getAllocationNodeId(replica, allocation);
       if (!nodeId || !allocation.uuid) continue;
@@ -324,56 +374,95 @@ export function addBackEndpointDeviceAllocationsToNodeResources(
     }
   }
 
-  if (allocationsByDevice.size === 0) {
-    return nodeResources;
-  }
-
   return Object.fromEntries(
     Object.entries(nodeResources).map(([nodeName, nodeStatus]) => {
-      const nextDevices = nodeStatus.devices?.map((device) => {
-        const allocation = allocationsByDevice.get(
-          `${nodeName}\u0000${device.uuid}`,
-        );
-        if (!allocation) return device;
+      let changed = false;
+      const nextDevices =
+        allocationsByDevice.size === 0
+          ? nodeStatus.devices
+          : nodeStatus.devices?.map((device) => {
+              const allocation = allocationsByDevice.get(
+                `${nodeName}\u0000${device.uuid}`,
+              );
+              if (!allocation) return device;
 
-        const acceleratorType = getProductAcceleratorType(
-          nodeStatus.allocatable,
-          device.product,
-        );
-        if (
-          !matchesSelectedAccelerator(
-            { acceleratorType, product: device.product },
-            selectedAccelerator,
-          )
-        ) {
-          return device;
+              const acceleratorType = getProductAcceleratorType(
+                nodeStatus.allocatable,
+                device.product,
+              );
+              if (
+                !matchesSelectedAccelerator(
+                  { acceleratorType, product: device.product },
+                  selectedAccelerator,
+                )
+              ) {
+                return device;
+              }
+
+              const currentMemoryMiB = toFiniteNumber(
+                device.available?.memory_mib,
+              );
+              const currentCoreUnits = toFiniteNumber(
+                device.available?.core_units,
+              );
+              if (currentMemoryMiB == null || currentCoreUnits == null) {
+                return device;
+              }
+              changed = true;
+
+              return {
+                ...device,
+                available: {
+                  memory_mib: capResourceValue(
+                    currentMemoryMiB + allocation.memoryMiB,
+                    device.allocatable?.memory_mib,
+                  ),
+                  core_units: capResourceValue(
+                    currentCoreUnits + allocation.coreUnits,
+                    device.allocatable?.core_units,
+                  ),
+                },
+              };
+            });
+
+      let nextAvailable = nodeStatus.available;
+      if (canRestoreNodeResources && nodeStatus.available) {
+        const replicaCountOnNode = replicaNodeIds.filter(
+          (replicaNodeId) => replicaNodeId === nodeName,
+        ).length;
+        if (replicaCountOnNode > 0) {
+          const currentCpu = toFiniteNumber(nodeStatus.available.cpu);
+          const currentMemory = toFiniteNumber(nodeStatus.available.memory);
+          const nextCpu =
+            currentCpu == null
+              ? currentCpu
+              : capResourceValue(
+                  currentCpu + cpuPerReplica * replicaCountOnNode,
+                  nodeStatus.allocatable?.cpu,
+                );
+          const nextMemory =
+            currentMemory == null
+              ? currentMemory
+              : capResourceValue(
+                  currentMemory + memoryPerReplica * replicaCountOnNode,
+                  nodeStatus.allocatable?.memory,
+                );
+          if (nextCpu !== currentCpu || nextMemory !== currentMemory) {
+            changed = true;
+            nextAvailable = {
+              ...nodeStatus.available,
+              cpu: nextCpu ?? nodeStatus.available.cpu,
+              memory: nextMemory ?? nodeStatus.available.memory,
+            };
+          }
         }
-
-        const currentMemoryMiB =
-          toFiniteNumber(device.available?.memory_mib) ?? 0;
-        const currentCoreUnits =
-          toFiniteNumber(device.available?.core_units) ?? 0;
-
-        return {
-          ...device,
-          available: {
-            memory_mib: capResourceValue(
-              currentMemoryMiB + allocation.memoryMiB,
-              device.allocatable?.memory_mib,
-            ),
-            core_units: capResourceValue(
-              currentCoreUnits + allocation.coreUnits,
-              device.allocatable?.core_units,
-            ),
-          },
-        };
-      });
+      }
 
       return [
         nodeName,
-        nextDevices === nodeStatus.devices
-          ? nodeStatus
-          : { ...nodeStatus, devices: nextDevices },
+        changed
+          ? { ...nodeStatus, available: nextAvailable, devices: nextDevices }
+          : nodeStatus,
       ];
     }),
   );
@@ -383,32 +472,21 @@ const getDeviceFractionalGpuSlotCapacity = (
   device: DeviceResource,
   requestedPerReplica: number,
 ) => {
-  const availableMemoryMiB = toFiniteNumber(device.available?.memory_mib);
-  const allocatableMemoryMiB = toFiniteNumber(device.allocatable?.memory_mib);
   const availableCoreUnits = toFiniteNumber(device.available?.core_units);
-  const allocatableCoreUnits = toFiniteNumber(device.allocatable?.core_units);
+  const requiredCoreUnits = getFractionalGpuCoreRequirement(
+    requestedPerReplica,
+    device.allocatable?.core_units,
+  );
 
   if (
     !device.health ||
-    availableMemoryMiB == null ||
-    allocatableMemoryMiB == null ||
     availableCoreUnits == null ||
-    allocatableCoreUnits == null ||
-    allocatableMemoryMiB <= 0 ||
-    allocatableCoreUnits <= 0 ||
-    requestedPerReplica <= 0
+    requiredCoreUnits == null
   ) {
     return 0;
   }
 
-  const memorySlots = Math.floor(
-    availableMemoryMiB / (allocatableMemoryMiB * requestedPerReplica),
-  );
-  const coreSlots = Math.floor(
-    availableCoreUnits / (allocatableCoreUnits * requestedPerReplica),
-  );
-
-  return Math.max(0, Math.min(memorySlots, coreSlots));
+  return Math.max(0, Math.floor(availableCoreUnits / requiredCoreUnits));
 };
 
 const canDeviceSatisfyVgpuRequest = (
@@ -498,6 +576,987 @@ export function calculatePhysicalCardUsageForRequest(
     requested,
     total: available,
     used: Math.min(requested, available),
+  };
+}
+
+type GpuPlacementAllocationMode = "full" | "fractional" | "vgpu";
+type GpuPlacementStatus = "pass" | "fail" | "unknown";
+
+type GpuPlacementCapacity = {
+  canAllocate: boolean | null;
+  canAllocateCpu: boolean | null;
+  canAllocateMemory: boolean | null;
+  cpuPlacement: GpuPlacementStatus;
+  gpu: GpuPlacementStatus;
+  cpu: GpuPlacementStatus;
+  memory: GpuPlacementStatus;
+  memoryPlacement: GpuPlacementStatus;
+  overall: GpuPlacementStatus;
+  matchingDeviceCount: number;
+  maxCardsPerReplica: number;
+  maxFullGpuCardsPerNode: number;
+  maxGpuPlaceableReplicas: number | null;
+  maxPlaceableReplicas: number | null;
+  requestedCardsPerReplica: number;
+  satisfyingDeviceCount: number;
+  totalAvailableCoreUnits: number;
+  totalAvailableCpu: number;
+  totalAvailableMemory: number;
+  totalAvailableMemoryMiB: number;
+};
+
+type GpuPlacementOptions = {
+  allocationMode: GpuPlacementAllocationMode;
+  coreUnitsPerCard?: number | null;
+  cpuPerReplica?: number | null;
+  gpuPerReplica: number;
+  memoryMiBPerCard?: number | null;
+  memoryPerReplica?: number | null;
+  replicaCount?: number | null;
+  selectedAccelerator?: SelectedAccelerator | null;
+};
+
+type PlacementDeviceState = {
+  availableCoreUnits: number;
+  availableMemoryMiB: number;
+  id: string;
+  nodeName: string;
+  totalCoreUnits: number;
+  totalMemoryMiB: number;
+  uuid: string;
+};
+
+type PlacementNodeState = {
+  availableCpu: number | null;
+  availableMemory: number | null;
+  devices: PlacementDeviceState[];
+  hasUnknownDeviceSignals: boolean;
+  nodeName: string;
+  topologyKnown: boolean;
+};
+
+type PlacementSnapshot = {
+  hasUnknownCpuSignals: boolean;
+  hasUnknownMemorySignals: boolean;
+  hasUnknownTopology: boolean;
+  matchingDeviceCount: number;
+  nodes: PlacementNodeState[];
+  satisfyingDeviceCount: number;
+  totalAvailableCoreUnits: number;
+  totalAvailableCpu: number;
+  totalAvailableMemory: number;
+  totalAvailableMemoryMiB: number;
+};
+
+type PlacementRequirement = {
+  coreUnits: number;
+  memoryMiB: number;
+};
+
+type PlacementSearchResult = {
+  capacity: number;
+  indeterminate: boolean;
+};
+
+type MinimumPhysicalCardSearchResult = {
+  indeterminate: boolean;
+  physicalCardCount: number | null;
+};
+
+type PlacementSearchContext = {
+  exhausted: boolean;
+  memo: Map<string, boolean>;
+  states: number;
+};
+
+const PLACEMENT_SEARCH_STATE_LIMIT = 20_000;
+const PLACEMENT_REPLICA_LIMIT = 256;
+
+const placementStatusToBoolean = (
+  status: GpuPlacementStatus,
+): boolean | null => {
+  if (status === "pass") return true;
+  if (status === "fail") return false;
+  return null;
+};
+
+const getRequestedCardsPerReplica = (
+  allocationMode: GpuPlacementAllocationMode,
+  gpuPerReplica: number,
+) => {
+  if (allocationMode === "fractional") {
+    return gpuPerReplica > 0 && gpuPerReplica < 1 ? 1 : 0;
+  }
+
+  return Number.isInteger(gpuPerReplica) && gpuPerReplica > 0
+    ? gpuPerReplica
+    : 0;
+};
+
+const getPlacementRequirement = (
+  device: PlacementDeviceState,
+  options: GpuPlacementOptions,
+): PlacementRequirement | null => {
+  if (options.allocationMode === "fractional") {
+    const coreUnits = getFractionalGpuCoreRequirement(
+      options.gpuPerReplica,
+      device.totalCoreUnits,
+    );
+    if (coreUnits == null) return null;
+
+    return {
+      memoryMiB: 0,
+      coreUnits,
+    };
+  }
+
+  if (options.allocationMode === "full") {
+    return {
+      memoryMiB: device.totalMemoryMiB,
+      coreUnits: device.totalCoreUnits,
+    };
+  }
+
+  const memoryMiB = toFiniteNumber(options.memoryMiBPerCard) ?? 0;
+  const coreUnits = Math.max(0, toFiniteNumber(options.coreUnitsPerCard) ?? 0);
+  return memoryMiB > 0 ? { memoryMiB, coreUnits } : null;
+};
+
+const canPlacementDeviceSatisfy = (
+  device: PlacementDeviceState,
+  requirement: PlacementRequirement | null,
+) => {
+  if (!requirement) return false;
+
+  const requiresMemory = requirement.memoryMiB > 0;
+  const requiresCore = requirement.coreUnits > 0;
+  if (!requiresMemory && !requiresCore) return false;
+  if (requiresMemory && device.availableMemoryMiB < requirement.memoryMiB) {
+    return false;
+  }
+
+  return !requiresCore || device.availableCoreUnits >= requirement.coreUnits;
+};
+
+const consumePlacementDevice = (
+  device: PlacementDeviceState,
+  requirement: PlacementRequirement,
+): PlacementDeviceState => ({
+  ...device,
+  availableMemoryMiB: device.availableMemoryMiB - requirement.memoryMiB,
+  availableCoreUnits:
+    requirement.coreUnits > 0
+      ? device.availableCoreUnits - requirement.coreUnits
+      : device.availableCoreUnits,
+});
+
+const normalizePlacementReplicaCount = (value: number | null | undefined) =>
+  Math.max(1, Math.floor(Number(value || 1)));
+
+const placementNumberKey = (value: number | null) =>
+  value == null ? "?" : String(Math.round(value * 1_000_000) / 1_000_000);
+
+const placementStateKey = (
+  remainingReplicas: number,
+  availableCpu: number | null,
+  availableMemory: number | null,
+  devices: PlacementDeviceState[],
+) =>
+  [
+    remainingReplicas,
+    placementNumberKey(availableCpu),
+    placementNumberKey(availableMemory),
+    ...devices
+      .map(
+        (device) =>
+          `${device.id}:${placementNumberKey(device.availableMemoryMiB)}:${placementNumberKey(device.availableCoreUnits)}`,
+      )
+      .sort(),
+  ].join("|");
+
+const enumeratePlacementCombinations = (
+  candidates: PlacementDeviceState[],
+  count: number,
+  visit: (devices: PlacementDeviceState[]) => boolean,
+) => {
+  const selected: PlacementDeviceState[] = [];
+  const selectedUuids = new Set<string>();
+
+  const walk = (startIndex: number): boolean => {
+    if (selected.length === count) return visit(selected);
+
+    const remaining = count - selected.length;
+    for (
+      let index = startIndex;
+      index <= candidates.length - remaining;
+      index += 1
+    ) {
+      const candidate = candidates[index];
+      if (selectedUuids.has(candidate.uuid)) continue;
+
+      selected.push(candidate);
+      selectedUuids.add(candidate.uuid);
+      if (walk(index + 1)) return true;
+      selected.pop();
+      selectedUuids.delete(candidate.uuid);
+    }
+
+    return false;
+  };
+
+  return walk(0);
+};
+
+const canPlaceReplicasOnNode = (
+  node: PlacementNodeState,
+  options: GpuPlacementOptions,
+  cardsPerReplica: number,
+  replicaCount: number,
+): { feasible: boolean; indeterminate: boolean } => {
+  const cpuPerReplica = Math.max(0, Number(options.cpuPerReplica || 0));
+  const memoryPerReplica = Math.max(0, Number(options.memoryPerReplica || 0));
+  const requirementFor = (device: PlacementDeviceState) =>
+    getPlacementRequirement(device, options);
+  const context: PlacementSearchContext = {
+    exhausted: false,
+    memo: new Map(),
+    states: 0,
+  };
+
+  const search = (
+    remainingReplicas: number,
+    availableCpu: number | null,
+    availableMemory: number | null,
+    devices: PlacementDeviceState[],
+  ): boolean => {
+    if (remainingReplicas === 0) return true;
+    if (context.exhausted) return false;
+
+    const stateKey = placementStateKey(
+      remainingReplicas,
+      availableCpu,
+      availableMemory,
+      devices,
+    );
+    const cached = context.memo.get(stateKey);
+    if (cached !== undefined) return cached;
+
+    context.states += 1;
+    if (context.states > PLACEMENT_SEARCH_STATE_LIMIT) {
+      context.exhausted = true;
+      return false;
+    }
+
+    if (
+      (cpuPerReplica > 0 &&
+        (availableCpu == null || availableCpu < cpuPerReplica)) ||
+      (memoryPerReplica > 0 &&
+        (availableMemory == null || availableMemory < memoryPerReplica))
+    ) {
+      context.memo.set(stateKey, false);
+      return false;
+    }
+
+    const candidates = devices
+      .filter((device) =>
+        canPlacementDeviceSatisfy(device, requirementFor(device)),
+      )
+      .sort(
+        (first, second) =>
+          second.availableMemoryMiB - first.availableMemoryMiB ||
+          second.availableCoreUnits - first.availableCoreUnits ||
+          first.id.localeCompare(second.id),
+      );
+    if (candidates.length < cardsPerReplica) {
+      context.memo.set(stateKey, false);
+      return false;
+    }
+
+    const nextCpu = availableCpu == null ? null : availableCpu - cpuPerReplica;
+    const nextMemory =
+      availableMemory == null ? null : availableMemory - memoryPerReplica;
+    const found = enumeratePlacementCombinations(
+      candidates,
+      cardsPerReplica,
+      (selectedDevices) => {
+        const selectedIds = new Set(selectedDevices.map((device) => device.id));
+        const nextDevices = devices.map((device) => {
+          if (!selectedIds.has(device.id)) return device;
+          const requirement = requirementFor(device);
+          return requirement
+            ? consumePlacementDevice(device, requirement)
+            : device;
+        });
+
+        return search(remainingReplicas - 1, nextCpu, nextMemory, nextDevices);
+      },
+    );
+    context.memo.set(stateKey, found);
+    return found;
+  };
+
+  const feasible = search(
+    replicaCount,
+    node.availableCpu,
+    node.availableMemory,
+    node.devices,
+  );
+  return { feasible, indeterminate: context.exhausted };
+};
+
+const getNodeMinimumPhysicalCardUsage = (
+  node: PlacementNodeState,
+  options: GpuPlacementOptions,
+  cardsPerReplica: number,
+  replicaCount: number,
+): MinimumPhysicalCardSearchResult => {
+  if (replicaCount === 0) {
+    return { indeterminate: false, physicalCardCount: 0 };
+  }
+
+  const cpuPerReplica = Math.max(0, Number(options.cpuPerReplica || 0));
+  const memoryPerReplica = Math.max(0, Number(options.memoryPerReplica || 0));
+  const requirementFor = (device: PlacementDeviceState) =>
+    getPlacementRequirement(device, options);
+  const context: PlacementSearchContext = {
+    exhausted: false,
+    memo: new Map(),
+    states: 0,
+  };
+  let minimumPhysicalCardCount = Number.POSITIVE_INFINITY;
+
+  const search = (
+    remainingReplicas: number,
+    availableCpu: number | null,
+    availableMemory: number | null,
+    devices: PlacementDeviceState[],
+    usedDeviceIds: ReadonlySet<string>,
+  ): void => {
+    if (usedDeviceIds.size >= minimumPhysicalCardCount || context.exhausted) {
+      return;
+    }
+    if (remainingReplicas === 0) {
+      minimumPhysicalCardCount = usedDeviceIds.size;
+      return;
+    }
+
+    const usedDeviceKey = Array.from(usedDeviceIds).sort().join(",");
+    const stateKey = `${placementStateKey(
+      remainingReplicas,
+      availableCpu,
+      availableMemory,
+      devices,
+    )}|${usedDeviceKey}`;
+    if (context.memo.has(stateKey)) return;
+    context.memo.set(stateKey, true);
+
+    context.states += 1;
+    if (context.states > PLACEMENT_SEARCH_STATE_LIMIT) {
+      context.exhausted = true;
+      return;
+    }
+
+    if (
+      (cpuPerReplica > 0 &&
+        (availableCpu == null || availableCpu < cpuPerReplica)) ||
+      (memoryPerReplica > 0 &&
+        (availableMemory == null || availableMemory < memoryPerReplica))
+    ) {
+      return;
+    }
+
+    const candidates = devices
+      .filter((device) =>
+        canPlacementDeviceSatisfy(device, requirementFor(device)),
+      )
+      .sort(
+        (first, second) =>
+          Number(usedDeviceIds.has(second.id)) -
+            Number(usedDeviceIds.has(first.id)) ||
+          second.availableMemoryMiB - first.availableMemoryMiB ||
+          second.availableCoreUnits - first.availableCoreUnits ||
+          first.id.localeCompare(second.id),
+      );
+    if (candidates.length < cardsPerReplica) return;
+
+    const nextCpu = availableCpu == null ? null : availableCpu - cpuPerReplica;
+    const nextMemory =
+      availableMemory == null ? null : availableMemory - memoryPerReplica;
+    enumeratePlacementCombinations(
+      candidates,
+      cardsPerReplica,
+      (selectedDevices) => {
+        const selectedIds = new Set(selectedDevices.map((device) => device.id));
+        const nextDevices = devices.map((device) => {
+          if (!selectedIds.has(device.id)) return device;
+          const requirement = requirementFor(device);
+          return requirement
+            ? consumePlacementDevice(device, requirement)
+            : device;
+        });
+        const nextUsedDeviceIds = new Set(usedDeviceIds);
+        for (const device of selectedDevices) {
+          nextUsedDeviceIds.add(device.id);
+        }
+
+        search(
+          remainingReplicas - 1,
+          nextCpu,
+          nextMemory,
+          nextDevices,
+          nextUsedDeviceIds,
+        );
+        return false;
+      },
+    );
+  };
+
+  search(
+    replicaCount,
+    node.availableCpu,
+    node.availableMemory,
+    node.devices,
+    new Set(),
+  );
+  return {
+    indeterminate: context.exhausted,
+    physicalCardCount: Number.isFinite(minimumPhysicalCardCount)
+      ? minimumPhysicalCardCount
+      : null,
+  };
+};
+
+const getNodeReplicaUpperBound = (
+  node: PlacementNodeState,
+  options: GpuPlacementOptions,
+  cardsPerReplica: number,
+) => {
+  if (cardsPerReplica <= 0) return 0;
+
+  let deviceReplicaBound = 0;
+  for (const device of node.devices) {
+    const requirement = getPlacementRequirement(device, options);
+    if (!requirement || !canPlacementDeviceSatisfy(device, requirement)) {
+      continue;
+    }
+
+    const memoryBound =
+      requirement.memoryMiB > 0
+        ? Math.floor(
+            Math.max(0, device.availableMemoryMiB) / requirement.memoryMiB,
+          )
+        : Number.POSITIVE_INFINITY;
+    const coreBound =
+      requirement.coreUnits > 0
+        ? Math.floor(
+            Math.max(0, device.availableCoreUnits) / requirement.coreUnits,
+          )
+        : Number.POSITIVE_INFINITY;
+    deviceReplicaBound += Math.min(memoryBound, coreBound);
+  }
+
+  let upperBound = Math.floor(deviceReplicaBound / cardsPerReplica);
+  const cpuPerReplica = Math.max(0, Number(options.cpuPerReplica || 0));
+  if (cpuPerReplica > 0 && node.availableCpu != null) {
+    upperBound = Math.min(
+      upperBound,
+      Math.floor(Math.max(0, node.availableCpu) / cpuPerReplica),
+    );
+  }
+  const memoryPerReplica = Math.max(0, Number(options.memoryPerReplica || 0));
+  if (memoryPerReplica > 0 && node.availableMemory != null) {
+    upperBound = Math.min(
+      upperBound,
+      Math.floor(Math.max(0, node.availableMemory) / memoryPerReplica),
+    );
+  }
+
+  return Math.max(0, Math.min(upperBound, PLACEMENT_REPLICA_LIMIT));
+};
+
+const getNodeMaxReplicaCapacity = (
+  node: PlacementNodeState,
+  options: GpuPlacementOptions,
+  cardsPerReplica: number,
+): PlacementSearchResult => {
+  const upperBound = getNodeReplicaUpperBound(node, options, cardsPerReplica);
+  if (upperBound <= 0) return { capacity: 0, indeterminate: false };
+
+  for (let replicaCount = 1; replicaCount <= upperBound; replicaCount += 1) {
+    const result = canPlaceReplicasOnNode(
+      node,
+      options,
+      cardsPerReplica,
+      replicaCount,
+    );
+    if (result.indeterminate) {
+      return { capacity: Math.max(0, replicaCount - 1), indeterminate: true };
+    }
+    if (!result.feasible) {
+      return { capacity: replicaCount - 1, indeterminate: false };
+    }
+  }
+
+  return {
+    capacity: upperBound,
+    indeterminate: upperBound === PLACEMENT_REPLICA_LIMIT,
+  };
+};
+
+const buildPlacementSnapshot = (
+  nodeResources: Record<string, NodeResourceStatus>,
+  options: GpuPlacementOptions,
+): PlacementSnapshot => {
+  const nodes: PlacementNodeState[] = [];
+  let matchingDeviceCount = 0;
+  let satisfyingDeviceCount = 0;
+  let hasUnknownTopology = false;
+  let hasUnknownCpuSignals = false;
+  let hasUnknownMemorySignals = false;
+  let totalAvailableCpu = 0;
+  let totalAvailableMemory = 0;
+  let totalAvailableMemoryMiB = 0;
+  let totalAvailableCoreUnits = 0;
+
+  for (const [nodeName, nodeStatus] of Object.entries(nodeResources)) {
+    const availableCpu = toFiniteNumber(nodeStatus.available?.cpu);
+    const availableMemory = toFiniteNumber(nodeStatus.available?.memory);
+    if (availableCpu == null) hasUnknownCpuSignals = true;
+    if (availableMemory == null) hasUnknownMemorySignals = true;
+    if (availableCpu != null) totalAvailableCpu += Math.max(0, availableCpu);
+    if (availableMemory != null)
+      totalAvailableMemory += Math.max(0, availableMemory);
+
+    const topologyKnown = Array.isArray(nodeStatus.devices);
+    if (!topologyKnown) hasUnknownTopology = true;
+
+    const devices: PlacementDeviceState[] = [];
+    let hasUnknownDeviceSignals = !topologyKnown;
+    for (const [deviceIndex, device] of (nodeStatus.devices ?? []).entries()) {
+      if (!device.health) continue;
+
+      const acceleratorType = getProductAcceleratorType(
+        nodeStatus.allocatable,
+        device.product,
+      );
+      if (
+        !matchesSelectedAccelerator(
+          { acceleratorType, product: device.product },
+          options.selectedAccelerator,
+        )
+      ) {
+        continue;
+      }
+
+      matchingDeviceCount += 1;
+      const totalMemoryMiB = toFiniteNumber(device.allocatable?.memory_mib);
+      const availableMemoryMiB = toFiniteNumber(device.available?.memory_mib);
+      const totalCoreUnits = toFiniteNumber(device.allocatable?.core_units);
+      const availableCoreUnits = toFiniteNumber(device.available?.core_units);
+      const memoryRequired = options.allocationMode !== "fractional";
+      const coreRequired =
+        options.allocationMode !== "vgpu" ||
+        (toFiniteNumber(options.coreUnitsPerCard) ?? 0) > 0;
+      if (
+        (memoryRequired &&
+          (totalMemoryMiB == null || availableMemoryMiB == null)) ||
+        (coreRequired && (totalCoreUnits == null || availableCoreUnits == null))
+      ) {
+        hasUnknownDeviceSignals = true;
+        continue;
+      }
+
+      const placementDevice: PlacementDeviceState = {
+        availableCoreUnits: Math.max(0, availableCoreUnits ?? 0),
+        availableMemoryMiB: Math.max(0, availableMemoryMiB ?? 0),
+        id: `${nodeName}:${device.uuid}:${deviceIndex}`,
+        nodeName,
+        totalCoreUnits: Math.max(0, totalCoreUnits ?? 0),
+        totalMemoryMiB: Math.max(0, totalMemoryMiB ?? 0),
+        uuid: device.uuid || `${nodeName}:${deviceIndex}`,
+      };
+      devices.push(placementDevice);
+      totalAvailableMemoryMiB += placementDevice.availableMemoryMiB;
+      totalAvailableCoreUnits += placementDevice.availableCoreUnits;
+      if (
+        canPlacementDeviceSatisfy(
+          placementDevice,
+          getPlacementRequirement(placementDevice, options),
+        )
+      ) {
+        satisfyingDeviceCount += 1;
+      }
+    }
+
+    nodes.push({
+      availableCpu,
+      availableMemory,
+      devices,
+      hasUnknownDeviceSignals,
+      nodeName,
+      topologyKnown,
+    });
+  }
+
+  return {
+    hasUnknownCpuSignals,
+    hasUnknownMemorySignals,
+    hasUnknownTopology,
+    matchingDeviceCount,
+    nodes,
+    satisfyingDeviceCount,
+    totalAvailableCoreUnits,
+    totalAvailableCpu,
+    totalAvailableMemory,
+    totalAvailableMemoryMiB,
+  };
+};
+
+export function calculateVgpuPhysicalCardUsage(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  options: GpuPlacementOptions,
+): number | null {
+  if (
+    options.allocationMode !== "vgpu" ||
+    !nodeResources ||
+    !options.selectedAccelerator?.product
+  ) {
+    return null;
+  }
+
+  const replicaCount = normalizePlacementReplicaCount(options.replicaCount);
+  const cardsPerReplica = getRequestedCardsPerReplica(
+    options.allocationMode,
+    Number(options.gpuPerReplica || 0),
+  );
+  if (cardsPerReplica <= 0 || replicaCount > PLACEMENT_REPLICA_LIMIT) {
+    return null;
+  }
+
+  const snapshot = buildPlacementSnapshot(nodeResources, options);
+  const requiresCpu = Number(options.cpuPerReplica || 0) > 0;
+  const requiresMemory = Number(options.memoryPerReplica || 0) > 0;
+  if (
+    snapshot.hasUnknownTopology ||
+    snapshot.nodes.some(
+      (node) =>
+        node.hasUnknownDeviceSignals ||
+        (requiresCpu && node.availableCpu == null) ||
+        (requiresMemory && node.availableMemory == null),
+    )
+  ) {
+    return null;
+  }
+
+  let bestByReplicaCount = Array.from(
+    { length: replicaCount + 1 },
+    (_, index) => (index === 0 ? 0 : Number.POSITIVE_INFINITY),
+  );
+  for (const node of snapshot.nodes) {
+    const nodeUsageByReplicaCount = [0];
+    for (let count = 1; count <= replicaCount; count += 1) {
+      const result = getNodeMinimumPhysicalCardUsage(
+        node,
+        options,
+        cardsPerReplica,
+        count,
+      );
+      if (result.indeterminate) return null;
+      nodeUsageByReplicaCount.push(
+        result.physicalCardCount ?? Number.POSITIVE_INFINITY,
+      );
+    }
+
+    const nextBest = Array.from(
+      { length: replicaCount + 1 },
+      () => Number.POSITIVE_INFINITY,
+    );
+    for (let placed = 0; placed <= replicaCount; placed += 1) {
+      if (!Number.isFinite(bestByReplicaCount[placed])) continue;
+      for (let onNode = 0; placed + onNode <= replicaCount; onNode += 1) {
+        const nodeUsage = nodeUsageByReplicaCount[onNode];
+        if (!Number.isFinite(nodeUsage)) continue;
+        const totalUsage = bestByReplicaCount[placed] + nodeUsage;
+        const nextCount = placed + onNode;
+        nextBest[nextCount] = Math.min(nextBest[nextCount], totalUsage);
+      }
+    }
+    bestByReplicaCount = nextBest;
+  }
+
+  const physicalCardCount = bestByReplicaCount[replicaCount];
+  return Number.isFinite(physicalCardCount) ? physicalCardCount : null;
+}
+
+const getAggregateDimensionStatus = (
+  requested: number,
+  available: number,
+  hasUnknownSignals: boolean,
+  hasAnySignal: boolean,
+): GpuPlacementStatus => {
+  if (!hasAnySignal) return "unknown";
+  if (available >= requested) return "pass";
+  return hasUnknownSignals ? "unknown" : "fail";
+};
+
+const solvePlacementForCards = (
+  snapshot: PlacementSnapshot,
+  options: GpuPlacementOptions,
+  cardsPerReplica: number,
+): PlacementSearchResult => {
+  const requiresCpu = Number(options.cpuPerReplica || 0) > 0;
+  const requiresMemory = Number(options.memoryPerReplica || 0) > 0;
+  let capacity = 0;
+  let indeterminate = false;
+
+  for (const node of snapshot.nodes) {
+    const result = getNodeMaxReplicaCapacity(node, options, cardsPerReplica);
+    capacity += result.capacity;
+    indeterminate ||=
+      result.indeterminate ||
+      node.hasUnknownDeviceSignals ||
+      (requiresCpu && node.availableCpu == null) ||
+      (requiresMemory && node.availableMemory == null);
+  }
+
+  return { capacity, indeterminate };
+};
+
+const getPlacementStatus = (
+  placement: PlacementSearchResult,
+  snapshot: PlacementSnapshot,
+  replicaCount: number,
+): GpuPlacementStatus => {
+  if (placement.capacity >= replicaCount && !placement.indeterminate) {
+    return "pass";
+  }
+  if (
+    snapshot.hasUnknownTopology ||
+    snapshot.nodes.some((node) => node.hasUnknownDeviceSignals) ||
+    placement.indeterminate
+  ) {
+    return "unknown";
+  }
+  return "fail";
+};
+
+const getOverallPlacementStatus = (...statuses: GpuPlacementStatus[]) => {
+  if (statuses.includes("fail")) return "fail" as const;
+  if (statuses.includes("unknown")) return "unknown" as const;
+  return "pass" as const;
+};
+
+export function calculateGpuPlacementCapacity(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+  options: GpuPlacementOptions,
+): GpuPlacementCapacity {
+  const gpuPerReplica = Number(options.gpuPerReplica || 0);
+  const replicaCount = normalizePlacementReplicaCount(options.replicaCount);
+  const requestedCardsPerReplica = getRequestedCardsPerReplica(
+    options.allocationMode,
+    gpuPerReplica,
+  );
+  const unknownResult = (
+    matchingDeviceCount = 0,
+    satisfyingDeviceCount = 0,
+    totals?: Partial<PlacementSnapshot>,
+  ): GpuPlacementCapacity => {
+    const overall = "unknown" as const;
+    return {
+      canAllocate: null,
+      canAllocateCpu: null,
+      canAllocateMemory: null,
+      cpuPlacement: overall,
+      gpu: overall,
+      cpu: overall,
+      memory: overall,
+      memoryPlacement: overall,
+      overall,
+      matchingDeviceCount,
+      maxCardsPerReplica: 0,
+      maxFullGpuCardsPerNode: 0,
+      maxGpuPlaceableReplicas: null,
+      maxPlaceableReplicas: null,
+      requestedCardsPerReplica,
+      satisfyingDeviceCount,
+      totalAvailableCoreUnits: totals?.totalAvailableCoreUnits ?? 0,
+      totalAvailableCpu: totals?.totalAvailableCpu ?? 0,
+      totalAvailableMemory: totals?.totalAvailableMemory ?? 0,
+      totalAvailableMemoryMiB: totals?.totalAvailableMemoryMiB ?? 0,
+    };
+  };
+
+  if (!nodeResources || !options.selectedAccelerator?.product) {
+    return unknownResult();
+  }
+
+  const snapshot = buildPlacementSnapshot(nodeResources, options);
+  const maxFullGpuCardsPerNode =
+    options.allocationMode === "full"
+      ? snapshot.nodes.reduce(
+          (maximum, node) =>
+            Math.max(
+              maximum,
+              node.devices.filter((device) =>
+                canPlacementDeviceSatisfy(
+                  device,
+                  getPlacementRequirement(device, options),
+                ),
+              ).length,
+            ),
+          0,
+        )
+      : 0;
+  if (requestedCardsPerReplica <= 0) {
+    const invalid: GpuPlacementCapacity = {
+      canAllocate: false,
+      canAllocateCpu: false,
+      canAllocateMemory: false,
+      cpuPlacement: "fail",
+      gpu: "fail",
+      cpu: "fail",
+      memory: "fail",
+      memoryPlacement: "fail",
+      overall: "fail",
+      matchingDeviceCount: snapshot.matchingDeviceCount,
+      maxCardsPerReplica: 0,
+      maxFullGpuCardsPerNode: 0,
+      maxGpuPlaceableReplicas: 0,
+      maxPlaceableReplicas: 0,
+      requestedCardsPerReplica,
+      satisfyingDeviceCount: snapshot.satisfyingDeviceCount,
+      totalAvailableCoreUnits: snapshot.totalAvailableCoreUnits,
+      totalAvailableCpu: snapshot.totalAvailableCpu,
+      totalAvailableMemory: snapshot.totalAvailableMemory,
+      totalAvailableMemoryMiB: snapshot.totalAvailableMemoryMiB,
+    };
+    return invalid;
+  }
+
+  const cpuPerReplica = Math.max(0, Number(options.cpuPerReplica || 0));
+  const memoryPerReplica = Math.max(0, Number(options.memoryPerReplica || 0));
+  const requestedCpu = cpuPerReplica * replicaCount;
+  const requestedMemory = memoryPerReplica * replicaCount;
+  const cpuStatus = getAggregateDimensionStatus(
+    requestedCpu,
+    snapshot.totalAvailableCpu,
+    snapshot.hasUnknownCpuSignals,
+    snapshot.nodes.some((node) => node.availableCpu != null),
+  );
+  const memoryStatus = getAggregateDimensionStatus(
+    requestedMemory,
+    snapshot.totalAvailableMemory,
+    snapshot.hasUnknownMemorySignals,
+    snapshot.nodes.some((node) => node.availableMemory != null),
+  );
+
+  const gpuOnlyOptions: GpuPlacementOptions = {
+    ...options,
+    cpuPerReplica: 0,
+    memoryPerReplica: 0,
+  };
+  const cpuPlacementOptions: GpuPlacementOptions = {
+    ...options,
+    memoryPerReplica: 0,
+  };
+  const memoryPlacementOptions: GpuPlacementOptions = {
+    ...options,
+    cpuPerReplica: 0,
+  };
+  const gpuOnlyPlacement = solvePlacementForCards(
+    snapshot,
+    gpuOnlyOptions,
+    requestedCardsPerReplica,
+  );
+  const cpuPlacement = solvePlacementForCards(
+    snapshot,
+    cpuPlacementOptions,
+    requestedCardsPerReplica,
+  );
+  const memoryPlacement = solvePlacementForCards(
+    snapshot,
+    memoryPlacementOptions,
+    requestedCardsPerReplica,
+  );
+  const requestedPlacement = solvePlacementForCards(
+    snapshot,
+    options,
+    requestedCardsPerReplica,
+  );
+  const gpuStatus = getPlacementStatus(
+    gpuOnlyPlacement,
+    snapshot,
+    replicaCount,
+  );
+  const cpuPlacementStatus = getPlacementStatus(
+    cpuPlacement,
+    snapshot,
+    replicaCount,
+  );
+  const memoryPlacementStatus = getPlacementStatus(
+    memoryPlacement,
+    snapshot,
+    replicaCount,
+  );
+  const combinedPlacementStatus = getPlacementStatus(
+    requestedPlacement,
+    snapshot,
+    replicaCount,
+  );
+
+  const maxPlaceableReplicas =
+    combinedPlacementStatus === "unknown" ? null : requestedPlacement.capacity;
+  const maxGpuPlaceableReplicas =
+    gpuStatus === "unknown" ? null : gpuOnlyPlacement.capacity;
+
+  let maxCardsPerReplica = 0;
+  const candidateCardCounts =
+    options.allocationMode === "fractional"
+      ? [1]
+      : Array.from(
+          { length: snapshot.matchingDeviceCount },
+          (_, index) => snapshot.matchingDeviceCount - index,
+        );
+  for (const candidate of candidateCardCounts) {
+    const result = solvePlacementForCards(snapshot, gpuOnlyOptions, candidate);
+    if (
+      result.capacity >= replicaCount &&
+      !result.indeterminate &&
+      !snapshot.hasUnknownTopology &&
+      !snapshot.nodes.some((node) => node.hasUnknownDeviceSignals)
+    ) {
+      maxCardsPerReplica = candidate;
+      break;
+    }
+  }
+
+  const overall = getOverallPlacementStatus(
+    gpuStatus,
+    cpuStatus,
+    memoryStatus,
+    combinedPlacementStatus,
+  );
+  return {
+    canAllocate: placementStatusToBoolean(overall),
+    canAllocateCpu: placementStatusToBoolean(cpuStatus),
+    canAllocateMemory: placementStatusToBoolean(memoryStatus),
+    cpuPlacement: cpuPlacementStatus,
+    gpu: gpuStatus,
+    cpu: cpuStatus,
+    memory: memoryStatus,
+    memoryPlacement: memoryPlacementStatus,
+    overall,
+    matchingDeviceCount: snapshot.matchingDeviceCount,
+    maxCardsPerReplica,
+    maxFullGpuCardsPerNode,
+    maxGpuPlaceableReplicas,
+    maxPlaceableReplicas,
+    requestedCardsPerReplica,
+    satisfyingDeviceCount: snapshot.satisfyingDeviceCount,
+    totalAvailableCoreUnits: snapshot.totalAvailableCoreUnits,
+    totalAvailableCpu: snapshot.totalAvailableCpu,
+    totalAvailableMemory: snapshot.totalAvailableMemory,
+    totalAvailableMemoryMiB: snapshot.totalAvailableMemoryMiB,
   };
 }
 
