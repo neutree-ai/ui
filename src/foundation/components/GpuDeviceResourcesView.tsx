@@ -306,7 +306,10 @@ const GpuDeviceHealthIndicator = ({
   const label = healthy ? labels.healthy : labels.unhealthy;
   const indicator = (
     <span
-      className={cn("flex items-center justify-center", className)}
+      className={cn(
+        "flex items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        className,
+      )}
       role="img"
       aria-label={label}
       title={healthy ? label : undefined}

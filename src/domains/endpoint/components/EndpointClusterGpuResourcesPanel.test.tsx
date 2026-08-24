@@ -189,6 +189,28 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
   });
 
+  it("keeps healthy GPU indicators native and out of the tab order", () => {
+    render(
+      <TooltipProvider delayDuration={0}>
+        <EndpointClusterGpuResourcesPanel
+          resourceInfo={resourceInfo}
+          currentCluster="cluster-a"
+          selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+          virtualizationEnabled={false}
+          t={t}
+        />
+      </TooltipProvider>,
+    );
+
+    const healthyIndicator = screen.getByRole("img", { name: "Usable" });
+    expect(healthyIndicator.getAttribute("title")).toBe("Usable");
+    expect(healthyIndicator.getAttribute("tabindex")).toBeNull();
+
+    fireEvent.focus(healthyIndicator);
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
   it("shows an unhealthy GPU device tooltip", async () => {
     const nodeA = resourceInfo.node_resources?.["node-a"];
     if (!nodeA) throw new Error("node fixture is incomplete");
@@ -223,6 +245,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(unhealthyIndicator.getAttribute("title")).toBeNull();
     expect(unhealthyIndicator.getAttribute("tabindex")).toBe("0");
     expect(unhealthyIndicator.className).not.toContain("cursor-");
+    expect(unhealthyIndicator.className).toContain("focus-visible:ring-2");
 
     fireEvent.focus(unhealthyIndicator);
 

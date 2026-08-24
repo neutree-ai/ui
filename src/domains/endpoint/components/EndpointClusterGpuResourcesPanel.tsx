@@ -510,7 +510,7 @@ function GpuDeviceCard({
   const statusIndicator = (
     <span
       className={cn(
-        "flex h-5 w-5 shrink-0 items-center justify-center",
+        "flex h-5 w-5 shrink-0 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         statusClassName,
       )}
       role="img"

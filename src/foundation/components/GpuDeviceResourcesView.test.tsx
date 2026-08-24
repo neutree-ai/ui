@@ -183,6 +183,22 @@ describe("GpuDeviceResourcesView", () => {
     ).toContain("text-center");
   });
 
+  it("keeps healthy device indicators native and out of the tab order", () => {
+    render(
+      <TooltipProvider delayDuration={0}>
+        <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />
+      </TooltipProvider>,
+    );
+
+    const healthyIndicator = screen.getByRole("img", { name: "Healthy" });
+    expect(healthyIndicator.getAttribute("title")).toBe("Healthy");
+    expect(healthyIndicator.getAttribute("tabindex")).toBeNull();
+
+    fireEvent.focus(healthyIndicator);
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
   it("shows an unhealthy device tooltip in the cluster detail table", async () => {
     const nodeA = nodeResources["node-a"];
     if (!nodeA) throw new Error("node fixture is incomplete");
@@ -210,6 +226,7 @@ describe("GpuDeviceResourcesView", () => {
     expect(unhealthyIndicator.getAttribute("title")).toBeNull();
     expect(unhealthyIndicator.getAttribute("tabindex")).toBe("0");
     expect(unhealthyIndicator.className).not.toContain("cursor-");
+    expect(unhealthyIndicator.className).toContain("focus-visible:ring-2");
 
     fireEvent.focus(unhealthyIndicator);
 
