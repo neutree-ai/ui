@@ -1,16 +1,14 @@
 import {
   useCustomMutation,
   useDelete,
+  useInvalidate,
   useList,
   useNavigation,
   useNotification,
 } from "@refinedev/core";
 import {
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   FolderInput,
   MoreHorizontal,
   Pencil,
@@ -66,6 +64,7 @@ import type {
 } from "@/domains/api-key/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { ListPage } from "@/foundation/components/ListPage";
+import { PaginationControls } from "@/foundation/components/PaginationControls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
@@ -95,6 +94,10 @@ const endpointPhaseClass = (phase: string | null | undefined) =>
   })[phase ?? ""] ??
   "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]";
 
+// Number of allowed models rendered before the cell collapses the rest behind
+// a "show N more" toggle — keeps rows short when a key allows many models.
+const MODELS_COLLAPSED = 2;
+
 function ModelsCell({
   models,
   modelMap,
@@ -106,7 +109,7 @@ function ModelsCell({
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? models : models.slice(0, 2);
+  const visible = expanded ? models : models.slice(0, MODELS_COLLAPSED);
 
   if (models.length === 0) {
     return (
@@ -170,7 +173,7 @@ function ModelsCell({
           </div>
         );
       })}
-      {models.length > 2 && (
+      {models.length > MODELS_COLLAPSED && (
         <button
           type="button"
           className="self-start text-xs text-muted-foreground hover:underline"
@@ -178,7 +181,9 @@ function ModelsCell({
         >
           {expanded
             ? t("api_keys.limits.showLess")
-            : t("api_keys.limits.showMore", { count: models.length - 2 })}
+            : t("api_keys.limits.showMore", {
+                count: models.length - MODELS_COLLAPSED,
+              })}
         </button>
       )}
     </div>
@@ -196,7 +201,10 @@ export const ApiKeysList = () => {
   });
   const [createKeySession, setCreateKeySession] = useState(0);
   const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [collapsedState, setCollapsedState] = useState({
+    context: "",
+    ids: new Set<string>(),
+  });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [moveOpen, setMoveOpen] = useState(false);
   const [target, setTarget] = useState("");
@@ -218,6 +226,7 @@ export const ApiKeysList = () => {
   const { open: openNotification } = useNotification();
   const { show } = useNavigation();
   const { mutateAsync: deleteKey } = useDelete();
+  const invalidate = useInvalidate();
   const { disable, enable } = useApiKeyDisable();
   // The trace endpoint understands the UI's `_all_` sentinel and applies the
   // caller's per-workspace permissions while aggregating. Passing `scoped`
@@ -243,7 +252,7 @@ export const ApiKeysList = () => {
         .map((key) => ({
           id: String(key.id),
           name:
-            key.metadata?.display_name ?? key.metadata?.name ?? String(key.id),
+            key.metadata?.display_name || key.metadata?.name || String(key.id),
           description: key.spec.description,
         })),
     [keysData, workspace],
@@ -290,7 +299,6 @@ export const ApiKeysList = () => {
       project.metadata.name,
     ]),
   );
-  const groupedProjectIds = grouped.map((group) => group.project.id).join(",");
   const expansionContext = [
     scoped,
     debouncedQuery,
@@ -315,16 +323,25 @@ export const ApiKeysList = () => {
       : selectedPageKeyCount === pageKeyIds.length
         ? true
         : "indeterminate";
-  // Reset only when the result context changes. User toggles must not cause a
-  // collapsed Project to immediately reopen.
-  useEffect(() => {
-    const projectIds = expansionContext
-      ? groupedProjectIds.split(",").filter(Boolean)
-      : [];
-    setExpanded(new Set(projectIds));
-  }, [expansionContext, groupedProjectIds]);
+  // Groups render expanded unless the user collapsed them, so tracking the
+  // collapsed ids means a refetch that adds or removes a Project leaves the
+  // rest of the page as the user left it. Only a new result context (search,
+  // filter, page) starts over — adjusted during render rather than in an
+  // effect, so the reset lands in the same commit as the new results.
+  if (collapsedState.context !== expansionContext) {
+    setCollapsedState({ context: expansionContext, ids: new Set() });
+  }
+  const collapsed = collapsedState.ids;
+  const setCollapsed = (update: (ids: Set<string>) => Set<string>) =>
+    setCollapsedState((current) => ({
+      context: current.context,
+      ids: update(current.ids),
+    }));
   const refresh = async () => {
-    await groupsQuery.refetch();
+    await Promise.all([
+      groupsQuery.refetch(),
+      invalidate({ resource: "api_keys", invalidates: ["list"] }),
+    ]);
   };
   const createKey = (project?: ApiKeyProject) => {
     setCreateKeyPreset({
@@ -339,7 +356,7 @@ export const ApiKeysList = () => {
     setActionError("");
     setCreatingProject(true);
     try {
-      const response = await mutateAsync({
+      await mutateAsync({
         url: "/rpc/create_api_key_project",
         method: "post",
         values: {
@@ -347,15 +364,17 @@ export const ApiKeysList = () => {
           p_name: createProjectName.trim(),
           p_description: createProjectDescription.trim(),
         },
+        successNotification: false,
+        errorNotification: false,
       });
-      const project = response.data as ApiKeyProject;
       setCreateProjectOpen(false);
       setCreateProjectName("");
       setCreateProjectDescription("");
-      setExpanded((current) => new Set([...current, project.id]));
       await refresh();
     } catch (cause) {
-      setActionError(cause instanceof Error ? cause.message : String(cause));
+      setActionError(
+        apiKeyActionErrorMessage(cause, t("api_keys.messages.operationFailed")),
+      );
     } finally {
       setCreatingProject(false);
     }
@@ -375,20 +394,16 @@ export const ApiKeysList = () => {
       });
       setSelected(new Set());
       setMoveOpen(false);
-      setExpanded(
-        (v) => new Set([...v, target || `__ungrouped__:${moveWorkspace}`]),
-      );
       openNotification?.({
         type: "success",
-        message: `${Number(response.data) || 0} API key${Number(response.data) === 1 ? "" : "s"} moved`,
+        message: t("api_keys.move.success", {
+          count: Number(response.data) || 0,
+        }),
       });
       await refresh();
     } catch (cause) {
       setActionError(
-        apiKeyActionErrorMessage(
-          cause,
-          "Failed to move API keys. Please try again.",
-        ),
+        apiKeyActionErrorMessage(cause, t("api_keys.move.failed")),
       );
     }
   };
@@ -409,19 +424,21 @@ export const ApiKeysList = () => {
           p_name: editName,
           p_description: editDescription,
         },
+        successNotification: false,
+        errorNotification: false,
       });
       setEditing(undefined);
       await refresh();
     } catch (cause) {
-      setActionError(cause instanceof Error ? cause.message : String(cause));
+      setActionError(
+        apiKeyActionErrorMessage(cause, t("api_keys.messages.operationFailed")),
+      );
     }
   };
   const deleteApiKeys = async (forceDelete: boolean) => {
     if (deletingKeys.length === 0) return;
     if (deletingKeys.some((key) => !key.metadata.workspace)) {
-      setActionError(
-        "An API key is missing its workspace. Refresh and try again.",
-      );
+      setActionError(t("api_keys.messages.missingWorkspace"));
       return;
     }
     const variables = buildBatchDeleteVariables(
@@ -437,7 +454,7 @@ export const ApiKeysList = () => {
       forceDelete,
     );
     if (variables.length !== deletingKeys.length) {
-      setActionError("An API key is missing its name. Refresh and try again.");
+      setActionError(t("api_keys.messages.missingName"));
       return;
     }
     setActionError("");
@@ -449,7 +466,10 @@ export const ApiKeysList = () => {
       const failed = results.filter((result) => result.status === "rejected");
       if (failed.length > 0) {
         setActionError(
-          `${failed.length} of ${variables.length} API keys could not be deleted.`,
+          t("api_keys.messages.deletePartialFailure", {
+            failed: failed.length,
+            total: variables.length,
+          }),
         );
         if (failed.length === variables.length) return;
       }
@@ -468,8 +488,10 @@ export const ApiKeysList = () => {
         type: "success",
         message:
           deletedIds.size === 1
-            ? "Successfully deleted API key"
-            : `Successfully deleted ${deletedIds.size} API keys`,
+            ? t("api_keys.messages.deleteKeySuccess")
+            : t("api_keys.messages.deleteKeysSuccess", {
+                count: deletedIds.size,
+              }),
       });
       await refresh();
     } catch (cause) {
@@ -485,8 +507,10 @@ export const ApiKeysList = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create API Key</DialogTitle>
-            <DialogDescription>Create a key in a Project.</DialogDescription>
+            <DialogTitle>{t("api_keys.create")}</DialogTitle>
+            <DialogDescription>
+              {t("api_keys.messages.createDescription")}
+            </DialogDescription>
           </DialogHeader>
           <CreateApiKeyForm
             key={createKeySession}
@@ -506,9 +530,9 @@ export const ApiKeysList = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Project</DialogTitle>
+            <DialogTitle>{t("api_keys.projects.create")}</DialogTitle>
             <DialogDescription>
-              Create a Project in workspace {scoped}.
+              {t("api_keys.projects.createDescription", { workspace: scoped })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -516,7 +540,7 @@ export const ApiKeysList = () => {
               htmlFor="new-project-name"
               className="block text-sm font-medium"
             >
-              Name
+              {t("api_keys.fields.displayName")}
               <Input
                 id="new-project-name"
                 value={createProjectName}
@@ -527,7 +551,7 @@ export const ApiKeysList = () => {
               htmlFor="new-project-description"
               className="block text-sm font-medium"
             >
-              Description
+              {t("api_keys.fields.description")}
               <Textarea
                 id="new-project-description"
                 value={createProjectDescription}
@@ -545,13 +569,15 @@ export const ApiKeysList = () => {
               variant="secondary"
               onClick={() => setCreateProjectOpen(false)}
             >
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               disabled={!createProjectName.trim() || creatingProject}
               onClick={() => void createProject()}
             >
-              {creatingProject ? "Creating..." : "Create Project"}
+              {creatingProject
+                ? t("api_keys.projects.creating")
+                : t("api_keys.projects.create")}
             </Button>
           </div>
         </DialogContent>
@@ -559,15 +585,15 @@ export const ApiKeysList = () => {
       <Dialog open={moveOpen} onOpenChange={setMoveOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Move API keys</DialogTitle>
+            <DialogTitle>{t("api_keys.move.title")}</DialogTitle>
             <DialogDescription>
-              {selected.size} selected. The operation is atomic.
+              {t("api_keys.move.description", { count: selected.size })}
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-hidden rounded-md border">
             <div className="grid grid-cols-2 gap-4 border-b bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
-              <span>API key</span>
-              <span>Current Project</span>
+              <span>{t("api_keys.fields.apiKey")}</span>
+              <span>{t("api_keys.fields.currentProject")}</span>
             </div>
             <div className="max-h-48 overflow-y-auto">
               {selectedKeys.map((key) => (
@@ -576,13 +602,13 @@ export const ApiKeysList = () => {
                   className="grid grid-cols-2 gap-4 border-b px-3 py-2 text-sm last:border-b-0"
                 >
                   <span className="min-w-0 truncate font-medium">
-                    {key.metadata.display_name ?? key.metadata.name}
+                    {key.metadata.display_name || key.metadata.name}
                   </span>
                   <span className="min-w-0 truncate text-muted-foreground">
                     {key.spec.project_id
                       ? (moveProjectNames.get(key.spec.project_id) ??
-                        "Unknown Project")
-                      : "Ungrouped"}
+                        t("api_keys.move.unknownProject"))
+                      : t("api_keys.projects.ungrouped")}
                   </span>
                 </div>
               ))}
@@ -595,13 +621,12 @@ export const ApiKeysList = () => {
           />
           {selectedWorkspaces.length > 1 && (
             <p className="text-sm text-destructive">
-              Selected API keys span multiple workspaces. Move one workspace at
-              a time.
+              {t("api_keys.move.multipleWorkspaces")}
             </p>
           )}
           {movableKeyCount === 0 && (
             <p className="text-sm text-muted-foreground">
-              The selected API keys already belong to this Project.
+              {t("api_keys.move.alreadyInProject")}
             </p>
           )}
           {actionError && (
@@ -609,7 +634,7 @@ export const ApiKeysList = () => {
           )}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setMoveOpen(false)}>
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               disabled={
@@ -619,7 +644,7 @@ export const ApiKeysList = () => {
               }
               onClick={() => void migrate()}
             >
-              Move
+              {t("api_keys.move.confirm")}
             </Button>
           </div>
         </DialogContent>
@@ -630,14 +655,14 @@ export const ApiKeysList = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
+            <DialogTitle>{t("api_keys.projects.edit")}</DialogTitle>
             <DialogDescription>
-              Renaming does not change API key associations or usage history.
+              {t("api_keys.projects.editDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <label htmlFor="project-name" className="block text-sm font-medium">
-              Name
+              {t("api_keys.fields.displayName")}
               <Input
                 id="project-name"
                 value={editName}
@@ -648,7 +673,7 @@ export const ApiKeysList = () => {
               htmlFor="project-description"
               className="block text-sm font-medium"
             >
-              Description
+              {t("api_keys.fields.description")}
               <Textarea
                 id="project-description"
                 value={editDescription}
@@ -658,13 +683,13 @@ export const ApiKeysList = () => {
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setEditing(undefined)}>
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               disabled={!editName.trim()}
               onClick={() => void saveProject()}
             >
-              Save
+              {t("buttons.save")}
             </Button>
           </div>
         </DialogContent>
@@ -675,10 +700,11 @@ export const ApiKeysList = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Project</DialogTitle>
+            <DialogTitle>{t("api_keys.projects.delete")}</DialogTitle>
             <DialogDescription>
-              Delete {deletingProject?.metadata.name}? Only an empty Project can
-              be deleted.
+              {t("api_keys.projects.deleteDescription", {
+                name: deletingProject?.metadata.name,
+              })}
             </DialogDescription>
           </DialogHeader>
           {actionError && (
@@ -689,7 +715,7 @@ export const ApiKeysList = () => {
               variant="secondary"
               onClick={() => setDeletingProject(undefined)}
             >
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -700,23 +726,28 @@ export const ApiKeysList = () => {
                   url: "/rpc/delete_api_key_project",
                   method: "post",
                   values: { p_project_id: deletingProject.id },
+                  successNotification: false,
+                  errorNotification: false,
                 })
                   .then(async () => {
                     setDeletingProject(undefined);
                     openNotification?.({
                       type: "success",
-                      message: "Successfully deleted Project",
+                      message: t("api_keys.projects.deleteSuccess"),
                     });
                     await refresh();
                   })
                   .catch((cause) =>
                     setActionError(
-                      cause instanceof Error ? cause.message : String(cause),
+                      apiKeyActionErrorMessage(
+                        cause,
+                        t("api_keys.messages.operationFailed"),
+                      ),
                     ),
                   );
               }}
             >
-              Delete
+              {t("buttons.delete")}
             </Button>
           </div>
         </DialogContent>
@@ -727,7 +758,9 @@ export const ApiKeysList = () => {
         loading={deletingKeyPending}
         title={
           deletingKeys.length > 1
-            ? `Delete ${deletingKeys.length} API keys?`
+            ? t("api_keys.selection.deleteMany", {
+                count: deletingKeys.length,
+              })
             : undefined
         }
         errorMessage={actionError || undefined}
@@ -740,7 +773,7 @@ export const ApiKeysList = () => {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Search Project, API key, or description"
+            placeholder={t("api_keys.placeholders.search")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -759,9 +792,13 @@ export const ApiKeysList = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All API keys</SelectItem>
-            <SelectItem value="active">Active API keys</SelectItem>
-            <SelectItem value="disabled">Disabled API keys</SelectItem>
+            <SelectItem value="all">{t("api_keys.filters.allKeys")}</SelectItem>
+            <SelectItem value="active">
+              {t("api_keys.filters.activeKeys")}
+            </SelectItem>
+            <SelectItem value="disabled">
+              {t("api_keys.filters.disabledKeys")}
+            </SelectItem>
           </SelectContent>
         </Select>
         <Button
@@ -771,12 +808,12 @@ export const ApiKeysList = () => {
           onClick={() => setCreateProjectOpen(true)}
         >
           <Plus className="mr-1 h-4 w-4" />
-          Create Project
+          {t("api_keys.projects.create")}
         </Button>
         {selected.size > 0 && (
           <>
             <span className="inline-flex h-8 shrink-0 items-center whitespace-nowrap text-sm">
-              {selected.size} selected
+              {t("api_keys.selection.count", { count: selected.size })}
             </span>
             <Button
               className="h-8 w-36 shrink-0 whitespace-nowrap"
@@ -786,7 +823,7 @@ export const ApiKeysList = () => {
                 setMoveOpen(true);
               }}
             >
-              Move to Project
+              {t("api_keys.move.action")}
             </Button>
             <Button
               className="h-8 shrink-0 whitespace-nowrap"
@@ -797,14 +834,14 @@ export const ApiKeysList = () => {
               }}
             >
               <Trash2 className="mr-1 h-4 w-4" />
-              Delete
+              {t("buttons.delete")}
             </Button>
             <Button
               className="h-8 shrink-0"
               variant="ghost"
               onClick={() => setSelected(new Set())}
             >
-              Clear
+              {t("api_keys.selection.clear")}
             </Button>
           </>
         )}
@@ -813,7 +850,7 @@ export const ApiKeysList = () => {
         <div className="grid grid-cols-[minmax(240px,2fr)_100px_48px] gap-4 border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground">
           <span className="flex items-center gap-3">
             <Checkbox
-              aria-label="Select all API keys on this page"
+              aria-label={t("api_keys.selection.selectAllOnPage")}
               checked={pageSelectionState}
               disabled={pageKeyIds.length === 0}
               onCheckedChange={(checked) =>
@@ -826,14 +863,14 @@ export const ApiKeysList = () => {
                 })
               }
             />
-            Project / description
+            {t("api_keys.fields.projectAndDescription")}
           </span>
-          <span>API keys</span>
+          <span>{t("api_keys.title")}</span>
           <span />
         </div>
         {groupsQuery.isLoading && (
           <div className="p-8 text-center text-muted-foreground">
-            Loading...
+            {t("api_keys.messages.loading")}
           </div>
         )}
         {groupsQuery.error && (
@@ -845,11 +882,11 @@ export const ApiKeysList = () => {
           !groupsQuery.error &&
           grouped.length === 0 && (
             <div className="p-8 text-center text-muted-foreground">
-              No matching Projects or API keys
+              {t("api_keys.messages.noResults")}
             </div>
           )}
         {pageGroups.map(({ project, shown, count }) => {
-          const isOpen = expanded.has(project.id);
+          const isOpen = !collapsed.has(project.id);
           const projectKeyIds = shown.map((key) => key.id);
           const selectedProjectKeyCount = projectKeyIds.filter((id) =>
             selected.has(id),
@@ -867,12 +904,14 @@ export const ApiKeysList = () => {
                   type="button"
                   className="flex min-w-0 items-center gap-2 text-left"
                   onClick={() =>
-                    setExpanded((old) => {
-                      const n = new Set(old);
-                      n.has(project.id)
-                        ? n.delete(project.id)
-                        : n.add(project.id);
-                      return n;
+                    setCollapsed((old) => {
+                      const next = new Set(old);
+                      if (next.has(project.id)) {
+                        next.delete(project.id);
+                      } else {
+                        next.add(project.id);
+                      }
+                      return next;
                     })
                   }
                 >
@@ -906,12 +945,12 @@ export const ApiKeysList = () => {
                     {!project.is_ungrouped && (
                       <DropdownMenuItem onClick={() => startEdit(project)}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit Project
+                        {t("api_keys.projects.edit")}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => createKey(project)}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Create API key
+                      {t("api_keys.projects.createKey")}
                     </DropdownMenuItem>
                     {!project.is_ungrouped && (
                       <DropdownMenuItem
@@ -919,13 +958,13 @@ export const ApiKeysList = () => {
                         disabled={count > 0}
                         title={
                           count > 0
-                            ? `Move or delete the ${count} API key${count === 1 ? "" : "s"} first`
+                            ? t("api_keys.projects.deleteBlocked", { count })
                             : undefined
                         }
                         onClick={() => setDeletingProject(project)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {t("buttons.delete")}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -935,13 +974,13 @@ export const ApiKeysList = () => {
                 <div className="border-t bg-muted/20 px-6 py-3">
                   {shown.length === 0 ? (
                     <div className="py-8 text-center text-sm text-muted-foreground">
-                      This Project has no API keys
+                      {t("api_keys.projects.empty")}
                       <div>
                         <Button
                           variant="link"
                           onClick={() => createKey(project)}
                         >
-                          Create API key
+                          {t("api_keys.projects.createKey")}
                         </Button>
                       </div>
                     </div>
@@ -952,7 +991,10 @@ export const ApiKeysList = () => {
                           <tr className="text-left text-xs text-muted-foreground">
                             <th className="w-10">
                               <Checkbox
-                                aria-label={`Select all API keys in ${project.metadata.name}`}
+                                aria-label={t(
+                                  "api_keys.selection.selectAllInProject",
+                                  { name: project.metadata.name },
+                                )}
                                 checked={projectSelectionState}
                                 onCheckedChange={(checked) =>
                                   setSelected((current) => {
@@ -965,13 +1007,15 @@ export const ApiKeysList = () => {
                                 }
                               />
                             </th>
-                            <th className="py-2">API key / description</th>
-                            <th>Workspace</th>
-                            <th>Status</th>
-                            <th>Usage</th>
-                            <th>Rate limit</th>
-                            <th>Supported models</th>
-                            <th>Created at</th>
+                            <th className="py-2">
+                              {t("api_keys.fields.apiKeyAndDescription")}
+                            </th>
+                            <th>{t("api_keys.fields.workspace")}</th>
+                            <th>{t("api_keys.fields.status")}</th>
+                            <th>{t("api_keys.limits.usageColumn")}</th>
+                            <th>{t("api_keys.limits.rateColumn")}</th>
+                            <th>{t("api_keys.limits.modelsColumn")}</th>
+                            <th>{t("api_keys.fields.createdAt")}</th>
                             <th className="w-12" />
                           </tr>
                         </thead>
@@ -1016,7 +1060,7 @@ export const ApiKeysList = () => {
                                     className="!h-auto !min-h-0 items-start !p-0 text-left"
                                   >
                                     <strong>
-                                      {key.metadata.display_name ??
+                                      {key.metadata.display_name ||
                                         key.metadata.name}
                                     </strong>
                                   </ShowButton>
@@ -1140,7 +1184,7 @@ export const ApiKeysList = () => {
                                         }
                                       >
                                         <Pencil className="mr-2 h-4 w-4" />
-                                        Edit
+                                        {t("buttons.edit")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() =>
@@ -1156,7 +1200,9 @@ export const ApiKeysList = () => {
                                         ) : (
                                           <PowerOff className="mr-2 h-4 w-4" />
                                         )}
-                                        {limits.disabled ? "Enable" : "Disable"}
+                                        {limits.disabled
+                                          ? t("api_keys.limits.enable")
+                                          : t("api_keys.limits.disable")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => {
@@ -1166,7 +1212,7 @@ export const ApiKeysList = () => {
                                         }}
                                       >
                                         <FolderInput className="mr-2 h-4 w-4" />
-                                        Move to Project
+                                        {t("api_keys.move.action")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         className="text-destructive"
@@ -1176,7 +1222,7 @@ export const ApiKeysList = () => {
                                         }}
                                       >
                                         <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
+                                        {t("buttons.delete")}
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -1194,77 +1240,21 @@ export const ApiKeysList = () => {
           );
         })}
       </div>
-      <div className="mt-4 flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
-        <span>
-          {groupsQuery.data[0]?.total_projects ?? 0} groups,{" "}
-          {groupsQuery.totalApiKeys} API keys
-        </span>
-        <div className="flex flex-wrap items-center justify-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground">
-              {t("table.pagination.rowsPerPage")}
-            </span>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(value) => {
-                setPageSize(Number(value));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[10, 20, 30, 40, 50].map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <span className="font-medium text-foreground">
-            {t("table.pagination.page", { current: page, total: pageCount })}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page <= 1}
-              onClick={() => setPage(1)}
-              aria-label={t("table.pagination.goToFirstPage")}
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              aria-label={t("table.pagination.goToPreviousPage")}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page >= pageCount}
-              onClick={() => setPage((p) => p + 1)}
-              aria-label={t("table.pagination.goToNextPage")}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page >= pageCount}
-              onClick={() => setPage(pageCount)}
-              aria-label={t("table.pagination.goToLastPage")}
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="mt-4">
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          summary={t("api_keys.projects.countLabel", {
+            projects: groupsQuery.data[0]?.total_projects ?? 0,
+            keys: groupsQuery.totalApiKeys,
+          })}
+        />
       </div>
     </ListPage>
   );

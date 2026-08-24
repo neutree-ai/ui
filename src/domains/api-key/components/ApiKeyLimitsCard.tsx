@@ -166,30 +166,39 @@ export const ApiKeyLimitsCard = ({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xl font-semibold">
-              API key details
+              {t("api_keys.detailsTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormFieldGroup
               {...form}
               name="display_name"
-              label="Name"
+              label={t("api_keys.fields.displayName")}
               rules={{
-                required: "Name is required",
+                required: t("api_keys.messages.nameRequired"),
                 maxLength: {
                   value: 63,
-                  message: "Name cannot exceed 63 characters",
+                  message: t("api_keys.messages.nameTooLong"),
                 },
                 validate: (value) =>
-                  value.trim().length > 0 || "Name is required",
+                  value.trim().length > 0 ||
+                  t("api_keys.messages.nameRequired"),
               }}
             >
               <Input />
             </FormFieldGroup>
-            <FormFieldGroup {...form} name="description" label="Description">
+            <FormFieldGroup
+              {...form}
+              name="description"
+              label={t("api_keys.fields.description")}
+            >
               <Textarea />
             </FormFieldGroup>
-            <FormFieldGroup {...form} name="project_id" label="API key Project">
+            <FormFieldGroup
+              {...form}
+              name="project_id"
+              label={t("api_keys.fields.project")}
+            >
               <ProjectPicker
                 workspace={workspace}
                 value={form.watch("project_id")}

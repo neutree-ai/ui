@@ -1,5 +1,5 @@
-import { useCustomMutation } from "@refinedev/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCustom } from "@refinedev/core";
+import { useCallback } from "react";
 import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
 
 type ApiKeyProjectGroup = {
@@ -10,72 +10,58 @@ type ApiKeyProjectGroup = {
   total_projects: number;
 };
 
-export function useApiKeyProjectGroups(params: {
+type GroupParams = {
   workspace?: string;
   search: string;
   apiKeyDisabled: boolean | null;
   page: number;
   pageSize: number;
-}) {
-  const { mutateAsync } = useCustomMutation();
-  const [data, setData] = useState<ApiKeyProjectGroup[]>([]);
-  const [totalApiKeys, setTotalApiKeys] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const request = useRef(0);
+};
 
-  const fetchGroups = useCallback(async () => {
-    const current = ++request.current;
-    setIsLoading(true);
-    setError("");
-    try {
-      const [response, countResponse] = await Promise.all([
-        mutateAsync({
-          url: "/rpc/get_api_key_project_groups",
-          method: "post",
-          values: {
-            p_workspace: params.workspace ?? null,
-            p_search: params.search.trim() || null,
-            p_api_key_disabled: params.apiKeyDisabled,
-            p_page: params.page,
-            p_page_size: params.pageSize,
-          },
-        }),
-        mutateAsync({
-          url: "/rpc/count_api_key_project_group_api_keys",
-          method: "post",
-          values: {
-            p_workspace: params.workspace ?? null,
-            p_search: params.search.trim() || null,
-            p_api_key_disabled: params.apiKeyDisabled,
-          },
-        }),
-      ]);
-      if (current === request.current) {
-        setData((response.data as ApiKeyProjectGroup[]) ?? []);
-        setTotalApiKeys(Number(countResponse.data) || 0);
-      }
-    } catch (cause) {
-      if (current === request.current) {
-        setData([]);
-        setTotalApiKeys(0);
-        setError(cause instanceof Error ? cause.message : String(cause));
-      }
-    } finally {
-      if (current === request.current) setIsLoading(false);
-    }
-  }, [
-    mutateAsync,
-    params.workspace,
-    params.search,
-    params.apiKeyDisabled,
-    params.page,
-    params.pageSize,
-  ]);
+// The grouped listing and its total key count share the same filters, so they
+// are issued as two queries keyed on those filters. Running them through
+// react-query (rather than a mutation plus a hand-rolled race guard) means a
+// superseded filter combination can no longer overwrite the current one.
+export function useApiKeyProjectGroups(params: GroupParams) {
+  const filters = {
+    p_workspace: params.workspace ?? null,
+    p_search: params.search.trim() || null,
+    p_api_key_disabled: params.apiKeyDisabled,
+  };
 
-  useEffect(() => {
-    void fetchGroups();
-  }, [fetchGroups]);
+  const groups = useCustom<ApiKeyProjectGroup[]>({
+    url: "/rpc/get_api_key_project_groups",
+    method: "post",
+    config: {
+      payload: {
+        ...filters,
+        p_page: params.page,
+        p_page_size: params.pageSize,
+      },
+    },
+    successNotification: false,
+    errorNotification: false,
+  });
 
-  return { data, totalApiKeys, isLoading, error, refetch: fetchGroups };
+  const total = useCustom<{ count: number }>({
+    url: "/rpc/count_api_key_project_group_api_keys",
+    method: "post",
+    config: { payload: filters },
+    successNotification: false,
+    errorNotification: false,
+  });
+
+  const refetch = useCallback(async () => {
+    await Promise.all([groups.refetch(), total.refetch()]);
+  }, [groups.refetch, total.refetch]);
+
+  const failure = groups.error ?? total.error;
+
+  return {
+    data: failure ? [] : (groups.data?.data ?? []),
+    totalApiKeys: failure ? 0 : Number(total.data?.data) || 0,
+    isLoading: groups.isLoading || total.isLoading,
+    error: failure ? failure.message : "",
+    refetch,
+  };
 }

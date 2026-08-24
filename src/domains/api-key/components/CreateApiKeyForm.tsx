@@ -17,7 +17,7 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import { createApiKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
+import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -110,7 +110,9 @@ export const CreateApiKeyForm = ({
       await onCreated?.();
       setApiKey(data as ApiKey);
     } catch (cause) {
-      setSubmitError(createApiKeyErrorMessage(cause));
+      setSubmitError(
+        apiKeyActionErrorMessage(cause, t("api_keys.messages.createFailed")),
+      );
     }
   };
 
@@ -182,7 +184,11 @@ export const CreateApiKeyForm = ({
             }))}
           />
         </FormFieldGroup>
-        <FormFieldGroup {...form} name="project_id" label="Project">
+        <FormFieldGroup
+          {...form}
+          name="project_id"
+          label={t("api_keys.fields.project")}
+        >
           <ProjectPicker
             workspace={selectedWorkspace}
             value={form.watch("project_id")}
@@ -196,17 +202,22 @@ export const CreateApiKeyForm = ({
           name="name"
           label={t("common.fields.name")}
           rules={{
-            required: "Name is required",
+            required: t("api_keys.messages.nameRequired"),
             maxLength: {
               value: 63,
-              message: "Name cannot exceed 63 characters",
+              message: t("api_keys.messages.nameTooLong"),
             },
-            validate: (value) => value.trim().length > 0 || "Name is required",
+            validate: (value) =>
+              value.trim().length > 0 || t("api_keys.messages.nameRequired"),
           }}
         >
           <Input />
         </FormFieldGroup>
-        <FormFieldGroup {...form} name="description" label="Description">
+        <FormFieldGroup
+          {...form}
+          name="description"
+          label={t("api_keys.fields.description")}
+        >
           <Textarea />
         </FormFieldGroup>
 

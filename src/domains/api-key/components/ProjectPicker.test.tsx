@@ -8,6 +8,10 @@ vi.mock("@refinedev/core", () => ({
   useCustomMutation: () => ({ mutateAsync }),
 }));
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
   useApiKeyProjects: () => ({
     data: [
@@ -50,7 +54,9 @@ describe("ProjectPicker", () => {
       <ProjectPicker workspace="default" value="active" onChange={onChange} />,
     );
     fireEvent.click(screen.getByRole("combobox"));
-    fireEvent.click(screen.getByRole("option", { name: "Ungrouped" }));
+    fireEvent.click(
+      screen.getByRole("option", { name: "api_keys.projects.ungrouped" }),
+    );
     expect(onChange).toHaveBeenCalledWith("");
   });
 
@@ -68,14 +74,24 @@ describe("ProjectPicker", () => {
     render(<ProjectPicker workspace="default" value="" onChange={onChange} />);
 
     fireEvent.click(screen.getByRole("combobox"));
-    fireEvent.click(screen.getByRole("button", { name: /Create Project/ }));
-    fireEvent.change(screen.getByPlaceholderText("Project name"), {
-      target: { value: "New" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Description (optional)"), {
-      target: { value: "Calls" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Create and select" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "api_keys.projects.create" }),
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText("api_keys.placeholders.projectName"),
+      {
+        target: { value: "New" },
+      },
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText("api_keys.placeholders.projectDescription"),
+      {
+        target: { value: "Calls" },
+      },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "api_keys.projects.createAndSelect" }),
+    );
 
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith(

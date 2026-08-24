@@ -1,7 +1,5 @@
-import { useNavigation, useShow } from "@refinedev/core";
-import { ArrowLeft } from "lucide-react";
+import { useShow } from "@refinedev/core";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard";
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
@@ -16,7 +14,6 @@ export const ApiKeysShow = () => {
     query: { data, isLoading, refetch },
   } = useShow();
   const record = data?.data;
-  const { list } = useNavigation();
   const {
     data: projects,
     isLoading: isProjectLoading,
@@ -36,40 +33,33 @@ export const ApiKeysShow = () => {
 
   return (
     <div className="w-full h-full">
-      <Button
-        variant="ghost"
-        className="mb-2 px-0"
-        onClick={() => list("api_keys")}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
-      </Button>
       <ShowPage
         record={record as ApiKey}
         canEdit={false}
         showCurrentBreadcrumb={false}
       >
         <ShowPage.ObjectHeader
-          title={record.metadata.display_name ?? record.metadata.name}
+          title={record.metadata.display_name || record.metadata.name}
           description={
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
               <ShowPage.Meta label={t("common.fields.workspace")}>
                 {record.metadata.workspace ?? "-"}
               </ShowPage.Meta>
               {record.spec.description && (
-                <ShowPage.Meta label="Description">
+                <ShowPage.Meta label={t("api_keys.fields.description")}>
                   {record.spec.description}
                 </ShowPage.Meta>
               )}
               <ShowPage.Meta label={t("api_keys.fields.usage")}>
                 {record.status?.usage ?? "-"}
               </ShowPage.Meta>
-              <ShowPage.Meta label="Project">
+              <ShowPage.Meta label={t("api_keys.fields.project")}>
                 {!record.spec.project_id
-                  ? "Ungrouped"
+                  ? t("api_keys.projects.ungrouped")
                   : isProjectLoading
-                    ? "Loading..."
+                    ? t("api_keys.messages.loading")
                     : projectError
-                      ? "Unable to load Project"
+                      ? t("api_keys.projects.loadFailed")
                       : (project?.metadata.name ?? "-")}
               </ShowPage.Meta>
               <MetadataTimestampMeta metadata={record.metadata} />
@@ -87,7 +77,7 @@ export const ApiKeysShow = () => {
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}
               projectId={record.spec.project_id ?? null}
-              displayName={record.metadata.display_name ?? record.metadata.name}
+              displayName={record.metadata.display_name || record.metadata.name}
               description={record.spec.description ?? ""}
               onSaved={refetch}
             />

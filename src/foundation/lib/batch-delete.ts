@@ -1,7 +1,13 @@
 // Batch delete threads each selected row's OWN metadata into its delete call.
 //
-// Neutree resources are keyed by `metadata->name` AND (for workspaced
-// resources) `metadata->workspace`; display names may repeat.
+// Neutree resources are keyed by `metadata->name` AND (for workspaced resources)
+// `metadata->workspace` — display names may repeat, so the technical name is the
+// identity here. The data provider's soft-delete first re-reads the record by
+// that composite key before stamping `deletion_timestamp`. A batch delete
+// therefore cannot share a single `meta` across rows: each row may live in a
+// different workspace. Passing only the names (and dropping the workspace) makes
+// the re-read match zero rows, and the provider then dereferences an undefined
+// record -> "Cannot read properties of undefined (reading 'metadata')".
 //
 // This builds one delete variable object per row, carrying that row's full
 // metadata (so `workspace` reaches the provider), merging the force-delete flag,

@@ -1,6 +1,7 @@
 import { useCustomMutation } from "@refinedev/core";
 import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -18,7 +19,18 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
+import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKeyProject } from "@/domains/api-key/types";
+
+// PostgREST surfaces the raised SQLSTATE as the error code. Matching on that
+// rather than on the message text keeps this working when the backend wording
+// changes or is localized.
+const UNIQUE_VIOLATION = "23505";
+
+const isDuplicateName = (cause: unknown) =>
+  typeof cause === "object" &&
+  cause !== null &&
+  (cause as { code?: unknown }).code === UNIQUE_VIOLATION;
 
 export function ProjectPicker({
   workspace,
@@ -31,6 +43,7 @@ export function ProjectPicker({
   onChange: (id: string, project?: ApiKeyProject) => void;
   allowUngrouped?: boolean;
 }) {
+  const { t } = useTranslation();
   const {
     data: projects,
     isLoading,
@@ -69,11 +82,9 @@ export function ProjectPicker({
       setDescription("");
     } catch (e) {
       setError(
-        String((e as { message?: string }).message ?? e).includes(
-          "already exists",
-        )
-          ? "Project name already exists. Choose another name."
-          : String((e as { message?: string }).message ?? e),
+        isDuplicateName(e)
+          ? t("api_keys.projects.duplicateName")
+          : apiKeyActionErrorMessage(e, t("api_keys.messages.operationFailed")),
       );
     } finally {
       setSaving(false);
@@ -93,20 +104,24 @@ export function ProjectPicker({
           >
             <span className="truncate">
               {projects.find((p) => p.id === value)?.metadata.name ??
-                (allowUngrouped ? "Ungrouped" : "Select a Project")}
+                (allowUngrouped
+                  ? t("api_keys.projects.ungrouped")
+                  : t("api_keys.projects.select"))}
             </span>
             <ChevronsUpDown className="h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
           <Command>
-            <CommandInput placeholder="Search Projects" />
+            <CommandInput
+              placeholder={t("api_keys.placeholders.searchProjects")}
+            />
             <CommandList>
-              <CommandEmpty>No Projects found.</CommandEmpty>
+              <CommandEmpty>{t("api_keys.projects.notFound")}</CommandEmpty>
               <CommandGroup>
                 {allowUngrouped && (
                   <CommandItem
-                    value="Ungrouped"
+                    value={t("api_keys.projects.ungrouped")}
                     onSelect={() => {
                       onChange("");
                       setOpen(false);
@@ -115,7 +130,7 @@ export function ProjectPicker({
                     <Check
                       className={`mr-2 h-4 w-4 ${value ? "opacity-0" : "opacity-100"}`}
                     />
-                    Ungrouped
+                    {t("api_keys.projects.ungrouped")}
                   </CommandItem>
                 )}
                 {projects.map((p) => (
@@ -154,7 +169,7 @@ export function ProjectPicker({
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Create Project
+              {t("api_keys.projects.create")}
             </Button>
           </div>
         </PopoverContent>
@@ -163,7 +178,7 @@ export function ProjectPicker({
       {creating && (
         <div className="space-y-2 border bg-muted/40 p-3">
           <div className="flex items-center justify-between text-sm font-medium">
-            Create Project
+            {t("api_keys.projects.create")}
             <Button
               type="button"
               variant="ghost"
@@ -175,12 +190,12 @@ export function ProjectPicker({
           </div>
           <Input
             ref={inputRef}
-            placeholder="Project name"
+            placeholder={t("api_keys.placeholders.projectName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <Textarea
-            placeholder="Description (optional)"
+            placeholder={t("api_keys.placeholders.projectDescription")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -191,14 +206,16 @@ export function ProjectPicker({
               variant="secondary"
               onClick={() => setCreating(false)}
             >
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               type="button"
               disabled={!name.trim() || saving}
               onClick={() => void create()}
             >
-              {saving ? "Creating..." : "Create and select"}
+              {saving
+                ? t("api_keys.projects.creating")
+                : t("api_keys.projects.createAndSelect")}
             </Button>
           </div>
         </div>

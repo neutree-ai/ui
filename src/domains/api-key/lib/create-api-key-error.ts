@@ -11,17 +11,12 @@ function errorText(value: unknown): string {
   return "";
 }
 
+// PostgREST errors arrive nested ({ message: { message } }), so rendering the
+// cause directly yields "[object Object]". Pull out the deepest string and fall
+// back to a caller-supplied (translated) message when there is none.
 export function apiKeyActionErrorMessage(
   cause: unknown,
-  fallback = "API key operation failed. Please try again.",
+  fallback: string,
 ): string {
-  const message = errorText(cause);
-  return message || fallback;
-}
-
-export function createApiKeyErrorMessage(cause: unknown): string {
-  return apiKeyActionErrorMessage(
-    cause,
-    "Failed to create API key. Please try again.",
-  );
+  return errorText(cause) || fallback;
 }

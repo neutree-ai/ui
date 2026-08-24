@@ -1,11 +1,7 @@
 import {
   CaretDownIcon,
   CaretUpIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   DotsHorizontalIcon,
-  DoubleArrowLeftIcon,
-  DoubleArrowRightIcon,
   MixerHorizontalIcon,
 } from "@radix-ui/react-icons";
 import type { PopoverContentProps } from "@radix-ui/react-popover";
@@ -55,13 +51,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   TableBody,
   TableCell,
   TableHead,
@@ -77,6 +66,7 @@ import {
 import { BatchDeleteBar } from "@/foundation/components/BatchDeleteBar";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
+import { PaginationControls } from "@/foundation/components/PaginationControls";
 import { TableSearch } from "@/foundation/components/TableSearch";
 import { useColumnVisibility } from "@/foundation/hooks/use-column-visibility";
 import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
@@ -239,87 +229,14 @@ const Pagination = <TData extends BaseRecord = BaseRecord>({
   const total = table.refineCore.tableQuery.data?.total ?? 0;
 
   return (
-    <div className="flex flex-col sm:flex-row gap-y-4 sm-gap-y-0 items-center justify-between">
-      <div className="flex-1 text-sm text-muted-foreground">
-        {t("table.pagination.totalItems", { total })}
-      </div>
-      <div className="flex relative flex-col-reverse gap-y-4 sm:gap-y-0 sm:flex-row items-center space-x-6 lg:space-x-8">
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">
-            {t("table.pagination.rowsPerPage")}
-          </p>
-          <Select
-            value={`${table.getState().pagination.pageSize}`}
-            onValueChange={(value) => {
-              table.setPageSize(Number(value));
-            }}
-          >
-            <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex w-fit items-center justify-center text-sm font-medium">
-          {t("table.pagination.page", {
-            current: table.getState().pagination.pageIndex + 1,
-            total: table.getPageCount(),
-          })}
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <span className="sr-only">
-              {t("table.pagination.goToFirstPage")}
-            </span>
-            <DoubleArrowLeftIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <span className="sr-only">
-              {t("table.pagination.goToPreviousPage")}
-            </span>
-            <ChevronLeftIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            <span className="sr-only">
-              {t("table.pagination.goToNextPage")}
-            </span>
-            <ChevronRightIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-          >
-            <span className="sr-only">
-              {t("table.pagination.goToLastPage")}
-            </span>
-            <DoubleArrowRightIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
+    <PaginationControls
+      page={table.getState().pagination.pageIndex + 1}
+      pageCount={table.getPageCount()}
+      pageSize={table.getState().pagination.pageSize}
+      onPageChange={(page) => table.setPageIndex(page - 1)}
+      onPageSizeChange={(pageSize) => table.setPageSize(pageSize)}
+      summary={t("table.pagination.totalItems", { total })}
+    />
   );
 };
 
