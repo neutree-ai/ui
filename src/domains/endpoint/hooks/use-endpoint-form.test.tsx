@@ -918,6 +918,7 @@ function setupMocks(
     metadata: { name: string };
     visibility?: "public" | "private";
   }> = [],
+  engines: Array<Record<string, unknown>> = [],
 ) {
   vi.mocked(useSelect).mockImplementation(((opts: { resource: string }) => {
     if (opts.resource === "model_catalogs") {
@@ -928,6 +929,9 @@ function setupMocks(
     }
     if (opts.resource === "model_registries") {
       return { query: { data: { data: registries }, isLoading: false } };
+    }
+    if (opts.resource === "engines") {
+      return { query: { data: { data: engines }, isLoading: false } };
     }
     return defaultSelectResult;
   }) as unknown as typeof useSelect);
@@ -941,6 +945,24 @@ function setupMocks(
     error: null,
     refetch: vi.fn(),
   } as unknown as ReturnType<typeof useRegistryModels>);
+}
+
+function engineRef(name: string, tasks: string[] = ["text-generation"]) {
+  return {
+    metadata: {
+      name,
+      workspace: "default",
+      deletion_timestamp: null,
+      creation_timestamp: "",
+      update_timestamp: "",
+      labels: {},
+      annotations: {},
+    },
+    spec: {
+      versions: [{ version: "v1", values_schema: {} }],
+      supported_tasks: tasks,
+    },
+  };
 }
 
 // --- Test components ---
@@ -4844,5 +4866,45 @@ describe("what the chosen registry costs at deploy time", () => {
     expect(
       screen.queryByTestId("endpoint-runtime-download-unknown"),
     ).toBeNull();
+  });
+});
+
+describe("engines that need no model spec", () => {
+  // The Flex engine runs an arbitrary workload; Neutree manages no model for it,
+  // so the form must not ask which model to serve.
+  const modelFieldLabels = [
+    "endpoints.fields.modelRegistry",
+    "endpoints.fields.modelName",
+    "endpoints.fields.modelVersion",
+    "endpoints.fields.modelFile",
+    "endpoints.fields.taskType",
+  ];
+
+  it("hides every model field once Flex is selected", async () => {
+    setupMocks([], [], [], [engineRef("flex"), engineRef("vllm")]);
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "flex", version: "v1" });
+    });
+
+    for (const label of modelFieldLabels) {
+      expect(screen.queryByText(label)).toBeNull();
+    }
+    // Replicas shares the card with the model fields and must survive.
+    expect(screen.queryByText("endpoints.fields.replicas")).not.toBeNull();
+  });
+
+  it("keeps them for an ordinary engine", async () => {
+    setupMocks([], [], [], [engineRef("flex"), engineRef("vllm")]);
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "vllm", version: "v1" });
+    });
+
+    for (const label of modelFieldLabels) {
+      expect(screen.queryByText(label)).not.toBeNull();
+    }
   });
 });
