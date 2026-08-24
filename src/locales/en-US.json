@@ -48,6 +48,9 @@
 			"grafanaNotConfigured": "Grafana monitoring is not configured.",
 			"leaveEmptyToKeepValue": "Leave empty to keep existing value"
 		},
+		"errors": {
+			"unknown": "Unknown error"
+		},
 		"tabs": {
 			"basic": "Basic",
 			"monitor": "Monitor",
@@ -734,7 +737,6 @@
 			"fetchFailed": "Failed to fetch URL: {{status}} {{statusText}}",
 			"noDocuments": "No model catalog documents found in the input.",
 			"invalidResource": "Missing apiVersion, kind, or metadata.name.",
-			"unknownError": "Unknown error",
 			"successAll": "Imported {{count}} catalogs",
 			"failedAll": "All {{count}} imports failed",
 			"partial": "{{ok}} imported, {{failed}} failed",
@@ -1313,8 +1315,7 @@
 				"readingFile": "Error reading file",
 				"failedToReadFile": "Failed to read file",
 				"fetchingYamlFromUrl": "Error fetching YAML from URL",
-				"failedToFetchFromUrl": "Failed to fetch from URL: {{status}} {{statusText}}",
-				"unknownError": "Unknown error"
+				"failedToFetchFromUrl": "Failed to fetch from URL: {{status}} {{statusText}}"
 			}
 		},
 		"yamlExport": {
@@ -1351,8 +1352,7 @@
 			},
 			"errors": {
 				"generateFailed": "Failed to generate YAML",
-				"copyFailed": "Failed to copy to clipboard",
-				"unknownError": "Unknown error"
+				"copyFailed": "Failed to copy to clipboard"
 			}
 		},
 		"apiKey": {

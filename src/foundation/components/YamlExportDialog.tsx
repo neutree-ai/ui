@@ -40,6 +40,7 @@ import {
   type ExportableResource,
   useYamlExport,
 } from "@/foundation/hooks/use-yaml-export";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 
 interface YamlExportDialogProps {
   trigger?: React.ReactNode;
@@ -116,10 +117,7 @@ export const YamlExportDialog = ({
     } catch (error) {
       console.error("Failed to generate YAML:", error);
       toast.error(t("components.yamlExport.errors.generateFailed"), {
-        description:
-          error instanceof Error
-            ? error.message
-            : t("components.yamlExport.errors.unknownError"),
+        description: getErrorMessage(error, t("common.errors.unknown")),
       });
     }
   };

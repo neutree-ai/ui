@@ -31,6 +31,7 @@ import {
   filterMessagesForApi,
 } from "@/domains/endpoint/lib/chat-helpers";
 import { clientPostgrest } from "@/foundation/lib/api";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 
 type FormValue = {
   model: string;
@@ -292,7 +293,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
 
           contentArray.push({
             type: "error",
-            error: error instanceof Error ? error.message : String(error),
+            error: getErrorMessage(error, t("common.errors.unknown")),
           });
 
           return next;

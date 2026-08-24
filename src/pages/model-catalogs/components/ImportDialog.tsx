@@ -22,6 +22,7 @@ import {
   runCatalogImport,
 } from "@/domains/model-catalog/lib/catalog-import";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   isValidYamlResource,
@@ -110,9 +111,6 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
     confirmResolverRef.current = null;
   }, []);
 
-  // Refine's HttpError is a plain object, not an Error instance, so read
-  // .message off any shape before giving up — otherwise every server-side
-  // validation reason surfaces as "Unknown error".
   const describeError = useCallback(
     (err: unknown, name: string): string => {
       if (isDuplicateNameError(err)) {
@@ -123,14 +121,7 @@ export const ImportDialog = ({ open, onOpenChange }: ImportDialogProps) => {
         );
       }
 
-      const msg =
-        err instanceof Error
-          ? err.message
-          : (err as { message?: unknown } | null)?.message;
-
-      return typeof msg === "string" && msg
-        ? msg
-        : t("model_catalogs.import.unknownError", "Unknown error");
+      return getErrorMessage(err, t("common.errors.unknown"));
     },
     [t],
   );

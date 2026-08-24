@@ -1,5 +1,7 @@
 import { useCustomMutation } from "@refinedev/core";
 import { useCallback, useState } from "react";
+import { getErrorMessage } from "@/foundation/lib/error-message";
+import { i18n } from "@/foundation/lib/i18n";
 
 export type TestConnectivityResult = {
   success: boolean;
@@ -62,7 +64,7 @@ export function useTestConnectivity() {
       } catch (err) {
         const data: TestConnectivityResult = {
           success: false,
-          error: err instanceof Error ? err.message : String(err),
+          error: getErrorMessage(err, i18n.t("common.errors.unknown")),
         };
         setResultMap((prev) => ({ ...prev, [key]: data }));
         return data;
