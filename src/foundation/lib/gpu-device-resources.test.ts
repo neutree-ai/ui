@@ -430,11 +430,31 @@ describe("gpu device resource helpers", () => {
     expect(overCapacity.gpu).toBe("fail");
   });
 
-  it("rejects a fractional request when no physical card has enough residual capacity", () => {
+  it("uses core-only requirements for fractional placement", () => {
     const result = calculateGpuPlacementCapacity(
       {
         "node-a": placementNodeWithDevices([
-          placementDevice("GPU-a", 4096, 100),
+          placementDevice("GPU-core-only", 0, 100),
+        ]),
+      },
+      {
+        allocationMode: "fractional",
+        gpuPerReplica: 0.5,
+        replicaCount: 2,
+        selectedAccelerator: placementAccelerator,
+      },
+    );
+
+    expect(result.gpu).toBe("pass");
+    expect(result.satisfyingDeviceCount).toBe(1);
+    expect(result.maxPlaceableReplicas).toBe(2);
+  });
+
+  it("rejects a fractional request when no physical card has enough residual core", () => {
+    const result = calculateGpuPlacementCapacity(
+      {
+        "node-a": placementNodeWithDevices([
+          placementDevice("GPU-a", 15360, 49),
         ]),
       },
       {
@@ -447,6 +467,26 @@ describe("gpu device resource helpers", () => {
 
     expect(result.canAllocate).toBe(false);
     expect(result.satisfyingDeviceCount).toBe(0);
+  });
+
+  it("does not merge fractional core fragments from different cards", () => {
+    const result = calculateGpuPlacementCapacity(
+      {
+        "node-a": placementNodeWithDevices([
+          placementDevice("GPU-a", 15360, 49),
+          placementDevice("GPU-b", 15360, 49),
+        ]),
+      },
+      {
+        allocationMode: "fractional",
+        gpuPerReplica: 0.5,
+        replicaCount: 1,
+        selectedAccelerator: placementAccelerator,
+      },
+    );
+
+    expect(result.gpu).toBe("fail");
+    expect(result.maxPlaceableReplicas).toBe(0);
   });
 
   it("rejects multi-card fractional input on static clusters", () => {
@@ -858,7 +898,7 @@ describe("gpu device resource helpers", () => {
     });
   });
 
-  it("calculates fractional GPU card usage with physical-card semantics", () => {
+  it("calculates fractional GPU card usage from per-card core units", () => {
     expect(
       calculatePhysicalCardUsageForRequest(
         {
@@ -871,14 +911,14 @@ describe("gpu device resource helpers", () => {
                 product: "Tesla-T4",
                 health: true,
                 allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 7680, core_units: 50 },
+                available: { memory_mib: 0, core_units: 50 },
               },
               {
                 uuid: "GPU-too-small",
                 product: "Tesla-T4",
                 health: true,
                 allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 4096, core_units: 50 },
+                available: { memory_mib: 15360, core_units: 49 },
               },
             ],
           },

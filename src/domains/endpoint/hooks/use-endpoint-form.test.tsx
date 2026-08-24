@@ -4001,6 +4001,41 @@ describe("useEndpointForm", () => {
       ).toBe("endpoints.fields.vgpuCoreCapacity-");
     });
 
+    it("allows static fractional replicas when per-card core fits despite low VRAM", async () => {
+      const fractionalCoreOnlyCluster = JSON.parse(
+        JSON.stringify(staticNodeClusterWithNodeResources),
+      ) as EndpointClusterRef;
+      fractionalCoreOnlyCluster.metadata = metadata("fractional-core-only");
+      const resourceInfo = fractionalCoreOnlyCluster.status?.resource_info;
+      const device = resourceInfo?.node_resources?.["node-a"]?.devices?.[0];
+      if (!device) throw new Error("fractional fixture is incomplete");
+      device.available = { memory_mib: 0, core_units: 100 };
+
+      setupMocks([catalogA, catalogB], [fractionalCoreOnlyCluster]);
+      render(<CreateForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "fractional-core-only");
+        formInstance?.setValue("spec.replicas.num", 2);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 0.5,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+          },
+        });
+      });
+
+      await waitFor(() => expect(submitBlockedState).toBe(false));
+      expect(getAcceleratorCardText()).not.toContain(
+        "endpoints.messages.fractionalGpuResourcesInsufficient",
+      );
+    });
+
     it("blocks fractional GPU replicas that exceed per-device placement slots", async () => {
       const fractionalPlacementCluster = {
         metadata: metadata("fractional-placement"),

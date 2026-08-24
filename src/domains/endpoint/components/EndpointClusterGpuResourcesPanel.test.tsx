@@ -222,6 +222,57 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
   });
 
+  it("uses core units instead of VRAM for fractional card usability", () => {
+    const nodeA = resourceInfo.node_resources?.["node-a"];
+    if (!nodeA) throw new Error("node fixture is incomplete");
+
+    render(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={{
+          ...resourceInfo,
+          node_resources: {
+            "node-a": {
+              ...nodeA,
+              devices: nodeA.devices?.map((device) =>
+                device.uuid === "GPU-partial"
+                  ? {
+                      ...device,
+                      available: { memory_mib: 1, core_units: 75 },
+                    }
+                  : device,
+              ),
+            },
+          },
+        }}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        request={{
+          allocationMode: "fractional",
+          gpuPerReplica: 0.75,
+          cpuPerReplica: 1,
+          memoryPerReplica: 1,
+          requestedFullGpuCards: 0.75,
+          fullGpuCardCapacity: 2,
+          fullGpuCapacityExceeded: false,
+          requestedVirtualCards: 0,
+          totalVirtualCardCapacity: 0,
+          requestedVgpuMemoryMiB: 0,
+          availableVgpuMemoryMiB: 0,
+          requestedVgpuCoreUnits: 0,
+          availableVgpuCoreUnits: 0,
+          vgpuCapacityExceeded: false,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Usable 2"),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Usable")).toHaveLength(2);
+  });
+
   it("marks GPU devices unusable when the same node cannot fit the request", () => {
     const nodeA = resourceInfo.node_resources?.["node-a"];
     render(

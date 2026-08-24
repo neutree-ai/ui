@@ -273,6 +273,28 @@ const matchesSelectedAccelerator = (
 const toFiniteNumber = (value: number | null | undefined) =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
+export const getFractionalGpuCoreRequirement = (
+  gpuPerReplica: number | null | undefined,
+  totalCoreUnits: number | null | undefined,
+) => {
+  const normalizedGpuPerReplica = toFiniteNumber(gpuPerReplica);
+  const normalizedTotalCoreUnits = toFiniteNumber(totalCoreUnits);
+  if (
+    normalizedGpuPerReplica == null ||
+    normalizedTotalCoreUnits == null ||
+    normalizedGpuPerReplica <= 0 ||
+    normalizedGpuPerReplica >= 1 ||
+    normalizedTotalCoreUnits <= 0
+  ) {
+    return null;
+  }
+
+  const requiredCoreUnits = normalizedGpuPerReplica * normalizedTotalCoreUnits;
+  return Number.isFinite(requiredCoreUnits) && requiredCoreUnits > 0
+    ? requiredCoreUnits
+    : null;
+};
+
 const capResourceValue = (value: number, total: number | null | undefined) => {
   const normalizedTotal = toFiniteNumber(total);
   return normalizedTotal == null ? value : Math.min(value, normalizedTotal);
@@ -450,32 +472,21 @@ const getDeviceFractionalGpuSlotCapacity = (
   device: DeviceResource,
   requestedPerReplica: number,
 ) => {
-  const availableMemoryMiB = toFiniteNumber(device.available?.memory_mib);
-  const allocatableMemoryMiB = toFiniteNumber(device.allocatable?.memory_mib);
   const availableCoreUnits = toFiniteNumber(device.available?.core_units);
-  const allocatableCoreUnits = toFiniteNumber(device.allocatable?.core_units);
+  const requiredCoreUnits = getFractionalGpuCoreRequirement(
+    requestedPerReplica,
+    device.allocatable?.core_units,
+  );
 
   if (
     !device.health ||
-    availableMemoryMiB == null ||
-    allocatableMemoryMiB == null ||
     availableCoreUnits == null ||
-    allocatableCoreUnits == null ||
-    allocatableMemoryMiB <= 0 ||
-    allocatableCoreUnits <= 0 ||
-    requestedPerReplica <= 0
+    requiredCoreUnits == null
   ) {
     return 0;
   }
 
-  const memorySlots = Math.floor(
-    availableMemoryMiB / (allocatableMemoryMiB * requestedPerReplica),
-  );
-  const coreSlots = Math.floor(
-    availableCoreUnits / (allocatableCoreUnits * requestedPerReplica),
-  );
-
-  return Math.max(0, Math.min(memorySlots, coreSlots));
+  return Math.max(0, Math.floor(availableCoreUnits / requiredCoreUnits));
 };
 
 const canDeviceSatisfyVgpuRequest = (
@@ -687,12 +698,15 @@ const getPlacementRequirement = (
   options: GpuPlacementOptions,
 ): PlacementRequirement | null => {
   if (options.allocationMode === "fractional") {
-    const gpuPerReplica = Number(options.gpuPerReplica || 0);
-    if (gpuPerReplica <= 0 || gpuPerReplica >= 1) return null;
+    const coreUnits = getFractionalGpuCoreRequirement(
+      options.gpuPerReplica,
+      device.totalCoreUnits,
+    );
+    if (coreUnits == null) return null;
 
     return {
-      memoryMiB: gpuPerReplica * device.totalMemoryMiB,
-      coreUnits: gpuPerReplica * device.totalCoreUnits,
+      memoryMiB: 0,
+      coreUnits,
     };
   }
 
@@ -712,12 +726,16 @@ const canPlacementDeviceSatisfy = (
   device: PlacementDeviceState,
   requirement: PlacementRequirement | null,
 ) => {
-  if (!requirement || requirement.memoryMiB <= 0) return false;
-  if (device.availableMemoryMiB < requirement.memoryMiB) return false;
-  return (
-    requirement.coreUnits <= 0 ||
-    device.availableCoreUnits >= requirement.coreUnits
-  );
+  if (!requirement) return false;
+
+  const requiresMemory = requirement.memoryMiB > 0;
+  const requiresCore = requirement.coreUnits > 0;
+  if (!requiresMemory && !requiresCore) return false;
+  if (requiresMemory && device.availableMemoryMiB < requirement.memoryMiB) {
+    return false;
+  }
+
+  return !requiresCore || device.availableCoreUnits >= requirement.coreUnits;
 };
 
 const consumePlacementDevice = (
@@ -1019,13 +1037,15 @@ const getNodeReplicaUpperBound = (
   for (const device of node.devices) {
     const requirement = getPlacementRequirement(device, options);
     if (!requirement || !canPlacementDeviceSatisfy(device, requirement)) {
-      if (options.allocationMode === "full") continue;
+      continue;
     }
 
-    if (!requirement || requirement.memoryMiB <= 0) continue;
-    const memoryBound = Math.floor(
-      Math.max(0, device.availableMemoryMiB) / requirement.memoryMiB,
-    );
+    const memoryBound =
+      requirement.memoryMiB > 0
+        ? Math.floor(
+            Math.max(0, device.availableMemoryMiB) / requirement.memoryMiB,
+          )
+        : Number.POSITIVE_INFINITY;
     const coreBound =
       requirement.coreUnits > 0
         ? Math.floor(
@@ -1133,12 +1153,13 @@ const buildPlacementSnapshot = (
       const availableMemoryMiB = toFiniteNumber(device.available?.memory_mib);
       const totalCoreUnits = toFiniteNumber(device.allocatable?.core_units);
       const availableCoreUnits = toFiniteNumber(device.available?.core_units);
+      const memoryRequired = options.allocationMode !== "fractional";
       const coreRequired =
         options.allocationMode !== "vgpu" ||
         (toFiniteNumber(options.coreUnitsPerCard) ?? 0) > 0;
       if (
-        totalMemoryMiB == null ||
-        availableMemoryMiB == null ||
+        (memoryRequired &&
+          (totalMemoryMiB == null || availableMemoryMiB == null)) ||
         (coreRequired && (totalCoreUnits == null || availableCoreUnits == null))
       ) {
         hasUnknownDeviceSignals = true;
@@ -1147,11 +1168,11 @@ const buildPlacementSnapshot = (
 
       const placementDevice: PlacementDeviceState = {
         availableCoreUnits: Math.max(0, availableCoreUnits ?? 0),
-        availableMemoryMiB: Math.max(0, availableMemoryMiB),
+        availableMemoryMiB: Math.max(0, availableMemoryMiB ?? 0),
         id: `${nodeName}:${device.uuid}:${deviceIndex}`,
         nodeName,
         totalCoreUnits: Math.max(0, totalCoreUnits ?? 0),
-        totalMemoryMiB: Math.max(0, totalMemoryMiB),
+        totalMemoryMiB: Math.max(0, totalMemoryMiB ?? 0),
         uuid: device.uuid || `${nodeName}:${deviceIndex}`,
       };
       devices.push(placementDevice);

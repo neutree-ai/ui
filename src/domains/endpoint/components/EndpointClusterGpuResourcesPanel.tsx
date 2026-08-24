@@ -10,6 +10,7 @@ import {
   buildGpuDeviceResourceRows,
   buildNodePhysicalGpuResourceRows,
   type GpuDeviceResourceRow,
+  getFractionalGpuCoreRequirement,
 } from "@/foundation/lib/gpu-device-resources";
 import { cn } from "@/foundation/lib/utils";
 import type {
@@ -766,32 +767,17 @@ const isDeviceUsableForRequest = (
   }
 
   if (request.allocationMode === "fractional") {
-    const gpuPerReplica = Number(request.gpuPerReplica || 0);
-    if (!(gpuPerReplica > 0 && gpuPerReplica < 1)) {
-      return false;
-    }
-
-    const totalMemory = getDeviceAllocatableResourceValue(
-      schedulingDevice,
-      "memory_mib",
-      row.memory.total,
-    );
     const totalCore = getDeviceAllocatableResourceValue(
       schedulingDevice,
       "core_units",
       row.core.total,
     );
-    const requiredMemory =
-      totalMemory == null ? null : totalMemory * gpuPerReplica;
-    const requiredCore = totalCore == null ? null : totalCore * gpuPerReplica;
-    if (requiredMemory != null && availableMemory < requiredMemory) {
-      return false;
-    }
-    if (requiredCore != null && availableCore < requiredCore) {
-      return false;
-    }
+    const requiredCore = getFractionalGpuCoreRequirement(
+      request.gpuPerReplica,
+      totalCore,
+    );
 
-    return availableMemory > 0 && availableCore > 0;
+    return requiredCore != null && availableCore >= requiredCore;
   }
 
   const memoryMiBPerCard = Number(request.memoryMiBPerCard || 0);
