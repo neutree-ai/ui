@@ -25,6 +25,7 @@ import {
   isUpgradeVersion,
 } from "@/domains/cluster/lib/upgrade-versions";
 import type { Cluster } from "@/domains/cluster/types";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type AvailableVersionsResponse = {
@@ -179,11 +180,7 @@ function UpgradeDialog({
         invalidates: ["list", "detail"],
       });
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("clusters.messages.upgradeFailed"),
-      );
+      toast.error(getErrorMessage(error, t("clusters.messages.upgradeFailed")));
     }
   };
 

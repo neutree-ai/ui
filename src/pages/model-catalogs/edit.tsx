@@ -13,6 +13,7 @@ import {
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
 import { PageHeader } from "@/foundation/components/PageHeader";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   type ResourceEntity,
@@ -135,7 +136,7 @@ export const ModelCatalogsEdit = () => {
       toast.success(t("model_catalogs.edit.saved", "Catalog updated"));
       goToShow();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(getErrorMessage(e, t("common.errors.unknown")));
     }
   };
 

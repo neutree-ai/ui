@@ -43,6 +43,21 @@ describe("handleError", () => {
     });
   });
 
+  it("rejects with a real Error instance so instanceof narrowing works", async () => {
+    const error: PostgrestError = {
+      name: "PostgrestError",
+      message: "spec must be a mapping",
+      code: "400",
+      details: "",
+      hint: "",
+    };
+    await expect(handleError(error)).rejects.toBeInstanceOf(Error);
+    const rejected = await handleError(error).catch((e: unknown) => e);
+    expect(
+      rejected instanceof Error ? rejected.message : String(rejected),
+    ).toBe("spec must be a mapping");
+  });
+
   it("handles AuthError without hint", async () => {
     const error = { message: "Auth error", code: "", status: 401 };
     await expect(

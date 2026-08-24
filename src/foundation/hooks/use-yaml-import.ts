@@ -1,5 +1,6 @@
 import { useCreate, useDataProvider, useResource } from "@refinedev/core";
 import { useCallback, useState } from "react";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   isValidYamlResource,
@@ -178,12 +179,7 @@ export const useYamlImport = () => {
               resourceType: resourceType,
               success: false,
               skipped: false,
-              error:
-                typeof error === "object" &&
-                error !== null &&
-                "message" in error
-                  ? String(error.message)
-                  : t("components.yamlImport.errors.unknownError"),
+              error: getErrorMessage(error, t("common.errors.unknown")),
             });
           }
 
@@ -224,10 +220,10 @@ export const useYamlImport = () => {
               resourceName: file.name,
               resourceType: "file",
               success: false,
-              error:
-                error instanceof Error
-                  ? error.message
-                  : t("components.yamlImport.errors.failedToReadFile"),
+              error: getErrorMessage(
+                error,
+                t("components.yamlImport.errors.failedToReadFile"),
+              ),
             },
           ],
         });
@@ -282,10 +278,10 @@ export const useYamlImport = () => {
               resourceName: url,
               resourceType: "url",
               success: false,
-              error:
-                error instanceof Error
-                  ? error.message
-                  : t("components.yamlImport.errors.failedToFetchFromUrl"),
+              error: getErrorMessage(
+                error,
+                t("components.yamlImport.errors.failedToFetchFromUrl"),
+              ),
             },
           ],
         });

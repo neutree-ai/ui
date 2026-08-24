@@ -7,6 +7,7 @@ import {
 } from "@/domains/endpoint/lib/pause-action";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { RowAction, type RowActionProps } from "@/foundation/components/Table";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type EndpointPauseActionProps = RowActionProps & {
@@ -76,13 +77,14 @@ export const EndpointPauseAction = ({
       });
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              isPaused
-                ? "endpoints.messages.resumeFailed"
-                : "endpoints.messages.pauseFailed",
-            ),
+        getErrorMessage(
+          error,
+          translate(
+            isPaused
+              ? "endpoints.messages.resumeFailed"
+              : "endpoints.messages.pauseFailed",
+          ),
+        ),
       );
     }
   };

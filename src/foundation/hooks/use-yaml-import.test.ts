@@ -208,14 +208,14 @@ describe("useYamlImport", () => {
     });
 
     it("falls back to i18n key when error has no message", async () => {
-      mockMutateAsync.mockRejectedValue("some string error");
+      mockMutateAsync.mockRejectedValue({ statusCode: 500 });
       const { result } = await importHook();
 
       await act(() => result.current.importFromYaml("yaml-content"));
 
       expect(result.current.progress.results[0]).toMatchObject({
         success: false,
-        error: "components.yamlImport.errors.unknownError",
+        error: "common.errors.unknown",
       });
     });
 
