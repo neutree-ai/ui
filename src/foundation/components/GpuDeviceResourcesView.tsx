@@ -19,6 +19,11 @@ import {
   TableRow,
   Table as UITable,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
@@ -289,6 +294,47 @@ const getDeviceStatusLabel = (
   return labels.allocated;
 };
 
+const GpuDeviceHealthIndicator = ({
+  healthy,
+  labels,
+  className,
+}: {
+  healthy: boolean;
+  labels: Pick<GpuDeviceResourcesViewLabels, "healthy" | "unhealthy">;
+  className?: string;
+}) => {
+  const label = healthy ? labels.healthy : labels.unhealthy;
+  const indicator = (
+    <span
+      className={cn(
+        "flex items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        className,
+      )}
+      role="img"
+      aria-label={label}
+      title={healthy ? label : undefined}
+      tabIndex={healthy ? undefined : 0}
+    >
+      {healthy ? (
+        <CircleCheck className="h-4 w-4 text-emerald-600" />
+      ) : (
+        <CircleAlert className="h-4 w-4 text-destructive" />
+      )}
+    </span>
+  );
+
+  if (healthy) {
+    return indicator;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{indicator}</TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+};
+
 export function GpuDeviceResourcesView({
   nodeResources,
   labels,
@@ -534,18 +580,10 @@ export function GpuDeviceResourcesView({
                   >
                     {getDeviceStatusLabel(row, request, labels)}
                   </Badge>
-                  <span
-                    className="flex items-center justify-center"
-                    role="img"
-                    aria-label={row.healthy ? labels.healthy : labels.unhealthy}
-                    title={row.healthy ? labels.healthy : labels.unhealthy}
-                  >
-                    {row.healthy ? (
-                      <CircleCheck className="h-4 w-4 text-emerald-600" />
-                    ) : (
-                      <CircleAlert className="h-4 w-4 text-destructive" />
-                    )}
-                  </span>
+                  <GpuDeviceHealthIndicator
+                    healthy={row.healthy}
+                    labels={labels}
+                  />
                 </div>
               </div>
 
@@ -644,20 +682,11 @@ export function GpuDeviceResourcesView({
                     </Button>
                   </TableCell>
                   <TableCell className="text-center">
-                    <span
-                      className="flex w-full items-center justify-center"
-                      role="img"
-                      aria-label={
-                        row.healthy ? labels.healthy : labels.unhealthy
-                      }
-                      title={row.healthy ? labels.healthy : labels.unhealthy}
-                    >
-                      {row.healthy ? (
-                        <CircleCheck className="h-4 w-4 text-emerald-600" />
-                      ) : (
-                        <CircleAlert className="h-4 w-4 text-destructive" />
-                      )}
-                    </span>
+                    <GpuDeviceHealthIndicator
+                      healthy={row.healthy}
+                      labels={labels}
+                      className="w-full"
+                    />
                   </TableCell>
                   {showNodeColumn && (
                     <TableCell>

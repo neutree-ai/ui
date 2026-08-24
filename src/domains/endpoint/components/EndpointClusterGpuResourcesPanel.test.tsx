@@ -1,5 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import { EndpointClusterGpuResourcesPanel } from "./EndpointClusterGpuResourcesPanel";
 
@@ -186,6 +187,69 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toBeTruthy();
     expect(screen.getAllByLabelText("Usable")).toHaveLength(1);
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
+  });
+
+  it("keeps healthy GPU indicators native and out of the tab order", () => {
+    render(
+      <TooltipProvider delayDuration={0}>
+        <EndpointClusterGpuResourcesPanel
+          resourceInfo={resourceInfo}
+          currentCluster="cluster-a"
+          selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+          virtualizationEnabled={false}
+          t={t}
+        />
+      </TooltipProvider>,
+    );
+
+    const healthyIndicator = screen.getByRole("img", { name: "Usable" });
+    expect(healthyIndicator.getAttribute("title")).toBe("Usable");
+    expect(healthyIndicator.getAttribute("tabindex")).toBeNull();
+
+    fireEvent.focus(healthyIndicator);
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("shows an unhealthy GPU device tooltip", async () => {
+    const nodeA = resourceInfo.node_resources?.["node-a"];
+    if (!nodeA) throw new Error("node fixture is incomplete");
+
+    render(
+      <TooltipProvider delayDuration={0}>
+        <EndpointClusterGpuResourcesPanel
+          resourceInfo={{
+            ...resourceInfo,
+            node_resources: {
+              "node-a": {
+                ...nodeA,
+                devices: nodeA.devices?.map((device) =>
+                  device.uuid === "GPU-free"
+                    ? { ...device, health: false }
+                    : device,
+                ),
+              },
+            },
+          }}
+          currentCluster="cluster-a"
+          selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+          virtualizationEnabled={false}
+          t={t}
+        />
+      </TooltipProvider>,
+    );
+
+    const unhealthyIndicator = screen.getByRole("img", {
+      name: "Unhealthy",
+    });
+    expect(unhealthyIndicator.getAttribute("title")).toBeNull();
+    expect(unhealthyIndicator.getAttribute("tabindex")).toBe("0");
+    expect(unhealthyIndicator.className).not.toContain("cursor-");
+    expect(unhealthyIndicator.className).toContain("focus-visible:ring-2");
+
+    fireEvent.focus(unhealthyIndicator);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe("Unhealthy");
   });
 
   it("uses fractional card capacity when checking physical GPU requests", () => {
