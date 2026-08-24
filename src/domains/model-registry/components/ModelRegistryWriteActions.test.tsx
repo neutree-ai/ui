@@ -7,6 +7,12 @@ vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+// Reaching the row-action parts means importing the table module, which pulls in
+// @refinedev/react-table — whose ESM build imports `lodash/isEqual` with no
+// extension and fails to resolve under vitest. Nothing here renders a table, so
+// the hook it exports is never called.
+vi.mock("@refinedev/react-table", () => ({ useTable: vi.fn() }));
+
 vi.mock("@refinedev/core", async () => {
   const actual =
     await vi.importActual<typeof import("@refinedev/core")>("@refinedev/core");
@@ -52,8 +58,13 @@ describe("ModelRegistryWriteActions", () => {
   it("offers edit and delete on a registry a user created", () => {
     render(<ModelRegistryWriteActions registry={registry({})} />);
 
-    const trigger = screen.getByTestId("row-actions-trigger");
-    fireEvent.click(trigger);
+    // The menu opens on pointer down, not on click — a plain click leaves it
+    // closed and every assertion below would pass vacuously.
+    fireEvent.pointerDown(screen.getByTestId("row-actions-trigger"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
+    });
 
     expect(screen.getByText("buttons.edit")).toBeTruthy();
     expect(screen.getByText("buttons.delete")).toBeTruthy();
