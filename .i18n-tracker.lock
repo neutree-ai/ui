@@ -238,7 +238,7 @@
   "src/foundation/components/VariablesInput.tsx": "1d43ebad87c1dcbb3053798477ab3722",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "60d6fab6e42a96ac0c4a91ff0c2e4c29",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "47376e2e25f9fa5b5089251fe7f74e37",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "cc05243baff2e4e9542f4244049ebcc8",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "1e1cfe7ad811875f9a8b101c39edb45b",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "7fc5186989f74eb21ecf621ac24e5ee4",
   "src/pages/external-endpoints/create.tsx": "bd5d137b2a4a49d077ea1891707f2988",
@@ -384,5 +384,6 @@
   "src/domains/api-key/components/ApiKeyLabel.tsx": "3cdf5f7478d547f4cf3fc71a97e53e28",
   "src/domains/api-key/components/ProjectPicker.tsx": "f0fa514cf0497fdc5cbedda67192f53c",
   "src/domains/model-registry/lib/model-card-html.ts": "c122c65d212a4fd311ef8abe86dcadd6",
-  "src/domains/endpoint/components/WorkloadImageInput.tsx": "304fa99fa65a207a26b7ee097550af48"
+  "src/domains/endpoint/components/WorkloadImageInput.tsx": "304fa99fa65a207a26b7ee097550af48",
+  "src/foundation/lib/registry-model-display.ts": "1a385e0a97717a0b6f0d3e77d18c7224"
 }
