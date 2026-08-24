@@ -302,7 +302,6 @@ const getReplicaNodeId = (
 type EndpointResourceAddBackOptions = {
   cpuPerReplica?: number | null;
   memoryPerReplica?: number | null;
-  replicaCount?: number | null;
 };
 
 export function addBackEndpointDeviceAllocationsToNodeResources(
@@ -318,15 +317,10 @@ export function addBackEndpointDeviceAllocationsToNodeResources(
   const replicas = endpointResources.replicas;
   const cpuPerReplica = Math.max(0, Number(options?.cpuPerReplica || 0));
   const memoryPerReplica = Math.max(0, Number(options?.memoryPerReplica || 0));
-  const expectedReplicaCount = Math.max(
-    1,
-    Math.floor(Number(options?.replicaCount || replicas.length)),
-  );
   const replicaNodeIds = replicas.map(getReplicaNodeId);
-  const canRestoreNodeResources =
-    (cpuPerReplica > 0 || memoryPerReplica > 0) &&
-    replicas.length === expectedReplicaCount &&
-    replicaNodeIds.every(Boolean);
+  // GPU-only replicas can request zero CPU and memory; node topology alone
+  // determines whether restoring their node-level allocation is safe.
+  const canRestoreNodeResources = replicaNodeIds.every(Boolean);
 
   const allocationsByDevice = new Map<
     string,

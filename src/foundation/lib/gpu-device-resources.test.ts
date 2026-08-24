@@ -717,13 +717,35 @@ describe("gpu device resource helpers", () => {
         ],
       },
       undefined,
-      { cpuPerReplica: 4, memoryPerReplica: 16, replicaCount: 2 },
+      { cpuPerReplica: 4, memoryPerReplica: 16 },
     );
 
     expect(result?.["node-a"]?.available?.cpu).toBe(8);
     expect(result?.["node-a"]?.available?.memory).toBe(32);
     expect(result?.["node-b"]?.available?.cpu).toBe(12);
     expect(result?.["node-b"]?.available?.memory).toBe(48);
+  });
+
+  it("adds back node resources from every replica with known node data", () => {
+    const result = addBackEndpointDeviceAllocationsToNodeResources(
+      {
+        "node-a": {
+          allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
+          available: { cpu: 4, memory: 16, accelerator_groups: null },
+          devices: [],
+        },
+      },
+      {
+        replicas: [
+          { instance_id: "replica-a", node_id: "node-a", devices: [] },
+        ],
+      },
+      undefined,
+      { cpuPerReplica: 4, memoryPerReplica: 16 },
+    );
+
+    expect(result?.["node-a"]?.available?.cpu).toBe(8);
+    expect(result?.["node-a"]?.available?.memory).toBe(32);
   });
 
   it("does not add back node resources from partial replica placement data", () => {
@@ -742,7 +764,7 @@ describe("gpu device resource helpers", () => {
         ],
       },
       undefined,
-      { cpuPerReplica: 4, memoryPerReplica: 16, replicaCount: 2 },
+      { cpuPerReplica: 4, memoryPerReplica: 16 },
     );
 
     expect(result?.["node-a"]?.available?.cpu).toBe(4);
@@ -775,7 +797,7 @@ describe("gpu device resource helpers", () => {
         ],
       },
       undefined,
-      { cpuPerReplica: 4, memoryPerReplica: 16, replicaCount: 1 },
+      { cpuPerReplica: 4, memoryPerReplica: 16 },
     );
 
     expect(result?.["node-a"]?.available?.cpu).toBe(8);

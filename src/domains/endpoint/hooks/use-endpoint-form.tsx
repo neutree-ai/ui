@@ -449,13 +449,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           ? {
               cpuPerReplica: normalizedQueryResources?.cpu,
               memoryPerReplica: normalizedQueryResources?.memory,
-              replicaCount: currentEndpointReplicaCount,
             }
           : undefined,
       ),
     [
       currentEndpointRuntimeResources,
-      currentEndpointReplicaCount,
       canReuseCurrentEndpointResources,
       normalizedQueryResources?.cpu,
       normalizedQueryResources?.memory,

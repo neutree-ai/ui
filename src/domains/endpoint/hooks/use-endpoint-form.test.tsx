@@ -5291,12 +5291,12 @@ describe("useEndpointForm", () => {
       ).toBeNull();
     });
 
-    it("adds back an edited endpoint's node CPU and memory without device allocations", async () => {
+    it("adds back known edit replica CPU and memory without device allocations", async () => {
       queryDataRef.current = {
         metadata: metadata("cpu-memory-edit"),
         spec: {
           cluster: "plain-k8s-node-resources",
-          replicas: { num: 1 },
+          replicas: { num: 2 },
           resources: {
             cpu: "4",
             memory: "8",
