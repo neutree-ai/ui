@@ -60,12 +60,14 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
+import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
   calculateGpuPlacementCapacity,
@@ -76,6 +78,10 @@ import {
   countFullCardAvailableDevicesByProduct,
   sumMatchingDeviceAvailableResources,
 } from "@/foundation/lib/gpu-device-resources";
+import {
+  registryIsDisabled,
+  registryIsUnreachable,
+} from "@/foundation/lib/model-registry-availability";
 import {
   MODEL_REGISTRY_SELECT,
   registryModelDelivery,
@@ -192,6 +198,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           currentRegistry,
           currentModelName,
           availableModelNames: modelExistenceNames,
+          availableRegistryNames: modelRegistryNames,
           clusterType,
         },
         t,
@@ -322,6 +329,40 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const selectedModelDelivery = selectedRegistry
     ? registryModelDelivery(selectedRegistry.visibility)
     : null;
+
+  // The registries this workspace can offer, or null while the listing has not
+  // arrived — which is not the same statement as "there are none".
+  const modelRegistryNames = useMemo<string[] | null>(
+    () =>
+      modelRegistries.query.data?.data
+        ? modelRegistries.query.data.data.map(
+            (registry) => registry.metadata.name,
+          )
+        : null,
+    [modelRegistries.query.data],
+  );
+
+  // A registry that is not answering, or is on its way out, cannot be listed
+  // from. Offered but unselectable, with the reason on the row: removing it
+  // would leave the user looking for a registry they know they created.
+  const modelRegistryOptions = useMemo(
+    () =>
+      (modelRegistries.query.data?.data ?? []).map((registry) => {
+        const unavailable = registryIsDisabled(registry)
+          ? t("endpoints.messages.modelRegistryDeleted")
+          : registryIsUnreachable(registry)
+            ? t("endpoints.messages.modelRegistryUnreachable")
+            : undefined;
+
+        return {
+          label: registry.metadata.name,
+          value: registry.metadata.name,
+          disabled: Boolean(unavailable),
+          description: unavailable,
+        };
+      }),
+    [modelRegistries.query.data, t],
+  );
 
   const modelCatalogs = useSelect<EndpointModelCatalogRef>({
     resource: "model_catalogs",
@@ -1199,6 +1240,26 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       : null;
   }, [modelExistenceQuery.page]);
 
+  // What the checkpoint says about itself lives in the detail read, not in the
+  // listing, so picking a model asks for it and the answer lands in the effect
+  // below. Only a pick sets this: opening an existing endpoint, or applying a
+  // catalog, must keep whatever `info` that spec already carries.
+  const [pickedModelRef, setPickedModelRef] = useState<RegistryModelRef | null>(
+    null,
+  );
+  const pickedModelVersion = useRegistryModelVersion(pickedModelRef ?? {});
+  const pickedModelInfo = pickedModelVersion.model?.info ?? null;
+  const pickedModelSettled =
+    Boolean(pickedModelRef) && !pickedModelVersion.isLoading;
+
+  useEffect(() => {
+    if (!pickedModelSettled) return;
+    // A failed read settles with nothing, which is the honest answer: the field
+    // was cleared when the model was picked and stays cleared.
+    form.setValue("spec.model.info", pickedModelInfo);
+    setPickedModelRef(null);
+  }, [pickedModelSettled, pickedModelInfo, form]);
+
   // The resolver only runs on form events, so a lookup result landing after
   // the last user interaction would never surface (or clear) the
   // model-not-found error. Re-validate that one field when the inputs or the
@@ -1671,16 +1732,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 <FormCombobox
                   placeholder={t("endpoints.placeholders.selectModelRegistry")}
                   disabled={modelRegistries.query.isLoading}
-                  options={(modelRegistries.query.data?.data || []).map(
-                    (e) => ({
-                      label: e.metadata.name,
-                      value: e.metadata.name,
-                    }),
-                  )}
+                  options={modelRegistryOptions}
                   onChange={(value) => {
                     form.setValue("spec.model.registry", value as string);
                     // Reset model name and search when registry changes
                     form.setValue("spec.model.name", "");
+                    form.setValue("spec.model.info", null);
                     setModelSearch("");
                   }}
                 />
@@ -1726,6 +1783,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       if (version) {
                         form.setValue("spec.model.version", version);
                       }
+
+                      // Cleared now and refilled when the detail read answers,
+                      // so the previous model's parameters are never shown
+                      // under this one's name.
+                      form.setValue("spec.model.info", null);
+                      setPickedModelRef(
+                        workspace && currentRegistry && value
+                          ? {
+                              workspace,
+                              registry: currentRegistry,
+                              model: value,
+                              version,
+                            }
+                          : null,
+                      );
                     }}
                   />
                   {/* Said here rather than in release notes: a model that is not on

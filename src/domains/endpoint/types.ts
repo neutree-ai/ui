@@ -134,7 +134,8 @@ export type EndpointModelCatalogRef = {
   };
 };
 
-/** Minimal model registry shape — only needs metadata.name */
+/** Minimal model registry shape — the name, plus what the picker has to say
+ * about whether the registry can be used. */
 export type EndpointModelRegistryRef = {
   metadata: Metadata;
   /**
@@ -143,4 +144,7 @@ export type EndpointModelRegistryRef = {
    * MODEL_REGISTRY_SELECT.
    */
   visibility?: ModelRegistryVisibility;
+  /** Carries the phase the availability rules read; `*` in the select brings
+   * it along already. */
+  status?: { phase?: string } | null;
 };

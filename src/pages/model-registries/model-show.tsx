@@ -15,12 +15,12 @@ import { ModelDeleteDialog } from "@/domains/model-registry/components/ModelDele
 import { ModelEditDialog } from "@/domains/model-registry/components/ModelEditDialog";
 import { ModelInfoFields } from "@/domains/model-registry/components/ModelInfoFields";
 import { ModelReadme } from "@/domains/model-registry/components/ModelReadme";
-import { useRegistryModelVersion } from "@/domains/model-registry/hooks/use-registry-model-version";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
+import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   MODEL_REGISTRY_SELECT,

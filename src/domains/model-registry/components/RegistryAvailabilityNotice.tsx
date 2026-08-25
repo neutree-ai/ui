@@ -3,13 +3,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoadingIcon } from "@/components/ui/loading";
 import { useRetryRegistryConnection } from "@/domains/model-registry/hooks/use-retry-registry-connection";
-import {
-  registryIsDisabled,
-  registryIsUnreachable,
-} from "@/domains/model-registry/lib/capabilities";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { formatTimestamp } from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  registryIsDisabled,
+  registryIsUnreachable,
+} from "@/foundation/lib/model-registry-availability";
 
 /**
  * Why a registry is not answering, and the one control that does something

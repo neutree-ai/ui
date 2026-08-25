@@ -1,9 +1,5 @@
 import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
-import type {
-  BaseOption,
-  BaseRecord,
-  UseSelectReturnType,
-} from "@refinedev/core";
+import type { BaseOption, BaseRecord } from "@refinedev/core";
 import {
   type ComponentPropsWithoutRef,
   type ElementRef,
@@ -29,16 +25,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
-type ComboboxProps = ComponentPropsWithoutRef<typeof Command> &
-  Pick<UseSelectReturnType<BaseOption, any>, "options"> & {
-    placeholder?: string;
-    emptyMessage?: string;
-    onChange?: (value: string | number) => void;
-    // null is not a valid prop value, but FormFieldGroup injects field.value
-    // verbatim and the API returns explicit nulls for empty composite fields.
-    value?: string | number | BaseRecord | null;
-    disabled?: boolean;
-  };
+/**
+ * One choice, widened from refine's `BaseOption` with the two things a list of
+ * live resources needs to say.
+ *
+ * A disabled option stays in the list: why it cannot be chosen is usually the
+ * answer the user came for, and hiding it would leave them hunting for
+ * something that appears not to exist.
+ */
+type FormComboboxOption = BaseOption & {
+  disabled?: boolean;
+  /** Shown under the label — why the option is disabled, typically. */
+  description?: string;
+};
+
+type ComboboxProps = ComponentPropsWithoutRef<typeof Command> & {
+  options?: FormComboboxOption[];
+  placeholder?: string;
+  emptyMessage?: string;
+  onChange?: (value: string | number) => void;
+  // null is not a valid prop value, but FormFieldGroup injects field.value
+  // verbatim and the API returns explicit nulls for empty composite fields.
+  value?: string | number | BaseRecord | null;
+  disabled?: boolean;
+};
 
 export const FormCombobox = forwardRef<
   ElementRef<typeof Command>,
@@ -102,12 +112,23 @@ export const FormCombobox = forwardRef<
                   <CommandItem
                     value={option.label}
                     key={option.value}
+                    disabled={option.disabled}
                     onSelect={() => {
+                      if (option.disabled) {
+                        return;
+                      }
                       props.onChange?.(option.value);
                       setOpen(false);
                     }}
                   >
-                    {option.label}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{option.label}</span>
+                      {option.description && (
+                        <span className="block truncate text-xs text-[var(--nt-text-neutral-tertiary)]">
+                          {option.description}
+                        </span>
+                      )}
+                    </span>
                     <CheckIcon
                       className={cn(
                         "ml-auto h-4 w-4",

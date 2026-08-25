@@ -527,6 +527,11 @@ export function validateEndpointValues(
      */
     availableModelNames: string[] | null;
     /**
+     * The registries visible in this workspace, or `null` while the listing has
+     * not resolved. Same rule as above: no answer means no verdict.
+     */
+    availableRegistryNames: string[] | null;
+    /**
      * The target cluster type ("ssh" or "kubernetes"). Determines the legal
      * accelerator card-count precision: SSH clusters allow 0 (unassigned),
      * one-decimal counts below one, and integers at or above one; Kubernetes
@@ -535,7 +540,7 @@ export function validateEndpointValues(
      */
     clusterType?: "ssh" | "kubernetes";
   },
-  t: (key: string) => string,
+  t: (key: string, options?: Record<string, unknown>) => string,
 ): Record<string, { type: string; message: string }> {
   const errors: Record<string, { type: string; message: string }> = {};
 
@@ -598,6 +603,23 @@ export function validateEndpointValues(
     errors["spec.resources.accelerator.virtualization.core_percent"] = {
       type: "manual",
       message: t("endpoints.messages.vgpuCorePercentRange"),
+    };
+  }
+
+  // A catalog written elsewhere names the registry its author had. The picker
+  // renders an unknown value as an empty box rather than as the name it holds,
+  // so without this the field looks unfilled and the deploy fails server-side.
+  if (
+    context.action === "create" &&
+    context.currentRegistry &&
+    context.availableRegistryNames !== null &&
+    !context.availableRegistryNames.includes(context.currentRegistry)
+  ) {
+    errors["spec.model.registry"] = {
+      type: "manual",
+      message: t("endpoints.messages.modelRegistryNotInWorkspace", {
+        name: context.currentRegistry,
+      }),
     };
   }
 

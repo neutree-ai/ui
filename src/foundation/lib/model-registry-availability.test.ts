@@ -1,29 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  type RegistryAvailability,
   registryIsDisabled,
   registryIsUnreachable,
-} from "@/domains/model-registry/lib/capabilities";
-import type { ModelRegistry } from "@/domains/model-registry/types";
+} from "./model-registry-availability";
 
 const registry = (
   overrides: { phase?: string; deletionTimestamp?: string | null } = {},
-): ModelRegistry =>
-  ({
-    id: 1,
-    api_version: "v1",
-    kind: "ModelRegistry",
-    metadata: {
-      name: "r",
-      workspace: "default",
-      deletion_timestamp: overrides.deletionTimestamp ?? null,
-      creation_timestamp: "2026-01-01T00:00:00Z",
-      update_timestamp: "2026-01-01T00:00:00Z",
-      labels: {},
-      annotations: {},
-    },
-    spec: { type: "hugging-face", url: "https://example.invalid" },
-    status: overrides.phase ? { phase: overrides.phase } : null,
-  }) as unknown as ModelRegistry;
+): RegistryAvailability => ({
+  metadata: { deletion_timestamp: overrides.deletionTimestamp ?? null },
+  status: overrides.phase ? { phase: overrides.phase } : null,
+});
 
 describe("registryIsUnreachable", () => {
   it("is the Failed phase and nothing else", () => {
