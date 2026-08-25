@@ -11,16 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  registryIsDisabled,
-  registryIsUnreachable,
-} from "@/domains/model-registry/lib/capabilities";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp, { formatTimestamp } from "@/foundation/components/Timestamp";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  registryIsDisabled,
+  registryIsUnreachable,
+} from "@/foundation/lib/model-registry-availability";
 import { registryPagesFromOffset } from "@/foundation/lib/model-registry-visibility";
 import type { RegistryModelVersion } from "@/foundation/types/model-types";
 

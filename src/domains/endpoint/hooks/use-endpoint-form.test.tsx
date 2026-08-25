@@ -70,6 +70,11 @@ vi.mock("@/foundation/hooks/use-registry-models", () => ({
   useRegistryModels: vi.fn(),
 }));
 
+// Picking a model reads that version's detail for its static parameters.
+vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
+  useRegistryModelVersion: vi.fn(),
+}));
+
 vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
@@ -91,6 +96,7 @@ vi.mock("@/foundation/components/VariablesInput", () => ({
 
 import { useSelect } from "@refinedev/core";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
+import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useEndpointForm } from "./use-endpoint-form";
 
@@ -988,6 +994,7 @@ function setupMocks(
   registries: Array<{
     metadata: { name: string };
     visibility?: "public" | "private";
+    status?: { phase?: string };
   }> = [],
   engines: Array<Record<string, unknown>> = [],
 ) {
@@ -1016,6 +1023,14 @@ function setupMocks(
     error: null,
     refetch: vi.fn(),
   } as unknown as ReturnType<typeof useRegistryModels>);
+
+  vi.mocked(useRegistryModelVersion).mockReturnValue({
+    model: null,
+    isLoading: false,
+    isFetching: false,
+    error: null,
+    refetch: vi.fn(),
+  } as unknown as ReturnType<typeof useRegistryModelVersion>);
 }
 
 function engineRef(name: string, tasks: string[] = ["text-generation"]) {
@@ -6123,5 +6138,196 @@ describe("model picker", () => {
 
     expect(formInstance?.getValues().spec.model.name).toBe("Qwen/Qwen3-8B");
     expect(formInstance?.getValues().spec.model.version).toBe("v2");
+  });
+});
+
+describe("model static parameters", () => {
+  const pickQwen = async () => {
+    const field = screen.getByTestId("field-spec.model.name");
+    const trigger = field.querySelector('button[role="combobox"]');
+    if (!trigger) throw new Error("model combobox trigger not found");
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("option", { name: "Qwen/Qwen3-8B" }));
+    });
+  };
+
+  const withOneModel = () => {
+    setupMocks([], [], [{ metadata: { name: "hf" } }]);
+    vi.mocked(useRegistryModels).mockReturnValue({
+      page: null,
+      models: [
+        {
+          name: "Qwen/Qwen3-8B",
+          versions: [{ name: "v2", creation_time: "" }],
+        },
+      ],
+      total: 1,
+      isLoading: false,
+      isFetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useRegistryModels>);
+  };
+
+  it("fills them in from the detail read when a model is picked", async () => {
+    withOneModel();
+    vi.mocked(useRegistryModelVersion).mockReturnValue({
+      model: {
+        name: "v2",
+        creation_time: "",
+        info: { parameter_count: "8B", num_hidden_layers: 36 },
+      },
+      isLoading: false,
+      isFetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useRegistryModelVersion>);
+
+    render(<CreateForm />);
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+    });
+    await pickQwen();
+
+    expect(formInstance?.getValues().spec.model.info).toEqual({
+      parameter_count: "8B",
+      num_hidden_layers: 36,
+    });
+  });
+
+  // The previous model's numbers must not stay on screen while the read for the
+  // new one is still in flight.
+  it("clears them while the detail read is still in flight", async () => {
+    withOneModel();
+    vi.mocked(useRegistryModelVersion).mockReturnValue({
+      model: null,
+      isLoading: true,
+      isFetching: true,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useRegistryModelVersion>);
+
+    render(<CreateForm />);
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.info", { parameter_count: "72B" });
+    });
+    await pickQwen();
+
+    expect(formInstance?.getValues().spec.model.info).toBeNull();
+  });
+
+  // A read that fails settles with nothing, and nothing is the honest answer.
+  it("leaves them empty when the detail read comes back with nothing", async () => {
+    withOneModel();
+
+    render(<CreateForm />);
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.info", { parameter_count: "72B" });
+    });
+    await pickQwen();
+
+    expect(formInstance?.getValues().spec.model.info).toBeNull();
+  });
+});
+
+describe("registries that cannot be listed from", () => {
+  const registryOption = (name: string) =>
+    screen
+      .getAllByRole("option")
+      .find((option) => option.textContent?.startsWith(name));
+
+  it("offers an unreachable registry but does not let it be chosen", async () => {
+    setupMocks(
+      [],
+      [],
+      [
+        { metadata: { name: "live" }, status: { phase: "Connected" } },
+        { metadata: { name: "down" }, status: { phase: "Failed" } },
+      ],
+    );
+
+    render(<CreateForm />);
+
+    const field = screen.getByTestId("field-spec.model.registry");
+    const trigger = field.querySelector('button[role="combobox"]');
+    if (!trigger) throw new Error("registry combobox trigger not found");
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+
+    const down = registryOption("down");
+    if (!down) throw new Error("unreachable registry missing from the list");
+    expect(down.getAttribute("data-disabled")).toBe("true");
+
+    await act(async () => {
+      fireEvent.click(down);
+    });
+    expect(formInstance?.getValues().spec.model.registry).toBe("");
+  });
+
+  it("lets a healthy one be chosen", async () => {
+    setupMocks(
+      [],
+      [],
+      [
+        { metadata: { name: "live" }, status: { phase: "Connected" } },
+        { metadata: { name: "down" }, status: { phase: "Failed" } },
+      ],
+    );
+
+    render(<CreateForm />);
+
+    const field = screen.getByTestId("field-spec.model.registry");
+    const trigger = field.querySelector('button[role="combobox"]');
+    if (!trigger) throw new Error("registry combobox trigger not found");
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+
+    const live = registryOption("live");
+    if (!live) throw new Error("healthy registry missing from the list");
+
+    await act(async () => {
+      fireEvent.click(live);
+    });
+    expect(formInstance?.getValues().spec.model.registry).toBe("live");
+  });
+});
+
+describe("a catalog naming a registry this workspace does not have", () => {
+  const registryError = async (registry: string) => {
+    setupMocks([], [], [{ metadata: { name: "mine" } }]);
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", registry);
+    });
+    // A separate pass: the resolver closes over the previous render's watched
+    // value, so validating in the same act would judge the empty field.
+    await act(async () => {
+      await formInstance?.trigger();
+    });
+
+    return formInstance?.formState.errors?.["spec.model.registry"];
+  };
+
+  it("says so instead of leaving the field looking unfilled", async () => {
+    const error = await registryError("someone-elses-registry");
+
+    expect(error?.message).toBe(
+      "endpoints.messages.modelRegistryNotInWorkspace",
+    );
+  });
+
+  it("stays quiet for a registry that is there", async () => {
+    expect(await registryError("mine")).toBeUndefined();
   });
 });

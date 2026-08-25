@@ -482,6 +482,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -496,10 +497,75 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
     expect(errors["spec.replicas.num"]).toBeUndefined();
+  });
+
+  // A catalog written elsewhere names its author's registry. The picker shows an
+  // unknown value as an empty box, so nothing else says the field is wrong.
+  it("returns error when the registry is not in this workspace", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 }, ...validScheduler },
+      {
+        action: "create",
+        currentRegistry: "someone-elses-registry",
+        currentModelName: "",
+        availableModelNames: null,
+        availableRegistryNames: ["mine"],
+      },
+      mockT,
+    );
+    expect(errors["spec.model.registry"]).toBeDefined();
+  });
+
+  it("returns no error when the registry is in this workspace", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 }, ...validScheduler },
+      {
+        action: "create",
+        currentRegistry: "mine",
+        currentModelName: "",
+        availableModelNames: null,
+        availableRegistryNames: ["mine"],
+      },
+      mockT,
+    );
+    expect(errors["spec.model.registry"]).toBeUndefined();
+  });
+
+  it("skips the registry check while the listing has not resolved", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 }, ...validScheduler },
+      {
+        action: "create",
+        currentRegistry: "someone-elses-registry",
+        currentModelName: "",
+        availableModelNames: null,
+        availableRegistryNames: null,
+      },
+      mockT,
+    );
+    expect(errors["spec.model.registry"]).toBeUndefined();
+  });
+
+  // Editing an endpoint whose registry has since been removed must stay
+  // editable — the field is not what the user came to change.
+  it("skips the registry check in edit mode", () => {
+    const errors = validateEndpointValues(
+      { replicas: { num: 1 }, ...validScheduler },
+      {
+        action: "edit",
+        currentRegistry: "gone",
+        currentModelName: "",
+        availableModelNames: null,
+        availableRegistryNames: ["mine"],
+      },
+      mockT,
+    );
+    expect(errors["spec.model.registry"]).toBeUndefined();
   });
 
   it("returns error when model not found in create mode", () => {
@@ -510,6 +576,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "my-registry",
         currentModelName: "missing-model",
         availableModelNames: ["model-a", "model-b"],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -524,6 +591,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "my-registry",
         currentModelName: "model-a",
         availableModelNames: ["model-a", "model-b"],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -538,6 +606,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "my-registry",
         currentModelName: "missing-model",
         availableModelNames: null,
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -552,6 +621,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "my-registry",
         currentModelName: "missing-model",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -569,6 +639,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -589,6 +660,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -609,6 +681,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -636,6 +709,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -669,6 +743,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -696,6 +771,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -724,6 +800,7 @@ describe("validateEndpointValues", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
       },
       mockT,
     );
@@ -765,6 +842,7 @@ describe("validateEndpointValues GPU count precision", () => {
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
+        availableRegistryNames: null,
         clusterType,
       },
       mockT,

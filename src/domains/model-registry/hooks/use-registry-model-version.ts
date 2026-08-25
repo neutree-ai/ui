@@ -1,8 +1,8 @@
 import { useInvalidate } from "@refinedev/core";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { registryModelDetailKey } from "@/foundation/hooks/use-registry-model-version";
 import {
   deleteRegistryModel,
-  fetchRegistryModel,
   type PatchRegistryModelBody,
   patchRegistryModel,
   type RegistryModelError,
@@ -11,74 +11,13 @@ import {
 import type { RegistryModelVersion } from "@/foundation/types/model-types";
 
 /**
- * One model version: reading its detail and writing the parts of it a user
- * owns. Everything here is scoped to a single `name:version` and goes to
- * `.../models/:model?version=`.
+ * Writing the parts of one model version a user owns. Everything here is scoped
+ * to a single `name:version` and goes to `.../models/:model?version=`.
  *
- * Its counterpart is `useRegistryModels` in `@/foundation/hooks` — the *listing*
- * of a registry's models, read-only, paged. That one lives in foundation rather
- * than beside this file because `domains/endpoint` consumes it too and
- * `.dependency-cruiser.cjs` forbids one L2 domain importing another. Nothing
- * outside this domain reads a single version, so this half stays here.
+ * The *read* half is `useRegistryModelVersion` in `@/foundation/hooks`, next to
+ * the listing hook: the endpoint form needs it too, and one L2 domain may not
+ * import another. Only this domain writes, so the mutations stay here.
  */
-
-const detailKey = (ref: Partial<RegistryModelRef>) => [
-  "registry-model",
-  ref.workspace ?? null,
-  ref.registry ?? null,
-  ref.model ?? null,
-  ref.version ?? null,
-];
-
-/** A fetched version together with the model it was fetched for. */
-type IdentifiedModel = {
-  key: string;
-  model: RegistryModelVersion;
-};
-
-/** A stable identity for a ref, used to check that a fetched result still
- * belongs to the model being asked about. */
-const refIdentity = (ref: Partial<RegistryModelRef>) =>
-  JSON.stringify(detailKey(ref));
-
-/**
- * Reads one model version, including what the checkpoint states about itself.
- * This is the expensive read — the listing deliberately does not carry `info`.
- *
- * The result carries the model it belongs to and is discarded when that stops
- * matching what the caller is asking about. This page exists to state facts
- * about one checkpoint, so showing the previous model's parameter count under
- * the next model's name is worse than showing nothing at all.
- */
-export const useRegistryModelVersion = (ref: Partial<RegistryModelRef>) => {
-  const enabled = Boolean(ref.workspace && ref.registry && ref.model);
-  const identity = refIdentity(ref);
-
-  const query = useQuery<IdentifiedModel, RegistryModelError>({
-    queryKey: detailKey(ref),
-    queryFn: async ({ signal }) => ({
-      key: identity,
-      model: await fetchRegistryModel(ref as RegistryModelRef, signal),
-    }),
-    enabled,
-    // The failures this route reports — an unreadable checkpoint, a model that
-    // is not there — are answers, not flakes. One retry absorbs a transient
-    // gateway blip; three plus backoff would leave a spinner on screen for the
-    // better part of a minute before saying what went wrong.
-    retry: 1,
-  });
-
-  const current = query.data?.key === identity ? query.data.model : null;
-
-  return {
-    model: current,
-    // A result that belongs to another model is not an answer to this one.
-    isLoading: enabled && (query.isLoading || (!current && !query.error)),
-    isFetching: query.isFetching,
-    error: query.error ?? null,
-    refetch: query.refetch,
-  };
-};
 
 /**
  * Invalidates what a write to a model makes stale: the version's own detail, the
@@ -98,7 +37,7 @@ const useInvalidateModel = () => {
   const invalidate = useInvalidate();
 
   return (ref: RegistryModelRef) => {
-    queryClient.invalidateQueries({ queryKey: detailKey(ref) });
+    queryClient.invalidateQueries({ queryKey: registryModelDetailKey(ref) });
     queryClient.invalidateQueries({
       queryKey: ["registry-models", ref.workspace, ref.registry],
     });
