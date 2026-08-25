@@ -553,7 +553,8 @@
 		"types": {
 			"huggingFace": "Hugging Face",
 			"modelScope": "ModelScope",
-			"fileSystem": "File System"
+			"fileSystem": "File System",
+			"filterTitle": "Filter by type"
 		},
 		"validation": {
 			"urlRequired": "URL is required",
@@ -647,8 +648,7 @@
 		},
 		"visibility": {
 			"public": "Public",
-			"private": "Private",
-			"filterTitle": "Filter by visibility"
+			"private": "Private"
 		},
 		"availability": {
 			"unreachable": "This registry cannot be reached",

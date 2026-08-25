@@ -54,12 +54,20 @@ const PRESENTATION: Record<string, ModelRegistryTypePresentation> = {
 };
 
 /**
- * The kinds a user may create, in the order the menu offers them. Spelt out
- * rather than derived from the table above, so that describing a new kind does
- * not reorder a menu people are used to, and so that a kind which is only ever
- * provisioned can be described without becoming creatable.
+ * Every kind the server defines, in the order menus offer them — the same three
+ * as `ModelRegistryType` in `api/v1/model_registry_types.go`.
+ *
+ * Two menus read it: the create form, and the list's type filter. Those are
+ * different questions — "what may I make" and "what may the server report" —
+ * that happen to have the same answer, because every kind defined today is one
+ * a user may create. Should a kind ever become provisioned-only, the filter has
+ * to keep following the server's enum while the create form drops it, and they
+ * part company here.
+ *
+ * Spelt out rather than derived from the table above, so that describing a new
+ * kind does not reorder a menu people are used to.
  */
-const CREATABLE_TYPES = [
+const KNOWN_TYPES = [
   "hugging-face",
   "model-scope",
   PRIVATE_MODEL_REGISTRY_TYPE,
@@ -68,9 +76,9 @@ const CREATABLE_TYPES = [
 /** The kind a create form starts on. */
 export const DEFAULT_MODEL_REGISTRY_TYPE = "hugging-face";
 
-/** The type options a create form offers, already localized. */
+/** Every kind, localized, for a menu that offers one per entry. */
 export const modelRegistryTypeOptions = (t: (key: string) => string) =>
-  CREATABLE_TYPES.map((value) => ({
+  KNOWN_TYPES.map((value) => ({
     label: PRESENTATION[value].label(t),
     value,
   }));
