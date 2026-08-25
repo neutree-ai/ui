@@ -7,9 +7,9 @@ const registry = (annotations?: Record<string, string> | null) => ({
 
 describe("registryIsProvisioned", () => {
   it("is the annotation the control plane stamps, spelt exactly", () => {
-    expect(registryIsProvisioned(registry({ "neutree.ai/builtin": "true" }))).toBe(
-      true,
-    );
+    expect(
+      registryIsProvisioned(registry({ "neutree.ai/builtin": "true" })),
+    ).toBe(true);
   });
 
   it("treats anything other than that annotation as a user's registry", () => {

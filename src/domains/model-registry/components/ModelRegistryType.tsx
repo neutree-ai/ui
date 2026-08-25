@@ -73,8 +73,16 @@ const KNOWN_TYPES = [
   PRIVATE_MODEL_REGISTRY_TYPE,
 ];
 
-/** The kind a create form starts on. */
-export const DEFAULT_MODEL_REGISTRY_TYPE = "hugging-face";
+/**
+ * The kind a create form starts on.
+ *
+ * A private registry, because the public hubs arrive provisioned by the control
+ * plane and a hand-made one is read-only: it reports itself public, and every
+ * write against it is refused. Pushing a model needs a private registry, so
+ * starting on a public kind would start the form at the one place the
+ * create-then-push path cannot go.
+ */
+export const DEFAULT_MODEL_REGISTRY_TYPE = PRIVATE_MODEL_REGISTRY_TYPE;
 
 /** Every kind, localized, for a menu that offers one per entry. */
 export const modelRegistryTypeOptions = (t: (key: string) => string) =>

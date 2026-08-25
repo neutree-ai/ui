@@ -63,11 +63,20 @@ function urlPlaceholder() {
   return field.querySelector("input")?.getAttribute("placeholder");
 }
 
+function selectedType() {
+  const field = screen.getByTestId("field-spec.type");
+  return field.querySelector('button[role="combobox"]')?.textContent;
+}
+
 describe("useModelRegistryForm", () => {
   describe("URL protocol validation", () => {
     it("shows error for non-NFS URL when bentoml type is selected", async () => {
       render(<CreateForm />);
 
+      // Away and back, so this still proves the rule follows the selection.
+      // The form now opens on this kind, and selecting it directly would pass
+      // even if choosing a type did nothing at all.
+      selectType("model_registries.types.huggingFace");
       selectType("model_registries.types.fileSystem");
       await fillUrl("https://example.com");
 
@@ -94,6 +103,8 @@ describe("useModelRegistryForm", () => {
     it("does not validate URL protocol for hugging-face type", async () => {
       render(<CreateForm />);
 
+      // Selected rather than relied on: the form no longer opens on this kind.
+      selectType("model_registries.types.huggingFace");
       await fillUrl("https://huggingface.co");
 
       await waitFor(() => {
@@ -133,11 +144,33 @@ describe("useModelRegistryForm", () => {
       ).toBeTruthy();
     });
 
+    it("starts on the file system kind", () => {
+      // The kind a new registry can actually be pushed to. The public hubs are
+      // provisioned rather than made by hand, and refuse writes.
+      render(<CreateForm />);
+
+      expect(selectedType()).toBe("model_registries.types.fileSystem");
+    });
+
+    it("applies the file system URL rule from the first render", async () => {
+      // Follows from the default, and is the half that bites: the rule is in
+      // force before the user has touched the type field at all.
+      render(<CreateForm />);
+
+      await fillUrl("https://example.com");
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("model_registries.validation.mustUseNfsProtocol"),
+        ).toBeTruthy();
+      });
+    });
+
     it("shows the example address of the kind that is selected", async () => {
       render(<CreateForm />);
 
       expect(urlPlaceholder()).toBe(
-        "model_registries.placeholders.huggingFaceUrl",
+        "model_registries.placeholders.fileSystemUrl",
       );
 
       selectType("model_registries.types.modelScope");
@@ -147,11 +180,25 @@ describe("useModelRegistryForm", () => {
         );
       });
 
-      selectType("model_registries.types.fileSystem");
+      selectType("model_registries.types.huggingFace");
       await waitFor(() => {
         expect(urlPlaceholder()).toBe(
-          "model_registries.placeholders.fileSystemUrl",
+          "model_registries.placeholders.huggingFaceUrl",
         );
+      });
+    });
+
+    it("asks for credentials whatever the kind is", async () => {
+      // Every kind can carry one — a hub token, or a credential for the mount —
+      // so the field is not conditional and switching kind never hides a value
+      // already typed.
+      render(<CreateForm />);
+
+      expect(screen.getByTestId("field-spec.credentials")).toBeTruthy();
+
+      selectType("model_registries.types.modelScope");
+      await waitFor(() => {
+        expect(screen.getByTestId("field-spec.credentials")).toBeTruthy();
       });
     });
   });
