@@ -55,21 +55,22 @@ beforeEach(() => {
 });
 
 describe("ModelReadme — a card is untrusted content", () => {
-  it("renders raw HTML in a card as text, never as markup", () => {
-    // The XSS acceptance for this feature, asserted directly rather than argued.
-    // It holds because the pipeline has no HTML step in it: the server returns
-    // the markdown as stored, and react-markdown builds elements from a parsed
-    // tree with no `rehype-raw` to turn raw nodes back into markup. Adding that
-    // plugin — anywhere in this repo — is what would break this test.
+  it("drops the tags that would run or embed something", () => {
+    // Half of the XSS acceptance for this feature, asserted rather than argued.
+    // The card's HTML *is* rendered, so what carries the safety is the
+    // allow-list: a tag not on it never becomes an element, and `script` is
+    // stripped with its contents rather than left behind as text.
     returns({
       content: [
         "# Card",
         "",
         "<script>window.__pwned = true</script>",
         "",
-        '<img src="x" onerror="window.__pwned = true">',
-        "",
         '<iframe src="https://evil.invalid"></iframe>',
+        "",
+        '<object data="https://evil.invalid"></object>',
+        "",
+        '<form action="https://evil.invalid"><input type="text" /></form>',
       ].join("\n"),
     });
 
@@ -79,36 +80,117 @@ describe("ModelReadme — a card is untrusted content", () => {
 
     expect(content.querySelector("script")).toBeNull();
     expect(content.querySelector("iframe")).toBeNull();
-    // No <img> either: the tag was written as raw HTML, so it is text.
-    expect(content.querySelector("img")).toBeNull();
-    // And it is visible as source, which is what "passed through as text" means.
-    expect(content.textContent).toContain("<script>");
+    expect(content.querySelector("object")).toBeNull();
+    expect(content.querySelector("form")).toBeNull();
+    expect(content.textContent).not.toContain("window.__pwned");
     expect(
       (globalThis as unknown as { __pwned?: boolean }).__pwned,
     ).toBeUndefined();
   });
 
-  it("does not emit a javascript: link from a markdown link", () => {
-    returns({ content: "[click](javascript:window.__pwned = true)" });
+  it("strips the attributes a card could act or paint through", () => {
+    // The other half: the tags here are allowed, and it is the attributes that
+    // would do the damage. An event handler is code, and inline CSS is how a
+    // card would cover the page it is embedded in.
+    returns({
+      content: [
+        '<img src="https://example.invalid/logo.png" onerror="window.__pwned = true" alt="logo">',
+        "",
+        '<div style="position:fixed;inset:0;background:red" onclick="window.__pwned = true">hi</div>',
+      ].join("\n"),
+    });
 
     render(<ModelReadme modelRef={modelRef} />);
 
-    const link = screen.getByTestId("readme-content").querySelector("a");
+    const content = screen.getByTestId("readme-content");
+    const image = content.querySelector("img");
+    const div = content.querySelector("div");
 
-    // The library's default URL transform drops the scheme rather than the
-    // element, so what remains must not be executable.
-    expect(link?.getAttribute("href") ?? "").not.toContain("javascript:");
+    expect(image).not.toBeNull();
+    expect(image?.getAttribute("onerror")).toBeNull();
+    expect(div?.getAttribute("style")).toBeNull();
+    expect(div?.getAttribute("onclick")).toBeNull();
+    expect(
+      (globalThis as unknown as { __pwned?: boolean }).__pwned,
+    ).toBeUndefined();
   });
 
-  it("sends card links out with no referrer", () => {
-    returns({ content: "[hub](https://example.invalid/model)" });
+  it("renders the HTML hub cards are actually written with", () => {
+    // The reason the pipeline renders HTML at all. Passed through as text, the
+    // top of a typical card is a wall of angle brackets.
+    returns({
+      content: [
+        '<div align="center">',
+        '  <img src="https://example.invalid/logo.png" width="200" alt="logo">',
+        "  <p><b>Qwen2.5</b></p>",
+        "</div>",
+        "",
+        "<details><summary>Benchmarks</summary>",
+        "",
+        "**mmlu** 86.1",
+        "",
+        "</details>",
+      ].join("\n"),
+    });
 
     render(<ModelReadme modelRef={modelRef} />);
 
-    const link = screen.getByTestId("readme-content").querySelector("a");
+    const content = screen.getByTestId("readme-content");
 
-    expect(link?.getAttribute("rel")).toContain("noreferrer");
-    expect(link?.getAttribute("target")).toBe("_blank");
+    expect(content.querySelector("div")?.getAttribute("align")).toBe("center");
+    expect(content.querySelector("img")?.getAttribute("src")).toBe(
+      "https://example.invalid/logo.png",
+    );
+    expect(content.querySelector("img")?.getAttribute("width")).toBe("200");
+    expect(content.querySelector("details")).not.toBeNull();
+    // Markdown inside the raw block is still markdown: `rehype-raw` reassembles
+    // the two into one tree rather than treating the span between the tags as
+    // opaque text.
+    expect(content.querySelector("details strong")?.textContent).toBe("mmlu");
+    expect(content.textContent).not.toContain("<div");
+  });
+
+  it("does not emit a javascript: link, written either way", () => {
+    returns({
+      content: [
+        "[markdown](javascript:alert(1))",
+        "",
+        '<a href="javascript:alert(1)">html</a>',
+      ].join("\n"),
+    });
+
+    render(<ModelReadme modelRef={modelRef} />);
+
+    const links = screen.getByTestId("readme-content").querySelectorAll("a");
+
+    expect(links).toHaveLength(2);
+
+    for (const link of links) {
+      expect(link.getAttribute("href") ?? "").not.toContain("javascript:");
+    }
+  });
+
+  it("sends card links out with no referrer, and on this app's terms", () => {
+    // Including the ones written as raw HTML: every link is rebuilt by the
+    // component, so a card cannot choose its own target or rel.
+    returns({
+      content: [
+        "[hub](https://example.invalid/model)",
+        "",
+        '<a href="https://example.invalid/other" target="_self" rel="opener">html</a>',
+      ].join("\n"),
+    });
+
+    render(<ModelReadme modelRef={modelRef} />);
+
+    const links = screen.getByTestId("readme-content").querySelectorAll("a");
+
+    expect(links).toHaveLength(2);
+
+    for (const link of links) {
+      expect(link.getAttribute("rel")).toContain("noreferrer");
+      expect(link.getAttribute("target")).toBe("_blank");
+    }
   });
 });
 
