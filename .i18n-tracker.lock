@@ -363,7 +363,7 @@
   "src/domains/endpoint/components/EndpointAdvancedParameters.tsx": "747ce1445ef75df6316c942332856247",
   "src/domains/engine/lib/resolve-capabilities.ts": "9a444cc413dae9066a7983c28c1d0fba",
   "src/domains/cluster/lib/upgrade-versions.ts": "0b8da429b7f5a4c73d1ee2cada4556ae",
-  "src/domains/model-registry/components/ModelReadme.tsx": "c3f21f41c6a82adc1bc70c85f2d336e3",
+  "src/domains/model-registry/components/ModelReadme.tsx": "fa1bb56a5fbe40a25863ae2c37da7bbb",
   "src/domains/model-registry/components/RegistryAvailabilityNotice.tsx": "2c9dcfb8c2befffc176756510462d653",
   "src/domains/model-registry/components/RegistryVisibility.tsx": "757a8e29d1c3a91d9dac5e76e6fba909",
   "src/domains/model-registry/components/RegistryVisibilityFilter.tsx": "eb78ddfcb4ea2833fd16a6699b79014f",

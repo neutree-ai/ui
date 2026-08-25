@@ -3,6 +3,7 @@ import type { AnchorHTMLAttributes } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { useRegistryModelReadme } from "@/domains/model-registry/hooks/use-registry-model-readme";
 import { splitModelCard } from "@/domains/model-registry/lib/model-card";
 import { modelCardSanitizeSchema } from "@/domains/model-registry/lib/model-card-html";
@@ -125,6 +126,13 @@ export const ModelReadme = ({ modelRef }: Props) => {
         >
           <ReactMarkdown
             components={{ a: MarkdownLink }}
+            // Hub cards are written in GitHub's dialect, not CommonMark: the
+            // benchmark table every card ends with is the whole reason anyone
+            // scrolls that far, and without this it is a paragraph of pipe
+            // characters. What GFM adds — tables, task lists, strikethrough,
+            // footnotes — is what the sanitize schema below was built around, so
+            // it needs no widening to let this through.
+            remarkPlugins={[remarkGfm]}
             // Order is the safety property: raw HTML becomes tree nodes first,
             // and the allow-list is applied to the result. Reversed, the
             // sanitiser would run over a tree the raw HTML is not yet part of
