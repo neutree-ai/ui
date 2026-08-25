@@ -127,7 +127,9 @@ describe("ModelReadme — a card is untrusted content", () => {
         "",
         "<details><summary>Benchmarks</summary>",
         "",
-        "**mmlu** 86.1",
+        "| task | score |",
+        "| --- | --- |",
+        "| mmlu | 86.1 |",
         "",
         "</details>",
       ].join("\n"),
@@ -146,7 +148,7 @@ describe("ModelReadme — a card is untrusted content", () => {
     // Markdown inside the raw block is still markdown: `rehype-raw` reassembles
     // the two into one tree rather than treating the span between the tags as
     // opaque text.
-    expect(content.querySelector("details strong")?.textContent).toBe("mmlu");
+    expect(content.querySelector("details table")).not.toBeNull();
     expect(content.textContent).not.toContain("<div");
   });
 
@@ -191,6 +193,59 @@ describe("ModelReadme — a card is untrusted content", () => {
       expect(link.getAttribute("rel")).toContain("noreferrer");
       expect(link.getAttribute("target")).toBe("_blank");
     }
+  });
+});
+
+describe("ModelReadme — a card is written in GitHub's dialect", () => {
+  it("renders the benchmark table every card ends with", () => {
+    returns({
+      content: ["| task | score |", "| --- | --- |", "| mmlu | 86.1 |"].join(
+        "\n",
+      ),
+    });
+
+    render(<ModelReadme modelRef={modelRef} />);
+
+    const content = screen.getByTestId("readme-content");
+
+    expect(content.querySelector("table")).not.toBeNull();
+    expect(content.querySelectorAll("th")).toHaveLength(2);
+    expect(content.querySelectorAll("td")[1]?.textContent).toBe("86.1");
+    // The failure this replaces: the row rendered as its own source.
+    expect(content.textContent).not.toContain("| mmlu |");
+  });
+
+  it("renders the rest of the dialect a card leans on", () => {
+    returns({
+      content: ["- [x] instruct", "- [ ] base", "", "~~deprecated~~"].join(
+        "\n",
+      ),
+    });
+
+    render(<ModelReadme modelRef={modelRef} />);
+
+    const content = screen.getByTestId("readme-content");
+    const boxes = content.querySelectorAll("input[type=checkbox]");
+
+    expect(boxes).toHaveLength(2);
+    // The schema forces this: a card may render a checkbox, never a live one.
+    expect(boxes[0]?.hasAttribute("disabled")).toBe(true);
+    expect(content.querySelector("del")?.textContent).toBe("deprecated");
+  });
+
+  it("sends a bare URL out on the same terms as a written link", () => {
+    // GFM turns bare URLs into links, so autolinks have to be rebuilt by the
+    // component too — otherwise they are the one kind of card link that leaves
+    // with a referrer.
+    returns({ content: "see https://example.invalid/model for details" });
+
+    render(<ModelReadme modelRef={modelRef} />);
+
+    const link = screen.getByTestId("readme-content").querySelector("a");
+
+    expect(link?.getAttribute("href")).toBe("https://example.invalid/model");
+    expect(link?.getAttribute("rel")).toContain("noreferrer");
+    expect(link?.getAttribute("target")).toBe("_blank");
   });
 });
 
