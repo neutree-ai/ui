@@ -23,6 +23,7 @@ import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
+import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageInput";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
@@ -2716,6 +2717,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         >
           <VariablesInput
             schema={engineValueSchema?.properties as unknown as Schema}
+            // Recognised by engine name and argument key, the same way the
+            // model fields are hidden for an engine that needs none. Another
+            // engine with an image argument keeps the plain text box until the
+            // console is taught about it: a convenience too few, never a field
+            // too few. Both cases converge on an engine declaration later.
+            valueInputs={
+              engineSpec?.engine === "flex"
+                ? {
+                    image: ({ value, onChange }) => (
+                      <WorkloadImageInput
+                        value={value}
+                        onChange={onChange}
+                        workspace={workspace}
+                        registry={selectedCluster?.spec?.image_registry}
+                      />
+                    ),
+                  }
+                : undefined
+            }
           />
         </FormFieldGroup>
         <FormFieldGroup

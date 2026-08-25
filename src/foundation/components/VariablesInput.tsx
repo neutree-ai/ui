@@ -42,12 +42,32 @@ import {
 } from "@/foundation/hooks/use-variables-input";
 import { ResourceFormSubmitContext } from "./resource-form-submit-context";
 
+/** What an overriding input is handed: the current value and a way to replace it. */
+interface VariableValueInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+/**
+ * Replacement inputs for particular argument keys.
+ *
+ * Which key deserves which input is the caller's judgement, not this
+ * component's: an input that has to reach an API belongs to whoever knows which
+ * API, and which arguments an engine has is knowledge this generic key/value
+ * editor has no business holding.
+ */
+type VariableValueInputs = Record<
+  string,
+  (props: VariableValueInputProps) => React.ReactNode
+>;
+
 interface VariablesInputProps {
   name?: string;
   value?: Record<string, unknown>;
   onChange?: (value: Record<string, unknown>) => void;
   title?: string;
   schema?: Schema;
+  valueInputs?: VariableValueInputs;
   field?: {
     value?: Record<string, unknown>;
     onChange?: (value: Record<string, unknown>) => void;
@@ -57,7 +77,7 @@ interface VariablesInputProps {
 export const VariablesInput = React.forwardRef<
   HTMLTableElement,
   VariablesInputProps
->(({ name, value, onChange, schema = {}, field }, ref) => {
+>(({ name, value, onChange, schema = {}, valueInputs = {}, field }, ref) => {
   const { t } = useTranslation();
   const form = useFormContext<FieldValues>();
   const submitContext = useContext(ResourceFormSubmitContext);
@@ -271,6 +291,18 @@ export const VariablesInput = React.forwardRef<
   const renderValueInput = (key: string, val: unknown) => {
     if (schema[key]) {
       const { type } = schema[key];
+
+      // An input the caller supplied for this key wins over the type's own.
+      // Anything else falls through, so a key the caller says nothing about
+      // keeps the input its type implies.
+      const override = valueInputs[key];
+
+      if (override) {
+        return override({
+          value: String(formatPrimitiveValue(val) ?? ""),
+          onChange: (next) => handleUpdateValue(key, next),
+        });
+      }
 
       switch (type) {
         case "boolean":
