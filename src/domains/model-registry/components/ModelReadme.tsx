@@ -1,8 +1,11 @@
 import "github-markdown-css/github-markdown-light.css";
 import type { AnchorHTMLAttributes } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import { useRegistryModelReadme } from "@/domains/model-registry/hooks/use-registry-model-readme";
 import { splitModelCard } from "@/domains/model-registry/lib/model-card";
+import { modelCardSanitizeSchema } from "@/domains/model-registry/lib/model-card-html";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -15,22 +18,31 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * ## Why this is safe to display
  *
  * A card is content from outside this system — anybody who can publish to a
- * public hub can write one — so it is treated as data all the way to the screen:
+ * public hub can write one — and hub cards use raw HTML for the parts that
+ * matter most: the centred title block, the logo, the badges, the `<details>`
+ * around the long table. So the HTML is rendered, and every step from the wire
+ * to the screen treats it as hostile:
  *
  * - the server returns the markdown **as stored** and never renders it, so no
  *   HTML arrives that something else already decided to trust;
- * - `react-markdown` builds React elements from a parsed syntax tree. It has no
- *   `dangerouslySetInnerHTML` path unless `rehype-raw` is added, so raw HTML in
- *   the source — `<script>`, `<img onerror=…>`, `<iframe>` — is passed through as
- *   text rather than becoming markup. **Adding `rehype-raw` to this repo, here or
- *   anywhere, is what would break that**;
- * - link and image targets go through the library's default URL transform, which
- *   drops `javascript:` and other executable schemes, and links carry
- *   `rel="noreferrer nofollow"` so a card cannot pass this app's URL on as a
- *   referrer.
+ * - `rehype-raw` reparses the raw HTML into the same syntax tree as the
+ *   markdown, and `rehype-sanitize` then prunes that tree against
+ *   {@link modelCardSanitizeSchema} — an allow-list of tags, attributes and URL
+ *   protocols. `<script>` and `<iframe>` are dropped, `onerror=…` never survives
+ *   as an attribute, and `javascript:` never survives as a URL. **The two
+ *   plugins are a pair: `rehype-raw` without `rehype-sanitize` after it is
+ *   `dangerouslySetInnerHTML` on hub content**;
+ * - `react-markdown` then builds React elements from what is left, so what
+ *   reaches the DOM is a tree this app constructed and not a string it was
+ *   handed;
+ * - link targets additionally go through the library's default URL transform,
+ *   and every link — written in markdown or in raw HTML — is rebuilt by
+ *   {@link MarkdownLink} below, so a card cannot choose its own `target` and
+ *   carries `rel="noreferrer nofollow"` rather than passing this app's URL on as
+ *   a referrer.
  *
- * Nothing here sanitises HTML, because nothing here ever produces any. That is
- * the whole argument, and it is why there is no allow-list to keep up to date.
+ * The XSS acceptance for all of this is asserted in the sibling test rather than
+ * argued here.
  *
  * ## Why it is not always present
  *
@@ -111,7 +123,17 @@ export const ModelReadme = ({ modelRef }: Props) => {
           className="markdown-body max-w-none overflow-x-auto rounded-md bg-transparent p-2 text-sm dark:text-gray-200 [&_img]:max-w-full"
           data-testid="readme-content"
         >
-          <ReactMarkdown components={{ a: MarkdownLink }}>
+          <ReactMarkdown
+            components={{ a: MarkdownLink }}
+            // Order is the safety property: raw HTML becomes tree nodes first,
+            // and the allow-list is applied to the result. Reversed, the
+            // sanitiser would run over a tree the raw HTML is not yet part of
+            // and pass everything.
+            rehypePlugins={[
+              rehypeRaw,
+              [rehypeSanitize, modelCardSanitizeSchema],
+            ]}
+          >
             {splitModelCard(readme.content).body}
           </ReactMarkdown>
         </div>
