@@ -80,6 +80,10 @@ import {
   MODEL_REGISTRY_SELECT,
   registryModelDelivery,
 } from "@/foundation/lib/model-registry-visibility";
+import {
+  registryModelDefaultVersion,
+  registryModelLabel,
+} from "@/foundation/lib/registry-model-display";
 import { cn } from "@/foundation/lib/utils";
 import {
   composeEndpointSpec,
@@ -1696,8 +1700,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         </CommandLoading>
                       ) : null
                     }
+                    // Labelled by alias, valued by the physical name: the
+                    // endpoint is stored against the name it is served under.
                     options={modelsData.models.map((e) => ({
-                      label: e.name,
+                      label: registryModelLabel(e),
                       value: e.name,
                     }))}
                     shouldFilter={false}
@@ -1707,6 +1713,19 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     value={currentModelName}
                     onChange={(value: string) => {
                       form.setValue("spec.model.name", value);
+
+                      // Fill in the version the registry reports, so the
+                      // reference is complete without opening "Show all options".
+                      const picked = modelsData.models.find(
+                        (e) => e.name === value,
+                      );
+                      const version = picked
+                        ? registryModelDefaultVersion(picked)
+                        : undefined;
+
+                      if (version) {
+                        form.setValue("spec.model.version", version);
+                      }
                     }}
                   />
                   {/* Said here rather than in release notes: a model that is not on

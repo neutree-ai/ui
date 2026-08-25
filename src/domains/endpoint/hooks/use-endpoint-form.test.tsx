@@ -6083,3 +6083,45 @@ describe("engines that need no model spec", () => {
     }
   });
 });
+
+describe("model picker", () => {
+  // Renaming the alias later must leave this endpoint pointing where it was.
+  it("labels a model by its alias but submits the physical name", async () => {
+    setupMocks([], [], [{ metadata: { name: "hf" } }]);
+    vi.mocked(useRegistryModels).mockReturnValue({
+      page: null,
+      models: [
+        {
+          name: "Qwen/Qwen3-8B",
+          versions: [{ name: "v2", creation_time: "", alias: "qwen-chat" }],
+        },
+      ],
+      total: 1,
+      isLoading: false,
+      isFetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useRegistryModels>);
+
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+    });
+
+    const field = screen.getByTestId("field-spec.model.name");
+    const trigger = field.querySelector('button[role="combobox"]');
+    if (!trigger) throw new Error("model combobox trigger not found");
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("option", { name: "qwen-chat" }));
+    });
+
+    expect(formInstance?.getValues().spec.model.name).toBe("Qwen/Qwen3-8B");
+    expect(formInstance?.getValues().spec.model.version).toBe("v2");
+  });
+});
