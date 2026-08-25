@@ -896,7 +896,8 @@
 			"selectVersion": "Select A Version",
 			"selectTaskType": "Select A Support Task Type",
 			"selectAccelerator": "Select An Accelerator",
-			"selectSchedulerType": "Select Scheduler Type"
+			"selectSchedulerType": "Select Scheduler Type",
+			"workloadImage": "repository:tag"
 		},
 		"options": {
 			"generic": "Generic",
@@ -961,7 +962,8 @@
 			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared",
 			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting",
 			"runtimeDownloadHint": "Models in a public registry are downloaded when the endpoint starts: the first start takes noticeably longer, and it cannot start at all without access to the registry.",
-			"runtimeDownloadUnknown": "This registry did not report whether it stores its models locally, so whether they are downloaded when the endpoint starts is unknown."
+			"runtimeDownloadUnknown": "This registry did not report whether it stores its models locally, so whether they are downloaded when the endpoint starts is unknown.",
+			"fetchingImageTags": "Looking up tags…"
 		},
 		"tabs": {
 			"playground": "Playground"

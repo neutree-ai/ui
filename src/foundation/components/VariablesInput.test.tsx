@@ -214,3 +214,73 @@ describe("VariablesInput", () => {
     ).toBeTruthy();
   });
 });
+
+const imageSchema = {
+  image: { type: "string", title: "Image" },
+} as unknown as Schema;
+
+function ValueInputForm({
+  valueInputs,
+  onSubmit,
+}: {
+  valueInputs?: Parameters<typeof VariablesInput>[0]["valueInputs"];
+  onSubmit: (values: { args: Record<string, unknown> }) => void;
+}) {
+  const form = useForm<{ args: Record<string, unknown> }>({
+    defaultValues: { args: { image: "my-workload:v1" } },
+  });
+  const args = form.watch("args");
+
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <VariablesInput
+          name="args"
+          value={args}
+          onChange={(next) => form.setValue("args", next)}
+          schema={imageSchema}
+          valueInputs={valueInputs}
+        />
+        <button type="submit">Save</button>
+      </form>
+    </FormProvider>
+  );
+}
+
+describe("VariablesInput value inputs", () => {
+  it("hands the value to the input supplied for a key, and takes its answer", () => {
+    render(
+      <ValueInputForm
+        onSubmit={vi.fn()}
+        valueInputs={{
+          image: ({ value, onChange }) => (
+            <button
+              type="button"
+              data-testid="image-widget"
+              onClick={() => onChange("picked:v2")}
+            >
+              {value}
+            </button>
+          ),
+        }}
+      />,
+    );
+
+    // The supplied input was given the current value...
+    expect(screen.getByTestId("image-widget").textContent).toBe(
+      "my-workload:v1",
+    );
+
+    // ...and what it answers becomes the value, which comes back to it.
+    fireEvent.click(screen.getByTestId("image-widget"));
+
+    expect(screen.getByTestId("image-widget").textContent).toBe("picked:v2");
+  });
+
+  it("falls back to the type's own input for a key the caller says nothing about", () => {
+    render(<ValueInputForm onSubmit={vi.fn()} />);
+
+    expect(screen.queryByTestId("image-widget")).toBeNull();
+    expect(screen.getByDisplayValue("my-workload:v1")).not.toBeNull();
+  });
+});

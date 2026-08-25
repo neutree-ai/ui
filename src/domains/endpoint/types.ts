@@ -68,6 +68,8 @@ export type EndpointClusterRef = {
   metadata: Metadata;
   spec: {
     type: string;
+    /** The image registry this cluster pulls workload images from. */
+    image_registry?: string;
     accelerator_virtualization?: { enabled?: boolean } | null;
   };
   status: {
