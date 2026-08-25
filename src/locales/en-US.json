@@ -1157,16 +1157,40 @@
 			"model": "Model",
 			"promptTokens": "Prompt Tokens",
 			"completionTokens": "Completion Tokens",
-			"usage": "Total Tokens"
+			"usage": "Total Tokens",
+			"displayName": "Name",
+			"description": "Description",
+			"project": "Project",
+			"apiKey": "API key",
+			"currentProject": "Current Project",
+			"workspace": "Workspace",
+			"status": "Status",
+			"createdAt": "Created at",
+			"apiKeyAndDescription": "API key / description",
+			"projectAndDescription": "Project / description"
 		},
 		"placeholders": {
-			"selectWorkspace": "Select A Workspace"
+			"selectWorkspace": "Select A Workspace",
+			"search": "Search Project, API key, or description",
+			"searchProjects": "Search Projects",
+			"projectName": "Project name",
+			"projectDescription": "Description (optional)"
 		},
 		"messages": {
 			"createSuccess": "API Key created successfully! Please copy your secret key now. You won't be able to see it again.",
 			"createDescription": "Create a new API key for your application.",
 			"loading": "Loading...",
-			"notFound": "404 not found"
+			"notFound": "404 not found",
+			"createFailed": "Failed to create API key. Please try again.",
+			"operationFailed": "API key operation failed. Please try again.",
+			"noResults": "No matching Projects or API keys",
+			"deleteKeySuccess": "Successfully deleted API key",
+			"deleteKeysSuccess": "Successfully deleted {{count}} API keys",
+			"deletePartialFailure": "{{failed}} of {{total}} API keys could not be deleted.",
+			"missingWorkspace": "An API key is missing its workspace. Refresh and try again.",
+			"missingName": "An API key is missing its name. Refresh and try again.",
+			"nameRequired": "Name is required",
+			"nameTooLong": "Name cannot exceed 63 characters"
 		},
 		"buttons": {
 			"copy": "Copy",
@@ -1257,7 +1281,51 @@
 			"unavailable": "Endpoint unavailable",
 			"instanceLabel": "Inference instance: {{name}}",
 			"endpointLabel": "Endpoint: {{name}}"
-		}
+		},
+		"projects": {
+			"ungrouped": "Ungrouped",
+			"select": "Select a Project",
+			"notFound": "No Projects found.",
+			"create": "Create Project",
+			"createDescription": "Create a Project in workspace {{workspace}}.",
+			"creating": "Creating...",
+			"createAndSelect": "Create and select",
+			"edit": "Edit Project",
+			"editDescription": "Renaming does not change API key associations or usage history.",
+			"delete": "Delete Project",
+			"deleteDescription": "Delete {{name}}? Only an empty Project can be deleted.",
+			"deleteBlocked": "Move or delete the {{count}} API key(s) first",
+			"deleteSuccess": "Successfully deleted Project",
+			"duplicateName": "Project name already exists. Choose another name.",
+			"loadFailed": "Unable to load Project",
+			"empty": "This Project has no API keys",
+			"createKey": "Create API key",
+			"countLabel": "{{projects}} groups, {{keys}} API keys"
+		},
+		"move": {
+			"action": "Move to Project",
+			"title": "Move API keys",
+			"description": "{{count}} selected. The operation is atomic.",
+			"confirm": "Move",
+			"success": "Moved {{count}} API key(s)",
+			"failed": "Failed to move API keys. Please try again.",
+			"multipleWorkspaces": "Selected API keys span multiple workspaces. Move one workspace at a time.",
+			"alreadyInProject": "The selected API keys already belong to this Project.",
+			"unknownProject": "Unknown Project"
+		},
+		"filters": {
+			"allKeys": "All API keys",
+			"activeKeys": "Active API keys",
+			"disabledKeys": "Disabled API keys"
+		},
+		"selection": {
+			"count": "{{count}} selected",
+			"clear": "Clear",
+			"selectAllOnPage": "Select all API keys on this page",
+			"selectAllInProject": "Select all API keys in {{name}}",
+			"deleteMany": "Delete {{count}} API keys?"
+		},
+		"detailsTitle": "API key details"
 	},
 	"infrastructure": {
 		"title": "Infrastructure"

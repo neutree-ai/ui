@@ -6,12 +6,12 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
 // Per-key reference (id + display name) for attributing ranking entries.
-type RankingKeyRef = { id: string; name: string };
+type RankingKeyRef = { id: string; name: string; description?: string | null };
 
 // Top-3 + "others" donut slice colors (blue / green / amber / muted-gray).
 const SLICE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#cbd5e1"];
 
-type Entry = { name: string; value: number };
+type Entry = { name: string; description?: string | null; value: number };
 
 const RankingPanel = ({
   title,
@@ -71,8 +71,13 @@ const RankingPanel = ({
           <ol className="mt-1 space-y-0.5 text-xs">
             {top.map((e, i) => (
               <li key={e.name} className="flex justify-between gap-2">
-                <span className="truncate text-muted-foreground">
+                <span className="min-w-0 truncate text-muted-foreground">
                   {i + 1}. {e.name}
+                  {e.description ? (
+                    <span className="ml-1 text-[10px] font-normal text-muted-foreground/70">
+                      - {e.description}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="shrink-0 font-medium tabular-nums">
                   {format(e.value)} ·{" "}
@@ -104,10 +109,12 @@ export const ApiKeyRankingOverview = ({
 
   const requestEntries: Entry[] = keys.map((k) => ({
     name: k.name,
+    description: k.description,
     value: traffic.get(k.id)?.requests ?? 0,
   }));
   const tokenEntries: Entry[] = keys.map((k) => ({
     name: k.name,
+    description: k.description,
     value: traffic.get(k.id)?.tokens ?? 0,
   }));
 

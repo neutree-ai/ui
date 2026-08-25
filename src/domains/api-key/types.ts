@@ -36,8 +36,21 @@ export type ApiKey = {
   status: ApiKeyStatus | null;
 };
 
+export type ApiKeyProject = {
+  id: string;
+  api_version: "v1";
+  kind: "ApiKeyProject";
+  metadata: Metadata;
+  spec: { description: string };
+  user_id: string;
+  is_ungrouped?: boolean;
+};
+
 export type ApiKeySpec = {
   quota: number;
+  expires_in?: number | null;
+  project_id?: string | null;
+  description?: string;
   // Quota + access limits for the key. Optional: keys with no limits have none.
   limits?: ApiKeyLimits | null;
 };
@@ -62,6 +75,8 @@ export type ApiUsageRecord = {
   date: string;
   api_key_id: string;
   api_key_name: string;
+  api_key_display_name?: string | null;
+  api_key_description?: string;
   endpoint_type: string | null;
   endpoint_name: string;
   model_name: string | null;

@@ -178,8 +178,9 @@ function stripComputed(limits: ApiKeyLimits | null | undefined): ApiKeyLimits {
   return l;
 }
 
-// Load + save a single API key's limits (edit). save() replaces the whole limits
-// object (single source of truth), preserving the separately-toggled disabled.
+// Load a single API key's limits (edit). Writes go through
+// update_api_key_configuration, which replaces the whole limits object (single
+// source of truth) alongside the key's identity and Project in one call.
 export function useApiKeyLimits() {
   const { mutateAsync } = useCustomMutation();
 
@@ -195,23 +196,7 @@ export function useApiKeyLimits() {
     [mutateAsync],
   );
 
-  const save = useCallback(
-    async (
-      apiKeyId: string,
-      values: ApiKeyPolicyFormValues,
-      opts?: { disabled?: boolean },
-    ) => {
-      const limits = buildApiKeyLimits(values, { disabled: opts?.disabled });
-      await mutateAsync({
-        url: "/rpc/set_api_key_limits",
-        method: "post",
-        values: { p_id: apiKeyId, p_limits: limits },
-      });
-    },
-    [mutateAsync],
-  );
-
-  return { load, save };
+  return { load };
 }
 
 // Toggle a key's disabled state by rewriting its limits object (preserving the

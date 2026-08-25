@@ -369,7 +369,8 @@ export const dataProvider = (
           if (meta?.headers?.["Content-Type"] === "text/plain") {
             return res.text();
           }
-          return res.json();
+          const responseText = await res.text();
+          return responseText ? JSON.parse(responseText) : null;
         })
         .then((data) => {
           return {

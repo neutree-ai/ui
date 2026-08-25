@@ -1,5 +1,6 @@
 export type Metadata = {
   name: string;
+  display_name?: string | null;
   workspace: string | null;
   deletion_timestamp: string | null;
   creation_timestamp: string;

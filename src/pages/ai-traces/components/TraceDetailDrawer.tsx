@@ -26,6 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -858,12 +859,13 @@ const WorkspaceLink = ({ name }: { name?: string }) => {
 };
 
 const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
-  // The api_keys resource has resource-level
-  // meta: { idColumnName: "metadata->name" }, so useOne by uuid id misses
-  // (it looks up metadata.name = <uuid>). Fetch the workspace's keys via
-  // useList and resolve locally — shares the react-query cache with the
-  // list page's identical query.
-  const { data } = useList<{ id: string; metadata?: { name?: string } }>({
+  // Resolve the technical name used by the resource detail route and retain
+  // the user-facing display name for the link label.
+  const { data } = useList<{
+    id: string;
+    metadata?: { name?: string; display_name?: string };
+    spec?: { description?: string };
+  }>({
     resource: "api_keys",
     pagination: { mode: "off" },
     meta: { workspace },
@@ -875,10 +877,9 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
     return <span className="font-mono text-xs">{id}</span>;
   }
 
-  const name = data?.data?.find((k) => k.id === id)?.metadata?.name;
+  const apiKey = data?.data?.find((key) => key.id === id);
+  const name = apiKey?.metadata?.name;
 
-  // The api_keys show route is keyed by metadata.name, not the raw key id —
-  // render a link only once the name has resolved, otherwise it 404s.
   if (!name) {
     return <span className="font-mono text-xs">{id}</span>;
   }
@@ -889,9 +890,13 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
       recordItemId={name}
       meta={{ workspace }}
       variant="link"
-      className="!h-auto !p-0 font-mono text-xs"
+      className="!h-auto !min-h-0 items-start !p-0 font-normal"
     >
-      {name}
+      <ApiKeyLabel
+        name={name}
+        displayName={apiKey.metadata?.display_name}
+        description={apiKey.spec?.description}
+      />
     </ShowButton>
   );
 };
