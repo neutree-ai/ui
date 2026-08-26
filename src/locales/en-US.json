@@ -1167,6 +1167,10 @@
 			"description": "Creates a new catalog from this endpoint's current configuration. It is not linked to the catalog this endpoint was deployed from, and carries no variants or features.",
 			"nameLabel": "Catalog name",
 			"submit": "Save"
+		},
+		"origin": {
+			"hint": "What this endpoint was deployed from. Its settings are edited below; changing them here does not change the catalog.",
+			"featuresUnreadable": "the recorded options could not be read"
 		}
 	},
 	"external_endpoints": {

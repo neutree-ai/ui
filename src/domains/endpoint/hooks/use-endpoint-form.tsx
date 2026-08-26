@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
+import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
@@ -28,6 +29,7 @@ import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageI
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
+import { buildCatalogOriginAnnotations } from "@/domains/endpoint/lib/catalog-origin";
 import {
   buildCatalogMergedSpec,
   defaultEndpointSpec,
@@ -1663,6 +1665,32 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             ? structuredClone(values)
             : JSON.parse(JSON.stringify(values));
         transformEndpointValues((transformedValues as Endpoint).spec);
+
+        // Record what this was deployed from, while the answer is still in
+        // hand: the spec about to be submitted is the composed result, and
+        // nothing in it says which catalog, variant or features produced it.
+        // Create only — an edit is not a new deployment, and rewriting the
+        // record would claim the endpoint came from wherever it happens to
+        // point today.
+        if (!isEdit && selectedCatalog) {
+          const endpoint = transformedValues as Endpoint;
+          endpoint.metadata = {
+            ...endpoint.metadata,
+            annotations: {
+              ...endpoint.metadata?.annotations,
+              ...buildCatalogOriginAnnotations({
+                catalog: selectedCatalog.metadata.name,
+                // Composition reads "" as the default profile, so the record
+                // names it rather than leaving the field empty.
+                variant: isRecipeCatalog
+                  ? selectedVariant || DEFAULT_VARIANT
+                  : undefined,
+                features: isRecipeCatalog ? featureSelections : undefined,
+              }),
+            },
+          };
+        }
+
         return form.refineCore.onFinish(transformedValues);
       },
     },
@@ -1708,6 +1736,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           title={t("endpoints.sections.modelAndReplicas")}
           variant={sectionVariant}
         >
+          {/* Edit mode has no catalog picker — the deployment already happened
+          — but it renders what that deployment came from in the same place, so
+          the endpoint does not read as two different things depending on which
+          page you are on. */}
+          {isEdit && (
+            <div className="col-span-4">
+              <EndpointCatalogOrigin
+                annotations={queryEndpoint?.metadata?.annotations}
+              />
+            </div>
+          )}
           {!isEdit && (
             <div
               data-testid="model-catalog-row"
