@@ -21,9 +21,9 @@ type ParseCatalogSpecResult =
   | { ok: true; spec: ModelCatalogSpec; metadata?: EditableMetadata }
   | { ok: false; error: ParseCatalogSpecError };
 
-type Mapping = Record<string, unknown>;
+export type Mapping = Record<string, unknown>;
 
-function isMapping(value: unknown): value is Mapping {
+export function isMapping(value: unknown): value is Mapping {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -38,7 +38,7 @@ function str(value: unknown): string {
 // whole document rather than a spec. Whether that document carries a usable
 // `spec` is a separate question — checked at the call site so a malformed
 // envelope is rejected, not stored as the spec.
-function looksLikeDocument(doc: Mapping): boolean {
+export function looksLikeDocument(doc: Mapping): boolean {
   return "apiVersion" in doc || "kind" in doc || "metadata" in doc;
 }
 

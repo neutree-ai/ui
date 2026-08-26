@@ -81,10 +81,7 @@ import {
   sumMatchingDeviceAvailableResources,
 } from "@/foundation/lib/gpu-device-resources";
 import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";
-import {
-  registryIsDisabled,
-  registryIsUnreachable,
-} from "@/foundation/lib/model-registry-availability";
+import { registryUnavailability } from "@/foundation/lib/model-registry-availability";
 import {
   MODEL_REGISTRY_SELECT,
   registryModelDelivery,
@@ -351,17 +348,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const modelRegistryOptions = useMemo(
     () =>
       (modelRegistries.query.data?.data ?? []).map((registry) => {
-        const unavailable = registryIsDisabled(registry)
-          ? t("endpoints.messages.modelRegistryDeleted")
-          : registryIsUnreachable(registry)
-            ? t("endpoints.messages.modelRegistryUnreachable")
-            : undefined;
+        const unavailable = registryUnavailability(registry);
 
         return {
           label: registry.metadata.name,
           value: registry.metadata.name,
           disabled: Boolean(unavailable),
-          description: unavailable,
+          description: unavailable
+            ? t(`common.modelRegistry.${unavailable}`)
+            : undefined,
         };
       }),
     [modelRegistries.query.data, t],

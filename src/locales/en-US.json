@@ -75,6 +75,10 @@
 		},
 		"validation": {
 			"workspaceRequired": "Please select a workspace before creating the resource"
+		},
+		"modelRegistry": {
+			"unreachable": "Not answering — cannot list models",
+			"deleted": "Being deleted"
 		}
 	},
 	"appearance": {
@@ -763,7 +767,21 @@
 			"nameMismatch": "This document is for \"{{actual}}\", but you are editing \"{{expected}}\". Import it as a new catalog instead.",
 			"workspaceMismatch": "This document belongs to workspace \"{{actual}}\", but this catalog is in \"{{expected}}\"."
 		},
-		"wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\""
+		"wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\"",
+		"models": {
+			"registryLabel": "Model registry",
+			"selectRegistry": "Select a registry",
+			"selectModel": "Select a model",
+			"catalogModel": "Catalog model",
+			"unparsable": "Fix the YAML below to choose models here.",
+			"none": "This catalog names no model yet.",
+			"listFailed": "Could not list this registry's models.",
+			"title": "Models",
+			"hint": "Point each of this catalog's models at one in a registry you can reach, and choose the engine version it deploys with. Edits land in the YAML below.",
+			"unset": "No model chosen",
+			"engine": "Engine",
+			"selectEngineVersion": "Select a version"
+		}
 	},
 	"image_registries": {
 		"image_registries": "image registry",
@@ -932,8 +950,6 @@
 			"saveAsCatalogFailed": "Failed to save as catalog",
 			"saveAsCatalogDuplicate": "A catalog named \"{{name}}\" already exists in this workspace",
 			"modelRegistryNotInWorkspace": "Model registry \"{{name}}\" does not exist in this workspace",
-			"modelRegistryUnreachable": "Not answering — cannot list models",
-			"modelRegistryDeleted": "Being deleted",
 			"fetchingClusterResources": "Fetching cluster resources",
 			"failedToFetchClusterResources": "Failed to fetch cluster resources",
 			"clusterResourcesUnavailable": "Cluster resources unavailable",
@@ -1079,7 +1095,7 @@
 				"constant": "A fixed factor of the formula, not a value from the checkpoint",
 				"deployment": "Taken from the engine args this deployment will be created with, not from the checkpoint"
 			},
-			"reading": "Reading the checkpoint\u2026",
+			"reading": "Reading the checkpoint…",
 			"unread": {
 				"unauthorized": "Cannot read this checkpoint: the registry refused the request. A gated model needs an access token on the registry before its files can be read.",
 				"not-found": "Cannot read this checkpoint: the registry has no model or version by that name.",

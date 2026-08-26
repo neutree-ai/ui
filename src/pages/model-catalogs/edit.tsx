@@ -1,11 +1,13 @@
 import { useShow, useUpdate } from "@refinedev/core";
+import yaml from "js-yaml";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { CatalogModelSlots } from "@/domains/model-catalog/components/CatalogModelSlots";
 import {
   type ParseCatalogSpecError,
   parseCatalogSpecYaml,
@@ -78,6 +80,23 @@ export const ModelCatalogsEdit = () => {
 
   const { mutateAsync, isLoading: isSaving } = useUpdate<ModelCatalog>();
   const [specYaml, setSpecYaml] = useState("");
+  // The editor's text is the source of truth; the model panel reads this and
+  // hands a changed document back, which is serialized straight over the text.
+  // Null while the text is not a catalog the panel can work on, which it says
+  // so about. Valid YAML is not enough: a bare scalar parses, and handing that
+  // over would have the panel report a catalog naming no models rather than
+  // text that is not a catalog at all.
+  const parsedDoc = useMemo(() => {
+    try {
+      const loaded = yaml.load(specYaml);
+
+      return loaded && typeof loaded === "object" && !Array.isArray(loaded)
+        ? loaded
+        : null;
+    } catch {
+      return null;
+    }
+  }, [specYaml]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -163,6 +182,28 @@ export const ModelCatalogsEdit = () => {
                   {record.metadata.workspace || "-"}
                 </div>
               </div>
+            </div>
+
+            {/* The one edit almost every imported catalog needs, lifted out of
+            the YAML: the models it names have to point at this workspace's
+            registries. It rewrites the text below rather than holding a copy,
+            so hand-editing and using the panel stay interchangeable. */}
+            <div className="space-y-1.5">
+              <div className="text-sm font-medium">
+                {t("model_catalogs.models.title")}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("model_catalogs.models.hint")}
+              </p>
+              <CatalogModelSlots
+                doc={parsedDoc}
+                onChange={(nextDoc) =>
+                  setSpecYaml(
+                    serializeToYaml([nextDoc as Record<string, unknown>]),
+                  )
+                }
+                workspace={record.metadata.workspace ?? ""}
+              />
             </div>
 
             <div className="space-y-1.5">
