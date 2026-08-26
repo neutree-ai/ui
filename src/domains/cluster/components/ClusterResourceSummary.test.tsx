@@ -103,6 +103,100 @@ describe("ClusterResourceSummary", () => {
     expect(progressBars[3].className).toContain("--nt-chart-series-2");
   });
 
+  it("reports pooled usage as unknown when a product omits availability", () => {
+    render(
+      <ClusterResourceSummary
+        resourceInfo={{
+          allocatable: {
+            cpu: 16,
+            memory: 64,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 4,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 2,
+                    virtualization: {
+                      memory_mib: 30 * 1024,
+                      core_units: 200,
+                    },
+                  },
+                  "NVIDIA-L20": {
+                    quantity: 2,
+                    virtualization: {
+                      memory_mib: 40 * 1024,
+                      core_units: 100,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          available: {
+            cpu: 12,
+            memory: 48,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 1,
+                product_groups: null,
+                products: {
+                  "Tesla-T4": {
+                    quantity: 1,
+                    virtualization: {
+                      memory_mib: 10 * 1024,
+                      core_units: 50,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          node_resources: null,
+        }}
+        t={t}
+      />,
+    );
+
+    // The whole pool is unknown rather than the T4 share standing in for it,
+    // which would have read as the L20 cards being fully consumed.
+    expect(screen.getByText("- / 70.0")).toBeTruthy();
+    expect(screen.getByText("- / 300")).toBeTruthy();
+
+    const progressBars = screen.getAllByRole("progressbar");
+    expect(progressBars[2].className).toContain("border-dashed");
+    expect(progressBars[3].className).toContain("border-dashed");
+  });
+
+  it("reports card allocation as unknown when the type omits availability", () => {
+    render(
+      <ClusterResourceSummary
+        resourceInfo={{
+          allocatable: {
+            cpu: 4,
+            memory: 8,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 2,
+                product_groups: null,
+                products: null,
+              },
+            },
+          },
+          available: null,
+          node_resources: null,
+        }}
+        t={t}
+      />,
+    );
+
+    const cardBar = screen.getByRole("img", { name: "GPU Cards: - / 2" });
+    expect(cardBar.children).toHaveLength(2);
+    for (const segment of cardBar.children) {
+      expect(segment.className).toContain("bg-muted");
+    }
+  });
+
   it("hides accelerator metrics when the cluster has no cards", () => {
     render(
       <ClusterResourceSummary

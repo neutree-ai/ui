@@ -32,6 +32,23 @@ const shapeClasses = {
   square: "rounded-none [&>div]:rounded-none",
 } as const;
 
+/** Fill for a mark that carries a series colour without being a bar — the
+ * per-card segments of a discrete meter, a legend swatch. Kept beside the bar's
+ * own map so a series never means two different colours across a page.
+ *
+ * The two maps are spelled out separately on purpose: Tailwind scans for whole
+ * class names, so deriving one from the other with a `[&>div]:` prefix would
+ * leave every variant unbuilt. */
+export const METRIC_BAR_SERIES_FILL_CLASSES: Record<MetricBarSeries, string> = {
+  blue: "bg-[var(--nt-chart-series-1)]",
+  cyan: "bg-[var(--nt-chart-series-2)]",
+  purple: "bg-[var(--nt-chart-series-3)]",
+  green: "bg-[var(--nt-chart-series-4)]",
+  amber: "bg-[var(--nt-chart-series-5)]",
+  neutral:
+    "bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
+};
+
 const seriesClasses: Record<MetricBarSeries, string> = {
   blue: "[&>div]:bg-[var(--nt-chart-series-1)]",
   cyan: "[&>div]:bg-[var(--nt-chart-series-2)]",

@@ -4,6 +4,7 @@ import {
 } from "@/domains/cluster/lib/accelerator-virtualization";
 import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
 import {
+  METRIC_BAR_SERIES_FILL_CLASSES,
   MetricBar,
   type MetricBarSeries,
 } from "@/foundation/components/MetricBar";
@@ -12,9 +13,15 @@ import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
+/** Stands in for a number the cluster never reported. */
+const UNKNOWN_VALUE = "-";
+
 type UsageMetricProps = {
   label: string;
   total: number;
+  /** `null` when the cluster reported no availability for this pool. Unknown
+   * usage is not zero usage, so the metric says so rather than reading as
+   * fully consumed. */
   available?: number | null;
   unit?: string;
   series?: MetricBarSeries;
@@ -28,20 +35,39 @@ type UsageMetricProps = {
 const formatValue = (value: number, valueScale: number, precision: number) =>
   formatToDecimal(value * valueScale, precision) ?? "-";
 
-const sumDefined = (
+type ResourcePool = { total: number | null; available: number | null };
+
+/** Sum one allocatable/available pair across product rows.
+ *
+ * The two sides are summed together rather than independently: a product that
+ * reports a total but no availability would otherwise land in `total` alone and
+ * inflate `used` by its entire capacity. Once any contributing product is
+ * missing its available side the pool reports `available: null` — unknown —
+ * because a partial sum cannot be subtracted from a whole-cluster total. */
+const sumProductPool = (
   rows: AcceleratorProductResourceRow[],
-  key:
-    | "allocatableMemoryMiB"
-    | "availableMemoryMiB"
-    | "allocatableCoreUnits"
-    | "availableCoreUnits",
-) => {
-  const values = rows
-    .map((row) => row[key])
-    .filter((value): value is number => value != null);
-  return values.length > 0
-    ? values.reduce((sum, value) => sum + value, 0)
-    : null;
+  allocatableKey: "allocatableMemoryMiB" | "allocatableCoreUnits",
+  availableKey: "availableMemoryMiB" | "availableCoreUnits",
+): ResourcePool => {
+  let total: number | null = null;
+  let available: number | null = null;
+  let availableIsKnown = true;
+
+  for (const row of rows) {
+    const allocatableValue = row[allocatableKey];
+    if (allocatableValue == null) continue;
+
+    total = (total ?? 0) + allocatableValue;
+
+    const availableValue = row[availableKey];
+    if (availableValue == null) {
+      availableIsKnown = false;
+      continue;
+    }
+    available = (available ?? 0) + availableValue;
+  }
+
+  return { total, available: availableIsKnown ? available : null };
 };
 
 const UsageMetric = ({
@@ -57,25 +83,31 @@ const UsageMetric = ({
   t,
 }: UsageMetricProps) => {
   const precision = discrete ? 0 : valuePrecision;
-  const { used, percent } = calcResourceUsage(total, available ?? undefined);
+  const usageIsKnown = available != null;
+  const { used, percent } = usageIsKnown
+    ? calcResourceUsage(total, available)
+    : { used: 0, percent: 0 };
   const free = Math.max(total - used, 0);
   const usedLabel = allocationLabels
     ? t("clusters.options.allocated")
     : t("clusters.options.used");
-  const freeLabel = allocationLabels
-    ? t("clusters.options.free")
-    : t("clusters.options.free");
-  const usageLabel = allocationLabels
-    ? t("clusters.options.allocated").toLowerCase()
-    : t("clusters.options.used").toLowerCase();
+  const freeLabel = t("clusters.options.free");
+  const usageLabel = usedLabel.toLowerCase();
+  const totalText = formatValue(total, valueScale, precision);
+  const usedText = usageIsKnown
+    ? formatValue(used, valueScale, precision)
+    : UNKNOWN_VALUE;
+  const freeText = usageIsKnown
+    ? formatValue(free, valueScale, precision)
+    : UNKNOWN_VALUE;
+  const filledSegments = usageIsKnown ? Math.round(used) : 0;
 
   return (
     <div className="min-w-0 border-r pr-5 last:border-r-0 last:pr-0">
       <div className="text-sm text-muted-foreground">{label}</div>
       <div className="mt-1 flex items-baseline justify-between gap-3">
         <div className="min-w-0 whitespace-nowrap text-2xl font-semibold leading-8 tabular-nums text-foreground">
-          {formatValue(used, valueScale, precision)} /{" "}
-          {formatValue(total, valueScale, precision)}
+          {usedText} / {totalText}
           {unit && (
             <span className="ml-1.5 text-base font-medium text-muted-foreground">
               {unit}
@@ -83,7 +115,7 @@ const UsageMetric = ({
           )}
         </div>
         <span className="shrink-0 text-sm text-muted-foreground">
-          {percent}% {usageLabel}
+          {usageIsKnown ? `${percent}%` : UNKNOWN_VALUE} {usageLabel}
         </span>
       </div>
       {discrete ? (
@@ -93,14 +125,14 @@ const UsageMetric = ({
             gridTemplateColumns: `repeat(${Math.round(total)}, minmax(0, 1fr))`,
           }}
           role="img"
-          aria-label={`${label}: ${formatValue(used, valueScale, precision)} / ${formatValue(total, valueScale, precision)}`}
+          aria-label={`${label}: ${usedText} / ${totalText}`}
         >
           {Array.from({ length: Math.round(total) }, (_, index) => (
             <span
               key={index}
               className={`${
-                index < Math.round(used)
-                  ? "bg-[var(--nt-chart-series-5)]"
+                index < filledSegments
+                  ? METRIC_BAR_SERIES_FILL_CLASSES[series]
                   : "bg-muted"
               } ${index === 0 ? "rounded-l-full" : ""} ${
                 index === Math.round(total) - 1 ? "rounded-r-full" : ""
@@ -109,21 +141,27 @@ const UsageMetric = ({
           ))}
         </div>
       ) : (
-        <MetricBar value={percent} size="sm" series={series} className="mt-3" />
+        <MetricBar
+          value={percent}
+          size="sm"
+          series={series}
+          track={usageIsKnown ? "subtle" : "unavailable"}
+          className="mt-3"
+        />
       )}
       <div className="mt-1.5 flex items-baseline justify-between gap-3 text-sm text-muted-foreground">
         <span className="min-w-0 truncate">
           {usedLabel}{" "}
           <strong className="font-medium tabular-nums text-foreground">
-            {formatValue(used, valueScale, precision)}
-            {unit && ` ${unit}`}
+            {usedText}
+            {unit && usageIsKnown && ` ${unit}`}
           </strong>
         </span>
         <span className="min-w-0 truncate text-right">
           {freeLabel}{" "}
           <strong className="font-medium tabular-nums text-foreground">
-            {formatValue(free, valueScale, precision)}
-            {unit && ` ${unit}`}
+            {freeText}
+            {unit && usageIsKnown && ` ${unit}`}
           </strong>
         </span>
       </div>
@@ -143,21 +181,31 @@ export function ClusterResourceSummary({
 
   const productRows = getAcceleratorProductResourceRows(resourceInfo);
   const acceleratorGroups = allocatable.accelerator_groups ?? {};
+  const availableGroups = resourceInfo.available?.accelerator_groups;
   const totalCards = Object.values(acceleratorGroups).reduce(
     (sum, group) => sum + group.quantity,
     0,
   );
-  const availableCards = Object.entries(acceleratorGroups).reduce(
-    (sum, [type, group]) =>
-      sum +
-      (resourceInfo.available?.accelerator_groups?.[type]?.quantity ??
-        group.quantity),
+  // An accelerator type with no availability entry leaves the card count
+  // unknown rather than fully free — the same rule the VRAM and Core pools
+  // follow, so one card cannot read as idle in one metric and busy in another.
+  const availableCards = Object.keys(acceleratorGroups).reduce<number | null>(
+    (sum, type) => {
+      const quantity = availableGroups?.[type]?.quantity;
+      return sum == null || quantity == null ? null : sum + quantity;
+    },
     0,
   );
-  const totalVram = sumDefined(productRows, "allocatableMemoryMiB");
-  const availableVram = sumDefined(productRows, "availableMemoryMiB");
-  const totalCore = sumDefined(productRows, "allocatableCoreUnits");
-  const availableCore = sumDefined(productRows, "availableCoreUnits");
+  const vram = sumProductPool(
+    productRows,
+    "allocatableMemoryMiB",
+    "availableMemoryMiB",
+  );
+  const core = sumProductPool(
+    productRows,
+    "allocatableCoreUnits",
+    "availableCoreUnits",
+  );
 
   return (
     <div className="space-y-5">
@@ -196,11 +244,11 @@ export function ClusterResourceSummary({
               series="amber"
               t={t}
             />
-            {totalVram != null && (
+            {vram.total != null && (
               <UsageMetric
                 label={t("clusters.fields.memoryUsage")}
-                total={totalVram}
-                available={availableVram}
+                total={vram.total}
+                available={vram.available}
                 unit="GiB"
                 valueScale={1 / 1024}
                 // VRAM and Core repeat per device in the Nodes table below, so
@@ -209,11 +257,11 @@ export function ClusterResourceSummary({
                 t={t}
               />
             )}
-            {totalCore != null && (
+            {core.total != null && (
               <UsageMetric
                 label={t("clusters.fields.coreUsage")}
-                total={totalCore}
-                available={availableCore}
+                total={core.total}
+                available={core.available}
                 valuePrecision={0}
                 series="cyan"
                 t={t}
