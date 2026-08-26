@@ -2,7 +2,6 @@ import { useShow } from "@refinedev/core";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -39,7 +38,6 @@ export const WorkspacesShow = () => {
         }
       />
       <div className="mt-4 space-y-3">
-        <MetadataDisclosure metadata={metadata} />
         <ShowPage.Section title={t("role_assignments.title")}>
           <Table
             refineCoreProps={{

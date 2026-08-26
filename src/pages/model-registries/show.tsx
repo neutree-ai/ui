@@ -9,7 +9,6 @@ import { RegistryVisibility } from "@/domains/model-registry/components/Registry
 import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -93,7 +92,6 @@ export const ModelRegistriesShow = () => {
           value="basic"
           className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
         >
-          <MetadataDisclosure metadata={record.metadata} />
           <ShowPage.Section title={t("common.sections.configuration")}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
               <ShowPage.Row title={t("common.fields.type")}>

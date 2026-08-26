@@ -14,7 +14,6 @@ import EngineStatus from "@/domains/engine/components/EngineStatus";
 import JSONSchemaVisualizer from "@/domains/engine/components/JsonSchemaVisualizer";
 import type { Engine } from "@/domains/engine/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 
@@ -76,7 +75,6 @@ export const EnginesShow = () => {
         }
       />
       <div className="mt-4 space-y-3">
-        <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section title={t("engines.fields.supportedTasks")}>
           <div className="flex flex-wrap gap-1.5">
             {record.spec.supported_tasks.map((task) => (
