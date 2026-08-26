@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -537,21 +537,21 @@ function useDeploymentDefault(
   const [value, setValue] = useState(() =>
     derived === null ? "" : String(derived),
   );
-  const edited = useRef(false);
+  const [edited, setEdited] = useState(false);
 
   useEffect(() => {
-    if (edited.current || derived === null) {
+    if (edited || derived === null) {
       return;
     }
 
     setValue(String(derived));
-  }, [derived]);
+  }, [derived, edited]);
 
   return {
     value,
-    source: edited.current ? "input" : derivedSource,
+    source: edited ? "input" : derivedSource,
     onChange: (next: string) => {
-      edited.current = true;
+      setEdited(true);
       setValue(next);
     },
   };
@@ -577,7 +577,8 @@ const Estimator = ({
   // number presented as an estimate of their deployment. Concurrency does have
   // a floor worth defaulting to: one sequence is the smallest deployment that
   // exists, and it is visibly a starting point rather than a claim.
-  const derivedTokens = engineArgs.maxModelLen ?? info.max_position_embeddings ?? null;
+  const derivedTokens =
+    engineArgs.maxModelLen ?? info.max_position_embeddings ?? null;
   const tokensField = useDeploymentDefault(
     derivedTokens,
     engineArgs.maxModelLen !== null
@@ -845,10 +846,7 @@ const Estimator = ({
               )}
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div
-                className="mt-1 space-y-1"
-                data-testid="kv-cache-components"
-              >
+              <div className="mt-1 space-y-1" data-testid="kv-cache-components">
                 {result.components.map((component) => (
                   <ComponentRow
                     key={component.key}
