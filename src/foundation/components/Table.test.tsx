@@ -2,10 +2,8 @@ import type { Column } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 import {
   getColumnViewOptionsLabel,
-  getTableSelectionColumnStyle,
   mapTableColumn,
   TABLE_SELECTION_COLUMN_WIDTH,
-  tableSelectionColumnStyle,
 } from "./Table";
 
 vi.mock("@refinedev/react-table", () => ({
@@ -86,15 +84,6 @@ describe("getColumnViewOptionsLabel", () => {
 describe("Table", () => {
   it("keeps the shared row-selection column at a fixed width", () => {
     expect(TABLE_SELECTION_COLUMN_WIDTH).toBe(48);
-    expect(tableSelectionColumnStyle).toEqual({
-      width: 48,
-      minWidth: 48,
-      maxWidth: 48,
-    });
-    expect(getTableSelectionColumnStyle("_select")).toBe(
-      tableSelectionColumnStyle,
-    );
-    expect(getTableSelectionColumnStyle("name")).toBeUndefined();
   });
 
   it("passes column view options labels into column metadata", () => {

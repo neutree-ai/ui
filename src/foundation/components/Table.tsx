@@ -32,7 +32,6 @@ import {
 } from "@tanstack/react-table";
 import type React from "react";
 import {
-  type CSSProperties,
   type FC,
   type PropsWithChildren,
   type ReactElement,
@@ -474,15 +473,6 @@ function DataTableToolbar<TData>({
 
 export const TABLE_SELECTION_COLUMN_WIDTH = 48;
 
-export const tableSelectionColumnStyle: CSSProperties = {
-  width: TABLE_SELECTION_COLUMN_WIDTH,
-  minWidth: TABLE_SELECTION_COLUMN_WIDTH,
-  maxWidth: TABLE_SELECTION_COLUMN_WIDTH,
-};
-
-export const getTableSelectionColumnStyle = (columnId: string) =>
-  columnId === "_select" ? tableSelectionColumnStyle : undefined;
-
 export function Table<
   TQueryFnData extends BaseRecord = BaseRecord,
   TData extends BaseRecord = TQueryFnData,
@@ -615,7 +605,7 @@ export function Table<
           }
         />
         <div className="rounded-md border border-border">
-          <TableUi>
+          <TableUi className="[&_th:has([role=checkbox])]:w-12 [&_th:has([role=checkbox])]:min-w-12 [&_th:has([role=checkbox])]:max-w-12 [&_td:has([role=checkbox])]:w-12 [&_td:has([role=checkbox])]:min-w-12 [&_td:has([role=checkbox])]:max-w-12">
             {showHeader && (
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -624,10 +614,7 @@ export function Table<
                       const columnDef = header.column
                         .columnDef as CustomColumnDef<TData>;
                       return (
-                        <TableHead
-                          key={header.id}
-                          style={getTableSelectionColumnStyle(header.column.id)}
-                        >
+                        <TableHead key={header.id}>
                           <div className="inline-flex flex-row items-center gap-x-2.5">
                             {header.isPlaceholder
                               ? null
@@ -673,11 +660,7 @@ export function Table<
                     data-state={row.getIsSelected() && "selected"}
                   >
                     {row.getVisibleCells().map((cell: Cell<TData, unknown>) => (
-                      <TableCell
-                        key={cell.id}
-                        className="text-nowrap"
-                        style={getTableSelectionColumnStyle(cell.column.id)}
-                      >
+                      <TableCell key={cell.id} className="text-nowrap">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
