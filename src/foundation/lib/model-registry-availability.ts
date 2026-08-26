@@ -33,3 +33,20 @@ export const registryIsUnreachable = (registry: RegistryAvailability) =>
 export const registryIsDisabled = (registry: RegistryAvailability) =>
   Boolean(registry.metadata.deletion_timestamp) ||
   registry.status?.phase === "Deleted";
+
+/**
+ * Why a registry cannot be listed from, or null when it can.
+ *
+ * The precedence is the point: a registry on its way out is reported as
+ * withdrawn even while it is also failing to answer, so every picker in the app
+ * gives the same reason for the same registry. Stated as a token rather than a
+ * sentence — this module is i18n-free, and each caller owns its wording.
+ */
+export const registryUnavailability = (
+  registry: RegistryAvailability,
+): "deleted" | "unreachable" | null => {
+  if (registryIsDisabled(registry)) return "deleted";
+  if (registryIsUnreachable(registry)) return "unreachable";
+
+  return null;
+};
