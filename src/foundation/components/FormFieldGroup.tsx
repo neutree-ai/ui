@@ -24,6 +24,7 @@ type FieldProps<
 > = UseControllerProps<TFieldValues, TName> & {
   label?: string;
   description?: string;
+  required?: boolean;
   className?: string;
   isCheckbox?: boolean;
   children: ReactElement<{
@@ -51,6 +52,11 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
               {!props.isCheckbox && (
                 <FormLabel className={formFieldLabelClassName}>
                   {props.label}
+                  {props.required ? (
+                    <span className="ml-1 text-destructive" aria-hidden="true">
+                      *
+                    </span>
+                  ) : null}
                 </FormLabel>
               )}
               <FormControl>

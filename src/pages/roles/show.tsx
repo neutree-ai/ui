@@ -2,7 +2,6 @@ import { useShow } from "@refinedev/core";
 import PermissionsTree from "@/domains/role/components/PermissionsTree";
 import type { Role } from "@/domains/role/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -50,7 +49,6 @@ export const RolesShow = () => {
         }
       />
       <div className="mt-4 space-y-3">
-        <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section
           title={t("common.fields.permissions")}
           data-testid="permissions-card"

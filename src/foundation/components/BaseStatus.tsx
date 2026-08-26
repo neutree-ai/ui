@@ -44,7 +44,7 @@ export default function BaseStatus({
         <span className="inline-flex items-center gap-1">
           <span
             className={cn(
-              "px-2 py-1 text-xs font-semibold rounded-lg",
+              "whitespace-nowrap px-2 py-1 text-xs font-semibold rounded-lg",
               className,
             )}
           >

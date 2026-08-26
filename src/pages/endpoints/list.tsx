@@ -5,10 +5,10 @@ import {
   EndpointSaveAsCatalogAction,
   EndpointSaveAsCatalogProvider,
 } from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
-import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import type { Endpoint } from "@/domains/endpoint/types";
+import EndpointStatus from "@/foundation/components/EndpointStatus";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";

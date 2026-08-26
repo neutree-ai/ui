@@ -4,7 +4,6 @@ import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard"
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey } from "@/domains/api-key/types";
-import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 
@@ -68,7 +67,6 @@ export const ApiKeysShow = () => {
         />
         {record.id && (
           <div className="mt-4 space-y-3">
-            <MetadataDisclosure metadata={record.metadata} />
             <ApiKeyPerformanceCard
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}

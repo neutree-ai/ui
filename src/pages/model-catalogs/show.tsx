@@ -18,7 +18,6 @@ import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -141,7 +140,6 @@ export const ModelCatalogsShow = () => {
         }
       />
       <div className="mt-4 space-y-3 overflow-auto">
-        <MetadataDisclosure metadata={record.metadata} />
         {verifiedHardware.length > 0 && (
           <ShowPage.Section
             title={t(

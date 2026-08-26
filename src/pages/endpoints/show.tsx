@@ -20,12 +20,12 @@ import {
   EndpointSaveAsCatalogAction,
   EndpointSaveAsCatalogProvider,
 } from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
-import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
+import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";

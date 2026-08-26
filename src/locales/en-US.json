@@ -28,9 +28,7 @@
 			"password": "Password",
 			"permissions": "Permissions",
 			"permissionsCount": "{{count}} permissions",
-			"metadata": "Metadata",
 			"labels": "Labels",
-			"annotations": "Annotations",
 			"openaiUrl": "OpenAI Compatible URL",
 			"anthropicUrl": "Anthropic Compatible URL",
 			"allReplicas": "All Replicas",
@@ -786,6 +784,9 @@
 	"image_registries": {
 		"image_registries": "image registry",
 		"title": "Image Registries",
+		"create": {
+			"title": "Create Image Registry"
+		},
 		"fields": {
 			"url": "URL",
 			"repository": "Repository",
@@ -805,7 +806,8 @@
 			"base64Auth": "Base64 encoded username:password"
 		},
 		"validation": {
-			"nameRequired": "Name is required"
+			"nameRequired": "Name is required",
+			"urlRequired": "URL is required"
 		}
 	},
 	"engines": {
@@ -1170,6 +1172,7 @@
 	"external_endpoints": {
 		"external_endpoints": "external endpoint",
 		"title": "External Endpoints",
+		"create": "Create External Endpoint",
 		"fields": {
 			"serviceUrl": "Service URL",
 			"routeType": "Route Type",
