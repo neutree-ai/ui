@@ -543,15 +543,18 @@
 			"registryName": "Model Registry Name",
 			"selectType": "Select Model Registry Type",
 			"huggingFaceUrl": "e.g https://huggingface.co",
+			"modelScopeUrl": "e.g https://www.modelscope.cn",
 			"fileSystemUrl": "e.g nfs://path/to/registry",
 			"credentials": "Credentials"
 		},
 		"descriptions": {
-			"credentials": "Credentials for the model registry. For hugging face, it should be a HF token."
+			"credentials": "Credentials for the model registry. For a public hub, this is that hub's access token — a Hugging Face token or a ModelScope token."
 		},
 		"types": {
 			"huggingFace": "Hugging Face",
-			"fileSystem": "File System"
+			"modelScope": "ModelScope",
+			"fileSystem": "File System",
+			"filterTitle": "Filter by type"
 		},
 		"validation": {
 			"urlRequired": "URL is required",
@@ -645,8 +648,7 @@
 		},
 		"visibility": {
 			"public": "Public",
-			"private": "Private",
-			"filterTitle": "Filter by visibility"
+			"private": "Private"
 		},
 		"availability": {
 			"unreachable": "This registry cannot be reached",

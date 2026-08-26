@@ -6,6 +6,7 @@ import ModelRegistryType from "@/domains/model-registry/components/ModelRegistry
 import { RegistryAvailabilityNotice } from "@/domains/model-registry/components/RegistryAvailabilityNotice";
 import { RegistryModelsTable } from "@/domains/model-registry/components/RegistryModelsTable";
 import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
+import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataDisclosure } from "@/foundation/components/MetadataDisclosure";
@@ -43,8 +44,17 @@ export const ModelRegistriesShow = () => {
   // symptom, which is the one thing worse than an error.
   const workspace = (params?.workspace as string | undefined) ?? "";
 
+  // A provisioned registry is configured by a neutree-core setting and refuses
+  // both writes, so neither control is offered. See registryIsProvisioned.
+  const isProvisioned = registryIsProvisioned(record);
+
   return (
-    <ShowPage record={record} showCurrentBreadcrumb={false}>
+    <ShowPage
+      record={record}
+      canEdit={!isProvisioned}
+      canDelete={!isProvisioned}
+      showCurrentBreadcrumb={false}
+    >
       <Tabs defaultValue="basic" className="flex h-full flex-col">
         <ShowPage.ObjectHeader
           title={record.metadata.name}

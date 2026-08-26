@@ -1,5 +1,10 @@
 import { useForm } from "@refinedev/react-hook-form";
 import { Input } from "@/components/ui/input";
+import {
+  DEFAULT_MODEL_REGISTRY_TYPE,
+  modelRegistryTypeOptions,
+  modelRegistryUrlPlaceholder,
+} from "@/domains/model-registry/components/ModelRegistryType";
 import { transformModelRegistryValues } from "@/domains/model-registry/lib/transform-model-registry-values";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
@@ -32,7 +37,7 @@ export const useModelRegistryForm = ({
       },
       spec: {
         url: "",
-        type: "hugging-face",
+        type: DEFAULT_MODEL_REGISTRY_TYPE,
         credentials: "",
       },
     },
@@ -93,16 +98,7 @@ export const useModelRegistryForm = ({
         >
           <FormSelect
             placeholder={t("model_registries.placeholders.selectType")}
-            options={[
-              {
-                label: t("model_registries.types.huggingFace"),
-                value: "hugging-face",
-              },
-              {
-                label: t("model_registries.types.fileSystem"),
-                value: PRIVATE_MODEL_REGISTRY_TYPE,
-              },
-            ]}
+            options={modelRegistryTypeOptions(t)}
           />
         </FormFieldGroup>
         <FormFieldGroup
@@ -114,7 +110,10 @@ export const useModelRegistryForm = ({
               message: t("model_registries.validation.urlRequired"),
             },
             validate: (value: string) => {
-              // Only validate protocol for file system type
+              // A file system registry names a mount, and only nfs:// mounts can
+              // be reached from every node. Every other kind is addressed by a
+              // hub URL the control plane has to resolve for itself, so there is
+              // nothing to check here that the connection attempt does not.
               if (currentType === PRIVATE_MODEL_REGISTRY_TYPE) {
                 if (!value) return true; // Let required rule handle empty
                 return (
@@ -122,17 +121,11 @@ export const useModelRegistryForm = ({
                   t("model_registries.validation.mustUseNfsProtocol")
                 );
               }
-              return true; // No validation for hugging-face type
+              return true;
             },
           })}
         >
-          <Input
-            placeholder={
-              currentType === "hugging-face"
-                ? t("model_registries.placeholders.huggingFaceUrl")
-                : t("model_registries.placeholders.fileSystemUrl")
-            }
-          />
+          <Input placeholder={modelRegistryUrlPlaceholder(currentType, t)} />
         </FormFieldGroup>
         <FormFieldGroup
           {...form}

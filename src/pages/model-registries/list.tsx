@@ -4,8 +4,9 @@ import {
 } from "@/domains/model-registry/components/ModelRegistryStats";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
+import { ModelRegistryWriteActions } from "@/domains/model-registry/components/ModelRegistryWriteActions";
+import { RegistryTypeFilter } from "@/domains/model-registry/components/RegistryTypeFilter";
 import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
-import { RegistryVisibilityFilter } from "@/domains/model-registry/components/RegistryVisibilityFilter";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -36,7 +37,7 @@ export const ModelRegistriesList = () => {
           meta: { select: MODEL_REGISTRY_SELECT },
         }}
         filters={({ filters, setFilters }) => (
-          <RegistryVisibilityFilter filters={filters} setFilters={setFilters} />
+          <RegistryTypeFilter filters={filters} setFilters={setFilters} />
         )}
       >
         {metadataColumns.name}
@@ -92,7 +93,15 @@ export const ModelRegistriesList = () => {
           )}
         />
         {metadataColumns.creation_timestamp}
-        {metadataColumns.action}
+        <Table.Column
+          accessorKey="id"
+          id="actions"
+          cell={({ row }) => (
+            <ModelRegistryWriteActions
+              registry={row.original as ModelRegistry}
+            />
+          )}
+        />
       </Table>
     </ListPage>
   );
