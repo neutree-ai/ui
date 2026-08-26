@@ -22,6 +22,11 @@ export const ImageRegistriesShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
+  const repository = record.spec.repository?.trim();
+  const repositoryUrl = repository
+    ? `${record.spec.url.replace(/\/$/, "")}/${repository.replace(/^\//, "")}`
+    : record.spec.url;
+
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
       <ShowPage.ObjectHeader
@@ -29,9 +34,6 @@ export const ImageRegistriesShow = () => {
         status={<ImageRegistryStatus {...record.status} />}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("image_registries.fields.repository")}>
-              {record.spec.repository}
-            </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
@@ -41,7 +43,7 @@ export const ImageRegistriesShow = () => {
         <ShowPage.Section title={t("common.sections.configuration")}>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
             <ShowPage.Row title={t("image_registries.fields.repo")}>
-              {record.spec.url}/{record.spec.repository}
+              {repositoryUrl}
             </ShowPage.Row>
           </div>
         </ShowPage.Section>

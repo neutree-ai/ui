@@ -17,6 +17,7 @@ import type {
   ExternalEndpoint,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
+import BaseStatus from "@/foundation/components/BaseStatus";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -27,7 +28,21 @@ import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
+import { endpointStatusClass } from "@/foundation/lib/endpoint-status-class";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
+
+const InternalEndpointStatus = (status: BaseStatusType) => {
+  const { t } = useTranslation();
+
+  return (
+    <BaseStatus
+      {...status}
+      className={endpointStatusClass(status.phase)}
+      translatedPhase={t(`status.phases.endpoint.${status.phase}`)}
+    />
+  );
+};
 
 const emptyExternalUpstream: UpstreamSpec = {
   upstream: { url: "" },
@@ -146,9 +161,10 @@ export const useExternalEndpointForm = ({
     .map((item) => {
       const phase = (item as { status?: { phase?: string } }).status?.phase;
       return {
-        label: phase ? `${item.metadata.name} (${phase})` : item.metadata.name,
+        label: item.metadata.name,
         value: item.metadata.name,
         phase,
+        status: (item as { status?: { phase?: string } }).status,
       };
     })
     .sort((a, b) => {
@@ -236,7 +252,7 @@ export const useExternalEndpointForm = ({
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4 py-2 px-4">
-                <div className="grid grid-cols-4 xs:grid-cols-1 gap-4">
+                <div className="grid grid-cols-4 gap-x-5 gap-y-4 xs:grid-cols-1">
                   <FormFieldGroup
                     {...form}
                     name={`_upstreamType_${index}`}
@@ -294,6 +310,7 @@ export const useExternalEndpointForm = ({
                         {...form}
                         name={`spec.upstreams.${index}.auth.credential`}
                         label={t("external_endpoints.fields.credential")}
+                        className="col-span-2 xs:col-span-1"
                         description={
                           isEdit
                             ? t("common.messages.leaveEmptyToKeepValue")
@@ -307,7 +324,7 @@ export const useExternalEndpointForm = ({
                           )}
                         />
                       </FormFieldGroup>
-                      <div className="col-span-4 flex items-center">
+                      <div className="col-span-4 flex items-center xs:col-span-1">
                         <TestConnectivityButton
                           testing={connectivity.testingMap[index] ?? false}
                           result={connectivity.resultMap[index] ?? null}
@@ -360,13 +377,31 @@ export const useExternalEndpointForm = ({
                         {...form}
                         name={`spec.upstreams.${index}.endpoint_ref`}
                         label={t("external_endpoints.fields.endpointRef")}
-                        className="col-span-3"
+                        className="col-span-3 xs:col-span-1"
                       >
                         <FormCombobox
                           placeholder={t(
                             "external_endpoints.placeholders.selectEndpointRef",
                           )}
                           options={endpointOptions}
+                          renderOption={(option) => {
+                            const endpoint =
+                              option as (typeof endpointOptions)[number];
+                            return (
+                              <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                                <span className="truncate">
+                                  {endpoint.label}
+                                </span>
+                                {endpoint.status?.phase ? (
+                                  <span className="shrink-0">
+                                    <InternalEndpointStatus
+                                      {...endpoint.status}
+                                    />
+                                  </span>
+                                ) : null}
+                              </span>
+                            );
+                          }}
                           onChange={(val) => {
                             const ref = String(val);
                             form.setValue(
@@ -377,7 +412,7 @@ export const useExternalEndpointForm = ({
                           }}
                         />
                       </FormFieldGroup>
-                      <div className="col-span-4 flex items-center">
+                      <div className="col-span-4 flex items-center xs:col-span-1">
                         <TestConnectivityButton
                           testing={connectivity.testingMap[index] ?? false}
                           result={connectivity.resultMap[index] ?? null}

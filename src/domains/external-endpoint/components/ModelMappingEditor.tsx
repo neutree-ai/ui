@@ -25,7 +25,7 @@ export default function ModelMappingEditor({
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground">
+      <div className="grid grid-cols-[1fr_1fr_auto] gap-5 text-xs font-medium text-muted-foreground">
         <span>{t("external_endpoints.fields.upstreamModelName")}</span>
         <span>{t("external_endpoints.fields.exposedModelName")}</span>
         <span className="w-8" />
@@ -39,7 +39,7 @@ export default function ModelMappingEditor({
           !availableModels.includes(row.value);
         return (
           <div key={index} className="space-y-1">
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <div className="grid grid-cols-[1fr_1fr_auto] gap-5">
               <div>
                 <div className="relative">
                   <Input

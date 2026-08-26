@@ -32,6 +32,7 @@ import {
 } from "@tanstack/react-table";
 import type React from "react";
 import {
+  type CSSProperties,
   type FC,
   type PropsWithChildren,
   type ReactElement,
@@ -471,6 +472,14 @@ function DataTableToolbar<TData>({
 // Main Table Component
 // ============================================================================
 
+export const TABLE_SELECTION_COLUMN_WIDTH = 48;
+
+export const tableSelectionColumnStyle: CSSProperties = {
+  width: TABLE_SELECTION_COLUMN_WIDTH,
+  minWidth: TABLE_SELECTION_COLUMN_WIDTH,
+  maxWidth: TABLE_SELECTION_COLUMN_WIDTH,
+};
+
 export function Table<
   TQueryFnData extends BaseRecord = BaseRecord,
   TData extends BaseRecord = TQueryFnData,
@@ -522,6 +531,9 @@ export function Table<
         ),
         enableSorting: false,
         enableHiding: false,
+        size: TABLE_SELECTION_COLUMN_WIDTH,
+        minSize: TABLE_SELECTION_COLUMN_WIDTH,
+        maxSize: TABLE_SELECTION_COLUMN_WIDTH,
       } as ColumnDef<TData>);
     }
 
@@ -609,7 +621,14 @@ export function Table<
                       const columnDef = header.column
                         .columnDef as CustomColumnDef<TData>;
                       return (
-                        <TableHead key={header.id}>
+                        <TableHead
+                          key={header.id}
+                          style={
+                            header.column.id === "_select"
+                              ? tableSelectionColumnStyle
+                              : undefined
+                          }
+                        >
                           <div className="inline-flex flex-row items-center gap-x-2.5">
                             {header.isPlaceholder
                               ? null
@@ -655,7 +674,15 @@ export function Table<
                     data-state={row.getIsSelected() && "selected"}
                   >
                     {row.getVisibleCells().map((cell: Cell<TData, unknown>) => (
-                      <TableCell key={cell.id} className="text-nowrap">
+                      <TableCell
+                        key={cell.id}
+                        className="text-nowrap"
+                        style={
+                          cell.column.id === "_select"
+                            ? tableSelectionColumnStyle
+                            : undefined
+                        }
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),

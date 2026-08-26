@@ -4,6 +4,7 @@ import {
   type ComponentPropsWithoutRef,
   type ElementRef,
   forwardRef,
+  type ReactNode,
   useState,
 } from "react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> & {
   // verbatim and the API returns explicit nulls for empty composite fields.
   value?: string | number | BaseRecord | null;
   disabled?: boolean;
+  renderOption?: (option: FormComboboxOption) => ReactNode;
 };
 
 export const FormCombobox = forwardRef<
@@ -121,20 +123,27 @@ export const FormCombobox = forwardRef<
                       setOpen(false);
                     }}
                   >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{option.label}</span>
-                      {option.description && (
-                        <span className="block truncate text-xs text-[var(--nt-text-neutral-tertiary)]">
-                          {option.description}
-                        </span>
-                      )}
-                    </span>
-                    <CheckIcon
-                      className={cn(
-                        "ml-auto h-4 w-4",
-                        option.value === value() ? "opacity-100" : "opacity-0",
-                      )}
-                    />
+                    {props.renderOption?.(option) ?? (
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{option.label}</span>
+                        {option.description && (
+                          <span className="block truncate text-xs text-[var(--nt-text-neutral-tertiary)]">
+                            {option.description}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {!props.renderOption ? (
+                      <CheckIcon
+                        data-testid="combobox-option-check"
+                        className={cn(
+                          "ml-auto h-4 w-4",
+                          option.value === value()
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                    ) : null}
                   </CommandItem>
                 ))}
               </ScrollArea>

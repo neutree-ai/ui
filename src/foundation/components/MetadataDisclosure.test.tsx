@@ -1,33 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import type { Metadata } from "@/foundation/types/basic-types";
 import { MetadataDisclosure } from "./MetadataDisclosure";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/components/ShowPage", () => ({
-  ShowPage: {
-    Row: ({ title, children }: { title: ReactNode; children: ReactNode }) => (
-      <div>
-        <h3>{title}</h3>
-        {children}
-      </div>
-    ),
-  },
-}));
-
-vi.mock("./MetadataCard", () => ({
-  KeyValueTags: ({ data }: { data: Record<string, string> }) => (
-    <div>
-      {Object.entries(data).map(([key, value]) => (
-        <span key={key}>{value}</span>
-      ))}
-    </div>
-  ),
-}));
 
 const metadata = (overrides: Partial<Metadata> = {}): Metadata => ({
   name: "endpoint-a",
@@ -47,7 +21,7 @@ describe("MetadataDisclosure", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("summarizes metadata and reveals both groups", () => {
+  it("does not render metadata groups", () => {
     render(
       <MetadataDisclosure
         metadata={metadata({
@@ -57,28 +31,19 @@ describe("MetadataDisclosure", () => {
       />,
     );
 
-    expect(
-      screen.getByText("1 common.fields.labels · 2 common.fields.annotations"),
-    ).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
     expect(screen.queryByText("inference")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button"));
-
-    expect(screen.getByText("inference")).toBeTruthy();
-    expect(screen.getByText("platform")).toBeTruthy();
-    expect(screen.getByText("production")).toBeTruthy();
   });
 
-  it("renders a single available metadata group", () => {
+  it("does not render a single metadata group", () => {
     render(
       <MetadataDisclosure
         metadata={metadata({ annotations: { owner: "platform" } })}
       />,
     );
 
-    expect(screen.getByText("1 common.fields.annotations")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByText("platform")).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText("platform")).toBeNull();
     expect(screen.queryByText("common.fields.labels")).toBeNull();
   });
 });

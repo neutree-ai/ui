@@ -1,6 +1,11 @@
 import type { Column } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
-import { getColumnViewOptionsLabel, mapTableColumn } from "./Table";
+import {
+  getColumnViewOptionsLabel,
+  mapTableColumn,
+  TABLE_SELECTION_COLUMN_WIDTH,
+  tableSelectionColumnStyle,
+} from "./Table";
 
 vi.mock("@refinedev/react-table", () => ({
   useTable: vi.fn(),
@@ -78,6 +83,15 @@ describe("getColumnViewOptionsLabel", () => {
 });
 
 describe("Table", () => {
+  it("keeps the shared row-selection column at a fixed width", () => {
+    expect(TABLE_SELECTION_COLUMN_WIDTH).toBe(48);
+    expect(tableSelectionColumnStyle).toEqual({
+      width: 48,
+      minWidth: 48,
+      maxWidth: 48,
+    });
+  });
+
   it("passes column view options labels into column metadata", () => {
     const acceleratorColumn = mapTableColumn({
       id: "accelerator_virtualization",

@@ -60,6 +60,7 @@ export const useImageRegistryForm = ({
         <FormFieldGroup
           {...form}
           label={t("common.fields.name")}
+          required
           {...form.register("metadata.name", {
             required: {
               value: true,
@@ -76,6 +77,7 @@ export const useImageRegistryForm = ({
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
+          required
           rules={{
             required: t("common.validation.workspaceRequired"),
             validate: (value: string) =>
@@ -94,6 +96,10 @@ export const useImageRegistryForm = ({
             {...form}
             name="spec.url"
             label={t("image_registries.fields.url")}
+            required
+            rules={{
+              required: t("image_registries.validation.urlRequired"),
+            }}
           >
             <Input placeholder={t("image_registries.placeholders.dockerUrl")} />
           </FormFieldGroup>
