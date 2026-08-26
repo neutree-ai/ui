@@ -2,6 +2,7 @@ import type { Column } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 import {
   getColumnViewOptionsLabel,
+  getTableSelectionColumnStyle,
   mapTableColumn,
   TABLE_SELECTION_COLUMN_WIDTH,
   tableSelectionColumnStyle,
@@ -90,6 +91,10 @@ describe("Table", () => {
       minWidth: 48,
       maxWidth: 48,
     });
+    expect(getTableSelectionColumnStyle("_select")).toBe(
+      tableSelectionColumnStyle,
+    );
+    expect(getTableSelectionColumnStyle("name")).toBeUndefined();
   });
 
   it("passes column view options labels into column metadata", () => {

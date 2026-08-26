@@ -480,6 +480,9 @@ export const tableSelectionColumnStyle: CSSProperties = {
   maxWidth: TABLE_SELECTION_COLUMN_WIDTH,
 };
 
+export const getTableSelectionColumnStyle = (columnId: string) =>
+  columnId === "_select" ? tableSelectionColumnStyle : undefined;
+
 export function Table<
   TQueryFnData extends BaseRecord = BaseRecord,
   TData extends BaseRecord = TQueryFnData,
@@ -623,11 +626,7 @@ export function Table<
                       return (
                         <TableHead
                           key={header.id}
-                          style={
-                            header.column.id === "_select"
-                              ? tableSelectionColumnStyle
-                              : undefined
-                          }
+                          style={getTableSelectionColumnStyle(header.column.id)}
                         >
                           <div className="inline-flex flex-row items-center gap-x-2.5">
                             {header.isPlaceholder
@@ -677,11 +676,7 @@ export function Table<
                       <TableCell
                         key={cell.id}
                         className="text-nowrap"
-                        style={
-                          cell.column.id === "_select"
-                            ? tableSelectionColumnStyle
-                            : undefined
-                        }
+                        style={getTableSelectionColumnStyle(cell.column.id)}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,

@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { type FieldValues, useForm } from "react-hook-form";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { Form } from "@/components/ui/form";
 import { FormCombobox } from "./FormCombobox";
@@ -11,17 +11,38 @@ const OPTIONS = [
   { label: "Text Embedding", value: "text-embedding" },
 ];
 
+beforeAll(() => {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+  HTMLElement.prototype.scrollIntoView = () => {};
+});
+
 // Render through FormFieldGroup so the combobox receives field.value the same
 // way production forms inject it (cloneElement spreads the controller field).
 // Only string props are expressible in JSX — null and BaseRecord values reach
 // the component exclusively through this injection, and the API returns
 // explicit nulls for empty composite-type fields (NEU-520).
-function Harness({ fieldValue }: { fieldValue: unknown }) {
+function Harness({
+  fieldValue,
+  required = false,
+  renderOption,
+}: {
+  fieldValue: unknown;
+  required?: boolean;
+  renderOption?: (option: (typeof OPTIONS)[number]) => React.ReactNode;
+}) {
   const form = useForm<FieldValues>({ defaultValues: { task: fieldValue } });
   return (
     <Form {...form}>
-      <FormFieldGroup {...form} name="task" label="Task">
-        <FormCombobox options={OPTIONS} placeholder="Select task" />
+      <FormFieldGroup {...form} name="task" label="Task" required={required}>
+        <FormCombobox
+          options={OPTIONS}
+          placeholder="Select task"
+          renderOption={renderOption}
+        />
       </FormFieldGroup>
     </Form>
   );
@@ -55,5 +76,31 @@ describe("FormCombobox", () => {
     const text = getTrigger().textContent ?? "";
     expect(text).not.toContain("Text Generation");
     expect(text).not.toContain("Text Embedding");
+  });
+
+  it("renders a required marker for required fields", () => {
+    render(<Harness fieldValue={undefined} required />);
+    expect(screen.getByText("*").getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("uses custom option content without reserving check-icon space", () => {
+    render(
+      <Harness
+        fieldValue={undefined}
+        renderOption={(option) => <span>{option.label} status</span>}
+      />,
+    );
+
+    fireEvent.click(getTrigger());
+
+    expect(screen.getByText("Text Generation status")).toBeTruthy();
+    expect(screen.queryByTestId("combobox-option-check")).toBeNull();
+  });
+
+  it("keeps selection checks for the default option renderer", () => {
+    render(<Harness fieldValue="text-generation" />);
+    fireEvent.click(getTrigger());
+
+    expect(screen.getAllByTestId("combobox-option-check")).toHaveLength(2);
   });
 });

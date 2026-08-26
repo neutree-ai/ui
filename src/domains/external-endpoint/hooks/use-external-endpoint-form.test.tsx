@@ -7,6 +7,12 @@ vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+vi.mock("@/foundation/components/BaseStatus", () => ({
+  default: ({ translatedPhase }: { translatedPhase: string }) => (
+    <span>{translatedPhase}</span>
+  ),
+}));
+
 vi.mock("@refinedev/react-hook-form", async () => {
   const rhf =
     await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
@@ -23,7 +29,24 @@ vi.mock("@refinedev/react-hook-form", async () => {
 
 vi.mock("@refinedev/core", () => ({
   useSelect: () => ({
-    query: { data: { data: [] }, isLoading: false },
+    query: {
+      data: {
+        data: [
+          {
+            metadata: { name: "endpoint-running" },
+            status: { phase: "Running" },
+          },
+          {
+            metadata: { name: "endpoint-deploying" },
+            status: { phase: "Deploying" },
+          },
+          {
+            metadata: { name: "endpoint-unknown" },
+          },
+        ],
+      },
+      isLoading: false,
+    },
     options: [],
   }),
 }));
@@ -97,15 +120,27 @@ vi.mock("@/foundation/components/FormCombobox", () => ({
   FormCombobox: ({
     onChange,
     placeholder,
+    options,
+    renderOption,
   }: {
     onChange?: (v: string) => void;
     placeholder?: string;
+    options?: { label: string; value: string }[];
+    renderOption?: (option: {
+      label: string;
+      value: string;
+    }) => React.ReactNode;
   }) => (
-    <input
-      data-testid="form-combobox-mock"
-      placeholder={placeholder}
-      onChange={(e) => onChange?.(e.target.value)}
-    />
+    <div>
+      <input
+        data-testid="form-combobox-mock"
+        placeholder={placeholder}
+        onChange={(e) => onChange?.(e.target.value)}
+      />
+      {options?.map((option) => (
+        <div key={option.value}>{renderOption?.(option) ?? option.label}</div>
+      ))}
+    </div>
   ),
 }));
 
@@ -299,6 +334,19 @@ describe("useExternalEndpointForm", () => {
         expect(inputs).toHaveLength(1);
         expect((inputs[0] as HTMLInputElement).value).toBe("model-x");
       });
+    });
+
+    it("renders endpoint ref phases as status tags instead of label text", () => {
+      render(<CreateForm />);
+      fireEvent.change(screen.getByTestId("form-select-mock"), {
+        target: { value: "endpoint_ref" },
+      });
+
+      expect(screen.getByText("endpoint-running")).toBeTruthy();
+      expect(screen.getByText("status.phases.endpoint.Running")).toBeTruthy();
+      expect(screen.getByText("status.phases.endpoint.Deploying")).toBeTruthy();
+      expect(screen.getByText("endpoint-unknown")).toBeTruthy();
+      expect(screen.queryByText("endpoint-running (Running)")).toBeNull();
     });
 
     it("default upstream renders external type fields", () => {
