@@ -323,7 +323,7 @@
   "src/foundation/recipe/vram.ts": "f88e860dfad69d93ddf339f47e663faa",
   "src/domains/model-catalog/components/ModelInfoBadges.tsx": "1608ced09a1c2236d30ee644f974dda2",
   "src/domains/endpoint/components/ComposePreview.tsx": "46c02bdd098aca320703bbad27578a6b",
-  "src/domains/endpoint/components/FeaturePicker.tsx": "c5c1526a94623f28e6e23c33245b82d1",
+  "src/domains/endpoint/components/FeaturePicker.tsx": "870ad4d4f2b1a435c52a2bd377437448",
   "src/domains/endpoint/components/VRAMCheckBadge.tsx": "8669ff213df55b49535f2134db420d66",
   "src/domains/endpoint/components/VariantPicker.tsx": "b3b3a2b57bc5652c21577a59b3dab38e",
   "src/components/ui/switch.tsx": "62081204adcbf21dca9b67f40a677901",
@@ -401,11 +401,12 @@
   "src/domains/endpoint/lib/catalog-origin.ts": "10d2d40c7e5cd6e84454dbdd56ebec53",
   "src/domains/endpoint/components/EndpointCatalogOrigin.tsx": "4274ff735abe2e28e0a2bf05c26faab6",
   "src/domains/endpoint/components/ImageExplorerButton.tsx": "973ded28876b9eca3f53a8d501b3f2b2",
-  "src/domains/endpoint/components/ImageRegistryExplorerDialog.tsx": "38440700922123578d8c4bed75c1edab",
+  "src/domains/endpoint/components/ImageRegistryExplorerDialog.tsx": "0ae34e5c46b54d4bf469034c3317f6a3",
   "src/domains/endpoint/components/WorkloadImageFeatureAddon.tsx": "e2dea3a952d64af7d492cf3fd9f1c220",
   "src/domains/endpoint/lib/image-namespaces.ts": "e3266370af0d1951dcdd660120e9582a",
   "src/domains/endpoint/lib/recipe-image-feature.ts": "4707e5c397be5d5e3ac9eb5783d8c412",
   "src/foundation/hooks/use-image-repositories.ts": "f8e90671d876b9eb500a722bcfd88edd",
   "src/foundation/lib/api/image-registry-content.ts": "b9c17d2f5495d6d793c16bf5093839f4",
-  "src/foundation/lib/image-reference.ts": "8200f52a33e48a24b0d355fb856ff946"
+  "src/foundation/lib/image-reference.ts": "8200f52a33e48a24b0d355fb856ff946",
+  "src/foundation/components/BreakableReference.tsx": "fa3ac0ab1cbd99466faac427cf695346"
 }

@@ -15,6 +15,7 @@ import {
   imageReferencesFrom,
   namespaceSuggestions,
 } from "@/domains/endpoint/lib/image-namespaces";
+import { BreakableReference } from "@/foundation/components/BreakableReference";
 import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
 import { useImageRepositories } from "@/foundation/hooks/use-image-repositories";
 import type { ListRepositoriesCapability } from "@/foundation/lib/api/image-registry-content";
@@ -365,10 +366,12 @@ export function ImageRegistryExplorerDialog({
             allowed to break, it wraps instead. */}
         {preview && (
           <p
-            className="break-all rounded bg-muted px-2 py-1.5 font-mono text-xs text-muted-foreground"
+            className="rounded bg-muted px-2 py-1.5 font-mono text-xs text-muted-foreground"
             data-testid="image-explorer-preview"
           >
-            {preview}
+            {/* Wraps at the separators rather than mid-segment, which is the
+                same treatment a reference gets wherever else it is shown. */}
+            <BreakableReference value={preview} />
           </p>
         )}
 

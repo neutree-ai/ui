@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { BreakableReference } from "@/foundation/components/BreakableReference";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import type {
@@ -139,7 +140,14 @@ function SuggestInput({
           <ChevronsUpDown className="ml-2 size-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("p-0", widthClass)} align="end">
+      {/* Its own width, not the trigger's. `widthClass` sizes a control in a
+          form row -- w-44 in a stack layout -- and reusing it here left the
+          list 176px wide, far too narrow for anything it might hold. Capped
+          against the viewport so a narrow window does not push it off-screen. */}
+      <PopoverContent
+        className="w-[min(26rem,calc(100vw-2rem))] p-0"
+        align="end"
+      >
         <Command shouldFilter={false}>
           <CommandInput
             value={draft}
@@ -154,8 +162,11 @@ function SuggestInput({
                 <CommandItem
                   value={`__use__${trimmed}`}
                   onSelect={() => commit(trimmed)}
+                  className="items-start"
                 >
-                  Use “{trimmed}”
+                  <span className="min-w-0 flex-1">
+                    Use “<BreakableReference value={trimmed} />”
+                  </span>
                 </CommandItem>
               </CommandGroup>
             )}
@@ -165,16 +176,26 @@ function SuggestInput({
                   key={s.value}
                   value={s.value}
                   onSelect={() => commit(s.value)}
+                  className="items-start"
                 >
-                  {s.label}
-                  {s.label !== s.value && (
-                    <span className="ml-2 font-mono text-xs text-muted-foreground">
-                      {s.value}
-                    </span>
-                  )}
+                  {/* Stacked rather than two columns. A label and a
+                      sixty-character reference cannot share a line at this
+                      width: the label collapsed to one character per line
+                      while the reference overflowed and was clipped. min-w-0
+                      is what lets this column shrink at all -- a flex item
+                      defaults to min-content, and a reference has none. */}
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate">{s.label}</span>
+                    {s.label !== s.value && (
+                      <BreakableReference
+                        value={s.value}
+                        className="font-mono text-xs text-muted-foreground"
+                      />
+                    )}
+                  </div>
                   <Check
                     className={cn(
-                      "ml-auto size-4",
+                      "mt-0.5 size-4",
                       value === s.value ? "opacity-100" : "opacity-0",
                     )}
                   />
