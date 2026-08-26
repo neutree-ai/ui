@@ -1,5 +1,10 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -605,6 +610,7 @@ const Estimator = ({
   const [checkpointInterval, setCheckpointInterval] = useState("");
   const [includeLinearState, setIncludeLinearState] = useState(true);
   const [includeDraftKvCache, setIncludeDraftKvCache] = useState(false);
+  const [showFormula, setShowFormula] = useState(false);
 
   const linear = hasLinearAttention(info);
   const indexes = hasIndexer(info);
@@ -638,6 +644,7 @@ const Estimator = ({
             htmlFor="kv-cache-tokens"
           >
             {t("endpoints.kvCache.tokensPerSequence", "Tokens per sequence")}
+            <SourceTag source={tokensField.source} />
           </label>
           <Input
             id="kv-cache-tokens"
@@ -654,6 +661,7 @@ const Estimator = ({
             htmlFor="kv-cache-sequences"
           >
             {t("endpoints.kvCache.sequences", "Concurrent sequences")}
+            <SourceTag source={sequencesField.source} />
           </label>
           <Input
             id="kv-cache-sequences"
@@ -814,15 +822,43 @@ const Estimator = ({
           <div className="text-xs text-muted-foreground">
             {t(`endpoints.kvCache.familyBasis.${result.familyBasis}`)}
           </div>
-          <div className="space-y-1" data-testid="kv-cache-components">
-            {result.components.map((component) => (
-              <ComponentRow
-                key={component.key}
-                component={component}
-                totalBytes={result.totalBytes}
-              />
-            ))}
-          </div>
+          {/* The multiplied-out formula is behind a disclosure, not a hover
+              bubble. It is several rows of factors carrying their own
+              provenance — too much for a tooltip to hold legibly — and it is
+              reference material a reader opens when they want to check the
+              arithmetic, not something they need in order to act. A disclosure
+              also comes with the keyboard and touch affordances for free,
+              which a hover-only tooltip would not.
+
+              What stays visible is the result and the basis. A refusal stays
+              visible in full for the opposite reason: it is what the reader has
+              to act on. */}
+          <Collapsible open={showFormula} onOpenChange={setShowFormula}>
+            <CollapsibleTrigger
+              className="rounded text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              data-testid="kv-cache-formula-toggle"
+            >
+              {t(
+                showFormula
+                  ? "endpoints.kvCache.hideFormula"
+                  : "endpoints.kvCache.showFormula",
+              )}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div
+                className="mt-1 space-y-1"
+                data-testid="kv-cache-components"
+              >
+                {result.components.map((component) => (
+                  <ComponentRow
+                    key={component.key}
+                    component={component}
+                    totalBytes={result.totalBytes}
+                  />
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       ) : (
         <div

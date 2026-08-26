@@ -1104,7 +1104,9 @@
 			"checkpointIntervalPlaceholder": "Prompt end only",
 			"includeLinearState": "Retain linear-attention state",
 			"includeDraftKvCache": "Include draft (MTP) KV",
-			"compressionRates": "Cannot estimate: this checkpoint compresses at a rate ({{rates}}) whose cache layout has not been established from any released checkpoint, so whether those layers carry an indexer is unknown."
+			"compressionRates": "Cannot estimate: this checkpoint compresses at a rate ({{rates}}) whose cache layout has not been established from any released checkpoint, so whether those layers carry an indexer is unknown.",
+			"showFormula": "Show the formula",
+			"hideFormula": "Hide the formula"
 		},
 		"monitor": {
 			"overviewMetrics": "Overview",

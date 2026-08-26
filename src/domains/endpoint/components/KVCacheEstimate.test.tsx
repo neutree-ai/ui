@@ -60,8 +60,17 @@ describe("KVCacheEstimate", () => {
     // Latent layout, defaults taken from the model: 163840 tokens × 1 sequence.
     expect(panel.getAttribute("data-state")).toBe("latent");
     expect(tokenInput().value).toBe("163840");
-    expect(panel.textContent).toContain("70,272");
     expect(screen.queryByTestId("kv-cache-refusal")).toBeNull();
+
+    // The multiplied-out formula is reference material, not something the
+    // reader needs in order to act, so it starts closed.
+    expect(screen.queryByTestId("kv-cache-components")).toBeNull();
+    expect(panel.textContent).not.toContain("70,272");
+
+    fireEvent.click(screen.getByTestId("kv-cache-formula-toggle"));
+
+    expect(screen.queryByTestId("kv-cache-components")).not.toBeNull();
+    expect(panel.textContent).toContain("70,272");
   });
 
   it("names the field it is missing instead of estimating without it", () => {
@@ -93,12 +102,15 @@ describe("KVCacheEstimate", () => {
     );
 
     expect(state()).toBe("mixed_full_sliding_gqa");
-    // The windowed layers are shown as their own part of the cache, because
-    // they stop growing where the full ones do not.
+    expect(screen.queryByTestId("kv-cache-refusal")).toBeNull();
+
+    // The windowed layers are their own part of the cache, because they stop
+    // growing where the full ones do not — visible once the formula is opened.
+    fireEvent.click(screen.getByTestId("kv-cache-formula-toggle"));
+
     expect(
       screen.queryByTestId("kv-cache-component-sliding_kv"),
     ).not.toBeNull();
-    expect(screen.queryByTestId("kv-cache-refusal")).toBeNull();
   });
 
   it("refuses a layer kind none of the formulas describes", () => {
@@ -334,5 +346,88 @@ describe("KVCacheEstimate starting values", () => {
     expect(
       screen.getByTestId("kv-cache-estimate").textContent,
     ).not.toContain("endpoints.kvCache.sources.deployment");
+  });
+});
+
+describe("KVCacheEstimate disclosure", () => {
+  const open = () =>
+    screen.getByTestId("kv-cache-formula-toggle") as HTMLButtonElement;
+
+  it("keeps the result and the basis visible without opening anything", () => {
+    render(<KVCacheEstimate read={ready(deepseekV3)} />);
+
+    const panel = screen.getByTestId("kv-cache-estimate");
+
+    // The total and the family label are the answer. The basis is the trust
+    // signal: a number that does not say what shape it took the model to be is
+    // one a reader has no way to judge, so it is not hidden behind anything.
+    expect(panel.textContent).toContain("GB");
+    expect(panel.textContent).toContain("endpoints.kvCache.families.latent");
+    expect(panel.textContent).toContain(
+      "endpoints.kvCache.familyBasis.latent_widths",
+    );
+    expect(screen.queryByTestId("kv-cache-components")).toBeNull();
+  });
+
+  it("opens and closes the formula, and says which it will do", () => {
+    render(<KVCacheEstimate read={ready(deepseekV3)} />);
+
+    expect(open().textContent).toBe("endpoints.kvCache.showFormula");
+    expect(open().getAttribute("aria-expanded")).toBe("false");
+
+    fireEvent.click(open());
+
+    expect(open().textContent).toBe("endpoints.kvCache.hideFormula");
+    expect(open().getAttribute("aria-expanded")).toBe("true");
+    expect(screen.queryByTestId("kv-cache-components")).not.toBeNull();
+
+    fireEvent.click(open());
+
+    expect(screen.queryByTestId("kv-cache-components")).toBeNull();
+  });
+
+  it("is a real button, so keyboard and touch reach it as well as a pointer", () => {
+    // The formula is what a reader checks the arithmetic against. Putting it
+    // behind hover alone would hand it to mouse users and nobody else.
+    render(<KVCacheEstimate read={ready(deepseekV3)} />);
+
+    expect(open().tagName).toBe("BUTTON");
+
+    open().focus();
+    expect(document.activeElement).toBe(open());
+
+    fireEvent.keyDown(open(), { key: "Enter" });
+    fireEvent.keyUp(open(), { key: "Enter" });
+    fireEvent.click(open());
+
+    expect(screen.queryByTestId("kv-cache-components")).not.toBeNull();
+  });
+
+  it("shows a refusal in full, with nothing to open", () => {
+    // A refusal is what the reader has to act on — supply a token, pick another
+    // model, fill the field in by hand — so it is never behind a disclosure.
+    render(
+      <KVCacheEstimate
+        read={ready({ ...deepseekV3, kv_lora_rank: undefined })}
+      />,
+    );
+
+    expect(screen.getByTestId("kv-cache-refusal").textContent).toContain(
+      "kv_lora_rank",
+    );
+    expect(screen.queryByTestId("kv-cache-formula-toggle")).toBeNull();
+  });
+
+  it("shows a read failure in full, with nothing to open", () => {
+    render(
+      <KVCacheEstimate
+        read={{ state: "unread", reason: "unauthorized", message: null }}
+      />,
+    );
+
+    expect(screen.getByTestId("kv-cache-notice").textContent).toContain(
+      "endpoints.kvCache.unread.unauthorized",
+    );
+    expect(screen.queryByTestId("kv-cache-formula-toggle")).toBeNull();
   });
 });
