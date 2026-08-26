@@ -920,6 +920,7 @@
 		"actions": {
 			"openResources": "Open Resources",
 			"pause": "Pause",
+			"saveAsCatalog": "Save as Catalog",
 			"resume": "Resume"
 		},
 		"messages": {
@@ -927,6 +928,9 @@
 			"rayDashboardNotAvailable": "Ray dashboard is not available.",
 			"fetching": "fetching...",
 			"modelNotFoundInRegistry": "Model not found in selected registry",
+			"saveAsCatalogSuccess": "Saved as catalog \"{{name}}\"",
+			"saveAsCatalogFailed": "Failed to save as catalog",
+			"saveAsCatalogDuplicate": "A catalog named \"{{name}}\" already exists in this workspace",
 			"modelRegistryNotInWorkspace": "Model registry \"{{name}}\" does not exist in this workspace",
 			"modelRegistryUnreachable": "Not answering — cannot list models",
 			"modelRegistryDeleted": "Being deleted",
@@ -1139,6 +1143,12 @@
 			"autoConfigured": "Model, engine and resources are auto-configured from the selected variant.",
 			"showAdvanced": "Show all options",
 			"hideAdvanced": "Hide advanced options"
+		},
+		"saveAsCatalog": {
+			"title": "Save as Catalog",
+			"description": "Creates a new catalog from this endpoint's current configuration. It is not linked to the catalog this endpoint was deployed from, and carries no variants or features.",
+			"nameLabel": "Catalog name",
+			"submit": "Save"
 		}
 	},
 	"external_endpoints": {

@@ -16,6 +16,10 @@ import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPause
 import EndpointRuntimeResourcesCard, {
   EndpointRuntimeResourcesSummary,
 } from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
+import {
+  EndpointSaveAsCatalogAction,
+  EndpointSaveAsCatalogProvider,
+} from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
 import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
@@ -192,205 +196,224 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const playground = resolvePlayground(engineVersion, record.spec.model.task);
 
   return (
-    <ShowPage
-      record={record}
-      showCurrentBreadcrumb={false}
-      extraActions={() => <EndpointPauseAction endpoint={record} />}
-    >
-      <Tabs defaultValue="basic" className="flex h-full flex-col">
-        <ShowPage.ObjectHeader
-          title={record.metadata.name}
-          descriptionClassName="max-w-none"
-          description={
-            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
-              <ShowPage.Meta label={t("common.fields.model")}>
-                <EndpointModel model={record.spec.model} />
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.task")}>
-                <ModelTask task={record.spec.model.task} />
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.engine")}>
-                <EndpointEngine {...record} />
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("common.fields.cluster")}>
-                <ShowButton
-                  recordItemId={record.spec.cluster}
-                  meta={{
-                    workspace: record.metadata.workspace,
-                  }}
-                  variant="link"
-                  resource="clusters"
-                >
-                  {record.spec.cluster}
-                </ShowButton>
-              </ShowPage.Meta>
-              {url && (
-                <EndpointAccessSummary serviceUrl={url} className="shrink-0" />
-              )}
-              <ShowPage.Meta label={t("endpoints.fields.replicas")}>
-                {replicaCount}
-              </ShowPage.Meta>
-              {shouldShowScheduler && (
-                <ShowPage.Meta label={t("common.fields.scheduler")}>
-                  {schedulerText}
-                </ShowPage.Meta>
-              )}
-              <ShowPage.Meta label={t("common.fields.createdAt")}>
-                <Timestamp
-                  timestamp={record.metadata.creation_timestamp}
-                  relative
-                />
-              </ShowPage.Meta>
-            </span>
-          }
-          status={<EndpointStatus {...record.status} />}
-        />
-        <TabsList className="relative h-11 w-full items-end justify-start gap-8 rounded-none border-0 bg-transparent p-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-border">
-          <TabsTrigger value="basic" className={detailTabTriggerClassName}>
-            {t("common.tabs.basic")}
-          </TabsTrigger>
-          {shouldShowRayDashboard && (
-            <TabsTrigger value="ray" className={detailTabTriggerClassName}>
-              {t("common.tabs.rayDashboard")}
-            </TabsTrigger>
-          )}
-          {showMonitorTab && (
-            <TabsTrigger value="monitor" className={detailTabTriggerClassName}>
-              {t("common.tabs.monitor")}
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="logs" className={detailTabTriggerClassName}>
-            {t("common.tabs.logs")}
-          </TabsTrigger>
-          {playground.enabled && (
-            <TabsTrigger
-              value="playground"
-              className={detailTabTriggerClassName}
-            >
-              {t("endpoints.tabs.playground")}
-            </TabsTrigger>
-          )}
-        </TabsList>
-        <TabsContent
-          value="basic"
-          className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
-        >
-          <div className="space-y-3">
-            <ShowPage.Section
-              title={t("endpoints.sections.runtimeAllocation")}
-              actions={
-                <EndpointRuntimeResourcesSummary
-                  resources={record.status?.resources}
-                />
-              }
-            >
-              <div className="space-y-6">
-                <EndpointRuntimeResourcesCard
-                  resources={record.status?.resources}
-                  requestedResources={record.spec.resources}
-                />
-              </div>
-            </ShowPage.Section>
-          </div>
-          <EndpointAdvancedParameters
-            engineParameters={
-              record.spec.variables?.engine_args as
-                | Record<string, unknown>
-                | undefined
-            }
-            environmentVariables={record.spec.env}
-          />
-        </TabsContent>
-        {shouldShowRayDashboard && (
-          <TabsContent value="ray" className="mt-0 flex-1">
-            <RayDashboardTab record={record} cluster={clusterData?.data?.[0]} />
-          </TabsContent>
+    <EndpointSaveAsCatalogProvider>
+      <ShowPage
+        record={record}
+        showCurrentBreadcrumb={false}
+        extraActions={() => (
+          <>
+            <EndpointPauseAction endpoint={record} />
+            <EndpointSaveAsCatalogAction endpoint={record} />
+          </>
         )}
-        <TabsContent
-          value="monitor"
-          className="mt-0 flex-1 overflow-hidden pt-4"
-        >
-          {grafanaUrl ? (
-            <div className="flex flex-col gap-4 h-full">
-              {showSelector && (
-                <div className="flex justify-start pb-2">
-                  <SegmentedControl
-                    ariaLabel={t("common.tabs.monitor")}
+      >
+        <Tabs defaultValue="basic" className="flex h-full flex-col">
+          <ShowPage.ObjectHeader
+            title={record.metadata.name}
+            descriptionClassName="max-w-none"
+            description={
+              <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                <ShowPage.Meta label={t("common.fields.model")}>
+                  <EndpointModel model={record.spec.model} />
+                </ShowPage.Meta>
+                <ShowPage.Meta label={t("common.fields.task")}>
+                  <ModelTask task={record.spec.model.task} />
+                </ShowPage.Meta>
+                <ShowPage.Meta label={t("common.fields.engine")}>
+                  <EndpointEngine {...record} />
+                </ShowPage.Meta>
+                <ShowPage.Meta label={t("common.fields.cluster")}>
+                  <ShowButton
+                    recordItemId={record.spec.cluster}
+                    meta={{
+                      workspace: record.metadata.workspace,
+                    }}
+                    variant="link"
+                    resource="clusters"
+                  >
+                    {record.spec.cluster}
+                  </ShowButton>
+                </ShowPage.Meta>
+                {url && (
+                  <EndpointAccessSummary
+                    serviceUrl={url}
                     className="shrink-0"
-                    items={panels.map((panel) => ({
-                      value: panel,
-                      description:
-                        panel === "latency"
-                          ? t("endpoints.monitor.latencyDescription")
-                          : panel === "throughput"
-                            ? t("endpoints.monitor.throughputDescription")
-                            : panel === "queue"
-                              ? t("endpoints.monitor.queueDescription")
-                              : panel === "cache"
-                                ? t("endpoints.monitor.cacheDescription")
-                                : t("endpoints.monitor.overviewDescription"),
-                      label:
-                        panel === "overview"
-                          ? t("endpoints.monitor.overviewMetrics")
-                          : panel === "latency"
-                            ? t("endpoints.monitor.latencyMetrics")
-                            : panel === "throughput"
-                              ? t("endpoints.monitor.throughputMetrics")
-                              : panel === "queue"
-                                ? t("endpoints.monitor.queueMetrics")
-                                : t("endpoints.monitor.cacheMetrics"),
-                    }))}
-                    onValueChange={setSelectedPanel}
-                    value={selectedPanel || undefined}
+                  />
+                )}
+                <ShowPage.Meta label={t("endpoints.fields.replicas")}>
+                  {replicaCount}
+                </ShowPage.Meta>
+                {shouldShowScheduler && (
+                  <ShowPage.Meta label={t("common.fields.scheduler")}>
+                    {schedulerText}
+                  </ShowPage.Meta>
+                )}
+                <ShowPage.Meta label={t("common.fields.createdAt")}>
+                  <Timestamp
+                    timestamp={record.metadata.creation_timestamp}
+                    relative
+                  />
+                </ShowPage.Meta>
+              </span>
+            }
+            status={<EndpointStatus {...record.status} />}
+          />
+          <TabsList className="relative h-11 w-full items-end justify-start gap-8 rounded-none border-0 bg-transparent p-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-border">
+            <TabsTrigger value="basic" className={detailTabTriggerClassName}>
+              {t("common.tabs.basic")}
+            </TabsTrigger>
+            {shouldShowRayDashboard && (
+              <TabsTrigger value="ray" className={detailTabTriggerClassName}>
+                {t("common.tabs.rayDashboard")}
+              </TabsTrigger>
+            )}
+            {showMonitorTab && (
+              <TabsTrigger
+                value="monitor"
+                className={detailTabTriggerClassName}
+              >
+                {t("common.tabs.monitor")}
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="logs" className={detailTabTriggerClassName}>
+              {t("common.tabs.logs")}
+            </TabsTrigger>
+            {playground.enabled && (
+              <TabsTrigger
+                value="playground"
+                className={detailTabTriggerClassName}
+              >
+                {t("endpoints.tabs.playground")}
+              </TabsTrigger>
+            )}
+          </TabsList>
+          <TabsContent
+            value="basic"
+            className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
+          >
+            <div className="space-y-3">
+              <ShowPage.Section
+                title={t("endpoints.sections.runtimeAllocation")}
+                actions={
+                  <EndpointRuntimeResourcesSummary
+                    resources={record.status?.resources}
+                  />
+                }
+              >
+                <div className="space-y-6">
+                  <EndpointRuntimeResourcesCard
+                    resources={record.status?.resources}
+                    requestedResources={record.spec.resources}
                   />
                 </div>
-              )}
-
-              {selectedPanel ? (
-                <GrafanaDashboard
-                  {...getEndpointSplitDashboardProps(
-                    grafanaUrl,
-                    selectedPanel,
-                    {
-                      clusterName: record.spec.cluster,
-                      endpointName: record.metadata.name,
-                    },
-                  )}
-                  className="flex-1"
-                  hideVariables
-                />
-              ) : null}
+              </ShowPage.Section>
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">
-                {t("common.messages.grafanaNotConfigured")}
-              </p>
-            </div>
+            <EndpointAdvancedParameters
+              engineParameters={
+                record.spec.variables?.engine_args as
+                  | Record<string, unknown>
+                  | undefined
+              }
+              environmentVariables={record.spec.env}
+            />
+          </TabsContent>
+          {shouldShowRayDashboard && (
+            <TabsContent value="ray" className="mt-0 flex-1">
+              <RayDashboardTab
+                record={record}
+                cluster={clusterData?.data?.[0]}
+              />
+            </TabsContent>
           )}
-        </TabsContent>
-        <TabsContent value="logs" className="mt-0 flex-1 overflow-hidden pt-4">
-          <Suspense fallback={<TabLoader />}>
-            <EndpointLogTabs endpoint={record} />
-          </Suspense>
-        </TabsContent>
-        {playground.enabled && (
           <TabsContent
-            value="playground"
-            className="mt-0 flex-1 overflow-hidden"
+            value="monitor"
+            className="mt-0 flex-1 overflow-hidden pt-4"
+          >
+            {grafanaUrl ? (
+              <div className="flex flex-col gap-4 h-full">
+                {showSelector && (
+                  <div className="flex justify-start pb-2">
+                    <SegmentedControl
+                      ariaLabel={t("common.tabs.monitor")}
+                      className="shrink-0"
+                      items={panels.map((panel) => ({
+                        value: panel,
+                        description:
+                          panel === "latency"
+                            ? t("endpoints.monitor.latencyDescription")
+                            : panel === "throughput"
+                              ? t("endpoints.monitor.throughputDescription")
+                              : panel === "queue"
+                                ? t("endpoints.monitor.queueDescription")
+                                : panel === "cache"
+                                  ? t("endpoints.monitor.cacheDescription")
+                                  : t("endpoints.monitor.overviewDescription"),
+                        label:
+                          panel === "overview"
+                            ? t("endpoints.monitor.overviewMetrics")
+                            : panel === "latency"
+                              ? t("endpoints.monitor.latencyMetrics")
+                              : panel === "throughput"
+                                ? t("endpoints.monitor.throughputMetrics")
+                                : panel === "queue"
+                                  ? t("endpoints.monitor.queueMetrics")
+                                  : t("endpoints.monitor.cacheMetrics"),
+                      }))}
+                      onValueChange={setSelectedPanel}
+                      value={selectedPanel || undefined}
+                    />
+                  </div>
+                )}
+
+                {selectedPanel ? (
+                  <GrafanaDashboard
+                    {...getEndpointSplitDashboardProps(
+                      grafanaUrl,
+                      selectedPanel,
+                      {
+                        clusterName: record.spec.cluster,
+                        endpointName: record.metadata.name,
+                      },
+                    )}
+                    className="flex-1"
+                    hideVariables
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">
+                  {t("common.messages.grafanaNotConfigured")}
+                </p>
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent
+            value="logs"
+            className="mt-0 flex-1 overflow-hidden pt-4"
           >
             <Suspense fallback={<TabLoader />}>
-              {playground.mode === "embedding" ? (
-                <EmbeddingPlayground endpoint={record} />
-              ) : playground.mode === "rerank" ? (
-                <RerankPlayground endpoint={record} />
-              ) : (
-                <ChatPlayground endpoint={record} />
-              )}
+              <EndpointLogTabs endpoint={record} />
             </Suspense>
           </TabsContent>
-        )}
-      </Tabs>
-    </ShowPage>
+          {playground.enabled && (
+            <TabsContent
+              value="playground"
+              className="mt-0 flex-1 overflow-hidden"
+            >
+              <Suspense fallback={<TabLoader />}>
+                {playground.mode === "embedding" ? (
+                  <EmbeddingPlayground endpoint={record} />
+                ) : playground.mode === "rerank" ? (
+                  <RerankPlayground endpoint={record} />
+                ) : (
+                  <ChatPlayground endpoint={record} />
+                )}
+              </Suspense>
+            </TabsContent>
+          )}
+        </Tabs>
+      </ShowPage>
+    </EndpointSaveAsCatalogProvider>
   );
 };
