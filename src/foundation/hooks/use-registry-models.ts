@@ -25,12 +25,11 @@ type UseRegistryModelsParams = {
 /**
  * Lists the models of one registry.
  *
- * Its counterpart is `useRegistryModelVersion` in
- * `@/domains/model-registry/hooks` — a *single* `name:version`, including the
- * writes to it. This half sits in foundation only because `domains/endpoint`
- * needs the listing too and `.dependency-cruiser.cjs` forbids one L2 domain
- * importing another; the single-version half has no such caller and stays in
- * the domain.
+ * Its counterpart is `useRegistryModelVersion`, beside this file — a *single*
+ * `name:version`, and the only read that carries what the checkpoint states
+ * about itself. Both live in foundation because `domains/endpoint` and
+ * `domains/model-registry` each read them and `.dependency-cruiser.cjs` forbids
+ * one L2 domain importing another; the writes to a version stay in that domain.
  *
  * The single place the models listing is fetched from — the endpoint form's
  * model picker and the registry's own model list both come through here, so the

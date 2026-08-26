@@ -20,6 +20,7 @@ import {
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
+import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
@@ -78,6 +79,7 @@ import {
   countFullCardAvailableDevicesByProduct,
   sumMatchingDeviceAvailableResources,
 } from "@/foundation/lib/gpu-device-resources";
+import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";
 import {
   registryIsDisabled,
   registryIsUnreachable,
@@ -1571,6 +1573,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     activeVariantVram != null ? activeVariantVram * replicaCount : null;
   const activeModelInfo = activeVariant?.model?.info ?? null;
 
+  // What the KV cache estimate is computed from. There is no second read for
+  // it: picking a model already fetches the version detail above and lands its
+  // `info` on the form, and a catalog variant carries that metadata with it, so
+  // both routes are already answered by the time the panel needs them. The read
+  // state comes from that same query, which is what separates "still reading"
+  // and "the registry refused" from "the checkpoint omits this field".
+  const currentModelInfo = form.watch("spec.model.info") ?? null;
+  const modelInfoRead = resolveModelInfoRead({
+    selected: Boolean(
+      activeModelInfo ||
+        currentModelInfo ||
+        (currentRegistry && currentModelName),
+    ),
+    info: activeModelInfo ?? currentModelInfo,
+    isLoading: pickedModelVersion.isLoading,
+    error: pickedModelVersion.error,
+  });
+
   // GPU products this recipe MC declares as validated (annotation
   // `recipe.vllm.ai/hardware-verified`, e.g. "H200,H100,L40S"); empty for
   // non-recipe / un-annotated catalogs.
@@ -1830,6 +1850,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </div>
               </FormFieldGroup>
             </>
+          )}
+          {!hidesModelFields && (
+            <div className="col-span-4">
+              {/* Remounted per model so the inputs re-derive their defaults from
+                  the checkpoint being estimated; carrying the previous model's
+                  context length into the next model's estimate would look like
+                  a value read from it. */}
+              <KVCacheEstimate
+                key={`${currentRegistry ?? ""}:${currentModelName ?? ""}:${
+                  form.watch("spec.model.version") ?? ""
+                }`}
+                read={modelInfoRead}
+              />
+            </div>
           )}
           {showFull && !hidesModelFields && (
             <>
