@@ -87,7 +87,7 @@
   "src/foundation/types/basic-types.ts": "245c22a49cd67de4186fc1604c6b7a2e",
   "src/foundation/types/chat-types.ts": "c31082555c7146ce3cb384794d530d87",
   "src/foundation/types/license.ts": "e7cd2bf058d508b41b5521f5cee745a3",
-  "src/foundation/types/serving-types.ts": "35742a66f7069e2aae14a891ca898c0a",
+  "src/foundation/types/serving-types.ts": "c194c0b8901a79ee35ac8b08eca24968",
   "src/foundation/types/system-types.ts": "95251bc1ec54424d96b599dedf23ffeb",
   "src/foundation/providers/data-provider/index.ts": "0d6290230ad411bc4582668f1c2e43ca",
   "src/foundation/providers/data-provider/utils/generate-filter.ts": "5d3bce54e997574b28f34e20392290be",
@@ -238,7 +238,7 @@
   "src/foundation/components/VariablesInput.tsx": "1d43ebad87c1dcbb3053798477ab3722",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "96dd43a88bc38afa4c23c811b457fcce",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "15748011a2a3dcd6ef21f19f17df6bc0",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "f1f75063cb8e6539aad961af9a69d53e",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "1e1cfe7ad811875f9a8b101c39edb45b",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "7fc5186989f74eb21ecf621ac24e5ee4",
   "src/pages/external-endpoints/create.tsx": "bd5d137b2a4a49d077ea1891707f2988",
@@ -350,7 +350,7 @@
   "src/pages/model-registries/model-show.tsx": "3688e8bded883d58685b81de0636dd7d",
   "src/foundation/types/model-types.ts": "80a78a25a6c7c804da328542b039310c",
   "src/foundation/lib/api/registry-models.ts": "7a0b45e22eee9ece967e6e73fe350e7d",
-  "src/foundation/hooks/use-registry-models.ts": "17ec9212ef30e410b1a67421b27a9424",
+  "src/foundation/hooks/use-registry-models.ts": "397d8e6ccf905144e4899dc90c789c09",
   "src/domains/model-registry/hooks/use-registry-model-version.ts": "3600c55535d71900ff9ac8320da1260a",
   "src/domains/model-registry/components/ModelDeleteDialog.tsx": "f58bab7be8df9b329ec973c0c95a776a",
   "src/domains/model-registry/components/ModelEditDialog.tsx": "c9af4f5b1b5cae132240a0669762769a",
@@ -388,5 +388,9 @@
   "src/foundation/hooks/use-registry-model-version.ts": "818f61524f691ef42ef2c6c959ace365",
   "src/domains/model-registry/components/ModelRegistryWriteActions.tsx": "d265af6d1495445e1afbe3e05927a246",
   "src/domains/model-registry/components/RegistryTypeFilter.tsx": "7c8fef086b7cdcf0110b40b682d54b44",
-  "src/domains/model-registry/lib/provisioning.ts": "2aedc935197cf24ee0264bbaceac802f"
+  "src/domains/model-registry/lib/provisioning.ts": "2aedc935197cf24ee0264bbaceac802f",
+  "src/foundation/lib/kv-cache.ts": "ece671374e16c9db6a62fd96f870c74d",
+  "src/foundation/lib/model-info-read.ts": "b9d8f811da92aec9acbc3842a2436d0e",
+  "src/domains/endpoint/components/KVCacheEstimate.tsx": "795b5c409db1cfb5c56f26cbf1c86a59",
+  "src/domains/endpoint/lib/engine-cache-args.ts": "4eb64234934587917d3344e88b0c16c2"
 }
