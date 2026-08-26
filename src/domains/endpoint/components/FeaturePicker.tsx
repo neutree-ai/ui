@@ -1,4 +1,5 @@
 import { Check, ChevronsUpDown } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,24 @@ type Props = {
    * "grid" renders heading-less label-above-control cells in a 2-col grid, so a
    * promoted group reads like ordinary form fields (matches the deploy mockup). */
   layout?: "stack" | "grid";
+  /**
+   * An extra control rendered beside an input feature's own control, for
+   * features the caller recognises. Returning nothing leaves the feature
+   * exactly as it was.
+   *
+   * Beside rather than instead: a feature's `suggestions` are the catalog
+   * author's recommendations and an addon is a way to go and find something
+   * else, which are complementary rather than alternatives. Replacing the
+   * control would also mean re-implementing SuggestInput to keep them.
+   *
+   * Which features deserve one is the caller's judgement — recognising them
+   * needs to know the engine, and a generic feature renderer has no business
+   * holding that.
+   */
+  inputAddon?: (
+    feature: RecipeFeature,
+    props: { value: string; onChange: (value: string) => void },
+  ) => ReactNode;
 };
 
 function featureType(f: RecipeFeature): "boolean" | "select" | "input" {
@@ -188,6 +207,7 @@ export const FeaturePicker = ({
   disabled,
   renderGroups,
   layout = "stack",
+  inputAddon,
 }: Props) => {
   const grid = layout === "grid";
   const { t } = useTranslation();
@@ -336,6 +356,7 @@ export const FeaturePicker = ({
           key,
           val === "" && !required ? undefined : { name: key, value: val },
         );
+      const addon = inputAddon?.(f, { value: current, onChange: commitValue });
       return (
         <div
           key={key}
@@ -344,30 +365,38 @@ export const FeaturePicker = ({
           }
         >
           {renderHeader(key, f, conflict)}
-          {suggestions.length > 0 ? (
-            <SuggestInput
-              ariaLabel={key}
-              value={current}
-              suggestions={suggestions}
-              numeric={numeric}
-              placeholder={f.input?.default ?? ""}
-              disabled={itemDisabled}
-              onCommit={commitValue}
-              widthClass={grid ? "w-full" : "w-44"}
-            />
-          ) : (
-            <Input
-              aria-label={key}
-              type={numeric ? "number" : "text"}
-              value={current}
-              placeholder={f.input?.default ?? ""}
-              disabled={itemDisabled}
-              min={f.input?.min ?? undefined}
-              max={f.input?.max ?? undefined}
-              onChange={(event) => commitValue(event.target.value)}
-              className={cn("h-9", grid ? "w-full" : "w-44 shrink-0")}
-            />
-          )}
+          <div
+            className={cn(
+              "flex items-center gap-2",
+              grid ? "w-full" : "shrink-0",
+            )}
+          >
+            {suggestions.length > 0 ? (
+              <SuggestInput
+                ariaLabel={key}
+                value={current}
+                suggestions={suggestions}
+                numeric={numeric}
+                placeholder={f.input?.default ?? ""}
+                disabled={itemDisabled}
+                onCommit={commitValue}
+                widthClass={grid ? "w-full" : "w-44"}
+              />
+            ) : (
+              <Input
+                aria-label={key}
+                type={numeric ? "number" : "text"}
+                value={current}
+                placeholder={f.input?.default ?? ""}
+                disabled={itemDisabled}
+                min={f.input?.min ?? undefined}
+                max={f.input?.max ?? undefined}
+                onChange={(event) => commitValue(event.target.value)}
+                className={cn("h-9", grid ? "w-full" : "w-44")}
+              />
+            )}
+            {addon}
+          </div>
         </div>
       );
     }

@@ -21,6 +21,7 @@ import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
+import { WorkloadImageFeatureAddon } from "@/domains/endpoint/components/WorkloadImageFeatureAddon";
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
@@ -101,6 +102,7 @@ import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
 import type {
   ComposedSpec,
   FeatureSelection,
+  RecipeFeature,
   RecipeInputSpec,
 } from "@/foundation/recipe/types";
 import { matchesAcceleratorName } from "@/foundation/recipe/vram";
@@ -1699,6 +1701,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     },
   };
 
+  // A catalog can expose the Flex workload image as a recipe feature, where the
+  // default is routinely a placeholder the user must replace. The addon decides
+  // for itself whether a given feature is that one.
+  const workloadImageAddon = (
+    feature: RecipeFeature,
+    { onChange }: { value: string; onChange: (value: string) => void },
+  ) => (
+    <WorkloadImageFeatureAddon
+      engine={engineSpec?.engine}
+      feature={feature}
+      workspace={workspace}
+      registry={selectedCluster?.spec?.image_registry}
+      onChange={onChange}
+    />
+  );
+
   return {
     form: formWithTransformedOnFinish,
     // Block deploy while any requested resource exceeds cluster capacity; the
@@ -2078,6 +2096,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 onChange={handleFeaturesChange}
                 renderGroups={[coreFeatureGroup]}
                 layout="grid"
+                inputAddon={workloadImageAddon}
               />
             </div>
           )}
@@ -2203,6 +2222,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   value={featureSelections}
                   onChange={handleFeaturesChange}
                   renderGroups={bottomFeatureGroups}
+                  inputAddon={workloadImageAddon}
                 />
               </div>
             )}
