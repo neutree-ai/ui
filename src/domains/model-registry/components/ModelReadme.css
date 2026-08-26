@@ -1,0 +1,49 @@
+.markdown-body.model-readme {
+	color-scheme: light dark;
+	--fgColor-default: var(--nt-text-neutral-primary);
+	--fgColor-muted: var(--nt-text-neutral-secondary);
+	--fgColor-accent: var(--nt-text-colorful-outstanding);
+	--fgColor-success: var(--nt-text-colorful-positive);
+	--fgColor-attention: var(--nt-text-colorful-notice);
+	--fgColor-danger: var(--nt-text-colorful-serious);
+	--fgColor-done: var(--nt-text-colorful-purple);
+	--bgColor-default: transparent;
+	--bgColor-muted: var(--nt-fill-neutral-trans-1);
+	--bgColor-neutral-muted: var(--nt-fill-neutral-trans-2);
+	--bgColor-attention-muted: var(--nt-fill-notice-light);
+	--borderColor-default: var(--nt-stroke-neutral-trans-2);
+	--borderColor-muted: var(--nt-stroke-neutral-trans-2);
+	--borderColor-neutral-muted: var(--nt-stroke-neutral-trans-2);
+	--borderColor-accent-emphasis: var(--nt-text-colorful-outstanding);
+	--borderColor-success-emphasis: var(--nt-text-colorful-positive);
+	--borderColor-attention-emphasis: var(--nt-text-colorful-notice);
+	--borderColor-danger-emphasis: var(--nt-text-colorful-serious);
+	--borderColor-done-emphasis: var(--nt-text-colorful-purple);
+	--color-prettylights-syntax-comment: var(--nt-text-neutral-tertiary);
+	--color-prettylights-syntax-constant: var(--nt-text-colorful-outstanding);
+	--color-prettylights-syntax-constant-other-reference-link: var(
+		--nt-text-colorful-outstanding
+	);
+	--color-prettylights-syntax-entity: var(--nt-text-colorful-purple);
+	--color-prettylights-syntax-storage-modifier-import: var(
+		--nt-text-neutral-primary
+	);
+	--color-prettylights-syntax-entity-tag: var(--nt-text-colorful-positive);
+	--color-prettylights-syntax-keyword: var(--nt-text-colorful-serious);
+	--color-prettylights-syntax-string: var(--nt-text-colorful-positive);
+	--color-prettylights-syntax-variable: var(--nt-text-colorful-notice);
+	--color-prettylights-syntax-brackethighlighter-unmatched: var(
+		--nt-text-colorful-serious
+	);
+	--color-prettylights-syntax-brackethighlighter-angle: var(
+		--nt-text-neutral-secondary
+	);
+	--color-prettylights-syntax-markup-heading: var(
+		--nt-text-colorful-outstanding
+	);
+	--color-prettylights-syntax-markup-italic: var(--nt-text-neutral-primary);
+	--color-prettylights-syntax-markup-bold: var(--nt-text-neutral-primary);
+
+	background-color: transparent;
+	color: var(--nt-text-neutral-primary);
+}

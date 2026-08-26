@@ -1,9 +1,11 @@
-import "github-markdown-css/github-markdown-light.css";
+import "github-markdown-css/github-markdown.css";
+import "./ModelReadme.css";
 import type { AnchorHTMLAttributes } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
+import { Card } from "@/components/ui/card";
 import { useRegistryModelReadme } from "@/domains/model-registry/hooks/use-registry-model-readme";
 import { splitModelCard } from "@/domains/model-registry/lib/model-card";
 import { modelCardSanitizeSchema } from "@/domains/model-registry/lib/model-card-html";
@@ -56,6 +58,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
 
 type Props = {
   modelRef: RegistryModelRef;
+  framed?: boolean;
+  contentFramed?: boolean;
 };
 
 const MarkdownLink = ({
@@ -67,7 +71,11 @@ const MarkdownLink = ({
   </a>
 );
 
-export const ModelReadme = ({ modelRef }: Props) => {
+export const ModelReadme = ({
+  modelRef,
+  framed = true,
+  contentFramed = false,
+}: Props) => {
   const { t } = useTranslation();
   const { readme, isLoading, error } = useRegistryModelReadme(modelRef);
 
@@ -121,7 +129,7 @@ export const ModelReadme = ({ modelRef }: Props) => {
           </div>
         )}
         <div
-          className="markdown-body max-w-none overflow-x-auto rounded-md bg-transparent p-2 text-sm dark:text-gray-200 [&_img]:max-w-full"
+          className="markdown-body model-readme max-w-none overflow-x-auto rounded-md p-2 text-sm [&_img]:max-w-full"
           data-testid="readme-content"
         >
           <ReactMarkdown
@@ -149,9 +157,18 @@ export const ModelReadme = ({ modelRef }: Props) => {
     );
   };
 
+  const content = body();
+
   return (
-    <ShowPage.Section title={t("model_registries.models.readme.title")}>
-      {body()}
+    <ShowPage.Section
+      title={t("model_registries.models.readme.title")}
+      framed={framed}
+    >
+      {contentFramed ? (
+        <Card className="rounded-md p-2 shadow-none">{content}</Card>
+      ) : (
+        content
+      )}
     </ShowPage.Section>
   );
 };

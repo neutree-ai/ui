@@ -644,7 +644,7 @@
 				"success": "Model deleted"
 			},
 			"readme": {
-				"title": "Model card",
+				"title": "README.md",
 				"none": "This model has no card.",
 				"truncated": "This card is long and has been shortened."
 			}

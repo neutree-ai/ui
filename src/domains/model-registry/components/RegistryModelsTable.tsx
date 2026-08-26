@@ -1,6 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -100,14 +99,13 @@ const COLUMN_COUNT = 5;
 type Props = {
   workspace: string;
   registry: ModelRegistry;
-  /** Builds the link to a model's detail page. */
-  modelHref: (model: string, version: string) => string;
+  onModelSelect: (model: string, version: string) => void;
 };
 
 export const RegistryModelsTable = ({
   workspace,
   registry,
-  modelHref,
+  onModelSelect,
 }: Props) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
@@ -286,14 +284,21 @@ export const RegistryModelsTable = ({
     }
 
     return rows.map((row) => (
-      <TableRow key={rowKey(row)}>
-        <TableCell>
-          <Link
-            to={modelHref(row.model, row.version.name)}
-            className="text-primary hover:underline"
-          >
-            {row.model}
-          </Link>
+      <TableRow
+        key={rowKey(row)}
+        className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        tabIndex={0}
+        onClick={() => onModelSelect(row.model, row.version.name)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onModelSelect(row.model, row.version.name);
+          }
+        }}
+        data-testid={`registry-model-row-${rowKey(row)}`}
+      >
+        <TableCell className="font-medium text-foreground">
+          {row.model}
         </TableCell>
         <TableCell>
           {row.version.alias || (

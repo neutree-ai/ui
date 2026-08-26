@@ -1,5 +1,12 @@
-import { Badge } from "@/components/ui/badge";
+import { UserRound } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
 import {
   isModelFieldMissing,
   type ModelFieldSource,
@@ -144,41 +151,89 @@ const SourceTag = ({ source }: { source: ModelFieldSource | null }) => {
     return null;
   }
 
+  const label = t(`model_registries.models.sources.${source}`);
+  const hint = t(`model_registries.models.sourceHints.${source}`);
+
   return (
-    <Badge
-      variant="outline"
-      className="ml-2 px-1.5 py-0 text-[10px] font-normal"
-      title={t(`model_registries.models.sourceHints.${source}`)}
-    >
-      {t(`model_registries.models.sources.${source}`)}
-    </Badge>
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className="ml-1 inline-flex shrink-0 cursor-help align-middle text-muted-foreground"
+            role="img"
+            aria-label={label}
+          >
+            <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>
+            {label}: {hint}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
-export const ModelInfoFields = ({ info }: { info?: ModelInfo | null }) => {
+export const ModelInfoFields = ({
+  info,
+  className,
+  variant = "grid",
+}: {
+  info?: ModelInfo | null;
+  className?: string;
+  variant?: "grid" | "definition-table";
+}) => {
   const { t } = useTranslation();
   const resolved = info ?? {};
 
   return (
     <div
-      className="grid grid-cols-1 gap-5 lg:grid-cols-4"
+      className={cn(
+        "grid grid-cols-1",
+        variant === "grid" ? "gap-5 lg:grid-cols-4" : "gap-x-6 sm:grid-cols-2",
+        className,
+      )}
       data-testid="model-info-fields"
     >
       {FIELDS.map((field) => {
         const value = resolveFieldValue(resolved, field);
         const source = modelFieldSource(resolved, field.key);
 
+        if (variant === "definition-table" && value.state === "notApplicable") {
+          return null;
+        }
+
         return (
-          <div key={field.key} data-testid={`model-info-${field.key}`}>
-            <div className="flex items-center text-sm text-muted-foreground">
+          <div
+            key={field.key}
+            data-testid={`model-info-${field.key}`}
+            className={cn(
+              variant === "definition-table" &&
+                "grid min-w-0 grid-cols-[minmax(7rem,42%)_minmax(0,1fr)] items-baseline border-b py-2 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0",
+            )}
+          >
+            <div className="flex min-w-0 items-center text-xs font-medium leading-5 text-muted-foreground">
               {t(`model_registries.models.fields.${field.labelKey}`)}
               <SourceTag source={source} />
             </div>
-            <div className="mt-1 break-all text-sm">
+            <div
+              className={cn(
+                "break-all text-sm leading-6",
+                variant === "grid" && "mt-1",
+              )}
+            >
               {value.state === "value" ? (
                 <FieldValue field={field} text={value.text} />
               ) : (
-                <span className="text-muted-foreground">
+                <span
+                  className={cn(
+                    value.state === "unknown"
+                      ? "text-[var(--nt-text-neutral-quaternary)]"
+                      : "text-muted-foreground",
+                  )}
+                >
                   {t(`model_registries.models.values.${value.state}`)}
                 </span>
               )}

@@ -119,8 +119,10 @@ describe("ModelInfoFields", () => {
     expect(
       screen
         .getByTestId("model-info-head_dim")
-        .textContent?.includes("model_registries.models.sources.derived"),
-    ).toBe(true);
+        .querySelector(
+          '[aria-label="model_registries.models.sources.derived"]',
+        ),
+    ).not.toBeNull();
     expect(
       screen
         .getByTestId("model-info-architecture")
@@ -140,9 +142,11 @@ describe("ModelInfoFields", () => {
     );
 
     const cell = screen.getByTestId("model-info-parameter_count");
-    expect(cell.textContent).toContain(
-      "model_registries.models.sources.manual",
-    );
+    expect(
+      cell.querySelector(
+        '[aria-label="model_registries.models.sources.manual"]',
+      ),
+    ).not.toBeNull();
     expect(cell.textContent).toContain("7,000,000,000");
   });
 
@@ -171,5 +175,36 @@ describe("ModelInfoFields", () => {
     // Every named field reads "unknown", and no digit is rendered anywhere:
     // nothing was guessed from the model's name or filled with a zero.
     expect(/\d/.test(container.textContent ?? "")).toBe(false);
+  });
+
+  it("offers the compact definition-table layout for detail drawers", () => {
+    render(<ModelInfoFields info={parsed} variant="definition-table" />);
+
+    expect(screen.getByTestId("model-info-fields").className).toContain(
+      "sm:grid-cols-2",
+    );
+    expect(screen.getByTestId("model-info-architecture").className).toContain(
+      "border-b",
+    );
+  });
+
+  it("de-emphasizes unknown values and omits not-applicable compact rows", () => {
+    render(
+      <ModelInfoFields
+        info={{
+          is_moe: false,
+          field_sources: { is_moe: "auto" },
+          missing_fields: ["parameter_count"],
+        }}
+        variant="definition-table"
+      />,
+    );
+
+    expect(
+      screen.getByTestId("model-info-parameter_count").querySelector("span")
+        ?.className,
+    ).toContain("--nt-text-neutral-quaternary");
+    expect(screen.queryByTestId("model-info-num_experts")).toBeNull();
+    expect(screen.queryByTestId("model-info-num_experts_per_token")).toBeNull();
   });
 });

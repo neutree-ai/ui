@@ -118,6 +118,30 @@ function readModelCatalogQueryParam(): string {
   return new URLSearchParams(hash.slice(q + 1)).get("model_catalog") ?? "";
 }
 
+type RegistryModelPreselection = {
+  registry: string;
+  model: string;
+  version?: string;
+};
+
+export function readRegistryModelQueryParams(): RegistryModelPreselection | null {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash ?? "";
+  const q = hash.indexOf("?");
+  if (q === -1) return null;
+
+  const params = new URLSearchParams(hash.slice(q + 1));
+  const registry = params.get("model_registry") ?? "";
+  const model = params.get("model") ?? "";
+  if (!registry || !model) return null;
+
+  return {
+    registry,
+    model,
+    version: params.get("version") || undefined,
+  };
+}
+
 type AcceleratorVirtualization = NonNullable<
   ResourceSpec["accelerator"]
 >["virtualization"];
@@ -1498,6 +1522,38 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     preselectAppliedRef.current = true;
     handleModelCatalogSelect(preselectCatalogId);
   }, [preselectCatalogId, modelCatalogs.query.data]);
+
+  // Deploy-from-registry-model: the model detail drawer links here with the
+  // exact registry/model/revision. Wait until the registry listing confirms
+  // that the target exists, then populate the same form fields a manual pick
+  // would populate and fetch the checkpoint information once.
+  const [preselectRegistryModel] = useState(() =>
+    action === "create" ? readRegistryModelQueryParams() : null,
+  );
+  const registryModelPreselectAppliedRef = useRef(false);
+  useEffect(() => {
+    if (
+      registryModelPreselectAppliedRef.current ||
+      !preselectRegistryModel ||
+      !modelRegistryNames?.includes(preselectRegistryModel.registry)
+    ) {
+      return;
+    }
+
+    registryModelPreselectAppliedRef.current = true;
+    form.setValue("spec.model.registry", preselectRegistryModel.registry);
+    form.setValue("spec.model.name", preselectRegistryModel.model);
+    if (preselectRegistryModel.version) {
+      form.setValue("spec.model.version", preselectRegistryModel.version);
+    }
+    form.setValue("spec.model.info", null);
+    setPickedModelRef({
+      workspace,
+      registry: preselectRegistryModel.registry,
+      model: preselectRegistryModel.model,
+      version: preselectRegistryModel.version,
+    });
+  }, [form, modelRegistryNames, preselectRegistryModel, workspace]);
 
   // When user changes variant or features, re-apply the composed result.
   const handleVariantChange = (v: string) => {
