@@ -32,8 +32,8 @@
   "src/pages/engines/show.tsx": "beec780e9b600e5537a46d6ac8d6692f",
   "src/pages/endpoints/create.tsx": "80007cdbc2f2ecd902d6485b6774cf2b",
   "src/pages/endpoints/edit.tsx": "f985a843fe494b31594f2291e8bcfee8",
-  "src/pages/endpoints/list.tsx": "99588f5a2ac8fd9ed967190a5019a7dc",
-  "src/pages/endpoints/show.tsx": "81b247031a165fe5933e8457b9ae54a6",
+  "src/pages/endpoints/list.tsx": "7fb9631fe11bfc5db40c61356a362e49",
+  "src/pages/endpoints/show.tsx": "a7a4eb53f1962e15e06e3a1c4f478512",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "fd2b1c7affa795305445f8e307dea099",
   "src/pages/clusters/edit.tsx": "d636f55fd8591fabd56759bf0f46963e",
@@ -315,7 +315,7 @@
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
   "src/pages/model-catalogs/edit.tsx": "4b04b40e8e6733b27ebedfa82efc67c0",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
-  "src/pages/model-catalogs/components/ImportDialog.tsx": "df9db0770bdc496b21291689a43ffd6e",
+  "src/pages/model-catalogs/components/ImportDialog.tsx": "c8b67dba091272b9170ff5ea2f2c6258",
   "src/pages/model-catalogs/components/KeyConfigCard.tsx": "a3e49d8166c2440bfa82b6d6b53cc2e1",
   "src/pages/model-catalogs/components/ModelCatalogCard.tsx": "132f283f4613247531e4a7603d3b6d44",
   "src/pages/model-catalogs/components/VariantTable.tsx": "3cd5dd6edd452daa33e327aaf391a9b7",
@@ -373,7 +373,7 @@
   "src/foundation/lib/model-registry-visibility.ts": "24550d054dd3e6365f09c526b829302a",
   "src/domains/role/lib/format-permission.ts": "9f2b7f7a698e51dc6ba8188a808db44b",
   "src/domains/model-catalog/lib/catalog-import.ts": "0722a4c305e6f4066c9f70aed2e61ed0",
-  "src/foundation/lib/error-message.ts": "2785e4aefa66aa19662cf51d21aa6874",
+  "src/foundation/lib/error-message.ts": "e7845dbba8c0a36698c7775a078a455d",
   "src/domains/endpoint/lib/model-spec.ts": "18639ba24921f56eef631d1cbe1398fe",
   "src/foundation/components/PaginationControls.tsx": "93cfc849b897fe0d688b6dbb000ecc15",
   "src/domains/api-key/lib/create-api-key-error.ts": "f49c61569f3dba4d91247d2f7ad97913",
@@ -395,5 +395,7 @@
   "src/domains/endpoint/lib/engine-cache-args.ts": "4eb64234934587917d3344e88b0c16c2",
   "src/domains/cluster/components/ClusterResourceSummary.tsx": "a6d16b69f0e59757e2435b6a707a0239",
   "src/foundation/components/MetricBar.tsx": "58b87909b5d1371dfdd6f5932adb8408",
-  "src/foundation/components/ResourceUsageLegend.tsx": "c09c3da92d40c1b98d3450f65a7feb10"
+  "src/foundation/components/ResourceUsageLegend.tsx": "c09c3da92d40c1b98d3450f65a7feb10",
+  "src/domains/endpoint/lib/save-as-catalog.ts": "92faeef51fe64fcc065322c760d9443e",
+  "src/domains/endpoint/components/EndpointSaveAsCatalogAction.tsx": "4a5d02cc27df64ef6f134570bdc09f1d"
 }
