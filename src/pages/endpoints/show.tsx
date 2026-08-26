@@ -22,6 +22,7 @@ import {
 } from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
+import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
@@ -194,6 +195,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     (v) => v.version === record.spec.engine.version,
   );
   const playground = resolvePlayground(engineVersion, record.spec.model.task);
+  // Read off the endpoint, never fetched: a record that still reads correctly
+  // after its catalog is gone is the point of keeping it here.
+  const catalogOrigin = readCatalogOrigin(record.metadata.annotations);
 
   return (
     <EndpointSaveAsCatalogProvider>
@@ -222,6 +226,15 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 <ShowPage.Meta label={t("common.fields.engine")}>
                   <EndpointEngine {...record} />
                 </ShowPage.Meta>
+                {catalogOrigin && (
+                  <ShowPage.Meta label={t("endpoints.fields.modelCatalog")}>
+                    <span data-testid="endpoint-origin-summary">
+                      {catalogOrigin.variant
+                        ? `${catalogOrigin.catalog} · ${catalogOrigin.variant}`
+                        : catalogOrigin.catalog}
+                    </span>
+                  </ShowPage.Meta>
+                )}
                 <ShowPage.Meta label={t("common.fields.cluster")}>
                   <ShowButton
                     recordItemId={record.spec.cluster}

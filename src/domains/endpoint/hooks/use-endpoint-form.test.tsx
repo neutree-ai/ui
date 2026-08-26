@@ -6331,3 +6331,50 @@ describe("a catalog naming a registry this workspace does not have", () => {
     expect(await registryError("mine")).toBeUndefined();
   });
 });
+
+// An endpoint holds the composed result and nothing that says what produced
+// it, so the deployment records that on itself. Read back on the endpoint's own
+// pages; never followed back to the catalog.
+describe("what a deploy came from is recorded on the endpoint", () => {
+  const submitted = () => refineCoreOnFinishMock.mock.calls[0]?.[0];
+  const annotations = () => submitted()?.metadata?.annotations ?? {};
+
+  const deployFrom = async (name: string) => {
+    render(<CreateForm />);
+    selectCatalog(name);
+    await act(async () => {
+      await formInstance?.refineCore.onFinish(formInstance.getValues());
+    });
+  };
+
+  beforeEach(() => {
+    refineCoreOnFinishMock.mockClear();
+  });
+
+  it("names the catalog, the variant and the chosen features", async () => {
+    setupMocks([catalogA, recipeCatalog], [plainKubernetesCluster]);
+    await deployFrom("recipe-mc");
+
+    expect(annotations()["neutree.ai/model-catalog"]).toBe("recipe-mc");
+    expect(annotations()["neutree.ai/model-catalog-variant"]).toBe("default");
+  });
+
+  // A plain catalog has no variants to choose between.
+  it("names only the catalog for a plain one", async () => {
+    setupMocks([catalogA, recipeCatalog], [plainKubernetesCluster]);
+    await deployFrom("vllm-llama");
+
+    expect(annotations()["neutree.ai/model-catalog"]).toBe("vllm-llama");
+    expect(annotations()["neutree.ai/model-catalog-variant"]).toBeUndefined();
+  });
+
+  it("records nothing when the endpoint was not deployed from a catalog", async () => {
+    setupMocks([catalogA], [plainKubernetesCluster]);
+    render(<CreateForm />);
+    await act(async () => {
+      await formInstance?.refineCore.onFinish(formInstance.getValues());
+    });
+
+    expect(annotations()["neutree.ai/model-catalog"]).toBeUndefined();
+  });
+});

@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "80007cdbc2f2ecd902d6485b6774cf2b",
   "src/pages/endpoints/edit.tsx": "f985a843fe494b31594f2291e8bcfee8",
   "src/pages/endpoints/list.tsx": "1433e09de8bd43a223233018926e7dd8",
-  "src/pages/endpoints/show.tsx": "7050394fbaaf070aecbd9926c0a0cf1a",
+  "src/pages/endpoints/show.tsx": "e7b1e4e660eac15cab2dfd8ee6a97537",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "fd2b1c7affa795305445f8e307dea099",
   "src/pages/clusters/edit.tsx": "d636f55fd8591fabd56759bf0f46963e",
@@ -236,7 +236,7 @@
   "src/foundation/components/VariablesInput.tsx": "1d43ebad87c1dcbb3053798477ab3722",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "96dd43a88bc38afa4c23c811b457fcce",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "be5475a36d13c26d08e53033bc861090",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "3d278e9aeecf43b5acd93e3c79180fcc",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "1e1cfe7ad811875f9a8b101c39edb45b",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "7fc5186989f74eb21ecf621ac24e5ee4",
   "src/pages/external-endpoints/create.tsx": "b5439551b4bedc80ab76a86ddf68dc75",
@@ -397,5 +397,7 @@
   "src/domains/endpoint/components/EndpointSaveAsCatalogAction.tsx": "4a5d02cc27df64ef6f134570bdc09f1d",
   "src/domains/model-catalog/lib/catalog-model-slots.ts": "c147dc9b9985074a4c093cc3f86e6a5b",
   "src/domains/model-catalog/components/CatalogModelSlots.tsx": "d118ba5007506fd7ccb56fb72ccee216",
-  "src/foundation/components/EndpointStatus.tsx": "ec48c1610372339234ef6b849c5040c6"
+  "src/foundation/components/EndpointStatus.tsx": "ec48c1610372339234ef6b849c5040c6",
+  "src/domains/endpoint/lib/catalog-origin.ts": "10d2d40c7e5cd6e84454dbdd56ebec53",
+  "src/domains/endpoint/components/EndpointCatalogOrigin.tsx": "4274ff735abe2e28e0a2bf05c26faab6"
 }
