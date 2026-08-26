@@ -103,4 +103,31 @@ describe("FormCombobox", () => {
 
     expect(screen.getAllByTestId("combobox-option-check")).toHaveLength(2);
   });
+
+  // cmdk puts `data-selected` on the keyboard cursor, which starts on the first
+  // row whatever the field holds — so a custom row that drops the check icon
+  // needs its own indicator bound to the value, or the list shows none at all.
+  it("marks the stored value, not the cmdk cursor, in custom option rows", () => {
+    render(
+      <Harness
+        fieldValue="text-embedding"
+        renderOption={(option) => <span>{option.label}</span>}
+      />,
+    );
+
+    fireEvent.click(getTrigger());
+
+    const rows = Array.from(
+      document.querySelectorAll<HTMLElement>('[cmdk-item=""]'),
+    );
+    const cursorRow = rows.find(
+      (row) => row.getAttribute("data-selected") === "true",
+    );
+    const markedRow = rows.find((row) =>
+      row.className.includes("--nt-fill-outstanding-light"),
+    );
+
+    expect(markedRow?.textContent).toBe("Text Embedding");
+    expect(cursorRow?.textContent).not.toBe("Text Embedding");
+  });
 });

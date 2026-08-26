@@ -17,7 +17,7 @@ import type {
   ExternalEndpoint,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
-import BaseStatus from "@/foundation/components/BaseStatus";
+import EndpointStatus from "@/foundation/components/EndpointStatus";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -28,21 +28,7 @@ import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
-import { endpointStatusClass } from "@/foundation/lib/endpoint-status-class";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
-
-const InternalEndpointStatus = (status: BaseStatusType) => {
-  const { t } = useTranslation();
-
-  return (
-    <BaseStatus
-      {...status}
-      className={endpointStatusClass(status.phase)}
-      translatedPhase={t(`status.phases.endpoint.${status.phase}`)}
-    />
-  );
-};
 
 const emptyExternalUpstream: UpstreamSpec = {
   upstream: { url: "" },
@@ -394,9 +380,7 @@ export const useExternalEndpointForm = ({
                                 </span>
                                 {endpoint.status?.phase ? (
                                   <span className="shrink-0">
-                                    <InternalEndpointStatus
-                                      {...endpoint.status}
-                                    />
+                                    <EndpointStatus {...endpoint.status} />
                                   </span>
                                 ) : null}
                               </span>

@@ -471,8 +471,6 @@ function DataTableToolbar<TData>({
 // Main Table Component
 // ============================================================================
 
-export const TABLE_SELECTION_COLUMN_WIDTH = 48;
-
 export function Table<
   TQueryFnData extends BaseRecord = BaseRecord,
   TData extends BaseRecord = TQueryFnData,
@@ -524,9 +522,6 @@ export function Table<
         ),
         enableSorting: false,
         enableHiding: false,
-        size: TABLE_SELECTION_COLUMN_WIDTH,
-        minSize: TABLE_SELECTION_COLUMN_WIDTH,
-        maxSize: TABLE_SELECTION_COLUMN_WIDTH,
       } as ColumnDef<TData>);
     }
 
@@ -605,7 +600,12 @@ export function Table<
           }
         />
         <div className="rounded-md border border-border">
-          <TableUi className="[&_th:has([role=checkbox])]:w-12 [&_th:has([role=checkbox])]:min-w-12 [&_th:has([role=checkbox])]:max-w-12 [&_td:has([role=checkbox])]:w-12 [&_td:has([role=checkbox])]:min-w-12 [&_td:has([role=checkbox])]:max-w-12">
+          {/* The row-selection column is unshifted to the front, so `:first-child`
+              addresses it and nothing else. Matching on `:has([role=checkbox])`
+              alone would also clamp any future data column that happens to
+              render a checkbox. Column sizing is expressed here rather than
+              through TanStack's `size`, which this table never reads. */}
+          <TableUi className="[&_td:first-child:has([role=checkbox])]:w-12 [&_td:first-child:has([role=checkbox])]:min-w-12 [&_td:first-child:has([role=checkbox])]:max-w-12 [&_th:first-child:has([role=checkbox])]:w-12 [&_th:first-child:has([role=checkbox])]:min-w-12 [&_th:first-child:has([role=checkbox])]:max-w-12">
             {showHeader && (
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
