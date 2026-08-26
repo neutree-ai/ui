@@ -142,7 +142,10 @@ function precisionIdForDtype(
 
 /**
  * Where one number in the formula came from: a ModelInfo provenance for a
- * checkpoint field, "input" for something the user typed, "constant" for the
+ * checkpoint field, "input" for something the user typed, "deployment" for a
+ * value taken from the engine args this deployment will be created with —
+ * which is a fact about the deployment, not about the checkpoint, and is worth
+ * telling apart from both — "constant" for the
  * factor of two that a key and a value make, "unstated" for a value carrying no
  * provenance at all — a legacy catalog entry, or an assumption this module makes
  * because the checkpoint is silent — which is not the same as one the checkpoint
@@ -153,6 +156,7 @@ export type KvCacheSource =
   | "derived"
   | "manual"
   | "input"
+  | "deployment"
   | "constant"
   | "unstated";
 
@@ -284,6 +288,15 @@ export type KvCacheInputs = {
   info: ModelInfo | null | undefined;
   tokensPerSequence: number | null;
   sequences: number | null;
+  /**
+   * Where the two counts above came from. They are inputs and the user owns
+   * them, but a value the user has not touched still has a provenance worth
+   * showing — the engine args of the deployment being filled in, or the
+   * checkpoint's own context length — and reporting all three as "input" would
+   * throw that away. Defaults to "input", which is what a typed value is.
+   */
+  tokensSource?: KvCacheSource;
+  sequencesSource?: KvCacheSource;
   bytesPerElement: number | null;
   /**
    * Width of one indexer element. Needed only by a checkpoint whose schedule
@@ -374,11 +387,15 @@ const valueFactor = (value: KvCacheValue): KvCacheFactor => ({
   ...value,
 });
 
-const inputFactor = (key: string, value: number): KvCacheFactor => ({
+const inputFactor = (
+  key: string,
+  value: number,
+  source: KvCacheSource = "input",
+): KvCacheFactor => ({
   kind: "value",
   key,
   value,
-  source: "input",
+  source,
 });
 
 /**
@@ -437,7 +454,7 @@ export function estimateKvCache(inputs: KvCacheInputs): KvCacheResult {
     // recurrent state are not held at the KV precision and saying they were
     // would make one selector silently move three unrelated numbers.
     const factors = [
-      inputFactor("sequences", sequences),
+      inputFactor("sequences", sequences, inputs.sequencesSource),
       ...component.factors,
       ...(KV_PRECISION_COMPONENTS.includes(component.key)
         ? [inputFactor("bytes_per_element", bytes)]
@@ -586,7 +603,11 @@ function resolveUniform(info: ModelInfo, inputs: KvCacheInputs): ResolvedShape {
           key: "full_kv",
           perToken: true,
           factors: [
-            inputFactor("tokens_per_sequence", inputs.tokensPerSequence ?? 0),
+            inputFactor(
+              "tokens_per_sequence",
+              inputs.tokensPerSequence ?? 0,
+              inputs.tokensSource,
+            ),
             layers,
             {
               kind: "sum",
@@ -609,7 +630,11 @@ function resolveUniform(info: ModelInfo, inputs: KvCacheInputs): ResolvedShape {
         key: "full_kv",
         perToken: true,
         factors: [
-          inputFactor("tokens_per_sequence", inputs.tokensPerSequence ?? 0),
+          inputFactor(
+              "tokens_per_sequence",
+              inputs.tokensPerSequence ?? 0,
+              inputs.tokensSource,
+            ),
           layers,
           KEY_AND_VALUE,
           ...HEAD_FIELDS.map((field) =>
@@ -677,7 +702,7 @@ function resolveMixedFullSlidingGqa(
       key: "full_kv",
       perToken: true,
       factors: [
-        inputFactor("tokens_per_sequence", tokens),
+        inputFactor("tokens_per_sequence", tokens, inputs.tokensSource),
         countedFactor("full_attention_layers", fullLayers, "layer_types"),
         KEY_AND_VALUE,
         ...perLayerWidth,
@@ -695,7 +720,11 @@ function resolveMixedFullSlidingGqa(
           key: "cached_sliding_tokens",
           value: Math.min(tokens, window),
           terms: [
-            { key: "tokens_per_sequence", value: tokens, source: "input" },
+            {
+              key: "tokens_per_sequence",
+              value: tokens,
+              source: inputs.tokensSource ?? "input",
+            },
             factorFor(info, SLIDING_WINDOW_FIELD, window),
           ],
         },
@@ -774,7 +803,7 @@ function resolveQwenLinearFullHybrid(
       key: "full_kv",
       perToken: true,
       factors: [
-        inputFactor("tokens_per_sequence", tokens),
+        inputFactor("tokens_per_sequence", tokens, inputs.tokensSource),
         countedFactor("full_attention_layers", fullLayers, "layer_types"),
         KEY_AND_VALUE,
         ...perLayerWidth,
@@ -805,7 +834,7 @@ function resolveQwenLinearFullHybrid(
       key: "draft_kv",
       perToken: true,
       factors: [
-        inputFactor("tokens_per_sequence", tokens),
+        inputFactor("tokens_per_sequence", tokens, inputs.tokensSource),
         draft,
         KEY_AND_VALUE,
         ...perLayerWidth,

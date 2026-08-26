@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,6 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  type EngineCacheArgs,
+  NO_ENGINE_CACHE_ARGS,
+} from "@/domains/endpoint/lib/engine-cache-args";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   BYTES_PER_GB,
@@ -24,6 +28,7 @@ import {
   type LinearStateCheckpointPolicy,
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
+import { modelFieldSource } from "@/foundation/types/model-types";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
 /**
@@ -69,7 +74,12 @@ const bytesOf = (id: KvCachePrecisionId | ""): number | null =>
 const SourceTag = ({ source }: { source: KvCacheSource }) => {
   const { t } = useTranslation();
 
-  if (source !== "derived" && source !== "manual" && source !== "unstated") {
+  if (
+    source !== "derived" &&
+    source !== "manual" &&
+    source !== "unstated" &&
+    source !== "deployment"
+  ) {
     return null;
   }
 
@@ -451,7 +461,15 @@ const Panel = ({ state, children }: { state: string; children: ReactNode }) => {
   );
 };
 
-export const KVCacheEstimate = ({ read }: { read: ModelInfoRead }) => {
+export const KVCacheEstimate = ({
+  read,
+  engineArgs = NO_ENGINE_CACHE_ARGS,
+}: {
+  read: ModelInfoRead;
+  /** What this deployment's engine args say about context and concurrency.
+   * Absent on any path that has none, which falls back to the checkpoint. */
+  engineArgs?: EngineCacheArgs;
+}) => {
   if (read.state === "none") {
     return null;
   }
@@ -471,7 +489,7 @@ export const KVCacheEstimate = ({ read }: { read: ModelInfoRead }) => {
     );
   }
 
-  return <Estimator info={read.info} />;
+  return <Estimator info={read.info} engineArgs={engineArgs} />;
 };
 
 /**
@@ -479,17 +497,95 @@ export const KVCacheEstimate = ({ read }: { read: ModelInfoRead }) => {
  * inputs take their defaults from that checkpoint, and a component mounted
  * while the read was still in flight would have defaulted from nothing.
  */
-const Estimator = ({ info }: { info: ModelInfo }) => {
+/**
+ * A number field that starts from what the deployment says and follows it until
+ * the user types in it.
+ *
+ * The default has to be able to move: a recipe's context window is chosen by a
+ * feature the user can switch, so a value derived once at mount goes stale the
+ * moment they change it, and a panel showing a stale figure next to the control
+ * that changed it is worse than one that never offered a default.
+ *
+ * It must equally not move *back*. Once someone has typed a number here they
+ * are asking a what-if — "how much would 128k cost?" — and having the answer
+ * overwritten by an unrelated feature toggle destroys an input they cannot get
+ * back, with nothing on screen to say why. So the field stops following on the
+ * first edit and the user owns it from there.
+ *
+ * The boundary is per field, not per panel: changing the concurrency must not
+ * freeze the context length. It resets when the panel remounts, which happens
+ * per selected model — a different checkpoint is a different question, and the
+ * old answer was about the old model.
+ *
+ * `derived` is the value to follow, or null when nothing states one; `source`
+ * is where that value came from, and becomes "input" once the field is the
+ * user's.
+ */
+function useDeploymentDefault(
+  derived: number | null,
+  derivedSource: KvCacheSource,
+): {
+  value: string;
+  source: KvCacheSource;
+  onChange: (next: string) => void;
+} {
+  const [value, setValue] = useState(() =>
+    derived === null ? "" : String(derived),
+  );
+  const edited = useRef(false);
+
+  useEffect(() => {
+    if (edited.current || derived === null) {
+      return;
+    }
+
+    setValue(String(derived));
+  }, [derived]);
+
+  return {
+    value,
+    source: edited.current ? "input" : derivedSource,
+    onChange: (next: string) => {
+      edited.current = true;
+      setValue(next);
+    },
+  };
+}
+
+const Estimator = ({
+  info,
+  engineArgs,
+}: {
+  info: ModelInfo;
+  engineArgs: EngineCacheArgs;
+}) => {
   const { t } = useTranslation();
 
-  // The context window the checkpoint states is a starting point for the one
-  // input a user is most likely to change; an unstated one leaves the field
-  // empty, because a token count invented here would end up multiplied into a
-  // number presented as an estimate of their deployment.
-  const [tokens, setTokens] = useState(() =>
-    info.max_position_embeddings ? String(info.max_position_embeddings) : "",
+  // Where the two counts start from, in order of what they are about. The
+  // engine args are what this deployment will actually be created with; the
+  // checkpoint's context length is only a ceiling, and on a model like
+  // Qwen3.6-27B the two are eight-fold apart. Someone filling in this form is
+  // sizing the deployment, so the deployment answers first.
+  //
+  // An unstated context length leaves the field empty rather than inventing
+  // one, because a token count invented here would end up multiplied into a
+  // number presented as an estimate of their deployment. Concurrency does have
+  // a floor worth defaulting to: one sequence is the smallest deployment that
+  // exists, and it is visibly a starting point rather than a claim.
+  const derivedTokens = engineArgs.maxModelLen ?? info.max_position_embeddings ?? null;
+  const tokensField = useDeploymentDefault(
+    derivedTokens,
+    engineArgs.maxModelLen !== null
+      ? "deployment"
+      : (modelFieldSource(info, "max_position_embeddings") ?? "auto"),
   );
-  const [sequences, setSequences] = useState("1");
+  const sequencesField = useDeploymentDefault(
+    engineArgs.maxNumSeqs ?? 1,
+    engineArgs.maxNumSeqs !== null ? "deployment" : "input",
+  );
+  const tokens = tokensField.value;
+  const sequences = sequencesField.value;
+
   const [precision, setPrecision] = useState<KvCachePrecisionId | "">(
     () => defaultPrecisionId(info) ?? "",
   );
@@ -523,6 +619,8 @@ const Estimator = ({ info }: { info: ModelInfo }) => {
     info,
     tokensPerSequence: parseCount(tokens),
     sequences: parseCount(sequences),
+    tokensSource: tokensField.source,
+    sequencesSource: sequencesField.source,
     bytesPerElement: bytesOf(precision),
     recurrentStateBytesPerElement: bytesOf(recurrentPrecision),
     indexerBytesPerElement: bytesOf(indexerPrecision),
@@ -546,7 +644,7 @@ const Estimator = ({ info }: { info: ModelInfo }) => {
             className="mt-1"
             inputMode="numeric"
             value={tokens}
-            onChange={(event) => setTokens(event.target.value)}
+            onChange={(event) => tokensField.onChange(event.target.value)}
             data-testid="kv-cache-tokens"
           />
         </div>
@@ -562,7 +660,7 @@ const Estimator = ({ info }: { info: ModelInfo }) => {
             className="mt-1"
             inputMode="numeric"
             value={sequences}
-            onChange={(event) => setSequences(event.target.value)}
+            onChange={(event) => sequencesField.onChange(event.target.value)}
             data-testid="kv-cache-sequences"
           />
         </div>

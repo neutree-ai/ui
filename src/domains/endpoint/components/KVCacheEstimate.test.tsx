@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
@@ -37,6 +37,19 @@ const state = () =>
 
 const tokenInput = () =>
   screen.getByTestId("kv-cache-tokens") as HTMLInputElement;
+
+const sequenceInput = () =>
+  screen.getByTestId("kv-cache-sequences") as HTMLInputElement;
+
+/** Qwen/Qwen3.6-27B: a 262144-token ceiling no ordinary deployment opens. */
+const qwen36: ModelInfo = {
+  num_hidden_layers: 64,
+  num_key_value_heads: 4,
+  head_dim: 256,
+  max_position_embeddings: 262144,
+  parameter_dtype: "bfloat16",
+  field_sources: { max_position_embeddings: "auto" },
+};
 
 describe("KVCacheEstimate", () => {
   it("estimates from the checkpoint's own context length and dtype", () => {
@@ -209,5 +222,117 @@ describe("KVCacheEstimate", () => {
     expect(screen.getAllByTestId("kv-cache-notice")[1]?.textContent).toContain(
       "endpoints.kvCache.unreported",
     );
+  });
+});
+
+describe("KVCacheEstimate starting values", () => {
+  it("starts from the context and concurrency this deployment states", () => {
+    render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 32768, maxNumSeqs: 16 }}
+      />,
+    );
+
+    // Not the checkpoint's 262144 ceiling: an eight-fold difference, and the
+    // form is asking what this deployment needs.
+    expect(tokenInput().value).toBe("32768");
+    expect(sequenceInput().value).toBe("16");
+
+    // And it is marked as coming from the deployment, so a reader cannot take
+    // it for something the checkpoint vouched for.
+    const panel = screen.getByTestId("kv-cache-estimate");
+
+    expect(panel.textContent).toContain("endpoints.kvCache.sources.deployment");
+  });
+
+  it("falls back to the checkpoint when the deployment states neither", () => {
+    render(<KVCacheEstimate read={ready(qwen36)} />);
+
+    expect(tokenInput().value).toBe("262144");
+    expect(sequenceInput().value).toBe("1");
+    expect(
+      screen.getByTestId("kv-cache-estimate").textContent,
+    ).not.toContain("endpoints.kvCache.sources.deployment");
+  });
+
+  it("falls back per field, not all or nothing", () => {
+    render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: null, maxNumSeqs: 8 }}
+      />,
+    );
+
+    expect(tokenInput().value).toBe("262144");
+    expect(sequenceInput().value).toBe("8");
+  });
+
+  it("re-derives when a feature change moves the engine args", () => {
+    // Switching a recipe feature recomposes engine_args; a default computed
+    // once at mount would leave the panel showing the old context length next
+    // to the control that just changed it.
+    const { rerender } = render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 32768, maxNumSeqs: 16 }}
+      />,
+    );
+
+    expect(tokenInput().value).toBe("32768");
+
+    rerender(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 131072, maxNumSeqs: 4 }}
+      />,
+    );
+
+    expect(tokenInput().value).toBe("131072");
+    expect(sequenceInput().value).toBe("4");
+  });
+
+  it("stops following once the user has typed in the field", () => {
+    const { rerender } = render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 32768, maxNumSeqs: 16 }}
+      />,
+    );
+
+    fireEvent.change(tokenInput(), { target: { value: "4096" } });
+    expect(tokenInput().value).toBe("4096");
+
+    rerender(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 131072, maxNumSeqs: 4 }}
+      />,
+    );
+
+    // The user asked a what-if; overwriting it would destroy an input they
+    // cannot get back, with nothing on screen to say why.
+    expect(tokenInput().value).toBe("4096");
+    // The field they did not touch still follows.
+    expect(sequenceInput().value).toBe("4");
+  });
+
+  it("marks an edited field as the user's rather than the deployment's", () => {
+    render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 32768, maxNumSeqs: null }}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("kv-cache-estimate").textContent,
+    ).toContain("endpoints.kvCache.sources.deployment");
+
+    fireEvent.change(tokenInput(), { target: { value: "4096" } });
+
+    expect(
+      screen.getByTestId("kv-cache-estimate").textContent,
+    ).not.toContain("endpoints.kvCache.sources.deployment");
   });
 });

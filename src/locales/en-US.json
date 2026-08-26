@@ -1062,13 +1062,15 @@
 				"derived": "derived",
 				"manual": "manual",
 				"unstated": "unverified",
-				"constant": "constant"
+				"constant": "constant",
+				"deployment": "this deployment"
 			},
 			"sourceHints": {
 				"derived": "Computed from other checkpoint values by a documented convention",
 				"manual": "Typed in by a user, overriding what the checkpoint states",
 				"unstated": "This value states no provenance, so it is not known to come from the checkpoint",
-				"constant": "A fixed factor of the formula, not a value from the checkpoint"
+				"constant": "A fixed factor of the formula, not a value from the checkpoint",
+				"deployment": "Taken from the engine args this deployment will be created with, not from the checkpoint"
 			},
 			"reading": "Reading the checkpoint\u2026",
 			"unread": {

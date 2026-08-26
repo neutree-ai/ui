@@ -79,6 +79,7 @@ import {
   countFullCardAvailableDevicesByProduct,
   sumMatchingDeviceAvailableResources,
 } from "@/foundation/lib/gpu-device-resources";
+import { readEngineCacheArgs } from "@/domains/endpoint/lib/engine-cache-args";
 import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";
 import {
   registryIsDisabled,
@@ -1580,6 +1581,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // state comes from that same query, which is what separates "still reading"
   // and "the registry refused" from "the checkpoint omits this field".
   const currentModelInfo = form.watch("spec.model.info") ?? null;
+
+  // What this deployment will actually be created with, which is what the KV
+  // cache estimate should start from. These are the composed engine args — a
+  // catalog recipe writes them here when a variant or a feature is applied, and
+  // the raw form writes them here when a user edits them directly — so the
+  // panel sees whatever will be deployed without knowing which route produced
+  // it. A path that states neither flag reads as nothing and the panel falls
+  // back to the checkpoint.
+  const engineCacheArgs = readEngineCacheArgs(
+    form.watch("spec.engine.engine"),
+    form.watch("spec.variables.engine_args"),
+  );
   const modelInfoRead = resolveModelInfoRead({
     selected: Boolean(
       activeModelInfo ||
@@ -1862,6 +1875,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   form.watch("spec.model.version") ?? ""
                 }`}
                 read={modelInfoRead}
+                engineArgs={engineCacheArgs}
               />
             </div>
           )}
