@@ -1616,30 +1616,33 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         .filter(Boolean),
     );
   }, [selectedCatalog]);
-  // Simplified recipe deploy only offers GPU products that are both validated
-  // (verifiedProducts) and present in the selected cluster (acceleratorOptions);
-  // "Show all options" reveals every available product.
-  const restrictAcceleratorToVerified = !showFull && verifiedProducts.size > 0;
-  const verifiedAcceleratorOptions = restrictAcceleratorToVerified
-    ? acceleratorOptions.filter((opt) =>
-        matchesAcceleratorName(opt.product, verifiedProducts),
-      )
-    : acceleratorOptions;
-  // No validated GPU in this cluster → the picker must stay usable (NEU-590:
-  // selecting a card is a deploy essential, and the verified list is advice,
-  // not a gate), so fall back to every available accelerator and render an
-  // unvalidated-hardware notice next to the picker instead of hiding it.
-  // Requires the cluster to actually offer accelerators — a GPU-less cluster
-  // (or one whose resource info hasn't loaded yet) is not a "disjoint
-  // verified list" and must not claim to be showing alternatives.
+  // A recipe's validated list orders and labels the accelerators; it never
+  // removes any. NEU-590 already had to walk back hiding the picker, and
+  // filtering was the one place the simplified form took capability away
+  // rather than folding it — the two modes now offer the same set and differ
+  // only in emphasis. Sort is stable, so the cluster's own order survives
+  // within each group.
+  const displayedAcceleratorOptions = useMemo(() => {
+    const marked = acceleratorOptions.map((option) => ({
+      ...option,
+      verified:
+        verifiedProducts.size > 0 &&
+        matchesAcceleratorName(option.product, verifiedProducts),
+    }));
+
+    return marked.some((option) => option.verified)
+      ? [...marked].sort((a, b) => Number(b.verified) - Number(a.verified))
+      : marked;
+  }, [acceleratorOptions, verifiedProducts]);
+  // The recipe names validated GPUs and this cluster has none of them. Said
+  // out loud next to the picker, because every option below is then untested
+  // for this recipe. A GPU-less cluster (or one whose resource info has not
+  // loaded) is not that case and must not claim to be.
   const noVerifiedAcceleratorAvailable =
-    restrictAcceleratorToVerified &&
+    verifiedProducts.size > 0 &&
     Boolean(currentCluster) &&
     acceleratorOptions.length > 0 &&
-    verifiedAcceleratorOptions.length === 0;
-  const displayedAcceleratorOptions = noVerifiedAcceleratorAvailable
-    ? acceleratorOptions
-    : verifiedAcceleratorOptions;
+    !displayedAcceleratorOptions.some((option) => option.verified);
 
   const formWithTransformedOnFinish = {
     ...form,
@@ -2211,9 +2214,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <ComposePreview composed={null} error={composeResult.error} />
             </div>
           )}
-          {showFull && composeResult?.ok && (
+          {/* Always rendered, folded to one line while the raw fields are.
+          The simplified form hides which engine and arguments the deploy will
+          use, and "what am I about to run" is a fact, not a decision — the
+          same reason the capacity warnings and compose errors already pierce
+          simplified mode. */}
+          {composeResult?.ok && (
             <div className="col-span-4">
-              <ComposePreview composed={composeResult.spec} error={null} />
+              <ComposePreview
+                composed={composeResult.spec}
+                error={null}
+                collapsible={!showFull}
+              />
             </div>
           )}
         </FormCardGrid>
@@ -2425,6 +2437,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           options={displayedAcceleratorOptions.map((opt) => ({
                             label: opt.label,
                             value: opt.value,
+                            description: opt.verified
+                              ? t("endpoints.recipe.verifiedAccelerator")
+                              : undefined,
                           }))}
                           value={
                             selectedAccelerator?.type &&
@@ -2477,10 +2492,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           data-testid="endpoint-accelerator-unverified-notice"
                           className="col-span-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground sm:col-span-2"
                         >
-                          {t(
-                            "endpoints.recipe.noVerifiedAccelerator",
-                            "This recipe has not been validated on the GPUs in this cluster — showing all available accelerators.",
-                          )}
+                          {t("endpoints.recipe.noVerifiedAccelerator")}
                           {activeVariantVram != null && (
                             <span className="ml-1">
                               {t(

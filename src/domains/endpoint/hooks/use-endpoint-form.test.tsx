@@ -6378,3 +6378,143 @@ describe("what a deploy came from is recorded on the endpoint", () => {
     expect(annotations()["neutree.ai/model-catalog"]).toBeUndefined();
   });
 });
+
+// The shared CreateForm harness leaves out the recipe slots; the real page
+// (pages/endpoints/create.tsx) renders them all, and these tests are about
+// what that page shows.
+function RecipeCreateForm() {
+  const result = useEndpointForm({ action: "create" });
+  formInstance = result.form;
+  submitBlockedState = result.submitBlocked;
+  return (
+    <FormProvider {...result.form}>
+      <form>
+        {result.metadataFields}
+        {result.advancedToggle}
+        {result.templateFields}
+        {result.recipeFields}
+        {result.resourceFields}
+        {result.customizeFields}
+      </form>
+    </FormProvider>
+  );
+}
+
+// The simplified recipe form folds engine, engine args and env away, so
+// without this there is no way to see what the deploy will actually run. The
+// same reason the capacity warnings and compose errors already pierce it.
+describe("what a recipe deploy will run stays visible", () => {
+  const renderRecipeDeploy = () => {
+    setupMocks([catalogA, recipeCatalog], [plainKubernetesCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+  };
+
+  it("summarises the composed engine without expanding anything", () => {
+    renderRecipeDeploy();
+
+    const toggle = screen.getByTestId("compose-preview-toggle");
+    expect(toggle.textContent).toContain("vllm");
+    expect(toggle.textContent).toContain("0.8.5");
+    expect(toggle.textContent).toContain("text-generation");
+  });
+
+  it("opens to the full composition", () => {
+    renderRecipeDeploy();
+
+    expect(screen.getByTestId("compose-preview").textContent).not.toContain(
+      "org/recipe-model",
+    );
+
+    fireEvent.click(screen.getByTestId("compose-preview-toggle"));
+
+    expect(screen.getByTestId("compose-preview").textContent).toContain(
+      "org/recipe-model",
+    );
+  });
+
+  // Standalone deploy has no disclosure at all, so there is nothing to fold
+  // against — the preview is simply open.
+  it("is not folded once the advanced options are shown", async () => {
+    renderRecipeDeploy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("endpoints.simplified.showAdvanced"));
+    });
+
+    expect(screen.queryByTestId("compose-preview-toggle")).toBeNull();
+    expect(screen.getByTestId("compose-preview").textContent).toContain(
+      "org/recipe-model",
+    );
+  });
+});
+
+// A recipe's validated GPU list is advice. It orders and labels the picker; it
+// never removes an option, so both modes offer the same set (NEU-590 already
+// had to walk back hiding the picker entirely).
+describe("validated accelerators are ranked, not filtered", () => {
+  const withVerified = (verified: string) => ({
+    ...recipeCatalog,
+    metadata: {
+      name: "recipe-mc",
+      annotations: { "recipe.vllm.ai/hardware-verified": verified },
+    },
+  });
+
+  // The shared fixture's cluster has one GPU product, which cannot show that a
+  // card the recipe does not name survives beside one it does.
+  const twoProductCluster = (() => {
+    const cluster = structuredClone(plainKubernetesClusterWithNodeResources);
+    for (const bucket of ["allocatable", "available"] as const) {
+      (
+        cluster.status.resource_info as unknown as Record<
+          string,
+          {
+            accelerator_groups: Record<
+              string,
+              { product_groups: Record<string, number> }
+            >;
+          }
+        >
+      )[bucket].accelerator_groups.nvidia_gpu.product_groups["A100-SXM4"] = 1;
+    }
+    return cluster;
+  })();
+
+  const renderOnGpuCluster = async (verified: string) => {
+    setupMocks([catalogA, withVerified(verified)], [twoProductCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+    await act(async () => {
+      formInstance?.setValue("spec.cluster", "plain-k8s-node-resources");
+    });
+
+    const field = screen.getByTestId("field-spec.resources.accelerator");
+    const trigger = field.querySelector('button[role="combobox"]');
+    if (!trigger) throw new Error("accelerator combobox trigger not found");
+    fireEvent.click(trigger);
+
+    return screen.getAllByRole("option");
+  };
+
+  it("offers the cards the recipe does not name, ranked below the ones it does", async () => {
+    const options = await renderOnGpuCluster("T4");
+    const text = options.map((option) => option.textContent ?? "");
+
+    expect(text.some((label) => label.includes("A100"))).toBe(true);
+    expect(text.findIndex((label) => label.includes("T4"))).toBeLessThan(
+      text.findIndex((label) => label.includes("A100")),
+    );
+  });
+
+  it("marks the ones the recipe names, and only those", async () => {
+    const options = await renderOnGpuCluster("T4");
+    const marked = (label: string) =>
+      options
+        .find((option) => option.textContent?.includes(label))
+        ?.textContent?.includes("endpoints.recipe.verifiedAccelerator");
+
+    expect(marked("T4")).toBe(true);
+    expect(marked("A100")).toBe(false);
+  });
+});

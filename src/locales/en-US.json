@@ -1014,13 +1014,18 @@
 			"resourceEstimate": "Resource estimate",
 			"estimatedVram": "Estimated VRAM",
 			"replicasCount": "{{count}} replica",
-			"noVerifiedAccelerator": "This recipe has not been validated on the GPUs in this cluster — showing all available accelerators.",
+			"noVerifiedAccelerator": "This recipe has not been validated on the GPUs in this cluster.",
 			"requiredVram": "Requires ≥ {{gb}} GB VRAM.",
 			"vramSufficient": "Sufficient VRAM: {{total}} GB available, {{required}} GB required",
 			"vramInsufficient": "Insufficient VRAM: {{total}} GB available, {{required}} GB required",
 			"vramRequiredOnly": "Requires ≥ {{gb}} GB VRAM",
 			"composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}",
-			"defaultVariant": "Default variant"
+			"defaultVariant": "Default variant",
+			"engineArgCount": "{{count}} engine args",
+			"engineArgCount_one": "1 engine arg",
+			"envCount": "{{count}} env vars",
+			"envCount_one": "1 env var",
+			"verifiedAccelerator": "Validated by this recipe"
 		},
 		"kvCache": {
 			"title": "KV cache estimate",
