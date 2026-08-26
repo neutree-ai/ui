@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import {
   type CatalogModelSlot,
+  readCatalogEngine,
   readCatalogModelSlots,
   slotKey,
+  writeCatalogEngineVersion,
   writeCatalogModelSlot,
 } from "@/domains/model-catalog/lib/catalog-model-slots";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
@@ -18,6 +20,14 @@ import {
 import type { Metadata } from "@/foundation/types/basic-types";
 
 const MODEL_PAGE_SIZE = 20;
+/**
+ * Both columns hold a name, so they are sized alike rather than letting the
+ * picker stretch to the page. The left one has to fit "registry / model" on one
+ * line, which is the longer of the two; `minmax(0, …)` lets both collapse on a
+ * narrow screen instead of overflowing.
+ */
+const SLOT_ROW =
+  "grid grid-cols-[minmax(0,22rem)_minmax(0,32rem)] items-center gap-3";
 /** A registry's listing does not change under the user mid-edit, and every slot
  * reads the same one. */
 const MODEL_STALE_TIME = 30_000;
@@ -25,6 +35,11 @@ const MODEL_STALE_TIME = 30_000;
 type RegistryRef = {
   metadata: Metadata;
   status?: { phase?: string } | null;
+};
+
+type EngineRef = {
+  metadata: Metadata;
+  spec: { versions: { version: string }[] };
 };
 
 /**
@@ -54,13 +69,20 @@ export function CatalogModelSlots({
   const [search, setSearch] = useState("");
   // Set when a model is picked and cleared once its parameters land, which is
   // the only thing this drives; see the effect below.
+  // Carries the registry it was picked from: the combobox above is free to
+  // move while the detail read is in flight, and a read keyed on the current
+  // registry would either fetch a different registry's model or stop fetching
+  // altogether — and then write `info` under a registry the model never came
+  // from.
   const [pending, setPending] = useState<{
     slot: CatalogModelSlot;
+    registry: string;
     model: string;
     version?: string;
   } | null>(null);
 
   const slots = useMemo(() => readCatalogModelSlots(doc), [doc]);
+  const engine = useMemo(() => readCatalogEngine(doc), [doc]);
 
   // The availability rules read only `status.phase` and the deletion stamp, so
   // this deliberately does not ask for `visibility` (MODEL_REGISTRY_SELECT).
@@ -82,6 +104,25 @@ export function CatalogModelSlots({
       ? named
       : "");
 
+  const engines = useSelect<EngineRef>({
+    resource: "engines",
+    meta: { workspace, workspaced: true },
+  });
+
+  // Only the versions of the engine this catalog already names. Switching
+  // engine outright would invalidate every engine arg the catalog carries, so
+  // the engine is shown as a fact and only its version is a choice.
+  const engineVersionOptions = useMemo(() => {
+    const declared = (engines.query.data?.data ?? []).find(
+      (row) => row.metadata.name === engine?.engine,
+    );
+
+    return (declared?.spec.versions ?? []).map(({ version }) => ({
+      label: version,
+      value: version,
+    }));
+  }, [engines.query.data, engine?.engine]);
+
   const models = useRegistryModels({
     workspace,
     registry,
@@ -92,7 +133,12 @@ export function CatalogModelSlots({
 
   const pendingVersion = useRegistryModelVersion(
     pending
-      ? { workspace, registry, model: pending.model, version: pending.version }
+      ? {
+          workspace,
+          registry: pending.registry,
+          model: pending.model,
+          version: pending.version,
+        }
       : {},
   );
   const pendingInfo = pendingVersion.model?.info;
@@ -135,7 +181,7 @@ export function CatalogModelSlots({
     if (pendingInfo) {
       onChange(
         writeCatalogModelSlot(doc, pending.slot, {
-          registry,
+          registry: pending.registry,
           name: pending.model,
           version: pending.version,
           info: pendingInfo,
@@ -143,7 +189,7 @@ export function CatalogModelSlots({
       );
     }
     setPending(null);
-  }, [pendingSettled, pendingInfo, pending, doc, onChange, registry]);
+  }, [pendingSettled, pendingInfo, pending, doc, onChange]);
 
   const handlePick = (slot: CatalogModelSlot, modelName: string) => {
     const picked = models.models.find((model) => model.name === modelName);
@@ -156,7 +202,7 @@ export function CatalogModelSlots({
         version,
       }),
     );
-    setPending({ slot, model: modelName, version });
+    setPending({ slot, registry, model: modelName, version });
   };
 
   if (doc === null) {
@@ -177,7 +223,7 @@ export function CatalogModelSlots({
 
   return (
     <div className="space-y-3" data-testid="catalog-model-slots">
-      <div className="space-y-1.5">
+      <div className="max-w-[32rem] space-y-1.5">
         <div className="text-xs text-muted-foreground">
           {t("model_catalogs.models.registryLabel")}
         </div>
@@ -191,12 +237,37 @@ export function CatalogModelSlots({
         />
       </div>
 
+      {engine && (
+        <div data-testid="catalog-engine-version" className={SLOT_ROW}>
+          <div className="min-w-0">
+            <div className="truncate text-sm">
+              {t("model_catalogs.models.engine")}
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              {engine.engine}
+            </div>
+          </div>
+          <Combobox
+            asField={false}
+            value={engine.version}
+            placeholder={t("model_catalogs.models.selectEngineVersion")}
+            disabled={
+              engines.query.isLoading || engineVersionOptions.length === 0
+            }
+            options={engineVersionOptions}
+            onChange={(version) =>
+              onChange(writeCatalogEngineVersion(doc, version))
+            }
+          />
+        </div>
+      )}
+
       <div className="space-y-2">
         {slots.map((slot) => (
           <div
             key={slotKey(slot)}
             data-testid={`catalog-model-slot-${slotKey(slot)}`}
-            className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] items-center gap-2"
+            className={SLOT_ROW}
           >
             <div className="min-w-0">
               <div className="truncate text-sm">

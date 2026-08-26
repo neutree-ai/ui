@@ -9,13 +9,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   registries: [] as unknown[],
+  engines: [] as unknown[],
   models: [] as unknown[],
   info: null as unknown,
+  infoLoading: false,
+  versionRefs: [] as { registry?: string; model?: string }[],
 }));
 
 vi.mock("@refinedev/core", () => ({
-  useSelect: () => ({
-    query: { data: { data: mocks.registries }, isLoading: false },
+  useSelect: ({ resource }: { resource: string }) => ({
+    query: {
+      data: {
+        data: resource === "engines" ? mocks.engines : mocks.registries,
+      },
+      isLoading: false,
+    },
   }),
 }));
 
@@ -32,13 +40,20 @@ vi.mock("@/foundation/hooks/use-registry-models", () => ({
 }));
 
 vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
-  useRegistryModelVersion: (ref: { model?: string }) => ({
-    model: ref.model ? { name: ref.model, info: mocks.info } : null,
-    isLoading: false,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useRegistryModelVersion: (ref: { registry?: string; model?: string }) => {
+    if (ref.model) mocks.versionRefs.push(ref);
+
+    return {
+      model:
+        ref.model && !mocks.infoLoading
+          ? { name: ref.model, info: mocks.info }
+          : null,
+      isLoading: Boolean(ref.model) && mocks.infoLoading,
+      isFetching: false,
+      error: null,
+      refetch: vi.fn(),
+    };
+  },
 }));
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -127,15 +142,27 @@ const pickModel = (slotId: string, model: string) => {
   );
 };
 
-describe("CatalogModelSlots", () => {
-  beforeEach(() => {
-    mocks.registries = [registry("local-nfs"), registry("huggingface")];
-    mocks.models = [
-      { name: "qwen3-27b", versions: [{ name: "v1", creation_time: "" }] },
-    ];
-    mocks.info = null;
-  });
+beforeEach(() => {
+  mocks.registries = [registry("local-nfs"), registry("huggingface")];
+  mocks.models = [
+    { name: "qwen3-27b", versions: [{ name: "v1", creation_time: "" }] },
+  ];
+  mocks.info = null;
+  mocks.infoLoading = false;
+  mocks.versionRefs = [];
+  mocks.engines = [
+    {
+      metadata: { name: "vllm" },
+      spec: { versions: [{ version: "0.24" }, { version: "0.25" }] },
+    },
+    {
+      metadata: { name: "sglang" },
+      spec: { versions: [{ version: "0.5" }] },
+    },
+  ];
+});
 
+describe("CatalogModelSlots", () => {
   it("shows a row per variant, labelled by variant key", () => {
     renderPanel();
 
@@ -223,5 +250,75 @@ describe("CatalogModelSlots", () => {
     );
     const option = within(select).getByText("down") as HTMLOptionElement;
     expect(option.disabled).toBe(true);
+  });
+});
+
+describe("engine version", () => {
+  const withEngine = (engineName: string) => ({
+    apiVersion: "v1",
+    kind: "ModelCatalog",
+    metadata: { name: "q", workspace: "team-a" },
+    spec: {
+      engine: { engine: engineName, version: "0.24" },
+      model: { registry: "huggingface", name: "Qwen/Qwen3-8B" },
+    },
+  });
+
+  it("shows the engine as a fact and offers only its versions", () => {
+    renderPanel(withEngine("vllm"));
+
+    const row = screen.getByTestId("catalog-engine-version");
+    expect(within(row).getByText("vllm")).toBeDefined();
+
+    const select = within(row).getByLabelText(
+      "model_catalogs.models.selectEngineVersion",
+    );
+    const offered = within(select)
+      .getAllByRole("option")
+      .map((option) => (option as HTMLOptionElement).value)
+      .filter(Boolean);
+    expect(offered).toEqual(["0.24", "0.25"]);
+  });
+
+  it("switches the version and leaves the engine alone", () => {
+    const onChange = renderPanel(withEngine("vllm"));
+
+    const row = screen.getByTestId("catalog-engine-version");
+    fireEvent.change(
+      within(row).getByLabelText("model_catalogs.models.selectEngineVersion"),
+      { target: { value: "0.25" } },
+    );
+
+    const doc = nextDoc(onChange) as unknown as {
+      spec: { engine: { engine: string; version: string } };
+    };
+    expect(doc.spec.engine).toEqual({ engine: "vllm", version: "0.25" });
+  });
+
+  it("renders no engine row when the catalog names none", () => {
+    renderPanel();
+
+    expect(screen.queryByTestId("catalog-engine-version")).toBeNull();
+  });
+});
+
+describe("a registry change while a pick is still resolving", () => {
+  // The detail read and the follow-up `info` write are anchored to the registry
+  // the model was picked from. Keyed on the live combobox instead, they would
+  // ask a different registry for the model, or stop asking entirely.
+  it("keeps reading the registry the model was picked from", () => {
+    mocks.infoLoading = true;
+    renderPanel();
+
+    pickModel("variant.bf16", "qwen3-27b");
+    fireEvent.change(
+      screen.getByLabelText("model_catalogs.models.selectRegistry"),
+      { target: { value: "local-nfs" } },
+    );
+
+    expect(mocks.versionRefs.length).toBeGreaterThan(0);
+    for (const ref of mocks.versionRefs) {
+      expect(ref.registry).toBe("huggingface");
+    }
   });
 });

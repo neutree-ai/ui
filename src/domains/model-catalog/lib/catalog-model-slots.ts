@@ -56,15 +56,60 @@ export function readCatalogModelSlots(doc: unknown): CatalogModelSlot[] {
   const modelOf = (holder: Mapping) =>
     isMapping(holder.model) ? (holder.model as ModelSpec) : null;
 
-  if (!isRecipeShape(spec as Pick<RecipeInputSpec, "variants">)) {
+  // `isRecipeShape` only asks whether there is anything under `variants`, which
+  // a half-typed document can satisfy with a string or a list — and indexing
+  // those yields one bogus variant per character. The text here is mid-edit by
+  // definition, so the shape is checked before it is trusted.
+  if (
+    !isMapping(spec.variants) ||
+    !isRecipeShape(spec as Pick<RecipeInputSpec, "variants">)
+  ) {
     return [{ kind: "catalog", model: modelOf(spec) }];
   }
 
-  return Object.entries(spec.variants as Mapping).map(([key, variant]) => ({
+  return Object.entries(spec.variants).map(([key, variant]) => ({
     kind: "variant" as const,
     key,
     model: isMapping(variant) ? modelOf(variant) : null,
   }));
+}
+
+/**
+ * The engine a catalog deploys with. There is one for the whole catalog —
+ * variants carry a model and resources, never an engine (`compose.ts` reads
+ * `recipe.engine` off the spec's top level for both shapes).
+ */
+export function readCatalogEngine(
+  doc: unknown,
+): { engine: string; version: string } | null {
+  const spec = specOf(doc);
+  if (!spec || !isMapping(spec.engine)) return null;
+
+  const { engine, version } = spec.engine;
+
+  return typeof engine === "string" && engine
+    ? { engine, version: typeof version === "string" ? version : "" }
+    : null;
+}
+
+/**
+ * Returns the document deploying with another version of the same engine.
+ *
+ * Only the version moves. Switching engine outright would invalidate every
+ * engine arg the catalog carries — base, per-variant and per-feature — and
+ * there is nothing here that could rewrite those, so the engine name is
+ * presented as a fact rather than a choice.
+ */
+export function writeCatalogEngineVersion(
+  doc: unknown,
+  version: string,
+): unknown {
+  const spec = specOf(doc);
+  if (!spec || !isMapping(spec.engine)) return doc;
+
+  const nextSpec = { ...spec, engine: { ...spec.engine, version } };
+
+  return spec === doc ? nextSpec : { ...(doc as Mapping), spec: nextSpec };
 }
 
 /** What choosing a model in the picker establishes. Everything else the slot

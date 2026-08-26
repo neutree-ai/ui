@@ -313,7 +313,7 @@
   "src/domains/api-key/components/ModelMultiSelect.tsx": "6068a1c19a7048cf190ef4bbe964faf7",
   "src/domains/api-key/hooks/use-api-key-policy.ts": "3c22ef4f4f09707dfce3d76f5a594686",
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
-  "src/pages/model-catalogs/edit.tsx": "60a404ebb272a36086b8ea0046585c24",
+  "src/pages/model-catalogs/edit.tsx": "94de5b536bbce3e7ebeae4f17decd835",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
   "src/pages/model-catalogs/components/ImportDialog.tsx": "c8b67dba091272b9170ff5ea2f2c6258",
   "src/pages/model-catalogs/components/KeyConfigCard.tsx": "a3e49d8166c2440bfa82b6d6b53cc2e1",
@@ -398,6 +398,6 @@
   "src/foundation/components/ResourceUsageLegend.tsx": "c09c3da92d40c1b98d3450f65a7feb10",
   "src/domains/endpoint/lib/save-as-catalog.ts": "92faeef51fe64fcc065322c760d9443e",
   "src/domains/endpoint/components/EndpointSaveAsCatalogAction.tsx": "4a5d02cc27df64ef6f134570bdc09f1d",
-  "src/domains/model-catalog/lib/catalog-model-slots.ts": "2cb7d75b448db6f80060738684f15246",
-  "src/domains/model-catalog/components/CatalogModelSlots.tsx": "1a2849b0515754bf68b696a220a0df95"
+  "src/domains/model-catalog/lib/catalog-model-slots.ts": "c147dc9b9985074a4c093cc3f86e6a5b",
+  "src/domains/model-catalog/components/CatalogModelSlots.tsx": "d118ba5007506fd7ccb56fb72ccee216"
 }

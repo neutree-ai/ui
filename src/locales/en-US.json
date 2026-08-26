@@ -777,8 +777,10 @@
 			"none": "This catalog names no model yet.",
 			"listFailed": "Could not list this registry's models.",
 			"title": "Models",
-			"hint": "Point each of this catalog's models at one in a registry you can reach. Edits land in the YAML below.",
-			"unset": "No model chosen"
+			"hint": "Point each of this catalog's models at one in a registry you can reach, and choose the engine version it deploys with. Edits land in the YAML below.",
+			"unset": "No model chosen",
+			"engine": "Engine",
+			"selectEngineVersion": "Select a version"
 		}
 	},
 	"image_registries": {

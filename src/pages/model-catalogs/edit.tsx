@@ -82,10 +82,17 @@ export const ModelCatalogsEdit = () => {
   const [specYaml, setSpecYaml] = useState("");
   // The editor's text is the source of truth; the model panel reads this and
   // hands a changed document back, which is serialized straight over the text.
-  // Null while the text does not parse, which the panel renders as such.
+  // Null while the text is not a catalog the panel can work on, which it says
+  // so about. Valid YAML is not enough: a bare scalar parses, and handing that
+  // over would have the panel report a catalog naming no models rather than
+  // text that is not a catalog at all.
   const parsedDoc = useMemo(() => {
     try {
-      return yaml.load(specYaml) ?? null;
+      const loaded = yaml.load(specYaml);
+
+      return loaded && typeof loaded === "object" && !Array.isArray(loaded)
+        ? loaded
+        : null;
     } catch {
       return null;
     }

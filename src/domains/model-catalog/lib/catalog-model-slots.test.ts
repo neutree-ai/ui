@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   type CatalogModelSlot,
+  readCatalogEngine,
   readCatalogModelSlots,
   slotKey,
+  writeCatalogEngineVersion,
   writeCatalogModelSlot,
 } from "./catalog-model-slots";
 
@@ -66,6 +68,16 @@ describe("readCatalogModelSlots", () => {
   it("accepts a bare spec, which is what a pasted document may be", () => {
     expect(readCatalogModelSlots(plain.spec)).toEqual([
       { kind: "catalog", model: plain.spec.model },
+    ]);
+  });
+
+  // A half-typed `variants:` can be a string or a list, and indexing those
+  // yields one bogus variant per character.
+  it("does not read variants out of something that is not a mapping", () => {
+    const doc = { kind: "ModelCatalog", spec: { variants: "abc" } };
+
+    expect(readCatalogModelSlots(doc)).toEqual([
+      { kind: "catalog", model: null },
     ]);
   });
 
@@ -170,5 +182,64 @@ describe("writeCatalogModelSlot", () => {
         name: "n",
       }),
     ).toEqual(recipe);
+  });
+});
+
+describe("readCatalogEngine", () => {
+  const withEngine = {
+    kind: "ModelCatalog",
+    spec: { engine: { engine: "vllm", version: "0.24" }, variants: {} },
+  };
+
+  it("reads the catalog's engine and version", () => {
+    expect(readCatalogEngine(withEngine)).toEqual({
+      engine: "vllm",
+      version: "0.24",
+    });
+  });
+
+  it("reports an engine that names no version", () => {
+    expect(
+      readCatalogEngine({
+        kind: "ModelCatalog",
+        spec: { engine: { engine: "vllm" } },
+      }),
+    ).toEqual({ engine: "vllm", version: "" });
+  });
+
+  it("reads nothing when the catalog names no engine", () => {
+    const noEngine = { kind: "ModelCatalog", spec: { model: { name: "m" } } };
+
+    expect(readCatalogEngine(noEngine)).toBeNull();
+    // A scalar under `engine` is a half-typed document, not an engine.
+    expect(
+      readCatalogEngine({ kind: "ModelCatalog", spec: { engine: "vllm" } }),
+    ).toBeNull();
+    expect(readCatalogEngine(null)).toBeNull();
+  });
+});
+
+describe("writeCatalogEngineVersion", () => {
+  // Switching engine outright would invalidate every engine arg the catalog
+  // carries, so only the version moves.
+  it("moves the version and keeps the engine", () => {
+    const doc = {
+      kind: "ModelCatalog",
+      spec: {
+        engine: { engine: "vllm", version: "0.24" },
+        model: { registry: "r", name: "m" },
+      },
+    };
+
+    const next = writeCatalogEngineVersion(doc, "0.25") as typeof doc;
+
+    expect(next.spec.engine).toEqual({ engine: "vllm", version: "0.25" });
+    expect(next.spec.model).toEqual(doc.spec.model);
+  });
+
+  it("leaves a document naming no engine untouched", () => {
+    const noEngine = { kind: "ModelCatalog", spec: { model: { name: "m" } } };
+
+    expect(writeCatalogEngineVersion(noEngine, "0.25")).toEqual(noEngine);
   });
 });
