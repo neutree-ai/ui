@@ -211,10 +211,48 @@ describe("EndpointRuntimeResourcesCard", () => {
 
     const gpuCells = screen.getAllByTestId("runtime-gpu-cell");
     const firstVram = within(gpuCells[0]).getByTestId("runtime-vram-values");
-    expect(firstVram.textContent?.replace(/\s/g, "")).toBe("5.5/8/80GiB");
+    expect(firstVram.textContent?.replace(/\s/g, "")).toBe("8/80GiB");
+    const requestedBar = within(gpuCells[0]).getByTestId("runtime-vram-bar");
+    expect(requestedBar.getAttribute("aria-valuenow")).toBe("10");
+    expect(requestedBar.className).toContain("rounded-full");
+    expect(requestedBar.className).toContain("[&>div]:rounded-none");
+    expect(requestedBar.className).toContain("--nt-fill-neutral-trans-7");
+    expect(screen.queryByText("Actual usage")).toBeNull();
+    expect(screen.getAllByText("Requested VRAM")).toHaveLength(2);
+    expect(screen.getAllByText("Physical VRAM")).toHaveLength(2);
   });
 
-  it("falls back to dashes when actual and physical VRAM are unavailable", () => {
+  it("keeps the GPU row scrollable instead of clipping cards in a narrow container", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        resources={{
+          summary: null,
+          replicas: [
+            {
+              instance_id: "endpoint-abc",
+              replica_id: "endpoint-abc-single-node",
+              node_id: "gpu-node-01",
+              devices: [
+                t4,
+                { ...t4, uuid: "GPU-t4-02", order: 2 },
+                { ...t4, uuid: "GPU-t4-03", order: 3 },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    // The rounded frame around the cells clips its own overflow, so the grid
+    // has to claim the width its tracks demand. Without that the scroller
+    // around it sees nothing to scroll and the last cards are simply cut off.
+    const grid = screen.getAllByTestId("runtime-gpu-cell")[0]
+      .parentElement as HTMLElement;
+    expect(grid.style.minWidth).toBe("516px");
+    expect(grid.parentElement?.className).toContain("overflow-x-auto");
+  });
+
+  it("falls back to a dash when physical VRAM is unavailable", () => {
     render(
       <EndpointRuntimeResourcesCard
         resources={{
@@ -241,7 +279,7 @@ describe("EndpointRuntimeResourcesCard", () => {
 
     const gpuCell = screen.getByTestId("runtime-gpu-cell");
     const vram = within(gpuCell).getByTestId("runtime-vram-values");
-    expect(vram.textContent?.replace(/\s/g, "")).toBe("—/8/—GiB");
+    expect(vram.textContent?.replace(/\s/g, "")).toBe("8/—GiB");
     expect(
       within(screen.getByTestId("runtime-host")).getByText(/CPU —/),
     ).toBeTruthy();
@@ -310,7 +348,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getByText("Core 50")).toBeTruthy();
   });
 
-  it("flags usage that exceeds the requested VRAM", () => {
+  it("does not expose actual VRAM usage when runtime status includes it", () => {
     render(
       <EndpointRuntimeResourcesCard
         resources={{
@@ -340,13 +378,14 @@ describe("EndpointRuntimeResourcesCard", () => {
 
     const gpuCell = screen.getByTestId("runtime-gpu-cell");
     expect(
-      within(gpuCell).getByTestId("runtime-vram-over-requested").textContent,
-    ).toBe("Usage exceeds requested VRAM");
-    expect(within(gpuCell).getByTestId("runtime-vram-bar").className).toContain(
-      "stroke-serious-light",
-    );
+      within(gpuCell).queryByTestId("runtime-vram-over-requested"),
+    ).toBeNull();
+    expect(
+      within(gpuCell).getByTestId("runtime-vram-bar").className,
+    ).not.toContain("stroke-serious-light");
     const vram = within(gpuCell).getByTestId("runtime-vram-values");
-    expect(vram.textContent?.replace(/\s/g, "")).toBe("12.5/8/80GiB");
+    expect(vram.textContent?.replace(/\s/g, "")).toBe("8/80GiB");
+    expect(gpuCell.textContent).not.toContain("12.5");
   });
 
   it("keeps long replica names on one line and exposes them via title", () => {

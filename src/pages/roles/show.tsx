@@ -49,7 +49,7 @@ export const RolesShow = () => {
           </span>
         }
       />
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-3">
         <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section
           title={t("common.fields.permissions")}

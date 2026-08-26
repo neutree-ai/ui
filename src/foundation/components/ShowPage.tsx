@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,39 +62,47 @@ const Section = ({
   framed?: boolean;
 }> &
   // `title` is a ReactNode here, not the DOM string attribute
-  Omit<HTMLAttributes<HTMLDivElement>, "title">) => (
-  <div
-    {...props}
-    className={cn(
-      framed ? "rounded-lg border bg-card shadow-sm" : "bg-transparent",
-      className,
-    )}
-  >
-    {(title || description || actions) && (
-      <div
-        className={cn(
-          "flex flex-wrap items-start justify-between gap-4",
-          framed ? "px-5 pt-4" : "pb-3",
-        )}
-      >
-        <div className="min-w-0">
-          {title && (
-            <h2 className="text-base font-semibold leading-6 text-foreground">
-              {title}
-            </h2>
+  Omit<HTMLAttributes<HTMLDivElement>, "title">) => {
+  // A framed section *is* a card, so it renders the Card primitive instead of
+  // restating that surface. Spelling out radius/border/shadow here is exactly
+  // what let sections drift 4px away from every Card sitting beside them.
+  const Frame = framed ? Card : "div";
+
+  return (
+    <Frame
+      {...props}
+      className={cn(framed ? undefined : "bg-transparent", className)}
+    >
+      {(title || description || actions) && (
+        <div
+          className={cn(
+            "flex flex-wrap items-start justify-between gap-4",
+            framed ? "px-5 pt-4" : "pb-3",
           )}
-          {description && (
-            <p className="mt-1 text-sm leading-5 text-muted-foreground">
-              {description}
-            </p>
+        >
+          <div className="min-w-0">
+            {title && (
+              <h2 className="text-base font-semibold leading-6 text-foreground">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                {description}
+              </p>
+            )}
+          </div>
+          {actions && (
+            <div className="flex shrink-0 items-center">{actions}</div>
           )}
         </div>
-        {actions && <div className="flex shrink-0 items-center">{actions}</div>}
+      )}
+      <div className={cn(framed ? "p-5" : "", contentClassName)}>
+        {children}
       </div>
-    )}
-    <div className={cn(framed ? "p-5" : "", contentClassName)}>{children}</div>
-  </div>
-);
+    </Frame>
+  );
+};
 
 const SummaryItem = ({
   label,

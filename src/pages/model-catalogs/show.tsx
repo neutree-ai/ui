@@ -140,7 +140,7 @@ export const ModelCatalogsShow = () => {
           </span>
         }
       />
-      <div className="mt-4 space-y-4 overflow-auto">
+      <div className="mt-4 space-y-3 overflow-auto">
         <MetadataDisclosure metadata={record.metadata} />
         {verifiedHardware.length > 0 && (
           <ShowPage.Section

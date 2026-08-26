@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -25,12 +24,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import {
+  MetricBar,
+  type MetricBarSeries,
+} from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   buildGpuDeviceResourceRows,
   filterGpuDeviceResourceRows,
+  GPU_CELL_CLASS,
+  GPU_CELL_INERT_CLASS,
   GPU_DEVICE_FILTER_ALL,
+  GPU_USAGE_TEXT_CLASS,
   type GpuDeviceResourceRow,
+  getGpuCellGridStyle,
   getGpuDeviceResourceFilterOptions,
 } from "@/foundation/lib/gpu-device-resources";
 import { formatToDecimal } from "@/foundation/lib/unit";
@@ -79,13 +86,14 @@ type GpuDeviceResourcesViewProps = {
   labels: GpuDeviceResourcesViewLabels;
   selectedAccelerator?: SelectedAccelerator | null;
   className?: string;
-  variant?: "table" | "cards";
+  variant?: "table" | "cards" | "grid";
   showHeader?: boolean;
   showFilters?: boolean;
   showSummary?: boolean;
   showResourceControls?: boolean;
   resourceControlsTestId?: string;
   showNodeColumn?: boolean;
+  gridColumns?: number;
   request?: GpuDeviceRequestFitContext;
 };
 
@@ -187,6 +195,7 @@ const ResourceUsageCell = ({
   unit,
   valueScale,
   precision,
+  series,
 }: {
   label: string;
   remainingLabel: string;
@@ -194,13 +203,14 @@ const ResourceUsageCell = ({
   unit?: string;
   valueScale?: number;
   precision?: number;
+  series: MetricBarSeries;
 }) => (
   <div className="min-w-[150px] space-y-1">
     <div className="flex items-center justify-between gap-3 text-xs">
       <span className="text-muted-foreground">{label}</span>
       <span className="tabular-nums">{pool.percent}%</span>
     </div>
-    <Progress value={pool.percent} className="h-2" />
+    <MetricBar value={pool.percent} series={series} />
     <div className="text-xs tabular-nums text-muted-foreground">
       {formatUsage(pool, unit, valueScale, precision)}
     </div>
@@ -220,6 +230,7 @@ const ResourceUsageCard = ({
   unit,
   valueScale,
   precision,
+  series,
 }: {
   label: string;
   remainingLabel: string;
@@ -227,13 +238,14 @@ const ResourceUsageCard = ({
   unit?: string;
   valueScale?: number;
   precision?: number;
+  series: MetricBarSeries;
 }) => (
   <div className="space-y-1 rounded-md bg-muted/30 px-2 py-1.5">
     <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
       <span>{label}</span>
       <span className="tabular-nums">{pool.percent}%</span>
     </div>
-    <Progress value={pool.percent} className="h-1.5" />
+    <MetricBar value={pool.percent} size="sm" series={series} />
     <div className="flex items-center justify-between gap-2 text-xs">
       <span className="text-muted-foreground">{remainingLabel}</span>
       <span className="tabular-nums">
@@ -243,6 +255,47 @@ const ResourceUsageCard = ({
     <div className="text-xs tabular-nums text-muted-foreground">
       {formatUsage(pool, unit, valueScale, precision)}
     </div>
+  </div>
+);
+
+const GridResourceUsage = ({
+  label,
+  pool,
+  unit,
+  valueScale,
+  precision,
+  series = "blue",
+  unavailable = false,
+}: {
+  label: string;
+  pool: GpuDeviceResourceRow["memory"];
+  unit?: string;
+  valueScale?: number;
+  precision?: number;
+  series?: MetricBarSeries;
+  /** The device is out of service, so its pools carry no measurement. */
+  unavailable?: boolean;
+}) => (
+  <div
+    className={cn(
+      "mt-2 grid min-w-0 gap-1",
+      GPU_USAGE_TEXT_CLASS,
+      unavailable ? undefined : "text-muted-foreground",
+    )}
+  >
+    <div className="flex items-center justify-between gap-3">
+      <span>{label}</span>
+      <span className="min-w-0 truncate font-medium tabular-nums">
+        {/* An unhealthy card reports zeroed pools. Printing "0 / 0" says the
+            card is idle and available; the reading simply does not exist. */}
+        {unavailable ? "—" : formatUsage(pool, unit, valueScale, precision)}
+      </span>
+    </div>
+    <MetricBar
+      value={unavailable ? 0 : pool.percent}
+      series={series}
+      track={unavailable ? "unavailable" : "outlined"}
+    />
   </div>
 );
 
@@ -347,6 +400,7 @@ export function GpuDeviceResourcesView({
   showResourceControls = false,
   resourceControlsTestId = "gpu-device-resource-toolbar",
   showNodeColumn = true,
+  gridColumns,
   request,
 }: GpuDeviceResourcesViewProps) {
   const [productFilter, setProductFilter] = useState(GPU_DEVICE_FILTER_ALL);
@@ -391,6 +445,13 @@ export function GpuDeviceResourcesView({
     [visibleRows],
   );
   const healthyCount = visibleRows.filter((row) => row.healthy).length;
+  const effectiveGridColumns = Math.max(
+    1,
+    Math.round(gridColumns ?? visibleRows.length),
+  );
+  const emptyGridCellCount =
+    (effectiveGridColumns - (visibleRows.length % effectiveGridColumns)) %
+    effectiveGridColumns;
   const hasSelectedAccelerator = Boolean(
     selectedAccelerator?.type || selectedAccelerator?.product,
   );
@@ -407,7 +468,13 @@ export function GpuDeviceResourcesView({
   }
 
   return (
-    <div className={cn("space-y-3 rounded-md border p-3", className)}>
+    <div
+      className={cn(
+        "space-y-3",
+        variant !== "grid" && "rounded-md border p-3",
+        className,
+      )}
+    >
       {showHeader && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -445,7 +512,11 @@ export function GpuDeviceResourcesView({
               <span>{labels.memoryUsage}</span>
               <span className="tabular-nums">{memorySummary.percent}%</span>
             </div>
-            <Progress value={memorySummary.percent} className="mt-2 h-2" />
+            <MetricBar
+              value={memorySummary.percent}
+              series="blue"
+              className="mt-2"
+            />
             <div className="mt-1 flex items-center justify-between gap-2 text-xs">
               <span className="text-muted-foreground">{labels.remaining}</span>
               <span className="tabular-nums">
@@ -463,7 +534,11 @@ export function GpuDeviceResourcesView({
               <span>{labels.coreUsage}</span>
               <span className="tabular-nums">{coreSummary.percent}%</span>
             </div>
-            <Progress value={coreSummary.percent} className="mt-2 h-2" />
+            <MetricBar
+              value={coreSummary.percent}
+              series="cyan"
+              className="mt-2"
+            />
             <div className="mt-1 flex items-center justify-between gap-2 text-xs">
               <span className="text-muted-foreground">{labels.remaining}</span>
               <span className="tabular-nums">
@@ -536,7 +611,92 @@ export function GpuDeviceResourcesView({
         </div>
       )}
 
-      {variant === "cards" ? (
+      {variant === "grid" ? (
+        <div className="overflow-x-auto">
+          <div
+            data-testid="gpu-device-grid"
+            className="grid divide-x divide-[var(--nt-stroke-neutral-trans-2)] overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
+            style={getGpuCellGridStyle(effectiveGridColumns)}
+          >
+            {visibleRows.map((row) => (
+              <div
+                key={`${row.nodeName}:${row.uuid}`}
+                // An out-of-service card is dimmed by surface and text tokens
+                // rather than a blanket opacity, so the Unhealthy badge below
+                // keeps its full contrast.
+                className={cn(
+                  "relative",
+                  GPU_CELL_CLASS,
+                  !row.healthy && GPU_CELL_INERT_CLASS,
+                )}
+                title={row.product || undefined}
+              >
+                <span
+                  className={cn(
+                    "absolute right-2.5 top-2.5 flex items-center gap-1 text-xs font-medium",
+                    row.healthy ? "text-emerald-600" : "text-destructive",
+                  )}
+                >
+                  {row.healthy ? (
+                    <CircleCheck className="h-3.5 w-3.5" />
+                  ) : (
+                    <CircleAlert className="h-3.5 w-3.5" />
+                  )}
+                  {row.healthy ? labels.healthy : labels.unhealthy}
+                </span>
+                <div className="flex min-w-0 items-center gap-1">
+                  <span className="whitespace-nowrap text-sm font-semibold leading-5">
+                    {labels.gpuNumber} {row.gpuNumber}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    title={labels.copyUuid}
+                    aria-label={`${labels.gpuNumber} ${row.gpuNumber} ${labels.copyUuid}`}
+                    className="h-6 w-6 shrink-0 text-muted-foreground"
+                    onClick={() =>
+                      copy(row.uuid, {
+                        successMessage: labels.copyUuidSuccess,
+                        errorMessage: labels.copyUuidFailed,
+                      })
+                    }
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    <span className="sr-only">{labels.copyUuid}</span>
+                  </Button>
+                </div>
+                <GridResourceUsage
+                  label={labels.memoryUsage}
+                  pool={row.memory}
+                  unit="GiB"
+                  valueScale={VRAM_VALUE_SCALE}
+                  precision={VRAM_VALUE_PRECISION}
+                  unavailable={!row.healthy}
+                  series="blue"
+                />
+                <GridResourceUsage
+                  label={labels.coreUsage}
+                  pool={row.core}
+                  // Core keeps its own fill: this cell carries two bars, and the
+                  // Nodes legend colour-codes which is which. The endpoint cell
+                  // has one bar and needs no such pairing.
+                  series="cyan"
+                  unavailable={!row.healthy}
+                />
+              </div>
+            ))}
+            {Array.from({ length: emptyGridCellCount }, (_, emptyIndex) => (
+              <div
+                aria-hidden="true"
+                className="min-h-[116px]"
+                data-testid="gpu-device-grid-empty-cell"
+                key={`empty-${emptyIndex}`}
+              />
+            ))}
+          </div>
+        </div>
+      ) : variant === "cards" ? (
         <div className="grid gap-2">
           {visibleRows.map((row) => (
             <div
@@ -613,11 +773,13 @@ export function GpuDeviceResourcesView({
                   unit="GiB"
                   valueScale={VRAM_VALUE_SCALE}
                   precision={VRAM_VALUE_PRECISION}
+                  series="blue"
                 />
                 <ResourceUsageCard
                   label={labels.coreUsage}
                   remainingLabel={labels.remaining}
                   pool={row.core}
+                  series="cyan"
                 />
               </div>
             </div>
@@ -712,6 +874,7 @@ export function GpuDeviceResourcesView({
                       unit="GiB"
                       valueScale={VRAM_VALUE_SCALE}
                       precision={VRAM_VALUE_PRECISION}
+                      series="blue"
                     />
                   </TableCell>
                   <TableCell>
@@ -719,6 +882,7 @@ export function GpuDeviceResourcesView({
                       label={labels.usedSlashTotal}
                       remainingLabel={labels.remaining}
                       pool={row.core}
+                      series="cyan"
                     />
                   </TableCell>
                 </TableRow>

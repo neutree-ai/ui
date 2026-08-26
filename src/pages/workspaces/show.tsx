@@ -38,7 +38,7 @@ export const WorkspacesShow = () => {
           </span>
         }
       />
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-3">
         <MetadataDisclosure metadata={metadata} />
         <ShowPage.Section title={t("role_assignments.title")}>
           <Table

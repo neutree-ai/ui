@@ -11,6 +11,7 @@ import {
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
   filterGpuDeviceResourceRows,
+  getGpuCellGridStyle,
   sumMatchingDeviceAvailableResources,
 } from "./gpu-device-resources";
 
@@ -2394,6 +2395,27 @@ describe("gpu device resource helpers", () => {
     ).toEqual({
       matchingDeviceCount: 2,
       totalCards: 1,
+    });
+  });
+});
+
+describe("getGpuCellGridStyle", () => {
+  it("grows the grid box with its tracks so a narrow container scrolls", () => {
+    // The min width has to match what the track floor actually demands.
+    // Anything smaller lets the rounded frame clip cards off the right edge
+    // instead of handing the overflow to the scroll container around it.
+    expect(getGpuCellGridStyle(4)).toEqual({
+      gridTemplateColumns: "repeat(4, minmax(172px, 1fr))",
+      minWidth: "688px",
+      boxSizing: "content-box",
+    });
+  });
+
+  it("asks for no width when a node reports no devices", () => {
+    expect(getGpuCellGridStyle(0)).toEqual({
+      gridTemplateColumns: "repeat(0, minmax(172px, 1fr))",
+      minWidth: "0px",
+      boxSizing: "content-box",
     });
   });
 });

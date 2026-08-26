@@ -36,7 +36,7 @@ export const ImageRegistriesShow = () => {
           </span>
         }
       />
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-3">
         <MetadataDisclosure metadata={record.metadata} />
         <ShowPage.Section title={t("common.sections.configuration")}>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">

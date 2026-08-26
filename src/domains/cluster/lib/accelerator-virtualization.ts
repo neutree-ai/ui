@@ -9,7 +9,7 @@ import type {
 
 const MAX_UNSUPPORTED_ACCELERATOR_VIRTUALIZATION_CLUSTER_VERSION = "v1.0.1";
 
-type AcceleratorProductResourceRow = {
+export type AcceleratorProductResourceRow = {
   acceleratorType: string;
   product: string;
   quantity: number;

@@ -67,7 +67,7 @@ export const ApiKeysShow = () => {
           }
         />
         {record.id && (
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-3">
             <MetadataDisclosure metadata={record.metadata} />
             <ApiKeyPerformanceCard
               apiKeyId={String(record.id)}

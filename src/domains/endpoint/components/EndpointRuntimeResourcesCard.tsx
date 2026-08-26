@@ -1,4 +1,4 @@
-import { CircleAlert, Copy, Layers, Server } from "lucide-react";
+import { Copy, Layers, Server } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,14 @@ import {
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
+import { MetricBar } from "@/foundation/components/MetricBar";
+import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import {
+  GPU_CELL_CLASS,
+  GPU_USAGE_TEXT_CLASS,
+  getGpuCellGridStyle,
+} from "@/foundation/lib/gpu-device-resources";
 import {
   formatMiBAsGiB,
   formatMiBAsGiBValue,
@@ -64,77 +71,36 @@ const VRAM_BAR_PERCENT_MAX = 100;
 
 const VramBar = ({
   requestedMiB,
-  actualMiB,
   physicalMiB,
-  t,
 }: {
   requestedMiB: number;
-  actualMiB: number | null;
   physicalMiB: number | null;
-  t: (key: string, options?: Record<string, unknown>) => string;
 }) => {
   const hasScale = physicalMiB != null && physicalMiB > 0;
-  const actualPercent =
-    hasScale && actualMiB != null
-      ? Math.min(
-          VRAM_BAR_PERCENT_MAX,
-          Math.max(0, (actualMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
-        )
-      : 0;
   const requestedPercent = hasScale
     ? Math.min(
         VRAM_BAR_PERCENT_MAX,
         Math.max(0, (requestedMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
       )
     : 0;
-  const overRequested = actualMiB != null && actualMiB > requestedMiB;
 
   return (
     <div className="min-w-0">
-      <div
+      <MetricBar
         data-testid="runtime-vram-bar"
-        className={cn(
-          "relative h-2 overflow-visible rounded-full border",
-          hasScale
-            ? overRequested
-              ? "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)]"
-              : "border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]"
-            : "border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent",
-        )}
-      >
-        {hasScale && actualMiB != null ? (
-          <div
-            className={cn(
-              "absolute inset-y-0 left-0 rounded-full",
-              overRequested
-                ? "bg-[var(--nt-fill-serious-base)]"
-                : "bg-[var(--nt-fill-outstanding-base)]",
-            )}
-            style={{ width: `${actualPercent}%` }}
-          />
-        ) : null}
-        {hasScale ? (
-          <div
-            className="absolute -bottom-0.5 -top-0.5 w-0.5 bg-[var(--nt-text-neutral-super)]"
-            style={{ left: `calc(${requestedPercent}% - 1px)` }}
-          />
-        ) : null}
-      </div>
+        value={requestedPercent}
+        series="neutral"
+        track={hasScale ? "outlined" : "unavailable"}
+      />
+      {/* Restore a requested-VRAM boundary marker here when the bar once again
+          includes a separate real-time actual-usage fill. */}
       <div
         data-testid="runtime-vram-values"
-        className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] leading-4 tabular-nums text-muted-foreground"
+        className={cn(
+          "mt-1 flex items-center gap-1 whitespace-nowrap tabular-nums text-muted-foreground",
+          GPU_USAGE_TEXT_CLASS,
+        )}
       >
-        <span
-          className={cn(
-            "font-semibold",
-            overRequested
-              ? "text-[var(--nt-text-colorful-serious)]"
-              : "text-[var(--nt-text-colorful-outstanding)]",
-          )}
-        >
-          {formatVramValue(actualMiB)}
-        </span>
-        <span>/</span>
         <span className="font-semibold text-[var(--nt-text-neutral-super)]">
           {formatVramValue(requestedMiB)}
         </span>
@@ -142,15 +108,6 @@ const VramBar = ({
         <span>{formatVramValue(physicalMiB)}</span>
         <span>GiB</span>
       </div>
-      {overRequested && (
-        <div
-          data-testid="runtime-vram-over-requested"
-          className="mt-1 flex items-center gap-1 text-[11px] leading-4 text-[var(--nt-text-colorful-serious)]"
-        >
-          <CircleAlert className="h-3 w-3 shrink-0" />
-          <span>{t("endpoints.fields.vramExceedsRequested")}</span>
-        </div>
-      )}
     </div>
   );
 };
@@ -160,20 +117,21 @@ const Legend = ({
 }: {
   t: (key: string, options?: Record<string, unknown>) => string;
 }) => (
-  <div className="flex items-center gap-3 text-[11px] leading-4 text-muted-foreground">
-    <span className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-sm bg-[var(--nt-fill-outstanding-base)]" />
-      {t("endpoints.fields.actualMemory")}
-    </span>
-    <span className="flex items-center gap-1.5">
-      <span className="h-2.5 w-0.5 rounded-full bg-[var(--nt-text-neutral-super)]" />
-      {t("endpoints.fields.requestedMemory")}
-    </span>
-    <span className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]" />
-      {t("endpoints.fields.physicalMemory")}
-    </span>
-  </div>
+  <ResourceUsageLegend
+    className="ml-0 text-[11px] leading-4"
+    items={[
+      {
+        label: t("endpoints.fields.requestedMemory"),
+        markerClassName:
+          "h-2 w-2 rounded-sm bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
+      },
+      {
+        label: t("endpoints.fields.physicalMemory"),
+        markerClassName:
+          "h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]",
+      },
+    ]}
+  />
 );
 
 export function EndpointRuntimeResourcesSummary({
@@ -448,9 +406,7 @@ function Host({
         <div className="mt-3 overflow-x-auto pb-1">
           <div
             className="grid divide-x divide-[var(--nt-stroke-neutral-trans-2)] overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
-            style={{
-              gridTemplateColumns: `repeat(${maxCols}, minmax(172px, 1fr))`,
-            }}
+            style={getGpuCellGridStyle(maxCols)}
           >
             {node.devices.map((device, deviceIndex) => (
               <GpuCell
@@ -490,11 +446,8 @@ function GpuCell({
   const gpuNumber = device.order ?? deviceIndex + 1;
 
   return (
-    <div
-      data-testid="runtime-gpu-cell"
-      className="min-w-0 bg-[var(--nt-fill-neutral-opaque-1)] p-2.5"
-    >
-      <div className="flex min-w-0 items-center justify-between gap-2">
+    <div data-testid="runtime-gpu-cell" className={GPU_CELL_CLASS}>
+      <div className="flex min-w-0 items-center gap-1">
         <span className="whitespace-nowrap text-sm font-semibold leading-5">
           {t("clusters.fields.gpuNumber")} {gpuNumber}
         </span>
@@ -535,13 +488,11 @@ function GpuCell({
       <div className="mt-2">
         <VramBar
           requestedMiB={device.memoryMiB}
-          actualMiB={device.actualMemoryMiB}
           physicalMiB={device.physicalMemoryMiB}
-          t={t}
         />
       </div>
 
-      <div className="mt-1 text-[11px] leading-4 text-muted-foreground">
+      <div className={cn("mt-1 text-muted-foreground", GPU_USAGE_TEXT_CLASS)}>
         {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
       </div>
     </div>
