@@ -1,25 +1,50 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/foundation/lib/i18n", async () => {
+  const en = (await import("@/locales/en-US.json")).default as Record<
+    string,
+    unknown
+  >;
+
+  const lookup = (key: string): string | undefined => {
+    const found = key
+      .split(".")
+      .reduce<unknown>(
+        (node, part) => (node as Record<string, unknown> | undefined)?.[part],
+        en,
+      );
+
+    return typeof found === "string" ? found : undefined;
+  };
+
+  return {
+    useTranslation: () => ({ t: (key: string) => lookup(key) ?? key }),
+  };
+});
+
+// The explorer has its own file and its own tests. Here it only has to stay
+// shut until it is asked for, and to hand its answer back.
+vi.mock("./ImageRegistryExplorerDialog", () => ({
+  ImageRegistryExplorerDialog: ({
+    open,
+    clusterRegistry,
+    onApply,
+  }: {
+    open: boolean;
+    clusterRegistry?: string | null;
+    onApply: (value: string) => void;
+  }) =>
+    open ? (
+      <div data-testid="image-explorer" data-cluster-registry={clusterRegistry}>
+        <button type="button" onClick={() => onApply("registry.io/team/x:v1")}>
+          apply
+        </button>
+      </div>
+    ) : null,
+}));
+
 import { WorkloadImageInput } from "./WorkloadImageInput";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string) => fallback ?? key,
-  }),
-}));
-
-const useCustom = vi.fn();
-
-vi.mock("@refinedev/core", () => ({
-  useCustom: (args: unknown) => useCustom(args),
-}));
-
-function answer(tags?: string[], isFetching = false) {
-  useCustom.mockReturnValue({
-    data: tags ? { data: { tags } } : undefined,
-    isFetching,
-  });
-}
 
 function renderInput(
   props: Partial<Parameters<typeof WorkloadImageInput>[0]> = {},
@@ -39,9 +64,11 @@ function renderInput(
   return { onChange };
 }
 
+const openButton = () =>
+  screen.getByRole("button", { name: /Explore image registry/ });
+
 describe("WorkloadImageInput", () => {
-  it("stays typeable and reports what was typed", () => {
-    answer([]);
+  it("stays a plain text box and reports what was typed", () => {
     const { onChange } = renderInput();
 
     fireEvent.change(screen.getByDisplayValue("my-workload:v1"), {
@@ -51,48 +78,49 @@ describe("WorkloadImageInput", () => {
     expect(onChange).toHaveBeenCalledWith("other/image:v9");
   });
 
-  it("offers the registry's other tags and applies one to the repository", () => {
-    answer(["v1", "v2"]);
+  it("asks for nothing on its own", () => {
+    // Nothing is inferred from a half-typed value and nothing is fetched per
+    // keystroke: the box is a box, and looking things up happens in the
+    // explorer.
+    renderInput({ value: "team/inner" });
+
+    expect(screen.queryByTestId("image-explorer")).toBeNull();
+  });
+
+  it("opens the explorer and writes back what it returns", () => {
     const { onChange } = renderInput();
 
-    // The tag already in the value is not offered back.
-    expect(screen.queryByText("v1")).toBeNull();
+    fireEvent.click(openButton());
+    fireEvent.click(screen.getByText("apply"));
 
-    fireEvent.click(screen.getByText("v2"));
-
-    expect(onChange).toHaveBeenCalledWith("my-workload:v2");
+    expect(onChange).toHaveBeenCalledWith("registry.io/team/x:v1");
   });
 
-  it("shows nothing extra when the registry cannot answer", () => {
-    // A refusing registry means no suggestions, not an error: the field is the
-    // user's to fill in either way.
-    answer(undefined);
-    renderInput();
+  it("offers the explorer with no cluster picked", () => {
+    // The registry is chosen inside the explorer, so this field does not need
+    // one to be useful. It used to be dead without a cluster.
+    renderInput({ registry: null });
 
-    expect(screen.queryByTestId("workload-image-tag-suggestions")).toBeNull();
-    expect(screen.getByDisplayValue("my-workload:v1")).toBeTruthy();
+    expect((openButton() as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(openButton());
+
+    expect(
+      screen
+        .getByTestId("image-explorer")
+        .getAttribute("data-cluster-registry"),
+    ).toBeNull();
   });
 
-  it("asks for nothing until there is a repository and a registry to ask", () => {
-    answer(undefined);
-    renderInput({ value: "", registry: null });
+  it("tells the explorer which registry the cluster uses", () => {
+    renderInput({ registry: "cluster-hub" });
 
-    expect(useCustom).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: "",
-        queryOptions: expect.objectContaining({ enabled: false }),
-      }),
-    );
-  });
+    fireEvent.click(openButton());
 
-  it("encodes a repository that contains slashes into one path segment", () => {
-    answer([]);
-    renderInput({ value: "team/inner:v1" });
-
-    expect(useCustom).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: "/workspaces/default/image_registries/hub/repositories/team%2Finner/tags",
-      }),
-    );
+    expect(
+      screen
+        .getByTestId("image-explorer")
+        .getAttribute("data-cluster-registry"),
+    ).toBe("cluster-hub");
   });
 });

@@ -4,6 +4,7 @@ import {
   type ComponentPropsWithoutRef,
   type ElementRef,
   forwardRef,
+  type ReactNode,
   useState,
 } from "react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> & {
   // verbatim and the API returns explicit nulls for empty composite fields.
   value?: string | number | BaseRecord | null;
   disabled?: boolean;
+  renderOption?: (option: FormComboboxOption) => ReactNode;
 };
 
 export const FormCombobox = forwardRef<
@@ -108,35 +110,60 @@ export const FormCombobox = forwardRef<
               heading={t("components.ui.combobox.headings.suggestions")}
             >
               <ScrollArea className="max-h-52 overflow-y-auto">
-                {props.options?.map((option) => (
-                  <CommandItem
-                    value={option.label}
-                    key={option.value}
-                    disabled={option.disabled}
-                    onSelect={() => {
-                      if (option.disabled) {
-                        return;
-                      }
-                      props.onChange?.(option.value);
-                      setOpen(false);
-                    }}
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{option.label}</span>
-                      {option.description && (
-                        <span className="block truncate text-xs text-[var(--nt-text-neutral-tertiary)]">
-                          {option.description}
+                {props.options?.map((option) => {
+                  // One condition drives both halves. Deriving the check icon
+                  // from `renderOption` while the content used `?? ` meant a
+                  // renderer returning null fell back to the default row but
+                  // still lost its check.
+                  const hasCustomOption = Boolean(props.renderOption);
+                  const isSelected = option.value === value();
+
+                  return (
+                    <CommandItem
+                      value={option.label}
+                      key={option.value}
+                      disabled={option.disabled}
+                      // cmdk's `data-selected` is the keyboard cursor, not the
+                      // stored value — on open it lands on the first row. A
+                      // custom row drops the check icon, so without this the
+                      // list shows nothing at all for the current value.
+                      className={cn(
+                        hasCustomOption &&
+                          isSelected &&
+                          "bg-[var(--nt-fill-outstanding-light)] text-[var(--nt-text-colorful-outstanding)] data-[selected=true]:bg-[var(--nt-fill-outstanding-lighthover)] data-[selected=true]:text-[var(--nt-text-colorful-outstanding)]",
+                      )}
+                      onSelect={() => {
+                        if (option.disabled) {
+                          return;
+                        }
+                        props.onChange?.(option.value);
+                        setOpen(false);
+                      }}
+                    >
+                      {hasCustomOption ? (
+                        props.renderOption?.(option)
+                      ) : (
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate">{option.label}</span>
+                          {option.description && (
+                            <span className="block truncate text-xs text-[var(--nt-text-neutral-tertiary)]">
+                              {option.description}
+                            </span>
+                          )}
                         </span>
                       )}
-                    </span>
-                    <CheckIcon
-                      className={cn(
-                        "ml-auto h-4 w-4",
-                        option.value === value() ? "opacity-100" : "opacity-0",
+                      {hasCustomOption ? null : (
+                        <CheckIcon
+                          data-testid="combobox-option-check"
+                          className={cn(
+                            "ml-auto h-4 w-4",
+                            isSelected ? "opacity-100" : "opacity-0",
+                          )}
+                        />
                       )}
-                    />
-                  </CommandItem>
-                ))}
+                    </CommandItem>
+                  );
+                })}
               </ScrollArea>
             </CommandGroup>
           </CommandList>

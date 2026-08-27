@@ -17,8 +17,8 @@ import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-pr
 import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
-import EndpointStatus from "@/domains/endpoint/components/EndpointStatus";
 import type { Endpoint } from "@/domains/endpoint/types";
+import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";

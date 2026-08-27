@@ -18,16 +18,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
+import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
+import { WorkloadImageFeatureAddon } from "@/domains/endpoint/components/WorkloadImageFeatureAddon";
 import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageInput";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
+import { buildCatalogOriginAnnotations } from "@/domains/endpoint/lib/catalog-origin";
 import {
   buildCatalogMergedSpec,
   defaultEndpointSpec,
@@ -81,10 +84,7 @@ import {
   sumMatchingDeviceAvailableResources,
 } from "@/foundation/lib/gpu-device-resources";
 import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";
-import {
-  registryIsDisabled,
-  registryIsUnreachable,
-} from "@/foundation/lib/model-registry-availability";
+import { registryUnavailability } from "@/foundation/lib/model-registry-availability";
 import {
   MODEL_REGISTRY_SELECT,
   registryModelDelivery,
@@ -102,6 +102,7 @@ import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
 import type {
   ComposedSpec,
   FeatureSelection,
+  RecipeFeature,
   RecipeInputSpec,
 } from "@/foundation/recipe/types";
 import { matchesAcceleratorName } from "@/foundation/recipe/vram";
@@ -375,17 +376,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const modelRegistryOptions = useMemo(
     () =>
       (modelRegistries.query.data?.data ?? []).map((registry) => {
-        const unavailable = registryIsDisabled(registry)
-          ? t("endpoints.messages.modelRegistryDeleted")
-          : registryIsUnreachable(registry)
-            ? t("endpoints.messages.modelRegistryUnreachable")
-            : undefined;
+        const unavailable = registryUnavailability(registry);
 
         return {
           label: registry.metadata.name,
           value: registry.metadata.name,
           disabled: Boolean(unavailable),
-          description: unavailable,
+          description: unavailable
+            ? t(`common.modelRegistry.${unavailable}`)
+            : undefined,
         };
       }),
     [modelRegistries.query.data, t],
@@ -1675,30 +1674,33 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         .filter(Boolean),
     );
   }, [selectedCatalog]);
-  // Simplified recipe deploy only offers GPU products that are both validated
-  // (verifiedProducts) and present in the selected cluster (acceleratorOptions);
-  // "Show all options" reveals every available product.
-  const restrictAcceleratorToVerified = !showFull && verifiedProducts.size > 0;
-  const verifiedAcceleratorOptions = restrictAcceleratorToVerified
-    ? acceleratorOptions.filter((opt) =>
-        matchesAcceleratorName(opt.product, verifiedProducts),
-      )
-    : acceleratorOptions;
-  // No validated GPU in this cluster → the picker must stay usable (NEU-590:
-  // selecting a card is a deploy essential, and the verified list is advice,
-  // not a gate), so fall back to every available accelerator and render an
-  // unvalidated-hardware notice next to the picker instead of hiding it.
-  // Requires the cluster to actually offer accelerators — a GPU-less cluster
-  // (or one whose resource info hasn't loaded yet) is not a "disjoint
-  // verified list" and must not claim to be showing alternatives.
+  // A recipe's validated list orders and labels the accelerators; it never
+  // removes any. NEU-590 already had to walk back hiding the picker, and
+  // filtering was the one place the simplified form took capability away
+  // rather than folding it — the two modes now offer the same set and differ
+  // only in emphasis. Sort is stable, so the cluster's own order survives
+  // within each group.
+  const displayedAcceleratorOptions = useMemo(() => {
+    const marked = acceleratorOptions.map((option) => ({
+      ...option,
+      verified:
+        verifiedProducts.size > 0 &&
+        matchesAcceleratorName(option.product, verifiedProducts),
+    }));
+
+    return marked.some((option) => option.verified)
+      ? [...marked].sort((a, b) => Number(b.verified) - Number(a.verified))
+      : marked;
+  }, [acceleratorOptions, verifiedProducts]);
+  // The recipe names validated GPUs and this cluster has none of them. Said
+  // out loud next to the picker, because every option below is then untested
+  // for this recipe. A GPU-less cluster (or one whose resource info has not
+  // loaded) is not that case and must not claim to be.
   const noVerifiedAcceleratorAvailable =
-    restrictAcceleratorToVerified &&
+    verifiedProducts.size > 0 &&
     Boolean(currentCluster) &&
     acceleratorOptions.length > 0 &&
-    verifiedAcceleratorOptions.length === 0;
-  const displayedAcceleratorOptions = noVerifiedAcceleratorAvailable
-    ? acceleratorOptions
-    : verifiedAcceleratorOptions;
+    !displayedAcceleratorOptions.some((option) => option.verified);
 
   const formWithTransformedOnFinish = {
     ...form,
@@ -1724,10 +1726,52 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             ? structuredClone(values)
             : JSON.parse(JSON.stringify(values));
         transformEndpointValues((transformedValues as Endpoint).spec);
+
+        // Record what this was deployed from, while the answer is still in
+        // hand: the spec about to be submitted is the composed result, and
+        // nothing in it says which catalog, variant or features produced it.
+        // Create only — an edit is not a new deployment, and rewriting the
+        // record would claim the endpoint came from wherever it happens to
+        // point today.
+        if (!isEdit && selectedCatalog) {
+          const endpoint = transformedValues as Endpoint;
+          endpoint.metadata = {
+            ...endpoint.metadata,
+            annotations: {
+              ...endpoint.metadata?.annotations,
+              ...buildCatalogOriginAnnotations({
+                catalog: selectedCatalog.metadata.name,
+                // Composition reads "" as the default profile, so the record
+                // names it rather than leaving the field empty.
+                variant: isRecipeCatalog
+                  ? selectedVariant || DEFAULT_VARIANT
+                  : undefined,
+                features: isRecipeCatalog ? featureSelections : undefined,
+              }),
+            },
+          };
+        }
+
         return form.refineCore.onFinish(transformedValues);
       },
     },
   };
+
+  // A catalog can expose the Flex workload image as a recipe feature, where the
+  // default is routinely a placeholder the user must replace. The addon decides
+  // for itself whether a given feature is that one.
+  const workloadImageAddon = (
+    feature: RecipeFeature,
+    { onChange }: { value: string; onChange: (value: string) => void },
+  ) => (
+    <WorkloadImageFeatureAddon
+      engine={engineSpec?.engine}
+      feature={feature}
+      workspace={workspace}
+      registry={selectedCluster?.spec?.image_registry}
+      onChange={onChange}
+    />
+  );
 
   return {
     form: formWithTransformedOnFinish,
@@ -1769,6 +1813,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           title={t("endpoints.sections.modelAndReplicas")}
           variant={sectionVariant}
         >
+          {/* Edit mode has no catalog picker — the deployment already happened
+          — but it renders what that deployment came from in the same place, so
+          the endpoint does not read as two different things depending on which
+          page you are on. */}
+          {isEdit && (
+            <div className="col-span-4">
+              <EndpointCatalogOrigin
+                annotations={queryEndpoint?.metadata?.annotations}
+              />
+            </div>
+          )}
           {!isEdit && (
             <div
               data-testid="model-catalog-row"
@@ -2097,6 +2152,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 onChange={handleFeaturesChange}
                 renderGroups={[coreFeatureGroup]}
                 layout="grid"
+                inputAddon={workloadImageAddon}
               />
             </div>
           )}
@@ -2222,6 +2278,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   value={featureSelections}
                   onChange={handleFeaturesChange}
                   renderGroups={bottomFeatureGroups}
+                  inputAddon={workloadImageAddon}
                 />
               </div>
             )}
@@ -2233,9 +2290,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               <ComposePreview composed={null} error={composeResult.error} />
             </div>
           )}
-          {showFull && composeResult?.ok && (
+          {/* Always rendered, folded to one line while the raw fields are.
+          The simplified form hides which engine and arguments the deploy will
+          use, and "what am I about to run" is a fact, not a decision — the
+          same reason the capacity warnings and compose errors already pierce
+          simplified mode. */}
+          {composeResult?.ok && (
             <div className="col-span-4">
-              <ComposePreview composed={composeResult.spec} error={null} />
+              <ComposePreview
+                composed={composeResult.spec}
+                error={null}
+                collapsible={!showFull}
+              />
             </div>
           )}
         </FormCardGrid>
@@ -2447,6 +2513,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           options={displayedAcceleratorOptions.map((opt) => ({
                             label: opt.label,
                             value: opt.value,
+                            description: opt.verified
+                              ? t("endpoints.recipe.verifiedAccelerator")
+                              : undefined,
                           }))}
                           value={
                             selectedAccelerator?.type &&
@@ -2499,10 +2568,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           data-testid="endpoint-accelerator-unverified-notice"
                           className="col-span-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground sm:col-span-2"
                         >
-                          {t(
-                            "endpoints.recipe.noVerifiedAccelerator",
-                            "This recipe has not been validated on the GPUs in this cluster — showing all available accelerators.",
-                          )}
+                          {t("endpoints.recipe.noVerifiedAccelerator")}
                           {activeVariantVram != null && (
                             <span className="ml-1">
                               {t(

@@ -22,7 +22,10 @@ import {
   runCatalogImport,
 } from "@/domains/model-catalog/lib/catalog-import";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import {
+  getErrorMessage,
+  isDuplicateNameError,
+} from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   isValidYamlResource,
@@ -32,22 +35,6 @@ import {
 import type { RecipeVariant } from "@/foundation/recipe/types";
 
 type Source = "yaml" | "url" | "file";
-
-// Each document is resolved against the store before writing, so a duplicate-name
-// collision means the catalog appeared between that read and the write. The unique
-// index catches it; this turns the raw constraint message into what happened.
-function isDuplicateNameError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const e = err as { statusCode?: number; code?: string; message?: string };
-  if (e.statusCode === 409 || e.code === "23505") return true;
-  const msg = (e.message ?? "").toLowerCase();
-  return (
-    msg.includes("duplicate key") ||
-    msg.includes("already exists") ||
-    msg.includes("23505") ||
-    msg.includes("unique constraint")
-  );
-}
 
 // Per-document result of a client-side import, shown in the results table.
 type ModelCatalogImportItem = {

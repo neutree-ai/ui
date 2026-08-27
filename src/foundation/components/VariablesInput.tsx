@@ -381,6 +381,32 @@ export const VariablesInput = React.forwardRef<
     if (row.key && schema[row.key]) {
       const { type } = schema[row.key];
 
+      // A row being drafted gets the same replacement input a saved one does.
+      // Without this the two halves of the table disagree: a key the caller has
+      // supplied an input for showed a plain text box until the row had been
+      // filled in and committed, so the input only appeared once it was no
+      // longer needed. Whoever added the key had to guess a value, blur, and
+      // come back.
+      //
+      // Committing on blur rather than on change is deliberate. These inputs
+      // hand back a whole value at once, but they are typeable too, and saving
+      // mid-word would move the row out of the drafting section and remount the
+      // input under the cursor. Blur is what every other draft input here does,
+      // and the form's before-submit hook saves anything still unblurred.
+      const override = valueInputs[row.key];
+
+      if (override) {
+        return (
+          // biome-ignore lint/a11y/noStaticElementInteractions: blur only, to commit the row
+          <div onBlur={() => saveEditingRowNow(row.id)}>
+            {override({
+              value: row.value,
+              onChange: (next) => handleEditingValueChange(row.id, next),
+            })}
+          </div>
+        );
+      }
+
       switch (type) {
         case "boolean":
           return (

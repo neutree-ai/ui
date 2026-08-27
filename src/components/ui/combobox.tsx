@@ -30,6 +30,19 @@ type ComboboxProps = {
   allowUnselect?: boolean;
   disabled?: boolean;
   asField?: boolean;
+  /**
+   * Make the popover modal. Needed inside a modal dialog, and only there.
+   *
+   * A dialog's overlay wraps the page in `react-remove-scroll`, which allows
+   * wheel and touch events only inside its own node and the dialog content it
+   * is handed as a shard. This popover's content is portalled to the body, so
+   * it is neither, and its list cannot be scrolled. A modal popover brings its
+   * own scroll lock, whose allowed node is the popover, so the list scrolls
+   * again. Portalling into the dialog instead would break positioning: the
+   * dialog content is transformed for centring, which makes it the containing
+   * block for the fixed-position popover.
+   */
+  modal?: boolean;
 };
 
 export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
@@ -47,6 +60,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
       popoverClassName,
       disabled,
       asField = true,
+      modal = false,
     }: ComboboxProps,
     ref,
   ) => {
@@ -80,6 +94,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
 
     return (
       <Popover
+        modal={modal}
         open={open}
         onOpenChange={(next) => {
           setOpen(next);

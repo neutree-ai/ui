@@ -600,7 +600,12 @@ export function Table<
           }
         />
         <div className="rounded-md border border-border">
-          <TableUi>
+          {/* The row-selection column is unshifted to the front, so `:first-child`
+              addresses it and nothing else. Matching on `:has([role=checkbox])`
+              alone would also clamp any future data column that happens to
+              render a checkbox. Column sizing is expressed here rather than
+              through TanStack's `size`, which this table never reads. */}
+          <TableUi className="[&_td:first-child:has([role=checkbox])]:w-12 [&_td:first-child:has([role=checkbox])]:min-w-12 [&_td:first-child:has([role=checkbox])]:max-w-12 [&_th:first-child:has([role=checkbox])]:w-12 [&_th:first-child:has([role=checkbox])]:min-w-12 [&_th:first-child:has([role=checkbox])]:max-w-12">
             {showHeader && (
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (

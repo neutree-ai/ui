@@ -92,15 +92,17 @@ export const ModelCatalogCard = ({ catalog, showWorkspace }: Props) => {
       className="flex flex-col h-full hover:border-primary/40 transition-colors"
     >
       <CardContent className="flex flex-col gap-3 flex-1 pt-5">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start justify-between gap-2">
           <button
             type="button"
             onClick={goShow}
-            className="text-left font-medium leading-tight hover:text-primary hover:underline break-all"
+            className="min-w-0 flex-1 break-all text-left font-medium leading-tight hover:text-primary hover:underline"
           >
             {name}
           </button>
-          <ModelCatalogStatus {...catalog.status} />
+          <div className="shrink-0 whitespace-nowrap">
+            <ModelCatalogStatus {...catalog.status} />
+          </div>
         </div>
 
         {model ? (

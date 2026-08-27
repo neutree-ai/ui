@@ -25,7 +25,7 @@ const TimeoutInput = forwardRef<HTMLInputElement, TimeoutInputProps>(
     const [unit, setUnit] = useState<TimeoutUnit>("s");
 
     return (
-      <div className="flex gap-2">
+      <div className="flex min-w-[248px] w-full">
         <NumberInput
           ref={ref}
           min={0}
@@ -34,10 +34,10 @@ const TimeoutInput = forwardRef<HTMLInputElement, TimeoutInputProps>(
             if (num >= 0) onChange?.(displayValueToMs(num, unit));
           }}
           placeholder={t("external_endpoints.placeholders.timeout")}
-          className="flex-1"
+          className="min-w-[120px] flex-1 rounded-r-none"
         />
         <Select value={unit} onValueChange={(v) => setUnit(v as TimeoutUnit)}>
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-[120px] rounded-l-none border-l-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
