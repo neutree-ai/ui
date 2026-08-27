@@ -30,8 +30,8 @@
   "src/pages/image-registries/show.tsx": "0fa61c23dabd1178b797359c3553bae4",
   "src/pages/engines/list.tsx": "a6ef20e4d638ba9a49929f1ff26d79b0",
   "src/pages/engines/show.tsx": "9ec6e84fabbbbf770f0c75aa6f6a1bf2",
-  "src/pages/endpoints/create.tsx": "80007cdbc2f2ecd902d6485b6774cf2b",
-  "src/pages/endpoints/edit.tsx": "f985a843fe494b31594f2291e8bcfee8",
+  "src/pages/endpoints/create.tsx": "cb35c8f7f98c0e100f1868c32490dadc",
+  "src/pages/endpoints/edit.tsx": "ef661bb90e2dfbc2be9ac65b92fbc3f1",
   "src/pages/endpoints/list.tsx": "1433e09de8bd43a223233018926e7dd8",
   "src/pages/endpoints/show.tsx": "e7b1e4e660eac15cab2dfd8ee6a97537",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
@@ -236,7 +236,7 @@
   "src/foundation/components/VariablesInput.tsx": "3b5e4cf926481133c4ee746787283e65",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "96dd43a88bc38afa4c23c811b457fcce",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "07ecfb6f9ac0825bb530f943a17d53f0",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "8d4568854be82f3447e6fd1425092582",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "1e1cfe7ad811875f9a8b101c39edb45b",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "7fc5186989f74eb21ecf621ac24e5ee4",
   "src/pages/external-endpoints/create.tsx": "b5439551b4bedc80ab76a86ddf68dc75",
@@ -408,5 +408,6 @@
   "src/foundation/lib/api/image-registry-content.ts": "b9c17d2f5495d6d793c16bf5093839f4",
   "src/foundation/lib/image-reference.ts": "8200f52a33e48a24b0d355fb856ff946",
   "src/foundation/components/BreakableReference.tsx": "fa3ac0ab1cbd99466faac427cf695346",
-  "src/domains/model-registry/components/ModelDetailDrawer.tsx": "378c22f5bcfe54e585d1f4bc6c8f837b"
+  "src/domains/model-registry/components/ModelDetailDrawer.tsx": "378c22f5bcfe54e585d1f4bc6c8f837b",
+  "src/domains/endpoint/components/EndpointWeightsEstimate.tsx": "0acccf15eabb4847ae6edada070d9bf9"
 }

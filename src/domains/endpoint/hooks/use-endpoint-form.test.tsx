@@ -1065,6 +1065,7 @@ function CreateForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.weightFields}
         {result.resourceFields}
         {result.customizeFields}
       </form>
@@ -1081,6 +1082,7 @@ function EditForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.weightFields}
         {result.resourceFields}
         {result.customizeFields}
       </form>
@@ -6393,6 +6395,7 @@ function RecipeCreateForm() {
         {result.advancedToggle}
         {result.templateFields}
         {result.recipeFields}
+        {result.weightFields}
         {result.resourceFields}
         {result.customizeFields}
       </form>
@@ -6516,5 +6519,91 @@ describe("validated accelerators are ranked, not filtered", () => {
 
     expect(marked("T4")).toBe(true);
     expect(marked("A100")).toBe(false);
+  });
+});
+
+// One section for what the deployment will weigh, reachable from both ways of
+// getting here: the recipe section only exists when a recipe catalog is
+// selected, and the model section is not rendered for an engine that needs no
+// model spec, so neither could host it.
+describe("the weights section is reachable from both modes", () => {
+  it("estimates the KV cache with no catalog in play", async () => {
+    setupMocks(
+      [catalogA],
+      [plainKubernetesCluster],
+      [{ metadata: { name: "hf" } }],
+    );
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.name", "org/model");
+      formInstance?.setValue("spec.model.info", { num_hidden_layers: 32 });
+    });
+
+    expect(screen.getByTestId("endpoint-weights-estimate")).toBeDefined();
+    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+    expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
+  });
+
+  it("puts what the catalog declares beside the estimate", async () => {
+    const withVram = {
+      ...recipeCatalog,
+      spec: {
+        ...recipeCatalog.spec,
+        variants: {
+          default: {
+            ...recipeCatalog.spec.variants.default,
+            vram_minimum_gb: 48,
+            model: {
+              ...recipeCatalog.spec.variants.default.model,
+              info: { parameter_count: "35B" },
+            },
+          },
+        },
+      },
+    };
+    setupMocks([catalogA, withVram], [plainKubernetesCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    const block = screen.getByTestId("endpoint-declared-weights");
+    expect(within(block).getByText("35B")).toBeDefined();
+    // One replica by default, so the total is the per-replica figure.
+    expect(within(block).getByText("≈ 48 GB")).toBeDefined();
+  });
+
+  // Flex serves a model baked into its own image; there is no checkpoint to
+  // compute a cache from. Checked with model info on the form, which an
+  // existing spec can carry — otherwise the panel is absent for want of a
+  // model rather than because the engine needs none.
+  it("drops the estimate for an engine that needs no model spec", async () => {
+    setupMocks(
+      [],
+      [],
+      [{ metadata: { name: "hf" } }],
+      [engineRef("flex"), engineRef("vllm")],
+    );
+    render(<CreateForm />);
+
+    const withModelInfo = async () => {
+      await act(async () => {
+        formInstance?.setValue("spec.model.registry", "hf");
+        formInstance?.setValue("spec.model.name", "org/model");
+        formInstance?.setValue("spec.model.info", { num_hidden_layers: 32 });
+      });
+    };
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "vllm", version: "v1" });
+    });
+    await withModelInfo();
+    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "flex", version: "v1" });
+    });
+    await withModelInfo();
+    expect(screen.queryByTestId("kv-cache-estimate")).toBeNull();
   });
 });

@@ -20,8 +20,8 @@ import {
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
+import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointWeightsEstimate";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
-import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
@@ -1625,8 +1625,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedCatalog?.spec.variants?.[selectedVariant] ??
     selectedCatalog?.spec.variants?.default;
   const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
-  const estimatedTotalVramGb =
-    activeVariantVram != null ? activeVariantVram * replicaCount : null;
   const activeModelInfo = activeVariant?.model?.info ?? null;
 
   // What the KV cache estimate is computed from. There is no second read for
@@ -1975,21 +1973,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </FormFieldGroup>
             </>
           )}
-          {!hidesModelFields && (
-            <div className="col-span-4">
-              {/* Remounted per model so the inputs re-derive their defaults from
-                  the checkpoint being estimated; carrying the previous model's
-                  context length into the next model's estimate would look like
-                  a value read from it. */}
-              <KVCacheEstimate
-                key={`${currentRegistry ?? ""}:${currentModelName ?? ""}:${
-                  form.watch("spec.model.version") ?? ""
-                }`}
-                read={modelInfoRead}
-                engineArgs={engineCacheArgs}
-              />
-            </div>
-          )}
           {showFull && !hidesModelFields && (
             <>
               <FormFieldGroup
@@ -2185,87 +2168,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </div>
             );
           })()}
-          {(estimatedTotalVramGb != null || activeModelInfo) && (
-            <div className="col-span-4 rounded-lg border bg-muted/20 p-3">
-              <div className="mb-2 text-sm font-medium">
-                {t("endpoints.recipe.resourceEstimate", "Resource estimate")}
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                {estimatedTotalVramGb != null && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t("endpoints.recipe.estimatedVram", "Estimated VRAM")}
-                    </div>
-                    <div className="mt-1 font-semibold tabular-nums">
-                      ≈ {estimatedTotalVramGb} GB
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {activeVariantVram} GB ×{" "}
-                      {t(
-                        "endpoints.recipe.replicasCount",
-                        "{{count}} replica",
-                        {
-                          count: replicaCount,
-                        },
-                      )}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.parameter_count && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.parameterCount",
-                        "Parameters",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.parameter_count}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.quantization && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.quantization",
-                        "Quantization",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.quantization}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.context_length && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.contextLength",
-                        "Context length",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.context_length}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.architecture && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.architecture",
-                        "Architecture",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.architecture}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
           {selectedCatalog.spec.features &&
             selectedCatalog.spec.features.length > 0 &&
             bottomFeatureGroups.length > 0 && (
@@ -2306,6 +2208,43 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           )}
         </FormCardGrid>
       ) : null,
+    // What the deployment is expected to weigh. Its own section so both ways
+    // of getting here can show it: the recipe section only exists when a recipe
+    // catalog is selected, and the model section is not rendered for an engine
+    // that needs no model spec — either would hide one of the two halves.
+    weightFields: (
+      <FormCardGrid
+        title={t("endpoints.sections.weights")}
+        variant={sectionVariant}
+      >
+        <div className="col-span-4">
+          <EndpointWeightsEstimate
+            declared={
+              selectedCatalog
+                ? {
+                    perReplicaGb: activeVariantVram,
+                    replicas: replicaCount,
+                    info: activeModelInfo,
+                  }
+                : null
+            }
+            // An engine serving a model baked into its own image has no
+            // checkpoint to estimate from.
+            kvCache={
+              hidesModelFields
+                ? null
+                : {
+                    read: modelInfoRead,
+                    engineArgs: engineCacheArgs,
+                    modelKey: `${currentRegistry ?? ""}:${
+                      currentModelName ?? ""
+                    }:${form.watch("spec.model.version") ?? ""}`,
+                  }
+            }
+          />
+        </div>
+      </FormCardGrid>
+    ),
     // Scheduling target and resource selection section - always visible.
     resourceFields: (
       <FormCardGrid
