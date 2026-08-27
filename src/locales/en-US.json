@@ -1138,7 +1138,8 @@
 			"includeDraftKvCache": "Include draft (MTP) KV",
 			"compressionRates": "Cannot estimate: this checkpoint compresses at a rate ({{rates}}) whose cache layout has not been established from any released checkpoint, so whether those layers carry an indexer is unknown.",
 			"showFormula": "Show the formula",
-			"hideFormula": "Hide the formula"
+			"hideFormula": "Hide the formula",
+			"ownedBy": "Set by “{{control}}” above"
 		},
 		"monitor": {
 			"overviewMetrics": "Overview",
@@ -1209,8 +1210,7 @@
 		},
 		"weights": {
 			"declared": "Declared by the catalog",
-			"perReplica": "{{gb}} GB × {{count}} replica",
-			"perReplica_other": "{{gb}} GB × {{count}} replicas"
+			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
 		}
 	},
 	"external_endpoints": {

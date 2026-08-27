@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
+  type EngineCacheArgControls,
   type EngineCacheArgs,
+  NO_ENGINE_CACHE_ARG_CONTROLS,
   NO_ENGINE_CACHE_ARGS,
 } from "@/domains/endpoint/lib/engine-cache-args";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -466,14 +468,88 @@ const Panel = ({ state, children }: { state: string; children: ReactNode }) => {
   );
 };
 
+/**
+ * One of the two counts, as a field to fill in or as the value a control
+ * elsewhere already holds.
+ *
+ * Read-only is not a lesser version: where the form has a control for this
+ * quantity, that control is what the deployment will use, and offering a second
+ * field beside it leaves a reader unable to tell which number applies. Naming
+ * the owner is what keeps the read-only value actionable.
+ */
+const CountField = ({
+  id,
+  label,
+  field,
+  value,
+  ownedBy,
+}: {
+  id: string;
+  label: string;
+  field: { source: KvCacheSource; onChange: (next: string) => void };
+  value: string;
+  ownedBy: string | null;
+}) => {
+  const { t } = useTranslation();
+
+  if (ownedBy) {
+    return (
+      <div>
+        <div className="text-xs text-muted-foreground">
+          {label}
+          <SourceTag source={field.source} />
+        </div>
+        <div
+          className="mt-1 flex h-9 items-center font-medium tabular-nums"
+          data-testid={id}
+          data-owned-by={ownedBy}
+        >
+          {value || "—"}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {t("endpoints.kvCache.ownedBy", { control: ownedBy })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground" htmlFor={id}>
+        {label}
+        <SourceTag source={field.source} />
+      </label>
+      <Input
+        id={id}
+        className="mt-1"
+        inputMode="numeric"
+        value={value}
+        onChange={(event) => field.onChange(event.target.value)}
+        data-testid={id}
+      />
+    </div>
+  );
+};
+
 export const KVCacheEstimate = ({
   read,
   engineArgs = NO_ENGINE_CACHE_ARGS,
+  controls = NO_ENGINE_CACHE_ARG_CONTROLS,
 }: {
   read: ModelInfoRead;
   /** What this deployment's engine args say about context and concurrency.
    * Absent on any path that has none, which falls back to the checkpoint. */
   engineArgs?: EngineCacheArgs;
+  /**
+   * Controls elsewhere on the form that own these quantities, by label.
+   *
+   * Where one exists the panel shows the value it holds instead of a field of
+   * its own: two inputs for one number is an ambiguity, and a reader has no way
+   * to tell which of them the deployment will use. Absent on a form that offers
+   * no such control, where the field is the only place to say it — and is a
+   * what-if the deployment does not follow.
+   */
+  controls?: EngineCacheArgControls;
 }) => {
   if (read.state === "none") {
     return null;
@@ -494,7 +570,9 @@ export const KVCacheEstimate = ({
     );
   }
 
-  return <Estimator info={read.info} engineArgs={engineArgs} />;
+  return (
+    <Estimator info={read.info} engineArgs={engineArgs} controls={controls} />
+  );
 };
 
 /**
@@ -560,9 +638,11 @@ function useDeploymentDefault(
 const Estimator = ({
   info,
   engineArgs,
+  controls,
 }: {
   info: ModelInfo;
   engineArgs: EngineCacheArgs;
+  controls: EngineCacheArgControls;
 }) => {
   const { t } = useTranslation();
 
@@ -639,40 +719,23 @@ const Estimator = ({
   return (
     <Panel state={result.ok ? result.family : result.reason}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div>
-          <label
-            className="text-xs text-muted-foreground"
-            htmlFor="kv-cache-tokens"
-          >
-            {t("endpoints.kvCache.tokensPerSequence", "Tokens per sequence")}
-            <SourceTag source={tokensField.source} />
-          </label>
-          <Input
-            id="kv-cache-tokens"
-            className="mt-1"
-            inputMode="numeric"
-            value={tokens}
-            onChange={(event) => tokensField.onChange(event.target.value)}
-            data-testid="kv-cache-tokens"
-          />
-        </div>
-        <div>
-          <label
-            className="text-xs text-muted-foreground"
-            htmlFor="kv-cache-sequences"
-          >
-            {t("endpoints.kvCache.sequences", "Concurrent sequences")}
-            <SourceTag source={sequencesField.source} />
-          </label>
-          <Input
-            id="kv-cache-sequences"
-            className="mt-1"
-            inputMode="numeric"
-            value={sequences}
-            onChange={(event) => sequencesField.onChange(event.target.value)}
-            data-testid="kv-cache-sequences"
-          />
-        </div>
+        <CountField
+          id="kv-cache-tokens"
+          label={t(
+            "endpoints.kvCache.tokensPerSequence",
+            "Tokens per sequence",
+          )}
+          field={tokensField}
+          value={tokens}
+          ownedBy={controls.context}
+        />
+        <CountField
+          id="kv-cache-sequences"
+          label={t("endpoints.kvCache.sequences", "Concurrent sequences")}
+          field={sequencesField}
+          value={sequences}
+          ownedBy={controls.concurrency}
+        />
         <div>
           <label
             className="text-xs text-muted-foreground"

@@ -6569,8 +6569,8 @@ describe("the weights section is reachable from both modes", () => {
 
     const block = screen.getByTestId("endpoint-declared-weights");
     expect(within(block).getByText("35B")).toBeDefined();
-    // One replica by default, so the total is the per-replica figure.
-    expect(within(block).getByText("≈ 48 GB")).toBeDefined();
+    // The requirement travels with the check on it, in the same block.
+    expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
   });
 
   // Flex serves a model baked into its own image; there is no checkpoint to
@@ -6753,5 +6753,76 @@ describe("switching catalogs does not carry model metadata over", () => {
     expect(formInstance?.getValues().spec.model.info).toEqual({
       parameter_count: "8B",
     });
+  });
+});
+
+// Deploying from a recipe that exposes the context window as a feature put the
+// same number on the page twice — once as the control that sets it, once as a
+// field in the estimate — with no way to tell which one the deployment uses.
+describe("a recipe's own controls are not offered twice", () => {
+  const catalogWithContextFeature = {
+    ...recipeCatalog,
+    spec: {
+      ...recipeCatalog.spec,
+      variants: {
+        default: {
+          ...recipeCatalog.spec.variants.default,
+          model: {
+            ...recipeCatalog.spec.variants.default.model,
+            info: {
+              num_hidden_layers: 32,
+              num_key_value_heads: 8,
+              head_dim: 128,
+            },
+          },
+        },
+      },
+      features: [
+        {
+          name: "max-model-len",
+          display_name: "Context window",
+          group: "Core",
+          type: "input",
+          input: { value_type: "int", default: "8192" },
+          engine_args: { max_model_len: "${value}" },
+        },
+      ],
+    },
+  };
+
+  it("reads the context from the feature instead of offering a field", () => {
+    setupMocks([catalogA, catalogWithContextFeature], [plainKubernetesCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    const tokens = screen.getByTestId("kv-cache-tokens");
+    expect(tokens.tagName).not.toBe("INPUT");
+    expect(tokens.getAttribute("data-owned-by")).toBe("Context window");
+    expect(tokens.textContent).toBe("8192");
+
+    // Concurrency has no control on this catalog, so it stays a field.
+    expect(screen.getByTestId("kv-cache-sequences").tagName).toBe("INPUT");
+  });
+
+  it("still offers both fields with no catalog in play", async () => {
+    setupMocks(
+      [catalogA],
+      [plainKubernetesCluster],
+      [{ metadata: { name: "hf" } }],
+    );
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.name", "org/model");
+      formInstance?.setValue("spec.model.info", {
+        num_hidden_layers: 32,
+        num_key_value_heads: 8,
+        head_dim: 128,
+      });
+    });
+
+    expect(screen.getByTestId("kv-cache-tokens").tagName).toBe("INPUT");
+    expect(screen.getByTestId("kv-cache-sequences").tagName).toBe("INPUT");
   });
 });

@@ -24,7 +24,6 @@ import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointW
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
-import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
 import { WorkloadImageFeatureAddon } from "@/domains/endpoint/components/WorkloadImageFeatureAddon";
 import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageInput";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
@@ -40,7 +39,10 @@ import {
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
-import { readEngineCacheArgs } from "@/domains/endpoint/lib/engine-cache-args";
+import {
+  findEngineCacheArgControls,
+  readEngineCacheArgs,
+} from "@/domains/endpoint/lib/engine-cache-args";
 import { engineNeedsModelSpec } from "@/domains/endpoint/lib/model-spec";
 import {
   formatVgpuMemoryGiBInputValue,
@@ -1646,6 +1648,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form.watch("spec.engine.engine"),
     form.watch("spec.variables.engine_args"),
   );
+  // A recipe that exposes the context window as a feature gives the user one
+  // place to set it; the estimate reads that rather than offering a second
+  // field holding the same number. Read from the features rather than from
+  // which group they were put in, so it holds however a catalog is organised.
+  const engineCacheArgControls = findEngineCacheArgControls(
+    form.watch("spec.engine.engine"),
+    isRecipeCatalog ? selectedCatalog?.spec.features : null,
+  );
   const modelInfoRead = resolveModelInfoRead({
     selected: Boolean(
       currentModelInfo ||
@@ -2151,35 +2161,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               />
             </div>
           )}
-          {(() => {
-            const v =
-              selectedCatalog.spec.variants?.[selectedVariant] ??
-              selectedCatalog.spec.variants?.default;
-            const req = v?.vram_minimum_gb ?? null;
-            if (!req) return null;
-            return (
-              <div className="col-span-4">
-                <VRAMCheckBadge
-                  // Only feed the check accelerator data that comes from the
-                  // selected cluster (selectedAcceleratorOption matches the
-                  // form value against real cluster options). The composed
-                  // variant also writes its *reference* accelerator into the
-                  // form; comparing that against the variant's own requirement
-                  // is recipe-vs-recipe math with no environment information
-                  // (NEU-499) — in that case the badge shows the requirement
-                  // alone.
-                  acceleratorProduct={selectedAcceleratorOption?.product}
-                  perGpuGb={
-                    selectedMemoryTotalMiB != null
-                      ? selectedMemoryTotalMiB / 1024
-                      : undefined
-                  }
-                  gpuCount={form.watch("spec.resources.gpu")}
-                  requiredGb={req}
-                />
-              </div>
-            );
-          })()}
           {selectedCatalog.spec.features &&
             selectedCatalog.spec.features.length > 0 &&
             bottomFeatureGroups.length > 0 && (
@@ -2237,6 +2218,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     perReplicaGb: activeVariantVram,
                     replicas: replicaCount,
                     info: activeModelInfo,
+                    // Only accelerator data that came from the selected
+                    // cluster. The composed variant also writes its reference
+                    // accelerator into the form; checking the requirement
+                    // against that is recipe-vs-recipe math with nothing of the
+                    // environment in it (NEU-499), and the badge then states
+                    // the requirement alone.
+                    accelerator: {
+                      product: selectedAcceleratorOption?.product,
+                      perGpuGb:
+                        selectedMemoryTotalMiB != null
+                          ? selectedMemoryTotalMiB / 1024
+                          : undefined,
+                      gpuCount: form.watch("spec.resources.gpu"),
+                    },
                   }
                 : null
             }
@@ -2248,6 +2243,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 : {
                     read: modelInfoRead,
                     engineArgs: engineCacheArgs,
+                    controls: engineCacheArgControls,
                     modelKey: `${currentRegistry ?? ""}:${
                       currentModelName ?? ""
                     }:${form.watch("spec.model.version") ?? ""}`,

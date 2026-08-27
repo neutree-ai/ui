@@ -442,3 +442,61 @@ describe("KVCacheEstimate disclosure", () => {
     expect(screen.queryByTestId("kv-cache-formula-toggle")).toBeNull();
   });
 });
+
+// Two inputs for one quantity is an ambiguity: a reader cannot tell which
+// number the deployment will use. Where the form already has a control for it,
+// the panel reads that control instead of offering a second field.
+describe("KVCacheEstimate fields a control elsewhere owns", () => {
+  it("shows the value read-only and names the control", () => {
+    render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 32768, maxNumSeqs: 16 }}
+        controls={{ context: "Context window", concurrency: null }}
+      />,
+    );
+
+    const tokens = screen.getByTestId("kv-cache-tokens");
+    expect(tokens.tagName).not.toBe("INPUT");
+    expect(tokens.textContent).toBe("32768");
+    expect(tokens.getAttribute("data-owned-by")).toBe("Context window");
+
+    // The one nothing owns is still a field to fill in.
+    expect(sequenceInput().value).toBe("16");
+  });
+
+  it("keeps following the control it was read from", () => {
+    const { rerender } = render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 32768, maxNumSeqs: 16 }}
+        controls={{ context: "Context window", concurrency: null }}
+      />,
+    );
+
+    rerender(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 131072, maxNumSeqs: 16 }}
+        controls={{ context: "Context window", concurrency: null }}
+      />,
+    );
+
+    expect(screen.getByTestId("kv-cache-tokens").textContent).toBe("131072");
+  });
+
+  // A form with no such control has nowhere else to say it, and the field is a
+  // what-if the deployment does not follow.
+  it("offers a field when nothing owns it", () => {
+    render(
+      <KVCacheEstimate
+        read={ready(qwen36)}
+        engineArgs={{ maxModelLen: 32768, maxNumSeqs: 16 }}
+      />,
+    );
+
+    expect(tokenInput().value).toBe("32768");
+    fireEvent.change(tokenInput(), { target: { value: "4096" } });
+    expect(tokenInput().value).toBe("4096");
+  });
+});

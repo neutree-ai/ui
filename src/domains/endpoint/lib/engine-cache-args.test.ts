@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type EngineCacheArgs,
+  findEngineCacheArgControls,
   NO_ENGINE_CACHE_ARGS,
   readEngineCacheArgs,
 } from "@/domains/endpoint/lib/engine-cache-args";
@@ -79,5 +80,80 @@ describe("readEngineCacheArgs", () => {
       maxModelLen: null,
       maxNumSeqs: 32,
     });
+  });
+});
+
+describe("findEngineCacheArgControls", () => {
+  const contextFeature = {
+    name: "max-model-len",
+    display_name: "Context window",
+    engine_args: { max_model_len: "${value}" },
+  };
+  const concurrencyFeature = {
+    name: "max-num-seqs",
+    engine_args: { "max-num-seqs": "${value}" },
+  };
+
+  it("names the feature that writes each flag", () => {
+    expect(
+      findEngineCacheArgControls("vllm", [contextFeature, concurrencyFeature]),
+    ).toEqual({
+      // The label the control is shown under, so "change it there" points
+      // somewhere the reader can see.
+      context: "Context window",
+      // No display name declared, so its identifier is the label.
+      concurrency: "max-num-seqs",
+    });
+  });
+
+  // A select feature sets the flag from whichever option is chosen; the control
+  // on screen is still the feature.
+  it("finds a flag written by one of a select feature's options", () => {
+    const preset = {
+      name: "context-preset",
+      display_name: "Context preset",
+      options: {
+        long: { engine_args: { max_model_len: 131072 } },
+        short: { engine_args: {} },
+      },
+    };
+
+    expect(findEngineCacheArgControls("vllm", [preset]).context).toBe(
+      "Context preset",
+    );
+  });
+
+  it("reads each engine's own spelling", () => {
+    const sglang = {
+      name: "ctx",
+      engine_args: { context_length: "${value}" },
+    };
+
+    expect(findEngineCacheArgControls("sglang", [sglang]).context).toBe("ctx");
+    // vLLM spells it differently, so this feature controls nothing there.
+    expect(findEngineCacheArgControls("vllm", [sglang]).context).toBeNull();
+  });
+
+  it("finds nothing without an engine, features, or a mapping", () => {
+    expect(findEngineCacheArgControls("vllm", [])).toEqual({
+      context: null,
+      concurrency: null,
+    });
+    expect(findEngineCacheArgControls(null, [contextFeature])).toEqual({
+      context: null,
+      concurrency: null,
+    });
+    expect(findEngineCacheArgControls("unknown", [contextFeature])).toEqual({
+      context: null,
+      concurrency: null,
+    });
+  });
+
+  it("ignores a feature that writes some other flag", () => {
+    expect(
+      findEngineCacheArgControls("vllm", [
+        { name: "quant", engine_args: { quantization: "fp8" } },
+      ]),
+    ).toEqual({ context: null, concurrency: null });
   });
 });

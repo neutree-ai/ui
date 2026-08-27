@@ -104,3 +104,71 @@ export function readEngineCacheArgs(
     maxNumSeqs: readArg(engineArgs, names.concurrency),
   };
 }
+
+/** The recipe control that owns each of the two quantities, by the label it is
+ * shown under. Null where no control on the form writes that flag. */
+export type EngineCacheArgControls = {
+  context: string | null;
+  concurrency: string | null;
+};
+
+export const NO_ENGINE_CACHE_ARG_CONTROLS: EngineCacheArgControls = {
+  context: null,
+  concurrency: null,
+};
+
+type FeatureLike = {
+  name: string;
+  display_name?: string;
+  engine_args?: Record<string, unknown> | null;
+  options?: Record<
+    string,
+    { engine_args?: Record<string, unknown> | null }
+  > | null;
+};
+
+/**
+ * Which recipe feature, if any, writes each of the two flags.
+ *
+ * A catalog that exposes the context window as a feature gives the user one
+ * place to set it, and the estimate should read that rather than offer a second
+ * field holding the same number — two inputs for one quantity is an ambiguity,
+ * not a convenience. Naming the control is what makes the read-only value
+ * actionable: "change it there" is only useful when there is a there.
+ *
+ * A select feature can write the flag from any of its options, so those count
+ * too; the label is the feature's, since that is the control on screen.
+ */
+export function findEngineCacheArgControls(
+  engine: string | null | undefined,
+  features: ReadonlyArray<FeatureLike> | null | undefined,
+): EngineCacheArgControls {
+  const names = engine ? ENGINE_CACHE_ARG_NAMES[engine] : undefined;
+
+  if (!names || !features?.length) {
+    return NO_ENGINE_CACHE_ARG_CONTROLS;
+  }
+
+  const owner = (flag: string) =>
+    features.find((feature) => writesArg(feature, flag))?.display_name ||
+    features.find((feature) => writesArg(feature, flag))?.name ||
+    null;
+
+  return {
+    context: owner(names.context),
+    concurrency: owner(names.concurrency),
+  };
+}
+
+function writesArg(feature: FeatureLike, name: string): boolean {
+  const dashed = name.replaceAll("_", "-");
+  const states = (args: Record<string, unknown> | null | undefined) =>
+    Boolean(args && (name in args || dashed in args));
+
+  return (
+    states(feature.engine_args) ||
+    Object.values(feature.options ?? {}).some((option) =>
+      states(option.engine_args),
+    )
+  );
+}

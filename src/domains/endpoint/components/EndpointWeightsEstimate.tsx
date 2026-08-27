@@ -1,5 +1,9 @@
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
-import type { EngineCacheArgs } from "@/domains/endpoint/lib/engine-cache-args";
+import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
+import type {
+  EngineCacheArgControls,
+  EngineCacheArgs,
+} from "@/domains/endpoint/lib/engine-cache-args";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import type { ModelInfo } from "@/foundation/types/serving-types";
@@ -28,11 +32,22 @@ type Declared = {
   replicas: number;
   /** What the checkpoint states about itself, as the catalog carries it. */
   info: ModelInfo | null;
+  /**
+   * What the chosen cluster offers one replica, so the declared figure can be
+   * checked against it rather than left as a number to compare by hand.
+   */
+  accelerator: {
+    product?: string | null;
+    perGpuGb?: number | null;
+    gpuCount?: number | string | null;
+  };
 };
 
 type KvCache = {
   read: ModelInfoRead;
   engineArgs: EngineCacheArgs;
+  /** Controls elsewhere on the form that own the context and concurrency. */
+  controls: EngineCacheArgControls;
   /**
    * Identity of the model being estimated. The estimator's inputs derive their
    * defaults from the checkpoint, so it is remounted when the checkpoint
@@ -55,11 +70,8 @@ export const EndpointWeightsEstimate = ({
   const { t } = useTranslation();
 
   const facts = declared ? modelFacts(declared.info) : [];
-  const totalGb =
-    declared?.perReplicaGb != null
-      ? declared.perReplicaGb * declared.replicas
-      : null;
-  const showsDeclared = totalGb != null || facts.length > 0;
+  const perReplicaGb = declared?.perReplicaGb ?? null;
+  const showsDeclared = perReplicaGb != null || facts.length > 0;
 
   if (!showsDeclared && !kvCache) return null;
 
@@ -73,22 +85,39 @@ export const EndpointWeightsEstimate = ({
           <div className="mb-2 text-sm font-medium">
             {t("endpoints.weights.declared")}
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            {totalGb != null && declared && (
-              <Fact
-                label={t("endpoints.recipe.estimatedVram")}
-                value={`≈ ${totalGb} GB`}
-              >
-                {t("endpoints.weights.perReplica", {
-                  gb: declared.perReplicaGb,
-                  count: declared.replicas,
-                })}
-              </Fact>
-            )}
-            {facts.map((fact) => (
-              <Fact key={fact.key} label={t(fact.key)} value={fact.value} />
-            ))}
-          </div>
+          {perReplicaGb != null && declared && (
+            <div className="mb-3 space-y-1">
+              {/* The requirement and the check on it are one statement. Stated
+              apart, the same figure appeared twice — as a number to compare by
+              hand, and as the comparison — and at one replica the two were the
+              same number in two places. */}
+              <VRAMCheckBadge
+                acceleratorProduct={declared.accelerator.product}
+                perGpuGb={declared.accelerator.perGpuGb}
+                gpuCount={declared.accelerator.gpuCount}
+                requiredGb={perReplicaGb}
+              />
+              {/* The badge speaks per replica, which is what a GPU allocation
+              is measured against. The fleet total is a different question and
+              is only worth asking once there is more than one replica. */}
+              {declared.replicas > 1 && (
+                <div className="text-xs text-muted-foreground">
+                  {t("endpoints.weights.acrossReplicas", {
+                    gb: perReplicaGb,
+                    count: declared.replicas,
+                    total: perReplicaGb * declared.replicas,
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+          {facts.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              {facts.map((fact) => (
+                <Fact key={fact.key} label={t(fact.key)} value={fact.value} />
+              ))}
+            </div>
+          )}
         </div>
       )}
       {kvCache && (
@@ -96,6 +125,7 @@ export const EndpointWeightsEstimate = ({
           key={kvCache.modelKey}
           read={kvCache.read}
           engineArgs={kvCache.engineArgs}
+          controls={kvCache.controls}
         />
       )}
     </div>
@@ -104,21 +134,10 @@ export const EndpointWeightsEstimate = ({
 
 EndpointWeightsEstimate.displayName = "EndpointWeightsEstimate";
 
-const Fact = ({
-  label,
-  value,
-  children,
-}: {
-  label: string;
-  value: string;
-  children?: React.ReactNode;
-}) => (
+const Fact = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-md border bg-background px-3 py-2">
     <div className="text-xs font-medium text-muted-foreground">{label}</div>
     <div className="mt-1 font-semibold tabular-nums">{value}</div>
-    {children && (
-      <div className="text-xs text-muted-foreground">{children}</div>
-    )}
   </div>
 );
 

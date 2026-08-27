@@ -9,13 +9,17 @@ vi.mock("@/domains/endpoint/components/KVCacheEstimate", () => ({
   KVCacheEstimate: () => <div data-testid="kv-cache-estimate" />,
 }));
 
-import type { EngineCacheArgs } from "@/domains/endpoint/lib/engine-cache-args";
+import {
+  type EngineCacheArgs,
+  NO_ENGINE_CACHE_ARG_CONTROLS,
+} from "@/domains/endpoint/lib/engine-cache-args";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { EndpointWeightsEstimate } from "./EndpointWeightsEstimate";
 
 const kvCache = {
   read: { state: "ready", info: {} } as unknown as ModelInfoRead,
   engineArgs: {} as EngineCacheArgs,
+  controls: NO_ENGINE_CACHE_ARG_CONTROLS,
   modelKey: "hf:qwen:v1",
 };
 
@@ -23,6 +27,7 @@ const declared = {
   perReplicaGb: 48,
   replicas: 2,
   info: { parameter_count: "35B", quantization: "fp8" },
+  accelerator: {},
 };
 
 describe("EndpointWeightsEstimate", () => {
@@ -33,7 +38,9 @@ describe("EndpointWeightsEstimate", () => {
     render(<EndpointWeightsEstimate declared={declared} kvCache={kvCache} />);
 
     const block = screen.getByTestId("endpoint-declared-weights");
-    expect(within(block).getByText("≈ 96 GB")).toBeDefined();
+    // The requirement and the check on it are one statement, not a number and
+    // a comparison of it stated separately.
+    expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
     expect(within(block).getByText("35B")).toBeDefined();
     expect(within(block).getByText("fp8")).toBeDefined();
     expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
@@ -55,10 +62,38 @@ describe("EndpointWeightsEstimate", () => {
     expect(screen.queryByTestId("kv-cache-estimate")).toBeNull();
   });
 
+  // The badge speaks per replica, which is what a GPU allocation is measured
+  // against; the fleet total is a different question and only arises above one.
+  it("states the fleet total only when there is more than one replica", () => {
+    const { rerender } = render(
+      <EndpointWeightsEstimate declared={declared} kvCache={null} />,
+    );
+
+    expect(
+      screen.getByTestId("endpoint-declared-weights").textContent,
+    ).toContain("endpoints.weights.acrossReplicas");
+
+    rerender(
+      <EndpointWeightsEstimate
+        declared={{ ...declared, replicas: 1 }}
+        kvCache={null}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("endpoint-declared-weights").textContent,
+    ).not.toContain("endpoints.weights.acrossReplicas");
+  });
+
   it("renders nothing when neither half has anything to say", () => {
     render(
       <EndpointWeightsEstimate
-        declared={{ perReplicaGb: null, replicas: 1, info: null }}
+        declared={{
+          perReplicaGb: null,
+          replicas: 1,
+          info: null,
+          accelerator: {},
+        }}
         kvCache={null}
       />,
     );
@@ -73,6 +108,7 @@ describe("EndpointWeightsEstimate", () => {
           perReplicaGb: null,
           replicas: 1,
           info: { architecture: "moe" },
+          accelerator: {},
         }}
         kvCache={null}
       />,
