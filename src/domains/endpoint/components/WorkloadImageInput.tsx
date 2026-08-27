@@ -1,39 +1,30 @@
-import { useCustom } from "@refinedev/core";
-import { Badge } from "@/components/ui/badge";
+import { useRef } from "react";
 import { Input } from "@/components/ui/input";
+import { ImageExplorerButton } from "@/domains/endpoint/components/ImageExplorerButton";
 import { useTranslation } from "@/foundation/lib/i18n";
-
-/** Splits `repo:tag` on the last colon, which a digest or a port never occupies
- * in a value this field accepts. A value with no colon is all repository. */
-function splitReference(value: string): { repository: string; tag: string } {
-  const at = value.lastIndexOf(":");
-
-  if (at < 0) {
-    return { repository: value, tag: "" };
-  }
-
-  return { repository: value.slice(0, at), tag: value.slice(at + 1) };
-}
 
 interface WorkloadImageInputProps {
   value: string;
   onChange: (value: string) => void;
   workspace?: string | null;
-  /** The image registry the endpoint's cluster pulls from. */
+  /** The image registry the endpoint's cluster pulls with, if a cluster has
+   * been picked. Only used to mark it in the explorer's registry list. */
   registry?: string | null;
 }
 
 /**
- * The workload image for an engine that runs one, typed as `repository:tag` with
- * the tags the registry actually holds offered underneath.
+ * The workload image for an engine that runs one: a plain text box, and a way
+ * to go and find the name when you do not know it.
  *
- * A text input rather than a picker, deliberately. The suggestions are an assist
- * that is not always available -- a registry can refuse the lookup, and an image
- * that lives somewhere other than the cluster's registry has no lookup to make
- * at all -- so the field has to stay typeable whether or not any arrive, and a
- * failed lookup has to mean "no suggestions" rather than an error. Reporting a
- * fault where there is only an absence of help would be worse than the silence,
- * which is also why it is never retried.
+ * Two things to know and no more. Someone who knows the reference types or
+ * pastes it, which is the fastest this field can be and is unchanged from
+ * before. Someone who does not opens the explorer, picks a registry, an image
+ * and a tag, and gets the reference written back. Nothing is inferred from what
+ * is half-typed, nothing is fetched per keystroke, and the box never fills
+ * itself in.
+ *
+ * The explorer is reachable whether or not a cluster has been picked. Its
+ * registry is chosen there, so this field needs no registry to be useful.
  */
 export function WorkloadImageInput({
   value,
@@ -42,60 +33,25 @@ export function WorkloadImageInput({
   registry,
 }: WorkloadImageInputProps) {
   const { t } = useTranslation();
-  const { repository, tag } = splitReference(value);
-
-  const enabled = Boolean(workspace && registry && repository.trim());
-
-  const { data, isFetching } = useCustom<{ tags?: string[] }>({
-    // The repository may contain slashes; encoding keeps it one path segment,
-    // which the router preserves -- the same thing model names rely on.
-    url: enabled
-      ? `/workspaces/${encodeURIComponent(
-          workspace as string,
-        )}/image_registries/${encodeURIComponent(
-          registry as string,
-        )}/repositories/${encodeURIComponent(repository.trim())}/tags`
-      : "",
-    method: "get",
-    queryOptions: { enabled, retry: false, staleTime: 30_000 },
-  });
-
-  const suggestions = (data?.data?.tags ?? []).filter(
-    (candidate) => candidate !== tag,
-  );
+  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="space-y-2">
+    <div className="flex items-center gap-2">
       <Input
+        ref={inputRef}
         value={value}
-        placeholder={t(
-          "endpoints.placeholders.workloadImage",
-          "repository:tag",
-        )}
+        placeholder={t("endpoints.placeholders.workloadImage")}
         onChange={(e) => onChange(e.target.value)}
       />
-      {isFetching && (
-        <p className="text-xs text-muted-foreground">
-          {t("endpoints.messages.fetchingImageTags", "Looking up tags…")}
-        </p>
-      )}
-      {suggestions.length > 0 && (
-        <div
-          className="flex flex-wrap gap-1"
-          data-testid="workload-image-tag-suggestions"
-        >
-          {suggestions.map((candidate) => (
-            <Badge
-              key={candidate}
-              variant="outline"
-              className="cursor-pointer"
-              onClick={() => onChange(`${repository}:${candidate}`)}
-            >
-              {candidate}
-            </Badge>
-          ))}
-        </div>
-      )}
+      <ImageExplorerButton
+        workspace={workspace}
+        registry={registry}
+        onApply={(next) => {
+          onChange(next);
+          // Back to the box, which is still the thing being filled in.
+          inputRef.current?.focus();
+        }}
+      />
     </div>
   );
 }

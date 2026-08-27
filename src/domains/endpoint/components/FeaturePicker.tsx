@@ -1,4 +1,5 @@
 import { Check, ChevronsUpDown } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { BreakableReference } from "@/foundation/components/BreakableReference";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import type {
@@ -41,6 +43,24 @@ type Props = {
    * "grid" renders heading-less label-above-control cells in a 2-col grid, so a
    * promoted group reads like ordinary form fields (matches the deploy mockup). */
   layout?: "stack" | "grid";
+  /**
+   * An extra control rendered beside an input feature's own control, for
+   * features the caller recognises. Returning nothing leaves the feature
+   * exactly as it was.
+   *
+   * Beside rather than instead: a feature's `suggestions` are the catalog
+   * author's recommendations and an addon is a way to go and find something
+   * else, which are complementary rather than alternatives. Replacing the
+   * control would also mean re-implementing SuggestInput to keep them.
+   *
+   * Which features deserve one is the caller's judgement — recognising them
+   * needs to know the engine, and a generic feature renderer has no business
+   * holding that.
+   */
+  inputAddon?: (
+    feature: RecipeFeature,
+    props: { value: string; onChange: (value: string) => void },
+  ) => ReactNode;
 };
 
 function featureType(f: RecipeFeature): "boolean" | "select" | "input" {
@@ -120,7 +140,14 @@ function SuggestInput({
           <ChevronsUpDown className="ml-2 size-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("p-0", widthClass)} align="end">
+      {/* Its own width, not the trigger's. `widthClass` sizes a control in a
+          form row -- w-44 in a stack layout -- and reusing it here left the
+          list 176px wide, far too narrow for anything it might hold. Capped
+          against the viewport so a narrow window does not push it off-screen. */}
+      <PopoverContent
+        className="w-[min(26rem,calc(100vw-2rem))] p-0"
+        align="end"
+      >
         <Command shouldFilter={false}>
           <CommandInput
             value={draft}
@@ -135,8 +162,11 @@ function SuggestInput({
                 <CommandItem
                   value={`__use__${trimmed}`}
                   onSelect={() => commit(trimmed)}
+                  className="items-start"
                 >
-                  Use “{trimmed}”
+                  <span className="min-w-0 flex-1">
+                    Use “<BreakableReference value={trimmed} />”
+                  </span>
                 </CommandItem>
               </CommandGroup>
             )}
@@ -146,16 +176,26 @@ function SuggestInput({
                   key={s.value}
                   value={s.value}
                   onSelect={() => commit(s.value)}
+                  className="items-start"
                 >
-                  {s.label}
-                  {s.label !== s.value && (
-                    <span className="ml-2 font-mono text-xs text-muted-foreground">
-                      {s.value}
-                    </span>
-                  )}
+                  {/* Stacked rather than two columns. A label and a
+                      sixty-character reference cannot share a line at this
+                      width: the label collapsed to one character per line
+                      while the reference overflowed and was clipped. min-w-0
+                      is what lets this column shrink at all -- a flex item
+                      defaults to min-content, and a reference has none. */}
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate">{s.label}</span>
+                    {s.label !== s.value && (
+                      <BreakableReference
+                        value={s.value}
+                        className="font-mono text-xs text-muted-foreground"
+                      />
+                    )}
+                  </div>
                   <Check
                     className={cn(
-                      "ml-auto size-4",
+                      "mt-0.5 size-4",
                       value === s.value ? "opacity-100" : "opacity-0",
                     )}
                   />
@@ -188,6 +228,7 @@ export const FeaturePicker = ({
   disabled,
   renderGroups,
   layout = "stack",
+  inputAddon,
 }: Props) => {
   const grid = layout === "grid";
   const { t } = useTranslation();
@@ -336,6 +377,7 @@ export const FeaturePicker = ({
           key,
           val === "" && !required ? undefined : { name: key, value: val },
         );
+      const addon = inputAddon?.(f, { value: current, onChange: commitValue });
       return (
         <div
           key={key}
@@ -344,30 +386,38 @@ export const FeaturePicker = ({
           }
         >
           {renderHeader(key, f, conflict)}
-          {suggestions.length > 0 ? (
-            <SuggestInput
-              ariaLabel={key}
-              value={current}
-              suggestions={suggestions}
-              numeric={numeric}
-              placeholder={f.input?.default ?? ""}
-              disabled={itemDisabled}
-              onCommit={commitValue}
-              widthClass={grid ? "w-full" : "w-44"}
-            />
-          ) : (
-            <Input
-              aria-label={key}
-              type={numeric ? "number" : "text"}
-              value={current}
-              placeholder={f.input?.default ?? ""}
-              disabled={itemDisabled}
-              min={f.input?.min ?? undefined}
-              max={f.input?.max ?? undefined}
-              onChange={(event) => commitValue(event.target.value)}
-              className={cn("h-9", grid ? "w-full" : "w-44 shrink-0")}
-            />
-          )}
+          <div
+            className={cn(
+              "flex items-center gap-2",
+              grid ? "w-full" : "shrink-0",
+            )}
+          >
+            {suggestions.length > 0 ? (
+              <SuggestInput
+                ariaLabel={key}
+                value={current}
+                suggestions={suggestions}
+                numeric={numeric}
+                placeholder={f.input?.default ?? ""}
+                disabled={itemDisabled}
+                onCommit={commitValue}
+                widthClass={grid ? "w-full" : "w-44"}
+              />
+            ) : (
+              <Input
+                aria-label={key}
+                type={numeric ? "number" : "text"}
+                value={current}
+                placeholder={f.input?.default ?? ""}
+                disabled={itemDisabled}
+                min={f.input?.min ?? undefined}
+                max={f.input?.max ?? undefined}
+                onChange={(event) => commitValue(event.target.value)}
+                className={cn("h-9", grid ? "w-full" : "w-44")}
+              />
+            )}
+            {addon}
+          </div>
         </div>
       );
     }

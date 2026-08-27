@@ -40,6 +40,7 @@ function VariablesInputForm({
           schema={objectSchema}
         />
         <button type="submit">Save</button>
+        <pre data-testid="committed-args">{JSON.stringify(args)}</pre>
       </form>
     </FormProvider>
   );
@@ -222,12 +223,15 @@ const imageSchema = {
 function ValueInputForm({
   valueInputs,
   onSubmit,
+  defaultArgs = { image: "my-workload:v1" },
 }: {
   valueInputs?: Parameters<typeof VariablesInput>[0]["valueInputs"];
   onSubmit: (values: { args: Record<string, unknown> }) => void;
+  /** Empty starts on a draft row, which is where a key is first added. */
+  defaultArgs?: Record<string, unknown>;
 }) {
   const form = useForm<{ args: Record<string, unknown> }>({
-    defaultValues: { args: { image: "my-workload:v1" } },
+    defaultValues: { args: defaultArgs },
   });
   const args = form.watch("args");
 
@@ -242,6 +246,7 @@ function ValueInputForm({
           valueInputs={valueInputs}
         />
         <button type="submit">Save</button>
+        <pre data-testid="committed-args">{JSON.stringify(args)}</pre>
       </form>
     </FormProvider>
   );
@@ -275,6 +280,78 @@ describe("VariablesInput value inputs", () => {
     fireEvent.click(screen.getByTestId("image-widget"));
 
     expect(screen.getByTestId("image-widget").textContent).toBe("picked:v2");
+  });
+
+  it("gives a row being drafted the same input a saved one gets", () => {
+    // The seam this closes: the override only reached saved variables, so
+    // whoever added the key first saw a plain text box, and had to guess a
+    // value and commit the row before the real input appeared -- by which time
+    // it was no longer needed.
+    render(
+      <ValueInputForm
+        onSubmit={vi.fn()}
+        defaultArgs={{}}
+        valueInputs={{
+          image: ({ value, onChange }) => (
+            <button
+              type="button"
+              data-testid="image-widget"
+              onClick={() => onChange("picked:v2")}
+            >
+              {value}
+            </button>
+          ),
+        }}
+      />,
+    );
+
+    expect(screen.queryByTestId("image-widget")).toBeNull();
+
+    // Naming the key is all it takes; nothing has been filled in yet.
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "image" },
+    });
+
+    expect(screen.getByTestId("image-widget")).toBeTruthy();
+  });
+
+  it("saves a drafted row once the supplied input is left, not mid-word", () => {
+    // Committing on change would move the row out of the drafting section and
+    // remount the input under the cursor, so the row is saved on the way out
+    // instead -- which is what every other draft input here does.
+    render(
+      <ValueInputForm
+        onSubmit={vi.fn()}
+        defaultArgs={{}}
+        valueInputs={{
+          image: ({ value, onChange }) => (
+            <input
+              aria-label="image widget"
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+            />
+          ),
+        }}
+      />,
+    );
+
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "image" },
+    });
+
+    const widget = screen.getByLabelText("image widget");
+    fireEvent.change(widget, { target: { value: "registry.io/team/x:v1" } });
+
+    // Still a draft while it is being typed into.
+    expect(screen.getByTestId("committed-args").textContent).toBe("{}");
+
+    // focusOut rather than blur: React drives onBlur from focusout, and only
+    // that one bubbles to the wrapper that saves the row.
+    fireEvent.focusOut(widget);
+
+    expect(screen.getByTestId("committed-args").textContent).toBe(
+      JSON.stringify({ image: "registry.io/team/x:v1" }),
+    );
   });
 
   it("falls back to the type's own input for a key the caller says nothing about", () => {

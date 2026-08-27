@@ -1176,6 +1176,34 @@
 		"origin": {
 			"hint": "What this endpoint was deployed from. Its settings are edited below; changing them here does not change the catalog.",
 			"featuresUnreadable": "the recorded options could not be read"
+		},
+		"imageExplorer": {
+			"open": "Explore image registry",
+			"title": "Explore image registry",
+			"description": "Pick a registry, an image and a tag. Anything you cannot pick, you can type.",
+			"registryLabel": "Image registry",
+			"selectRegistry": "Select an image registry",
+			"registryInUse": "{{name}} \u00b7 used by this cluster",
+			"foreignRegistry": "This is not the registry this cluster pulls with. The pull uses the credentials in {{name}}, so an image found here may not be pullable.",
+			"namespaceLabel": "Namespace",
+			"selectNamespace": "Select or type a namespace",
+			"namespaceNote": "Docker Hub cannot list namespaces, so this is not the full set \u2014 `{{official}}` holds its official images, and the rest are namespaces this deployment already uses. Type any other.",
+			"chooseNamespaceFirst": "Choose a namespace above and its images will be listed here.",
+			"imageLabel": "Image",
+			"selectImage": "Select or type an image",
+			"tagLabel": "Tag",
+			"selectTag": "Select or type a tag",
+			"tagOptional": "Optional \u2014 an image with no tag is a complete answer.",
+			"lookingForTags": "Looking for tags\u2026",
+			"useTyped": "Use \u201c{{typed}}\u201d",
+			"apply": "Use this image",
+			"noRegistry": "Choose a registry above and its images will be listed here.",
+			"listing": "Type to narrow the images this registry holds.",
+			"looking": "Looking for images\u2026",
+			"notChecked": "This registry has not reported yet whether its images can be listed. Type the image name \u2014 its tags will still be listed.",
+			"unsupported": "This registry cannot list its images. Type the image name instead; its tags will still be listed.",
+			"unauthorized": "The credentials stored for this registry can pull but cannot list its images. Ask an operator for credentials that can, or type the image name.",
+			"unavailable": "The registry could not be reached just now. Type the image name, or close this and try again."
 		}
 	},
 	"external_endpoints": {
