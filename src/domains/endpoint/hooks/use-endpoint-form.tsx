@@ -107,16 +107,41 @@ import type {
 } from "@/foundation/recipe/types";
 import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 
-// Reads `?model_catalog=<id>` off the current URL. The app uses a HashRouter so
+// Reads the query string off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
-// Returns "" when absent or outside a browser (e.g. unit tests), so callers can
-// treat it as "no preselection".
-function readModelCatalogQueryParam(): string {
-  if (typeof window === "undefined") return "";
+// Returns null when absent or outside a browser (e.g. unit tests), so callers
+// can treat it as "no preselection".
+function readHashQueryParams(): URLSearchParams | null {
+  if (typeof window === "undefined") return null;
   const hash = window.location.hash ?? "";
   const q = hash.indexOf("?");
-  if (q === -1) return "";
-  return new URLSearchParams(hash.slice(q + 1)).get("model_catalog") ?? "";
+  if (q === -1) return null;
+  return new URLSearchParams(hash.slice(q + 1));
+}
+
+function readModelCatalogQueryParam(): string {
+  return readHashQueryParams()?.get("model_catalog") ?? "";
+}
+
+type RegistryModelPreselection = {
+  registry: string;
+  model: string;
+  version?: string;
+};
+
+export function readRegistryModelQueryParams(): RegistryModelPreselection | null {
+  const params = readHashQueryParams();
+  if (!params) return null;
+
+  const registry = params.get("model_registry") ?? "";
+  const model = params.get("model") ?? "";
+  if (!registry || !model) return null;
+
+  return {
+    registry,
+    model,
+    version: params.get("version") || undefined,
+  };
 }
 
 type AcceleratorVirtualization = NonNullable<
@@ -323,10 +348,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // the warning instead of needing a branch added here.
   //
   // A registry that has not arrived yet is not an answer, so nothing is claimed
-  // until one is in hand — the same distinction model-show.tsx draws before
-  // deciding whether to offer write controls. Once one *is* in hand and still
-  // says nothing, that is the forgotten-`select` case, and it gets said out loud
-  // below rather than silently reading as "already local".
+  // until one is in hand. Once one *is* in hand and still says nothing, that is
+  // the forgotten-`select` case, and it gets said out loud below rather than
+  // silently reading as "already local".
   const selectedRegistry = (modelRegistries.query.data?.data ?? []).find(
     (candidate) => candidate.metadata.name === currentRegistry,
   );
@@ -1497,6 +1521,38 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     preselectAppliedRef.current = true;
     handleModelCatalogSelect(preselectCatalogId);
   }, [preselectCatalogId, modelCatalogs.query.data]);
+
+  // Deploy-from-registry-model: the model detail drawer links here with the
+  // exact registry/model/revision. Wait until the registry listing confirms
+  // that the target exists, then populate the same form fields a manual pick
+  // would populate and fetch the checkpoint information once.
+  const [preselectRegistryModel] = useState(() =>
+    action === "create" ? readRegistryModelQueryParams() : null,
+  );
+  const registryModelPreselectAppliedRef = useRef(false);
+  useEffect(() => {
+    if (
+      registryModelPreselectAppliedRef.current ||
+      !preselectRegistryModel ||
+      !modelRegistryNames?.includes(preselectRegistryModel.registry)
+    ) {
+      return;
+    }
+
+    registryModelPreselectAppliedRef.current = true;
+    form.setValue("spec.model.registry", preselectRegistryModel.registry);
+    form.setValue("spec.model.name", preselectRegistryModel.model);
+    if (preselectRegistryModel.version) {
+      form.setValue("spec.model.version", preselectRegistryModel.version);
+    }
+    form.setValue("spec.model.info", null);
+    setPickedModelRef({
+      workspace,
+      registry: preselectRegistryModel.registry,
+      model: preselectRegistryModel.model,
+      version: preselectRegistryModel.version,
+    });
+  }, [form, modelRegistryNames, preselectRegistryModel, workspace]);
 
   // When user changes variant or features, re-apply the composed result.
   const handleVariantChange = (v: string) => {

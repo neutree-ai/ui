@@ -589,6 +589,7 @@
 			"dataAsOfCached": "Cached registry data from {{time}}",
 			"fields": {
 				"alias": "Alias",
+				"modelName": "Model name",
 				"size": "Size",
 				"parameterCount": "Parameters",
 				"architecture": "Architecture",
@@ -646,7 +647,7 @@
 				"success": "Model deleted"
 			},
 			"readme": {
-				"title": "Model card",
+				"title": "README.md",
 				"none": "This model has no card.",
 				"truncated": "This card is long and has been shortened."
 			}

@@ -55,6 +55,16 @@ beforeEach(() => {
 });
 
 describe("ModelReadme — a card is untrusted content", () => {
+  it("can place the markdown in a nested framed document surface", () => {
+    returns({ content: "# Card" });
+
+    render(<ModelReadme modelRef={modelRef} framed={false} contentFramed />);
+
+    expect(
+      screen.getByTestId("readme-content").parentElement?.className,
+    ).toContain("shadow-none");
+  });
+
   it("drops the tags that would run or embed something", () => {
     // Half of the XSS acceptance for this feature, asserted rather than argued.
     // The card's HTML *is* rendered, so what carries the safety is the

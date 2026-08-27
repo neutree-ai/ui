@@ -1,5 +1,4 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   canPageForward,
@@ -23,10 +22,6 @@ vi.mock("@/foundation/lib/i18n", () => ({
     t: (key: string, vars?: Record<string, unknown>) =>
       vars ? `${key}:${Object.values(vars).join(",")}` : key,
   }),
-}));
-
-vi.mock("react-router-dom", () => ({
-  Link: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
 }));
 
 type Call = {
@@ -111,12 +106,15 @@ const page = (
   freshness: options?.freshness ?? { timestamp: null, cached: false },
 });
 
-const renderTable = (reg: ModelRegistry) =>
+const renderTable = (
+  reg: ModelRegistry,
+  onModelSelect: (model: string, version: string) => void = vi.fn(),
+) =>
   render(
     <RegistryModelsTable
       workspace="default"
       registry={reg}
-      modelHref={() => "/x"}
+      onModelSelect={onModelSelect}
     />,
   );
 
@@ -298,6 +296,20 @@ describe("paging follows what the registry can do", () => {
 });
 
 describe("states", () => {
+  it("opens model details from a row click or the keyboard", () => {
+    answerWith(() => ({ page: page(1, 1) }));
+    const onModelSelect = vi.fn();
+
+    renderTable(registry({ visibility: "private" }), onModelSelect);
+    const row = screen.getByTestId("registry-model-row-model-0:v1");
+
+    fireEvent.click(row);
+    fireEvent.keyDown(row, { key: "Enter" });
+
+    expect(onModelSelect).toHaveBeenNthCalledWith(1, "model-0", "v1");
+    expect(onModelSelect).toHaveBeenNthCalledWith(2, "model-0", "v1");
+  });
+
   it("shows a loader while asking, and claims nothing about the total", () => {
     answerWith(() => ({ page: null, isLoading: true }));
 

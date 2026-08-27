@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ModelInfoFields,
   resolveFieldValue,
@@ -9,6 +11,11 @@ import type { ModelInfo } from "@/foundation/types/serving-types";
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
+
+// SourceTag's Tooltip relies on the app-wide TooltipProvider mounted in
+// BaseLayout; this test renders the component in isolation, so it stands in.
+const renderWithTooltip = (ui: ReactElement) =>
+  render(<TooltipProvider>{ui}</TooltipProvider>);
 
 const textField = { key: "architecture", labelKey: "architecture" } as const;
 
@@ -105,7 +112,7 @@ describe("ModelInfoFields", () => {
   };
 
   it("shows unknown rather than a blank for a field the server could not establish", () => {
-    render(<ModelInfoFields info={parsed} />);
+    renderWithTooltip(<ModelInfoFields info={parsed} />);
 
     const cell = screen.getByTestId("model-info-parameter_count");
     expect(cell.textContent).toContain(
@@ -114,13 +121,15 @@ describe("ModelInfoFields", () => {
   });
 
   it("marks a derived field and leaves an auto one unmarked", () => {
-    render(<ModelInfoFields info={parsed} />);
+    renderWithTooltip(<ModelInfoFields info={parsed} />);
 
     expect(
       screen
         .getByTestId("model-info-head_dim")
-        .textContent?.includes("model_registries.models.sources.derived"),
-    ).toBe(true);
+        .querySelector(
+          '[aria-label="model_registries.models.sources.derived"]',
+        ),
+    ).not.toBeNull();
     expect(
       screen
         .getByTestId("model-info-architecture")
@@ -129,7 +138,7 @@ describe("ModelInfoFields", () => {
   });
 
   it("marks a hand-filled field", () => {
-    render(
+    renderWithTooltip(
       <ModelInfoFields
         info={{
           parameter_count: "7000000000",
@@ -140,9 +149,11 @@ describe("ModelInfoFields", () => {
     );
 
     const cell = screen.getByTestId("model-info-parameter_count");
-    expect(cell.textContent).toContain(
-      "model_registries.models.sources.manual",
-    );
+    expect(
+      cell.querySelector(
+        '[aria-label="model_registries.models.sources.manual"]',
+      ),
+    ).not.toBeNull();
     expect(cell.textContent).toContain("7,000,000,000");
   });
 
@@ -165,11 +176,44 @@ describe("ModelInfoFields", () => {
       ],
     };
 
-    render(<ModelInfoFields info={allMissing} />);
+    renderWithTooltip(<ModelInfoFields info={allMissing} />);
 
     const container = screen.getByTestId("model-info-fields");
     // Every named field reads "unknown", and no digit is rendered anywhere:
     // nothing was guessed from the model's name or filled with a zero.
     expect(/\d/.test(container.textContent ?? "")).toBe(false);
+  });
+
+  it("offers the compact definition-table layout for detail drawers", () => {
+    renderWithTooltip(
+      <ModelInfoFields info={parsed} variant="definition-table" />,
+    );
+
+    expect(screen.getByTestId("model-info-fields").className).toContain(
+      "sm:grid-cols-2",
+    );
+    expect(screen.getByTestId("model-info-architecture").className).toContain(
+      "border-b",
+    );
+  });
+
+  it("de-emphasizes unknown values and omits not-applicable compact rows", () => {
+    renderWithTooltip(
+      <ModelInfoFields
+        info={{
+          is_moe: false,
+          field_sources: { is_moe: "auto" },
+          missing_fields: ["parameter_count"],
+        }}
+        variant="definition-table"
+      />,
+    );
+
+    expect(
+      screen.getByTestId("model-info-parameter_count").querySelector("span")
+        ?.className,
+    ).toContain("--nt-text-neutral-quaternary");
+    expect(screen.queryByTestId("model-info-num_experts")).toBeNull();
+    expect(screen.queryByTestId("model-info-num_experts_per_token")).toBeNull();
   });
 });
