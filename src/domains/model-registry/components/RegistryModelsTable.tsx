@@ -422,7 +422,7 @@ export const RegistryModelsTable = ({
 
   return (
     <div className="space-y-3" data-testid="registry-models-table">
-      <div className="flex items-center gap-2">
+      <div className="-m-1 flex items-center gap-2 p-1">
         <Input
           className="max-w-xs"
           value={search}
@@ -437,7 +437,9 @@ export const RegistryModelsTable = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t("common.fields.name")}</TableHead>
+            <TableHead>
+              {t("model_registries.models.fields.modelName")}
+            </TableHead>
             <TableHead>{t("model_registries.models.fields.alias")}</TableHead>
             <TableHead>{t("common.fields.version")}</TableHead>
             <TableHead>{t("model_registries.models.fields.size")}</TableHead>

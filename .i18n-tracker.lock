@@ -356,7 +356,7 @@
   "src/domains/model-registry/components/ModelEditDialog.tsx": "c9af4f5b1b5cae132240a0669762769a",
   "src/domains/model-registry/components/ModelInfoFields.tsx": "5850b7c47e1b612c0acdd5e8bc833318",
   "src/domains/model-registry/components/ModelRegistryStats.tsx": "a22e82b32b59b815872b4fe939417c87",
-  "src/domains/model-registry/components/RegistryModelsTable.tsx": "7421b5b1137c618a309fc33908d6ce1d",
+  "src/domains/model-registry/components/RegistryModelsTable.tsx": "d3d6af660a1f9b688b661e2e2e5373d2",
   "src/foundation/components/MetadataDisclosure.tsx": "fcd34b1b25e3041e747bca4331decf82",
   "src/foundation/components/MetadataTimestampMeta.tsx": "159be54605a2a4bf9da4204a4c00dfd9",
   "src/domains/endpoint/components/EndpointAccessSummary.tsx": "bfc5d6c12fe0d59695aece9c31360a35",
