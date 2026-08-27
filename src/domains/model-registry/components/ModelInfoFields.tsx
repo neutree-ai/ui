@@ -2,7 +2,6 @@ import { UserRound } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -155,24 +154,22 @@ const SourceTag = ({ source }: { source: ModelFieldSource | null }) => {
   const hint = t(`model_registries.models.sourceHints.${source}`);
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className="ml-1 inline-flex shrink-0 cursor-help align-middle text-muted-foreground"
-            role="img"
-            aria-label={label}
-          >
-            <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>
-            {label}: {hint}
-          </p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="ml-1 inline-flex shrink-0 cursor-help align-middle text-muted-foreground"
+          role="img"
+          aria-label={label}
+        >
+          <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>
+          {label}: {hint}
+        </p>
+      </TooltipContent>
+    </Tooltip>
   );
 };
 

@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ModelInfoFields,
   resolveFieldValue,
@@ -9,6 +11,11 @@ import type { ModelInfo } from "@/foundation/types/serving-types";
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
+
+// SourceTag's Tooltip relies on the app-wide TooltipProvider mounted in
+// BaseLayout; this test renders the component in isolation, so it stands in.
+const renderWithTooltip = (ui: ReactElement) =>
+  render(<TooltipProvider>{ui}</TooltipProvider>);
 
 const textField = { key: "architecture", labelKey: "architecture" } as const;
 
@@ -105,7 +112,7 @@ describe("ModelInfoFields", () => {
   };
 
   it("shows unknown rather than a blank for a field the server could not establish", () => {
-    render(<ModelInfoFields info={parsed} />);
+    renderWithTooltip(<ModelInfoFields info={parsed} />);
 
     const cell = screen.getByTestId("model-info-parameter_count");
     expect(cell.textContent).toContain(
@@ -114,7 +121,7 @@ describe("ModelInfoFields", () => {
   });
 
   it("marks a derived field and leaves an auto one unmarked", () => {
-    render(<ModelInfoFields info={parsed} />);
+    renderWithTooltip(<ModelInfoFields info={parsed} />);
 
     expect(
       screen
@@ -131,7 +138,7 @@ describe("ModelInfoFields", () => {
   });
 
   it("marks a hand-filled field", () => {
-    render(
+    renderWithTooltip(
       <ModelInfoFields
         info={{
           parameter_count: "7000000000",
@@ -169,7 +176,7 @@ describe("ModelInfoFields", () => {
       ],
     };
 
-    render(<ModelInfoFields info={allMissing} />);
+    renderWithTooltip(<ModelInfoFields info={allMissing} />);
 
     const container = screen.getByTestId("model-info-fields");
     // Every named field reads "unknown", and no digit is rendered anywhere:
@@ -178,7 +185,9 @@ describe("ModelInfoFields", () => {
   });
 
   it("offers the compact definition-table layout for detail drawers", () => {
-    render(<ModelInfoFields info={parsed} variant="definition-table" />);
+    renderWithTooltip(
+      <ModelInfoFields info={parsed} variant="definition-table" />,
+    );
 
     expect(screen.getByTestId("model-info-fields").className).toContain(
       "sm:grid-cols-2",
@@ -189,7 +198,7 @@ describe("ModelInfoFields", () => {
   });
 
   it("de-emphasizes unknown values and omits not-applicable compact rows", () => {
-    render(
+    renderWithTooltip(
       <ModelInfoFields
         info={{
           is_moe: false,

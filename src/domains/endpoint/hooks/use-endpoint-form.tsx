@@ -107,16 +107,20 @@ import type {
 } from "@/foundation/recipe/types";
 import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 
-// Reads `?model_catalog=<id>` off the current URL. The app uses a HashRouter so
+// Reads the query string off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
-// Returns "" when absent or outside a browser (e.g. unit tests), so callers can
-// treat it as "no preselection".
-function readModelCatalogQueryParam(): string {
-  if (typeof window === "undefined") return "";
+// Returns null when absent or outside a browser (e.g. unit tests), so callers
+// can treat it as "no preselection".
+function readHashQueryParams(): URLSearchParams | null {
+  if (typeof window === "undefined") return null;
   const hash = window.location.hash ?? "";
   const q = hash.indexOf("?");
-  if (q === -1) return "";
-  return new URLSearchParams(hash.slice(q + 1)).get("model_catalog") ?? "";
+  if (q === -1) return null;
+  return new URLSearchParams(hash.slice(q + 1));
+}
+
+function readModelCatalogQueryParam(): string {
+  return readHashQueryParams()?.get("model_catalog") ?? "";
 }
 
 type RegistryModelPreselection = {
@@ -126,12 +130,9 @@ type RegistryModelPreselection = {
 };
 
 export function readRegistryModelQueryParams(): RegistryModelPreselection | null {
-  if (typeof window === "undefined") return null;
-  const hash = window.location.hash ?? "";
-  const q = hash.indexOf("?");
-  if (q === -1) return null;
+  const params = readHashQueryParams();
+  if (!params) return null;
 
-  const params = new URLSearchParams(hash.slice(q + 1));
   const registry = params.get("model_registry") ?? "";
   const model = params.get("model") ?? "";
   if (!registry || !model) return null;
@@ -347,10 +348,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // the warning instead of needing a branch added here.
   //
   // A registry that has not arrived yet is not an answer, so nothing is claimed
-  // until one is in hand — the same distinction model-show.tsx draws before
-  // deciding whether to offer write controls. Once one *is* in hand and still
-  // says nothing, that is the forgotten-`select` case, and it gets said out loud
-  // below rather than silently reading as "already local".
+  // until one is in hand. Once one *is* in hand and still says nothing, that is
+  // the forgotten-`select` case, and it gets said out loud below rather than
+  // silently reading as "already local".
   const selectedRegistry = (modelRegistries.query.data?.data ?? []).find(
     (candidate) => candidate.metadata.name === currentRegistry,
   );
