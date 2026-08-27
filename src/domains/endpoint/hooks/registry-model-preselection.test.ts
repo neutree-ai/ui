@@ -25,4 +25,21 @@ describe("readRegistryModelQueryParams", () => {
 
     expect(readRegistryModelQueryParams()).toBeNull();
   });
+
+  it("returns null when the hash has no query", () => {
+    window.location.hash = "#/default/endpoints/create";
+
+    expect(readRegistryModelQueryParams()).toBeNull();
+  });
+
+  it("keeps version optional", () => {
+    window.location.hash =
+      "#/default/endpoints/create?model_registry=team-models&model=org%2Fmodel";
+
+    expect(readRegistryModelQueryParams()).toEqual({
+      registry: "team-models",
+      model: "org/model",
+      version: undefined,
+    });
+  });
 });

@@ -21,8 +21,22 @@ vi.mock("@/domains/model-registry/components/ModelEditDialog", () => ({
     open ? <div data-testid="model-edit-dialog" /> : null,
 }));
 vi.mock("@/domains/model-registry/components/ModelDeleteDialog", () => ({
-  ModelDeleteDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="model-delete-dialog" /> : null,
+  ModelDeleteDialog: ({
+    open,
+    onDeleted,
+  }: {
+    open: boolean;
+    onDeleted: () => void;
+  }) =>
+    open ? (
+      <button
+        type="button"
+        data-testid="model-delete-dialog"
+        onClick={onDeleted}
+      >
+        Confirm delete
+      </button>
+    ) : null,
 }));
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({
@@ -115,5 +129,75 @@ describe("ModelDetailDrawer", () => {
     );
 
     expect(screen.getByTestId("model-edit-dialog")).toBeDefined();
+  });
+
+  it("opens delete from the writable management menu", async () => {
+    renderDrawer();
+
+    fireEvent.pointerDown(screen.getByTestId("model-actions-trigger"), {
+      button: 0,
+      ctrlKey: false,
+    });
+    fireEvent.click(await screen.findByText("buttons.delete"));
+
+    expect(screen.getByTestId("model-delete-dialog")).toBeDefined();
+    fireEvent.click(screen.getByTestId("model-delete-dialog"));
+  });
+
+  it("shows a loading state while the model is being fetched", () => {
+    vi.mocked(useRegistryModelVersion).mockReturnValue({
+      model: null,
+      isLoading: true,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useRegistryModelVersion>);
+
+    const { container } = renderDrawer();
+
+    expect(container.querySelector("[data-testid='model-deploy']")).toBeNull();
+    expect(screen.getByTitle("Loading...")).toBeDefined();
+  });
+
+  it("shows an error and retries the model request", () => {
+    const refetch = vi.fn();
+    vi.mocked(useRegistryModelVersion).mockReturnValue({
+      model: null,
+      isLoading: false,
+      error: { message: "Registry unavailable" },
+      refetch,
+    } as unknown as ReturnType<typeof useRegistryModelVersion>);
+
+    renderDrawer();
+    expect(screen.getByTestId("model-detail-error").textContent).toContain(
+      "Registry unavailable",
+    );
+
+    fireEvent.click(screen.getByText("buttons.refresh"));
+    expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it("renders unknown summary values when optional metadata is absent", () => {
+    vi.mocked(useRegistryModelVersion).mockReturnValue({
+      model: {
+        name: "resolved-revision",
+        alias: "",
+        labels: {},
+        info: {},
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useRegistryModelVersion>);
+
+    renderDrawer({ ...registry, visibility: undefined });
+
+    expect(screen.getByText("-")).toBeDefined();
+    expect(
+      screen.getByText("model_registries.fields.visibility").parentElement
+        ?.textContent,
+    ).toContain("model_registries.models.values.unknown");
+    expect(
+      screen.getByText("common.fields.createdAt").parentElement?.textContent,
+    ).toContain("model_registries.models.values.unknown");
   });
 });
