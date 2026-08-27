@@ -13,6 +13,13 @@ const booleanSchema = {
   enable_prefix_cache: { type: "boolean", title: "Enable Prefix Cache" },
 } as unknown as Schema;
 
+const humanReadableIntegerSchema: Schema = {
+  kv_cache_memory_bytes: {
+    type: ["integer", "string"],
+    pattern: "^(?:\\d+|\\d+[KMGT])$",
+  },
+};
+
 function VariablesInputForm({
   defaultArgs = { speculative_config: { method: "mtp" } },
   onSubmit,
@@ -44,6 +51,42 @@ function VariablesInputForm({
 }
 
 describe("VariablesInput", () => {
+  it("renders integer-string unions as text inputs and validates existing edits against pattern", () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <VariablesInput
+        value={{ kv_cache_memory_bytes: "4G" }}
+        onChange={onChange}
+        schema={humanReadableIntegerSchema}
+      />,
+    );
+
+    const input = screen.getByDisplayValue("4G") as HTMLInputElement;
+    expect(input.type).toBe("text");
+    expect(input.pattern).toBe("^(?:\\d+|\\d+[KMGT])$");
+
+    fireEvent.change(input, { target: { value: "8GB" } });
+    expect(onChange).not.toHaveBeenCalled();
+    screen.getByText("components.variablesInput.invalidPatternValue");
+
+    fireEvent.change(input, { target: { value: "8G" } });
+    expect(
+      screen.queryByText("components.variablesInput.invalidPatternValue"),
+    ).toBeNull();
+    expect(onChange).toHaveBeenCalledWith({ kv_cache_memory_bytes: "8G" });
+
+    rerender(
+      <VariablesInput
+        value={{ kv_cache_memory_bytes: "16G" }}
+        onChange={onChange}
+        schema={humanReadableIntegerSchema}
+      />,
+    );
+    expect((screen.getByDisplayValue("16G") as HTMLInputElement).value).toBe(
+      "16G",
+    );
+  });
+
   it("renders existing object schema values as pretty JSON", () => {
     render(
       <VariablesInput
