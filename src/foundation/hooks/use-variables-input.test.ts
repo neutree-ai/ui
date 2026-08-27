@@ -273,6 +273,53 @@ describe("useVariablesInput", () => {
       expect(onChange).toHaveBeenCalledWith({ strKey: "hello" });
     });
 
+    it("should preserve a human-readable value for integer-string unions", () => {
+      const onChange = vi.fn();
+      const schema: Schema = {
+        kv_cache_memory_bytes: {
+          type: ["integer", "string"],
+          pattern: "^(?:\\d+|\\d+[KMGT])$",
+        },
+      };
+      const { result } = renderHook(() =>
+        useVariablesInput({ onChange, schema }),
+      );
+      const rowId = result.current.editingRows[0].id;
+
+      fillEditingRow(result, rowId, "kv_cache_memory_bytes", "8G");
+      act(() => {
+        result.current.saveEditingRow(rowId);
+      });
+
+      expect(onChange).toHaveBeenCalledWith({
+        kv_cache_memory_bytes: "8G",
+      });
+    });
+
+    it("should reject a union value that does not match its pattern", () => {
+      const onChange = vi.fn();
+      const schema: Schema = {
+        kv_cache_memory_bytes: {
+          type: ["integer", "string"],
+          pattern: "^(?:\\d+|\\d+[KMGT])$",
+        },
+      };
+      const { result } = renderHook(() =>
+        useVariablesInput({ onChange, schema }),
+      );
+      const rowId = result.current.editingRows[0].id;
+
+      fillEditingRow(result, rowId, "kv_cache_memory_bytes", "8GB");
+      act(() => {
+        expect(result.current.saveEditingRow(rowId)).toBe(false);
+      });
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(result.current.editingRowErrors[rowId]).toBe(
+        "components.variablesInput.invalidPatternValue",
+      );
+    });
+
     it("should not save editing row with empty value", () => {
       const onChange = vi.fn();
       const schema: Schema = {

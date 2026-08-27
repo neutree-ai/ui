@@ -1652,7 +1652,8 @@
 			"addVariable": "Add Variable",
 			"selectOrTypeKey": "Select from schema or type custom key",
 			"noSchemaKeys": "No schema keys available",
-			"invalidJsonValue": "Enter a valid JSON object or array"
+			"invalidJsonValue": "Enter a valid JSON object or array",
+			"invalidPatternValue": "Enter a value in the required format"
 		},
 		"playground": {
 			"chat": {
