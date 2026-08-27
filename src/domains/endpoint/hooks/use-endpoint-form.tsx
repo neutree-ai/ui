@@ -1648,11 +1648,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   );
   const modelInfoRead = resolveModelInfoRead({
     selected: Boolean(
-      activeModelInfo ||
-        currentModelInfo ||
+      currentModelInfo ||
+        activeModelInfo ||
         (currentRegistry && currentModelName),
     ),
-    info: activeModelInfo ?? currentModelInfo,
+    // The form's copy first, because it is the model this endpoint will be
+    // created with. Applying a catalog writes the variant's metadata here, and
+    // picking a model replaces it with what that checkpoint reports — so this
+    // follows the selection either way.
+    //
+    // The variant's own copy cannot stand in front of it: a catalog states a
+    // model's *display* metadata (parameter count, quantization) and not the
+    // shape the cache arithmetic needs, so preferring it made a model picked
+    // from a catalog report the checkpoint as silent about its layers, KV heads
+    // and head dim — while the same model picked without a catalog estimated
+    // fine. It stays as the fallback for a variant whose metadata never reached
+    // the form.
+    info: currentModelInfo ?? activeModelInfo,
     isLoading: pickedModelVersion.isLoading,
     error: pickedModelVersion.error,
   });

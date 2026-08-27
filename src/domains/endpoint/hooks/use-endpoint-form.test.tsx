@@ -6607,3 +6607,151 @@ describe("the weights section is reachable from both modes", () => {
     expect(screen.queryByTestId("kv-cache-estimate")).toBeNull();
   });
 });
+
+// A catalog variant states the model's display metadata — parameter count,
+// quantization — and not the shape the cache arithmetic needs. Picking a model
+// fetches that shape onto the form, and the estimate has to use it.
+describe("picking a model from a catalog feeds the estimate", () => {
+  const displayOnlyCatalog = {
+    ...recipeCatalog,
+    spec: {
+      ...recipeCatalog.spec,
+      variants: {
+        default: {
+          ...recipeCatalog.spec.variants.default,
+          model: {
+            ...recipeCatalog.spec.variants.default.model,
+            info: { parameter_count: "35B", quantization: "fp8" },
+          },
+        },
+      },
+    },
+  };
+
+  const checkpointShape = {
+    num_hidden_layers: 32,
+    num_key_value_heads: 8,
+    head_dim: 128,
+  };
+
+  it("estimates from the checkpoint, not from the catalog's display metadata", async () => {
+    setupMocks(
+      [catalogA, displayOnlyCatalog],
+      [plainKubernetesCluster],
+      [{ metadata: { name: "hf" } }],
+    );
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.name", "org/model");
+      formInstance?.setValue("spec.model.info", checkpointShape);
+    });
+
+    expect(
+      screen.getByTestId("kv-cache-estimate").getAttribute("data-state"),
+    ).not.toBe("missing-fields");
+  });
+
+  // The other direction: a catalog that does state the shape must still
+  // estimate on its own, without anyone touching the model picker.
+  it("estimates from what the catalog states when nothing is picked", () => {
+    const shaped = {
+      ...displayOnlyCatalog,
+      spec: {
+        ...displayOnlyCatalog.spec,
+        variants: {
+          default: {
+            ...displayOnlyCatalog.spec.variants.default,
+            model: {
+              ...displayOnlyCatalog.spec.variants.default.model,
+              info: { parameter_count: "35B", ...checkpointShape },
+            },
+          },
+        },
+      },
+    };
+    setupMocks([catalogA, shaped], [plainKubernetesCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    expect(
+      screen.getByTestId("kv-cache-estimate").getAttribute("data-state"),
+    ).not.toBe("missing-fields");
+  });
+});
+
+// The estimate reads the form's copy of the model metadata, and that copy is
+// submitted, so a catalog that states none has to clear what the last one left
+// rather than inherit it.
+describe("switching catalogs does not carry model metadata over", () => {
+  const catalogNamed = (
+    id: number,
+    name: string,
+    model: Record<string, unknown>,
+  ) => ({
+    id,
+    metadata: { name },
+    spec: {
+      engine: { engine: "vllm", version: "0.8.5" },
+      variants: { default: { model } },
+    },
+  });
+
+  const baseModel = {
+    version: "",
+    registry: "hf",
+    file: "",
+    task: "text-generation",
+  };
+
+  it("clears it for a catalog that states none", () => {
+    setupMocks(
+      [
+        catalogNamed(91, "with-info", {
+          ...baseModel,
+          name: "a",
+          info: { parameter_count: "35B" },
+        }),
+        catalogNamed(92, "without-info", { ...baseModel, name: "b" }),
+      ],
+      [plainKubernetesCluster],
+    );
+    render(<RecipeCreateForm />);
+
+    selectCatalog("with-info");
+    expect(formInstance?.getValues().spec.model.info).toEqual({
+      parameter_count: "35B",
+    });
+
+    selectCatalog("without-info");
+    expect(formInstance?.getValues().spec.model.info).toBeNull();
+  });
+
+  it("replaces it for a catalog that states its own", () => {
+    setupMocks(
+      [
+        catalogNamed(91, "first", {
+          ...baseModel,
+          name: "a",
+          info: { parameter_count: "35B" },
+        }),
+        catalogNamed(92, "second", {
+          ...baseModel,
+          name: "b",
+          info: { parameter_count: "8B" },
+        }),
+      ],
+      [plainKubernetesCluster],
+    );
+    render(<RecipeCreateForm />);
+
+    selectCatalog("first");
+    selectCatalog("second");
+
+    expect(formInstance?.getValues().spec.model.info).toEqual({
+      parameter_count: "8B",
+    });
+  });
+});
