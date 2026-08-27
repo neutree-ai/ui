@@ -10,6 +10,7 @@ export const EndpointsEdit = () => {
     submitBlocked,
     metadataFields,
     templateFields,
+    weightFields,
     resourceFields,
     customizeFields,
   } = useEndpointForm({
@@ -25,6 +26,7 @@ export const EndpointsEdit = () => {
       <FormSectionStack>
         {metadataFields}
         {templateFields}
+        {weightFields}
         {resourceFields}
         {customizeFields}
       </FormSectionStack>

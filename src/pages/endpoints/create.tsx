@@ -12,6 +12,7 @@ export const EndpointsCreate = () => {
     advancedToggle,
     templateFields,
     recipeFields,
+    weightFields,
     resourceFields,
     customizeFields,
   } = useEndpointForm({
@@ -29,6 +30,7 @@ export const EndpointsCreate = () => {
         {advancedToggle}
         {templateFields}
         {recipeFields}
+        {weightFields}
         {resourceFields}
         {customizeFields}
       </FormSectionStack>

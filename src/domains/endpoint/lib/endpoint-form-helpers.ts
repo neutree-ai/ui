@@ -673,6 +673,11 @@ export const defaultEndpointSpec = {
     registry: "",
     file: "",
     task: "",
+    // Declared so that applying a catalog that states no model metadata clears
+    // whatever the last one left behind. The merge only writes the keys the
+    // default names, so without this the previous catalog's parameter count
+    // stays on the form — and gets submitted — under the new model's name.
+    info: null,
   },
   engine: {
     engine: "",

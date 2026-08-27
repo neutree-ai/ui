@@ -1065,6 +1065,7 @@ function CreateForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.weightFields}
         {result.resourceFields}
         {result.customizeFields}
       </form>
@@ -1081,6 +1082,7 @@ function EditForm() {
       <form>
         {result.metadataFields}
         {result.templateFields}
+        {result.weightFields}
         {result.resourceFields}
         {result.customizeFields}
       </form>
@@ -6393,6 +6395,7 @@ function RecipeCreateForm() {
         {result.advancedToggle}
         {result.templateFields}
         {result.recipeFields}
+        {result.weightFields}
         {result.resourceFields}
         {result.customizeFields}
       </form>
@@ -6516,5 +6519,310 @@ describe("validated accelerators are ranked, not filtered", () => {
 
     expect(marked("T4")).toBe(true);
     expect(marked("A100")).toBe(false);
+  });
+});
+
+// One section for what the deployment will weigh, reachable from both ways of
+// getting here: the recipe section only exists when a recipe catalog is
+// selected, and the model section is not rendered for an engine that needs no
+// model spec, so neither could host it.
+describe("the weights section is reachable from both modes", () => {
+  it("estimates the KV cache with no catalog in play", async () => {
+    setupMocks(
+      [catalogA],
+      [plainKubernetesCluster],
+      [{ metadata: { name: "hf" } }],
+    );
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.name", "org/model");
+      formInstance?.setValue("spec.model.info", { num_hidden_layers: 32 });
+    });
+
+    expect(screen.getByTestId("endpoint-weights-estimate")).toBeDefined();
+    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+    expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
+  });
+
+  it("puts what the catalog declares beside the estimate", async () => {
+    const withVram = {
+      ...recipeCatalog,
+      spec: {
+        ...recipeCatalog.spec,
+        variants: {
+          default: {
+            ...recipeCatalog.spec.variants.default,
+            vram_minimum_gb: 48,
+            model: {
+              ...recipeCatalog.spec.variants.default.model,
+              info: { parameter_count: "35B" },
+            },
+          },
+        },
+      },
+    };
+    setupMocks([catalogA, withVram], [plainKubernetesCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    const block = screen.getByTestId("endpoint-declared-weights");
+    expect(within(block).getByText("35B")).toBeDefined();
+    // The requirement travels with the check on it, in the same block.
+    expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
+  });
+
+  // Flex serves a model baked into its own image; there is no checkpoint to
+  // compute a cache from. Checked with model info on the form, which an
+  // existing spec can carry — otherwise the panel is absent for want of a
+  // model rather than because the engine needs none.
+  it("drops the estimate for an engine that needs no model spec", async () => {
+    setupMocks(
+      [],
+      [],
+      [{ metadata: { name: "hf" } }],
+      [engineRef("flex"), engineRef("vllm")],
+    );
+    render(<CreateForm />);
+
+    const withModelInfo = async () => {
+      await act(async () => {
+        formInstance?.setValue("spec.model.registry", "hf");
+        formInstance?.setValue("spec.model.name", "org/model");
+        formInstance?.setValue("spec.model.info", { num_hidden_layers: 32 });
+      });
+    };
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "vllm", version: "v1" });
+    });
+    await withModelInfo();
+    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "flex", version: "v1" });
+    });
+    await withModelInfo();
+    expect(screen.queryByTestId("kv-cache-estimate")).toBeNull();
+  });
+});
+
+// A catalog variant states the model's display metadata — parameter count,
+// quantization — and not the shape the cache arithmetic needs. Picking a model
+// fetches that shape onto the form, and the estimate has to use it.
+describe("picking a model from a catalog feeds the estimate", () => {
+  const displayOnlyCatalog = {
+    ...recipeCatalog,
+    spec: {
+      ...recipeCatalog.spec,
+      variants: {
+        default: {
+          ...recipeCatalog.spec.variants.default,
+          model: {
+            ...recipeCatalog.spec.variants.default.model,
+            info: { parameter_count: "35B", quantization: "fp8" },
+          },
+        },
+      },
+    },
+  };
+
+  const checkpointShape = {
+    num_hidden_layers: 32,
+    num_key_value_heads: 8,
+    head_dim: 128,
+  };
+
+  it("estimates from the checkpoint, not from the catalog's display metadata", async () => {
+    setupMocks(
+      [catalogA, displayOnlyCatalog],
+      [plainKubernetesCluster],
+      [{ metadata: { name: "hf" } }],
+    );
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.name", "org/model");
+      formInstance?.setValue("spec.model.info", checkpointShape);
+    });
+
+    expect(
+      screen.getByTestId("kv-cache-estimate").getAttribute("data-state"),
+    ).not.toBe("missing-fields");
+  });
+
+  // The other direction: a catalog that does state the shape must still
+  // estimate on its own, without anyone touching the model picker.
+  it("estimates from what the catalog states when nothing is picked", () => {
+    const shaped = {
+      ...displayOnlyCatalog,
+      spec: {
+        ...displayOnlyCatalog.spec,
+        variants: {
+          default: {
+            ...displayOnlyCatalog.spec.variants.default,
+            model: {
+              ...displayOnlyCatalog.spec.variants.default.model,
+              info: { parameter_count: "35B", ...checkpointShape },
+            },
+          },
+        },
+      },
+    };
+    setupMocks([catalogA, shaped], [plainKubernetesCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    expect(
+      screen.getByTestId("kv-cache-estimate").getAttribute("data-state"),
+    ).not.toBe("missing-fields");
+  });
+});
+
+// The estimate reads the form's copy of the model metadata, and that copy is
+// submitted, so a catalog that states none has to clear what the last one left
+// rather than inherit it.
+describe("switching catalogs does not carry model metadata over", () => {
+  const catalogNamed = (
+    id: number,
+    name: string,
+    model: Record<string, unknown>,
+  ) => ({
+    id,
+    metadata: { name },
+    spec: {
+      engine: { engine: "vllm", version: "0.8.5" },
+      variants: { default: { model } },
+    },
+  });
+
+  const baseModel = {
+    version: "",
+    registry: "hf",
+    file: "",
+    task: "text-generation",
+  };
+
+  it("clears it for a catalog that states none", () => {
+    setupMocks(
+      [
+        catalogNamed(91, "with-info", {
+          ...baseModel,
+          name: "a",
+          info: { parameter_count: "35B" },
+        }),
+        catalogNamed(92, "without-info", { ...baseModel, name: "b" }),
+      ],
+      [plainKubernetesCluster],
+    );
+    render(<RecipeCreateForm />);
+
+    selectCatalog("with-info");
+    expect(formInstance?.getValues().spec.model.info).toEqual({
+      parameter_count: "35B",
+    });
+
+    selectCatalog("without-info");
+    expect(formInstance?.getValues().spec.model.info).toBeNull();
+  });
+
+  it("replaces it for a catalog that states its own", () => {
+    setupMocks(
+      [
+        catalogNamed(91, "first", {
+          ...baseModel,
+          name: "a",
+          info: { parameter_count: "35B" },
+        }),
+        catalogNamed(92, "second", {
+          ...baseModel,
+          name: "b",
+          info: { parameter_count: "8B" },
+        }),
+      ],
+      [plainKubernetesCluster],
+    );
+    render(<RecipeCreateForm />);
+
+    selectCatalog("first");
+    selectCatalog("second");
+
+    expect(formInstance?.getValues().spec.model.info).toEqual({
+      parameter_count: "8B",
+    });
+  });
+});
+
+// Deploying from a recipe that exposes the context window as a feature put the
+// same number on the page twice — once as the control that sets it, once as a
+// field in the estimate — with no way to tell which one the deployment uses.
+describe("a recipe's own controls are not offered twice", () => {
+  const catalogWithContextFeature = {
+    ...recipeCatalog,
+    spec: {
+      ...recipeCatalog.spec,
+      variants: {
+        default: {
+          ...recipeCatalog.spec.variants.default,
+          model: {
+            ...recipeCatalog.spec.variants.default.model,
+            info: {
+              num_hidden_layers: 32,
+              num_key_value_heads: 8,
+              head_dim: 128,
+            },
+          },
+        },
+      },
+      features: [
+        {
+          name: "max-model-len",
+          display_name: "Context window",
+          group: "Core",
+          type: "input",
+          input: { value_type: "int", default: "8192" },
+          engine_args: { max_model_len: "${value}" },
+        },
+      ],
+    },
+  };
+
+  it("reads the context from the feature instead of offering a field", () => {
+    setupMocks([catalogA, catalogWithContextFeature], [plainKubernetesCluster]);
+    render(<RecipeCreateForm />);
+    selectCatalog("recipe-mc");
+
+    const tokens = screen.getByTestId("kv-cache-tokens");
+    expect(tokens.tagName).not.toBe("INPUT");
+    expect(tokens.getAttribute("data-owned-by")).toBe("Context window");
+    expect(tokens.textContent).toBe("8192");
+
+    // Concurrency has no control on this catalog, so it stays a field.
+    expect(screen.getByTestId("kv-cache-sequences").tagName).toBe("INPUT");
+  });
+
+  it("still offers both fields with no catalog in play", async () => {
+    setupMocks(
+      [catalogA],
+      [plainKubernetesCluster],
+      [{ metadata: { name: "hf" } }],
+    );
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "hf");
+      formInstance?.setValue("spec.model.name", "org/model");
+      formInstance?.setValue("spec.model.info", {
+        num_hidden_layers: 32,
+        num_key_value_heads: 8,
+        head_dim: 128,
+      });
+    });
+
+    expect(screen.getByTestId("kv-cache-tokens").tagName).toBe("INPUT");
+    expect(screen.getByTestId("kv-cache-sequences").tagName).toBe("INPUT");
   });
 });

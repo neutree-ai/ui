@@ -20,11 +20,10 @@ import {
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
+import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointWeightsEstimate";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
-import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
-import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
 import { WorkloadImageFeatureAddon } from "@/domains/endpoint/components/WorkloadImageFeatureAddon";
 import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageInput";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
@@ -40,7 +39,10 @@ import {
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
-import { readEngineCacheArgs } from "@/domains/endpoint/lib/engine-cache-args";
+import {
+  findEngineCacheArgControls,
+  readEngineCacheArgs,
+} from "@/domains/endpoint/lib/engine-cache-args";
 import { engineNeedsModelSpec } from "@/domains/endpoint/lib/model-spec";
 import {
   formatVgpuMemoryGiBInputValue,
@@ -1625,8 +1627,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedCatalog?.spec.variants?.[selectedVariant] ??
     selectedCatalog?.spec.variants?.default;
   const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
-  const estimatedTotalVramGb =
-    activeVariantVram != null ? activeVariantVram * replicaCount : null;
   const activeModelInfo = activeVariant?.model?.info ?? null;
 
   // What the KV cache estimate is computed from. There is no second read for
@@ -1648,13 +1648,33 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form.watch("spec.engine.engine"),
     form.watch("spec.variables.engine_args"),
   );
+  // A recipe that exposes the context window as a feature gives the user one
+  // place to set it; the estimate reads that rather than offering a second
+  // field holding the same number. Read from the features rather than from
+  // which group they were put in, so it holds however a catalog is organised.
+  const engineCacheArgControls = findEngineCacheArgControls(
+    form.watch("spec.engine.engine"),
+    isRecipeCatalog ? selectedCatalog?.spec.features : null,
+  );
   const modelInfoRead = resolveModelInfoRead({
     selected: Boolean(
-      activeModelInfo ||
-        currentModelInfo ||
+      currentModelInfo ||
+        activeModelInfo ||
         (currentRegistry && currentModelName),
     ),
-    info: activeModelInfo ?? currentModelInfo,
+    // The form's copy first, because it is the model this endpoint will be
+    // created with. Applying a catalog writes the variant's metadata here, and
+    // picking a model replaces it with what that checkpoint reports — so this
+    // follows the selection either way.
+    //
+    // The variant's own copy cannot stand in front of it: a catalog states a
+    // model's *display* metadata (parameter count, quantization) and not the
+    // shape the cache arithmetic needs, so preferring it made a model picked
+    // from a catalog report the checkpoint as silent about its layers, KV heads
+    // and head dim — while the same model picked without a catalog estimated
+    // fine. It stays as the fallback for a variant whose metadata never reached
+    // the form.
+    info: currentModelInfo ?? activeModelInfo,
     isLoading: pickedModelVersion.isLoading,
     error: pickedModelVersion.error,
   });
@@ -1975,21 +1995,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </FormFieldGroup>
             </>
           )}
-          {!hidesModelFields && (
-            <div className="col-span-4">
-              {/* Remounted per model so the inputs re-derive their defaults from
-                  the checkpoint being estimated; carrying the previous model's
-                  context length into the next model's estimate would look like
-                  a value read from it. */}
-              <KVCacheEstimate
-                key={`${currentRegistry ?? ""}:${currentModelName ?? ""}:${
-                  form.watch("spec.model.version") ?? ""
-                }`}
-                read={modelInfoRead}
-                engineArgs={engineCacheArgs}
-              />
-            </div>
-          )}
           {showFull && !hidesModelFields && (
             <>
               <FormFieldGroup
@@ -2156,116 +2161,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               />
             </div>
           )}
-          {(() => {
-            const v =
-              selectedCatalog.spec.variants?.[selectedVariant] ??
-              selectedCatalog.spec.variants?.default;
-            const req = v?.vram_minimum_gb ?? null;
-            if (!req) return null;
-            return (
-              <div className="col-span-4">
-                <VRAMCheckBadge
-                  // Only feed the check accelerator data that comes from the
-                  // selected cluster (selectedAcceleratorOption matches the
-                  // form value against real cluster options). The composed
-                  // variant also writes its *reference* accelerator into the
-                  // form; comparing that against the variant's own requirement
-                  // is recipe-vs-recipe math with no environment information
-                  // (NEU-499) — in that case the badge shows the requirement
-                  // alone.
-                  acceleratorProduct={selectedAcceleratorOption?.product}
-                  perGpuGb={
-                    selectedMemoryTotalMiB != null
-                      ? selectedMemoryTotalMiB / 1024
-                      : undefined
-                  }
-                  gpuCount={form.watch("spec.resources.gpu")}
-                  requiredGb={req}
-                />
-              </div>
-            );
-          })()}
-          {(estimatedTotalVramGb != null || activeModelInfo) && (
-            <div className="col-span-4 rounded-lg border bg-muted/20 p-3">
-              <div className="mb-2 text-sm font-medium">
-                {t("endpoints.recipe.resourceEstimate", "Resource estimate")}
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                {estimatedTotalVramGb != null && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t("endpoints.recipe.estimatedVram", "Estimated VRAM")}
-                    </div>
-                    <div className="mt-1 font-semibold tabular-nums">
-                      ≈ {estimatedTotalVramGb} GB
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {activeVariantVram} GB ×{" "}
-                      {t(
-                        "endpoints.recipe.replicasCount",
-                        "{{count}} replica",
-                        {
-                          count: replicaCount,
-                        },
-                      )}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.parameter_count && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.parameterCount",
-                        "Parameters",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.parameter_count}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.quantization && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.quantization",
-                        "Quantization",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.quantization}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.context_length && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.contextLength",
-                        "Context length",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.context_length}
-                    </div>
-                  </div>
-                )}
-                {activeModelInfo?.architecture && (
-                  <div className="rounded-md border bg-background px-3 py-2">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {t(
-                        "model_catalogs.modelInfo.architecture",
-                        "Architecture",
-                      )}
-                    </div>
-                    <div className="mt-1 font-semibold">
-                      {activeModelInfo.architecture}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
           {selectedCatalog.spec.features &&
             selectedCatalog.spec.features.length > 0 &&
             bottomFeatureGroups.length > 0 && (
@@ -2306,6 +2201,58 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           )}
         </FormCardGrid>
       ) : null,
+    // What the deployment is expected to weigh. Its own section so both ways
+    // of getting here can show it: the recipe section only exists when a recipe
+    // catalog is selected, and the model section is not rendered for an engine
+    // that needs no model spec — either would hide one of the two halves.
+    weightFields: (
+      <FormCardGrid
+        title={t("endpoints.sections.weights")}
+        variant={sectionVariant}
+      >
+        <div className="col-span-4">
+          <EndpointWeightsEstimate
+            declared={
+              selectedCatalog
+                ? {
+                    perReplicaGb: activeVariantVram,
+                    replicas: replicaCount,
+                    info: activeModelInfo,
+                    // Only accelerator data that came from the selected
+                    // cluster. The composed variant also writes its reference
+                    // accelerator into the form; checking the requirement
+                    // against that is recipe-vs-recipe math with nothing of the
+                    // environment in it (NEU-499), and the badge then states
+                    // the requirement alone.
+                    accelerator: {
+                      product: selectedAcceleratorOption?.product,
+                      perGpuGb:
+                        selectedMemoryTotalMiB != null
+                          ? selectedMemoryTotalMiB / 1024
+                          : undefined,
+                      gpuCount: form.watch("spec.resources.gpu"),
+                    },
+                  }
+                : null
+            }
+            // An engine serving a model baked into its own image has no
+            // checkpoint to estimate from.
+            kvCache={
+              hidesModelFields
+                ? null
+                : {
+                    read: modelInfoRead,
+                    engineArgs: engineCacheArgs,
+                    controls: engineCacheArgControls,
+                    modelKey: `${currentRegistry ?? ""}:${
+                      currentModelName ?? ""
+                    }:${form.watch("spec.model.version") ?? ""}`,
+                  }
+            }
+          />
+        </div>
+      </FormCardGrid>
+    ),
     // Scheduling target and resource selection section - always visible.
     resourceFields: (
       <FormCardGrid

@@ -948,13 +948,16 @@ describe("buildCatalogMergedSpec", () => {
 
     const result = buildCatalogMergedSpec(catalogSpec);
 
-    // Catalog values override defaults
+    // Catalog values override defaults; a key the catalog is silent about
+    // comes back as the default rather than being left off, which is what
+    // clears the previous catalog's value off the form.
     expect(result.model).toEqual({
       name: "llama-3",
       version: "",
       registry: "hf",
       file: "",
       task: "",
+      info: null,
     });
     expect(result.engine).toEqual({ engine: "vllm", version: "0.6.0" });
     // Sections not in catalog fall back to defaults
