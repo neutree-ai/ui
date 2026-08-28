@@ -1629,6 +1629,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
   const activeModelInfo = activeVariant?.model?.info ?? null;
 
+  // The variant's declared figure is weights alone; what a replica actually
+  // needs in VRAM also includes the KV cache, which EndpointWeightsEstimate
+  // computes from the context and concurrency this deployment will run with
+  // and reports back here. Falls back to the declared weights until that
+  // estimate lands, so callers outside the estimate section (the unverified-
+  // accelerator notice below) never regress to showing nothing.
+  const [kvCacheRequiredGb, setKvCacheRequiredGb] = useState<number | null>(
+    null,
+  );
+  const requiredVramGb = kvCacheRequiredGb ?? activeVariantVram;
+
   // What the KV cache estimate is computed from. There is no second read for
   // it: picking a model already fetches the version detail above and lands its
   // `info` on the form, and a catalog variant carries that metadata with it, so
@@ -2249,6 +2260,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     }:${form.watch("spec.model.version") ?? ""}`,
                   }
             }
+            onRequiredGbChange={setKvCacheRequiredGb}
           />
         </div>
       </FormCardGrid>
@@ -2516,12 +2528,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           className="col-span-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground sm:col-span-2"
                         >
                           {t("endpoints.recipe.noVerifiedAccelerator")}
-                          {activeVariantVram != null && (
+                          {requiredVramGb != null && (
                             <span className="ml-1">
                               {t(
                                 "endpoints.recipe.requiredVram",
                                 "Requires ≥ {{gb}} GB VRAM.",
-                                { gb: activeVariantVram },
+                                { gb: requiredVramGb },
                               )}
                             </span>
                           )}

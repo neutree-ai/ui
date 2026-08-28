@@ -535,6 +535,7 @@ export const KVCacheEstimate = ({
   read,
   engineArgs = NO_ENGINE_CACHE_ARGS,
   controls = NO_ENGINE_CACHE_ARG_CONTROLS,
+  onEstimate,
 }: {
   read: ModelInfoRead;
   /** What this deployment's engine args say about context and concurrency.
@@ -550,7 +551,23 @@ export const KVCacheEstimate = ({
    * what-if the deployment does not follow.
    */
   controls?: EngineCacheArgControls;
+  /**
+   * Reports the panel's current total (in GB), or null while it cannot compute
+   * one — a caller combining this with a declared weights figure needs the
+   * number, not just the rendering of it. Fires on every recompute, including
+   * unmount (via the effect cleanup path a caller may wire up), so a stale
+   * total never lingers once this panel stops mounting.
+   */
+  onEstimate?: (gb: number | null) => void;
 }) => {
+  useEffect(() => {
+    if (read.state !== "ready") {
+      onEstimate?.(null);
+    }
+    // Only the non-ready paths are handled here — the ready path's total comes
+    // from the Estimator itself, which knows the actual computed result.
+  }, [read.state, onEstimate]);
+
   if (read.state === "none") {
     return null;
   }
@@ -571,7 +588,12 @@ export const KVCacheEstimate = ({
   }
 
   return (
-    <Estimator info={read.info} engineArgs={engineArgs} controls={controls} />
+    <Estimator
+      info={read.info}
+      engineArgs={engineArgs}
+      controls={controls}
+      onEstimate={onEstimate}
+    />
   );
 };
 
@@ -639,10 +661,12 @@ const Estimator = ({
   info,
   engineArgs,
   controls,
+  onEstimate,
 }: {
   info: ModelInfo;
   engineArgs: EngineCacheArgs;
   controls: EngineCacheArgControls;
+  onEstimate?: (gb: number | null) => void;
 }) => {
   const { t } = useTranslation();
 
@@ -715,6 +739,11 @@ const Estimator = ({
     includeLinearState,
     includeDraftKvCache,
   });
+
+  const resultGb = result.ok ? result.totalGb : null;
+  useEffect(() => {
+    onEstimate?.(resultGb);
+  }, [resultGb, onEstimate]);
 
   return (
     <Panel state={result.ok ? result.family : result.reason}>

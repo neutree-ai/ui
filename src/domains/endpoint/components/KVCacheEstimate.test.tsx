@@ -194,6 +194,31 @@ describe("KVCacheEstimate", () => {
     expect(screen.queryByTestId("kv-cache-tokens")).toBeNull();
   });
 
+  // A caller combining this panel's total with a declared weights figure
+  // (EndpointWeightsEstimate) needs the number itself, not just the render of
+  // it — so the panel reports it back rather than keeping it as private state.
+  it("reports its computed total to onEstimate", () => {
+    const onEstimate = vi.fn();
+    render(
+      <KVCacheEstimate read={ready(deepseekV3)} onEstimate={onEstimate} />,
+    );
+
+    // 61 x 576 x 2 = 70,272 bytes/token, at the checkpoint's own 163,840-token
+    // ceiling and the panel's one-sequence default.
+    expect(onEstimate).toHaveBeenLastCalledWith(
+      expect.closeTo((70272 * 163840) / 2 ** 30, 5),
+    );
+  });
+
+  it("reports null to onEstimate while the read is not ready", () => {
+    const onEstimate = vi.fn();
+    render(
+      <KVCacheEstimate read={{ state: "loading" }} onEstimate={onEstimate} />,
+    );
+
+    expect(onEstimate).toHaveBeenLastCalledWith(null);
+  });
+
   it.each([
     {
       reason: "unauthorized" as const,

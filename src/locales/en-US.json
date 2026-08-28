@@ -1210,6 +1210,7 @@
 		},
 		"weights": {
 			"declared": "Declared by the catalog",
+			"breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
 			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
 		}
 	},
