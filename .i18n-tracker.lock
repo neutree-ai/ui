@@ -389,7 +389,7 @@
   "src/foundation/lib/model-info-read.ts": "b9d8f811da92aec9acbc3842a2436d0e",
   "src/domains/endpoint/components/KVCacheEstimate.tsx": "8afe7ee87f4328ba30d6187cfbe0572d",
   "src/domains/endpoint/lib/engine-cache-args.ts": "c5d778e0a48e9ecce84b9f77b425fa44",
-  "src/domains/cluster/components/ClusterResourceSummary.tsx": "581d58a42deb76bd82308ef48b17532c",
+  "src/domains/cluster/components/ClusterResourceSummary.tsx": "2fb7857b33a274d49a472bc4d5909307",
   "src/foundation/components/MetricBar.tsx": "58b87909b5d1371dfdd6f5932adb8408",
   "src/foundation/components/ResourceUsageLegend.tsx": "c09c3da92d40c1b98d3450f65a7feb10",
   "src/domains/endpoint/lib/save-as-catalog.ts": "92faeef51fe64fcc065322c760d9443e",

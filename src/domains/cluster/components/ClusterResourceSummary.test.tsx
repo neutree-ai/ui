@@ -258,6 +258,58 @@ describe("ClusterResourceSummary", () => {
     expect(screen.getByText("25% allocated")).toBeTruthy();
     expect(screen.getByText("1.5 cards")).toBeTruthy();
     expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
+    expect(
+      screen.getByRole("progressbar", { name: "GPU Cards: 0.5 / 2.0" }),
+    ).toBeTruthy();
+  });
+
+  it("keeps the meter continuous when fractional groups sum to an integer", () => {
+    render(
+      <ClusterResourceSummary
+        resourceInfo={{
+          allocatable: {
+            cpu: 4,
+            memory: 8,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+              npu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+            },
+          },
+          available: {
+            cpu: 4,
+            memory: 8,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+              npu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+            },
+          },
+          node_resources: null,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(screen.getByText("0.0 / 1.0")).toBeTruthy();
+    expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
+    expect(
+      screen.getByRole("progressbar", { name: "GPU Cards: 0.0 / 1.0" }),
+    ).toBeTruthy();
   });
 
   it("hides accelerator metrics when the cluster has no cards", () => {

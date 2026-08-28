@@ -146,6 +146,7 @@ const UsageMetric = ({
           size="sm"
           series={series}
           track={usageIsKnown ? "subtle" : "unavailable"}
+          aria-label={`${label}: ${usedText} / ${totalText}`}
           className="mt-3"
         />
       )}
@@ -195,7 +196,18 @@ export function ClusterResourceSummary({
     },
     0,
   );
+  const hasFractionalCardGroup = Object.values(acceleratorGroups).some(
+    (group) => !Number.isInteger(group.quantity),
+  );
+  const hasFractionalAvailableCardGroup = Object.keys(acceleratorGroups).some(
+    (type) => {
+      const quantity = availableGroups?.[type]?.quantity;
+      return quantity != null && !Number.isInteger(quantity);
+    },
+  );
   const useDiscreteCardMeter =
+    !hasFractionalCardGroup &&
+    !hasFractionalAvailableCardGroup &&
     Number.isInteger(totalCards) &&
     (availableCards == null || Number.isInteger(availableCards));
   const vram = sumProductPool(
