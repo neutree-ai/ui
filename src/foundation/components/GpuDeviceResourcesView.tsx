@@ -260,6 +260,7 @@ const ResourceUsageCard = ({
 
 const GridResourceUsage = ({
   label,
+  remainingLabel,
   pool,
   unit,
   valueScale,
@@ -268,6 +269,7 @@ const GridResourceUsage = ({
   unavailable = false,
 }: {
   label: string;
+  remainingLabel: string;
   pool: GpuDeviceResourceRow["memory"];
   unit?: string;
   valueScale?: number;
@@ -278,17 +280,20 @@ const GridResourceUsage = ({
 }) => (
   <div
     className={cn(
-      "mt-2 grid min-w-0 gap-1",
+      "mt-2 grid min-w-0 gap-1.5",
       GPU_USAGE_TEXT_CLASS,
       unavailable ? undefined : "text-muted-foreground",
     )}
   >
-    <div className="flex items-center justify-between gap-3">
-      <span>{label}</span>
-      <span className="min-w-0 truncate font-medium tabular-nums">
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="shrink-0 font-medium text-foreground">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right font-medium tabular-nums text-foreground">
         {/* An unhealthy card reports zeroed pools. Printing "0 / 0" says the
             card is idle and available; the reading simply does not exist. */}
         {unavailable ? "—" : formatUsage(pool, unit, valueScale, precision)}
+      </span>
+      <span className="w-9 shrink-0 text-right font-semibold tabular-nums text-foreground">
+        {unavailable ? "—" : `${pool.percent}%`}
       </span>
     </div>
     <MetricBar
@@ -296,6 +301,12 @@ const GridResourceUsage = ({
       series={series}
       track={unavailable ? "unavailable" : "outlined"}
     />
+    <div className="flex min-w-0 items-center gap-2 tabular-nums">
+      <span className="shrink-0">{remainingLabel}</span>
+      <span className="min-w-0 truncate">
+        {unavailable ? "—" : formatAvailable(pool, unit, valueScale, precision)}
+      </span>
+    </div>
   </div>
 );
 
@@ -668,6 +679,7 @@ export function GpuDeviceResourcesView({
                 </div>
                 <GridResourceUsage
                   label={labels.memoryUsage}
+                  remainingLabel={labels.remaining}
                   pool={row.memory}
                   unit="GiB"
                   valueScale={VRAM_VALUE_SCALE}
@@ -677,6 +689,7 @@ export function GpuDeviceResourcesView({
                 />
                 <GridResourceUsage
                   label={labels.coreUsage}
+                  remainingLabel={labels.remaining}
                   pool={row.core}
                   // Core keeps its own fill: this cell carries two bars, and the
                   // Nodes legend colour-codes which is which. The endpoint cell

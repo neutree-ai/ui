@@ -301,7 +301,7 @@
   "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "62fbdbf9a4721d412ba2844bc81ec87f",
   "src/domains/cluster/lib/resource-status.ts": "9e759f014c4589740efe23ebdaf8bf74",
   "src/foundation/lib/gpu-device-resources.ts": "b2449b3d0582b4064aba2f0359c097a7",
-  "src/foundation/components/GpuDeviceResourcesView.tsx": "dbf2b05bc2e78d705123044cc6d3583c",
+  "src/foundation/components/GpuDeviceResourcesView.tsx": "52134949d3e9bf2d80e24d36d7dcbccc",
   "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "b35c3309802ff13df367f98445724d2d",
   "src/domains/cluster/lib/accelerator-virtualization.ts": "d6ef94dfc840b468601b67e640b0c7bd",
   "src/domains/api-key/components/ApiKeyLimitsCard.tsx": "c8f42bfd6aa811f613952762c32fa83b",
