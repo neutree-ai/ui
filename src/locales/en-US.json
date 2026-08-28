@@ -1190,7 +1190,7 @@
 			"foreignRegistry": "This is not the registry this cluster pulls with. The pull uses the credentials in {{name}}, so an image found here may not be pullable.",
 			"namespaceLabel": "Namespace",
 			"selectNamespace": "Select or type a namespace",
-			"namespaceNote": "Docker Hub cannot list namespaces, so this is not the full set — `{{official}}` holds its official images, and the rest are namespaces this deployment already uses. Type any other.",
+			"namespaceNote": "Docker Hub cannot list namespaces, so this is not the full set — \"{{official}}\" holds its official images, and the rest are namespaces this deployment already uses. Type any other.",
 			"chooseNamespaceFirst": "Choose a namespace above and its images will be listed here.",
 			"imageLabel": "Image",
 			"selectImage": "Select or type an image",
