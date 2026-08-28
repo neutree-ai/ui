@@ -8,6 +8,7 @@ import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
+import type { Cluster } from "@/domains/cluster/types";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
@@ -147,8 +148,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     },
   });
 
-  const { data: clusterData } = useList({
+  const { data: clusterData } = useList<Cluster>({
     resource: "clusters",
+    meta: {
+      workspace: record?.metadata.workspace,
+      workspaced: true,
+    },
     filters: [
       {
         field: "metadata->name",
@@ -317,6 +322,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <EndpointRuntimeResourcesCard
                     resources={record.status?.resources}
                     requestedResources={record.spec.resources}
+                    clusterResourceInfo={
+                      clusterData?.data?.[0]?.status?.resource_info
+                    }
                   />
                 </div>
               </ShowPage.Section>

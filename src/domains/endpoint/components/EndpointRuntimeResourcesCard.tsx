@@ -28,12 +28,16 @@ import {
   formatToDecimal,
 } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
-import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
+import type {
+  ClusterResourceInfo,
+  EndpointResourceStatus,
+} from "@/foundation/types/resource-types";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 
 type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
   requestedResources?: ResourceSpec | null;
+  clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
 };
 
@@ -168,6 +172,7 @@ export function EndpointRuntimeResourcesSummary({
 export default function EndpointRuntimeResourcesCard({
   resources,
   requestedResources,
+  clusterResourceInfo,
   className,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
@@ -178,14 +183,18 @@ export default function EndpointRuntimeResourcesCard({
   const requestedCorePerCard =
     getVgpuVirtualization(requestedResources?.accelerator)?.core_percent ??
     undefined;
-  const acceleratorType = requestedResources?.accelerator?.type
-    ? t(`clusters.acceleratorTypes.${requestedResources.accelerator.type}`, {
-        defaultValue: requestedResources.accelerator.type,
+  const acceleratorResourceType = requestedResources?.accelerator?.type;
+  const acceleratorType = acceleratorResourceType
+    ? t(`clusters.acceleratorTypes.${acceleratorResourceType}`, {
+        defaultValue: acceleratorResourceType,
       })
     : null;
 
   const summaryRows = getEndpointResourceSummaryRows(resources);
-  const replicaGroups = getEndpointReplicaResourceGroups(resources);
+  const replicaGroups = getEndpointReplicaResourceGroups(resources, {
+    clusterResourceInfo,
+    acceleratorType: acceleratorResourceType,
+  });
 
   if (summaryRows.length === 0 && replicaGroups.length === 0) {
     return null;

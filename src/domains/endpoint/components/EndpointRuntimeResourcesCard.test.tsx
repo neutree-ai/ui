@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import EndpointRuntimeResourcesCard, {
   EndpointRuntimeResourcesSummary,
 } from "./EndpointRuntimeResourcesCard";
@@ -287,6 +288,56 @@ describe("EndpointRuntimeResourcesCard", () => {
       within(screen.getByTestId("runtime-host")).getByText(/Memory —/),
     ).toBeTruthy();
     expect(screen.getAllByText("Core -")).toHaveLength(2);
+  });
+
+  it("uses matching cluster metadata when device physical VRAM is unavailable", () => {
+    const clusterResourceInfo: ClusterResourceInfo = {
+      allocatable: null,
+      available: null,
+      node_resources: null,
+      accelerator_metadata: {
+        nvidia_gpu: {
+          products: {
+            "Tesla-T4": { memory_total_mib: 15 * 1024 },
+          },
+        },
+      },
+    };
+
+    render(
+      <EndpointRuntimeResourcesCard
+        requestedResources={{
+          cpu: 4,
+          memory: 8,
+          gpu: 1,
+          accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+        }}
+        clusterResourceInfo={clusterResourceInfo}
+        resources={{
+          summary: null,
+          replicas: [
+            {
+              instance_id: "endpoint-vgpu",
+              replica_id: "endpoint-vgpu-0",
+              node_id: "gpu-node-01",
+              devices: [
+                {
+                  uuid: "GPU-vgpu-01",
+                  product: "Tesla-T4",
+                  memory_mib: 8192,
+                  core_units: 0,
+                  node_id: "gpu-node-01",
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const gpuCell = screen.getByTestId("runtime-gpu-cell");
+    const vram = within(gpuCell).getByTestId("runtime-vram-values");
+    expect(vram.textContent?.replace(/\s/g, "")).toBe("8/15GiB");
   });
 
   it("does not render legacy instance metadata", () => {

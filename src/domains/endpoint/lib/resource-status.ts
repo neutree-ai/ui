@@ -3,6 +3,7 @@ import {
   getDeviceOrder,
 } from "@/foundation/lib/device-resource-utils";
 import type {
+  ClusterResourceInfo,
   DeviceAllocation,
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
@@ -45,11 +46,32 @@ export type EndpointReplicaResourceGroup = {
   nodes: EndpointReplicaNodeResourceGroup[];
 };
 
+type EndpointResourceResolutionOptions = {
+  clusterResourceInfo?: ClusterResourceInfo | null;
+  acceleratorType?: string | null;
+};
+
+const resolvePhysicalMemoryMiB = (
+  device: DeviceAllocation,
+  { clusterResourceInfo, acceleratorType }: EndpointResourceResolutionOptions,
+) => {
+  const products = acceleratorType
+    ? clusterResourceInfo?.accelerator_metadata?.[acceleratorType]?.products
+    : undefined;
+
+  return (
+    device.allocatable?.memory_mib ??
+    products?.[device.product]?.memory_total_mib ??
+    null
+  );
+};
+
 const toReplicaResourceRow = (
   replica: NonNullable<EndpointResourceStatus["replicas"]>[number],
   device: DeviceAllocation,
+  options: EndpointResourceResolutionOptions,
 ): EndpointReplicaResourceRow => {
-  const physicalMemoryMiB = device.allocatable?.memory_mib ?? null;
+  const physicalMemoryMiB = resolvePhysicalMemoryMiB(device, options);
   const availableMemoryMiB = device.available?.memory_mib ?? null;
   const actualMemoryMiB =
     physicalMemoryMiB != null && availableMemoryMiB != null
@@ -84,22 +106,24 @@ export function getEndpointResourceSummaryRows(
 
 export function getEndpointReplicaResourceRows(
   resourceStatus: EndpointResourceStatus | null | undefined,
+  options: EndpointResourceResolutionOptions = {},
 ): EndpointReplicaResourceRow[] {
   return (resourceStatus?.replicas ?? []).flatMap((replica) =>
     [...(replica.devices ?? [])]
       .sort(compareDevicesByOrderThenUuid)
-      .map((device) => toReplicaResourceRow(replica, device)),
+      .map((device) => toReplicaResourceRow(replica, device, options)),
   );
 }
 
 export function getEndpointReplicaResourceGroups(
   resourceStatus: EndpointResourceStatus | null | undefined,
+  options: EndpointResourceResolutionOptions = {},
 ): EndpointReplicaResourceGroup[] {
   return (resourceStatus?.replicas ?? [])
     .map((replica) => {
       const devices = [...(replica.devices ?? [])]
         .sort(compareDevicesByOrderThenUuid)
-        .map((device) => toReplicaResourceRow(replica, device));
+        .map((device) => toReplicaResourceRow(replica, device, options));
 
       const nodes = groupDevicesByNode(devices);
 
