@@ -27,7 +27,7 @@ const MODEL_PAGE_SIZE = 20;
  * narrow screen instead of overflowing.
  */
 const SLOT_ROW =
-  "grid grid-cols-[minmax(0,22rem)_minmax(0,32rem)] items-center gap-3";
+  "grid grid-cols-1 items-start gap-1.5 sm:grid-cols-[minmax(0,22rem)_minmax(0,32rem)] sm:items-center sm:gap-3";
 /** A registry's listing does not change under the user mid-edit, and every slot
  * reads the same one. */
 const MODEL_STALE_TIME = 30_000;
@@ -223,8 +223,8 @@ export function CatalogModelSlots({
 
   return (
     <div className="space-y-3" data-testid="catalog-model-slots">
-      <div className="max-w-[32rem] space-y-1.5">
-        <div className="text-xs text-muted-foreground">
+      <div className={SLOT_ROW}>
+        <div className="text-sm">
           {t("model_catalogs.models.registryLabel")}
         </div>
         <Combobox

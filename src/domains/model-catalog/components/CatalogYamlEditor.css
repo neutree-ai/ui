@@ -1,0 +1,22 @@
+.catalog-yaml-editor .hljs-attr,
+.catalog-yaml-editor .hljs-attribute {
+	color: var(--nt-text-colorful-outstanding);
+}
+
+.catalog-yaml-editor .hljs-string {
+	color: var(--nt-text-colorful-positive);
+}
+
+.catalog-yaml-editor .hljs-number,
+.catalog-yaml-editor .hljs-literal {
+	color: var(--nt-text-colorful-purple);
+}
+
+.catalog-yaml-editor .hljs-comment {
+	color: var(--nt-text-neutral-tertiary);
+}
+
+.catalog-yaml-editor .hljs-bullet,
+.catalog-yaml-editor .hljs-meta {
+	color: var(--nt-text-colorful-notice);
+}

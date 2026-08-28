@@ -401,7 +401,7 @@ describe("GpuDeviceResourcesView", () => {
     // reading at all, so both metrics show a dash.
     expect(screen.queryByText("0.0 / 0.0 GiB")).toBeNull();
     expect(screen.queryByText("0 / 0")).toBeNull();
-    expect(screen.getAllByText("\u2014")).toHaveLength(2);
+    expect(screen.getAllByText("\u2014")).toHaveLength(6);
 
     // Bars carry no fill and use the dashed no-reading track.
     const bars = screen.getAllByTestId("progress");
@@ -439,6 +439,10 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.getByText("Healthy")).toBeTruthy();
     expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
     expect(screen.getByText("50 / 100")).toBeTruthy();
+    expect(screen.getAllByText("50%")).toHaveLength(2);
+    expect(screen.getAllByText("Remaining")).toHaveLength(2);
+    expect(screen.getByText("7.5 GiB")).toBeTruthy();
+    expect(screen.getByText("50")).toBeTruthy();
     expect(screen.getAllByTestId("progress")).toHaveLength(2);
     expect(screen.queryByText("Tesla-T4")).toBeNull();
 
