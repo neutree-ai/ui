@@ -286,13 +286,30 @@ const GridResourceUsage = ({
     )}
   >
     <div className="flex min-w-0 items-center gap-2">
-      <span className="shrink-0 font-medium text-foreground">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right font-medium tabular-nums text-foreground">
+      <span
+        className={cn(
+          "shrink-0 font-medium",
+          unavailable ? undefined : "text-foreground",
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          "ml-auto min-w-0 truncate text-right font-medium tabular-nums",
+          unavailable ? undefined : "text-foreground",
+        )}
+      >
         {/* An unhealthy card reports zeroed pools. Printing "0 / 0" says the
             card is idle and available; the reading simply does not exist. */}
         {unavailable ? "—" : formatUsage(pool, unit, valueScale, precision)}
       </span>
-      <span className="w-9 shrink-0 text-right font-semibold tabular-nums text-foreground">
+      <span
+        className={cn(
+          "w-9 shrink-0 text-right font-semibold tabular-nums",
+          unavailable ? undefined : "text-foreground",
+        )}
+      >
         {unavailable ? "—" : `${pool.percent}%`}
       </span>
     </div>

@@ -1,7 +1,7 @@
 import { useShow, useUpdate } from "@refinedev/core";
 import yaml from "js-yaml";
 import { CircleHelp, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CatalogModelSlots } from "@/domains/model-catalog/components/CatalogModelSlots";
-import { CatalogYamlEditor } from "@/domains/model-catalog/components/CatalogYamlEditor";
 import {
   type ParseCatalogSpecError,
   parseCatalogSpecYaml,
@@ -27,6 +26,16 @@ import {
   serializeToYaml,
   transformEntityForExport,
 } from "@/foundation/lib/yaml-transform";
+
+// Lazy load the YAML editor: it pulls in lowlight/highlight.js for syntax
+// highlighting, which this page shouldn't pay for until it actually renders.
+const CatalogYamlEditor = lazy(() =>
+  import("@/domains/model-catalog/components/CatalogYamlEditor").then(
+    (module) => ({
+      default: module.CatalogYamlEditor,
+    }),
+  ),
+);
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 
@@ -204,7 +213,6 @@ export const ModelCatalogsEdit = () => {
                       type="button"
                       className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       aria-label={t("model_catalogs.models.hint")}
-                      title={t("model_catalogs.models.hint")}
                     >
                       <CircleHelp className="size-3.5" aria-hidden="true" />
                     </button>
@@ -239,11 +247,20 @@ export const ModelCatalogsEdit = () => {
                   "Edit the catalog, or paste a whole ModelCatalog document over it. Spec, labels and annotations are applied; name and workspace cannot change. Invalid recipes surface as a Failed status after saving.",
                 )}
               </p>
-              <CatalogYamlEditor
-                value={specYaml}
-                onChange={setSpecYaml}
-                ariaLabel={t("model_catalogs.edit.specLabel", "Catalog (YAML)")}
-              />
+              <Suspense
+                fallback={
+                  <div className="h-[28rem] animate-pulse rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-muted/40" />
+                }
+              >
+                <CatalogYamlEditor
+                  value={specYaml}
+                  onChange={setSpecYaml}
+                  ariaLabel={t(
+                    "model_catalogs.edit.specLabel",
+                    "Catalog (YAML)",
+                  )}
+                />
+              </Suspense>
               {error && <p className="text-xs text-destructive">{error}</p>}
             </div>
 

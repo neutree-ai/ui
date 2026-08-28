@@ -301,7 +301,7 @@
   "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "62fbdbf9a4721d412ba2844bc81ec87f",
   "src/domains/cluster/lib/resource-status.ts": "9e759f014c4589740efe23ebdaf8bf74",
   "src/foundation/lib/gpu-device-resources.ts": "b2449b3d0582b4064aba2f0359c097a7",
-  "src/foundation/components/GpuDeviceResourcesView.tsx": "52134949d3e9bf2d80e24d36d7dcbccc",
+  "src/foundation/components/GpuDeviceResourcesView.tsx": "b8263294748683b0fc404e1971731c20",
   "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "b35c3309802ff13df367f98445724d2d",
   "src/domains/cluster/lib/accelerator-virtualization.ts": "d6ef94dfc840b468601b67e640b0c7bd",
   "src/domains/api-key/components/ApiKeyLimitsCard.tsx": "c8f42bfd6aa811f613952762c32fa83b",
@@ -311,7 +311,7 @@
   "src/domains/api-key/components/ModelMultiSelect.tsx": "6068a1c19a7048cf190ef4bbe964faf7",
   "src/domains/api-key/hooks/use-api-key-policy.ts": "3c22ef4f4f09707dfce3d76f5a594686",
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
-  "src/pages/model-catalogs/edit.tsx": "1dc6fa82492ba18315dae5d86f340201",
+  "src/pages/model-catalogs/edit.tsx": "a64fdc003da2f38f5da03d87f05772a9",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
   "src/pages/model-catalogs/components/ImportDialog.tsx": "c8b67dba091272b9170ff5ea2f2c6258",
   "src/pages/model-catalogs/components/KeyConfigCard.tsx": "a3e49d8166c2440bfa82b6d6b53cc2e1",
@@ -321,7 +321,7 @@
   "src/foundation/recipe/normalize.ts": "37973e33217df534c07c56a63d07c1ed",
   "src/foundation/recipe/types.ts": "6b11c3319d89fc7158795a4dc2bfe661",
   "src/foundation/recipe/vram.ts": "f88e860dfad69d93ddf339f47e663faa",
-  "src/domains/model-catalog/components/ModelInfoBadges.tsx": "1ef833f925784ef7f13335bb27a5d30a",
+  "src/domains/model-catalog/components/ModelInfoBadges.tsx": "99b234b612959b53508ccc6487bce8c3",
   "src/domains/endpoint/components/ComposePreview.tsx": "46c02bdd098aca320703bbad27578a6b",
   "src/domains/endpoint/components/FeaturePicker.tsx": "870ad4d4f2b1a435c52a2bd377437448",
   "src/domains/endpoint/components/VRAMCheckBadge.tsx": "8669ff213df55b49535f2134db420d66",
@@ -410,6 +410,6 @@
   "src/foundation/components/BreakableReference.tsx": "fa3ac0ab1cbd99466faac427cf695346",
   "src/domains/model-registry/components/ModelDetailDrawer.tsx": "378c22f5bcfe54e585d1f4bc6c8f837b",
   "src/domains/endpoint/components/EndpointWeightsEstimate.tsx": "731ea242a685f560c31515348e52c359",
-  "src/domains/model-catalog/lib/model-info-display.ts": "4a1cba7539c39275a8c9198cf0ba7c9a",
-  "src/domains/model-catalog/components/CatalogYamlEditor.tsx": "e485c20af3907fc9cbc203a9be559bb2"
+  "src/domains/model-catalog/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38",
+  "src/domains/model-catalog/components/CatalogYamlEditor.tsx": "fb11382e48877cbfa38d200ed2513633"
 }

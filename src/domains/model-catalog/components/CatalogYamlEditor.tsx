@@ -60,7 +60,7 @@ export function CatalogYamlEditor({
   return (
     <div
       className={cn(
-        "catalog-yaml-editor relative h-[28rem] overflow-hidden rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] transition-colors hover:border-[var(--nt-stroke-neutral-trans-4)] focus-within:border-[var(--nt-stroke-outstanding-base)] focus-within:[box-shadow:var(--nt-outline-active-focus)]",
+        "catalog-yaml-editor relative h-[28rem] min-h-[10rem] resize-y overflow-hidden rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] transition-colors hover:border-[var(--nt-stroke-neutral-trans-4)] focus-within:border-[var(--nt-stroke-outstanding-base)] focus-within:[box-shadow:var(--nt-outline-active-focus)]",
         className,
       )}
     >
@@ -70,12 +70,11 @@ export function CatalogYamlEditor({
         className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre p-3 font-mono text-xs leading-5 text-[var(--nt-text-neutral-primary)]"
       >
         <code>{highlighted}</code>
-        {"\n"}
       </pre>
       <textarea
         data-testid="catalog-spec-yaml"
         aria-label={ariaLabel}
-        className="absolute inset-0 size-full resize-none overflow-auto whitespace-pre border-0 bg-transparent p-3 font-mono text-xs leading-5 text-transparent caret-[var(--nt-text-neutral-primary)] outline-none [text-shadow:none] selection:bg-[var(--nt-fill-outstanding-light)]"
+        className="absolute inset-0 size-full overflow-auto whitespace-pre border-0 bg-transparent p-3 font-mono text-xs leading-5 text-transparent caret-[var(--nt-text-neutral-primary)] outline-none [text-shadow:none] selection:bg-[var(--nt-fill-outstanding-light)]"
         style={{ WebkitTextFillColor: "transparent" }}
         value={value}
         onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>

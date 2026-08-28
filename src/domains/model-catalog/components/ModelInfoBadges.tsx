@@ -57,7 +57,7 @@ export const ModelInfoBadges = ({
         {architecture ? (
           <span className="inline-flex max-w-full whitespace-nowrap text-xs text-muted-foreground mr-3">
             {t("model_catalogs.modelInfo.architecture", "Architecture")}:{" "}
-            <span className="truncate font-mono text-foreground">
+            <span className="min-w-0 truncate font-mono text-foreground">
               {architecture}
             </span>
           </span>
