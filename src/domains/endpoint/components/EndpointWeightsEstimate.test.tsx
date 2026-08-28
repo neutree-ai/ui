@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -6,7 +7,19 @@ vi.mock("@/foundation/lib/i18n", () => ({
 }));
 
 vi.mock("@/domains/endpoint/components/KVCacheEstimate", () => ({
-  KVCacheEstimate: () => <div data-testid="kv-cache-estimate" />,
+  KVCacheEstimate: ({
+    onEstimate,
+  }: {
+    onEstimate?: (gb: number | null) => void;
+  }) => {
+    // Stands in for the real panel's own effect, which reports its current
+    // total upward as it recomputes — fixed here so the combined-requirement
+    // math above it is testable without the real estimator's inputs.
+    useEffect(() => {
+      onEstimate?.(10);
+    }, [onEstimate]);
+    return <div data-testid="kv-cache-estimate" />;
+  },
 }));
 
 import {
@@ -117,5 +130,43 @@ describe("EndpointWeightsEstimate", () => {
     const block = screen.getByTestId("endpoint-declared-weights");
     expect(within(block).getByText("moe")).toBeDefined();
     expect(within(block).queryByText(/GB/)).toBeNull();
+  });
+
+  // A deployment needs the weights and the KV cache in VRAM at once, so the
+  // badge is checked against their sum, not the declared weights alone.
+  it("checks VRAM against declared weights plus the KV cache's current estimate", () => {
+    render(<EndpointWeightsEstimate declared={declared} kvCache={kvCache} />);
+
+    const block = screen.getByTestId("endpoint-declared-weights");
+    expect(block.textContent).toContain("endpoints.weights.breakdown");
+  });
+
+  // Callers elsewhere on the form (an accelerator notice outside this
+  // section) need the same combined figure this section's own badge uses.
+  it("reports the combined requirement to the caller as it changes", () => {
+    const onRequiredGbChange = vi.fn();
+    render(
+      <EndpointWeightsEstimate
+        declared={declared}
+        kvCache={kvCache}
+        onRequiredGbChange={onRequiredGbChange}
+      />,
+    );
+
+    // 48 GB declared weights + the mocked 10 GB KV cache estimate.
+    expect(onRequiredGbChange).toHaveBeenCalledWith(58);
+  });
+
+  it("reports null when there is nothing declared to require", () => {
+    const onRequiredGbChange = vi.fn();
+    render(
+      <EndpointWeightsEstimate
+        declared={null}
+        kvCache={kvCache}
+        onRequiredGbChange={onRequiredGbChange}
+      />,
+    );
+
+    expect(onRequiredGbChange).toHaveBeenLastCalledWith(null);
   });
 });

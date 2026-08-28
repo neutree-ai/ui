@@ -6798,7 +6798,7 @@ describe("a recipe's own controls are not offered twice", () => {
     const tokens = screen.getByTestId("kv-cache-tokens");
     expect(tokens.tagName).not.toBe("INPUT");
     expect(tokens.getAttribute("data-owned-by")).toBe("Context window");
-    expect(tokens.textContent).toBe("8192");
+    expect(tokens.textContent).toBe("8,192");
 
     // Concurrency has no control on this catalog, so it stays a field.
     expect(screen.getByTestId("kv-cache-sequences").tagName).toBe("INPUT");
