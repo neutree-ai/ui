@@ -1,4 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -59,12 +65,55 @@ const parseCount = (raw: string): number | null => {
     return null;
   }
 
-  const value = Number(trimmed);
+  const value = Number(trimmed.replace(/,/g, ""));
 
   return Number.isFinite(value) ? value : null;
 };
 
 const groupedNumber = new Intl.NumberFormat("en");
+
+/** What the tokens/sequences fields actually track — digits only, never a
+ * grouped comma. Stripped on the way in so a pasted "163,840" still parses,
+ * and formatting is purely a display concern layered on top of this. */
+const stripGrouping = (raw: string): string => raw.replace(/,/g, "");
+
+/**
+ * How a raw count reads at a glance: 163840 is not a number anyone can place
+ * a magnitude on by eye, and thousands-heavy VRAM sizing is exactly where
+ * that matters. Left alone (not grouped) whenever the digits-only form is not
+ * a plain non-negative integer — a value mid-edit, or one this field never
+ * produces on its own — so a user typing is never fighting a reformat of
+ * something that is not a finished number yet.
+ */
+const formatGroupedInput = (raw: string): string => {
+  const digits = stripGrouping(raw);
+
+  return /^\d+$/.test(digits) ? groupedNumber.format(Number(digits)) : raw;
+};
+
+/** How many digits (not commas) precede `index` in a possibly-grouped string
+ * — the unit the caret is tracked in, since it is what stays meaningful
+ * across a reformat that only ever inserts or removes commas. */
+const digitsBefore = (text: string, index: number): number =>
+  (text.slice(0, index).match(/\d/g) ?? []).length;
+
+/** The inverse: where the caret lands in `text` after `count` digits, so
+ * typing or deleting anywhere in the field keeps the caret next to the same
+ * digit once the grouped commas shift around it. */
+const caretAfterDigits = (text: string, count: number): number => {
+  if (count <= 0) return 0;
+
+  let seen = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    if (/\d/.test(text[i])) {
+      seen++;
+      if (seen === count) return i + 1;
+    }
+  }
+
+  return text.length;
+};
 const compactNumber = new Intl.NumberFormat("en", {
   maximumSignificantDigits: 3,
 });
@@ -491,6 +540,29 @@ const CountField = ({
   ownedBy: string | null;
 }) => {
   const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Where to put the caret once this render's reformat lands — set in the
+  // change handler, from the digit it followed rather than a character
+  // index, and applied after the DOM has the new (possibly longer or
+  // shorter) grouped string. A plain controlled value would otherwise leave
+  // the caret wherever the browser's own edit put it, which is the wrong
+  // place the moment a comma is inserted or removed ahead of it.
+  const pendingCaret = useRef<number | null>(null);
+
+  // No dependency array: this only ever has work to do on the render right
+  // after the change handler set pendingCaret, and reading it there rather
+  // than depending on `value` is what lets the ref (not a render input) be
+  // the trigger — the caret fix is a side effect of that render, not of the
+  // value that produced it.
+  useLayoutEffect(() => {
+    if (pendingCaret.current !== null) {
+      inputRef.current?.setSelectionRange(
+        pendingCaret.current,
+        pendingCaret.current,
+      );
+      pendingCaret.current = null;
+    }
+  });
 
   if (ownedBy) {
     return (
@@ -504,7 +576,7 @@ const CountField = ({
           data-testid={id}
           data-owned-by={ownedBy}
         >
-          {value || "—"}
+          {value ? formatGroupedInput(value) : "—"}
         </div>
         <div className="text-xs text-muted-foreground">
           {t("endpoints.kvCache.ownedBy", { control: ownedBy })}
@@ -520,11 +592,24 @@ const CountField = ({
         <SourceTag source={field.source} />
       </label>
       <Input
+        ref={inputRef}
         id={id}
         className="mt-1"
         inputMode="numeric"
-        value={value}
-        onChange={(event) => field.onChange(event.target.value)}
+        value={formatGroupedInput(value)}
+        onChange={(event) => {
+          const raw = stripGrouping(event.target.value);
+          const caretDigits = digitsBefore(
+            event.target.value,
+            event.target.selectionStart ?? event.target.value.length,
+          );
+
+          pendingCaret.current = caretAfterDigits(
+            formatGroupedInput(raw),
+            caretDigits,
+          );
+          field.onChange(raw);
+        }}
         data-testid={id}
       />
     </div>

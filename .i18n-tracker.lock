@@ -387,7 +387,7 @@
   "src/domains/model-registry/lib/provisioning.ts": "2aedc935197cf24ee0264bbaceac802f",
   "src/foundation/lib/kv-cache.ts": "ece671374e16c9db6a62fd96f870c74d",
   "src/foundation/lib/model-info-read.ts": "b9d8f811da92aec9acbc3842a2436d0e",
-  "src/domains/endpoint/components/KVCacheEstimate.tsx": "c476f457f381bd82064014188782167e",
+  "src/domains/endpoint/components/KVCacheEstimate.tsx": "5b3385d828707172b2524ccfd0f1b0ef",
   "src/domains/endpoint/lib/engine-cache-args.ts": "c5d778e0a48e9ecce84b9f77b425fa44",
   "src/domains/cluster/components/ClusterResourceSummary.tsx": "a6d16b69f0e59757e2435b6a707a0239",
   "src/foundation/components/MetricBar.tsx": "58b87909b5d1371dfdd6f5932adb8408",

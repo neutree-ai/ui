@@ -59,7 +59,7 @@ describe("KVCacheEstimate", () => {
 
     // Latent layout, defaults taken from the model: 163840 tokens × 1 sequence.
     expect(panel.getAttribute("data-state")).toBe("latent");
-    expect(tokenInput().value).toBe("163840");
+    expect(tokenInput().value).toBe("163,840");
     expect(screen.queryByTestId("kv-cache-refusal")).toBeNull();
 
     // The bytes-per-token figure is part of the result, so it is on the face of
@@ -284,7 +284,7 @@ describe("KVCacheEstimate starting values", () => {
 
     // Not the checkpoint's 262144 ceiling: an eight-fold difference, and the
     // form is asking what this deployment needs.
-    expect(tokenInput().value).toBe("32768");
+    expect(tokenInput().value).toBe("32,768");
     expect(sequenceInput().value).toBe("16");
 
     // And it is marked as coming from the deployment, so a reader cannot take
@@ -297,7 +297,7 @@ describe("KVCacheEstimate starting values", () => {
   it("falls back to the checkpoint when the deployment states neither", () => {
     render(<KVCacheEstimate read={ready(qwen36)} />);
 
-    expect(tokenInput().value).toBe("262144");
+    expect(tokenInput().value).toBe("262,144");
     expect(sequenceInput().value).toBe("1");
     expect(screen.getByTestId("kv-cache-estimate").textContent).not.toContain(
       "endpoints.kvCache.sources.deployment",
@@ -312,7 +312,7 @@ describe("KVCacheEstimate starting values", () => {
       />,
     );
 
-    expect(tokenInput().value).toBe("262144");
+    expect(tokenInput().value).toBe("262,144");
     expect(sequenceInput().value).toBe("8");
   });
 
@@ -327,7 +327,7 @@ describe("KVCacheEstimate starting values", () => {
       />,
     );
 
-    expect(tokenInput().value).toBe("32768");
+    expect(tokenInput().value).toBe("32,768");
 
     rerender(
       <KVCacheEstimate
@@ -336,7 +336,7 @@ describe("KVCacheEstimate starting values", () => {
       />,
     );
 
-    expect(tokenInput().value).toBe("131072");
+    expect(tokenInput().value).toBe("131,072");
     expect(sequenceInput().value).toBe("4");
   });
 
@@ -349,7 +349,7 @@ describe("KVCacheEstimate starting values", () => {
     );
 
     fireEvent.change(tokenInput(), { target: { value: "4096" } });
-    expect(tokenInput().value).toBe("4096");
+    expect(tokenInput().value).toBe("4,096");
 
     rerender(
       <KVCacheEstimate
@@ -360,7 +360,7 @@ describe("KVCacheEstimate starting values", () => {
 
     // The user asked a what-if; overwriting it would destroy an input they
     // cannot get back, with nothing on screen to say why.
-    expect(tokenInput().value).toBe("4096");
+    expect(tokenInput().value).toBe("4,096");
     // The field they did not touch still follows.
     expect(sequenceInput().value).toBe("4");
   });
@@ -483,7 +483,7 @@ describe("KVCacheEstimate fields a control elsewhere owns", () => {
 
     const tokens = screen.getByTestId("kv-cache-tokens");
     expect(tokens.tagName).not.toBe("INPUT");
-    expect(tokens.textContent).toBe("32768");
+    expect(tokens.textContent).toBe("32,768");
     expect(tokens.getAttribute("data-owned-by")).toBe("Context window");
 
     // The one nothing owns is still a field to fill in.
@@ -507,7 +507,7 @@ describe("KVCacheEstimate fields a control elsewhere owns", () => {
       />,
     );
 
-    expect(screen.getByTestId("kv-cache-tokens").textContent).toBe("131072");
+    expect(screen.getByTestId("kv-cache-tokens").textContent).toBe("131,072");
   });
 
   // A form with no such control has nowhere else to say it, and the field is a
@@ -520,8 +520,45 @@ describe("KVCacheEstimate fields a control elsewhere owns", () => {
       />,
     );
 
-    expect(tokenInput().value).toBe("32768");
+    expect(tokenInput().value).toBe("32,768");
     fireEvent.change(tokenInput(), { target: { value: "4096" } });
-    expect(tokenInput().value).toBe("4096");
+    expect(tokenInput().value).toBe("4,096");
+  });
+});
+
+// A thousands-heavy count like 262144 is not a number anyone can place a
+// magnitude on by eye — the field groups it, and typing or deleting must not
+// fight the commas that come and go around the caret as it does.
+describe("KVCacheEstimate thousands grouping", () => {
+  it("groups the value the deployment or checkpoint derived", () => {
+    render(<KVCacheEstimate read={ready(qwen36)} />);
+
+    expect(tokenInput().value).toBe("262,144");
+  });
+
+  it("groups what the user types, keeping the underlying value plain digits", () => {
+    render(<KVCacheEstimate read={ready(deepseekV3)} />);
+
+    fireEvent.change(tokenInput(), { target: { value: "1234567" } });
+
+    expect(tokenInput().value).toBe("1,234,567");
+  });
+
+  it("keeps the caret next to the digit it was typed after, not at the end", () => {
+    render(<KVCacheEstimate read={ready(deepseekV3)} />);
+
+    const input = tokenInput();
+
+    // Typing a leading "1" in front of "163840" leaves the raw value
+    // "1163840" with the caret after the two digits typed so far — position 2,
+    // where a real keystroke would leave it.
+    fireEvent.change(input, {
+      target: { value: "1163840", selectionStart: 2 },
+    });
+
+    // Grouped as "1,163,840"; the caret belongs right after that second
+    // digit, not swept to the end of the string by the reformat.
+    expect(input.value).toBe("1,163,840");
+    expect(input.selectionStart).toBe(3);
   });
 });
