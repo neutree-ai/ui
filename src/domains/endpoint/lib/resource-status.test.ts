@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
+import type {
+  ClusterResourceInfo,
+  EndpointResourceStatus,
+} from "@/foundation/types/resource-types";
 import {
   getEndpointReplicaResourceGroups,
   getEndpointReplicaResourceRows,
@@ -100,6 +103,86 @@ describe("endpoint resource status helpers", () => {
         actualMemoryMiB: null,
       },
     ]);
+  });
+
+  it("uses matching cluster metadata when device physical VRAM is unavailable", () => {
+    const resourceStatus: EndpointResourceStatus = {
+      summary: null,
+      replicas: [
+        {
+          instance_id: "endpoint-abc",
+          node_id: "node-1",
+          devices: [
+            {
+              uuid: "GPU-1",
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+          ],
+        },
+      ],
+    };
+    const clusterResourceInfo: ClusterResourceInfo = {
+      allocatable: null,
+      available: null,
+      node_resources: null,
+      accelerator_metadata: {
+        nvidia_gpu: {
+          products: {
+            "Tesla-T4": { memory_total_mib: 15 * 1024 },
+          },
+        },
+      },
+    };
+
+    expect(
+      getEndpointReplicaResourceRows(resourceStatus, {
+        clusterResourceInfo,
+        acceleratorType: "nvidia_gpu",
+      })[0].physicalMemoryMiB,
+    ).toBe(15 * 1024);
+  });
+
+  it("keeps physical VRAM unknown when cluster metadata does not match the device", () => {
+    const resourceStatus: EndpointResourceStatus = {
+      summary: null,
+      replicas: [
+        {
+          instance_id: "endpoint-abc",
+          node_id: "node-1",
+          devices: [
+            {
+              uuid: "GPU-1",
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+          ],
+        },
+      ],
+    };
+    const clusterResourceInfo: ClusterResourceInfo = {
+      allocatable: null,
+      available: null,
+      node_resources: null,
+      accelerator_metadata: {
+        nvidia_gpu: {
+          products: {
+            "NVIDIA-L40S": { memory_total_mib: 48 * 1024 },
+          },
+        },
+      },
+    };
+
+    expect(
+      getEndpointReplicaResourceRows(resourceStatus, {
+        clusterResourceInfo,
+        acceleratorType: "nvidia_gpu",
+      })[0].physicalMemoryMiB,
+    ).toBeNull();
   });
 
   it("groups replica devices by node for multi-node replicas", () => {

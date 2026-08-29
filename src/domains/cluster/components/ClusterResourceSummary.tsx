@@ -146,6 +146,7 @@ const UsageMetric = ({
           size="sm"
           series={series}
           track={usageIsKnown ? "subtle" : "unavailable"}
+          aria-label={`${label}: ${usedText} / ${totalText}`}
           className="mt-3"
         />
       )}
@@ -186,16 +187,29 @@ export function ClusterResourceSummary({
     (sum, group) => sum + group.quantity,
     0,
   );
-  // An accelerator type with no availability entry leaves the card count
-  // unknown rather than fully free — the same rule the VRAM and Core pools
-  // follow, so one card cannot read as idle in one metric and busy in another.
+  // A missing accelerator type leaves the card count unknown. The API omits a
+  // present group's zero quantity, though, so that specific shape means zero.
   const availableCards = Object.keys(acceleratorGroups).reduce<number | null>(
     (sum, type) => {
-      const quantity = availableGroups?.[type]?.quantity;
-      return sum == null || quantity == null ? null : sum + quantity;
+      const group = availableGroups?.[type];
+      return sum == null || group == null ? null : sum + (group.quantity ?? 0);
     },
     0,
   );
+  const hasFractionalCardGroup = Object.values(acceleratorGroups).some(
+    (group) => !Number.isInteger(group.quantity),
+  );
+  const hasFractionalAvailableCardGroup = Object.keys(acceleratorGroups).some(
+    (type) => {
+      const quantity = availableGroups?.[type]?.quantity;
+      return quantity != null && !Number.isInteger(quantity);
+    },
+  );
+  const useDiscreteCardMeter =
+    !hasFractionalCardGroup &&
+    !hasFractionalAvailableCardGroup &&
+    Number.isInteger(totalCards) &&
+    (availableCards == null || Number.isInteger(availableCards));
   const vram = sumProductPool(
     productRows,
     "allocatableMemoryMiB",
@@ -240,7 +254,7 @@ export function ClusterResourceSummary({
               available={availableCards}
               unit="cards"
               allocationLabels
-              discrete
+              discrete={useDiscreteCardMeter}
               series="amber"
               t={t}
             />

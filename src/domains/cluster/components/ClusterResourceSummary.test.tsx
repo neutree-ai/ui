@@ -197,6 +197,121 @@ describe("ClusterResourceSummary", () => {
     }
   });
 
+  it("treats an omitted quantity in an existing availability group as zero", () => {
+    render(
+      <ClusterResourceSummary
+        resourceInfo={
+          {
+            allocatable: {
+              cpu: 4,
+              memory: 8,
+              accelerator_groups: {
+                nvidia_gpu: {
+                  quantity: 1,
+                  product_groups: null,
+                  products: null,
+                },
+              },
+            },
+            available: {
+              cpu: 4,
+              memory: 8,
+              accelerator_groups: {
+                nvidia_gpu: {
+                  product_groups: null,
+                  products: null,
+                },
+              },
+            },
+            node_resources: null,
+          } as unknown as ClusterResourceInfo
+        }
+        t={t}
+      />,
+    );
+
+    expect(screen.getByText("1 / 1")).toBeTruthy();
+    expect(screen.getByText("100% allocated")).toBeTruthy();
+    expect(screen.getByText("0 cards")).toBeTruthy();
+  });
+
+  it("displays fractional card allocation with decimal precision", () => {
+    render(
+      <ClusterResourceSummary
+        resourceInfo={{
+          ...resourceInfo,
+          available: {
+            ...resourceInfo.available!,
+            accelerator_groups: {
+              nvidia_gpu: {
+                ...resourceInfo.available!.accelerator_groups!.nvidia_gpu,
+                quantity: 1.5,
+              },
+            },
+          },
+        }}
+        t={t}
+      />,
+    );
+
+    expect(screen.getByText("0.5 / 2.0")).toBeTruthy();
+    expect(screen.getByText("25% allocated")).toBeTruthy();
+    expect(screen.getByText("1.5 cards")).toBeTruthy();
+    expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
+    expect(
+      screen.getByRole("progressbar", { name: "GPU Cards: 0.5 / 2.0" }),
+    ).toBeTruthy();
+  });
+
+  it("keeps the meter continuous when fractional groups sum to an integer", () => {
+    render(
+      <ClusterResourceSummary
+        resourceInfo={{
+          allocatable: {
+            cpu: 4,
+            memory: 8,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+              npu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+            },
+          },
+          available: {
+            cpu: 4,
+            memory: 8,
+            accelerator_groups: {
+              nvidia_gpu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+              npu: {
+                quantity: 0.5,
+                product_groups: null,
+                products: null,
+              },
+            },
+          },
+          node_resources: null,
+        }}
+        t={t}
+      />,
+    );
+
+    expect(screen.getByText("0.0 / 1.0")).toBeTruthy();
+    expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
+    expect(
+      screen.getByRole("progressbar", { name: "GPU Cards: 0.0 / 1.0" }),
+    ).toBeTruthy();
+  });
+
   it("hides accelerator metrics when the cluster has no cards", () => {
     render(
       <ClusterResourceSummary
