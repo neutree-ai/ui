@@ -6,7 +6,7 @@ import { useEndpointEngineOptions } from "./use-endpoint-engine-options";
 function makeEngine(
   name: string,
   versions: { version: string; values_schema?: Record<string, unknown> }[],
-  tasks: string[],
+  tasks: string[] | null,
 ): EndpointEngineRef {
   return {
     metadata: { name } as EndpointEngineRef["metadata"],
@@ -67,6 +67,23 @@ describe("useEndpointEngineOptions", () => {
     expect(result.current.engineTasks["llama-cpp"]).toEqual([
       "text-generation",
     ]);
+  });
+
+  it("normalizes a null supported_tasks to an empty array", () => {
+    const nullTasksEngine = makeEngine(
+      "legacy-engine",
+      [{ version: "1.0.0" }],
+      null,
+    );
+
+    const { result } = renderHook(() =>
+      useEndpointEngineOptions({
+        enginesData: [nullTasksEngine],
+        engineSpec: { engine: "", version: "" },
+      }),
+    );
+
+    expect(result.current.engineTasks["legacy-engine"]).toEqual([]);
   });
 
   it("finds value schema for selected engine and version", () => {

@@ -93,7 +93,8 @@ export type EndpointEngineRef = {
   metadata: Metadata;
   spec: {
     versions: EndpointEngineVersionRef[];
-    supported_tasks: string[];
+    /** Nullable: composite-type fallback stores this as NULL when unset. */
+    supported_tasks: string[] | null;
   };
 };
 

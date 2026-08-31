@@ -68,7 +68,7 @@ export const EnginesShow = () => {
               {record.spec.versions.length}
             </ShowPage.Meta>
             <ShowPage.Meta label={t("engines.fields.supportedTasks")}>
-              {record.spec.supported_tasks.length}
+              {record.spec.supported_tasks?.length ?? 0}
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
@@ -77,7 +77,7 @@ export const EnginesShow = () => {
       <div className="mt-4 space-y-3">
         <ShowPage.Section title={t("engines.fields.supportedTasks")}>
           <div className="flex flex-wrap gap-1.5">
-            {record.spec.supported_tasks.map((task) => (
+            {(record.spec.supported_tasks ?? []).map((task) => (
               <Badge key={task} variant="outline">
                 {task}
               </Badge>
