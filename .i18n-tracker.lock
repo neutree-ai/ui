@@ -325,7 +325,7 @@
   "src/domains/endpoint/components/ComposePreview.tsx": "46c02bdd098aca320703bbad27578a6b",
   "src/domains/endpoint/components/FeaturePicker.tsx": "870ad4d4f2b1a435c52a2bd377437448",
   "src/domains/endpoint/components/VRAMCheckBadge.tsx": "8669ff213df55b49535f2134db420d66",
-  "src/domains/endpoint/components/VariantPicker.tsx": "b3b3a2b57bc5652c21577a59b3dab38e",
+  "src/domains/endpoint/components/VariantPicker.tsx": "b9e5bff55ac2faa9b90c8fb8be33595c",
   "src/components/ui/switch.tsx": "62081204adcbf21dca9b67f40a677901",
   "src/foundation/lib/touched-fields.ts": "8bb21e569f8f08090d42f67df8e1e702",
   "src/foundation/lib/batch-delete.ts": "5f39355873017d5c1adbfaca77a09da7",
