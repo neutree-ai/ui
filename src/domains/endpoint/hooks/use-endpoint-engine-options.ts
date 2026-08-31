@@ -21,7 +21,7 @@ export function useEndpointEngineOptions({
     for (const engine of enginesData || []) {
       engineNames.push(engine.metadata.name);
       engineVersions[engine.metadata.name] = engine.spec.versions;
-      engineTasks[engine.metadata.name] = engine.spec.supported_tasks;
+      engineTasks[engine.metadata.name] = engine.spec.supported_tasks ?? [];
     }
 
     return { engineNames, engineVersions, engineTasks };

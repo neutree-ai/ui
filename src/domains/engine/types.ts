@@ -11,7 +11,8 @@ export type Engine = {
 
 export type EngineSpec = {
   versions: EngineVersion[];
-  supported_tasks: string[];
+  /** Nullable: composite-type fallback stores this as NULL when unset. */
+  supported_tasks: string[] | null;
 };
 
 /**
