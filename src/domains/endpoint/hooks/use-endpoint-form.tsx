@@ -1461,8 +1461,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
+  // Keep the form in sync with composeResult itself, rather than re-applying
+  // it only at the handful of call sites that change variant/features. That
+  // covers those same triggers (composeResult depends on selectedVariant and
+  // featureSelections) *and* the case those call sites missed: the selected
+  // catalog's own data changing under it — e.g. its model repository gets
+  // edited elsewhere and the catalog list refetches — which used to leave the
+  // form showing stale fields until the user happened to touch the variant.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applyComposedToForm is recreated every render and not itself a dependency of what it does — only composeResult's identity should trigger a re-apply.
+  useEffect(() => {
+    if (composeResult?.ok) {
+      applyComposedToForm(composeResult.spec);
+    }
+  }, [composeResult]);
+
   // Handle model catalog selection with merge logic. Trivial MCs go through
-  // the original `applyCatalogSpec` path; Recipe MCs go through the composer.
+  // the original `applyCatalogSpec` path; Recipe MCs go through the composer,
+  // driven by the effect above once selectedVariant/featureSelections land.
   const handleModelCatalogSelect = (catalogId: string) => {
     setSelectedModelCatalog(catalogId);
 
@@ -1479,7 +1494,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (!catalog) return;
 
     if (isRecipeShape(catalog.spec)) {
-      // Recipe path — initialize variant/features defaults, then compose.
+      // Recipe path — initialize variant/features defaults; the effect above
+      // composes and applies once these land.
       const variants = Object.keys(catalog.spec.variants ?? {});
       const initialVariant = variants.includes(DEFAULT_VARIANT)
         ? DEFAULT_VARIANT
@@ -1489,14 +1505,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       );
       setSelectedVariant(initialVariant);
       setFeatureSelections(initialFeatures);
-      const result = composeEndpointSpec(
-        catalog.spec as RecipeInputSpec,
-        initialVariant,
-        initialFeatures,
-      );
-      if (result.ok) {
-        applyComposedToForm(result.spec);
-      }
     } else {
       // Trivial path — current behavior, unchanged.
       applyCatalogSpec(catalog.spec as Record<string, unknown>);
@@ -1556,31 +1564,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     });
   }, [form, modelRegistryNames, preselectRegistryModel, workspace]);
 
-  // When user changes variant or features, re-apply the composed result.
+  // When user changes variant or features, the effect above re-composes and
+  // re-applies from the new selection.
   const handleVariantChange = (v: string) => {
     setSelectedVariant(v);
-    if (!selectedCatalog) return;
-    const result = composeEndpointSpec(
-      selectedCatalog.spec as RecipeInputSpec,
-      v,
-      featureSelections,
-    );
-    if (result.ok) {
-      applyComposedToForm(result.spec);
-    }
   };
 
   const handleFeaturesChange = (next: FeatureSelection[]) => {
     setFeatureSelections(next);
-    if (!selectedCatalog) return;
-    const result = composeEndpointSpec(
-      selectedCatalog.spec as RecipeInputSpec,
-      selectedVariant,
-      next,
-    );
-    if (result.ok) {
-      applyComposedToForm(result.spec);
-    }
   };
 
   const clusterGpuResourcesPanel = currentCluster ? (
