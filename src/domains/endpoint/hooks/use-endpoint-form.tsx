@@ -1903,12 +1903,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   }}
                 />
               </FormFieldGroup>
-              <FormFieldGroup
-                {...form}
-                name="spec.model.name"
-                label={t("endpoints.fields.modelName")}
-              >
-                <div className="space-y-2">
+              {/* The hints sit beside the field rather than inside it:
+              FormFieldGroup clones the controller's `field` onto its child, so
+              a wrapper around the combobox would take the keystrokes typed in
+              its search box as changes to the model name. */}
+              <div className="space-y-2">
+                <FormFieldGroup
+                  {...form}
+                  name="spec.model.name"
+                  label={t("endpoints.fields.modelName")}
+                >
                   <AsyncCombobox
                     placeholder={t("endpoints.placeholders.selectModel")}
                     loading={
@@ -1961,35 +1965,35 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       );
                     }}
                   />
-                  {/* Said here rather than in release notes: a model that is not on
-                  local storage is fetched when the endpoint starts, so the first
-                  start is slow and an air-gapped site cannot start it at all.
-                  Keyed off the registry's stated capability, so a second public
-                  provider inherits the warning without being named. */}
-                  {selectedModelDelivery === "at-deploy-time" && (
-                    <Alert data-testid="endpoint-runtime-download-hint">
-                      <AlertDescription>
-                        {t("endpoints.messages.runtimeDownloadHint")}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {/* The registry answered without saying which kind it is, which
-                  only happens when a request here drops MODEL_REGISTRY_SELECT.
-                  Rendering nothing would take the warning above away with no
-                  symptom at all; this makes the omission visible to whoever is
-                  looking at the screen. */}
-                  {selectedModelDelivery === "unknown" && (
-                    <Alert
-                      variant="warning"
-                      data-testid="endpoint-runtime-download-unknown"
-                    >
-                      <AlertDescription>
-                        {t("endpoints.messages.runtimeDownloadUnknown")}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              </FormFieldGroup>
+                </FormFieldGroup>
+                {/* Said here rather than in release notes: a model that is not
+                on local storage is fetched when the endpoint starts, so the
+                first start is slow and an air-gapped site cannot start it at
+                all. Keyed off the registry's stated capability, so a second
+                public provider inherits the warning without being named. */}
+                {selectedModelDelivery === "at-deploy-time" && (
+                  <Alert data-testid="endpoint-runtime-download-hint">
+                    <AlertDescription>
+                      {t("endpoints.messages.runtimeDownloadHint")}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {/* The registry answered without saying which kind it is,
+                which only happens when a request here drops
+                MODEL_REGISTRY_SELECT. Rendering nothing would take the warning
+                above away with no symptom at all; this makes the omission
+                visible to whoever is looking at the screen. */}
+                {selectedModelDelivery === "unknown" && (
+                  <Alert
+                    variant="warning"
+                    data-testid="endpoint-runtime-download-unknown"
+                  >
+                    <AlertDescription>
+                      {t("endpoints.messages.runtimeDownloadUnknown")}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
             </>
           )}
           {showFull && !hidesModelFields && (

@@ -6141,6 +6141,70 @@ describe("model picker", () => {
     expect(formInstance?.getValues().spec.model.name).toBe("Qwen/Qwen3-8B");
     expect(formInstance?.getValues().spec.model.version).toBe("v2");
   });
+
+  // The controller's field belongs to the combobox alone: a wrapper around it
+  // takes the search box's keystrokes as changes to the model name.
+  it("keeps the search term out of the model name when picking a model that is not on the first page", async () => {
+    setupMocks([], [], [{ metadata: { name: "reg" } }]);
+    const deepModel = {
+      name: "tc6-a-24-20260830230732",
+      versions: [{ name: "v1", creation_time: "" }],
+    };
+    const firstPage = Array.from({ length: 20 }, (_, index) => ({
+      name: `tc6-a-${String(index).padStart(2, "0")}-20260830230732`,
+      versions: [{ name: "v1", creation_time: "" }],
+    }));
+    vi.mocked(useRegistryModels).mockImplementation(((opts: {
+      search?: string;
+    }) => {
+      const models = opts.search
+        ? [deepModel, ...firstPage].filter((model) =>
+            model.name.includes(opts.search as string),
+          )
+        : firstPage;
+      return {
+        page: { models, total: models.length, limit: 20, freshness: null },
+        models,
+        total: models.length,
+        isLoading: false,
+        isFetching: false,
+        error: null,
+        refetch: vi.fn(),
+      };
+    }) as unknown as typeof useRegistryModels);
+
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.model.registry", "reg");
+    });
+
+    const field = screen.getByTestId("field-spec.model.name");
+    const trigger = field.querySelector('button[role="combobox"]');
+    if (!trigger) throw new Error("model combobox trigger not found");
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+
+    // Searching by the exact name is what makes this bite: with it in the
+    // field, the option reads as the current value and clicking it unselects.
+    const search = document.querySelector(
+      "input[cmdk-input]",
+    ) as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(search, { target: { value: deepModel.name } });
+    });
+
+    expect(formInstance?.getValues().spec.model.name).toBe("");
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("option", { name: deepModel.name }));
+    });
+
+    expect(formInstance?.getValues().spec.model.name).toBe(deepModel.name);
+    expect(formInstance?.getValues().spec.model.version).toBe("v1");
+  });
 });
 
 describe("model static parameters", () => {
