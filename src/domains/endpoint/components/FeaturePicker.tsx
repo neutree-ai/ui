@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { BreakableReference } from "@/foundation/components/BreakableReference";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import type {
@@ -277,7 +278,7 @@ export const FeaturePicker = ({
     conflict: string | null,
   ) => (
     <div className="min-w-0 flex-1">
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap">
         {f.display_name ? (
           <>
             <span className="text-sm font-medium">{f.display_name}</span>
@@ -288,6 +289,7 @@ export const FeaturePicker = ({
         ) : (
           <span className="font-mono text-sm">{key}</span>
         )}
+        {f.description && <InfoHint label={f.description} />}
         {f.default && featureType(f) === "boolean" && (
           <Badge variant="outline" className="text-xs">
             {t("endpoints.recipe.defaultOn", "default on")}
@@ -300,9 +302,6 @@ export const FeaturePicker = ({
           </span>
         )}
       </div>
-      {f.description && (
-        <div className="text-xs text-muted-foreground">{f.description}</div>
-      )}
     </div>
   );
 
