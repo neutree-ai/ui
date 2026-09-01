@@ -4,8 +4,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatModelInfoNumber } from "@/domains/model-catalog/lib/model-info-display";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatModelInfoNumber } from "@/foundation/lib/model-info-display";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
 type Props = {

@@ -144,6 +144,38 @@ describe("EndpointWeightsEstimate", () => {
     expect((await screen.findByRole("tooltip")).textContent).toBe(architecture);
   });
 
+  // A checkpoint states parameter count and context length as plain digit
+  // strings (35951822704, 262144) — nobody can place a magnitude on those by
+  // eye, and abbreviating them is exactly what ModelInfoBadges already does
+  // for the same two fields elsewhere. Quantization and architecture are
+  // already short labels, not counts, and must pass through unabbreviated.
+  it("abbreviates raw parameter count and context length, leaving other facts as-is", () => {
+    render(
+      <EndpointWeightsEstimate
+        declared={{
+          perReplicaGb: null,
+          replicas: 1,
+          info: {
+            parameter_count: "35951822704",
+            context_length: "262144",
+            quantization: "fp8",
+            architecture: "moe",
+          },
+          accelerator: {},
+        }}
+        kvCache={null}
+      />,
+    );
+
+    const block = screen.getByTestId("endpoint-declared-weights");
+    expect(within(block).getByText("36B")).toBeDefined();
+    expect(within(block).getByText("262K")).toBeDefined();
+    expect(within(block).getByText("fp8")).toBeDefined();
+    expect(within(block).getByText("moe")).toBeDefined();
+    expect(within(block).queryByText("35951822704")).toBeNull();
+    expect(within(block).queryByText("262144")).toBeNull();
+  });
+
   it("states the declared metadata a catalog carries without a VRAM figure", () => {
     render(
       <EndpointWeightsEstimate

@@ -13,6 +13,7 @@ import type {
 } from "@/domains/endpoint/lib/engine-cache-args";
 import { InfoHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatModelInfoNumber } from "@/foundation/lib/model-info-display";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { formatGb } from "@/foundation/recipe/vram";
 import type { ModelInfo } from "@/foundation/types/serving-types";
@@ -232,16 +233,32 @@ const Fact = ({ label, value }: { label: string; value: string }) => (
 );
 
 /** The checkpoint's own description, in the order a reader wants it. Absent
- * fields are dropped rather than shown as blanks. */
+ * fields are dropped rather than shown as blanks. Parameter count and context
+ * length are plain digit strings straight off the checkpoint (35951822704,
+ * 262144) — abbreviated the same way ModelInfoBadges already abbreviates the
+ * same two fields elsewhere, rather than left as a string nobody can place a
+ * magnitude on by eye. Quantization and architecture are already short labels
+ * or names, not counts, so formatModelInfoNumber leaves them untouched. */
 function modelFacts(info: ModelInfo | null) {
   const fields = [
-    ["model_catalogs.modelInfo.parameterCount", info?.parameter_count],
-    ["model_catalogs.modelInfo.quantization", info?.quantization],
-    ["model_catalogs.modelInfo.contextLength", info?.context_length],
-    ["model_catalogs.modelInfo.architecture", info?.architecture],
+    [
+      "model_catalogs.modelInfo.parameterCount",
+      info?.parameter_count,
+      formatModelInfoNumber,
+    ],
+    ["model_catalogs.modelInfo.quantization", info?.quantization, null],
+    [
+      "model_catalogs.modelInfo.contextLength",
+      info?.context_length,
+      formatModelInfoNumber,
+    ],
+    ["model_catalogs.modelInfo.architecture", info?.architecture, null],
   ] as const;
 
   return fields
     .filter(([, value]) => Boolean(value))
-    .map(([key, value]) => ({ key, value: value as string }));
+    .map(([key, value, format]) => ({
+      key,
+      value: format ? format(value as string) : (value as string),
+    }));
 }
