@@ -6381,6 +6381,44 @@ describe("what a deploy came from is recorded on the endpoint", () => {
   });
 });
 
+// The composed model address must track the selected catalog's own data, not
+// just the events (variant/feature change) that used to re-derive it. Editing
+// the catalog's underlying model elsewhere and having the catalog list
+// refetch is exactly such a change with no variant/feature event attached.
+describe("a recipe catalog's own data changing re-composes the form", () => {
+  it("updates the model address once the selected catalog refetches, without a variant switch", () => {
+    setupMocks([catalogA, recipeCatalog], [plainKubernetesCluster]);
+    const { rerender } = render(<CreateForm />);
+    selectCatalog("recipe-mc");
+
+    expect(formInstance?.getValues("spec.model.name")).toBe("org/recipe-model");
+
+    const editedRecipeCatalog = {
+      ...recipeCatalog,
+      spec: {
+        ...recipeCatalog.spec,
+        variants: {
+          default: {
+            model: {
+              ...recipeCatalog.spec.variants.default.model,
+              name: "org/local-recipe-model",
+              registry: "local",
+            },
+          },
+        },
+      },
+    };
+
+    setupMocks([catalogA, editedRecipeCatalog], [plainKubernetesCluster]);
+    rerender(<CreateForm />);
+
+    expect(formInstance?.getValues("spec.model.name")).toBe(
+      "org/local-recipe-model",
+    );
+    expect(formInstance?.getValues("spec.model.registry")).toBe("local");
+  });
+});
+
 // The shared CreateForm harness leaves out the recipe slots; the real page
 // (pages/endpoints/create.tsx) renders them all, and these tests are about
 // what that page shows.

@@ -1,6 +1,6 @@
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { ChevronDown, CircleHelp, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -11,12 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
@@ -64,6 +58,7 @@ import type {
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
@@ -1461,8 +1456,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
+  // Keep the form in sync with composeResult itself, rather than re-applying
+  // it only at the handful of call sites that change variant/features. That
+  // covers those same triggers (composeResult depends on selectedVariant and
+  // featureSelections) *and* the case those call sites missed: the selected
+  // catalog's own data changing under it — e.g. its model repository gets
+  // edited elsewhere and the catalog list refetches — which used to leave the
+  // form showing stale fields until the user happened to touch the variant.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applyComposedToForm is recreated every render and not itself a dependency of what it does — only composeResult's identity should trigger a re-apply.
+  useEffect(() => {
+    if (composeResult?.ok) {
+      applyComposedToForm(composeResult.spec);
+    }
+  }, [composeResult]);
+
   // Handle model catalog selection with merge logic. Trivial MCs go through
-  // the original `applyCatalogSpec` path; Recipe MCs go through the composer.
+  // the original `applyCatalogSpec` path; Recipe MCs go through the composer,
+  // driven by the effect above once selectedVariant/featureSelections land.
   const handleModelCatalogSelect = (catalogId: string) => {
     setSelectedModelCatalog(catalogId);
 
@@ -1479,7 +1489,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (!catalog) return;
 
     if (isRecipeShape(catalog.spec)) {
-      // Recipe path — initialize variant/features defaults, then compose.
+      // Recipe path — initialize variant/features defaults; the effect above
+      // composes and applies once these land.
       const variants = Object.keys(catalog.spec.variants ?? {});
       const initialVariant = variants.includes(DEFAULT_VARIANT)
         ? DEFAULT_VARIANT
@@ -1489,14 +1500,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       );
       setSelectedVariant(initialVariant);
       setFeatureSelections(initialFeatures);
-      const result = composeEndpointSpec(
-        catalog.spec as RecipeInputSpec,
-        initialVariant,
-        initialFeatures,
-      );
-      if (result.ok) {
-        applyComposedToForm(result.spec);
-      }
     } else {
       // Trivial path — current behavior, unchanged.
       applyCatalogSpec(catalog.spec as Record<string, unknown>);
@@ -1556,31 +1559,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     });
   }, [form, modelRegistryNames, preselectRegistryModel, workspace]);
 
-  // When user changes variant or features, re-apply the composed result.
+  // When user changes variant or features, the effect above re-composes and
+  // re-applies from the new selection.
   const handleVariantChange = (v: string) => {
     setSelectedVariant(v);
-    if (!selectedCatalog) return;
-    const result = composeEndpointSpec(
-      selectedCatalog.spec as RecipeInputSpec,
-      v,
-      featureSelections,
-    );
-    if (result.ok) {
-      applyComposedToForm(result.spec);
-    }
   };
 
   const handleFeaturesChange = (next: FeatureSelection[]) => {
     setFeatureSelections(next);
-    if (!selectedCatalog) return;
-    const result = composeEndpointSpec(
-      selectedCatalog.spec as RecipeInputSpec,
-      selectedVariant,
-      next,
-    );
-    if (result.ok) {
-      applyComposedToForm(result.spec);
-    }
   };
 
   const clusterGpuResourcesPanel = currentCluster ? (
@@ -2285,31 +2271,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   <h3 className="text-sm font-semibold">
                     {t("endpoints.sections.schedulingTarget")}
                   </h3>
-                  <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          aria-label={t(
-                            "endpoints.descriptions.clusterSchedulingTarget",
-                          )}
-                          title={t(
-                            "endpoints.descriptions.clusterSchedulingTarget",
-                          )}
-                        >
-                          <CircleHelp className="size-3.5" aria-hidden="true" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        align="start"
-                        className="max-w-xs leading-5"
-                      >
-                        {t("endpoints.descriptions.clusterSchedulingTarget")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <InfoHint
+                    label={t("endpoints.descriptions.clusterSchedulingTarget")}
+                  />
                 </div>
               </div>
               <div className="grid min-w-0 grid-cols-1 items-end justify-start gap-3 sm:grid-cols-[minmax(220px,280px)_max-content]">

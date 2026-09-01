@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -112,6 +112,36 @@ describe("EndpointWeightsEstimate", () => {
     );
 
     expect(screen.queryByTestId("endpoint-weights-estimate")).toBeNull();
+  });
+
+  // A checkpoint's architecture is a class name, not a number, and can run
+  // well past what a fact box in a 4-up grid row can show — truncated, with
+  // the full string reachable by keyboard through a tooltip, the same
+  // treatment ModelInfoBadges gives the same field elsewhere.
+  it("truncates a long architecture value and offers it in full via tooltip", async () => {
+    const architecture =
+      "Qwen3MoeForConditionalGenerationWithAnIntentionallyLongArchitectureName";
+    render(
+      <EndpointWeightsEstimate
+        declared={{
+          perReplicaGb: null,
+          replicas: 1,
+          info: { architecture },
+          accelerator: {},
+        }}
+        kvCache={null}
+      />,
+    );
+
+    const triggerValue = screen.getByText(architecture);
+    const trigger = triggerValue.closest("button");
+    if (!trigger)
+      throw new Error("architecture tooltip trigger was not rendered");
+
+    expect(triggerValue.className).toContain("truncate");
+    fireEvent.focus(trigger);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe(architecture);
   });
 
   it("states the declared metadata a catalog carries without a VRAM figure", () => {

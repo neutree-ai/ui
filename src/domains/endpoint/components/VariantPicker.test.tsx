@@ -10,7 +10,7 @@ vi.mock("@/foundation/lib/i18n", () => ({
 }));
 
 describe("VariantPicker", () => {
-  it("renders variants as radio options and emits the selected value", () => {
+  it("renders variants as a single-line segment control and emits the selected value", () => {
     const onChange = vi.fn();
 
     render(
@@ -31,16 +31,16 @@ describe("VariantPicker", () => {
     );
 
     expect(
-      screen.getByRole("radiogroup", { name: "Select a variant" }),
+      screen.getByRole("group", { name: "Select a variant" }),
     ).toBeTruthy();
 
-    const radios = screen.getAllByRole("radio");
-    const defaultRadio = radios[0];
-    const throughputRadio = radios[1];
-    expect((defaultRadio as HTMLInputElement).checked).toBe(true);
-    expect((throughputRadio as HTMLInputElement).checked).toBe(false);
+    const buttons = screen.getAllByRole("button");
+    const defaultButton = buttons[0];
+    const throughputButton = buttons[1];
+    expect(defaultButton.getAttribute("aria-pressed")).toBe("true");
+    expect(throughputButton.getAttribute("aria-pressed")).toBe("false");
 
-    fireEvent.click(throughputRadio);
+    fireEvent.click(throughputButton);
 
     expect(onChange).toHaveBeenCalledWith("throughput");
   });
