@@ -300,7 +300,7 @@ function Replica({
             <div className="grid min-w-0 gap-0.5">
               <div className="flex flex-wrap items-center gap-x-2 text-xs leading-4 text-muted-foreground">
                 <span>
-                  {t("common.fields.replica")} {groupIndex + 1}
+                  {t("common.fields.replica")} {groupIndex}
                 </span>
                 {group.nodeCount > 1 && (
                   <>
@@ -314,7 +314,7 @@ function Replica({
                 )}
               </div>
               <span
-                className="min-w-0 truncate text-sm font-semibold leading-5"
+                className="min-w-0 truncate font-mono text-xs font-normal leading-4 text-[var(--nt-text-neutral-tertiary)]"
                 title={replicaName}
               >
                 {replicaName}

@@ -185,8 +185,8 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getAllByTestId("runtime-replica")).toHaveLength(2);
     expect(screen.getAllByTestId("runtime-host")).toHaveLength(3);
     expect(screen.getAllByTestId("runtime-gpu-cell")).toHaveLength(8);
+    expect(screen.getByText("Replica 0")).toBeTruthy();
     expect(screen.getByText("Replica 1")).toBeTruthy();
-    expect(screen.getByText("Replica 2")).toBeTruthy();
     expect(screen.getByText("endpoint-abc-single-node")).toBeTruthy();
     expect(screen.getByText("endpoint-abc-multi-node")).toBeTruthy();
     expect(screen.queryByText(/Instance endpoint-abc/)).toBeNull();

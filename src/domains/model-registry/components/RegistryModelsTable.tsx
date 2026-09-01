@@ -305,7 +305,11 @@ export const RegistryModelsTable = ({
             <span className="text-muted-foreground">-</span>
           )}
         </TableCell>
-        <TableCell>{row.version.name}</TableCell>
+        <TableCell>
+          <span className="font-mono text-xs font-normal text-[var(--nt-text-neutral-tertiary)]">
+            {row.version.name}
+          </span>
+        </TableCell>
         <TableCell>
           {row.version.size || (
             <span className="text-muted-foreground">

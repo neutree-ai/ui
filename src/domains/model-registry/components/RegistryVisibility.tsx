@@ -31,7 +31,7 @@ export const RegistryVisibility = ({
 
   return (
     <span
-      className="inline-flex items-center gap-1"
+      className="inline-flex items-center gap-1 align-middle"
       data-testid={`registry-visibility-${visibility}`}
     >
       <Icon className="h-4 w-4 text-muted-foreground" />

@@ -310,6 +310,20 @@ describe("states", () => {
     expect(onModelSelect).toHaveBeenNthCalledWith(2, "model-0", "v1");
   });
 
+  it("keeps the version visually secondary to the model name", () => {
+    answerWith(() => ({ page: page(1, 1) }));
+
+    renderTable(registry({ visibility: "private" }));
+
+    const version = screen.getByText("v1");
+    expect(version.className).toContain("font-mono");
+    expect(version.className).toContain("text-xs");
+    expect(version.className).toContain("font-normal");
+    expect(version.className).toContain(
+      "text-[var(--nt-text-neutral-tertiary)]",
+    );
+  });
+
   it("shows a loader while asking, and claims nothing about the total", () => {
     answerWith(() => ({ page: null, isLoading: true }));
 
