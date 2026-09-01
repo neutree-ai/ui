@@ -26,6 +26,7 @@ import {
   NO_ENGINE_CACHE_ARG_CONTROLS,
   NO_ENGINE_CACHE_ARGS,
 } from "@/domains/endpoint/lib/engine-cache-args";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   BYTES_PER_GB,
@@ -509,8 +510,9 @@ const Panel = ({ state, children }: { state: string; children: ReactNode }) => {
       data-testid="kv-cache-estimate"
       data-state={state}
     >
-      <div className="mb-2 text-sm font-medium">
+      <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
         {t("endpoints.kvCache.title", "KV cache estimate")}
+        <InfoHint label={t("endpoints.kvCache.titleHint")} />
       </div>
       {children}
     </div>

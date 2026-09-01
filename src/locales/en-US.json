@@ -937,7 +937,8 @@
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
 			"basicResources": "Capacity shared with the selected cluster.",
-			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card."
+			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card.",
+			"declaredWeights": "What the catalog's author measured for the model weights alone, per replica — it does not include the KV cache, which is estimated separately below from this deployment's context and concurrency."
 		},
 		"actions": {
 			"openResources": "Open Resources",
@@ -1031,6 +1032,7 @@
 		},
 		"kvCache": {
 			"title": "KV cache estimate",
+			"titleHint": "Computed from this checkpoint's cache layout, the tokens and sequences below, and the KV precision you pick — not a value the catalog states.",
 			"tokensPerSequence": "Tokens per sequence",
 			"sequences": "Concurrent sequences",
 			"precision": "KV precision",

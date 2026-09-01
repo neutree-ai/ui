@@ -1,6 +1,6 @@
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { ChevronDown, CircleHelp, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -11,12 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
@@ -64,6 +58,7 @@ import type {
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { NumberInput } from "@/foundation/components/NumberInput";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
@@ -2276,31 +2271,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   <h3 className="text-sm font-semibold">
                     {t("endpoints.sections.schedulingTarget")}
                   </h3>
-                  <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          aria-label={t(
-                            "endpoints.descriptions.clusterSchedulingTarget",
-                          )}
-                          title={t(
-                            "endpoints.descriptions.clusterSchedulingTarget",
-                          )}
-                        >
-                          <CircleHelp className="size-3.5" aria-hidden="true" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        align="start"
-                        className="max-w-xs leading-5"
-                      >
-                        {t("endpoints.descriptions.clusterSchedulingTarget")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <InfoHint
+                    label={t("endpoints.descriptions.clusterSchedulingTarget")}
+                  />
                 </div>
               </div>
               <div className="grid min-w-0 grid-cols-1 items-end justify-start gap-3 sm:grid-cols-[minmax(220px,280px)_max-content]">
