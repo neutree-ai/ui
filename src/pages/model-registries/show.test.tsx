@@ -25,9 +25,28 @@ vi.mock("@/foundation/components/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => (
     <main>{children}</main>
   );
-  ShowPage.ObjectHeader = ({ title }: { title: ReactNode }) => <h1>{title}</h1>;
-  ShowPage.Meta = ({ children }: { children: ReactNode }) => (
-    <span>{children}</span>
+  ShowPage.ObjectHeader = ({
+    title,
+    description,
+  }: {
+    title: ReactNode;
+    description: ReactNode;
+  }) => (
+    <header>
+      <h1>{title}</h1>
+      <div data-testid="object-header-meta">{description}</div>
+    </header>
+  );
+  ShowPage.Meta = ({
+    label,
+    children,
+  }: {
+    label: ReactNode;
+    children: ReactNode;
+  }) => (
+    <span>
+      {label}:{children}
+    </span>
   );
   return { ShowPage };
 });
@@ -72,17 +91,17 @@ vi.mock("@/domains/model-registry/components/ModelRegistryStatus", () => ({
   default: () => null,
 }));
 vi.mock("@/domains/model-registry/components/ModelRegistryType", () => ({
-  default: () => null,
+  default: () => <span>ModelScope</span>,
 }));
 vi.mock(
   "@/domains/model-registry/components/RegistryAvailabilityNotice",
   () => ({ RegistryAvailabilityNotice: () => null }),
 );
 vi.mock("@/domains/model-registry/components/RegistryVisibility", () => ({
-  RegistryVisibility: () => null,
+  RegistryVisibility: () => <span>Public</span>,
 }));
 vi.mock("@/foundation/components/MetadataTimestampMeta", () => ({
-  MetadataTimestampMeta: () => null,
+  MetadataTimestampMeta: () => <span>Created:3 days ago</span>,
 }));
 
 import { ModelRegistriesShow } from "./show";
@@ -100,6 +119,14 @@ beforeEach(() => {
 });
 
 describe("ModelRegistriesShow", () => {
+  it("places creation time after type and visibility metadata", () => {
+    render(<ModelRegistriesShow />);
+
+    expect(screen.getByTestId("object-header-meta").textContent).toBe(
+      "common.fields.type:ModelScopemodel_registries.fields.visibility:PublicCreated:3 days ago",
+    );
+  });
+
   it("renders loading and not-found states", () => {
     state.isLoading = true;
     const { rerender } = render(<ModelRegistriesShow />);

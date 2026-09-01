@@ -329,6 +329,8 @@ describe("ModelReadme — what the server said", () => {
 
     render(<ModelReadme modelRef={modelRef} />);
 
-    expect(screen.getByTestId("readme-empty")).toBeDefined();
+    expect(screen.getByTestId("readme-empty").textContent).toBe(
+      "model_registries.models.readme.none",
+    );
   });
 });

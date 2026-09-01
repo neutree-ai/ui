@@ -648,7 +648,7 @@
 			},
 			"readme": {
 				"title": "README.md",
-				"none": "This model has no card.",
+				"none": "No README.md available.",
 				"truncated": "This card is long and has been shortened."
 			}
 		},

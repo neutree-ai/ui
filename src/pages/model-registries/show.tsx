@@ -64,10 +64,10 @@ export const ModelRegistriesShow = () => {
             <ShowPage.Meta label={t("common.fields.type")}>
               <ModelRegistryType type={record.spec.type} />
             </ShowPage.Meta>
-            <MetadataTimestampMeta metadata={record.metadata} />
             <ShowPage.Meta label={t("model_registries.fields.visibility")}>
               <RegistryVisibility visibility={record.visibility} />
             </ShowPage.Meta>
+            <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
       />
