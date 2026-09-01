@@ -192,6 +192,12 @@ function ModelsCell({
 
 export const ApiKeysList = () => {
   const { t } = useTranslation();
+  // The ungrouped bucket is synthesised by the RPC, so its name arrives as a
+  // fixed English string; only real Projects carry a user-supplied name.
+  const projectLabel = (project: ApiKeyProject) =>
+    project.is_ungrouped
+      ? t("api_keys.projects.ungrouped")
+      : project.metadata.name;
   const { current: workspace } = useWorkspace();
   const scoped = workspace === ALL_WORKSPACES ? undefined : workspace;
   const [open, setOpen] = useState(false);
@@ -296,7 +302,7 @@ export const ApiKeysList = () => {
   const moveProjectNames = new Map(
     [...moveProjects, ...projects].map((project) => [
       project.id,
-      project.metadata.name,
+      projectLabel(project),
     ]),
   );
   const expansionContext = [
@@ -922,7 +928,7 @@ export const ApiKeysList = () => {
                   )}
                   <span className="min-w-0">
                     <strong className="block truncate">
-                      {project.metadata.name}
+                      {projectLabel(project)}
                     </strong>
                     {project.spec.description && (
                       <span
@@ -993,7 +999,7 @@ export const ApiKeysList = () => {
                               <Checkbox
                                 aria-label={t(
                                   "api_keys.selection.selectAllInProject",
-                                  { name: project.metadata.name },
+                                  { name: projectLabel(project) },
                                 )}
                                 checked={projectSelectionState}
                                 onCheckedChange={(checked) =>
