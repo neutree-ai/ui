@@ -129,7 +129,7 @@ export const ResourceForm = <
 
             <div className="space-y-4">{props.children}</div>
 
-            <div className="sticky bottom-0 z-10 mt-5 flex justify-end gap-x-3 border-t bg-background/90 px-1 py-4 backdrop-blur">
+            <div className="sticky -bottom-2 z-10 mt-5 flex justify-end gap-x-3 border-t bg-background/90 px-1 py-4 backdrop-blur">
               {!props.hideCancel && (
                 <Button
                   type="button"

@@ -100,7 +100,7 @@ describe("ResourceForm", () => {
     const content = actionBar?.parentElement;
 
     expect(actionBar?.className).toContain("sticky");
-    expect(actionBar?.className).toContain("bottom-0");
+    expect(actionBar?.className).toContain("-bottom-2");
     expect(content?.className).not.toContain("pb-6");
   });
 
