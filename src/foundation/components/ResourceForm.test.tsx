@@ -93,6 +93,17 @@ function VariablesForm({
 }
 
 describe("ResourceForm", () => {
+  it("keeps the sticky action bar flush with the form viewport bottom", () => {
+    render(<TestForm onFinish={vi.fn()} />);
+
+    const actionBar = screen.getByTestId("form-submit").parentElement;
+    const content = actionBar?.parentElement;
+
+    expect(actionBar?.className).toContain("sticky");
+    expect(actionBar?.className).toContain("-bottom-2");
+    expect(content?.className).not.toContain("pb-6");
+  });
+
   it("submits the handleSubmit payload instead of reading getValues again", async () => {
     const onFinish = vi.fn();
     render(<TestForm onFinish={onFinish} />);
