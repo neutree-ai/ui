@@ -183,4 +183,19 @@ describe("EndpointsShow", () => {
       clusterResourceInfo,
     );
   });
+
+  // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
+  // the task off it used to throw and blank the whole page (NEU-728).
+  it("renders a model-free endpoint", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        data: {
+          data: { ...endpoint, spec: { ...endpoint.spec, model: null } },
+        },
+        isLoading: false,
+      },
+    });
+
+    expect(() => render(<EndpointsShow />)).not.toThrow();
+  });
 });
