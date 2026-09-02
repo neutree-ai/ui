@@ -199,7 +199,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const engineVersion = engineData?.data?.spec.versions.find(
     (v) => v.version === record.spec.engine.version,
   );
-  const playground = resolvePlayground(engineVersion, record.spec.model.task);
+  const playground = resolvePlayground(engineVersion, record.spec.model?.task);
   // Read off the endpoint, never fetched: a record that still reads correctly
   // after its catalog is gone is the point of keeping it here.
   const catalogOrigin = readCatalogOrigin(record.metadata.annotations);
@@ -226,7 +226,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <EndpointModel model={record.spec.model} />
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.task")}>
-                  <ModelTask task={record.spec.model.task} />
+                  <ModelTask task={record.spec.model?.task} />
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.engine")}>
                   <EndpointEngine {...record} />

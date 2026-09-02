@@ -34,7 +34,12 @@ enum EndpointPhase {
 
 export type EndpointSpec = {
   cluster: string;
-  model: ModelSpec;
+  /**
+   * Nullable: an engine that brings its own workload (Flex) deploys with no
+   * model at all, and the API then omits `spec.model` entirely — see
+   * `engineNeedsModelSpec`. Every reader has to handle the absence.
+   */
+  model: ModelSpec | null;
   engine: EndpointEngineSpec;
   resources: ResourceSpec | null;
   replicas: ReplicaSpec | null;

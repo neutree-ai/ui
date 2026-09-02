@@ -66,7 +66,7 @@ export const EndpointsList = () => {
             id="model"
             enableHiding
             cell={({ row }) => {
-              const { model } = row.original.spec;
+              const { model } = (row.original as Endpoint).spec;
               return <EndpointModel model={model} />;
             }}
           />
@@ -76,8 +76,8 @@ export const EndpointsList = () => {
             id="task"
             enableHiding
             cell={({ row }) => {
-              const { model } = row.original.spec;
-              return <ModelTask task={model.task} />;
+              const { model } = (row.original as Endpoint).spec;
+              return <ModelTask task={model?.task} />;
             }}
           />
           <Table.Column

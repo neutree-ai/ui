@@ -366,7 +366,9 @@ export const ClustersShow = () => {
                   id="model"
                   enableHiding
                   cell={({ row }) => (
-                    <EndpointModel model={row.original.spec.model} />
+                    <EndpointModel
+                      model={(row.original as Endpoint).spec.model}
+                    />
                   )}
                 />
                 <Table.Column
