@@ -6648,7 +6648,7 @@ describe("the weights section is reachable from both modes", () => {
     expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
   });
 
-  it("puts what the catalog declares beside the estimate", async () => {
+  it("puts what the catalog declares beside the estimate, in favor of the checkpoint facts once a VRAM figure exists", async () => {
     const withVram = {
       ...recipeCatalog,
       spec: {
@@ -6670,9 +6670,11 @@ describe("the weights section is reachable from both modes", () => {
     selectCatalog("recipe-mc");
 
     const block = screen.getByTestId("endpoint-declared-weights");
-    expect(within(block).getByText("35B")).toBeDefined();
     // The requirement travels with the check on it, in the same block.
     expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
+    // Once the badge answers "how much", the checkpoint facts would only
+    // repeat that in a less useful form, so they give way to the badge.
+    expect(within(block).queryByText("35B")).toBeNull();
   });
 
   // Flex serves a model baked into its own image; there is no checkpoint to

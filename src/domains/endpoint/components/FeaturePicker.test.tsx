@@ -114,3 +114,40 @@ describe("FeaturePicker input addons", () => {
     expect(screen.queryByTestId("addon")).toBeNull();
   });
 });
+
+// A feature's description used to sit as a permanent line under every field,
+// which is exactly what made a form with several features (context window,
+// concurrency, tool-calling, ...) read as dense. It now lives behind the same
+// hover-hint affordance InfoHint offers elsewhere, so the label row stays one
+// line and the explanation is still there for whoever wants it.
+describe("FeaturePicker feature descriptions", () => {
+  it("keeps a feature's description out of the label row, offering it via hover hint", async () => {
+    renderPicker({
+      features: [
+        imageFeature({
+          name: "max-model-len",
+          display_name: "Context window",
+          description:
+            "Max sequence length (tokens) — pick a preset or type your own (native ceiling 262144).",
+        }),
+      ],
+    });
+
+    expect(screen.queryByText(/Max sequence length/)).toBeNull();
+
+    const hint = screen.getByRole("button", {
+      name: "Max sequence length (tokens) — pick a preset or type your own (native ceiling 262144).",
+    });
+    fireEvent.focus(hint);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "Max sequence length (tokens) — pick a preset or type your own (native ceiling 262144).",
+    );
+  });
+
+  it("renders no hint when the feature states no description", () => {
+    renderPicker({ features: [imageFeature({ description: undefined })] });
+
+    expect(screen.queryByRole("button", { name: /./ })).toBeNull();
+  });
+});

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -39,7 +39,6 @@ const kvCache = {
 const declared = {
   perReplicaGb: 48,
   replicas: 2,
-  info: { parameter_count: "35B", quantization: "fp8" },
   accelerator: {},
 };
 
@@ -54,8 +53,21 @@ describe("EndpointWeightsEstimate", () => {
     // The requirement and the check on it are one statement, not a number and
     // a comparison of it stated separately.
     expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
-    expect(within(block).getByText("35B")).toBeDefined();
-    expect(within(block).getByText("fp8")).toBeDefined();
+    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+  });
+
+  // A catalog that states no VRAM figure has nothing this section can show —
+  // no fallback checkpoint-facts display to fall back on, since those were
+  // never a substitute for a number a reader can size hardware against.
+  it("shows nothing declared when the catalog states no VRAM figure", () => {
+    render(
+      <EndpointWeightsEstimate
+        declared={{ perReplicaGb: null, replicas: 1, accelerator: {} }}
+        kvCache={kvCache}
+      />,
+    );
+
+    expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
     expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
   });
 
@@ -101,65 +113,12 @@ describe("EndpointWeightsEstimate", () => {
   it("renders nothing when neither half has anything to say", () => {
     render(
       <EndpointWeightsEstimate
-        declared={{
-          perReplicaGb: null,
-          replicas: 1,
-          info: null,
-          accelerator: {},
-        }}
+        declared={{ perReplicaGb: null, replicas: 1, accelerator: {} }}
         kvCache={null}
       />,
     );
 
     expect(screen.queryByTestId("endpoint-weights-estimate")).toBeNull();
-  });
-
-  // A checkpoint's architecture is a class name, not a number, and can run
-  // well past what a fact box in a 4-up grid row can show — truncated, with
-  // the full string reachable by keyboard through a tooltip, the same
-  // treatment ModelInfoBadges gives the same field elsewhere.
-  it("truncates a long architecture value and offers it in full via tooltip", async () => {
-    const architecture =
-      "Qwen3MoeForConditionalGenerationWithAnIntentionallyLongArchitectureName";
-    render(
-      <EndpointWeightsEstimate
-        declared={{
-          perReplicaGb: null,
-          replicas: 1,
-          info: { architecture },
-          accelerator: {},
-        }}
-        kvCache={null}
-      />,
-    );
-
-    const triggerValue = screen.getByText(architecture);
-    const trigger = triggerValue.closest("button");
-    if (!trigger)
-      throw new Error("architecture tooltip trigger was not rendered");
-
-    expect(triggerValue.className).toContain("truncate");
-    fireEvent.focus(trigger);
-
-    expect((await screen.findByRole("tooltip")).textContent).toBe(architecture);
-  });
-
-  it("states the declared metadata a catalog carries without a VRAM figure", () => {
-    render(
-      <EndpointWeightsEstimate
-        declared={{
-          perReplicaGb: null,
-          replicas: 1,
-          info: { architecture: "moe" },
-          accelerator: {},
-        }}
-        kvCache={null}
-      />,
-    );
-
-    const block = screen.getByTestId("endpoint-declared-weights");
-    expect(within(block).getByText("moe")).toBeDefined();
-    expect(within(block).queryByText(/GB/)).toBeNull();
   });
 
   // A deployment needs the weights and the KV cache in VRAM at once, so the

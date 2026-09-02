@@ -526,7 +526,9 @@ const Panel = ({ state, children }: { state: string; children: ReactNode }) => {
  * Read-only is not a lesser version: where the form has a control for this
  * quantity, that control is what the deployment will use, and offering a second
  * field beside it leaves a reader unable to tell which number applies. Naming
- * the owner is what keeps the read-only value actionable.
+ * the owner is what keeps the read-only value actionable — said once, behind
+ * an InfoHint rather than as a permanent line, so it does not repeat what the
+ * SourceTag badge beside the label already shows at a glance.
  */
 const CountField = ({
   id,
@@ -569,9 +571,12 @@ const CountField = ({
   if (ownedBy) {
     return (
       <div>
-        <div className="text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
           {label}
           <SourceTag source={field.source} />
+          <InfoHint
+            label={t("endpoints.kvCache.ownedBy", { control: ownedBy })}
+          />
         </div>
         <div
           className="mt-1 flex h-9 items-center font-medium tabular-nums"
@@ -579,9 +584,6 @@ const CountField = ({
           data-owned-by={ownedBy}
         >
           {value ? formatGroupedInput(value) : "—"}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {t("endpoints.kvCache.ownedBy", { control: ownedBy })}
         </div>
       </div>
     );
@@ -990,17 +992,19 @@ const Estimator = ({
                 { bytes: groupedNumber.format(result.bytesPerToken) },
               )}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {t(`endpoints.kvCache.families.${result.family}`)}
+              {/* Which formula was used and what statement in the checkpoint
+                  settled it. More than one layout can be reached from a
+                  checkpoint that also states the head fields, and the number
+                  alone does not say which was taken — so the basis is still
+                  said, just behind a hint rather than as a permanent line,
+                  the same treatment every other explanatory line on this form
+                  gets. */}
+              <InfoHint
+                label={t(`endpoints.kvCache.familyBasis.${result.familyBasis}`)}
+              />
             </span>
-          </div>
-          {/* Which formula was used and what statement in the checkpoint
-              settled it. More than one layout can be reached from a checkpoint
-              that also states the head fields, and the number alone does not
-              say which was taken — so the basis is stated rather than assumed
-              to be obvious. */}
-          <div className="text-xs text-muted-foreground">
-            {t(`endpoints.kvCache.familyBasis.${result.familyBasis}`)}
           </div>
           {/* The multiplied-out formula is behind a disclosure, not a hover
               bubble. It is several rows of factors carrying their own
@@ -1010,9 +1014,9 @@ const Estimator = ({
               also comes with the keyboard and touch affordances for free,
               which a hover-only tooltip would not.
 
-              What stays visible is the result and the basis. A refusal stays
-              visible in full for the opposite reason: it is what the reader has
-              to act on. */}
+              What stays visible is the result, not the reasoning behind it.
+              A refusal stays visible in full for the opposite reason: it is
+              what the reader has to act on. */}
           <Collapsible open={showFormula} onOpenChange={setShowFormula}>
             <CollapsibleTrigger
               className="rounded text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
