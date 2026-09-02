@@ -409,7 +409,7 @@
   "src/foundation/lib/image-reference.ts": "8200f52a33e48a24b0d355fb856ff946",
   "src/foundation/components/BreakableReference.tsx": "fa3ac0ab1cbd99466faac427cf695346",
   "src/domains/model-registry/components/ModelDetailDrawer.tsx": "378c22f5bcfe54e585d1f4bc6c8f837b",
-  "src/domains/endpoint/components/EndpointWeightsEstimate.tsx": "359d76e3df2bfc4193a3a1e7938b50df",
+  "src/domains/endpoint/components/EndpointWeightsEstimate.tsx": "5c05a9c25a64c5b81312307b02dd271a",
   "src/domains/model-catalog/components/CatalogYamlEditor.tsx": "fb11382e48877cbfa38d200ed2513633",
   "src/foundation/components/InfoHint.tsx": "8e904dedae4bc761cc4c7bcbad2705ba",
   "src/foundation/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38"

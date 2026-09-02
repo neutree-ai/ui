@@ -54,9 +54,18 @@ describe("EndpointWeightsEstimate", () => {
     // The requirement and the check on it are one statement, not a number and
     // a comparison of it stated separately.
     expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
-    expect(within(block).getByText("35B")).toBeDefined();
-    expect(within(block).getByText("fp8")).toBeDefined();
     expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+  });
+
+  // Once the catalog declares a VRAM figure, the badge already answers "how
+  // much" — the checkpoint facts would only repeat that in a less useful
+  // form, so they give way to the badge rather than sit alongside it.
+  it("hides the checkpoint facts once the catalog declares a VRAM figure", () => {
+    render(<EndpointWeightsEstimate declared={declared} kvCache={null} />);
+
+    const block = screen.getByTestId("endpoint-declared-weights");
+    expect(within(block).queryByText("35B")).toBeNull();
+    expect(within(block).queryByText("fp8")).toBeNull();
   });
 
   it("shows only the estimate when there is no catalog", () => {

@@ -113,8 +113,13 @@ export const EndpointWeightsEstimate = ({
     if (kvGb !== null) setKvGb(null);
   }
 
-  const facts = declared ? modelFacts(declared.info) : [];
   const perReplicaGb = declared?.perReplicaGb ?? null;
+  // The checkpoint facts (parameter count, quantization, ...) are a stand-in
+  // for a VRAM figure the catalog doesn't declare — once it does declare one,
+  // the badge above already answers "how much", and the facts read as
+  // clutter repeating what the badge just said in a less useful form.
+  const facts =
+    declared && perReplicaGb == null ? modelFacts(declared.info) : [];
   const showsDeclared = perReplicaGb != null || facts.length > 0;
   // What one replica actually needs in VRAM: the declared weights plus
   // whatever the KV cache panel currently works out to. Adding zero when the
