@@ -118,7 +118,7 @@ export const ResourceForm = <
     <FormUI {...props}>
       <ResourceFormSubmitContext.Provider value={submitContext}>
         <form {...formProps} onSubmit={onSubmit} data-testid="form">
-          <div className="mx-auto w-full max-w-[1280px] pb-6">
+          <div className="mx-auto w-full max-w-[1280px]">
             {title && (
               <div className="mb-4">
                 <h1 className="text-2xl font-semibold leading-8 text-foreground">
