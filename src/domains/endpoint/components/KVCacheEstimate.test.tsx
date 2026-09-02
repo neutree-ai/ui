@@ -389,20 +389,30 @@ describe("KVCacheEstimate disclosure", () => {
   const open = () =>
     screen.getByTestId("kv-cache-formula-toggle") as HTMLButtonElement;
 
-  it("keeps the result and the basis visible without opening anything", () => {
+  it("keeps the result and family visible, with the basis a hover away", async () => {
     render(<KVCacheEstimate read={ready(deepseekV3)} />);
 
     const panel = screen.getByTestId("kv-cache-estimate");
 
-    // The total and the family label are the answer. The basis is the trust
-    // signal: a number that does not say what shape it took the model to be is
-    // one a reader has no way to judge, so it is not hidden behind anything.
+    // The total and the family label are the answer, stated in full. The
+    // basis is the trust signal behind that answer — still reachable, but
+    // behind the same InfoHint hover every other explanatory line on this
+    // form uses, not a permanent line of its own.
     expect(panel.textContent).toContain("GB");
     expect(panel.textContent).toContain("endpoints.kvCache.families.latent");
-    expect(panel.textContent).toContain(
+    expect(panel.textContent).not.toContain(
       "endpoints.kvCache.familyBasis.latent_widths",
     );
     expect(screen.queryByTestId("kv-cache-components")).toBeNull();
+
+    const hint = screen.getByRole("button", {
+      name: "endpoints.kvCache.familyBasis.latent_widths",
+    });
+    fireEvent.focus(hint);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "endpoints.kvCache.familyBasis.latent_widths",
+    );
   });
 
   it("opens and closes the formula, and says which it will do", () => {

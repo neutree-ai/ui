@@ -2218,7 +2218,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 ? {
                     perReplicaGb: activeVariantVram,
                     replicas: replicaCount,
-                    info: activeModelInfo,
                     // Only accelerator data that came from the selected
                     // cluster. The composed variant also writes its reference
                     // accelerator into the form; checking the requirement

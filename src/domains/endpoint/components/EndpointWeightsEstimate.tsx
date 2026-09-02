@@ -1,10 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
 import type {
@@ -13,10 +7,8 @@ import type {
 } from "@/domains/endpoint/lib/engine-cache-args";
 import { InfoHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatModelInfoNumber } from "@/foundation/lib/model-info-display";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { formatGb } from "@/foundation/recipe/vram";
-import type { ModelInfo } from "@/foundation/types/serving-types";
 
 /**
  * What this deployment is expected to weigh, in one place for both ways of
@@ -50,8 +42,6 @@ type Declared = {
    * back in for the VRAM check. */
   perReplicaGb: number | null;
   replicas: number;
-  /** What the checkpoint states about itself, as the catalog carries it. */
-  info: ModelInfo | null;
   /**
    * What the chosen cluster offers one replica, so the declared figure can be
    * checked against it rather than left as a number to compare by hand.
@@ -114,13 +104,11 @@ export const EndpointWeightsEstimate = ({
   }
 
   const perReplicaGb = declared?.perReplicaGb ?? null;
-  // The checkpoint facts (parameter count, quantization, ...) are a stand-in
-  // for a VRAM figure the catalog doesn't declare — once it does declare one,
-  // the badge above already answers "how much", and the facts read as
-  // clutter repeating what the badge just said in a less useful form.
-  const facts =
-    declared && perReplicaGb == null ? modelFacts(declared.info) : [];
-  const showsDeclared = perReplicaGb != null || facts.length > 0;
+  // A catalog that states no VRAM figure has nothing this section can show:
+  // the checkpoint facts it might otherwise carry are not a substitute for a
+  // number a reader can size hardware against, so this section is silent
+  // rather than showing them on their own.
+  const showsDeclared = perReplicaGb != null;
   // What one replica actually needs in VRAM: the declared weights plus
   // whatever the KV cache panel currently works out to. Adding zero when the
   // KV cache has not resolved yet keeps this equal to the weights alone,
@@ -134,136 +122,70 @@ export const EndpointWeightsEstimate = ({
   if (!showsDeclared && !kvCache) return null;
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <div className="space-y-3" data-testid="endpoint-weights-estimate">
-        {showsDeclared && (
-          <div
-            className="rounded-lg border bg-muted/20 p-3"
-            data-testid="endpoint-declared-weights"
-          >
-            <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-              {t("endpoints.weights.declared")}
-              <InfoHint label={t("endpoints.descriptions.declaredWeights")} />
-            </div>
-            {perReplicaGb != null && declared && (
-              <div className="mb-3 space-y-1">
-                {/* The requirement and the check on it are one statement. Stated
-              apart, the same figure appeared twice — as a number to compare by
-              hand, and as the comparison — and at one replica the two were the
-              same number in two places. The requirement itself is weights
-              plus the KV cache's current estimate, not the declared weights
-              alone — a deployment needs both in VRAM at once. */}
-                <VRAMCheckBadge
-                  acceleratorProduct={declared.accelerator.product}
-                  perGpuGb={declared.accelerator.perGpuGb}
-                  gpuCount={declared.accelerator.gpuCount}
-                  requiredGb={requiredGb}
-                />
-                {/* Rounded to the same display precision as every other GB
-              figure on this form (formatGb, one decimal) — the underlying
-              KV-cache estimate carries far more precision than that (a
-              binary fraction of a byte-per-token count multiplied out), and
-              showing it unrounded here read as a different, more exact
-              number than the one the badge above it just checked. */}
-                {kvGb != null && (
-                  <div className="text-xs text-muted-foreground">
-                    {t("endpoints.weights.breakdown", {
-                      weights: formatGb(perReplicaGb),
-                      kv: formatGb(kvGb),
-                      total: formatGb(requiredGb ?? 0),
-                    })}
-                  </div>
-                )}
-                {/* The badge speaks per replica, which is what a GPU allocation
-              is measured against. The fleet total is a different question and
-              is only worth asking once there is more than one replica. */}
-                {declared.replicas > 1 && requiredGb != null && (
-                  <div className="text-xs text-muted-foreground">
-                    {t("endpoints.weights.acrossReplicas", {
-                      gb: formatGb(requiredGb),
-                      count: declared.replicas,
-                      total: formatGb(requiredGb * declared.replicas),
-                    })}
-                  </div>
-                )}
+    <div className="space-y-3" data-testid="endpoint-weights-estimate">
+      {declared && perReplicaGb != null && (
+        <div
+          className="rounded-lg border bg-muted/20 p-3"
+          data-testid="endpoint-declared-weights"
+        >
+          <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+            {t("endpoints.weights.declared")}
+            <InfoHint label={t("endpoints.descriptions.declaredWeights")} />
+          </div>
+          <div className="space-y-1">
+            {/* The requirement and the check on it are one statement. Stated
+            apart, the same figure appeared twice — as a number to compare by
+            hand, and as the comparison — and at one replica the two were the
+            same number in two places. The requirement itself is weights
+            plus the KV cache's current estimate, not the declared weights
+            alone — a deployment needs both in VRAM at once. */}
+            <VRAMCheckBadge
+              acceleratorProduct={declared.accelerator.product}
+              perGpuGb={declared.accelerator.perGpuGb}
+              gpuCount={declared.accelerator.gpuCount}
+              requiredGb={requiredGb}
+            />
+            {/* Rounded to the same display precision as every other GB
+            figure on this form (formatGb, one decimal) — the underlying
+            KV-cache estimate carries far more precision than that (a
+            binary fraction of a byte-per-token count multiplied out), and
+            showing it unrounded here read as a different, more exact
+            number than the one the badge above it just checked. */}
+            {kvGb != null && (
+              <div className="text-xs text-muted-foreground">
+                {t("endpoints.weights.breakdown", {
+                  weights: formatGb(perReplicaGb),
+                  kv: formatGb(kvGb),
+                  total: formatGb(requiredGb ?? 0),
+                })}
               </div>
             )}
-            {facts.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                {facts.map((fact) => (
-                  <Fact key={fact.key} label={t(fact.key)} value={fact.value} />
-                ))}
+            {/* The badge speaks per replica, which is what a GPU allocation
+            is measured against. The fleet total is a different question and
+            is only worth asking once there is more than one replica. */}
+            {declared.replicas > 1 && requiredGb != null && (
+              <div className="text-xs text-muted-foreground">
+                {t("endpoints.weights.acrossReplicas", {
+                  gb: formatGb(requiredGb),
+                  count: declared.replicas,
+                  total: formatGb(requiredGb * declared.replicas),
+                })}
               </div>
             )}
           </div>
-        )}
-        {kvCache && (
-          <KVCacheEstimate
-            key={kvCache.modelKey}
-            read={kvCache.read}
-            engineArgs={kvCache.engineArgs}
-            controls={kvCache.controls}
-            onEstimate={setKvGb}
-          />
-        )}
-      </div>
-    </TooltipProvider>
+        </div>
+      )}
+      {kvCache && (
+        <KVCacheEstimate
+          key={kvCache.modelKey}
+          read={kvCache.read}
+          engineArgs={kvCache.engineArgs}
+          controls={kvCache.controls}
+          onEstimate={setKvGb}
+        />
+      )}
+    </div>
   );
 };
 
 EndpointWeightsEstimate.displayName = "EndpointWeightsEstimate";
-
-// A checkpoint's architecture is a class name, not a number — Qwen3.6's is
-// over 30 characters — and this box is one of a 2-to-4-up grid row, so
-// nothing here can assume the value is short. Truncated with a tooltip
-// carrying the untruncated string, the same treatment ModelInfoBadges already
-// gives the same field elsewhere.
-const Fact = ({ label, value }: { label: string; value: string }) => (
-  <div className="min-w-0 rounded-md border bg-background px-3 py-2">
-    <div className="text-xs font-medium text-muted-foreground">{label}</div>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="mt-1 block w-full min-w-0 cursor-help truncate text-left font-semibold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {value}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-md break-all">
-        {value}
-      </TooltipContent>
-    </Tooltip>
-  </div>
-);
-
-/** The checkpoint's own description, in the order a reader wants it. Absent
- * fields are dropped rather than shown as blanks. Parameter count and context
- * length are plain digit strings straight off the checkpoint (35951822704,
- * 262144) — abbreviated the same way ModelInfoBadges already abbreviates the
- * same two fields elsewhere, rather than left as a string nobody can place a
- * magnitude on by eye. Quantization and architecture are already short labels
- * or names, not counts, so formatModelInfoNumber leaves them untouched. */
-function modelFacts(info: ModelInfo | null) {
-  const fields = [
-    [
-      "model_catalogs.modelInfo.parameterCount",
-      info?.parameter_count,
-      formatModelInfoNumber,
-    ],
-    ["model_catalogs.modelInfo.quantization", info?.quantization, null],
-    [
-      "model_catalogs.modelInfo.contextLength",
-      info?.context_length,
-      formatModelInfoNumber,
-    ],
-    ["model_catalogs.modelInfo.architecture", info?.architecture, null],
-  ] as const;
-
-  return fields
-    .filter(([, value]) => Boolean(value))
-    .map(([key, value, format]) => ({
-      key,
-      value: format ? format(value as string) : (value as string),
-    }));
-}
