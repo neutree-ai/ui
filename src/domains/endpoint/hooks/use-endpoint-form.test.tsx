@@ -95,6 +95,7 @@ vi.mock("@/foundation/components/VariablesInput", () => ({
 }));
 
 import { useSelect } from "@refinedev/core";
+import { defaultEndpointSpec } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
@@ -6098,6 +6099,88 @@ describe("engines that need no model spec", () => {
     for (const label of modelFieldLabels) {
       expect(screen.queryByText(label)).not.toBeNull();
     }
+  });
+
+  // A Flex catalog may still carry a spec.model naming a registry this
+  // workspace does not have. With the fields hidden there is no box to flag and
+  // nothing the user could do, so the check must not fire: it would block Save
+  // with an error the page cannot show (NEU-632).
+  it("does not flag a registry the workspace lacks", async () => {
+    setupMocks(
+      [],
+      [],
+      [{ metadata: { name: "mine" } }],
+      [engineRef("flex"), engineRef("vllm")],
+    );
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "flex", version: "v1" });
+      formInstance?.setValue("spec.model.registry", "huggingface");
+      formInstance?.setValue("spec.model.name", "Qwen/Qwen2.5-0.5B-Instruct");
+    });
+    await act(async () => {
+      await formInstance?.trigger();
+    });
+
+    expect(formInstance?.formState.errors?.["spec.model.registry"]).toBe(
+      undefined,
+    );
+    expect(formInstance?.formState.errors?.["-model-catalog"]).toBe(undefined);
+  });
+
+  it("still flags it for an engine that does ask", async () => {
+    setupMocks(
+      [],
+      [],
+      [{ metadata: { name: "mine" } }],
+      [engineRef("flex"), engineRef("vllm")],
+    );
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "vllm", version: "v1" });
+      formInstance?.setValue("spec.model.registry", "huggingface");
+    });
+    await act(async () => {
+      await formInstance?.trigger();
+    });
+
+    expect(
+      formInstance?.formState.errors?.["spec.model.registry"]?.message,
+    ).toBe("endpoints.messages.modelRegistryNotInWorkspace");
+  });
+
+  it("submits no model beyond the task the engine set", async () => {
+    setupMocks(
+      [],
+      [],
+      [{ metadata: { name: "mine" } }],
+      [engineRef("flex"), engineRef("vllm")],
+    );
+    render(<CreateForm />);
+
+    await act(async () => {
+      formInstance?.setValue("spec.engine", { engine: "flex", version: "v1" });
+      formInstance?.setValue("spec.model", {
+        registry: "huggingface",
+        name: "Qwen/Qwen2.5-0.5B-Instruct",
+        version: "main",
+        file: "",
+        task: "text-generation",
+        info: null,
+      });
+    });
+
+    await act(async () => {
+      await formInstance?.refineCore.onFinish(formInstance.getValues());
+    });
+
+    const submitted = refineCoreOnFinishMock.mock.calls[0]?.[0];
+    expect(submitted?.spec.model).toEqual({
+      ...defaultEndpointSpec.model,
+      task: "text-generation",
+    });
   });
 });
 

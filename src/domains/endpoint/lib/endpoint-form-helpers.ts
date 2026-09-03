@@ -539,6 +539,15 @@ export function validateEndpointValues(
      * precision rules cannot be applied and the check is skipped.
      */
     clusterType?: "ssh" | "kubernetes";
+    /**
+     * Whether the form hides the model fields because the engine needs no
+     * `spec.model` (see `engineNeedsModelSpec`). The model checks below then
+     * have no field to point at: a catalog written for such an engine may
+     * still carry a `spec.model` block, and flagging it would block submit on
+     * an error the page cannot render. Nothing the user can see is wrong, and
+     * nothing they can do would clear it.
+     */
+    hidesModelFields?: boolean;
   },
   t: (key: string, options?: Record<string, unknown>) => string,
 ): Record<string, { type: string; message: string }> {
@@ -611,6 +620,7 @@ export function validateEndpointValues(
   // so without this the field looks unfilled and the deploy fails server-side.
   if (
     context.action === "create" &&
+    !context.hidesModelFields &&
     context.currentRegistry &&
     context.availableRegistryNames !== null &&
     !context.availableRegistryNames.includes(context.currentRegistry)
@@ -625,6 +635,7 @@ export function validateEndpointValues(
 
   if (
     context.action === "create" &&
+    !context.hidesModelFields &&
     context.currentRegistry &&
     context.currentModelName &&
     context.availableModelNames !== null
