@@ -226,6 +226,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           availableModelNames: modelExistenceNames,
           availableRegistryNames: modelRegistryNames,
           clusterType,
+          hidesModelFields,
         },
         t,
       );
@@ -1743,6 +1744,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             ? structuredClone(values)
             : JSON.parse(JSON.stringify(values));
         transformEndpointValues((transformedValues as Endpoint).spec);
+
+        // A catalog written for an engine that needs no `spec.model` may still
+        // carry one — the merge copies it in, and the form never shows it, so
+        // the user has no way to correct or even see it. Submitting a registry
+        // and model this workspace may not have names a checkpoint nobody
+        // fetches. Only `task` survives, which the engine itself sets and the
+        // gateway routes on.
+        if (hidesModelFields) {
+          const spec = (transformedValues as Endpoint).spec as unknown as {
+            model?: Record<string, unknown> | null;
+          };
+          if (spec.model) {
+            spec.model = {
+              ...defaultEndpointSpec.model,
+              task: spec.model.task ?? "",
+            };
+          }
+        }
 
         // Record what this was deployed from, while the answer is still in
         // hand: the spec about to be submitted is the composed result, and
