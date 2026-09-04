@@ -15,6 +15,7 @@ export type AuthSpec = {
 };
 
 export type UpstreamSpec = {
+  name?: string;
   upstream?: { url: string } | null;
   auth?: AuthSpec | null;
   endpoint_ref?: string;
@@ -22,10 +23,25 @@ export type UpstreamSpec = {
   models: string[] | null;
 };
 
+export type ModelRouteTarget = {
+  upstream: string;
+  upstream_model: string;
+  priority?: number;
+  weight?: number;
+  max_inflight_requests?: number;
+};
+
+export type ModelRoute = {
+  model: string;
+  strategy?: string;
+  targets: ModelRouteTarget[];
+};
+
 export type ExternalEndpointSpec = {
   route_type?: string;
   timeout: number | null;
   upstreams: UpstreamSpec[];
+  model_routes?: ModelRoute[];
 };
 
 /**

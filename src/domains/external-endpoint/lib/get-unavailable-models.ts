@@ -8,9 +8,15 @@ import type { UpstreamStatus } from "@/domains/external-endpoint/types";
 export function getUnavailableModels(
   statuses: (UpstreamStatus | null)[],
 ): Set<string> {
+  const ready = new Set(
+    statuses
+      .filter((status) => status?.phase === "Ready")
+      .flatMap((status) => status?.models ?? []),
+  );
   return new Set(
     statuses
       .filter((status) => status?.phase === "Failed")
-      .flatMap((status) => status?.models ?? []),
+      .flatMap((status) => status?.models ?? [])
+      .filter((model) => !ready.has(model)),
   );
 }

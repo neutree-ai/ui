@@ -39,6 +39,14 @@ describe("getExposedModels", () => {
     expect(getExposedModels(spec)).toEqual(["model-a", "model-b", "model-c"]);
   });
 
+  it("deduplicates models served by multiple upstreams", () => {
+    const spec = makeSpec([
+      makeUpstream({ chat: "provider-a" }),
+      makeUpstream({ chat: "provider-b", embedding: "provider-embedding" }),
+    ]);
+    expect(getExposedModels(spec)).toEqual(["chat", "embedding"]);
+  });
+
   it("handles upstream with null model_mapping from API", () => {
     const spec = makeSpec([makeUpstream(null)]);
     expect(getExposedModels(spec)).toEqual([]);
@@ -47,5 +55,18 @@ describe("getExposedModels", () => {
   it("skips upstreams with empty model_mapping", () => {
     const spec = makeSpec([makeUpstream({}), makeUpstream({ "model-x": "x" })]);
     expect(getExposedModels(spec)).toEqual(["model-x"]);
+  });
+
+  it("uses model routes instead of legacy mappings when both are present", () => {
+    const spec = {
+      ...makeSpec([makeUpstream({ legacy: "legacy-model" })]),
+      model_routes: [
+        {
+          model: "chat",
+          targets: [{ upstream: "openai", upstream_model: "gpt-4o" }],
+        },
+      ],
+    };
+    expect(getExposedModels(spec)).toEqual(["chat"]);
   });
 });

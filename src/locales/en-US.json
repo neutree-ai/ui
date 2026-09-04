@@ -1234,13 +1234,19 @@
 			"modelMapping": "Model Mapping",
 			"exposedModelName": "Exposed Model Name",
 			"upstreamModelName": "Upstream Model Name",
+			"providerName": "Provider Name",
+			"priority": "Priority",
+			"weight": "Weight",
+			"maxInflightRequests": "Max Inflight Requests",
 			"models": "Models",
 			"unavailableModels": "Unavailable models:",
 			"type": "Type"
 		},
 		"sections": {
 			"configuration": "Configuration",
-			"upstream": "Upstream {{index}}"
+			"upstream": "Upstream {{index}}",
+			"modelRoutes": "Model Routes",
+			"modelRoute": "Model Route {{index}}"
 		},
 		"placeholders": {
 			"endpointName": "External Endpoint Name",
@@ -1251,7 +1257,8 @@
 			"credential": "Bearer token for the upstream",
 			"timeout": "e.g. 60",
 			"exposedModelName": "Model name exposed to clients",
-			"upstreamModelName": "Model name at upstream provider"
+			"upstreamModelName": "Model name at upstream provider",
+			"providerName": "Stable name referenced by model routes"
 		},
 		"options": {
 			"chatCompletions": "Chat Completions",
@@ -1262,6 +1269,8 @@
 		"actions": {
 			"addUpstream": "Add Upstream",
 			"addModelMapping": "Add Model Mapping",
+			"addModelRoute": "Add Model Route",
+			"addRouteTarget": "Add Target",
 			"removeUpstream": "Remove Upstream",
 			"removeModelMapping": "Remove"
 		},

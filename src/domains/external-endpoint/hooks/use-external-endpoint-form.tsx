@@ -12,9 +12,10 @@ import { useTestConnectivity } from "@/domains/external-endpoint/hooks/use-test-
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
-import { findOverlappingModelKeys } from "@/domains/external-endpoint/lib/find-overlapping-model-keys";
 import type {
   ExternalEndpoint,
+  ModelRoute,
+  ModelRouteTarget,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
@@ -31,11 +32,18 @@ import {
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const emptyExternalUpstream: UpstreamSpec = {
+  name: "",
   upstream: { url: "" },
   auth: { type: "bearer", credential: "" },
   model_mapping: {},
   models: null,
 };
+
+const emptyModelRoute = (): ModelRoute => ({
+  model: "",
+  strategy: "weighted_random",
+  targets: [{ upstream: "", upstream_model: "", weight: 1 }],
+});
 
 export const useExternalEndpointForm = ({
   action,
@@ -57,6 +65,7 @@ export const useExternalEndpointForm = ({
         route_type: "/v1/chat/completions",
         timeout: 60000,
         upstreams: action === "create" ? [{ ...emptyExternalUpstream }] : [],
+        model_routes: [],
       },
     },
     refineCoreProps: {
@@ -84,7 +93,55 @@ export const useExternalEndpointForm = ({
   const connectivity = useTestConnectivity();
 
   // Derive upstream types from form data — no separate state needed
-  const upstreams = form.watch("spec.upstreams");
+  const upstreams = form.watch("spec.upstreams") as UpstreamSpec[] | undefined;
+  const modelRoutes =
+    (form.watch("spec.model_routes") as ModelRoute[] | undefined) ?? [];
+
+  const updateModelRoutes = useCallback(
+    (next: ModelRoute[]) => {
+      form.setValue("spec.model_routes", next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    },
+    [form],
+  );
+
+  const addModelRoute = () =>
+    updateModelRoutes([...modelRoutes, emptyModelRoute()]);
+  const removeModelRoute = (index: number) =>
+    updateModelRoutes(
+      modelRoutes.filter(
+        (_: ModelRoute, routeIndex: number) => routeIndex !== index,
+      ),
+    );
+  const addRouteTarget = (routeIndex: number) => {
+    const next = modelRoutes.map((route: ModelRoute, index: number) =>
+      index === routeIndex
+        ? {
+            ...route,
+            targets: [
+              ...route.targets,
+              { upstream: "", upstream_model: "", weight: 1 },
+            ],
+          }
+        : route,
+    );
+    updateModelRoutes(next);
+  };
+  const removeRouteTarget = (routeIndex: number, targetIndex: number) => {
+    const next = modelRoutes.map((route: ModelRoute, index: number) =>
+      index === routeIndex
+        ? {
+            ...route,
+            targets: route.targets.filter(
+              (_: ModelRouteTarget, index: number) => index !== targetIndex,
+            ),
+          }
+        : route,
+    );
+    updateModelRoutes(next);
+  };
 
   /** Auto-load models when an endpoint_ref is selected in the combobox */
   const handleEndpointRefChange = useCallback(
@@ -238,7 +295,21 @@ export const useExternalEndpointForm = ({
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4 py-2 px-4">
-                <div className="grid grid-cols-4 gap-x-5 gap-y-4 xs:grid-cols-1">
+                <div className="grid grid-cols-5 gap-x-5 gap-y-4 xs:grid-cols-1">
+                  <FormFieldGroup
+                    {...form}
+                    label={t("external_endpoints.fields.providerName")}
+                    className="col-span-1 xs:col-span-1"
+                    {...form.register(`spec.upstreams.${index}.name`, {
+                      required: modelRoutes.length > 0,
+                    })}
+                  >
+                    <Input
+                      placeholder={t(
+                        "external_endpoints.placeholders.providerName",
+                      )}
+                    />
+                  </FormFieldGroup>
                   <FormFieldGroup
                     {...form}
                     name={`_upstreamType_${index}`}
@@ -310,7 +381,7 @@ export const useExternalEndpointForm = ({
                           )}
                         />
                       </FormFieldGroup>
-                      <div className="col-span-4 flex items-center xs:col-span-1">
+                      <div className="col-span-5 flex items-center xs:col-span-1">
                         <TestConnectivityButton
                           testing={connectivity.testingMap[index] ?? false}
                           result={connectivity.resultMap[index] ?? null}
@@ -396,7 +467,7 @@ export const useExternalEndpointForm = ({
                           }}
                         />
                       </FormFieldGroup>
-                      <div className="col-span-4 flex items-center xs:col-span-1">
+                      <div className="col-span-5 flex items-center xs:col-span-1">
                         <TestConnectivityButton
                           testing={connectivity.testingMap[index] ?? false}
                           result={connectivity.resultMap[index] ?? null}
@@ -423,34 +494,20 @@ export const useExternalEndpointForm = ({
                     </>
                   )}
                 </div>
-                <div>
-                  <FormFieldGroup
-                    {...form}
-                    name={`spec.upstreams.${index}.model_mapping`}
-                    label={t("external_endpoints.fields.modelMapping")}
-                    className="col-span-4"
-                    rules={{
-                      validate: () => {
-                        const all = form.getValues("spec.upstreams");
-                        const overlapping = findOverlappingModelKeys(
-                          all,
-                          index,
-                        );
-                        if (overlapping.length > 0) {
-                          return t(
-                            "external_endpoints.validation.overlappingModelKeys",
-                            { keys: overlapping.join(", ") },
-                          );
-                        }
-                        return true;
-                      },
-                    }}
-                  >
-                    <ModelMappingEditor
-                      availableModels={availableModelsMap[index]}
-                    />
-                  </FormFieldGroup>
-                </div>
+                {modelRoutes.length === 0 && (
+                  <div>
+                    <FormFieldGroup
+                      {...form}
+                      name={`spec.upstreams.${index}.model_mapping`}
+                      label={t("external_endpoints.fields.modelMapping")}
+                      className="col-span-4"
+                    >
+                      <ModelMappingEditor
+                        availableModels={availableModelsMap[index]}
+                      />
+                    </FormFieldGroup>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
@@ -464,6 +521,157 @@ export const useExternalEndpointForm = ({
           <Plus className="mr-1 h-4 w-4" />
           {t("external_endpoints.actions.addUpstream")}
         </Button>
+        <FormCardGrid title={t("external_endpoints.sections.modelRoutes")}>
+          <div className="col-span-full space-y-4">
+            {modelRoutes.map((route: ModelRoute, routeIndex: number) => (
+              <div
+                key={routeIndex}
+                className="border-b border-border/60 pb-4 last:border-0"
+              >
+                <div className="flex items-center justify-between py-2">
+                  <h3 className="text-sm font-semibold">
+                    {t("external_endpoints.sections.modelRoute", {
+                      index: routeIndex + 1,
+                    })}
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeModelRoute(routeIndex)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-3 py-2">
+                  <FormFieldGroup
+                    {...form}
+                    label={t("external_endpoints.fields.exposedModelName")}
+                    {...form.register(`spec.model_routes.${routeIndex}.model`, {
+                      required: true,
+                    })}
+                  >
+                    <Input
+                      placeholder={t(
+                        "external_endpoints.placeholders.exposedModelName",
+                      )}
+                    />
+                  </FormFieldGroup>
+                  <div className="grid grid-cols-[1fr_1fr_100px_100px_140px_auto] gap-3 text-xs font-medium text-muted-foreground xs:grid-cols-1">
+                    <span>{t("external_endpoints.fields.providerName")}</span>
+                    <span>
+                      {t("external_endpoints.fields.upstreamModelName")}
+                    </span>
+                    <span>{t("external_endpoints.fields.priority")}</span>
+                    <span>{t("external_endpoints.fields.weight")}</span>
+                    <span>
+                      {t("external_endpoints.fields.maxInflightRequests")}
+                    </span>
+                    <span />
+                  </div>
+                  {route.targets.map(
+                    (target: ModelRouteTarget, targetIndex: number) => (
+                      <div
+                        key={targetIndex}
+                        className="grid grid-cols-[1fr_1fr_100px_100px_140px_auto] gap-3 xs:grid-cols-1"
+                      >
+                        <FormSelect
+                          value={target.upstream}
+                          onChange={(value) => {
+                            const next = modelRoutes.map(
+                              (item: ModelRoute, index: number) =>
+                                index === routeIndex
+                                  ? {
+                                      ...item,
+                                      targets: item.targets.map(
+                                        (
+                                          itemTarget: ModelRouteTarget,
+                                          index: number,
+                                        ) =>
+                                          index === targetIndex
+                                            ? {
+                                                ...itemTarget,
+                                                upstream: String(value),
+                                              }
+                                            : itemTarget,
+                                      ),
+                                    }
+                                  : item,
+                            );
+                            updateModelRoutes(next);
+                          }}
+                          options={(upstreams ?? [])
+                            .filter((upstream) => upstream.name)
+                            .map((upstream: UpstreamSpec) => ({
+                              label: upstream.name as string,
+                              value: upstream.name as string,
+                            }))}
+                        />
+                        <Input
+                          {...form.register(
+                            `spec.model_routes.${routeIndex}.targets.${targetIndex}.upstream_model`,
+                            { required: true },
+                          )}
+                          placeholder={t(
+                            "external_endpoints.placeholders.upstreamModelName",
+                          )}
+                        />
+                        <Input
+                          type="number"
+                          min={0}
+                          {...form.register(
+                            `spec.model_routes.${routeIndex}.targets.${targetIndex}.priority`,
+                            { valueAsNumber: true },
+                          )}
+                        />
+                        <Input
+                          type="number"
+                          min={1}
+                          {...form.register(
+                            `spec.model_routes.${routeIndex}.targets.${targetIndex}.weight`,
+                            { valueAsNumber: true, min: 1 },
+                          )}
+                        />
+                        <Input
+                          type="number"
+                          min={0}
+                          {...form.register(
+                            `spec.model_routes.${routeIndex}.targets.${targetIndex}.max_inflight_requests`,
+                            { valueAsNumber: true, min: 0 },
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            removeRouteTarget(routeIndex, targetIndex)
+                          }
+                          disabled={route.targets.length <= 1}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ),
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addRouteTarget(routeIndex)}
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    {t("external_endpoints.actions.addRouteTarget")}
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addModelRoute}>
+              <Plus className="mr-1 h-4 w-4" />
+              {t("external_endpoints.actions.addModelRoute")}
+            </Button>
+          </div>
+        </FormCardGrid>
       </>
     ),
   };

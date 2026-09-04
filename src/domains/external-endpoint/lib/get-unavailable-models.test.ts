@@ -32,4 +32,13 @@ describe("getUnavailableModels", () => {
       new Set(),
     );
   });
+
+  it("keeps a model available when another target is ready", () => {
+    expect(
+      getUnavailableModels([
+        { ref: "a", phase: "Failed", models: ["chat"] },
+        { ref: "b", phase: "Ready", models: ["chat"] },
+      ]),
+    ).toEqual(new Set());
+  });
 });
