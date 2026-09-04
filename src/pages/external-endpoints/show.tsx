@@ -167,6 +167,67 @@ export const ExternalEndpointsShow = () => {
           );
         })}
 
+        {record.spec?.model_routes && record.spec.model_routes.length > 0 && (
+          <ShowPage.Section
+            title={t("external_endpoints.sections.modelRoutes")}
+          >
+            <div className="space-y-4">
+              {record.spec.model_routes.map((route) => (
+                <div key={route.model}>
+                  <div className="mb-2 text-sm font-medium">
+                    <code>{route.model}</code>
+                  </div>
+                  <div className="rounded-md border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="px-4 py-2 text-left font-medium">
+                            {t("external_endpoints.fields.providerName")}
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium">
+                            {t("external_endpoints.fields.upstreamModelName")}
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium">
+                            {t("external_endpoints.fields.priority")}
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium">
+                            {t("external_endpoints.fields.weight")}
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium">
+                            {t("external_endpoints.fields.maxInflightRequests")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {route.targets.map((target, index) => (
+                          <tr
+                            key={`${target.upstream}-${index}`}
+                            className="border-b last:border-0"
+                          >
+                            <td className="px-4 py-2">
+                              <code>{target.upstream}</code>
+                            </td>
+                            <td className="px-4 py-2">
+                              <code>{target.upstream_model}</code>
+                            </td>
+                            <td className="px-4 py-2">
+                              {target.priority ?? 0}
+                            </td>
+                            <td className="px-4 py-2">{target.weight ?? 1}</td>
+                            <td className="px-4 py-2">
+                              {target.max_inflight_requests ?? 0}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ShowPage.Section>
+        )}
+
         {isServing && record.status?.service_url && (
           <CurlExample
             serviceUrl={record.status.service_url}
