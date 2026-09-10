@@ -88,6 +88,10 @@ const SERIES_COLORS = [
 
 const CHART_MARGIN = { top: 4, right: 8, bottom: 0, left: 4 };
 
+// Per-series rows shown in the daily tooltip before the rest collapse into a
+// single "+N more" line; keeps the tooltip inside the chart card.
+const TOOLTIP_MAX_ROWS = 8;
+
 export const ModelUsageList = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
@@ -666,13 +670,22 @@ const UsageTooltip = ({
 }) => {
   const { t } = useTranslation();
   if (!active || !payload || payload.length === 0) return null;
-  const rows = payload.filter((p) => (p.value ?? 0) > 0);
+  const rows = payload
+    .filter((p) => (p.value ?? 0) > 0)
+    .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
   if (rows.length === 0) return null;
   const total = rows.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  // A busy workspace can put dozens of API keys on a single day, which grows
+  // the tooltip well past the chart and off the card. Show only the biggest
+  // contributors and roll the rest into one line — the full per-key breakdown
+  // is a click away in the detail table below.
+  const visible = rows.slice(0, TOOLTIP_MAX_ROWS);
+  const overflow = rows.slice(TOOLTIP_MAX_ROWS);
+  const overflowTotal = overflow.reduce((sum, p) => sum + (p.value ?? 0), 0);
   return (
     <div className="rounded border bg-popover px-2 py-1 text-xs shadow">
       <div className="font-medium mb-1">{label}</div>
-      {rows.map((p) => (
+      {visible.map((p) => (
         <div
           key={p.dataKey}
           className="flex items-center gap-1.5 text-muted-foreground"
@@ -694,6 +707,17 @@ const UsageTooltip = ({
           <span className="ml-auto font-mono">{formatTokens(p.value)}</span>
         </div>
       ))}
+      {overflow.length > 0 ? (
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="inline-block size-2" />
+          <span>
+            {t("model_usage.daily.tooltip.more", { n: overflow.length })}
+          </span>
+          <span className="ml-auto font-mono">
+            {formatTokens(overflowTotal)}
+          </span>
+        </div>
+      ) : null}
       <div className="mt-1 flex border-t pt-1">
         <span>{t("model_usage.daily.tooltip.total")}</span>
         <span className="ml-auto font-mono">{formatTokens(total)}</span>
