@@ -2116,7 +2116,8 @@
 			"tooltip": {
 				"prompt": "Prompt",
 				"completion": "Completion",
-				"total": "Total"
+				"total": "Total",
+				"more": "+{{n}} more"
 			},
 			"titleByKey": "Daily tokens by API key",
 			"titleByModel": "Daily tokens by model",
