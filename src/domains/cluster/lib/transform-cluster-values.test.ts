@@ -130,6 +130,19 @@ describe("transformClusterValues", () => {
         },
       });
 
+    it("preserves the ZCache cluster settings in the submitted spec", () => {
+      const cluster = makeK8s();
+      cluster.spec.zcache = {
+        enabled: true,
+        l1_size_gib: 8,
+        api_url: "http://zcache-api:8080",
+      };
+
+      const result = transformClusterValues(cluster, true);
+
+      expect(result.spec.zcache).toEqual(cluster.spec.zcache);
+    });
+
     it("base64-encodes kubeconfig", () => {
       const result = transformClusterValues(makeK8s());
       expect(result.spec.config.kubernetes_config?.kubeconfig).toBe(

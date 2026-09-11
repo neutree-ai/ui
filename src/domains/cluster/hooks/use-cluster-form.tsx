@@ -58,6 +58,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           model_caches: [],
         },
         version: import.meta.env.VITE_DEFAULT_CLUSTER_VERSION,
+        zcache: {
+          enabled: false,
+          l1_size_gib: 8,
+          api_url: "",
+        },
       },
     },
   });
@@ -367,7 +372,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           <Checkbox
             checked={form.watch("spec.zcache.enabled") === true}
             onCheckedChange={(checked) =>
-              form.setValue("spec.zcache.enabled", checked === true)
+              form.setValue("spec.zcache.enabled", checked === true, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+              })
             }
           />
         </FormFieldGroup>
