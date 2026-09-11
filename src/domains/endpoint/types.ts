@@ -46,6 +46,7 @@ export type EndpointSpec = {
   deployment_options: DeploymentOptions | null;
   variables: Record<string, unknown> | null;
   env: Record<string, string> | null;
+  zcache?: { enabled?: boolean } | null;
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {

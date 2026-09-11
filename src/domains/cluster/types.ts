@@ -99,6 +99,10 @@ export type ClusterSpec = {
    */
   version?: string;
   accelerator_virtualization?: AcceleratorVirtualizationSpec;
+  zcache?: {
+    enabled?: boolean;
+    l1_size_gib?: number;
+  };
 };
 
 const NodeProvisionStatus = {
@@ -141,6 +145,13 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
    */
   accelerator_type?: string | null;
   component_status?: Record<string, unknown> | null;
+  zcache?: {
+    phase?: string;
+    ready_nodes?: number;
+    desired_nodes?: number;
+    endpoint?: string;
+    message?: string;
+  } | null;
 };
 
 enum ClusterPhase {

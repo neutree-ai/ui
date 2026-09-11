@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,10 @@ import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
+
+const EndpointZCacheCheckbox = ({ field }: { field: { value?: boolean; onChange: (value: boolean) => void } }) => (
+  <Checkbox checked={Boolean(field.value)} onCheckedChange={(checked) => field.onChange(checked === true)} />
+);
 import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
@@ -2112,6 +2117,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 />
               </FormFieldGroup>
             )}
+            <FormFieldGroup
+              {...form}
+              name="spec.zcache.enabled"
+              label="启用 ZCache"
+              isCheckbox
+              description="使用所选集群的 ZCache 服务；连接参数由平台生成。"
+            >
+              <EndpointZCacheCheckbox />
+            </FormFieldGroup>
           </FormCardGrid>
         )}
       </>

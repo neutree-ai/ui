@@ -180,6 +180,26 @@ export const ClustersShow = () => {
                 </div>
               </ShowPage.Section>
             )}
+            {record.spec.zcache?.enabled && (
+              <ShowPage.Section title="ZCache">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                  <ShowPage.Row title="服务状态">
+                    {record.status?.zcache?.phase ?? "未知"}
+                  </ShowPage.Row>
+                  <ShowPage.Row title="Ready 节点">
+                    {`${record.status?.zcache?.ready_nodes ?? 0} / ${record.status?.zcache?.desired_nodes ?? 0}`}
+                  </ShowPage.Row>
+                  <ShowPage.Row title="L1 容量">
+                    {record.spec.zcache.l1_size_gib
+                      ? `${record.spec.zcache.l1_size_gib} GiB`
+                      : "未配置"}
+                  </ShowPage.Row>
+                  <ShowPage.Row title="连接地址">
+                    {record.status?.zcache?.endpoint ?? "未就绪"}
+                  </ShowPage.Row>
+                </div>
+              </ShowPage.Section>
+            )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>
                 <ClusterResourceSummary
