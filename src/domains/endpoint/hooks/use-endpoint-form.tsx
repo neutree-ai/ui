@@ -71,9 +71,6 @@ import {
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 
-const EndpointZCacheCheckbox = ({ field }: { field: { value?: boolean; onChange: (value: boolean) => void } }) => (
-  <Checkbox checked={Boolean(field.value)} onCheckedChange={(checked) => field.onChange(checked === true)} />
-);
 import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
@@ -2124,7 +2121,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               isCheckbox
               description="使用所选集群的 ZCache 服务；连接参数由平台生成。"
             >
-              <EndpointZCacheCheckbox />
+              <Checkbox
+                checked={form.watch("spec.zcache.enabled") === true}
+                onCheckedChange={(checked) =>
+                  form.setValue("spec.zcache.enabled", checked === true)
+                }
+              />
             </FormFieldGroup>
           </FormCardGrid>
         )}

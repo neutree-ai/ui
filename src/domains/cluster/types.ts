@@ -102,6 +102,7 @@ export type ClusterSpec = {
   zcache?: {
     enabled?: boolean;
     l1_size_gib?: number;
+    api_url?: string;
   };
 };
 

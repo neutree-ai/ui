@@ -355,6 +355,48 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         </FormFieldGroup>
       </FormCardGrid>
     ) : null,
+    zcacheFields: isKubernetes ? (
+      <FormCardGrid title="ZCache" variant={sectionVariant}>
+        <FormFieldGroup
+          {...form}
+          name="spec.zcache.enabled"
+          label="启用 ZCache"
+          isCheckbox
+          className="col-span-4"
+        >
+          <Checkbox
+            checked={form.watch("spec.zcache.enabled") === true}
+            onCheckedChange={(checked) =>
+              form.setValue("spec.zcache.enabled", checked === true)
+            }
+          />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="spec.zcache.l1_size_gib"
+          label="L1 容量 (GiB)"
+          className="col-span-2"
+        >
+          <Input
+            type="number"
+            min={1}
+            disabled={form.watch("spec.zcache.enabled") !== true}
+          />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="spec.zcache.api_url"
+          label="ZCache API 地址"
+          className="col-span-2"
+          description="PoC 使用集群内 zcache-api 地址"
+        >
+          <Input
+            disabled={form.watch("spec.zcache.enabled") !== true}
+            placeholder="http://zcache-api:8080"
+          />
+        </FormFieldGroup>
+      </FormCardGrid>
+    ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
       <FormCardGrid
         title={t("clusters.sections.acceleratorVirtualization")}
