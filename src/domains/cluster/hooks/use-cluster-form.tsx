@@ -1,6 +1,7 @@
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
+import type { ControllerRenderProps } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,17 @@ import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
+
+const ClusterZCacheCheckbox = ({
+  field,
+}: {
+  field?: ControllerRenderProps<Cluster, "spec.zcache.enabled">;
+}) => (
+  <Checkbox
+    checked={field?.value === true}
+    onCheckedChange={(checked) => field?.onChange(checked === true)}
+  />
+);
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -369,16 +381,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           isCheckbox
           className="col-span-4"
         >
-          <Checkbox
-            checked={form.watch("spec.zcache.enabled") === true}
-            onCheckedChange={(checked) =>
-              form.setValue("spec.zcache.enabled", checked === true, {
-                shouldDirty: true,
-                shouldTouch: true,
-                shouldValidate: true,
-              })
-            }
-          />
+          <ClusterZCacheCheckbox />
         </FormFieldGroup>
         <FormFieldGroup
           {...form}
