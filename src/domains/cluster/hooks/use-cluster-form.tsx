@@ -459,7 +459,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           <ClusterZCacheNodesInput
             nodes={
               form.watch("status.zcache.nodes") ??
-              form.refineCore.query.data?.data?.status?.zcache?.nodes
+              form.refineCore.query?.data?.data?.status?.zcache?.nodes
             }
           />
         </FormFieldGroup>
