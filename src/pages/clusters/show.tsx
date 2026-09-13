@@ -273,7 +273,7 @@ export const ClustersShow = () => {
                     )}
                     {!record.status.zcache.operation.can_cancel && (
                       <div className="mt-2 text-xs text-muted-foreground">
-                        当前 ZCache API 不支持中止进行中的 Operation；失败后可将原配置重新提交，创建一次反向变更。
+                        当前 ZCache API 不支持中止进行中的 Operation；请以本次 Operation 的节点结果和原因进行排查。
                       </div>
                     )}
                     {(record.status.zcache.operation.nodes?.length ?? 0) > 0 && (
