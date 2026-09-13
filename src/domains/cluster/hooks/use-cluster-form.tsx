@@ -51,6 +51,36 @@ const ClusterZCacheSizeInput = ({
   />
 );
 
+const ClusterZCacheNodesInput = ({
+  value,
+  onChange,
+  nodes,
+}: {
+  value?: string[];
+  onChange?: (value: string[]) => void;
+  nodes?: Array<{ name: string }>;
+}) => {
+  const selected = new Set(value ?? nodes?.map((node) => node.name) ?? []);
+  return (
+    <div className="space-y-2">
+      {(nodes ?? []).map((node) => (
+        <label className="flex items-center gap-2" key={node.name}>
+          <Checkbox
+            checked={selected.has(node.name)}
+            onCheckedChange={(checked) => {
+              const next = new Set(selected);
+              if (checked === true) next.add(node.name);
+              else next.delete(node.name);
+              onChange?.(Array.from(next));
+            }}
+          />
+          <span>{node.name}</span>
+        </label>
+      ))}
+    </div>
+  );
+};
+
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
@@ -410,6 +440,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           <ClusterZCacheSizeInput
             disabled={form.watch("spec.zcache.enabled") !== true}
           />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="spec.zcache.target_nodes"
+          label="目标节点"
+          className="col-span-4"
+        >
+          <ClusterZCacheNodesInput nodes={form.watch("status.zcache.nodes")} />
         </FormFieldGroup>
       </FormCardGrid>
     ) : null,
