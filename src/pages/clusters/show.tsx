@@ -189,10 +189,8 @@ export const ClustersShow = () => {
                   <ShowPage.Row title="Ready 节点">
                     {`${record.status?.zcache?.ready_nodes ?? 0} / ${record.status?.zcache?.desired_nodes ?? 0}`}
                   </ShowPage.Row>
-                  <ShowPage.Row title="L1 容量">
-                    {record.spec.zcache.l1_size_gib
-                      ? `${record.spec.zcache.l1_size_gib} GiB`
-                      : "未配置"}
+                  <ShowPage.Row title="ZCache 版本">
+                    {record.status?.zcache?.version ?? "未知"}
                   </ShowPage.Row>
                   <ShowPage.Row title="连接地址">
                     {record.status?.zcache?.endpoint ?? "未就绪"}

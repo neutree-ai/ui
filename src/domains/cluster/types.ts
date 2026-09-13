@@ -152,6 +152,7 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
     desired_nodes?: number;
     endpoint?: string;
     message?: string;
+    version?: string;
     nodes?: Array<{
       name: string;
       phase: string;
