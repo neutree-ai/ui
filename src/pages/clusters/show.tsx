@@ -304,7 +304,7 @@ export const ClustersShow = () => {
                   <div className="mt-6 border-t pt-5">
                     <div className="mb-3 text-sm font-semibold">Operation 历史</div>
                     <div className="space-y-2">
-                      {record.status.zcache.operations?.map((operation) => (
+                      {record.status?.zcache?.operations?.map((operation) => (
                         <details key={operation.id} className="rounded border px-3 py-2">
                           <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 text-sm">
                             <span className="font-medium">{operation.id}</span>
