@@ -1,6 +1,5 @@
 import { useShow, useTranslation } from "@refinedev/core";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
@@ -220,84 +219,6 @@ export const ClustersShow = () => {
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                )}
-                {record.status?.zcache?.operation && (
-                  <div className="mt-6 border-t pt-5">
-                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold">最近一次配置变更</div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Operation {record.status.zcache.operation.id}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {record.status.zcache.operation.phase}
-                        </Badge>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={!record.status.zcache.operation.can_cancel}
-                          title="ZCache 当前 REST API 未提供取消 Operation 的能力"
-                        >
-                          取消变更
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="rounded border p-3">
-                        <div className="text-xs text-muted-foreground">原配置</div>
-                        <div className="mt-2 text-sm">
-                          L1 {record.status.zcache.operation.previous_config.l1_size_gib ?? "-"} GiB
-                        </div>
-                        <div className="mt-1 text-sm">
-                          节点 {record.status.zcache.operation.previous_config.target_nodes?.join(", ") || "无"}
-                        </div>
-                      </div>
-                      <div className="rounded border p-3">
-                        <div className="text-xs text-muted-foreground">新配置</div>
-                        <div className="mt-2 text-sm">
-                          L1 {record.status.zcache.operation.desired_config.l1_size_gib ?? "-"} GiB
-                        </div>
-                        <div className="mt-1 text-sm">
-                          节点 {record.status.zcache.operation.desired_config.target_nodes?.join(", ") || "无"}
-                        </div>
-                      </div>
-                    </div>
-                    {(record.status.zcache.operation.summary || record.status.zcache.operation.reason) && (
-                      <div className="mt-3 text-sm text-muted-foreground">
-                        {record.status.zcache.operation.reason || record.status.zcache.operation.summary}
-                      </div>
-                    )}
-                    {!record.status.zcache.operation.can_cancel && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        当前 ZCache API 不支持中止进行中的 Operation；请以本次 Operation 的节点结果和原因进行排查。
-                      </div>
-                    )}
-                    {(record.status.zcache.operation.nodes?.length ?? 0) > 0 && (
-                      <div className="mt-4 overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b text-left">
-                              <th className="px-3 py-2">本次变更节点</th>
-                              <th className="px-3 py-2">Operation 结果</th>
-                              <th className="px-3 py-2">原因</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {record.status.zcache.operation.nodes?.map((node) => (
-                              <tr key={node.name} className="border-b last:border-0">
-                                <td className="px-3 py-2">{node.name}</td>
-                                <td className="px-3 py-2">{node.phase}</td>
-                                <td className="px-3 py-2">{node.reason ?? ""}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
                   </div>
                 )}
                 {(record.status?.zcache?.operations?.length ?? 0) > 0 && (
