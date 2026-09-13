@@ -14,6 +14,7 @@ import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
+import { NumberInput } from "@/foundation/components/NumberInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import {
   isValidWorkspace,
@@ -30,6 +31,21 @@ const ClusterZCacheCheckbox = ({
   <Checkbox
     checked={value === true}
     onCheckedChange={(checked) => onChange?.(checked === true)}
+  />
+);
+
+const ClusterZCacheSizeInput = ({
+  field,
+  disabled,
+}: {
+  field?: { value?: number; onChange: (value: number) => void };
+  disabled?: boolean;
+}) => (
+  <NumberInput
+    value={field?.value ?? 8}
+    min={1}
+    disabled={disabled}
+    onValueChange={field?.onChange}
   />
 );
 
@@ -389,9 +405,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label="L1 容量 (GiB)"
           className="col-span-2"
         >
-          <Input
-            type="number"
-            min={1}
+          <ClusterZCacheSizeInput
             disabled={form.watch("spec.zcache.enabled") !== true}
           />
         </FormFieldGroup>
