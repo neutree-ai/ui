@@ -300,6 +300,30 @@ export const ClustersShow = () => {
                     )}
                   </div>
                 )}
+                {(record.status?.zcache?.operations?.length ?? 0) > 0 && (
+                  <div className="mt-6 border-t pt-5">
+                    <div className="mb-3 text-sm font-semibold">Operation 历史</div>
+                    <div className="space-y-2">
+                      {record.status.zcache.operations?.map((operation) => (
+                        <details key={operation.id} className="rounded border px-3 py-2">
+                          <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 text-sm">
+                            <span className="font-medium">{operation.id}</span>
+                            <Badge variant="outline">{operation.phase}</Badge>
+                            <span className="text-muted-foreground">{operation.kind || "runtime change"}</span>
+                          </summary>
+                          <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                            <div>{operation.summary || operation.reason || "无附加说明"}</div>
+                            <div>影响节点：{operation.affected_nodes?.join(", ") || "无"}</div>
+                            <div>变更字段：{operation.changed_fields?.join(", ") || "无"}</div>
+                            {(operation.nodes?.length ?? 0) > 0 && (
+                              <div>节点结果：{operation.nodes?.map((node) => `${node.name}=${node.phase}`).join("，")}</div>
+                            )}
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </ShowPage.Section>
             )}
             {record.status?.resource_info && (

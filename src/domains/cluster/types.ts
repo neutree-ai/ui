@@ -180,7 +180,19 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
         reason?: string;
       }>;
       can_cancel: boolean;
+      affected_nodes?: string[];
+      changed_fields?: string[];
     } | null;
+    operations?: Array<{
+      id: string;
+      phase: string;
+      kind?: string;
+      summary?: string;
+      reason?: string;
+      affected_nodes?: string[];
+      changed_fields?: string[];
+      nodes?: Array<{ name: string; phase: string; reason?: string }>;
+    }>;
   } | null;
 };
 
