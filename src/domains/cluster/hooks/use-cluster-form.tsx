@@ -74,7 +74,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         zcache: {
           enabled: false,
           l1_size_gib: 8,
-          api_url: "",
         },
       },
     },
@@ -394,18 +393,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
             type="number"
             min={1}
             disabled={form.watch("spec.zcache.enabled") !== true}
-          />
-        </FormFieldGroup>
-        <FormFieldGroup
-          {...form}
-          name="spec.zcache.api_url"
-          label="ZCache API 地址"
-          className="col-span-2"
-          description="PoC 使用集群内 zcache-api 地址"
-        >
-          <Input
-            disabled={form.watch("spec.zcache.enabled") !== true}
-            placeholder="http://zcache-api:8080"
           />
         </FormFieldGroup>
       </FormCardGrid>
