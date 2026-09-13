@@ -35,17 +35,19 @@ const ClusterZCacheCheckbox = ({
 );
 
 const ClusterZCacheSizeInput = ({
-  field,
+  value,
+  onChange,
   disabled,
 }: {
-  field?: { value?: number; onChange: (value: number) => void };
+  value?: number;
+  onChange?: (value: number) => void;
   disabled?: boolean;
 }) => (
   <NumberInput
-    value={field?.value ?? 8}
+    value={value ?? 8}
     min={1}
     disabled={disabled}
-    onValueChange={field?.onChange}
+    onValueChange={onChange}
   />
 );
 
