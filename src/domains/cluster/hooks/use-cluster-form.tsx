@@ -58,7 +58,7 @@ const ClusterZCacheNodesInput = ({
 }: {
   value?: string[];
   onChange?: (value: string[]) => void;
-  nodes?: Array<{ name: string }>;
+  nodes?: Array<{ name: string; phase?: string; reason?: string }>;
 }) => {
   const selected = new Set(value ?? nodes?.map((node) => node.name) ?? []);
   return (
@@ -75,6 +75,15 @@ const ClusterZCacheNodesInput = ({
             }}
           />
           <span>{node.name}</span>
+          {node.phase && (
+            <span className="text-muted-foreground text-xs">
+              {node.phase === "Succeeded" || node.phase === "Ready"
+                ? "已成功"
+                : node.phase === "Failed"
+                  ? "失败"
+                  : node.phase}
+            </span>
+          )}
         </label>
       ))}
     </div>
@@ -447,7 +456,12 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           label="目标节点"
           className="col-span-4"
         >
-          <ClusterZCacheNodesInput nodes={form.watch("status.zcache.nodes")} />
+          <ClusterZCacheNodesInput
+            nodes={
+              form.watch("status.zcache.nodes") ??
+              form.refineCore.query.data?.data?.status?.zcache?.nodes
+            }
+          />
         </FormFieldGroup>
       </FormCardGrid>
     ) : null,
