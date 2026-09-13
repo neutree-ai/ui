@@ -442,6 +442,17 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         </FormFieldGroup>
         <FormFieldGroup
           {...form}
+          name="spec.zcache.runtime_version"
+          label="ZCache Runtime 版本"
+          className="col-span-2"
+        >
+          <Input
+            disabled={form.watch("spec.zcache.enabled") !== true}
+            placeholder="v0.5.0"
+          />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
           name="spec.zcache.l1_size_gib"
           label="L1 容量 (GiB)"
           className="col-span-2"

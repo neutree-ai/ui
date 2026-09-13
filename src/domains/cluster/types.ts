@@ -101,6 +101,7 @@ export type ClusterSpec = {
   accelerator_virtualization?: AcceleratorVirtualizationSpec;
   zcache?: {
     enabled?: boolean;
+    runtime_version?: string;
     l1_size_gib?: number;
     api_url?: string;
     target_nodes?: string[];
