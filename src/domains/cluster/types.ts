@@ -152,6 +152,12 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
     desired_nodes?: number;
     endpoint?: string;
     message?: string;
+    nodes?: Array<{
+      name: string;
+      phase: string;
+      capacity_gib?: number;
+      reason?: string;
+    }>;
   } | null;
 };
 

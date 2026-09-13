@@ -198,6 +198,30 @@ export const ClustersShow = () => {
                     {record.status?.zcache?.endpoint ?? "未就绪"}
                   </ShowPage.Row>
                 </div>
+                {(record.status?.zcache?.nodes?.length ?? 0) > 0 && (
+                  <div className="mt-6 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left">
+                          <th className="px-3 py-2">节点</th>
+                          <th className="px-3 py-2">状态</th>
+                          <th className="px-3 py-2">L1 容量</th>
+                          <th className="px-3 py-2">原因</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {record.status?.zcache?.nodes?.map((node) => (
+                          <tr key={node.name} className="border-b last:border-0">
+                            <td className="px-3 py-2">{node.name}</td>
+                            <td className="px-3 py-2">{node.phase}</td>
+                            <td className="px-3 py-2">{node.capacity_gib} GiB</td>
+                            <td className="px-3 py-2">{node.reason ?? ""}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </ShowPage.Section>
             )}
             {record.status?.resource_info && (
