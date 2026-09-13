@@ -160,6 +160,27 @@ export type ClusterStatus = BaseStatus<ClusterPhase> & {
       capacity_gib?: number;
       reason?: string;
     }>;
+    operation?: {
+      id: string;
+      phase: string;
+      kind?: string;
+      summary?: string;
+      reason?: string;
+      previous_config: {
+        l1_size_gib?: number;
+        target_nodes?: string[];
+      };
+      desired_config: {
+        l1_size_gib?: number;
+        target_nodes?: string[];
+      };
+      nodes?: Array<{
+        name: string;
+        phase: string;
+        reason?: string;
+      }>;
+      can_cancel: boolean;
+    } | null;
   } | null;
 };
 
