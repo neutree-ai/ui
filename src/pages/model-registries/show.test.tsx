@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const state = vi.hoisted(() => ({
   isLoading: false,
@@ -119,12 +120,55 @@ beforeEach(() => {
 });
 
 describe("ModelRegistriesShow", () => {
-  it("places creation time after type and visibility metadata", () => {
+  it("places the address after visibility and before creation time", () => {
     render(<ModelRegistriesShow />);
 
     expect(screen.getByTestId("object-header-meta").textContent).toBe(
-      "common.fields.type:ModelScopemodel_registries.fields.visibility:PublicCreated:3 days ago",
+      "common.fields.type:ModelScopemodel_registries.fields.visibility:Publicmodel_registries.fields.url:nfs://modelsCreated:3 days ago",
     );
+  });
+
+  // NEU-770: the address used to live in a "Basic" tab, and dropping that tab
+  // took the address with it. This asserts the header itself carries it.
+  it("shows the registry address", () => {
+    render(<ModelRegistriesShow />);
+
+    expect(screen.getByText("nfs://models")).toBeDefined();
+  });
+
+  it("links a hub address out", () => {
+    state.record = {
+      ...registry,
+      spec: { type: "hugging-face", url: "https://huggingface.co" },
+    };
+
+    render(<ModelRegistriesShow />);
+
+    expect(
+      screen
+        .getByRole("link", { name: "https://huggingface.co" })
+        .getAttribute("href"),
+    ).toBe("https://huggingface.co");
+  });
+
+  it("shortens an address too long for the header, keeping it readable", () => {
+    state.record = {
+      ...registry,
+      spec: {
+        type: "bentoml",
+        url: "nfs://models.internal/volumes/models/registry/prod",
+      },
+    };
+
+    render(
+      <TooltipProvider>
+        <ModelRegistriesShow />
+      </TooltipProvider>,
+    );
+
+    expect(
+      screen.getByText("nfs://models.internal/…models/registry/prod"),
+    ).toBeDefined();
   });
 
   it("renders loading and not-found states", () => {
