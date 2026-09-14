@@ -568,6 +568,13 @@
 		"tabs": {
 			"models": "Models"
 		},
+		"actions": {
+			"copyUrl": "Copy URL"
+		},
+		"messages": {
+			"copyUrlSuccess": "URL copied to clipboard",
+			"copyUrlFailed": "Failed to copy URL"
+		},
 		"stats": {
 			"modelCount": "Models",
 			"storage": "Storage",
