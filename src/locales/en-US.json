@@ -1221,6 +1221,9 @@
 		"title": "External Endpoints",
 		"create": "Create External Endpoint",
 		"fields": {
+			"provider": "Model Service",
+			"virtualModel": "Virtual Model",
+			"weight": "Weight",
 			"serviceUrl": "Service URL",
 			"routeType": "Route Type",
 			"timeout": "Timeout",
@@ -1240,7 +1243,8 @@
 		},
 		"sections": {
 			"configuration": "Configuration",
-			"upstream": "Upstream {{index}}"
+			"upstream": "Upstream {{index}}",
+			"virtualModels": "Virtual Models"
 		},
 		"placeholders": {
 			"endpointName": "External Endpoint Name",
@@ -1251,19 +1255,30 @@
 			"credential": "Bearer token for the upstream",
 			"timeout": "e.g. 60",
 			"exposedModelName": "Model name exposed to clients",
-			"upstreamModelName": "Model name at upstream provider"
+			"upstreamModelName": "Model name at upstream provider",
+			"virtualModel": "Model name exposed to clients",
+			"selectProvider": "Select a model service",
+			"provider": "e.g. local-vllm"
 		},
 		"options": {
 			"chatCompletions": "Chat Completions",
 			"upstreamTypeExternal": "External",
 			"upstreamTypeEndpointRef": "Endpoint Ref",
-			"upstreamTypeMixed": "Mixed"
+			"upstreamTypeMixed": "Mixed",
+			"fixedRouting": "Fixed direct",
+			"priorityRouting": "Primary and fallback",
+			"weightedRouting": "Weighted split",
+			"noRetry": "Do not switch on failure",
+			"retryProvider": "Switch provider on failure"
 		},
 		"actions": {
 			"addUpstream": "Add Upstream",
 			"addModelMapping": "Add Model Mapping",
 			"removeUpstream": "Remove Upstream",
-			"removeModelMapping": "Remove"
+			"removeModelMapping": "Remove",
+			"addVirtualModel": "Add virtual model",
+			"addTarget": "Add model service",
+			"removeTarget": "Remove model service"
 		},
 		"messages": {
 			"curlExample": "Curl Example",

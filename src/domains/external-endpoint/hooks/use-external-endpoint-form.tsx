@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ModelMappingEditor from "@/domains/external-endpoint/components/ModelMappingEditor";
+import ModelRouteEditor from "@/domains/external-endpoint/components/ModelRouteEditor";
 import TestConnectivityButton from "@/domains/external-endpoint/components/TestConnectivityButton";
 import TimeoutInput from "@/domains/external-endpoint/components/TimeoutInput";
 import { useTestConnectivity } from "@/domains/external-endpoint/hooks/use-test-connectivity";
@@ -15,6 +16,7 @@ import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstr
 import { findOverlappingModelKeys } from "@/domains/external-endpoint/lib/find-overlapping-model-keys";
 import type {
   ExternalEndpoint,
+  ModelRoute,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
@@ -85,6 +87,7 @@ export const useExternalEndpointForm = ({
 
   // Derive upstream types from form data — no separate state needed
   const upstreams = form.watch("spec.upstreams");
+  const modelRoutes = form.watch("spec.model_routes");
 
   /** Auto-load models when an endpoint_ref is selected in the combobox */
   const handleEndpointRefChange = useCallback(
@@ -169,6 +172,23 @@ export const useExternalEndpointForm = ({
         form.formState.touchedFields.spec?.upstreams,
       );
     }
+    if (v.spec?.model_routes?.length) {
+      const providerNames = (v.spec.upstreams ?? []).map(
+        (upstream, index) => upstream.name || `provider-${index + 1}`,
+      );
+      v.spec.upstreams = (v.spec.upstreams ?? []).map((upstream, index) => ({
+        ...upstream,
+        name: providerNames[index],
+      }));
+      v.spec.model_routes = v.spec.model_routes.map((route) => ({
+        ...route,
+        targets: route.targets.map((target) => ({
+          ...target,
+          priority: target.priority ?? 0,
+          weight: target.weight || 1,
+        })),
+      }));
+    }
     return originalOnFinish(v);
   };
 
@@ -217,6 +237,18 @@ export const useExternalEndpointForm = ({
             <TimeoutInput />
           </FormFieldGroup>
         </FormCardGrid>
+        <FormCardGrid title={t("external_endpoints.sections.virtualModels")}>
+          <FormFieldGroup
+            {...form}
+            name="spec.model_routes"
+            className="col-span-4"
+          >
+            <ModelRouteEditor
+              value={(modelRoutes ?? []) as ModelRoute[]}
+              upstreams={upstreams ?? []}
+            />
+          </FormFieldGroup>
+        </FormCardGrid>
         {fields.map((field, index) => {
           const currentType = deriveUpstreamType(upstreams?.[index]);
           return (
@@ -239,6 +271,15 @@ export const useExternalEndpointForm = ({
               </CardHeader>
               <CardContent className="space-y-4 py-2 px-4">
                 <div className="grid grid-cols-4 gap-x-5 gap-y-4 xs:grid-cols-1">
+                  <FormFieldGroup
+                    {...form}
+                    label={t("external_endpoints.fields.provider")}
+                    {...form.register(`spec.upstreams.${index}.name`)}
+                  >
+                    <Input
+                      placeholder={t("external_endpoints.placeholders.provider")}
+                    />
+                  </FormFieldGroup>
                   <FormFieldGroup
                     {...form}
                     name={`_upstreamType_${index}`}
