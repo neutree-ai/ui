@@ -39,6 +39,27 @@ const emptyExternalUpstream: UpstreamSpec = {
   models: null,
 };
 
+function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
+  const routes: ModelRoute[] = [];
+  const seen = new Set<string>();
+  for (const [index, upstream] of upstreams.entries()) {
+    for (const [model, upstreamModel] of Object.entries(upstream.model_mapping ?? {})) {
+      if (seen.has(model)) continue;
+      seen.add(model);
+      routes.push({
+        model,
+        targets: [{
+          upstream: upstream.name || `provider-${index + 1}`,
+          upstream_model: upstreamModel,
+          priority: 0,
+          weight: 1,
+        }],
+      });
+    }
+  }
+  return routes;
+}
+
 export const useExternalEndpointForm = ({
   action,
 }: {
@@ -88,6 +109,7 @@ export const useExternalEndpointForm = ({
   // Derive upstream types from form data — no separate state needed
   const upstreams = form.watch("spec.upstreams");
   const modelRoutes = form.watch("spec.model_routes");
+  const effectiveModelRoutes = modelRoutes ?? routesFromLegacy(upstreams ?? []);
 
   /** Auto-load models when an endpoint_ref is selected in the combobox */
   const handleEndpointRefChange = useCallback(
@@ -172,7 +194,7 @@ export const useExternalEndpointForm = ({
         form.formState.touchedFields.spec?.upstreams,
       );
     }
-    if (v.spec?.model_routes?.length) {
+    if (v.spec) {
       const providerNames = (v.spec.upstreams ?? []).map(
         (upstream, index) => upstream.name || `provider-${index + 1}`,
       );
@@ -180,7 +202,10 @@ export const useExternalEndpointForm = ({
         ...upstream,
         name: providerNames[index],
       }));
-      v.spec.model_routes = v.spec.model_routes.map((route) => ({
+      const routes = v.spec.model_routes?.length
+        ? v.spec.model_routes
+        : routesFromLegacy(v.spec.upstreams);
+      if (routes.length > 0) v.spec.model_routes = routes.map((route) => ({
         ...route,
         targets: route.targets.map((target) => ({
           ...target,
@@ -244,7 +269,7 @@ export const useExternalEndpointForm = ({
             className="col-span-4"
           >
             <ModelRouteEditor
-              value={(modelRoutes ?? []) as ModelRoute[]}
+              value={effectiveModelRoutes as ModelRoute[]}
               upstreams={upstreams ?? []}
             />
           </FormFieldGroup>

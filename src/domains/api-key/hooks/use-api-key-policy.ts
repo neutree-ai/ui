@@ -246,6 +246,7 @@ type WorkspaceEndpointRef = {
 type WorkspaceExternalEndpointRef = {
   metadata?: { name?: string | null } | null;
   spec?: {
+    model_routes?: { model?: string | null }[] | null;
     upstreams?: {
       model_mapping?: Record<string, string> | null;
     }[];
@@ -263,6 +264,11 @@ function exposedExternalModels(
   spec: WorkspaceExternalEndpointRef["spec"],
 ): string[] {
   if (!spec?.upstreams) return [];
+  if (spec.model_routes?.length) {
+    return spec.model_routes
+      .map((route) => route.model)
+      .filter((model): model is string => Boolean(model));
+  }
   return spec.upstreams.flatMap((upstream) =>
     upstream.model_mapping ? Object.keys(upstream.model_mapping) : [],
   );

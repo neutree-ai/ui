@@ -46,9 +46,10 @@ export default function ModelRouteEditor({ value = [], onChange, upstreams }: Pr
     const route = value[index];
     if (!route) return;
     const targets = route.targets.length ? route.targets : [{ upstream: "", upstream_model: "" }];
+    const normalizedTargets = mode === "fixed" ? targets.slice(0, 1) : targets;
     update(index, {
       ...route,
-      targets: targets.map((target, targetIndex) => ({
+      targets: normalizedTargets.map((target, targetIndex) => ({
         ...target,
         priority: mode === "priority" ? targetIndex : 0,
         weight: mode === "weighted" ? target.weight || 1 : 1,
