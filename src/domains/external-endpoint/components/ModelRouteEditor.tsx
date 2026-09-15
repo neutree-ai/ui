@@ -163,17 +163,19 @@ export default function ModelRouteEditor({
                       {mode === "weighted" && (
                         <Input
                           type="number"
-                          min={1}
-                          value={target.weight || 1}
+                          min={0}
+                          max={100}
+                          value={target.weight ?? 0}
                           onChange={(event) => {
                             const targets = route.targets.slice();
                             targets[targetIndex] = {
                               ...target,
-                              weight: Number(event.target.value) || 1,
+                              weight: Math.min(100, Math.max(0, Number(event.target.value) || 0)),
                             };
                             update(index, { ...route, targets });
                           }}
                           aria-label={t("external_endpoints.fields.weight")}
+                          placeholder="Percent"
                           className="w-20"
                         />
                       )}

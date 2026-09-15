@@ -199,6 +199,15 @@ export const useExternalEndpointForm = ({
       );
     }
     if (v.spec) {
+      if (v.spec.model_routes) {
+        const invalid = v.spec.model_routes.find(
+          (route) => route.targets.reduce((sum, target) => sum + (target.weight ?? 0), 0) !== 100,
+        );
+        if (invalid) {
+          form.setError("spec.model_routes", { type: "validate", message: "Weighted route targets must total 100%." });
+          return;
+        }
+      }
       const previousProviderNames = (v.spec.upstreams ?? []).map(
         (upstream, index) => upstream.name || `provider-${index + 1}`,
       );
