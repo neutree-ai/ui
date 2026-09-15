@@ -393,7 +393,7 @@ export const useExternalEndpointForm = ({
                         const currentUpstreams =
                           form.getValues("spec.upstreams") ?? [];
                         const providerName =
-                          currentUpstreams[index]?.name ||
+                          currentUpstreams[index]?.name?.trim() ||
                           `provider-${index + 1}`;
                         const routes = form.getValues("spec.model_routes");
                         if (routes !== undefined) {
