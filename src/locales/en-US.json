@@ -1239,13 +1239,16 @@
 			"upstreamModelName": "Upstream Model Name",
 			"models": "Models",
 			"unavailableModels": "Unavailable models:",
-			"type": "Type"
-			,"maxInflightRequests": "Max concurrent requests"
+			"type": "Type",
+			"routingMode": "Routing mode",
+			"maxInflightRequests": "Max concurrent requests"
 		},
 		"sections": {
 			"configuration": "Configuration",
 			"upstream": "Upstream {{index}}",
-			"virtualModels": "Virtual Models"
+			"modelService": "Model Service {{index}}",
+			"virtualModels": "Virtual Models",
+			"modelServices": "Model Services"
 		},
 		"placeholders": {
 			"endpointName": "External Endpoint Name",
@@ -1259,8 +1262,9 @@
 			"upstreamModelName": "Model name at upstream provider",
 			"virtualModel": "Model name exposed to clients",
 			"selectProvider": "Select a model service",
-			"provider": "e.g. local-vllm"
-			,"maxInflightRequests": "Maximum concurrent requests"
+			"provider": "e.g. local-vllm",
+			"weight": "1-100%",
+			"maxInflightRequests": "Maximum concurrent requests"
 		},
 		"options": {
 			"chatCompletions": "Chat Completions",
@@ -1275,12 +1279,14 @@
 		},
 		"actions": {
 			"addUpstream": "Add Upstream",
+			"addModelService": "Add model service",
 			"addModelMapping": "Add Model Mapping",
 			"removeUpstream": "Remove Upstream",
 			"removeModelMapping": "Remove",
 			"addVirtualModel": "Add virtual model",
 			"addTarget": "Add model service",
-			"removeTarget": "Remove model service"
+			"removeTarget": "Remove model service",
+			"removeVirtualModel": "Remove virtual model"
 		},
 		"messages": {
 			"curlExample": "Curl Example",
@@ -1305,7 +1311,10 @@
 			"upstreamModelRequired": "Upstream model name is required",
 			"duplicateModelKey": "Duplicate model key in this upstream",
 			"unknownUpstreamModel": "This model was not found in the upstream's model list",
-			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream"
+			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream",
+			"virtualModelRequired": "Virtual model name is required",
+			"routeTargetRequired": "Select a model service and enter its upstream model",
+			"weightTotal": "Weighted targets must total 100%"
 		}
 	},
 	"user_profiles": {
