@@ -1324,7 +1324,8 @@
 			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream",
 			"virtualModelRequired": "Virtual model name is required",
 			"routeTargetRequired": "Select a model service and enter its upstream model",
-			"weightTotal": "Weighted targets must total 100%"
+			"weightTotal": "Weighted targets must total 100%",
+			"duplicateProvider": "Model service names must be unique"
 		}
 	},
 	"user_profiles": {

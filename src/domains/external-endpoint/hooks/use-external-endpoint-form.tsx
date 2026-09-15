@@ -61,6 +61,37 @@ function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
   return routes;
 }
 
+function renameRouteProvider(
+  routes: ModelRoute[] | undefined,
+  previousName: string,
+  nextName: string,
+): ModelRoute[] | undefined {
+  if (!routes || previousName === nextName) return routes;
+  return routes.map((route) => ({
+    ...route,
+    targets: route.targets.map((target) =>
+      target.upstream === previousName
+        ? { ...target, upstream: nextName }
+        : target,
+    ),
+  }));
+}
+
+function removeRouteProvider(
+  routes: ModelRoute[] | undefined,
+  providerName: string,
+): ModelRoute[] | undefined {
+  if (!routes) return routes;
+  return routes
+    .map((route) => ({
+      ...route,
+      targets: route.targets.filter(
+        (target) => target.upstream !== providerName,
+      ),
+    }))
+    .filter((route) => route.targets.length > 0);
+}
+
 export const useExternalEndpointForm = ({
   action,
 }: {
@@ -182,6 +213,16 @@ export const useExternalEndpointForm = ({
       );
     }
     if (v.spec) {
+      const providerNames = (v.spec.upstreams ?? []).map(
+        (upstream, index) => upstream.name?.trim() || `provider-${index + 1}`,
+      );
+      if (new Set(providerNames).size !== providerNames.length) {
+        form.setError("spec.model_routes", {
+          type: "validate",
+          message: t("external_endpoints.validation.duplicateProvider"),
+        });
+        return;
+      }
       if (v.spec.model_routes !== undefined) {
         const seenModels = new Set<string>();
         const invalid = v.spec.model_routes.find((route) => {
@@ -220,9 +261,6 @@ export const useExternalEndpointForm = ({
           return;
         }
       }
-      const providerNames = (v.spec.upstreams ?? []).map(
-        (upstream, index) => upstream.name || `provider-${index + 1}`,
-      );
       v.spec.upstreams = (v.spec.upstreams ?? []).map((upstream, index) => ({
         ...upstream,
         name: providerNames[index],
@@ -351,7 +389,23 @@ export const useExternalEndpointForm = ({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => remove(index)}
+                      onClick={() => {
+                        const currentUpstreams =
+                          form.getValues("spec.upstreams") ?? [];
+                        const providerName =
+                          currentUpstreams[index]?.name ||
+                          `provider-${index + 1}`;
+                        const routes = form.getValues("spec.model_routes");
+                        if (routes !== undefined) {
+                          form.setValue(
+                            "spec.model_routes",
+                            removeRouteProvider(routes, providerName),
+                            { shouldDirty: true },
+                          );
+                        }
+                        providerNameSnapshot.current = {};
+                        remove(index);
+                      }}
                       disabled={fields.length <= 1}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -365,14 +419,33 @@ export const useExternalEndpointForm = ({
                     >
                       <Input
                         onChange={(event) => {
+                          const nextName = event.target.value;
+                          const previousName =
+                            providerNameSnapshot.current[index] ||
+                            `provider-${index + 1}`;
                           form.setValue(
                             `spec.upstreams.${index}.name`,
-                            event.target.value,
+                            nextName,
                             {
                               shouldDirty: true,
                               shouldValidate: true,
                             },
                           );
+                          const currentRoutes =
+                            form.getValues("spec.model_routes");
+                          if (currentRoutes !== undefined && nextName.trim()) {
+                            form.setValue(
+                              "spec.model_routes",
+                              renameRouteProvider(
+                                currentRoutes,
+                                previousName,
+                                nextName.trim(),
+                              ),
+                              { shouldDirty: true },
+                            );
+                          }
+                          providerNameSnapshot.current[index] =
+                            nextName.trim() || previousName;
                         }}
                         onBlur={(event) => {
                           const currentUpstreams =

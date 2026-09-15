@@ -69,7 +69,7 @@ export const ExternalEndpointsShow = () => {
               {t("external_endpoints.options.upstreamTypeExternal")}
             </ShowPage.Meta>
             <ShowPage.Meta label={t("external_endpoints.fields.models")}>
-              {allModels.length || "-"}
+              {allModels.length ? allModels.join(", ") : "-"}
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
@@ -166,6 +166,8 @@ export const ExternalEndpointsShow = () => {
             <div className="divide-y divide-border/50">
               {upstreams.map((upstream, index) => {
                 const upstreamStatus = upstreamStatuses[index];
+                const upstreamModels =
+                  upstream.models ?? upstreamStatus?.models ?? [];
 
                 return (
                   <div key={index} className="py-4 first:pt-1 last:pb-1">
@@ -208,8 +210,9 @@ export const ExternalEndpointsShow = () => {
                       <ShowPage.Row
                         title={t("external_endpoints.fields.models")}
                       >
-                        {(upstream.models ?? upstreamStatus?.models ?? [])
-                          .length || "-"}
+                        {upstreamModels.length
+                          ? upstreamModels.join(", ")
+                          : "-"}
                       </ShowPage.Row>
                     </div>
                   </div>

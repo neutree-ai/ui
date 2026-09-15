@@ -196,6 +196,43 @@ describe("route weight submission validation", () => {
       !allowed,
     );
   });
+
+  it("rejects duplicate model service names before submit", async () => {
+    submitEndpoint.mockClear();
+    const { result } = renderHook(() =>
+      useExternalEndpointForm({ action: "create" }),
+    );
+    const values = result.current.form.getValues();
+    values.spec.upstreams = [
+      {
+        name: "same",
+        upstream: { url: "https://one.example/v1" },
+        auth: { type: "bearer", credential: "token" },
+        model_mapping: {},
+        models: null,
+      },
+      {
+        name: "same",
+        upstream: { url: "https://two.example/v1" },
+        auth: { type: "bearer", credential: "token" },
+        model_mapping: {},
+        models: null,
+      },
+    ];
+    values.spec.model_routes = [
+      {
+        model: "chat",
+        targets: [{ upstream: "same", upstream_model: "chat", weight: 100 }],
+      },
+    ];
+    await act(async () => {
+      await result.current.form.refineCore.onFinish(values);
+    });
+    expect(submitEndpoint).not.toHaveBeenCalled();
+    expect(result.current.form.getFieldState("spec.model_routes").invalid).toBe(
+      true,
+    );
+  });
 });
 
 function CreateForm() {
@@ -384,7 +421,7 @@ describe("useExternalEndpointForm", () => {
       ).toHaveLength(1);
 
       fireEvent.click(
-        screen.getByText("external_endpoints.actions.addUpstream"),
+        screen.getByText("external_endpoints.actions.addModelService"),
       );
 
       await waitFor(() => {
@@ -398,7 +435,7 @@ describe("useExternalEndpointForm", () => {
       render(<CreateForm />);
       // Add a second upstream first
       fireEvent.click(
-        screen.getByText("external_endpoints.actions.addUpstream"),
+        screen.getByText("external_endpoints.actions.addModelService"),
       );
 
       await waitFor(() => {
@@ -421,75 +458,22 @@ describe("useExternalEndpointForm", () => {
       });
     });
 
-    it("clears model mapping when switching upstream type", async () => {
+    it("does not auto-create virtual models from connectivity results", async () => {
       render(<CreateForm />);
-
-      // Add a model mapping entry: type upstream model name
-      const upstreamInputs = screen.getAllByPlaceholderText(
-        "external_endpoints.placeholders.upstreamModelName",
-      );
-      fireEvent.change(upstreamInputs[0], { target: { value: "gpt-4o" } });
-
-      // Switch to endpoint_ref
       const typeSelect = screen
         .getAllByTestId("form-select-mock")
         .find((select) => select.querySelector('option[value="endpoint_ref"]'));
       expect(typeSelect).toBeTruthy();
       fireEvent.change(typeSelect!, { target: { value: "endpoint_ref" } });
-
-      // Model mapping should be cleared — the upstream model input should
-      // no longer have the old value
-      await waitFor(() => {
-        const mappingInputs = screen.getAllByPlaceholderText(
-          "external_endpoints.placeholders.upstreamModelName",
-        );
-        expect((mappingInputs[0] as HTMLInputElement).value).toBe("");
-      });
-    });
-
-    it("updates model mapping when switching endpoint ref", async () => {
-      render(<CreateForm />);
-
-      // Switch to endpoint_ref type
-      const typeSelect = screen
-        .getAllByTestId("form-select-mock")
-        .find((select) => select.querySelector('option[value="endpoint_ref"]'));
-      expect(typeSelect).toBeTruthy();
-      fireEvent.change(typeSelect!, { target: { value: "endpoint_ref" } });
-
-      // First endpoint ref returns models ["model-a", "model-b"]
       mockConnectivityTest.mockResolvedValueOnce({
         success: true,
         models: ["model-a", "model-b"],
       });
-
       const combobox = await screen.findByTestId("form-combobox-mock");
       fireEvent.change(combobox, { target: { value: "endpoint-1" } });
-
       await waitFor(() => {
-        const inputs = screen.getAllByPlaceholderText(
-          "external_endpoints.placeholders.upstreamModelName",
-        );
-        expect((inputs[0] as HTMLInputElement).value).toBe("model-a");
-      });
-
-      // Switch to a different endpoint ref returning ["model-x"]
-      mockConnectivityTest.mockResolvedValueOnce({
-        success: true,
-        models: ["model-x"],
-      });
-
-      fireEvent.change(combobox, { target: { value: "endpoint-2" } });
-
-      await waitFor(() => {
-        const inputs = screen.getAllByPlaceholderText(
-          "external_endpoints.placeholders.upstreamModelName",
-        );
-        expect(
-          inputs.some(
-            (input) => (input as HTMLInputElement).value === "model-x",
-          ),
-        ).toBe(true);
+        expect(screen.queryByDisplayValue("model-a")).toBeNull();
+        expect(screen.queryByDisplayValue("model-b")).toBeNull();
       });
     });
 
