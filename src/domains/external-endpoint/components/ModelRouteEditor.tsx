@@ -147,6 +147,139 @@ export default function ModelRouteEditor({
       {draft.map((route, index) => {
         const key = routeIds.current[index];
         const mode = modes[key] ?? modeOf(route);
+        const targetRow = (targetIndex: number) => {
+          const target = targetFor(route, targetIndex, mode);
+          return (
+            <div
+              key={targetIndex}
+              className={`grid items-end gap-3 xs:grid-cols-1 ${
+                mode === "weighted"
+                  ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]"
+                  : "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+              }`}
+            >
+              <FormSelect
+                value={target.upstream}
+                onChange={(next) =>
+                  commit(
+                    draft.map((item, itemIndex) =>
+                      itemIndex === index
+                        ? {
+                            ...item,
+                            targets: item.targets.map((itemTarget, i) =>
+                              i === targetIndex
+                                ? { ...target, upstream: next }
+                                : itemTarget,
+                            ),
+                          }
+                        : item,
+                    ),
+                  )
+                }
+                options={providers}
+                placeholder={t(
+                  "external_endpoints.placeholders.selectProvider",
+                )}
+                aria-label={t("external_endpoints.fields.provider")}
+              />
+              <Input
+                value={target.upstream_model}
+                onChange={(event) =>
+                  updateTarget(index, targetIndex, {
+                    ...target,
+                    upstream_model: event.target.value,
+                  })
+                }
+                onBlur={commitDraft}
+                placeholder={t(
+                  "external_endpoints.placeholders.upstreamModelName",
+                )}
+                aria-label={t("external_endpoints.fields.upstreamModelName")}
+              />
+              {mode === "weighted" ? (
+                <div className="w-24 space-y-1 xs:w-full">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("external_endpoints.fields.weight")}
+                  </span>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={target.weight ?? ""}
+                      onChange={(event) =>
+                        updateTarget(index, targetIndex, {
+                          ...target,
+                          weight: Math.min(
+                            100,
+                            Math.max(1, Number(event.target.value) || 1),
+                          ),
+                        })
+                      }
+                      onBlur={commitDraft}
+                      aria-label={t("external_endpoints.fields.weight")}
+                      placeholder={t("external_endpoints.placeholders.weight")}
+                      className="w-full pr-7"
+                    />
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
+                      %
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="justify-self-end text-muted-foreground hover:bg-muted hover:text-foreground"
+                disabled={route.targets.length <= 1}
+                aria-label={t("external_endpoints.actions.removeTarget")}
+                onClick={() =>
+                  commit(
+                    draft.map((item, itemIndex) =>
+                      itemIndex === index
+                        ? {
+                            ...item,
+                            targets: item.targets.filter(
+                              (_, i) => i !== targetIndex,
+                            ),
+                          }
+                        : item,
+                    ),
+                  )
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        };
+        const addTarget = (atStart = false) =>
+          commit(
+            draft.map((item, itemIndex) =>
+              itemIndex === index
+                ? {
+                    ...item,
+                    targets: atStart
+                      ? [
+                          { upstream: "", upstream_model: "", priority: 0 },
+                          ...item.targets.map((target, targetIndex) => ({
+                            ...target,
+                            priority: targetIndex + 1,
+                          })),
+                        ]
+                      : [
+                          ...item.targets,
+                          {
+                            upstream: "",
+                            upstream_model: "",
+                            priority: item.targets.length,
+                          },
+                        ],
+                  }
+                : item,
+            ),
+          );
         return (
           <div key={key} className="rounded-md bg-muted/35 p-4">
             <div className="mb-4 flex items-start gap-3">
@@ -203,163 +336,69 @@ export default function ModelRouteEditor({
               </Button>
             </div>
 
-            <div className="space-y-2">
-              {route.targets.map((_, targetIndex) => {
-                const target = targetFor(route, targetIndex, mode);
-                return (
-                  <div
-                    key={targetIndex}
-                    className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] gap-3 xs:grid-cols-1"
-                  >
-                    <FormSelect
-                      value={target.upstream}
-                      onChange={(next) =>
-                        commit(
-                          draft.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? {
-                                  ...item,
-                                  targets: item.targets.map((itemTarget, i) =>
-                                    i === targetIndex
-                                      ? { ...target, upstream: next }
-                                      : itemTarget,
-                                  ),
-                                }
-                              : item,
-                          ),
-                        )
-                      }
-                      options={providers}
-                      placeholder={t(
-                        "external_endpoints.placeholders.selectProvider",
-                      )}
-                      aria-label={t("external_endpoints.fields.provider")}
-                    />
-                    <Input
-                      value={target.upstream_model}
-                      onChange={(event) =>
-                        updateTarget(index, targetIndex, {
-                          ...target,
-                          upstream_model: event.target.value,
-                        })
-                      }
-                      onBlur={commitDraft}
-                      placeholder={t(
-                        "external_endpoints.placeholders.upstreamModelName",
-                      )}
-                      aria-label={t(
-                        "external_endpoints.fields.upstreamModelName",
-                      )}
-                    />
-                    {mode === "priority" && (
-                      <Input
-                        type="number"
-                        min={0}
-                        value={target.max_inflight_requests ?? 0}
-                        onChange={(event) =>
-                          updateTarget(index, targetIndex, {
-                            ...target,
-                            max_inflight_requests: Math.max(
-                              0,
-                              Number(event.target.value) || 0,
-                            ),
-                          })
-                        }
-                        onBlur={commitDraft}
-                        aria-label={t(
-                          "external_endpoints.fields.maxInflightRequests",
-                        )}
-                        placeholder={t(
-                          "external_endpoints.placeholders.maxInflightRequests",
-                        )}
-                        className="w-36"
-                      />
-                    )}
-                    {mode === "weighted" && (
-                      <Input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={target.weight ?? ""}
-                        onChange={(event) =>
-                          updateTarget(index, targetIndex, {
-                            ...target,
-                            weight: Math.min(
-                              100,
-                              Math.max(1, Number(event.target.value) || 1),
-                            ),
-                          })
-                        }
-                        onBlur={commitDraft}
-                        aria-label={t("external_endpoints.fields.weight")}
-                        placeholder={t(
-                          "external_endpoints.placeholders.weight",
-                        )}
-                        className="w-24"
-                      />
-                    )}
+            {mode === "priority" ? (
+              <div className="space-y-5 rounded-md bg-background/70 p-4">
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {t("external_endpoints.sections.primaryTargets")}
+                    </h3>
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={route.targets.length <= 1}
-                      aria-label={t("external_endpoints.actions.removeTarget")}
-                      onClick={() =>
-                        commit(
-                          draft.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? {
-                                  ...item,
-                                  targets: item.targets.filter(
-                                    (_, i) => i !== targetIndex,
-                                  ),
-                                }
-                              : item,
-                          ),
-                        )
-                      }
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addTarget(true)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Plus className="mr-1 h-4 w-4" />
+                      {t("external_endpoints.actions.addPrimaryTarget")}
                     </Button>
                   </div>
-                );
-              })}
-              {mode !== "fixed" && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    commit(
-                      draft.map((item, itemIndex) =>
-                        itemIndex === index
-                          ? {
-                              ...item,
-                              targets: [
-                                ...item.targets,
-                                mode === "weighted"
-                                  ? {
-                                      upstream: "",
-                                      upstream_model: "",
-                                      weight: 1,
-                                    }
-                                  : {
-                                      upstream: "",
-                                      upstream_model: "",
-                                      priority: item.targets.length,
-                                    },
-                              ],
-                            }
-                          : item,
-                      ),
-                    )
-                  }
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  {t("external_endpoints.actions.addTarget")}
-                </Button>
-              )}
-            </div>
+                  {targetRow(0)}
+                </section>
+                <section className="space-y-3 border-t border-border/50 pt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {t("external_endpoints.sections.fallbackTargets")}
+                    </h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addTarget(false)}
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      {t("external_endpoints.actions.addFallbackTarget")}
+                    </Button>
+                  </div>
+                  {route.targets.length > 1 ? (
+                    <div className="space-y-3">
+                      {route.targets
+                        .slice(1)
+                        .map((_, targetIndex) => targetRow(targetIndex + 1))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {t("external_endpoints.messages.noFallbackTargets")}
+                    </p>
+                  )}
+                </section>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {route.targets.map((_, targetIndex) => targetRow(targetIndex))}
+              </div>
+            )}
+            {mode === "weighted" && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addTarget(false)}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                {t("external_endpoints.actions.addTarget")}
+              </Button>
+            )}
           </div>
         );
       })}

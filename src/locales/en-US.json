@@ -1250,7 +1250,9 @@
 			"upstream": "Upstream {{index}}",
 			"modelService": "Model Service {{index}}",
 			"virtualModels": "Virtual Models",
-			"modelServices": "Model Services"
+			"modelServices": "Model Services",
+			"primaryTargets": "Primary list",
+			"fallbackTargets": "Fallback list"
 		},
 		"placeholders": {
 			"endpointName": "External Endpoint Name",
@@ -1290,6 +1292,8 @@
 			"removeModelMapping": "Remove",
 			"addVirtualModel": "Add virtual model",
 			"addTarget": "Add model service",
+			"addPrimaryTarget": "Add primary",
+			"addFallbackTarget": "Add fallback",
 			"removeTarget": "Remove model service",
 			"removeVirtualModel": "Remove virtual model"
 		},
@@ -1305,7 +1309,8 @@
 			"testConnectivityTesting": "Testing...",
 			"testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
 			"testConnectivityFailed": "Connection failed: {{error}}",
-			"testConnectivityError": "Request error: {{error}}"
+			"testConnectivityError": "Request error: {{error}}",
+			"noFallbackTargets": "No fallback model services"
 		},
 		"validation": {
 			"nameRequired": "Name is required",
