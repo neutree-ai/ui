@@ -301,7 +301,21 @@ export const useExternalEndpointForm = ({
             />
           </FormFieldGroup>
         </FormCardGrid>
-        <FormCardGrid title={t("external_endpoints.sections.modelServices")}>
+        <FormCardGrid>
+          <div className="col-span-4 flex items-center justify-between border-b border-border/60 pb-3">
+            <h2 className="text-base font-semibold text-foreground">
+              {t("external_endpoints.sections.modelServices")}
+            </h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ ...emptyExternalUpstream })}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              {t("external_endpoints.actions.addModelService")}
+            </Button>
+          </div>
           <div className="col-span-4 divide-y divide-border/60">
             {fields.map((field, index) => {
               const currentType = deriveUpstreamType(upstreams?.[index]);
@@ -555,15 +569,6 @@ export const useExternalEndpointForm = ({
                 </div>
               );
             })}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => append({ ...emptyExternalUpstream })}
-              className="mt-4 w-full border-dashed"
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              {t("external_endpoints.actions.addModelService")}
-            </Button>
           </div>
         </FormCardGrid>
       </>
