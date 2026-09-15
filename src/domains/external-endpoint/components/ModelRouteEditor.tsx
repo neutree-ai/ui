@@ -273,7 +273,9 @@ export default function ModelRouteEditor({
                           {
                             upstream: "",
                             upstream_model: "",
-                            priority: item.targets.length,
+                            ...(mode === "weighted"
+                              ? { weight: 1 }
+                              : { priority: item.targets.length }),
                           },
                         ],
                   }
