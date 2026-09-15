@@ -60,7 +60,7 @@
   "src/components/ui/loading.tsx": "913dd92acdf36488b43493ece7f7259a",
   "src/components/ui/popover.tsx": "9209bc7bfff67b1e2324f044ec87452d",
   "src/components/ui/progress.tsx": "cf177db1092528afb5f47043e1287687",
-  "src/components/ui/scroll-area.tsx": "3cb075610cb184a400ef28fd216516c5",
+  "src/components/ui/scroll-area.tsx": "b14c16b4760909baa36b2b6aa344d46c",
   "src/components/ui/select.tsx": "6f49c85ccbb411780589fe409caff266",
   "src/components/ui/separator.tsx": "2590cba8be4a866e21f2946c9b2e25ee",
   "src/components/ui/sheet.tsx": "e090ce0245440924ad8b15400a1c9571",
@@ -177,7 +177,7 @@
   "src/domains/endpoint/hooks/use-endpoint-monitor-panels.ts": "f81266b161eca80a40cbba56086e81b6",
   "src/domains/endpoint/hooks/use-endpoint-resources.ts": "c1b719ca155f472655bf0644f278e041",
   "src/domains/endpoint/hooks/use-streaming-logs.ts": "f13d3f714694d7cd73b805269b6586ad",
-  "src/domains/endpoint/components/ChatPlayground.tsx": "6bf5b25fe308101baabb508c5264b535",
+  "src/domains/endpoint/components/ChatPlayground.tsx": "8a693f2fe838cab48261ea889c1c5cc9",
   "src/domains/endpoint/components/ChatSidebar.tsx": "188bc062294a45b16a56e7e3b9b24610",
   "src/domains/endpoint/components/DeploymentConfigCard.tsx": "91cc8c988179c5657e0cc51035f26bde",
   "src/domains/endpoint/components/EmbeddingPlayground.tsx": "1fc239ccfdd889f71daf62d91bd18148",
@@ -412,5 +412,7 @@
   "src/domains/endpoint/components/EndpointWeightsEstimate.tsx": "463fd95c14714917acfdd3a639931d9d",
   "src/domains/model-catalog/components/CatalogYamlEditor.tsx": "fb11382e48877cbfa38d200ed2513633",
   "src/foundation/components/InfoHint.tsx": "8e904dedae4bc761cc4c7bcbad2705ba",
-  "src/foundation/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38"
+  "src/foundation/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38",
+  "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
+  "src/foundation/hooks/use-stick-to-bottom.ts": "8911946af36a3f728c3c20e475457476"
 }
