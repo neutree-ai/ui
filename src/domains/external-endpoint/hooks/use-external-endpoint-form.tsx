@@ -209,10 +209,12 @@ export const useExternalEndpointForm = ({
         ...upstream,
         name: providerNames[index],
       }));
-      const routes = v.spec.model_routes?.length
+      const hasModelRoutes = v.spec.model_routes !== undefined;
+      const routes = hasModelRoutes
         ? v.spec.model_routes
         : routesFromLegacy(v.spec.upstreams);
-      if (routes.length > 0)
+      if (hasModelRoutes) {
+        v.spec.model_mapping = {};
         v.spec.model_routes = routes.map((route) => ({
           ...route,
           targets: route.targets.map((target) => ({
@@ -225,6 +227,7 @@ export const useExternalEndpointForm = ({
             weight: target.weight || 1,
           })),
         }));
+      }
     }
     return originalOnFinish(v);
   };
