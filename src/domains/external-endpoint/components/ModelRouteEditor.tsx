@@ -148,7 +148,7 @@ export default function ModelRouteEditor({
         const key = routeIds.current[index];
         const mode = modes[key] ?? modeOf(route);
         return (
-          <div key={key} className="rounded border border-border/60 p-4">
+          <div key={key} className="rounded-md bg-muted/35 p-4">
             <div className="mb-4 flex items-start gap-3">
               <div className="grid min-w-0 flex-1 grid-cols-2 gap-4 xs:grid-cols-1">
                 <Input

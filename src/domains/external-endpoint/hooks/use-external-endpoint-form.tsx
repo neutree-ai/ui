@@ -247,9 +247,13 @@ export const useExternalEndpointForm = ({
   return {
     form,
     metadataFields: (
-      <FormCardGrid title={t("common.sections.basicInformation")}>
+      <FormCardGrid
+        title={t("common.sections.basicInformation")}
+        className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none"
+      >
         <FormFieldGroup
           {...form}
+          className="max-w-md"
           label={t("common.fields.name")}
           {...form.register("metadata.name", {
             required: {
@@ -266,6 +270,7 @@ export const useExternalEndpointForm = ({
         <FormFieldGroup
           {...form}
           name="metadata.workspace"
+          className="max-w-md"
           label={t("common.fields.workspace")}
           rules={{
             required: t("common.validation.workspaceRequired"),
@@ -280,16 +285,23 @@ export const useExternalEndpointForm = ({
     ),
     specFields: (
       <>
-        <FormCardGrid title={t("external_endpoints.sections.configuration")}>
+        <FormCardGrid
+          title={t("external_endpoints.sections.configuration")}
+          className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none"
+        >
           <FormFieldGroup
             {...form}
             name="spec.timeout"
+            className="max-w-xs"
             label={t("external_endpoints.fields.timeout")}
           >
             <TimeoutInput />
           </FormFieldGroup>
         </FormCardGrid>
-        <FormCardGrid title={t("external_endpoints.sections.virtualModels")}>
+        <FormCardGrid
+          title={t("external_endpoints.sections.virtualModels")}
+          className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none"
+        >
           <FormFieldGroup
             {...form}
             name="spec.model_routes"
@@ -301,9 +313,9 @@ export const useExternalEndpointForm = ({
             />
           </FormFieldGroup>
         </FormCardGrid>
-        <FormCardGrid>
-          <div className="col-span-4 flex items-center justify-between border-b border-border/60 pb-3">
-            <h2 className="text-base font-semibold text-foreground">
+        <FormCardGrid className="border-0 shadow-sm [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none">
+          <div className="col-span-4 flex items-center justify-between border-b border-border/40 pb-3">
+            <h2 className="text-lg font-semibold text-foreground">
               {t("external_endpoints.sections.modelServices")}
             </h2>
             <Button
@@ -316,11 +328,14 @@ export const useExternalEndpointForm = ({
               {t("external_endpoints.actions.addModelService")}
             </Button>
           </div>
-          <div className="col-span-4 divide-y divide-border/60">
+          <div className="col-span-4 space-y-3">
             {fields.map((field, index) => {
               const currentType = deriveUpstreamType(upstreams?.[index]);
               return (
-                <div key={field.id} className="py-5 first:pt-0 last:pb-0">
+                <div
+                  key={field.id}
+                  className="rounded-md bg-muted/35 px-4 py-4"
+                >
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
