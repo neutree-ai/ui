@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { useState } from "react";
 import type { ModelRoute, ModelRouteTarget, UpstreamSpec } from "../types";
 
 type Mode = "fixed" | "priority" | "weighted";
@@ -14,9 +15,8 @@ function modeOf(route: ModelRoute): Mode {
   return "weighted";
 }
 
-function targetFor(route: ModelRoute, index: number): ModelRouteTarget {
+function targetFor(route: ModelRoute, index: number, mode: Mode): ModelRouteTarget {
   const target = route.targets[index] ?? { upstream: "", upstream_model: "" };
-  const mode = modeOf(route);
   return {
     ...target,
     priority: mode === "priority" ? index : 0,
@@ -36,6 +36,7 @@ export default function ModelRouteEditor({
   upstreams,
 }: Props) {
   const { t } = useTranslation();
+  const [modes, setModes] = useState<Record<number, Mode>>({});
   const providers = upstreams.map((upstream, index) => ({
     label:
       upstream.name ||
@@ -64,12 +65,13 @@ export default function ModelRouteEditor({
         weight: mode === "weighted" ? target.weight || 1 : 1,
       })),
     });
+    setModes((current) => ({ ...current, [index]: mode }));
   };
 
   return (
     <div className="space-y-4">
       {value.map((route, index) => {
-        const mode = modeOf(route);
+        const mode = modes[index] ?? modeOf(route);
         return (
           <div
             key={`${route.model}-${index}`}
@@ -105,7 +107,7 @@ export default function ModelRouteEditor({
             </div>
             <div className="space-y-2">
               {route.targets.map((_, targetIndex) => {
-                const target = targetFor(route, targetIndex);
+                const target = targetFor(route, targetIndex, mode);
                 return (
                   <div
                     key={targetIndex}
