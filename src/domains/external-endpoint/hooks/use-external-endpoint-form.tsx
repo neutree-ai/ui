@@ -3,7 +3,6 @@ import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ModelRouteEditor from "@/domains/external-endpoint/components/ModelRouteEditor";
 import TestConnectivityButton from "@/domains/external-endpoint/components/TestConnectivityButton";
@@ -303,17 +302,22 @@ export const useExternalEndpointForm = ({
           </FormFieldGroup>
         </FormCardGrid>
         <FormCardGrid title={t("external_endpoints.sections.modelServices")}>
-          <div className="col-span-4 grid grid-cols-[repeat(auto-fit,minmax(420px,1fr))] gap-4 xs:grid-cols-1">
+          <div className="col-span-4 divide-y divide-border/60">
             {fields.map((field, index) => {
               const currentType = deriveUpstreamType(upstreams?.[index]);
               return (
-                <Card key={field.id} className="border-border/60 shadow-none">
-                  <CardHeader className="flex flex-row items-center justify-between py-2 px-4">
-                    <CardTitle>
-                      {t("external_endpoints.sections.modelService", {
-                        index: index + 1,
-                      })}
-                    </CardTitle>
+                <div key={field.id} className="py-5 first:pt-0 last:pb-0">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                        {index + 1}
+                      </span>
+                      <span className="truncate text-sm font-semibold text-foreground">
+                        {t("external_endpoints.sections.modelService", {
+                          index: index + 1,
+                        })}
+                      </span>
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
@@ -323,244 +327,239 @@ export const useExternalEndpointForm = ({
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4 py-4 px-4">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-4 xs:grid-cols-1">
-                      <FormFieldGroup
-                        {...form}
-                        label={t("external_endpoints.fields.provider")}
-                        {...form.register(`spec.upstreams.${index}.name`)}
-                      >
-                        <Input
-                          onChange={(event) => {
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-x-4 gap-y-4 xs:grid-cols-1">
+                    <FormFieldGroup
+                      {...form}
+                      label={t("external_endpoints.fields.provider")}
+                      {...form.register(`spec.upstreams.${index}.name`)}
+                    >
+                      <Input
+                        onChange={(event) => {
+                          form.setValue(
+                            `spec.upstreams.${index}.name`,
+                            event.target.value,
+                            {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            },
+                          );
+                        }}
+                        onBlur={(event) => {
+                          const currentUpstreams =
+                            form.getValues("spec.upstreams") ?? [];
+                          const previousName =
+                            providerNameSnapshot.current[index] ||
+                            `provider-${index + 1}`;
+                          const nextName =
+                            event.target.value.trim() ||
+                            `provider-${index + 1}`;
+                          if (previousName !== nextName) {
+                            const currentRoutes =
+                              form.getValues("spec.model_routes");
+                            const routes: ModelRoute[] =
+                              currentRoutes ??
+                              routesFromLegacy(currentUpstreams);
                             form.setValue(
-                              `spec.upstreams.${index}.name`,
-                              event.target.value,
-                              {
-                                shouldDirty: true,
-                                shouldValidate: true,
-                              },
+                              "spec.model_routes",
+                              routes.map((route) => ({
+                                ...route,
+                                targets: route.targets.map((target) =>
+                                  target.upstream === previousName
+                                    ? { ...target, upstream: nextName }
+                                    : target,
+                                ),
+                              })),
+                              { shouldDirty: true },
                             );
-                          }}
-                          onBlur={(event) => {
-                            const currentUpstreams =
-                              form.getValues("spec.upstreams") ?? [];
-                            const previousName =
-                              providerNameSnapshot.current[index] ||
-                              `provider-${index + 1}`;
-                            const nextName =
-                              event.target.value.trim() ||
-                              `provider-${index + 1}`;
-                            if (previousName !== nextName) {
-                              const currentRoutes =
-                                form.getValues("spec.model_routes");
-                              const routes: ModelRoute[] =
-                                currentRoutes ??
-                                routesFromLegacy(currentUpstreams);
-                              form.setValue(
-                                "spec.model_routes",
-                                routes.map((route) => ({
-                                  ...route,
-                                  targets: route.targets.map((target) =>
-                                    target.upstream === previousName
-                                      ? { ...target, upstream: nextName }
-                                      : target,
-                                  ),
-                                })),
-                                { shouldDirty: true },
-                              );
-                              providerNameSnapshot.current[index] = nextName;
-                            }
-                          }}
-                          placeholder={t(
-                            "external_endpoints.placeholders.provider",
-                          )}
-                        />
-                      </FormFieldGroup>
-                      <FormFieldGroup
-                        {...form}
-                        name={`_upstreamType_${index}`}
-                        label={t("external_endpoints.fields.upstreamType")}
-                      >
-                        <FormSelect
-                          value={currentType}
-                          onChange={(value) =>
-                            handleUpstreamTypeChange(
-                              index,
-                              value as UpstreamType,
-                            )
+                            providerNameSnapshot.current[index] = nextName;
                           }
-                          options={[
+                        }}
+                        placeholder={t(
+                          "external_endpoints.placeholders.provider",
+                        )}
+                      />
+                    </FormFieldGroup>
+                    <FormFieldGroup
+                      {...form}
+                      name={`_upstreamType_${index}`}
+                      label={t("external_endpoints.fields.upstreamType")}
+                    >
+                      <FormSelect
+                        value={currentType}
+                        onChange={(value) =>
+                          handleUpstreamTypeChange(index, value as UpstreamType)
+                        }
+                        options={[
+                          {
+                            label: t(
+                              "external_endpoints.options.upstreamTypeExternal",
+                            ),
+                            value: "external",
+                          },
+                          {
+                            label: t(
+                              "external_endpoints.options.upstreamTypeEndpointRef",
+                            ),
+                            value: "endpoint_ref",
+                          },
+                        ]}
+                      />
+                    </FormFieldGroup>
+                    {currentType === "external" ? (
+                      <>
+                        <FormFieldGroup
+                          {...form}
+                          label={t("external_endpoints.fields.upstreamUrl")}
+                          {...form.register(
+                            `spec.upstreams.${index}.upstream.url`,
                             {
-                              label: t(
-                                "external_endpoints.options.upstreamTypeExternal",
-                              ),
-                              value: "external",
-                            },
-                            {
-                              label: t(
-                                "external_endpoints.options.upstreamTypeEndpointRef",
-                              ),
-                              value: "endpoint_ref",
-                            },
-                          ]}
-                        />
-                      </FormFieldGroup>
-                      {currentType === "external" ? (
-                        <>
-                          <FormFieldGroup
-                            {...form}
-                            label={t("external_endpoints.fields.upstreamUrl")}
-                            {...form.register(
-                              `spec.upstreams.${index}.upstream.url`,
-                              {
-                                required: {
-                                  value: true,
-                                  message: t(
-                                    "external_endpoints.validation.upstreamUrlRequired",
-                                  ),
-                                },
+                              required: {
+                                value: true,
+                                message: t(
+                                  "external_endpoints.validation.upstreamUrlRequired",
+                                ),
                               },
-                            )}
-                          >
-                            <Input
-                              placeholder={t(
-                                "external_endpoints.placeholders.upstreamUrl",
-                              )}
-                            />
-                          </FormFieldGroup>
-                          <input
-                            type="hidden"
-                            {...form.register(
-                              `spec.upstreams.${index}.auth.type`,
+                            },
+                          )}
+                        >
+                          <Input
+                            placeholder={t(
+                              "external_endpoints.placeholders.upstreamUrl",
                             )}
                           />
-                          <FormFieldGroup
-                            {...form}
-                            name={`spec.upstreams.${index}.auth.credential`}
-                            label={t("external_endpoints.fields.credential")}
-                            className="col-span-2 xs:col-span-1"
-                            description={
-                              isEdit
-                                ? t("common.messages.leaveEmptyToKeepValue")
-                                : undefined
-                            }
-                          >
-                            <Input
-                              type="password"
-                              placeholder={t(
-                                "external_endpoints.placeholders.credential",
-                              )}
-                            />
-                          </FormFieldGroup>
-                          <div className="col-span-2 flex items-center xs:col-span-1">
-                            <TestConnectivityButton
-                              testing={connectivity.testingMap[index] ?? false}
-                              result={connectivity.resultMap[index] ?? null}
-                              onTest={async () => {
-                                const url =
-                                  form.getValues(
-                                    `spec.upstreams.${index}.upstream.url`,
-                                  ) ?? "";
-                                const credential =
-                                  form.getValues(
-                                    `spec.upstreams.${index}.auth.credential`,
-                                  ) ?? "";
-                                const name = isEdit
-                                  ? (form.getValues("metadata.name") ?? "")
-                                  : "";
-                                const storedUpstreamUrl = isEdit
-                                  ? ((
-                                      form.refineCore.query?.data?.data as
-                                        | ExternalEndpoint
-                                        | undefined
-                                    )?.spec?.upstreams?.[index]?.upstream
-                                      ?.url ?? "")
-                                  : "";
-                                await connectivity.test(index, {
-                                  type: "external",
-                                  url,
-                                  credential,
-                                  ...(isEdit
-                                    ? {
-                                        name,
-                                        workspace: currentWorkspace,
-                                        stored_upstream_url: storedUpstreamUrl,
-                                      }
-                                    : {}),
-                                });
-                              }}
-                            />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <FormFieldGroup
-                            {...form}
-                            name={`spec.upstreams.${index}.endpoint_ref`}
-                            label={t("external_endpoints.fields.endpointRef")}
-                            className="col-span-3 xs:col-span-1"
-                          >
-                            <FormCombobox
-                              placeholder={t(
-                                "external_endpoints.placeholders.selectEndpointRef",
-                              )}
-                              options={endpointOptions}
-                              renderOption={(option) => {
-                                const endpoint =
-                                  option as (typeof endpointOptions)[number];
-                                return (
-                                  <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                                    <span className="truncate">
-                                      {endpoint.label}
-                                    </span>
-                                    {endpoint.status?.phase ? (
-                                      <span className="shrink-0">
-                                        <EndpointStatus {...endpoint.status} />
-                                      </span>
-                                    ) : null}
+                        </FormFieldGroup>
+                        <input
+                          type="hidden"
+                          {...form.register(
+                            `spec.upstreams.${index}.auth.type`,
+                          )}
+                        />
+                        <FormFieldGroup
+                          {...form}
+                          name={`spec.upstreams.${index}.auth.credential`}
+                          label={t("external_endpoints.fields.credential")}
+                          className="col-span-2 xs:col-span-1"
+                          description={
+                            isEdit
+                              ? t("common.messages.leaveEmptyToKeepValue")
+                              : undefined
+                          }
+                        >
+                          <Input
+                            type="password"
+                            placeholder={t(
+                              "external_endpoints.placeholders.credential",
+                            )}
+                          />
+                        </FormFieldGroup>
+                        <div className="col-span-2 flex items-center xs:col-span-1">
+                          <TestConnectivityButton
+                            testing={connectivity.testingMap[index] ?? false}
+                            result={connectivity.resultMap[index] ?? null}
+                            onTest={async () => {
+                              const url =
+                                form.getValues(
+                                  `spec.upstreams.${index}.upstream.url`,
+                                ) ?? "";
+                              const credential =
+                                form.getValues(
+                                  `spec.upstreams.${index}.auth.credential`,
+                                ) ?? "";
+                              const name = isEdit
+                                ? (form.getValues("metadata.name") ?? "")
+                                : "";
+                              const storedUpstreamUrl = isEdit
+                                ? ((
+                                    form.refineCore.query?.data?.data as
+                                      | ExternalEndpoint
+                                      | undefined
+                                  )?.spec?.upstreams?.[index]?.upstream?.url ??
+                                  "")
+                                : "";
+                              await connectivity.test(index, {
+                                type: "external",
+                                url,
+                                credential,
+                                ...(isEdit
+                                  ? {
+                                      name,
+                                      workspace: currentWorkspace,
+                                      stored_upstream_url: storedUpstreamUrl,
+                                    }
+                                  : {}),
+                              });
+                            }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <FormFieldGroup
+                          {...form}
+                          name={`spec.upstreams.${index}.endpoint_ref`}
+                          label={t("external_endpoints.fields.endpointRef")}
+                          className="col-span-3 xs:col-span-1"
+                        >
+                          <FormCombobox
+                            placeholder={t(
+                              "external_endpoints.placeholders.selectEndpointRef",
+                            )}
+                            options={endpointOptions}
+                            renderOption={(option) => {
+                              const endpoint =
+                                option as (typeof endpointOptions)[number];
+                              return (
+                                <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                                  <span className="truncate">
+                                    {endpoint.label}
                                   </span>
-                                );
-                              }}
-                              onChange={(val) => {
-                                const ref = String(val);
-                                form.setValue(
+                                  {endpoint.status?.phase ? (
+                                    <span className="shrink-0">
+                                      <EndpointStatus {...endpoint.status} />
+                                    </span>
+                                  ) : null}
+                                </span>
+                              );
+                            }}
+                            onChange={(val) => {
+                              const ref = String(val);
+                              form.setValue(
+                                `spec.upstreams.${index}.endpoint_ref`,
+                                ref,
+                              );
+                              handleEndpointRefChange(index, ref);
+                            }}
+                          />
+                        </FormFieldGroup>
+                        <div className="col-span-2 flex items-center xs:col-span-1">
+                          <TestConnectivityButton
+                            testing={connectivity.testingMap[index] ?? false}
+                            result={connectivity.resultMap[index] ?? null}
+                            onTest={async () => {
+                              const endpointRef =
+                                form.getValues(
                                   `spec.upstreams.${index}.endpoint_ref`,
-                                  ref,
-                                );
-                                handleEndpointRefChange(index, ref);
-                              }}
-                            />
-                          </FormFieldGroup>
-                          <div className="col-span-2 flex items-center xs:col-span-1">
-                            <TestConnectivityButton
-                              testing={connectivity.testingMap[index] ?? false}
-                              result={connectivity.resultMap[index] ?? null}
-                              onTest={async () => {
-                                const endpointRef =
-                                  form.getValues(
-                                    `spec.upstreams.${index}.endpoint_ref`,
-                                  ) ?? "";
-                                await connectivity.test(index, {
-                                  type: "endpoint_ref",
-                                  endpoint_ref: endpointRef,
-                                  workspace: currentWorkspace,
-                                });
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                                ) ?? "";
+                              await connectivity.test(index, {
+                                type: "endpoint_ref",
+                                endpoint_ref: endpointRef,
+                                workspace: currentWorkspace,
+                              });
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               );
             })}
             <Button
               type="button"
               variant="outline"
               onClick={() => append({ ...emptyExternalUpstream })}
-              className="min-h-24 w-full border-dashed"
+              className="mt-4 w-full border-dashed"
             >
               <Plus className="mr-1 h-4 w-4" />
               {t("external_endpoints.actions.addModelService")}
