@@ -77,6 +77,26 @@ export const ExternalEndpointsShow = () => {
           </div>
         </ShowPage.Section>
 
+        {record.spec?.model_routes?.length ? (
+          <ShowPage.Section title={t("external_endpoints.sections.virtualModels")}>
+            <div className="space-y-3">
+              {record.spec.model_routes.map((route) => (
+                <div key={route.model} className="rounded-md border p-3">
+                  <div className="font-medium">{route.model}</div>
+                  <div className="mt-2 space-y-1 text-sm">
+                    {route.targets.map((target, index) => (
+                      <div key={`${target.upstream}-${index}`} className="flex gap-3">
+                        <span>{target.upstream}</span>
+                        <code>{target.upstream_model}</code>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ShowPage.Section>
+        ) : null}
+
         {record.spec?.upstreams?.map((upstream, index) => {
           const upstreamStatus = upstreamStatuses[index];
 

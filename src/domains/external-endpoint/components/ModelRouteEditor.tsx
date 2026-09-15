@@ -224,39 +224,6 @@ export default function ModelRouteEditor({
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4 xs:grid-cols-1">
-              <FormSelect
-                value={route.max_attempts ? "enabled" : "disabled"}
-                onChange={(next) =>
-                  update(
-                    index,
-                    next === "enabled"
-                      ? {
-                          ...route,
-                          retryable_conditions: [
-                            "http_429",
-                            "http_502",
-                            "http_503",
-                            "http_504",
-                            "timeout",
-                          ],
-                          max_attempts: 1,
-                        }
-                      : { ...route, retryable_conditions: [], max_attempts: 0 },
-                  )
-                }
-                options={[
-                  {
-                    label: t("external_endpoints.options.noRetry"),
-                    value: "disabled",
-                  },
-                  {
-                    label: t("external_endpoints.options.retryProvider"),
-                    value: "enabled",
-                  },
-                ]}
-              />
-            </div>
           </div>
         );
       })}
