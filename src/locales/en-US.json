@@ -1240,6 +1240,8 @@
 			"models": "Models",
 			"unavailableModels": "Unavailable models:",
 			"type": "Type",
+			"role": "Role",
+			"unlimited": "Unlimited",
 			"routingMode": "Routing mode",
 			"maxInflightRequests": "Max concurrent requests"
 		},
@@ -1274,6 +1276,9 @@
 			"fixedRouting": "Fixed direct",
 			"priorityRouting": "Primary and fallback",
 			"weightedRouting": "Weighted split",
+			"fixedRole": "Fixed",
+			"primaryRole": "Primary",
+			"fallbackRole": "Fallback",
 			"noRetry": "Do not switch on failure",
 			"retryProvider": "Switch provider on failure"
 		},
