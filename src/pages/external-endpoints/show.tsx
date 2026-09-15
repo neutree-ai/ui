@@ -79,7 +79,7 @@ export const ExternalEndpointsShow = () => {
       <div className="mt-4 space-y-4">
         <ShowPage.Section
           title={t("external_endpoints.sections.configuration")}
-          className="rounded-md border-0 bg-background shadow-sm"
+          className="rounded-md"
           contentClassName="pt-1"
         >
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(140px,0.35fr)_minmax(0,1fr)]">
@@ -99,7 +99,7 @@ export const ExternalEndpointsShow = () => {
         {record.spec?.model_routes?.length ? (
           <ShowPage.Section
             title={t("external_endpoints.sections.virtualModels")}
-            className="rounded-md border-0 bg-background shadow-sm"
+            className="rounded-md"
             contentClassName="pt-1"
           >
             <div className="space-y-3">
@@ -160,7 +160,7 @@ export const ExternalEndpointsShow = () => {
         {upstreams.length > 0 && (
           <ShowPage.Section
             title={t("external_endpoints.sections.modelServices")}
-            className="rounded-md border-0 bg-background shadow-sm"
+            className="rounded-md"
             contentClassName="pt-1"
           >
             <div className="divide-y divide-border/50">
