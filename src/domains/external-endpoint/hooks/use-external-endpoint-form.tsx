@@ -204,16 +204,19 @@ export const useExternalEndpointForm = ({
           (route) =>
             route.targets.length > 1 &&
             route.targets.every((target) => (target.priority ?? 0) === 0) &&
-            route.targets.reduce((sum, target) => sum + (target.weight ?? 0), 0) !== 100,
+            route.targets.reduce(
+              (sum, target) => sum + (target.weight ?? 0),
+              0,
+            ) !== 100,
         );
         if (invalid) {
-          form.setError("spec.model_routes", { type: "validate", message: "Weighted route targets must total 100%." });
+          form.setError("spec.model_routes", {
+            type: "validate",
+            message: "Weighted route targets must total 100%.",
+          });
           return;
         }
       }
-      const previousProviderNames = (v.spec.upstreams ?? []).map(
-        (upstream, index) => upstream.name || `provider-${index + 1}`,
-      );
       const providerNames = (v.spec.upstreams ?? []).map(
         (upstream, index) => upstream.name || `provider-${index + 1}`,
       );
@@ -221,25 +224,19 @@ export const useExternalEndpointForm = ({
         ...upstream,
         name: providerNames[index],
       }));
-      const hasModelRoutes = v.spec.model_routes !== undefined;
-      const routes = hasModelRoutes
-        ? v.spec.model_routes
-        : routesFromLegacy(v.spec.upstreams);
-      if (hasModelRoutes) {
-        v.spec.model_mapping = {};
-        v.spec.model_routes = routes.map((route) => ({
-          ...route,
-          targets: route.targets.map((target) => ({
-            ...target,
-            upstream: (() => {
-              const index = previousProviderNames.indexOf(target.upstream);
-              return index >= 0 ? providerNames[index] : target.upstream;
-            })(),
-            priority: target.priority ?? 0,
-            weight: target.weight || 1,
-          })),
-        }));
-      }
+      const routes = v.spec.model_routes ?? routesFromLegacy(v.spec.upstreams);
+      v.spec.upstreams = v.spec.upstreams.map((upstream) => ({
+        ...upstream,
+        model_mapping: {},
+      }));
+      v.spec.model_routes = routes.map((route) => ({
+        ...route,
+        targets: route.targets.map((target) => ({
+          ...target,
+          priority: target.priority ?? 0,
+          weight: target.weight || 1,
+        })),
+      }));
     }
     return originalOnFinish(v);
   };
@@ -329,6 +326,38 @@ export const useExternalEndpointForm = ({
                     {...form.register(`spec.upstreams.${index}.name`)}
                   >
                     <Input
+                      onChange={(event) => {
+                        const currentUpstreams =
+                          form.getValues("spec.upstreams");
+                        const previousName =
+                          currentUpstreams[index].name ||
+                          `provider-${index + 1}`;
+                        const nextName =
+                          event.target.value || `provider-${index + 1}`;
+                        const routes =
+                          form.getValues("spec.model_routes") ??
+                          routesFromLegacy(currentUpstreams);
+                        form.setValue(
+                          "spec.model_routes",
+                          routes.map((route) => ({
+                            ...route,
+                            targets: route.targets.map((target) =>
+                              target.upstream === previousName
+                                ? { ...target, upstream: nextName }
+                                : target,
+                            ),
+                          })),
+                          { shouldDirty: true },
+                        );
+                        form.setValue(
+                          `spec.upstreams.${index}.name`,
+                          event.target.value,
+                          {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          },
+                        );
+                      }}
                       placeholder={t(
                         "external_endpoints.placeholders.provider",
                       )}

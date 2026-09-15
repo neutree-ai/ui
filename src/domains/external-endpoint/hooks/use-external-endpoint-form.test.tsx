@@ -1,4 +1,11 @@
-import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
@@ -152,26 +159,42 @@ describe("route weight submission validation", () => {
   it.each([
     { name: "fixed", weights: [1], priorities: [0], allowed: true },
     { name: "priority", weights: [1, 1], priorities: [0, 1], allowed: true },
-    { name: "weighted 70/30", weights: [70, 30], priorities: [0, 0], allowed: true },
-    { name: "weighted 70/70", weights: [70, 70], priorities: [0, 0], allowed: false },
+    {
+      name: "weighted 70/30",
+      weights: [70, 30],
+      priorities: [0, 0],
+      allowed: true,
+    },
+    {
+      name: "weighted 70/70",
+      weights: [70, 70],
+      priorities: [0, 0],
+      allowed: false,
+    },
   ])("validates $name", async ({ weights, priorities, allowed }) => {
     submitEndpoint.mockClear();
-    const { result } = renderHook(() => useExternalEndpointForm({ action: "create" }));
+    const { result } = renderHook(() =>
+      useExternalEndpointForm({ action: "create" }),
+    );
     const values = result.current.form.getValues();
-    values.spec.model_routes = [{
-      model: "chat",
-      targets: weights.map((weight, index) => ({
-        upstream: `provider-${index + 1}`,
-        upstream_model: "chat",
-        priority: priorities[index],
-        weight,
-      })),
-    }];
+    values.spec.model_routes = [
+      {
+        model: "chat",
+        targets: weights.map((weight, index) => ({
+          upstream: `provider-${index + 1}`,
+          upstream_model: "chat",
+          priority: priorities[index],
+          weight,
+        })),
+      },
+    ];
     await act(async () => {
       await result.current.form.refineCore.onFinish(values);
     });
     expect(submitEndpoint).toHaveBeenCalledTimes(allowed ? 1 : 0);
-    expect(result.current.form.getFieldState("spec.model_routes").invalid).toBe(!allowed);
+    expect(result.current.form.getFieldState("spec.model_routes").invalid).toBe(
+      !allowed,
+    );
   });
 });
 
@@ -188,6 +211,102 @@ function CreateForm() {
     </FormProvider>
   );
 }
+
+describe("provider rename and legacy migration", () => {
+  it.each(["create", "edit"] as const)(
+    "preserves renamed references on %s submission",
+    async (action) => {
+      submitEndpoint.mockClear();
+      const routes = ["chat", "other"].map((model) => ({
+        model,
+        targets: [{ upstream: "provider-1", upstream_model: model, weight: 1 }],
+      }));
+      function Harness() {
+        const { form, specFields } = useExternalEndpointForm({ action });
+        React.useEffect(() => {
+          form.reset({
+            ...form.getValues(),
+            metadata: { name: "rename-test", workspace: "default" },
+            spec: {
+              timeout: 60000,
+              upstreams: [
+                {
+                  name: action === "create" ? undefined : "provider-1",
+                  upstream: { url: "https://example.com" },
+                  model_mapping: { chat: "chat" },
+                  models: null,
+                },
+              ],
+              model_routes: routes,
+            },
+          });
+        }, [form.reset, form.getValues]);
+        return (
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(form.refineCore.onFinish)}>
+              {specFields}
+              <button type="submit">Save test endpoint</button>
+            </form>
+          </FormProvider>
+        );
+      }
+      const view = render(<Harness />);
+      const input = view.getByPlaceholderText(
+        "external_endpoints.placeholders.provider",
+      );
+      fireEvent.change(input, { target: { value: "openai" } });
+      fireEvent.change(input, { target: { value: "renamed-again" } });
+      fireEvent.click(view.getByText("Save test endpoint"));
+      await waitFor(() => expect(submitEndpoint).toHaveBeenCalledOnce());
+      const spec = submitEndpoint.mock.calls[0][0].spec;
+      expect(spec.upstreams[0].name).toBe("renamed-again");
+      expect(
+        spec.model_routes.map(
+          (route: { targets: { upstream: string }[] }) =>
+            route.targets[0].upstream,
+        ),
+      ).toEqual(["renamed-again", "renamed-again"]);
+      expect(spec.upstreams[0].model_mapping).toEqual({});
+      view.unmount();
+    },
+  );
+
+  it.each([
+    { name: "legacy", modelRoutes: undefined },
+    { name: "deleted", modelRoutes: [] },
+  ])(
+    "migrates legacy routes without restoring explicit deletions ($name)",
+    async ({ modelRoutes }) => {
+      submitEndpoint.mockClear();
+      const { result } = renderHook(() =>
+        useExternalEndpointForm({ action: "edit" }),
+      );
+      const values = result.current.form.getValues();
+      values.spec.upstreams = [
+        { name: "a", model_mapping: { chat: "actual-chat" }, models: null },
+        {
+          name: "b",
+          model_mapping: { embedding: "actual-embedding" },
+          models: null,
+        },
+      ];
+      values.spec.model_routes = modelRoutes;
+      await act(async () => {
+        await result.current.form.refineCore.onFinish(values);
+      });
+      const spec = submitEndpoint.mock.calls[0][0].spec;
+      expect(
+        spec.upstreams.map(
+          (upstream: { model_mapping: unknown }) => upstream.model_mapping,
+        ),
+      ).toEqual([{}, {}]);
+      expect(spec).not.toHaveProperty("model_mapping");
+      expect(
+        spec.model_routes.map((route: { model: string }) => route.model),
+      ).toEqual(modelRoutes === undefined ? ["chat", "embedding"] : []);
+    },
+  );
+});
 
 function EditForm() {
   const { form, metadataFields, specFields } = useExternalEndpointForm({
