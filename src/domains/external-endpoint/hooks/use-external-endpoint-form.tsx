@@ -199,6 +199,9 @@ export const useExternalEndpointForm = ({
       );
     }
     if (v.spec) {
+      const previousProviderNames = (v.spec.upstreams ?? []).map(
+        (upstream, index) => upstream.name || `provider-${index + 1}`,
+      );
       const providerNames = (v.spec.upstreams ?? []).map(
         (upstream, index) => upstream.name || `provider-${index + 1}`,
       );
@@ -214,6 +217,10 @@ export const useExternalEndpointForm = ({
           ...route,
           targets: route.targets.map((target) => ({
             ...target,
+            upstream: (() => {
+              const index = previousProviderNames.indexOf(target.upstream);
+              return index >= 0 ? providerNames[index] : target.upstream;
+            })(),
             priority: target.priority ?? 0,
             weight: target.weight || 1,
           })),
