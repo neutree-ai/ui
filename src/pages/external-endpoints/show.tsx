@@ -79,16 +79,17 @@ export const ExternalEndpointsShow = () => {
       <div className="mt-4 space-y-4">
         <ShowPage.Section
           title={t("external_endpoints.sections.configuration")}
-          framed={false}
-          className="rounded-md bg-background p-5 shadow-sm"
-          contentClassName="pt-0"
+          className="rounded-md border-0 bg-background shadow-sm"
+          contentClassName="pt-1"
         >
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-            <ShowPage.Row title={t("external_endpoints.fields.timeout")}>
-              {formatTimeout(record.spec?.timeout)}
-            </ShowPage.Row>
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(140px,0.35fr)_minmax(0,1fr)]">
+            <div className="max-w-[180px]">
+              <ShowPage.Row title={t("external_endpoints.fields.timeout")}>
+                {formatTimeout(record.spec?.timeout)}
+              </ShowPage.Row>
+            </div>
             {record.status?.service_url && (
-              <div className="lg:col-span-3">
+              <div className="min-w-0">
                 <ServiceUrls serviceUrl={record.status.service_url} />
               </div>
             )}
@@ -98,9 +99,8 @@ export const ExternalEndpointsShow = () => {
         {record.spec?.model_routes?.length ? (
           <ShowPage.Section
             title={t("external_endpoints.sections.virtualModels")}
-            framed={false}
-            className="rounded-md bg-background p-5 shadow-sm"
-            contentClassName="pt-0"
+            className="rounded-md border-0 bg-background shadow-sm"
+            contentClassName="pt-1"
           >
             <div className="space-y-3">
               {record.spec.model_routes.map((route) => (
@@ -160,16 +160,15 @@ export const ExternalEndpointsShow = () => {
         {upstreams.length > 0 && (
           <ShowPage.Section
             title={t("external_endpoints.sections.modelServices")}
-            framed={false}
-            className="rounded-md bg-background p-5 shadow-sm"
-            contentClassName="pt-0"
+            className="rounded-md border-0 bg-background shadow-sm"
+            contentClassName="pt-1"
           >
-            <div className="space-y-3">
+            <div className="divide-y divide-border/50">
               {upstreams.map((upstream, index) => {
                 const upstreamStatus = upstreamStatuses[index];
 
                 return (
-                  <div key={index} className="rounded-md bg-muted/35 p-4">
+                  <div key={index} className="py-4 first:pt-1 last:pb-1">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-base font-semibold text-foreground">
@@ -192,7 +191,7 @@ export const ExternalEndpointsShow = () => {
                     {upstreamStatus?.phase === "Failed" && (
                       <FailedUpstreamAlert status={upstreamStatus} />
                     )}
-                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="mt-3 grid max-w-3xl grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(140px,0.6fr)]">
                       <ShowPage.Row
                         title={
                           upstream.endpoint_ref
