@@ -1240,6 +1240,7 @@
 			"models": "Models",
 			"unavailableModels": "Unavailable models:",
 			"type": "Type"
+			,"maxInflightRequests": "Max concurrent requests"
 		},
 		"sections": {
 			"configuration": "Configuration",
@@ -1259,6 +1260,7 @@
 			"virtualModel": "Model name exposed to clients",
 			"selectProvider": "Select a model service",
 			"provider": "e.g. local-vllm"
+			,"maxInflightRequests": "Maximum concurrent requests"
 		},
 		"options": {
 			"chatCompletions": "Chat Completions",

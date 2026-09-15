@@ -157,8 +157,8 @@ export default function ModelRouteEditor({
                         };
                         update(index, { ...route, targets });
                       }}
-                      aria-label="Max inflight requests"
-                      placeholder="Max concurrent requests"
+                      aria-label={t("external_endpoints.fields.maxInflightRequests")}
+                      placeholder={t("external_endpoints.placeholders.maxInflightRequests")}
                       className="w-36"
                     />
                     <div className="flex items-center gap-2">
