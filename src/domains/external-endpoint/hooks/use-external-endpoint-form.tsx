@@ -43,17 +43,21 @@ function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
   const routes: ModelRoute[] = [];
   const seen = new Set<string>();
   for (const [index, upstream] of upstreams.entries()) {
-    for (const [model, upstreamModel] of Object.entries(upstream.model_mapping ?? {})) {
+    for (const [model, upstreamModel] of Object.entries(
+      upstream.model_mapping ?? {},
+    )) {
       if (seen.has(model)) continue;
       seen.add(model);
       routes.push({
         model,
-        targets: [{
-          upstream: upstream.name || `provider-${index + 1}`,
-          upstream_model: upstreamModel,
-          priority: 0,
-          weight: 1,
-        }],
+        targets: [
+          {
+            upstream: upstream.name || `provider-${index + 1}`,
+            upstream_model: upstreamModel,
+            priority: 0,
+            weight: 1,
+          },
+        ],
       });
     }
   }
@@ -205,14 +209,15 @@ export const useExternalEndpointForm = ({
       const routes = v.spec.model_routes?.length
         ? v.spec.model_routes
         : routesFromLegacy(v.spec.upstreams);
-      if (routes.length > 0) v.spec.model_routes = routes.map((route) => ({
-        ...route,
-        targets: route.targets.map((target) => ({
-          ...target,
-          priority: target.priority ?? 0,
-          weight: target.weight || 1,
-        })),
-      }));
+      if (routes.length > 0)
+        v.spec.model_routes = routes.map((route) => ({
+          ...route,
+          targets: route.targets.map((target) => ({
+            ...target,
+            priority: target.priority ?? 0,
+            weight: target.weight || 1,
+          })),
+        }));
     }
     return originalOnFinish(v);
   };
@@ -302,7 +307,9 @@ export const useExternalEndpointForm = ({
                     {...form.register(`spec.upstreams.${index}.name`)}
                   >
                     <Input
-                      placeholder={t("external_endpoints.placeholders.provider")}
+                      placeholder={t(
+                        "external_endpoints.placeholders.provider",
+                      )}
                     />
                   </FormFieldGroup>
                   <FormFieldGroup
