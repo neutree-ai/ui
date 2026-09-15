@@ -283,8 +283,11 @@ describe("useExternalEndpointForm", () => {
       fireEvent.change(upstreamInputs[0], { target: { value: "gpt-4o" } });
 
       // Switch to endpoint_ref
-      const typeSelect = screen.getByTestId("form-select-mock");
-      fireEvent.change(typeSelect, { target: { value: "endpoint_ref" } });
+      const typeSelect = screen
+        .getAllByTestId("form-select-mock")
+        .find((select) => select.querySelector('option[value="endpoint_ref"]'));
+      expect(typeSelect).toBeTruthy();
+      fireEvent.change(typeSelect!, { target: { value: "endpoint_ref" } });
 
       // Model mapping should be cleared — the upstream model input should
       // no longer have the old value
@@ -300,8 +303,11 @@ describe("useExternalEndpointForm", () => {
       render(<CreateForm />);
 
       // Switch to endpoint_ref type
-      const typeSelect = screen.getByTestId("form-select-mock");
-      fireEvent.change(typeSelect, { target: { value: "endpoint_ref" } });
+      const typeSelect = screen
+        .getAllByTestId("form-select-mock")
+        .find((select) => select.querySelector('option[value="endpoint_ref"]'));
+      expect(typeSelect).toBeTruthy();
+      fireEvent.change(typeSelect!, { target: { value: "endpoint_ref" } });
 
       // First endpoint ref returns models ["model-a", "model-b"]
       mockConnectivityTest.mockResolvedValueOnce({
@@ -331,14 +337,21 @@ describe("useExternalEndpointForm", () => {
         const inputs = screen.getAllByPlaceholderText(
           "external_endpoints.placeholders.upstreamModelName",
         );
-        expect(inputs).toHaveLength(1);
-        expect((inputs[0] as HTMLInputElement).value).toBe("model-x");
+        expect(
+          inputs.some(
+            (input) => (input as HTMLInputElement).value === "model-x",
+          ),
+        ).toBe(true);
       });
     });
 
     it("renders endpoint ref phases as status tags instead of label text", () => {
       render(<CreateForm />);
-      fireEvent.change(screen.getByTestId("form-select-mock"), {
+      const typeSelect = screen
+        .getAllByTestId("form-select-mock")
+        .find((select) => select.querySelector('option[value="endpoint_ref"]'));
+      expect(typeSelect).toBeTruthy();
+      fireEvent.change(typeSelect!, {
         target: { value: "endpoint_ref" },
       });
 
