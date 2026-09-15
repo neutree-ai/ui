@@ -109,7 +109,7 @@ export default function ModelRouteEditor({
                 return (
                   <div
                     key={targetIndex}
-                    className="grid grid-cols-[1fr_1fr_auto] gap-3 xs:grid-cols-1"
+                    className="grid grid-cols-[1fr_1fr_auto_auto] gap-3 xs:grid-cols-1"
                   >
                     <FormSelect
                       value={target.upstream}
@@ -139,6 +139,25 @@ export default function ModelRouteEditor({
                       aria-label={t(
                         "external_endpoints.fields.upstreamModelName",
                       )}
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={target.max_inflight_requests ?? 0}
+                      onChange={(event) => {
+                        const targets = route.targets.slice();
+                        targets[targetIndex] = {
+                          ...target,
+                          max_inflight_requests: Math.max(
+                            0,
+                            Number(event.target.value) || 0,
+                          ),
+                        };
+                        update(index, { ...route, targets });
+                      }}
+                      aria-label="Max inflight requests"
+                      placeholder="Max concurrent requests"
+                      className="w-36"
                     />
                     <div className="flex items-center gap-2">
                       {mode === "weighted" && (
