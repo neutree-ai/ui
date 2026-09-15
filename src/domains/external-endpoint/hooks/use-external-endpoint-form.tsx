@@ -468,7 +468,7 @@ export const useExternalEndpointForm = ({
                           {...form}
                           name={`spec.upstreams.${index}.auth.credential`}
                           label={t("external_endpoints.fields.credential")}
-                          className="col-span-2 xs:col-span-1"
+                          className="col-span-3 xs:col-span-1"
                           description={
                             isEdit
                               ? t("common.messages.leaveEmptyToKeepValue")
@@ -482,7 +482,7 @@ export const useExternalEndpointForm = ({
                             )}
                           />
                         </FormFieldGroup>
-                        <div className="col-span-2 flex items-center xs:col-span-1">
+                        <div className="col-span-1 flex items-end xs:col-span-1 xs:items-start">
                           <TestConnectivityButton
                             testing={connectivity.testingMap[index] ?? false}
                             result={connectivity.resultMap[index] ?? null}
@@ -561,7 +561,7 @@ export const useExternalEndpointForm = ({
                             }}
                           />
                         </FormFieldGroup>
-                        <div className="col-span-2 flex items-center xs:col-span-1">
+                        <div className="col-span-1 flex items-end xs:col-span-1 xs:items-start">
                           <TestConnectivityButton
                             testing={connectivity.testingMap[index] ?? false}
                             result={connectivity.resultMap[index] ?? null}
