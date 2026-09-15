@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
+
+const submitEndpoint = vi.hoisted(() => vi.fn());
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -21,7 +23,7 @@ vi.mock("@refinedev/react-hook-form", async () => {
       const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
       return {
         ...rhf.useForm(rhfOpts),
-        refineCore: { onFinish: vi.fn() },
+        refineCore: { onFinish: submitEndpoint },
       };
     },
   };
@@ -145,6 +147,33 @@ vi.mock("@/foundation/components/FormCombobox", () => ({
 }));
 
 import { useExternalEndpointForm } from "./use-external-endpoint-form";
+
+describe("route weight submission validation", () => {
+  it.each([
+    { name: "fixed", weights: [1], priorities: [0], allowed: true },
+    { name: "priority", weights: [1, 1], priorities: [0, 1], allowed: true },
+    { name: "weighted 70/30", weights: [70, 30], priorities: [0, 0], allowed: true },
+    { name: "weighted 70/70", weights: [70, 70], priorities: [0, 0], allowed: false },
+  ])("validates $name", async ({ weights, priorities, allowed }) => {
+    submitEndpoint.mockClear();
+    const { result } = renderHook(() => useExternalEndpointForm({ action: "create" }));
+    const values = result.current.form.getValues();
+    values.spec.model_routes = [{
+      model: "chat",
+      targets: weights.map((weight, index) => ({
+        upstream: `provider-${index + 1}`,
+        upstream_model: "chat",
+        priority: priorities[index],
+        weight,
+      })),
+    }];
+    await act(async () => {
+      await result.current.form.refineCore.onFinish(values);
+    });
+    expect(submitEndpoint).toHaveBeenCalledTimes(allowed ? 1 : 0);
+    expect(result.current.form.getFieldState("spec.model_routes").invalid).toBe(!allowed);
+  });
+});
 
 function CreateForm() {
   const { form, metadataFields, specFields } = useExternalEndpointForm({
