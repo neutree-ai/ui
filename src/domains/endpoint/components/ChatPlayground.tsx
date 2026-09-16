@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import {
   type ToolSet,
   tool,
 } from "ai";
-import { Image, Trash2, X } from "lucide-react";
+import { ArrowDown, Image, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
 import {
@@ -30,6 +30,7 @@ import {
   type ChatContentPart,
   filterMessagesForApi,
 } from "@/domains/endpoint/lib/chat-helpers";
+import { useStickToBottom } from "@/foundation/hooks/use-stick-to-bottom";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 
@@ -139,18 +140,9 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
 
   const { models } = usePlaygroundModels(endpoint, form);
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-
+  const { scrollRef, contentRef, isAtBottom, scrollToBottom } =
+    useStickToBottom();
   const selectedModel = form.watch("model");
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: trigger scroll on messages change
-  useEffect(() => {
-    const outerEl = scrollAreaRef.current?.parentElement;
-    outerEl?.scrollTo({
-      top: outerEl?.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages]);
 
   // Cleanup image URLs on unmount
   useEffect(() => {
@@ -182,6 +174,9 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setSelectedImages([]);
+    // Sending is an intent to read what comes next, so the view returns to the
+    // conversation's end even if the reader had scrolled up.
+    scrollToBottom();
 
     // Build messages array with system message if present
     const messagesToSend: ModelMessage[] = [];
@@ -362,102 +357,118 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-card">
             <div className="flex-1 relative overflow-hidden">
-              <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-                {messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center text-muted-foreground">
-                      <p className="text-lg mb-2">
-                        {t("components.playground.chat.chatPlaceholder")}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  messages.map((message, index) => (
-                    <div key={index} className="mb-4">
-                      <div className="font-bold text-sm uppercase dark:text-gray-300">
-                        {message.role}
+              <ScrollArea className="h-full p-4" viewportRef={scrollRef}>
+                <div ref={contentRef}>
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center text-muted-foreground">
+                        <p className="text-lg mb-2">
+                          {t("components.playground.chat.chatPlaceholder")}
+                        </p>
                       </div>
-                      <div className="markdown-body dark:bg-transparent dark:text-gray-200 rounded-md p-2">
-                        {typeof message.content === "string" && (
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        )}
-                        {typeof message.content !== "string" &&
-                          (message.content as ChatContentPart[]).map(
-                            (part, partIndex) => {
-                              if (part.type === "text") {
-                                return (
-                                  <ReactMarkdown key={partIndex}>
-                                    {part.text}
-                                  </ReactMarkdown>
-                                );
-                              }
-                              if (part.type === "image") {
-                                return (
-                                  <img
-                                    key={partIndex}
-                                    src={part.image as string}
-                                    alt={t(
-                                      "components.playground.chat.uploadImages",
-                                    )}
-                                    className="max-w-xs max-h-48 object-contain rounded border mt-2"
-                                  />
-                                );
-                              }
-                              if (part.type === "tool-call") {
-                                return (
-                                  <pre
-                                    className="whitespace-pre-wrap break-words mt-1 rounded-md"
-                                    key={partIndex}
-                                  >
-                                    <code>
-                                      {part.toolName}(
-                                      {JSON.stringify(part.input, null, 2)})
-                                    </code>
-                                  </pre>
-                                );
-                              }
-                              // Handle custom error type
-                              if (part.type === "error") {
-                                return (
-                                  <div
-                                    key={partIndex}
-                                    className="bg-destructive/10 border border-destructive/20 text-destructive rounded-md p-3 mt-2"
-                                  >
-                                    <div className="font-medium text-sm mb-1">
-                                      {t("components.playground.chat.error")}
-                                    </div>
-                                    <div className="text-sm whitespace-pre-wrap">
-                                      {part.error}
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              // Handle reasoning type
-                              if (part.type === "reasoning") {
-                                return (
-                                  <div
-                                    key={partIndex}
-                                    className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500 rounded-md p-1 my-1"
-                                  >
-                                    <div className="font-medium text-sm mb-1 flex items-center">
-                                      {t(
-                                        "components.playground.chat.reasoning",
-                                      ) || "Reasoning"}
-                                    </div>
-                                    <div className="text-sm whitespace-pre-wrap">
-                                      {part.reasoning}
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            },
+                    </div>
+                  ) : (
+                    messages.map((message, index) => (
+                      <div key={index} className="mb-4">
+                        <div className="font-bold text-sm uppercase dark:text-gray-300">
+                          {message.role}
+                        </div>
+                        <div className="markdown-body dark:bg-transparent dark:text-gray-200 rounded-md p-2">
+                          {typeof message.content === "string" && (
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
                           )}
+                          {typeof message.content !== "string" &&
+                            (message.content as ChatContentPart[]).map(
+                              (part, partIndex) => {
+                                if (part.type === "text") {
+                                  return (
+                                    <ReactMarkdown key={partIndex}>
+                                      {part.text}
+                                    </ReactMarkdown>
+                                  );
+                                }
+                                if (part.type === "image") {
+                                  return (
+                                    <img
+                                      key={partIndex}
+                                      src={part.image as string}
+                                      alt={t(
+                                        "components.playground.chat.uploadImages",
+                                      )}
+                                      className="max-w-xs max-h-48 object-contain rounded border mt-2"
+                                    />
+                                  );
+                                }
+                                if (part.type === "tool-call") {
+                                  return (
+                                    <pre
+                                      className="whitespace-pre-wrap break-words mt-1 rounded-md"
+                                      key={partIndex}
+                                    >
+                                      <code>
+                                        {part.toolName}(
+                                        {JSON.stringify(part.input, null, 2)})
+                                      </code>
+                                    </pre>
+                                  );
+                                }
+                                // Handle custom error type
+                                if (part.type === "error") {
+                                  return (
+                                    <div
+                                      key={partIndex}
+                                      className="bg-destructive/10 border border-destructive/20 text-destructive rounded-md p-3 mt-2"
+                                    >
+                                      <div className="font-medium text-sm mb-1">
+                                        {t("components.playground.chat.error")}
+                                      </div>
+                                      <div className="text-sm whitespace-pre-wrap">
+                                        {part.error}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                // Handle reasoning type
+                                if (part.type === "reasoning") {
+                                  return (
+                                    <div
+                                      key={partIndex}
+                                      className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500 rounded-md p-1 my-1"
+                                    >
+                                      <div className="font-medium text-sm mb-1 flex items-center">
+                                        {t(
+                                          "components.playground.chat.reasoning",
+                                        ) || "Reasoning"}
+                                      </div>
+                                      <div className="text-sm whitespace-pre-wrap">
+                                        {part.reasoning}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              },
+                            )}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </ScrollArea>
+              {!isAtBottom && (
+                <div className="absolute bottom-4 right-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => scrollToBottom("smooth")}
+                    className="bg-background/80 backdrop-blur"
+                    aria-label={t("components.playground.chat.jumpToLatest")}
+                  >
+                    <ArrowDown className="w-4 h-4 mr-1" />
+                    {t("components.playground.chat.latest")}
+                  </Button>
+                </div>
+              )}
               {messages.length > 0 && (
                 <div className="absolute top-4 right-4">
                   <Button
