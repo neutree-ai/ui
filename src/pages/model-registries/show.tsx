@@ -1,5 +1,5 @@
 import { useParsed, useShow } from "@refinedev/core";
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ModelDetailDrawer } from "@/domains/model-registry/components/ModelDetailDrawer";
 import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
@@ -14,15 +14,21 @@ import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestamp
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { MODEL_REGISTRY_SELECT } from "@/foundation/lib/model-registry-visibility";
-
-type SelectedModel = { model: string; version: string };
+import {
+  type RegistryModelSelection,
+  readRegistryModelSelection,
+  writeRegistryModelSelection,
+} from "@/foundation/lib/registry-model-link";
 
 export const ModelRegistriesShow = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
-  const [selectedModel, setSelectedModel] = useState<SelectedModel | null>(
-    null,
-  );
+  // The open model lives in the URL so another page can link straight to it —
+  // the endpoint detail page does (NEU-736).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedModel = readRegistryModelSelection(searchParams);
+  const setSelectedModel = (selection: RegistryModelSelection | null) =>
+    setSearchParams((prev) => writeRegistryModelSelection(prev, selection));
   const {
     query: { data, isLoading },
   } = useShow<ModelRegistry>({

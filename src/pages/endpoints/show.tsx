@@ -223,7 +223,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             description={
               <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
                 <ShowPage.Meta label={t("common.fields.model")}>
-                  <EndpointModel model={record.spec.model} />
+                  <EndpointModel
+                    model={record.spec.model}
+                    workspace={record.metadata.workspace}
+                  />
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.task")}>
                   <ModelTask task={record.spec.model?.task} />

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -105,7 +106,27 @@ vi.mock("@/foundation/components/MetadataTimestampMeta", () => ({
   MetadataTimestampMeta: () => <span>Created:3 days ago</span>,
 }));
 
-import { ModelRegistriesShow } from "./show";
+import { ModelRegistriesShow as Page } from "./show";
+
+let currentSearch = "";
+const SearchSpy = () => {
+  currentSearch = useLocation().search;
+  return null;
+};
+
+const renderAt = (entry = "/") =>
+  render(
+    <MemoryRouter initialEntries={[entry]}>
+      <Page />
+      <SearchSpy />
+    </MemoryRouter>,
+  );
+
+const ModelRegistriesShow = () => (
+  <MemoryRouter>
+    <Page />
+  </MemoryRouter>
+);
 
 const registry = {
   metadata: { name: "shared-nfs" },
@@ -183,7 +204,7 @@ describe("ModelRegistriesShow", () => {
   });
 
   it("opens a selected model in the drawer and clears it on close", () => {
-    render(<ModelRegistriesShow />);
+    renderAt();
 
     expect(screen.getByTestId("model-drawer").dataset.open).toBe("false");
     fireEvent.click(screen.getByText("Select model"));
@@ -191,8 +212,20 @@ describe("ModelRegistriesShow", () => {
     expect(screen.getByTestId("model-drawer").textContent).toContain(
       "org/model",
     );
+    expect(currentSearch).toBe("?model=org%2Fmodel&version=revision-1");
 
     fireEvent.click(screen.getByText("Close drawer"));
     expect(screen.getByTestId("model-drawer").dataset.open).toBe("false");
+    expect(currentSearch).toBe("");
+  });
+
+  // NEU-736: the endpoint detail page links to a model through the URL.
+  it("opens the model the URL names", () => {
+    renderAt("/?model=org%2Fmodel");
+
+    expect(screen.getByTestId("model-drawer").dataset.open).toBe("true");
+    expect(screen.getByTestId("model-drawer").textContent).toContain(
+      "org/model",
+    );
   });
 });
