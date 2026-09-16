@@ -30,7 +30,7 @@ function targetFor(
   return {
     ...target,
     priority: mode === "priority" ? index : 0,
-    weight: mode === "weighted" ? target.weight : 1,
+    weight: mode === "weighted" ? target.weight : undefined,
   };
 }
 
@@ -112,16 +112,15 @@ export default function ModelRouteEditor({
       targets = [
         targets[0],
         mode === "weighted"
-          ? { upstream: "", upstream_model: "", weight: 50 }
+          ? { upstream: "", upstream_model: "" }
           : { upstream: "", upstream_model: "", priority: 1 },
       ];
-      if (mode === "weighted") targets[0] = { ...targets[0], weight: 50 };
     }
 
     const normalized = targets.map((target, targetIndex) => ({
       ...target,
       priority: mode === "priority" ? targetIndex : 0,
-      weight: mode === "weighted" ? target.weight || 1 : 1,
+      weight: mode === "weighted" ? target.weight : undefined,
     }));
     const key = routeIds.current[index];
     setModes((current) => ({ ...current, [key]: mode }));
@@ -219,15 +218,19 @@ export default function ModelRouteEditor({
                       min={1}
                       max={100}
                       value={target.weight ?? ""}
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const rawValue = event.target.value;
                         updateTarget(index, targetIndex, {
                           ...target,
-                          weight: Math.min(
-                            100,
-                            Math.max(1, Number(event.target.value) || 1),
-                          ),
-                        })
-                      }
+                          // Keep the input empty while the user replaces the
+                          // current value; coercing it to 1 here resets the
+                          // controlled input before the next keystroke.
+                          weight:
+                            rawValue === ""
+                              ? undefined
+                              : Math.min(100, Math.max(1, Number(rawValue))),
+                        });
+                      }}
                       onBlur={commitDraft}
                       aria-label={t("external_endpoints.fields.weight")}
                       placeholder={t("external_endpoints.placeholders.weight")}
@@ -293,7 +296,7 @@ export default function ModelRouteEditor({
                             upstream: "",
                             upstream_model: "",
                             ...(mode === "weighted"
-                              ? { weight: 1 }
+                              ? {}
                               : {
                                   priority:
                                     Math.max(
