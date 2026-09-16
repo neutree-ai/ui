@@ -25,7 +25,7 @@ export default function EndpointModel({
   }
 
   return (
-    <span className="inline-flex items-center">
+    <span className="inline-flex items-center gap-1">
       <ShowButton
         recordItemId={model.registry}
         meta={{ workspace }}
