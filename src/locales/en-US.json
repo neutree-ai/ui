@@ -1248,7 +1248,7 @@
 		"sections": {
 			"configuration": "Configuration",
 			"upstream": "Upstream {{index}}",
-			"modelService": "Model Service {{index}}",
+			"modelService": "Upstream Channel {{index}}",
 			"virtualModels": "Virtual Models",
 			"modelServices": "Upstream Channels",
 			"primaryTargets": "Primary list",
@@ -1299,7 +1299,7 @@
 			"addTarget": "Add model service",
 			"addPrimaryTarget": "Add primary",
 			"addFallbackTarget": "Add fallback",
-			"removeTarget": "Remove model service",
+			"removeTarget": "Remove upstream channel",
 			"removeVirtualModel": "Remove virtual model",
 			"quickCreateUpstream": "Quickly create upstream channel"
 		},
