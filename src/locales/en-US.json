@@ -1221,6 +1221,9 @@
 		"title": "External Endpoints",
 		"create": "Create External Endpoint",
 		"fields": {
+			"provider": "Model Service",
+			"virtualModel": "Virtual Model",
+			"weight": "Weight",
 			"serviceUrl": "Service URL",
 			"routeType": "Route Type",
 			"timeout": "Timeout",
@@ -1236,11 +1239,20 @@
 			"upstreamModelName": "Upstream Model Name",
 			"models": "Models",
 			"unavailableModels": "Unavailable models:",
-			"type": "Type"
+			"type": "Type",
+			"role": "Role",
+			"unlimited": "Unlimited",
+			"routingMode": "Routing mode",
+			"maxInflightRequests": "Max concurrent requests"
 		},
 		"sections": {
 			"configuration": "Configuration",
-			"upstream": "Upstream {{index}}"
+			"upstream": "Upstream {{index}}",
+			"modelService": "Model Service {{index}}",
+			"virtualModels": "Virtual Models",
+			"modelServices": "Model Services",
+			"primaryTargets": "Primary list",
+			"fallbackTargets": "Fallback list"
 		},
 		"placeholders": {
 			"endpointName": "External Endpoint Name",
@@ -1251,19 +1263,39 @@
 			"credential": "Bearer token for the upstream",
 			"timeout": "e.g. 60",
 			"exposedModelName": "Model name exposed to clients",
-			"upstreamModelName": "Model name at upstream provider"
+			"upstreamModelName": "Model name at upstream provider",
+			"virtualModel": "Model name exposed to clients",
+			"selectProvider": "Select a model service",
+			"provider": "e.g. local-vllm",
+			"weight": "1-100%",
+			"maxInflightRequests": "Maximum concurrent requests"
 		},
 		"options": {
 			"chatCompletions": "Chat Completions",
 			"upstreamTypeExternal": "External",
 			"upstreamTypeEndpointRef": "Endpoint Ref",
-			"upstreamTypeMixed": "Mixed"
+			"upstreamTypeMixed": "Mixed",
+			"fixedRouting": "Fixed direct",
+			"priorityRouting": "Primary and fallback",
+			"weightedRouting": "Weighted split",
+			"fixedRole": "Fixed",
+			"primaryRole": "Primary",
+			"fallbackRole": "Fallback",
+			"noRetry": "Do not switch on failure",
+			"retryProvider": "Switch provider on failure"
 		},
 		"actions": {
 			"addUpstream": "Add Upstream",
+			"addModelService": "Add model service",
 			"addModelMapping": "Add Model Mapping",
 			"removeUpstream": "Remove Upstream",
-			"removeModelMapping": "Remove"
+			"removeModelMapping": "Remove",
+			"addVirtualModel": "Add virtual model",
+			"addTarget": "Add model service",
+			"addPrimaryTarget": "Add primary",
+			"addFallbackTarget": "Add fallback",
+			"removeTarget": "Remove model service",
+			"removeVirtualModel": "Remove virtual model"
 		},
 		"messages": {
 			"curlExample": "Curl Example",
@@ -1277,7 +1309,8 @@
 			"testConnectivityTesting": "Testing...",
 			"testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
 			"testConnectivityFailed": "Connection failed: {{error}}",
-			"testConnectivityError": "Request error: {{error}}"
+			"testConnectivityError": "Request error: {{error}}",
+			"noFallbackTargets": "No fallback model services"
 		},
 		"validation": {
 			"nameRequired": "Name is required",
@@ -1288,7 +1321,11 @@
 			"upstreamModelRequired": "Upstream model name is required",
 			"duplicateModelKey": "Duplicate model key in this upstream",
 			"unknownUpstreamModel": "This model was not found in the upstream's model list",
-			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream"
+			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream",
+			"virtualModelRequired": "Virtual model name is required",
+			"routeTargetRequired": "Select a model service and enter its upstream model",
+			"weightTotal": "Weighted targets must total 100%",
+			"duplicateProvider": "Model service names must be unique"
 		}
 	},
 	"user_profiles": {

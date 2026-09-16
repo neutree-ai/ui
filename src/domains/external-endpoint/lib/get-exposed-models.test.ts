@@ -48,4 +48,13 @@ describe("getExposedModels", () => {
     const spec = makeSpec([makeUpstream({}), makeUpstream({ "model-x": "x" })]);
     expect(getExposedModels(spec)).toEqual(["model-x"]);
   });
+
+  it("uses virtual model routes when configured", () => {
+    const spec = makeSpec([]);
+    spec.model_routes = [
+      { model: "company-chat", targets: [] },
+      { model: "company-embed", targets: [] },
+    ];
+    expect(getExposedModels(spec)).toEqual(["company-chat", "company-embed"]);
+  });
 });
