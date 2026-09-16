@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useStickToBottom } from "@/foundation/hooks/use-stick-to-bottom";
 
@@ -65,7 +65,9 @@ function makeScrollable(
   });
   element.scrollTo = ((options: ScrollToOptions) => {
     scrollToCalls.push({ top: options.top ?? 0, behavior: options.behavior });
-    top = Math.min(Math.max(0, options.top ?? 0), maxTop());
+    // A smooth scroll does not arrive here: it travels over several frames,
+    // which the test drives through `userScrollsTo`. Instant pins assign
+    // scrollTop directly and never call this.
   }) as typeof element.scrollTo;
 
   return {
@@ -221,8 +223,11 @@ describe("useStickToBottom", () => {
     act(() => api.scrollToBottom("smooth"));
     // The animation travels back down; those events are the browser's, not the
     // reader's, and must not switch following off mid-flight.
-    act(() => scrollerElement.dispatchEvent(new Event("scroll")));
+    act(() => scroller.userScrollsTo(300));
+    expect(isAtBottom()).toBe(true);
+    expect(scroller.scrollToCalls).toHaveLength(1);
 
+    act(() => scroller.userScrollsTo(600));
     expect(isAtBottom()).toBe(true);
   });
 
@@ -236,5 +241,40 @@ describe("useStickToBottom", () => {
     act(() => scroller.userScrollsTo(50));
 
     expect(isAtBottom()).toBe(false);
+  });
+
+  it("does nothing when there is no scroll container", () => {
+    const WithoutRefs = () => {
+      const stick = useStickToBottom();
+      return (
+        <div data-at-bottom={String(stick.isAtBottom)}>
+          <button type="button" onClick={() => stick.scrollToBottom()}>
+            latest
+          </button>
+        </div>
+      );
+    };
+
+    // No ref is ever attached: the mount effects and the listeners have nothing
+    // to work with, and neither an explicit jump nor a render may throw or
+    // claim the reader left the bottom.
+    render(<WithoutRefs />);
+    fireEvent.click(screen.getByRole("button", { name: "latest" }));
+
+    expect(
+      document
+        .querySelector("[data-at-bottom]")
+        ?.getAttribute("data-at-bottom"),
+    ).toBe("true");
+  });
+
+  it("still answers scrollToBottom where ResizeObserver does not exist", () => {
+    vi.unstubAllGlobals();
+    const { api, scrollerElement } = renderHarness();
+    const scroller = makeScrollable(scrollerElement, 400, 1000);
+
+    act(() => api.scrollToBottom());
+
+    expect(scroller.scrollTop()).toBe(600);
   });
 });
