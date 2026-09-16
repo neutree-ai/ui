@@ -38,12 +38,14 @@ type Props = {
   value?: ModelRoute[];
   onChange?: (value: ModelRoute[]) => void;
   upstreams: UpstreamSpec[];
+  onQuickCreate?: (routeIndex: number, targetIndex: number) => void;
 };
 
 export default function ModelRouteEditor({
   value = [],
   onChange,
   upstreams,
+  onQuickCreate,
 }: Props) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<ModelRoute[]>(value);
@@ -160,7 +162,21 @@ export default function ModelRouteEditor({
             >
               <FormSelect
                 value={target.upstream}
-                onChange={(next) =>
+                options={[
+                  ...providers,
+                  {
+                    label: `+ ${t("external_endpoints.actions.quickCreateUpstream")}`,
+                    value: "__quick_create_upstream__",
+                  },
+                ]}
+                placeholder={t(
+                  "external_endpoints.placeholders.selectProvider",
+                )}
+                onChange={(next) => {
+                  if (next === "__quick_create_upstream__") {
+                    onQuickCreate?.(index, targetIndex);
+                    return;
+                  }
                   commit(
                     draft.map((item, itemIndex) =>
                       itemIndex === index
@@ -174,12 +190,8 @@ export default function ModelRouteEditor({
                           }
                         : item,
                     ),
-                  )
-                }
-                options={providers}
-                placeholder={t(
-                  "external_endpoints.placeholders.selectProvider",
-                )}
+                  );
+                }}
                 aria-label={t("external_endpoints.fields.provider")}
               />
               <Input

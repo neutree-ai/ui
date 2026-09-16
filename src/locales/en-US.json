@@ -1221,7 +1221,7 @@
 		"title": "External Endpoints",
 		"create": "Create External Endpoint",
 		"fields": {
-			"provider": "Model Service",
+			"provider": "Upstream Channel",
 			"virtualModel": "Virtual Model",
 			"weight": "Weight",
 			"serviceUrl": "Service URL",
@@ -1250,7 +1250,7 @@
 			"upstream": "Upstream {{index}}",
 			"modelService": "Model Service {{index}}",
 			"virtualModels": "Virtual Models",
-			"modelServices": "Model Services",
+			"modelServices": "Upstream Channels",
 			"primaryTargets": "Primary list",
 			"fallbackTargets": "Fallback list"
 		},
@@ -1258,6 +1258,7 @@
 			"endpointName": "External Endpoint Name",
 			"selectRouteType": "Select Route Type",
 			"selectEndpointRef": "Select an internal endpoint",
+			"endpointRef": "e.g. smartdddd",
 			"upstreamUrl": "e.g. https://api.openai.com/v1",
 			"selectAuthType": "Select Auth Type",
 			"credential": "Bearer token for the upstream",
@@ -1269,6 +1270,10 @@
 			"provider": "e.g. local-vllm",
 			"weight": "1-100%",
 			"maxInflightRequests": "Maximum concurrent requests"
+		},
+		"quickCreate": {
+			"title": "Quickly create upstream channel",
+			"description": "Create a channel here and it will be selected for this route automatically."
 		},
 		"options": {
 			"chatCompletions": "Chat Completions",
@@ -1295,7 +1300,8 @@
 			"addPrimaryTarget": "Add primary",
 			"addFallbackTarget": "Add fallback",
 			"removeTarget": "Remove model service",
-			"removeVirtualModel": "Remove virtual model"
+			"removeVirtualModel": "Remove virtual model",
+			"quickCreateUpstream": "Quickly create upstream channel"
 		},
 		"messages": {
 			"curlExample": "Curl Example",
