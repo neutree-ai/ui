@@ -30,6 +30,21 @@ vi.mock("@/foundation/lib/api", () => ({
   clientPostgrest: { headers: {} },
 }));
 
+/** Lets a test send a message carrying a part the renderer does not know. */
+const helpers = vi.hoisted(() => ({ unknownPart: false }));
+vi.mock("@/domains/endpoint/lib/chat-helpers", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/domains/endpoint/lib/chat-helpers")
+  >("@/domains/endpoint/lib/chat-helpers");
+  return {
+    ...actual,
+    buildUserMessageContent: (text: string, images: string[]) =>
+      helpers.unknownPart
+        ? [{ type: "audio", audio: "ignored" }]
+        : actual.buildUserMessageContent(text, images),
+  };
+});
+
 // The sidebar is untouched by this behaviour: its sliders and pickers are
 // Radix widgets that measure themselves, which jsdom cannot do. Keeping them
 // out leaves the transcript itself — the part that was changed — on real code.
@@ -191,6 +206,7 @@ const latestButton = () =>
 
 beforeEach(() => {
   observers = [];
+  helpers.unknownPart = false;
   stream.deltas = [
     { type: "text-delta", text: "The answer " },
     { type: "text-delta", text: "arrives in pieces." },
@@ -266,6 +282,19 @@ describe("ChatPlayground transcript", () => {
     // The thumbnail in the composer is a blob URL; the message itself carries
     // the data URI, which is the one the transcript has to render.
     expect(document.querySelector('img[src^="data:image/png"]')).not.toBeNull();
+  });
+
+  it("renders nothing for a content part it does not know", async () => {
+    helpers.unknownPart = true;
+    renderPlayground();
+
+    await sendMessage("a message the client wrote oddly");
+
+    // The turn is still there and still counted; the unknown part contributes
+    // no markup rather than taking the transcript down.
+    expect(
+      screen.getByTestId("transcript").querySelectorAll(".mb-4").length,
+    ).toBeGreaterThan(0);
   });
 
   it("follows the end of the conversation as the answer streams", async () => {

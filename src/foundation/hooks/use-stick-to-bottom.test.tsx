@@ -277,4 +277,42 @@ describe("useStickToBottom", () => {
 
     expect(scroller.scrollTop()).toBe(600);
   });
+
+  it("ignores a scroll from a container that has gone away", () => {
+    let api: ReturnType<typeof useStickToBottom> | null = null;
+    let detached: HTMLDivElement | null = null;
+
+    const WithOptionalScroller = ({ show }: { show: boolean }) => {
+      const stick = useStickToBottom();
+      api = stick;
+      return (
+        <div>
+          {show ? (
+            <div
+              data-testid="scroller"
+              ref={(node) => {
+                stick.scrollRef.current = node;
+                // Keep the last real node: React calls this with null when the
+                // element leaves, which is the moment under test.
+                if (node) detached = node;
+              }}
+            />
+          ) : null}
+          <div ref={stick.contentRef} />
+        </div>
+      );
+    };
+
+    const { rerender } = render(<WithOptionalScroller show />);
+    expect(api).not.toBeNull();
+
+    // The transcript leaves the page; React clears the ref, and the listener
+    // stays attached to the element that went with it.
+    rerender(<WithOptionalScroller show={false} />);
+    expect(() =>
+      (detached as unknown as HTMLDivElement).dispatchEvent(
+        new Event("scroll"),
+      ),
+    ).not.toThrow();
+  });
 });
