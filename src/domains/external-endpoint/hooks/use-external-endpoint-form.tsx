@@ -117,7 +117,7 @@ export const useExternalEndpointForm = ({
             ? [
                 {
                   model: "",
-                  targets: [{ upstream: "provider-1", upstream_model: "" }],
+                  targets: [{ upstream: "", upstream_model: "" }],
                 },
               ]
             : undefined,

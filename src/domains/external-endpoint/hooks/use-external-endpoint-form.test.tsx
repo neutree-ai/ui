@@ -101,6 +101,7 @@ vi.mock("@/foundation/components/FormSelect", () => ({
         value={props.value}
         onChange={(e) => props.onChange?.(e.target.value)}
       >
+        {!props.value && <option value="">placeholder</option>}
         {props.options?.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -361,7 +362,7 @@ function EditForm() {
 
 describe("useExternalEndpointForm", () => {
   describe("create mode", () => {
-    it("starts with an editable fixed route to the first model service", async () => {
+    it("starts with an editable fixed route without a fake provider selection", async () => {
       render(<CreateForm />);
 
       await waitFor(() =>
@@ -380,7 +381,7 @@ describe("useExternalEndpointForm", () => {
         selects.find((select) =>
           select.querySelector('option[value="provider-1"]'),
         ),
-      ).toHaveProperty("value", "provider-1");
+      ).toHaveProperty("value", "");
 
       fireEvent.click(
         screen.getByRole("button", {
