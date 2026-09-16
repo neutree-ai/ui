@@ -361,6 +361,43 @@ function EditForm() {
 
 describe("useExternalEndpointForm", () => {
   describe("create mode", () => {
+    it("starts with an editable fixed route to the first model service", async () => {
+      render(<CreateForm />);
+
+      await waitFor(() =>
+        expect(
+          screen.getByLabelText("external_endpoints.fields.virtualModel"),
+        ).toHaveProperty("value", ""),
+      );
+      expect(
+        screen.getByLabelText("external_endpoints.fields.upstreamModelName"),
+      ).toHaveProperty("value", "");
+      const selects = screen.getAllByTestId("form-select-mock");
+      expect(
+        selects.find((select) => select.querySelector('option[value="fixed"]')),
+      ).toHaveProperty("value", "fixed");
+      expect(
+        selects.find((select) =>
+          select.querySelector('option[value="provider-1"]'),
+        ),
+      ).toHaveProperty("value", "provider-1");
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "external_endpoints.actions.removeVirtualModel",
+        }),
+      );
+      expect(
+        screen.queryByLabelText("external_endpoints.fields.virtualModel"),
+      ).toBeNull();
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addVirtualModel"),
+      );
+      expect(
+        screen.getAllByLabelText("external_endpoints.fields.virtualModel"),
+      ).toHaveLength(1);
+    });
+
     it("renders name, upstream type, upstream URL, and credential fields", () => {
       render(<CreateForm />);
       expect(screen.getByLabelText("common.fields.name")).toBeTruthy();
@@ -511,6 +548,15 @@ describe("useExternalEndpointForm", () => {
   });
 
   describe("edit mode", () => {
+    it("does not initialize a new route before existing data loads", () => {
+      const { result } = renderHook(() =>
+        useExternalEndpointForm({ action: "edit" }),
+      );
+      expect(
+        result.current.form.getValues("spec.model_routes"),
+      ).toBeUndefined();
+    });
+
     it("disables name field", () => {
       render(<EditForm />);
       const nameInput = screen.getByLabelText("common.fields.name");

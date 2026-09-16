@@ -112,6 +112,15 @@ export const useExternalEndpointForm = ({
         route_type: "/v1/chat/completions",
         timeout: 60000,
         upstreams: action === "create" ? [{ ...emptyExternalUpstream }] : [],
+        model_routes:
+          action === "create"
+            ? [
+                {
+                  model: "",
+                  targets: [{ upstream: "provider-1", upstream_model: "" }],
+                },
+              ]
+            : undefined,
       },
     },
     refineCoreProps: {
