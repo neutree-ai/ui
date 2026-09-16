@@ -123,6 +123,7 @@ export const useExternalEndpointForm = ({
             ? [
                 {
                   model: "",
+                  strategy: "fixed",
                   targets: [{ upstream: "", upstream_model: "" }],
                 },
               ]
@@ -323,6 +324,13 @@ export const useExternalEndpointForm = ({
       }));
       v.spec.model_routes = routes.map((route) => ({
         ...route,
+        strategy:
+          route.strategy ??
+          (route.targets.length <= 1
+            ? "fixed"
+            : route.targets.some((target) => (target.priority ?? 0) !== 0)
+              ? "priority"
+              : "weighted"),
         targets: route.targets.map((target) => ({
           ...target,
           priority: target.priority ?? 0,

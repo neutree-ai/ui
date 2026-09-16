@@ -33,6 +33,7 @@ export type ModelRouteTarget = {
 
 export type ModelRoute = {
   model: string;
+  strategy?: "fixed" | "priority" | "weighted";
   retryable_conditions?: string[];
   max_attempts?: number;
   targets: ModelRouteTarget[];

@@ -12,6 +12,7 @@ const sameRoutes = (left: ModelRoute[], right: ModelRoute[]) =>
   JSON.stringify(left) === JSON.stringify(right);
 
 function modeOf(route: ModelRoute): Mode {
+  if (route.strategy) return route.strategy;
   if (route.targets.length <= 1) return "fixed";
   return route.targets.some((target) => (target.priority ?? 0) !== 0)
     ? "priority"
@@ -126,7 +127,9 @@ export default function ModelRouteEditor({
     setModes((current) => ({ ...current, [key]: mode }));
     commit(
       draft.map((item, itemIndex) =>
-        itemIndex === index ? { ...route, targets: normalized } : item,
+        itemIndex === index
+          ? { ...route, strategy: mode, targets: normalized }
+          : item,
       ),
     );
   };
@@ -446,6 +449,7 @@ export default function ModelRouteEditor({
             ...draft,
             {
               model: "",
+              strategy: "fixed",
               targets: [
                 { upstream: providers[0]?.value || "", upstream_model: "" },
               ],
