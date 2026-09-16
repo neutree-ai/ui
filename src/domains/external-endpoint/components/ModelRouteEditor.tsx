@@ -12,11 +12,7 @@ const sameRoutes = (left: ModelRoute[], right: ModelRoute[]) =>
   JSON.stringify(left) === JSON.stringify(right);
 
 function modeOf(route: ModelRoute): Mode {
-  if (route.strategy) return route.strategy;
-  if (route.targets.length <= 1) return "fixed";
-  return route.targets.some((target) => (target.priority ?? 0) !== 0)
-    ? "priority"
-    : "weighted";
+  return route.strategy;
 }
 
 function targetFor(

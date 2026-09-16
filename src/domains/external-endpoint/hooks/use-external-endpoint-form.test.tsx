@@ -181,6 +181,12 @@ describe("route weight submission validation", () => {
     values.spec.model_routes = [
       {
         model: "chat",
+        strategy:
+          weights.length === 1
+            ? "fixed"
+            : priorities.some((priority) => priority !== 0)
+              ? "priority"
+              : "weighted",
         targets: weights.map((weight, index) => ({
           upstream: `provider-${index + 1}`,
           upstream_model: "chat",
@@ -223,7 +229,29 @@ describe("route weight submission validation", () => {
     values.spec.model_routes = [
       {
         model: "chat",
+        strategy: "fixed",
         targets: [{ upstream: "same", upstream_model: "chat", weight: 100 }],
+      },
+    ];
+    await act(async () => {
+      await result.current.form.refineCore.onFinish(values);
+    });
+    expect(submitEndpoint).not.toHaveBeenCalled();
+    expect(result.current.form.getFieldState("spec.model_routes").invalid).toBe(
+      true,
+    );
+  });
+
+  it("rejects routes without an explicit strategy", async () => {
+    submitEndpoint.mockClear();
+    const { result } = renderHook(() =>
+      useExternalEndpointForm({ action: "create" }),
+    );
+    const values = result.current.form.getValues();
+    values.spec.model_routes = [
+      {
+        model: "chat",
+        targets: [{ upstream: "provider-1", upstream_model: "chat" }],
       },
     ];
     await act(async () => {
@@ -261,6 +289,7 @@ describe("provider rename and legacy migration", () => {
       submitEndpoint.mockClear();
       const routes = ["chat", "other"].map((model) => ({
         model,
+        strategy: "fixed" as const,
         targets: [{ upstream: "provider-1", upstream_model: model, weight: 1 }],
       }));
       function Harness() {

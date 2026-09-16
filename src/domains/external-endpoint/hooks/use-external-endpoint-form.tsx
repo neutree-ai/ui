@@ -278,6 +278,7 @@ export const useExternalEndpointForm = ({
       if (v.spec.model_routes !== undefined) {
         const seenModels = new Set<string>();
         const invalid = v.spec.model_routes.find((route) => {
+          if (!route.strategy) return true;
           if (!route.model.trim() || seenModels.has(route.model.trim())) {
             return true;
           }
@@ -324,13 +325,7 @@ export const useExternalEndpointForm = ({
       }));
       v.spec.model_routes = routes.map((route) => ({
         ...route,
-        strategy:
-          route.strategy ??
-          (route.targets.length <= 1
-            ? "fixed"
-            : route.targets.some((target) => (target.priority ?? 0) !== 0)
-              ? "priority"
-              : "weighted"),
+        strategy: route.strategy,
         targets: route.targets.map((target) => ({
           ...target,
           priority: target.priority ?? 0,

@@ -52,8 +52,8 @@ describe("getExposedModels", () => {
   it("uses virtual model routes when configured", () => {
     const spec = makeSpec([]);
     spec.model_routes = [
-      { model: "company-chat", targets: [] },
-      { model: "company-embed", targets: [] },
+      { model: "company-chat", strategy: "fixed", targets: [] },
+      { model: "company-embed", strategy: "fixed", targets: [] },
     ];
     expect(getExposedModels(spec)).toEqual(["company-chat", "company-embed"]);
   });
