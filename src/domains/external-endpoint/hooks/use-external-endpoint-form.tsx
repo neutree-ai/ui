@@ -541,7 +541,7 @@ export const useExternalEndpointForm = ({
                           {...form}
                           name={`spec.upstreams.${index}.auth.credential`}
                           label={t("external_endpoints.fields.credential")}
-                          className="col-span-3 xs:col-span-1"
+                          className="col-span-4 xs:col-span-1"
                           description={
                             isEdit
                               ? t("common.messages.leaveEmptyToKeepValue")
@@ -555,7 +555,7 @@ export const useExternalEndpointForm = ({
                             )}
                           />
                         </FormFieldGroup>
-                        <div className="col-span-1 flex items-end xs:col-span-1 xs:items-start">
+                        <div className="col-span-4 mt-3 flex justify-start">
                           <TestConnectivityButton
                             testing={connectivity.testingMap[index] ?? false}
                             result={connectivity.resultMap[index] ?? null}
@@ -601,7 +601,7 @@ export const useExternalEndpointForm = ({
                           {...form}
                           name={`spec.upstreams.${index}.endpoint_ref`}
                           label={t("external_endpoints.fields.endpointRef")}
-                          className="col-span-3 xs:col-span-1"
+                          className="col-span-4 xs:col-span-1"
                         >
                           <FormCombobox
                             placeholder={t(
@@ -634,7 +634,7 @@ export const useExternalEndpointForm = ({
                             }}
                           />
                         </FormFieldGroup>
-                        <div className="col-span-1 flex items-end xs:col-span-1 xs:items-start">
+                        <div className="col-span-4 mt-3 flex justify-start">
                           <TestConnectivityButton
                             testing={connectivity.testingMap[index] ?? false}
                             result={connectivity.resultMap[index] ?? null}
