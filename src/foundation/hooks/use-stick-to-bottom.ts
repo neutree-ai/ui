@@ -3,10 +3,16 @@ import { isScrolledToBottom } from "@/foundation/lib/stick-to-bottom";
 
 type ScrollToBottomBehavior = "auto" | "smooth";
 
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/**
+ * Written as statements rather than one `&&` chain: every line here is a
+ * decision the hook makes, and each is expected to be exercised — in a
+ * document without `matchMedia`, and in one that answers either way.
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  if (typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 /**
  * Keeps a scroll container at its end while content grows, unless the reader

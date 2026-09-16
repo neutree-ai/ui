@@ -278,6 +278,37 @@ describe("useStickToBottom", () => {
     expect(scroller.scrollTop()).toBe(600);
   });
 
+  it("jumps instantly where the reader asked for less motion", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("prefers-reduced-motion"),
+      media: query,
+    }));
+    const { api, scrollerElement } = renderHarness();
+    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    contentGrows();
+    act(() => scroller.userScrollsTo(100));
+
+    act(() => api.scrollToBottom("smooth"));
+
+    expect(scroller.scrollToCalls).toHaveLength(0);
+    expect(scroller.scrollTop()).toBe(600);
+  });
+
+  it("animates where the reader has no motion preference", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: false,
+      media: query,
+    }));
+    const { api, scrollerElement } = renderHarness();
+    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    contentGrows();
+    act(() => scroller.userScrollsTo(100));
+
+    act(() => api.scrollToBottom("smooth"));
+
+    expect(scroller.scrollToCalls).toHaveLength(1);
+  });
+
   it("ignores a scroll from a container that has gone away", () => {
     let api: ReturnType<typeof useStickToBottom> | null = null;
     let detached: HTMLDivElement | null = null;
