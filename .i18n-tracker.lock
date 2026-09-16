@@ -21,7 +21,7 @@
   "src/pages/model-registries/create.tsx": "c2ce0d519c85a63cbff51df48d8453bd",
   "src/pages/model-registries/edit.tsx": "0f8edeacc4f79e9814958f468a96fb87",
   "src/pages/model-registries/list.tsx": "9a2390c87f7284ad5b133b75fd64cd15",
-  "src/pages/model-registries/show.tsx": "3d623369b202eafe5fbbc275e66fdb30",
+  "src/pages/model-registries/show.tsx": "f97a91c19279feabf6194b15b7aa16bf",
   "src/pages/model-catalogs/list.tsx": "c605c392cb13b47c389ff17fa2828478",
   "src/pages/model-catalogs/show.tsx": "0851b0568347ede9b210dddcb9ad0d00",
   "src/pages/image-registries/create.tsx": "5c916d2cd7f7367dbf5ba7297639f711",
@@ -413,6 +413,8 @@
   "src/domains/model-catalog/components/CatalogYamlEditor.tsx": "fb11382e48877cbfa38d200ed2513633",
   "src/foundation/components/InfoHint.tsx": "8e904dedae4bc761cc4c7bcbad2705ba",
   "src/foundation/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38",
+  "src/foundation/lib/middle-truncate.ts": "3c82129e02c91890e0f5e0a6a53fac4c",
+  "src/domains/model-registry/components/RegistryUrl.tsx": "74809b55508cd1fad67d7afc9c826307",
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
   "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991"
 }

@@ -5,6 +5,7 @@ import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegist
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import { RegistryAvailabilityNotice } from "@/domains/model-registry/components/RegistryAvailabilityNotice";
 import { RegistryModelsTable } from "@/domains/model-registry/components/RegistryModelsTable";
+import { RegistryUrl } from "@/domains/model-registry/components/RegistryUrl";
 import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
 import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning";
 import type { ModelRegistry } from "@/domains/model-registry/types";
@@ -66,6 +67,9 @@ export const ModelRegistriesShow = () => {
             </ShowPage.Meta>
             <ShowPage.Meta label={t("model_registries.fields.visibility")}>
               <RegistryVisibility visibility={record.visibility} />
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("model_registries.fields.url")}>
+              <RegistryUrl url={record.spec.url} />
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
