@@ -254,19 +254,26 @@ export default function ModelRouteEditor({
             </div>
           );
         };
-        const addTarget = (atStart = false) =>
+        const primaryTargetIndices = route.targets
+          .map((target, targetIndex) =>
+            (target.priority ?? 0) === 0 ? targetIndex : -1,
+          )
+          .filter((targetIndex) => targetIndex >= 0);
+        const fallbackTargetIndices = route.targets
+          .map((target, targetIndex) =>
+            (target.priority ?? 0) > 0 ? targetIndex : -1,
+          )
+          .filter((targetIndex) => targetIndex >= 0);
+        const addTarget = (primary = false) =>
           commit(
             draft.map((item, itemIndex) =>
               itemIndex === index
                 ? {
                     ...item,
-                    targets: atStart
+                    targets: primary
                       ? [
+                          ...item.targets,
                           { upstream: "", upstream_model: "", priority: 0 },
-                          ...item.targets.map((target, targetIndex) => ({
-                            ...target,
-                            priority: targetIndex + 1,
-                          })),
                         ]
                       : [
                           ...item.targets,
@@ -275,7 +282,15 @@ export default function ModelRouteEditor({
                             upstream_model: "",
                             ...(mode === "weighted"
                               ? { weight: 1 }
-                              : { priority: item.targets.length }),
+                              : {
+                                  priority:
+                                    Math.max(
+                                      0,
+                                      ...item.targets.map(
+                                        (target) => target.priority ?? 0,
+                                      ),
+                                    ) + 1,
+                                }),
                           },
                         ],
                   }
@@ -355,7 +370,11 @@ export default function ModelRouteEditor({
                       {t("external_endpoints.actions.addPrimaryTarget")}
                     </Button>
                   </div>
-                  {targetRow(0)}
+                  <div className="space-y-3">
+                    {primaryTargetIndices.map((targetIndex) =>
+                      targetRow(targetIndex),
+                    )}
+                  </div>
                 </section>
                 <section className="space-y-3 border-t border-border/50 pt-4">
                   <div className="flex items-center justify-between gap-3">
@@ -372,11 +391,11 @@ export default function ModelRouteEditor({
                       {t("external_endpoints.actions.addFallbackTarget")}
                     </Button>
                   </div>
-                  {route.targets.length > 1 ? (
+                  {fallbackTargetIndices.length > 0 ? (
                     <div className="space-y-3">
-                      {route.targets
-                        .slice(1)
-                        .map((_, targetIndex) => targetRow(targetIndex + 1))}
+                      {fallbackTargetIndices.map((targetIndex) =>
+                        targetRow(targetIndex),
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
