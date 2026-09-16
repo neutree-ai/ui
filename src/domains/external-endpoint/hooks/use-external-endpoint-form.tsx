@@ -117,7 +117,7 @@ export const useExternalEndpointForm = ({
       spec: {
         route_type: "/v1/chat/completions",
         timeout: 60000,
-        upstreams: action === "create" ? [{ ...emptyExternalUpstream }] : [],
+        upstreams: [],
         model_routes:
           action === "create"
             ? [

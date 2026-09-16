@@ -252,11 +252,6 @@ function CreateForm() {
 
 function renderCreateForm() {
   render(<CreateForm />);
-  fireEvent.click(
-    screen.getByRole("button", {
-      name: /external_endpoints\.sections\.modelService/,
-    }),
-  );
 }
 
 describe("provider rename and legacy migration", () => {
@@ -401,7 +396,7 @@ describe("useExternalEndpointForm", () => {
         selects.find((select) =>
           select.querySelector('option[value="provider-1"]'),
         ),
-      ).toHaveProperty("value", "");
+      ).toBeUndefined();
 
       fireEvent.click(
         screen.getByRole("button", {
@@ -419,9 +414,18 @@ describe("useExternalEndpointForm", () => {
       ).toHaveLength(1);
     });
 
-    it("renders name, upstream type, upstream URL, and credential fields", () => {
+    it("does not create an upstream channel until the user adds one", () => {
       renderCreateForm();
       expect(screen.getByLabelText("common.fields.name")).toBeTruthy();
+      expect(screen.queryByTestId("field-_upstreamType_0")).toBeNull();
+      expect(
+        screen.queryByLabelText("external_endpoints.fields.upstreamUrl"),
+      ).toBeNull();
+
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addModelService"),
+      );
+
       expect(screen.getByTestId("field-_upstreamType_0")).toBeTruthy();
       expect(
         screen.getByLabelText("external_endpoints.fields.upstreamUrl"),
@@ -447,6 +451,9 @@ describe("useExternalEndpointForm", () => {
 
     it("shows validation error when upstream URL is empty", async () => {
       renderCreateForm();
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addModelService"),
+      );
       const urlInput = screen.getByLabelText(
         "external_endpoints.fields.upstreamUrl",
       );
@@ -475,13 +482,22 @@ describe("useExternalEndpointForm", () => {
     it("adds a new upstream when add button is clicked", async () => {
       renderCreateForm();
       expect(
-        screen.getAllByLabelText("external_endpoints.fields.upstreamUrl"),
-      ).toHaveLength(1);
+        screen.queryAllByLabelText("external_endpoints.fields.upstreamUrl"),
+      ).toHaveLength(0);
 
       fireEvent.click(
         screen.getByText("external_endpoints.actions.addModelService"),
       );
 
+      await waitFor(() => {
+        expect(
+          screen.getAllByLabelText("external_endpoints.fields.upstreamUrl"),
+        ).toHaveLength(1);
+      });
+
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addModelService"),
+      );
       await waitFor(() => {
         expect(
           screen.getAllByLabelText("external_endpoints.fields.upstreamUrl"),
@@ -491,7 +507,10 @@ describe("useExternalEndpointForm", () => {
 
     it("removes an upstream when remove button is clicked", async () => {
       renderCreateForm();
-      // Add a second upstream first
+      // Add two upstreams first so the first one can be removed.
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addModelService"),
+      );
       fireEvent.click(
         screen.getByText("external_endpoints.actions.addModelService"),
       );
@@ -518,6 +537,9 @@ describe("useExternalEndpointForm", () => {
 
     it("does not auto-create virtual models from connectivity results", async () => {
       renderCreateForm();
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addModelService"),
+      );
       const typeSelect = screen
         .getAllByTestId("form-select-mock")
         .find((select) => select.querySelector('option[value="endpoint_ref"]'));
@@ -537,6 +559,9 @@ describe("useExternalEndpointForm", () => {
 
     it("renders endpoint ref phases as status tags instead of label text", () => {
       renderCreateForm();
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addModelService"),
+      );
       const typeSelect = screen
         .getAllByTestId("form-select-mock")
         .find((select) => select.querySelector('option[value="endpoint_ref"]'));
@@ -552,8 +577,11 @@ describe("useExternalEndpointForm", () => {
       expect(screen.queryByText("endpoint-running (Running)")).toBeNull();
     });
 
-    it("default upstream renders external type fields", () => {
+    it("newly added upstream renders external type fields", () => {
       renderCreateForm();
+      fireEvent.click(
+        screen.getByText("external_endpoints.actions.addModelService"),
+      );
       // External type fields should be visible
       expect(
         screen.getByLabelText("external_endpoints.fields.upstreamUrl"),
