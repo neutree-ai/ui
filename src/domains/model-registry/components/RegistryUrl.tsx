@@ -27,9 +27,11 @@ const MAX_LENGTH = 44;
 /**
  * The registry's address, as the detail header shows it.
  *
- * A hub address is a link out; a file-system registry names a mount that only
- * a node can resolve, so it is rendered as a machine value rather than as
- * something a browser would try to open.
+ * A hub address is a link out — over plain http as well as https, since a
+ * self-hosted or mirrored hub is often reached over http on an internal
+ * network. A file-system registry names a mount that only a node can resolve,
+ * so it is rendered as a machine value rather than as something a browser
+ * would try to open.
  *
  * The value is copyable in both cases — the address is what a user pastes into
  * a CLI or a `neutree-cli` manifest, and reading it off the screen is not a

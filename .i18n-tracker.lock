@@ -414,5 +414,5 @@
   "src/foundation/components/InfoHint.tsx": "8e904dedae4bc761cc4c7bcbad2705ba",
   "src/foundation/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38",
   "src/foundation/lib/middle-truncate.ts": "3c82129e02c91890e0f5e0a6a53fac4c",
-  "src/domains/model-registry/components/RegistryUrl.tsx": "d4ee09313431817a82f1cf4d21f5b1e5"
+  "src/domains/model-registry/components/RegistryUrl.tsx": "74809b55508cd1fad67d7afc9c826307"
 }

@@ -30,6 +30,17 @@ describe("RegistryUrl", () => {
     expect(link.getAttribute("rel")).toBe("noreferrer");
   });
 
+  it("links a plain-http hub address out too", () => {
+    // A self-hosted or mirrored hub is often reached over http on an internal
+    // network; it is still an address a browser can open.
+    renderWithTooltip(<RegistryUrl url="http://hub.internal:8080" />);
+
+    const link = screen.getByRole("link", { name: "http://hub.internal:8080" });
+    expect(link.getAttribute("href")).toBe("http://hub.internal:8080");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noreferrer");
+  });
+
   it("renders a mount path as a value, not as something to open", () => {
     renderWithTooltip(<RegistryUrl url="nfs://10.24.8.31/srv/models" />);
 
