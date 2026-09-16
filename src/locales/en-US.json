@@ -1684,6 +1684,8 @@
 				"invalidJsonSchema": "Invalid JSON schema",
 				"toggleSidebar": "Toggle Sidebar",
 				"clearChat": "Clear Chat",
+				"latest": "Latest",
+				"jumpToLatest": "Jump to latest messages",
 				"modelParameters": "Model & Parameters",
 				"error": "Error",
 				"reasoning": "Thinking...",

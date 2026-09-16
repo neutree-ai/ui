@@ -5,16 +5,34 @@ import * as React from "react";
 
 import { cn } from "@/foundation/lib/utils";
 
+type ScrollAreaProps = React.ComponentPropsWithoutRef<
+  typeof ScrollAreaPrimitive.Root
+> & {
+  /**
+   * The element that scrolls, as opposed to the root that frames it.
+   *
+   * Radix puts the overflow on an inner viewport, so the root's ref cannot be
+   * scrolled or measured: anything that needs the scroll position — following
+   * the end of a log or a conversation — has to reach the viewport itself.
+   */
+  viewportRef?: React.Ref<
+    React.ElementRef<typeof ScrollAreaPrimitive.Viewport>
+  >;
+};
+
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
+  ScrollAreaProps
+>(({ className, children, viewportRef, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}
     className={cn("relative overflow-hidden", className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+    <ScrollAreaPrimitive.Viewport
+      ref={viewportRef}
+      className="h-full w-full rounded-[inherit]"
+    >
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />
