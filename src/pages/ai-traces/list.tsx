@@ -82,6 +82,10 @@ export const AITracesList = () => {
   const keys = keysData?.data ?? [];
   const keysById = new Map(keys.map((key) => [key.id, key]));
 
+  // What the closed control shows: the key's name, one line. The description
+  // stays in the list, where there is room for it.
+  const selectedKey = keys.find((key) => key.id === apiKeyId);
+
   const queryArgs = {
     workspace,
     endpoint_name: endpointName.trim() || undefined,
@@ -203,7 +207,22 @@ export const AITracesList = () => {
           onValueChange={(v) => setApiKeyId(v === "all" ? "" : v)}
         >
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t("ai_traces.filters.apiKey")} />
+            <SelectValue placeholder={t("ai_traces.filters.apiKey")}>
+              {/* The control always has a value — "all" is the no-filter
+                  entry — so what it shows is spelled out rather than left to
+                  the selected item's own markup, which is two lines tall. */}
+              <ApiKeyLabel
+                variant="inline"
+                name={
+                  apiKeyId
+                    ? (selectedKey?.metadata?.name ?? apiKeyId)
+                    : t("ai_traces.filters.allApiKeys")
+                }
+                displayName={
+                  apiKeyId ? selectedKey?.metadata?.display_name : null
+                }
+              />
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">

@@ -137,6 +137,10 @@ export const ModelUsageList = () => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [usageData]);
 
+  // What the closed control shows: the key's name, one line. The description
+  // stays in the list, where there is room for it.
+  const selectedKey = keyOptions.find((k) => k.id === apiKeyId);
+
   const filtered = useMemo(
     () =>
       usageData.filter(
@@ -408,7 +412,19 @@ export const ModelUsageList = () => {
           }}
         >
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t("model_usage.filters.apiKey")} />
+            <SelectValue placeholder={t("model_usage.filters.apiKey")}>
+              {/* The control always has a value — "all" is the no-filter
+                  entry — so what it shows is spelled out rather than left to
+                  the selected item's own markup, which is two lines tall. */}
+              <ApiKeyLabel
+                variant="inline"
+                name={
+                  apiKeyId
+                    ? (selectedKey?.name ?? apiKeyId)
+                    : t("model_usage.filters.allApiKeys")
+                }
+              />
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
