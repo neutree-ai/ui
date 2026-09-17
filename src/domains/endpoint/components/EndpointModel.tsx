@@ -11,7 +11,8 @@ export default function EndpointModel({
     return <span className="text-muted-foreground">-</span>;
   }
 
-  return (
-    <div>{model.version ? `${model.name}:${model.version}` : model.name}</div>
-  );
+  // The version is not shown: most are ids the registry generated, which mean
+  // nothing to a reader, and the registry page is where versions are told
+  // apart (NEU-771).
+  return <div>{model.name}</div>;
 }

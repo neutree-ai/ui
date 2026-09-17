@@ -43,6 +43,27 @@ describe("usePlaygroundModels", () => {
     ]);
   });
 
+  it("labels the endpoint's versioned model by name, keeping the id as value", () => {
+    mockModelsResponse([
+      { id: "qwen3-8b:64x4t4fokobpkusu" },
+      { id: "qwen3-8b:other" },
+      { id: "lora-adapter" },
+    ]);
+    const { result } = renderWithForm({
+      ...endpoint,
+      spec: { model: { name: "qwen3-8b", version: "64x4t4fokobpkusu" } },
+    });
+
+    expect(result.current.models).toEqual([
+      { label: "qwen3-8b", value: "qwen3-8b:64x4t4fokobpkusu" },
+      { label: "qwen3-8b:other", value: "qwen3-8b:other" },
+      { label: "lora-adapter", value: "lora-adapter" },
+    ]);
+    expect(result.current.form.getValues("model")).toBe(
+      "qwen3-8b:64x4t4fokobpkusu",
+    );
+  });
+
   it("returns empty models when API returns no data", () => {
     vi.mocked(useCustom).mockReturnValue({
       data: null,

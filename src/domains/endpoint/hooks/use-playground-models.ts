@@ -17,9 +17,17 @@ export function usePlaygroundModels(
     },
   });
 
+  // The engine serves the model as `name:version`, and that id is what a
+  // request has to send, so only the label drops the version — see
+  // EndpointModel.
+  const model = endpoint.spec?.model;
+  const labels: Record<string, string> = model?.version
+    ? { [`${model.name}:${model.version}`]: model.name }
+    : {};
+
   const models: ModelOption[] = (modelsData.data?.data?.data || []).map(
     (v: { id: string }) => ({
-      label: v.id,
+      label: labels[v.id] ?? v.id,
       value: v.id,
     }),
   );

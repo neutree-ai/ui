@@ -288,7 +288,10 @@ test.describe("model catalogs", () => {
       // Model
       const modelDt = showPage.locator("dt", { hasText: /^model$/i });
       await expect(modelDt).toBeVisible();
-      await expect(showPage.getByText("test-model-tr:3.0")).toBeVisible();
+      await expect(
+        showPage.getByText("test-model-tr", { exact: true }).first(),
+      ).toBeVisible();
+      await expect(showPage.getByText("test-model-tr:3.0")).toHaveCount(0);
 
       // Task
       const taskDt = showPage.locator("dt", { hasText: /^task$/i });

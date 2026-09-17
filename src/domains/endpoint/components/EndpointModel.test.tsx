@@ -6,18 +6,15 @@ import EndpointModel from "./EndpointModel";
 const model = (spec: Partial<ModelSpec>) => spec as ModelSpec;
 
 describe("EndpointModel", () => {
-  it("renders name and version when the endpoint names a model", () => {
+  it("renders the model name without its version", () => {
     render(
-      <EndpointModel model={model({ name: "qwen3-8b", version: "v1" })} />,
+      <EndpointModel
+        model={model({ name: "qwen3-8b", version: "64x4t4fokobpkusu" })}
+      />,
     );
 
-    expect(screen.getByText("qwen3-8b:v1")).toBeTruthy();
-  });
-
-  it("renders the bare name when there is no version", () => {
-    render(<EndpointModel model={model({ name: "qwen3-8b" })} />);
-
     expect(screen.getByText("qwen3-8b")).toBeTruthy();
+    expect(screen.queryByText(/64x4t4fokobpkusu/)).toBeNull();
   });
 
   // A Flex endpoint deploys with no model at all, so the API omits spec.model
