@@ -426,9 +426,9 @@ const ToggleChip = ({
     aria-pressed={active}
     onClick={onClick}
     className={cn(
-      "rounded-[var(--nt-radius-button)] px-2 py-0.5 text-xs font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)]",
+      "rounded-[var(--nt-radius-button)] px-2 py-0.5 text-xs font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] focus-visible:[outline:2px_solid_var(--nt-stroke-outstanding-base)] focus-visible:[outline-offset:2px]",
       active
-        ? "bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-primary)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] hover:bg-[var(--nt-fill-neutral-white)]"
+        ? "bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-primary)] [box-shadow:var(--nt-effect-button-shadow-push-button-ordinary)] hover:bg-[var(--nt-fill-neutral-white)]"
         : "text-[var(--nt-text-neutral-secondary)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)]",
     )}
   >

@@ -51,9 +51,9 @@ export function SegmentedControl<TValue extends string>({
               }
               aria-pressed={selected}
               className={cn(
-                "inline-flex h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--nt-radius-button)] px-2.5 text-sm font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)] disabled:pointer-events-none disabled:opacity-50",
+                "inline-flex h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--nt-radius-button)] px-2.5 text-sm font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus-visible:[outline:2px_solid_var(--nt-stroke-outstanding-base)] focus-visible:[outline-offset:2px] disabled:pointer-events-none disabled:opacity-50",
                 selected &&
-                  "bg-[var(--nt-fill-neutral-white)] font-semibold text-[var(--nt-text-colorful-outstanding)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] ring-1 ring-[var(--nt-stroke-outstanding-light)] hover:bg-[var(--nt-fill-neutral-white)] hover:text-[var(--nt-text-colorful-outstanding)]",
+                  "bg-[var(--nt-fill-neutral-white)] font-semibold text-[var(--nt-text-colorful-outstanding)] shadow-[shadow:var(--nt-effect-button-shadow-push-button-ordinary)] ring-1 ring-[var(--nt-stroke-outstanding-light)] hover:bg-[var(--nt-fill-neutral-white)] hover:text-[var(--nt-text-colorful-outstanding)]",
               )}
               disabled={item.disabled}
               onClick={() => onValueChange(item.value)}

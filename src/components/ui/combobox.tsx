@@ -112,7 +112,7 @@ export const Combobox = forwardRef<ElementRef<typeof Command>, ComboboxProps>(
         </PopoverTrigger>
         <PopoverContent className={cn("w-[400px] p-0", popoverClassName)}>
           <Command
-            className="border border-[var(--nt-stroke-neutral-trans-2)] shadow-[var(--nt-effect-menu-shadow-default)]"
+            className="border border-[var(--nt-stroke-neutral-trans-2)] [box-shadow:var(--nt-effect-menu-shadow-default)]"
             ref={ref}
             shouldFilter={shouldFilter}
           >

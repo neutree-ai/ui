@@ -46,7 +46,7 @@ export const RegistryUrl = ({ url }: { url: string }) => {
 
   const valueClassName = cn(
     "rounded-sm font-mono text-[13px] leading-6",
-    "focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)]",
+    "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
     isLink
       ? "text-[var(--nt-text-colorful-outstanding)]"
       : "text-[var(--nt-text-neutral-secondary)]",
