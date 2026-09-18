@@ -273,7 +273,7 @@ export const useExternalEndpointForm = ({
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
-    const v = values as ExternalEndpoint;
+    const v = { ...values, spec: { ...values.spec } } as ExternalEndpoint;
     if (v.spec?.upstreams) {
       v.spec.upstreams = cleanUpstreamsForSubmit(
         v.spec.upstreams,

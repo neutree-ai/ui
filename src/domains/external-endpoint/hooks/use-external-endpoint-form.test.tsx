@@ -1044,6 +1044,14 @@ describe("routing state regression", () => {
       "abc",
       "ab",
     ]);
+    // A failed API request leaves the editor mounted; retry must use the same references.
+    expect(
+      screen.getAllByRole("combobox", {
+        name: "external_endpoints.fields.provider",
+      })[0],
+    ).toHaveProperty("value", "a");
+    await submitRoutingForm();
+    expect(submitEndpoint).toHaveBeenCalledTimes(2);
   });
   it("keeps references stable when clearing a name and swapping channel names", async () => {
     cleanup();

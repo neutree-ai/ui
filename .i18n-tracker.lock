@@ -244,7 +244,7 @@
   "src/pages/external-endpoints/list.tsx": "06c460fbe05204b22ee371fe71c9b5e7",
   "src/pages/external-endpoints/show.tsx": "f62b7d256a78749b6fd53cc8c8ed7b7b",
   "src/domains/external-endpoint/types.ts": "5548ae3d670cdbdabd1508e7b6d691fb",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "43bab66005f2b6aaf85a83bbfeac3e47",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "3ecdbca12a6273eb645e39c4b5296846",
   "src/domains/external-endpoint/components/CurlExample.tsx": "f24ac9cf5fd5477963f7908423692798",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "ddcc260a2c5be44d29b82e5ec4435da7",
   "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "ff00668fe1ae4dec364d78df3b322bf5",
