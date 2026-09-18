@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { getRouteStrategyError } from "../lib/validate-route-strategy";
 import type { ModelRoute, ModelRouteTarget } from "../types";
 
 type Mode = "fixed" | "priority" | "weighted";
@@ -77,6 +78,8 @@ export default function ModelRouteEditor({
       ...target,
       priority: mode === "priority" ? targetIndex : 0,
       weight: mode === "weighted" ? target.weight : undefined,
+      max_inflight_requests:
+        mode === "weighted" ? undefined : target.max_inflight_requests,
     }));
     commit(
       value.map((item, itemIndex) =>
@@ -109,6 +112,7 @@ export default function ModelRouteEditor({
           (sum, target) => sum + (target.weight ?? 0),
           0,
         );
+        const strategyError = getRouteStrategyError(route);
         const weightTotalId = `${editorId}-${key}-weight-total`;
         const modelInputId = `${editorId}-${key}-model`;
         const strategyInputId = `${editorId}-${key}-strategy`;
@@ -259,10 +263,12 @@ export default function ModelRouteEditor({
                           <div className="relative">
                             <Input
                               type="number"
-                              aria-invalid={weightTotal !== 100}
+                              aria-invalid={!!strategyError}
                               aria-describedby={weightTotalId}
                               min={1}
                               max={100}
+                              step={1}
+                              required
                               value={target.weight ?? ""}
                               onChange={(event) =>
                                 updateTarget(index, targetIndex, {
@@ -270,13 +276,7 @@ export default function ModelRouteEditor({
                                   weight:
                                     event.target.value === ""
                                       ? undefined
-                                      : Math.min(
-                                          100,
-                                          Math.max(
-                                            1,
-                                            Number(event.target.value),
-                                          ),
-                                        ),
+                                      : event.target.valueAsNumber,
                                 })
                               }
                               aria-label={t(
@@ -331,7 +331,11 @@ export default function ModelRouteEditor({
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            disabled={route.targets.length <= 1}
+                            disabled={
+                              route.targets.length <= 1 ||
+                              (requireCapacity &&
+                                primaryTargetIndices.length <= 1)
+                            }
                             aria-label={t(
                               "external_endpoints.actions.removeTarget",
                             )}
@@ -469,8 +473,14 @@ export default function ModelRouteEditor({
                     t("external_endpoints.sections.primaryTargets"),
                     true,
                   )}
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {t("external_endpoints.messages.primaryCapacityRequired")}
+                  <p
+                    role={strategyError ? "alert" : undefined}
+                    className={`mt-1 text-xs ${strategyError ? "text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {t(
+                      strategyError ??
+                        "external_endpoints.messages.primaryCapacityRequired",
+                    )}
                   </p>
                   <Button
                     type="button"
@@ -531,15 +541,14 @@ export default function ModelRouteEditor({
                       id={weightTotalId}
                       role="status"
                       className={
-                        weightTotal === 100
+                        !strategyError
                           ? "text-sm text-green-700 dark:text-green-400"
                           : "text-sm text-destructive"
                       }
                     >
                       {t(
-                        weightTotal === 100
-                          ? "external_endpoints.messages.weightTotalValid"
-                          : "external_endpoints.messages.weightTotalInvalid",
+                        strategyError ??
+                          "external_endpoints.messages.weightTotalValid",
                         { total: weightTotal },
                       )}
                     </p>

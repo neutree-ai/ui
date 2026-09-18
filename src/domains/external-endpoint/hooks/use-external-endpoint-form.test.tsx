@@ -445,6 +445,36 @@ describe("route weight submission validation", () => {
     { name: "fixed", weights: [1], priorities: [0], allowed: true },
     { name: "priority", weights: [1, 1], priorities: [0, 1], allowed: true },
     {
+      name: "weighted empty",
+      weights: [100, undefined],
+      priorities: [0, 0],
+      allowed: false,
+    },
+    {
+      name: "weighted zero",
+      weights: [100, 0],
+      priorities: [0, 0],
+      allowed: false,
+    },
+    {
+      name: "weighted fractional",
+      weights: [50.5, 49.5],
+      priorities: [0, 0],
+      allowed: false,
+    },
+    {
+      name: "weighted out of range",
+      weights: [101, -1],
+      priorities: [0, 0],
+      allowed: false,
+    },
+    {
+      name: "weighted NaN",
+      weights: [100, NaN],
+      priorities: [0, 0],
+      allowed: false,
+    },
+    {
       name: "weighted 70/30",
       weights: [70, 30],
       priorities: [0, 0],
@@ -475,6 +505,7 @@ describe("route weight submission validation", () => {
           upstream: `provider-${index + 1}`,
           upstream_model: "chat",
           priority: priorities[index],
+          max_inflight_requests: 1,
           weight,
         })),
       },
@@ -1244,5 +1275,142 @@ describe("routing state regression", () => {
     ).toBe(true);
     await submitRoutingForm();
     expect(submitEndpoint).not.toHaveBeenCalled();
+  });
+});
+
+describe("strategy constraints regression", () => {
+  const priorityRoute: ModelRoute = {
+    model: "chat",
+    strategy: "priority",
+    targets: [
+      {
+        upstream: "a",
+        upstream_model: "m1",
+        priority: 0,
+        max_inflight_requests: 1,
+      },
+      {
+        upstream: "b",
+        upstream_model: "m2",
+        priority: 1,
+        max_inflight_requests: 1,
+      },
+      { upstream: "c", upstream_model: "m3", priority: 2 },
+    ],
+  };
+
+  it("blocks a missing weight even when the other target has 100 percent", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingForm
+        routes={[
+          {
+            model: "chat",
+            strategy: "weighted",
+            targets: [
+              { upstream: "a", upstream_model: "m1", weight: 100 },
+              { upstream: "b", upstream_model: "m2" },
+            ],
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("submit-capacity")).toHaveProperty(
+      "disabled",
+      true,
+    );
+  });
+
+  it("clears previous limits only when actively switching to weighted", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(<RoutingForm routes={[priorityRoute]} />);
+    fireEvent.change(
+      screen.getByLabelText("external_endpoints.fields.routingMode"),
+      { target: { value: "weighted" } },
+    );
+    const weights = screen.getAllByLabelText(
+      "external_endpoints.fields.weightRatio",
+    );
+    for (const [i, input] of weights.entries())
+      fireEvent.change(input, { target: { value: String([50, 25, 25][i]) } });
+    await act(async () => fireEvent.click(screen.getByText("submit-capacity")));
+    expect(submitEndpoint).toHaveBeenCalledOnce();
+    expect(
+      submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].targets.every(
+        (t: { max_inflight_requests?: number }) =>
+          t.max_inflight_requests == null,
+      ),
+    ).toBe(true);
+  });
+
+  it("prevents removing the last primary target", () => {
+    cleanup();
+    render(<RoutingForm routes={[priorityRoute]} />);
+    const primary = screen.getByRole("table", {
+      name: "external_endpoints.sections.primaryTargets",
+    });
+    expect(
+      within(primary).getByRole("button", {
+        name: "external_endpoints.actions.removeTarget",
+      }),
+    ).toHaveProperty("disabled", true);
+  });
+
+  it.each([undefined, 0, -1, 1.5, 2147483648])(
+    "guards direct submission with invalid primary capacity %s",
+    async (limit) => {
+      cleanup();
+      submitEndpoint.mockClear();
+      const { result } = renderHook(() =>
+        useExternalEndpointForm({ action: "edit" }),
+      );
+      const values = result.current.form.getValues();
+      values.spec.upstreams = [
+        upstreamFixture("a"),
+        upstreamFixture("b"),
+        upstreamFixture("c"),
+      ];
+      values.spec.model_routes = [
+        {
+          ...priorityRoute,
+          targets: priorityRoute.targets.map((t, i) =>
+            i === 0 ? { ...t, max_inflight_requests: limit } : t,
+          ),
+        },
+      ];
+      act(() => result.current.form.reset(values));
+      await act(async () => {
+        await result.current.form.refineCore.onFinish(values);
+      });
+      expect(submitEndpoint).not.toHaveBeenCalled();
+      expect(result.current.submitBlocked).toBe(true);
+    },
+  );
+
+  it("blocks submission after deleting the channel of the only primary", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [
+            upstreamFixture("a"),
+            upstreamFixture("b"),
+            upstreamFixture("c"),
+          ],
+          model_routes: [priorityRoute],
+        }}
+      />,
+    );
+    const deletes = screen
+      .getAllByRole("button", { name: "" })
+      .filter((b) => b.querySelector("svg.lucide-trash-2"));
+    fireEvent.click(deletes[0]);
+    await submitRoutingForm();
+    expect(submitEndpoint).not.toHaveBeenCalled();
+    expect(screen.getByTestId("form-submit")).toHaveProperty("disabled", true);
   });
 });

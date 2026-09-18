@@ -17,6 +17,7 @@ import { useTestConnectivity } from "@/domains/external-endpoint/hooks/use-test-
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
+import { getRouteStrategyError } from "@/domains/external-endpoint/lib/validate-route-strategy";
 import type {
   ExternalEndpoint,
   ModelRoute,
@@ -296,18 +297,8 @@ export const useExternalEndpointForm = ({
         return;
       }
       if (v.spec.model_routes != null) {
-        // Weight feedback is rendered beside each route; still guard direct submissions.
-        if (
-          v.spec.model_routes.some(
-            (route) =>
-              route.strategy === "weighted" &&
-              route.targets.reduce(
-                (sum, target) => sum + (target.weight ?? 0),
-                0,
-              ) !== 100,
-          )
-        )
-          return;
+        // Inline feedback and disabled buttons use the same rules; also guard direct submissions.
+        if (v.spec.model_routes.some(getRouteStrategyError)) return;
 
         const seenModels = new Set<string>();
         const invalid = v.spec.model_routes.find((route) => {
@@ -357,7 +348,8 @@ export const useExternalEndpointForm = ({
               fields.findIndex((field) => field.name === target.upstream)
             ] ?? target.upstream,
           priority: target.priority ?? 0,
-          weight: target.weight || 1,
+          weight:
+            route.strategy === "weighted" ? target.weight : target.weight || 1,
         })),
       }));
     }
@@ -366,12 +358,7 @@ export const useExternalEndpointForm = ({
 
   return {
     form,
-    submitBlocked: effectiveModelRoutes.some(
-      (route) =>
-        route.strategy === "weighted" &&
-        route.targets.reduce((sum, target) => sum + (target.weight ?? 0), 0) !==
-          100,
-    ),
+    submitBlocked: effectiveModelRoutes.some(getRouteStrategyError),
     metadataFields: (
       <FormCardGrid
         title={t("common.sections.basicInformation")}

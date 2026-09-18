@@ -244,10 +244,9 @@
   "src/pages/external-endpoints/list.tsx": "06c460fbe05204b22ee371fe71c9b5e7",
   "src/pages/external-endpoints/show.tsx": "f62b7d256a78749b6fd53cc8c8ed7b7b",
   "src/domains/external-endpoint/types.ts": "5548ae3d670cdbdabd1508e7b6d691fb",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "3ecdbca12a6273eb645e39c4b5296846",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "df759b17c918487769c4135f997cd557",
   "src/domains/external-endpoint/components/CurlExample.tsx": "f24ac9cf5fd5477963f7908423692798",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "ddcc260a2c5be44d29b82e5ec4435da7",
-  "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "ff00668fe1ae4dec364d78df3b322bf5",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "aef504b00a7ee2db2ff13d55784c114d",
   "src/domains/external-endpoint/lib/clean-upstreams-for-submit.ts": "ebb7a51eb8c1f5a209d32adcb002079d",
   "src/domains/external-endpoint/lib/get-exposed-models.ts": "64803ce79f62aaf59fbfd23d7cdc6fef",
@@ -285,7 +284,6 @@
   "src/foundation/hooks/use-refine-field-array.ts": "7dbaa5d3a0ea2c6db1c09da0863f1b74",
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "8e580fedb30e8e802c5060d25a886a99",
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "3518ba31f791c430b2afe655cc2d2c08",
-  "src/domains/external-endpoint/hooks/use-model-mapping-rows.ts": "8acf1e3078e104a09eaa7ce60bb41b56",
   "src/pages/ai-traces/list.tsx": "f63e68406912963a1a3f21c6d676f338",
   "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "5f5b5725b80770fd25d831d0f0775fc3",
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "b3ad2234ffd9b0f92b41dfe951bc60d6",
@@ -417,8 +415,9 @@
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
   "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
-  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "f44f453b89666dada1ecb236b882703b",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "9a527752b5da70b0cbdd38d9a6bb09a0",
   "src/domains/external-endpoint/components/ModelRouteDetails.tsx": "fbef6590e30ea174ab2c48206133c3fd",
   "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "290302e76ac6c0b7f735e4715cf3e733",
-  "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e"
+  "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
+  "src/domains/external-endpoint/lib/validate-route-strategy.ts": "a6fa0e3cb9dab1c4211dd74f0e8bca66"
 }

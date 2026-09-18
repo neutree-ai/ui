@@ -1345,6 +1345,8 @@
 			"noFallbackTargets": "No fallback model services",
 			"weightTotalValid": "Current total: {{total}}%",
 			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
+			"weightRequired": "Enter an integer weight from 1 to 100 for every target.",
+			"primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
 			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full."
 		},
 		"validation": {
