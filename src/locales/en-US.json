@@ -219,6 +219,7 @@
 		"show": "Show"
 	},
 	"buttons": {
+		"copy": "Copy",
 		"add": "Add",
 		"create": "Create",
 		"save": "Save",
@@ -1228,6 +1229,11 @@
 		"title": "External Endpoints",
 		"create": "Create External Endpoint",
 		"fields": {
+			"provider": "Upstream Channel",
+			"virtualModel": "Exposed Model Name",
+			"virtualModelName": "Exposed Model Name",
+			"weightRatio": "Weight Ratio",
+			"weight": "Weight",
 			"serviceUrl": "Service URL",
 			"routeType": "Route Type",
 			"timeout": "Timeout",
@@ -1242,38 +1248,89 @@
 			"exposedModelName": "Exposed Model Name",
 			"upstreamModelName": "Upstream Model Name",
 			"models": "Models",
+			"associatedVirtualModels": "Associated exposed models",
 			"unavailableModels": "Unavailable models:",
-			"type": "Type"
+			"type": "Type",
+			"role": "Role",
+			"unlimited": "Unlimited",
+			"routingMode": "Routing Strategy",
+			"maxInflightRequests": "Max concurrent requests",
+			"nodeRole": "Node Role",
+			"trafficWeight": "Traffic Weight"
 		},
 		"sections": {
 			"configuration": "Configuration",
-			"upstream": "Upstream {{index}}"
+			"routeConfiguration": "Configuration: {{model}}",
+			"upstream": "Upstream {{index}}",
+			"modelService": "Upstream Channel {{index}}",
+			"virtualModels": "Exposed Model Name",
+			"modelServices": "Upstream Channels",
+			"primaryTargets": "Primary list",
+			"fallbackTargets": "Fallback list"
 		},
 		"placeholders": {
 			"endpointName": "External Endpoint Name",
 			"selectRouteType": "Select Route Type",
 			"selectEndpointRef": "Select an internal endpoint",
+			"endpointRef": "e.g. smartdddd",
 			"upstreamUrl": "e.g. https://api.openai.com/v1",
 			"selectAuthType": "Select Auth Type",
 			"credential": "Bearer token for the upstream",
 			"timeout": "e.g. 60",
 			"exposedModelName": "Model name exposed to clients",
-			"upstreamModelName": "Model name at upstream provider"
+			"upstreamModelName": "Model name at upstream provider",
+			"virtualModel": "Model name exposed to clients",
+			"selectProvider": "Select a model service",
+			"provider": "e.g. local-vllm",
+			"weight": "1-100%",
+			"maxInflightRequests": "Maximum concurrent requests",
+			"primaryCapacity": "Enter concurrency limit"
+		},
+		"quickCreate": {
+			"title": "Quickly create upstream channel",
+			"description": "Create a channel here and it will be selected for this route automatically."
 		},
 		"options": {
 			"chatCompletions": "Chat Completions",
 			"upstreamTypeExternal": "External",
 			"upstreamTypeEndpointRef": "Endpoint Ref",
-			"upstreamTypeMixed": "Mixed"
+			"upstreamTypeMixed": "Mixed",
+			"fixedRouting": "Single Route",
+			"priorityRouting": "Active & Standby",
+			"weightedRouting": "Weighted Routing",
+			"fixedRole": "Fixed",
+			"primaryRole": "Primary",
+			"fallbackRole": "Fallback",
+			"noRetry": "Do not switch on failure",
+			"retryProvider": "Switch provider on failure"
 		},
 		"actions": {
 			"addUpstream": "Add Upstream",
+			"addModelService": "Add model service",
 			"addModelMapping": "Add Model Mapping",
 			"removeUpstream": "Remove Upstream",
-			"removeModelMapping": "Remove"
+			"removeModelMapping": "Remove",
+			"addVirtualModel": "Add exposed model",
+			"testModel": "Test",
+			"addTarget": "Add model service",
+			"addPrimaryTarget": "Add primary target",
+			"addFallbackTarget": "Add fallback target",
+			"addWeightedTarget": "Add weighted target",
+			"removeTarget": "Remove upstream channel",
+			"removeVirtualModel": "Remove exposed model",
+			"quickCreateUpstream": "Quickly create upstream channel",
+			"viewModelMappings": "View model mappings",
+			"hideModelMappings": "Hide model mappings"
 		},
 		"messages": {
 			"curlExample": "Curl Example",
+			"unnamedModel": "Unnamed model",
+			"mappingSummary": "({{upstreamCount}} upstream models / {{exposedCount}} exposed models)",
+			"noModelMappings": "No model mappings configured.",
+			"fixedRoutingHint": "Send all requests to the single upstream model configured below.",
+			"priorityRoutingHint": "Use active targets first. Use standby targets when no active target can accept a request, including when all are at capacity.",
+			"weightedRoutingHint": "Distribute requests across the upstream models according to their configured weights.",
+			"maxInflightRequestsHint": "Leave empty or set to 0 for no limit.",
 			"curlHint": "Set your API key first: {{exportCmd}}. You can create one at {{apiKeyPage}}.",
 			"curlExampleOpenai": "OpenAI",
 			"curlExampleAnthropic": "Anthropic",
@@ -1284,7 +1341,13 @@
 			"testConnectivityTesting": "Testing...",
 			"testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
 			"testConnectivityFailed": "Connection failed: {{error}}",
-			"testConnectivityError": "Request error: {{error}}"
+			"testConnectivityError": "Request error: {{error}}",
+			"noFallbackTargets": "No fallback model services",
+			"weightTotalValid": "Current total: {{total}}%",
+			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
+			"weightRequired": "Enter an integer weight from 1 to 100 for every target.",
+			"primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
+			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full."
 		},
 		"validation": {
 			"nameRequired": "Name is required",
@@ -1295,7 +1358,11 @@
 			"upstreamModelRequired": "Upstream model name is required",
 			"duplicateModelKey": "Duplicate model key in this upstream",
 			"unknownUpstreamModel": "This model was not found in the upstream's model list",
-			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream"
+			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream",
+			"virtualModelRequired": "Exposed model name is required",
+			"routeTargetRequired": "Select a model service and enter its upstream model",
+			"weightTotal": "Weighted targets must total 100%",
+			"duplicateProvider": "Model service names must be unique"
 		}
 	},
 	"user_profiles": {
