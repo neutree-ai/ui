@@ -42,6 +42,12 @@ const emptyExternalUpstream: UpstreamSpec = {
   models: null,
 };
 
+function nextProviderName(usedNames: Set<string | undefined>) {
+  let index = 1;
+  while (usedNames.has(`provider-${index}`)) index++;
+  return `provider-${index}`;
+}
+
 function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
   const routes: ModelRoute[] = [];
   const seen = new Set<string>();
@@ -68,26 +74,10 @@ function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
   return routes;
 }
 
-function renameRouteProvider(
-  routes: ModelRoute[] | undefined,
-  previousName: string,
-  nextName: string,
-): ModelRoute[] | undefined {
-  if (!routes || previousName === nextName) return routes;
-  return routes.map((route) => ({
-    ...route,
-    targets: route.targets.map((target) =>
-      target.upstream === previousName
-        ? { ...target, upstream: nextName }
-        : target,
-    ),
-  }));
-}
-
 function removeRouteProvider(
-  routes: ModelRoute[] | undefined,
+  routes: ModelRoute[] | null | undefined,
   providerName: string,
-): ModelRoute[] | undefined {
+): ModelRoute[] | null | undefined {
   if (!routes) return routes;
   return routes
     .map((route) => ({
@@ -143,22 +133,36 @@ export const useExternalEndpointForm = ({
     warnWhenUnsavedChanges: true,
   });
 
-  const { fields, append, remove } = useRefineFieldArray({
+  const {
+    fields: upstreamFields,
+    append,
+    remove,
+    replace,
+  } = useRefineFieldArray({
     control: form.control,
     name: "spec.upstreams",
     refineForm: form,
   });
 
+  // Field-array operations rebuild values from the edited form. Retain each
+  // row's original reference by its stable RHF id until submission.
+  const channelNames = useRef(new Map<string, string>());
+  const fields = upstreamFields.map((field) => {
+    const name =
+      channelNames.current.get(field.id) ??
+      (field as { name?: string }).name ??
+      "";
+    channelNames.current.set(field.id, name);
+    return { ...field, name };
+  });
   const isEdit = action === "edit";
 
   const connectivity = useTestConnectivity();
 
   // Derive upstream types from form data — no separate state needed
-  const upstreams = form.watch("spec.upstreams");
+  const upstreams: UpstreamSpec[] = form.watch("spec.upstreams");
   const modelRoutes = form.watch("spec.model_routes");
-  const effectiveModelRoutes: ModelRoute[] =
-    modelRoutes ?? routesFromLegacy(upstreams ?? []);
-  const providerNameSnapshot = useRef<Record<number, string>>({});
+  const effectiveModelRoutes: ModelRoute[] = modelRoutes ?? [];
   const [quickCreateTarget, setQuickCreateTarget] = useState<{
     routeIndex: number;
     targetIndex: number;
@@ -170,9 +174,7 @@ export const useExternalEndpointForm = ({
   const handleQuickUpstreamCreate = useCallback(
     (name: string, upstream: UpstreamSpec) => {
       if (!quickCreateTarget) return;
-      const nextIndex = (form.getValues("spec.upstreams") ?? []).length;
       append({ ...upstream, name });
-      providerNameSnapshot.current[nextIndex] = name;
       const routes: ModelRoute[] = form.getValues("spec.model_routes") ?? [];
       const { routeIndex, targetIndex } = quickCreateTarget;
       form.setValue(
@@ -196,14 +198,25 @@ export const useExternalEndpointForm = ({
     [append, form, quickCreateTarget],
   );
 
+  // Initialize legacy data in the form itself, so every operation sees the
+  // same routes. Missing names are assigned once, never derived after deletion.
   useEffect(() => {
-    for (const [index, upstream] of (upstreams ?? []).entries()) {
-      if (providerNameSnapshot.current[index] === undefined) {
-        providerNameSnapshot.current[index] =
-          upstream.name || `provider-${index + 1}`;
-      }
+    if (!upstreams?.length) return;
+    const usedNames = new Set(
+      upstreams.map((upstream) => upstream.name).filter(Boolean),
+    );
+    const named = upstreams.map((upstream, index) => {
+      if (fields[index]?.name || upstream.name) return upstream;
+      const name = nextProviderName(usedNames);
+      usedNames.add(name);
+      return { ...upstream, name };
+    });
+    if (named.some((upstream, index) => upstream !== upstreams[index]))
+      replace(named);
+    if (modelRoutes == null) {
+      form.setValue("spec.model_routes", routesFromLegacy(named));
     }
-  }, [upstreams]);
+  }, [upstreams, fields, modelRoutes, replace, form.setValue]);
 
   /** Auto-load models when an endpoint_ref is selected in the combobox */
   const handleEndpointRefChange = useCallback(
@@ -270,16 +283,19 @@ export const useExternalEndpointForm = ({
     }
     if (v.spec) {
       const providerNames = (v.spec.upstreams ?? []).map(
-        (upstream, index) => upstream.name?.trim() || `provider-${index + 1}`,
+        (upstream) => upstream.name?.trim() || "",
       );
-      if (new Set(providerNames).size !== providerNames.length) {
+      if (
+        providerNames.some((name) => !name) ||
+        new Set(providerNames).size !== providerNames.length
+      ) {
         form.setError("spec.model_routes", {
           type: "validate",
           message: t("external_endpoints.validation.duplicateProvider"),
         });
         return;
       }
-      if (v.spec.model_routes !== undefined) {
+      if (v.spec.model_routes != null) {
         // Weight feedback is rendered beside each route; still guard direct submissions.
         if (
           v.spec.model_routes.some(
@@ -303,7 +319,9 @@ export const useExternalEndpointForm = ({
           if (
             route.targets.some(
               (target) =>
-                !target.upstream.trim() || !target.upstream_model.trim(),
+                !target.upstream.trim() ||
+                !target.upstream_model.trim() ||
+                !fields.some((field) => field.name === target.upstream),
             )
           ) {
             return true;
@@ -334,6 +352,10 @@ export const useExternalEndpointForm = ({
         strategy: route.strategy ?? "fixed",
         targets: route.targets.map((target) => ({
           ...target,
+          upstream:
+            providerNames[
+              fields.findIndex((field) => field.name === target.upstream)
+            ] ?? target.upstream,
           priority: target.priority ?? 0,
           weight: target.weight || 1,
         })),
@@ -414,7 +436,11 @@ export const useExternalEndpointForm = ({
             <ModelRouteEditor
               focusModel={focusModel}
               value={effectiveModelRoutes as ModelRoute[]}
-              upstreams={upstreams ?? []}
+              // Stable reference values, current editable display names.
+              providers={fields.map((field, index) => ({
+                value: field.name || "",
+                label: upstreams?.[index]?.name || field.name || "",
+              }))}
               onQuickCreate={(routeIndex, targetIndex) =>
                 setQuickCreateTarget({ routeIndex, targetIndex })
               }
@@ -432,7 +458,15 @@ export const useExternalEndpointForm = ({
               size="sm"
               onClick={() => {
                 const nextIndex = fields.length;
-                append({ ...emptyExternalUpstream });
+                append({
+                  ...emptyExternalUpstream,
+                  name: nextProviderName(
+                    new Set([
+                      ...fields.map((field) => field.name),
+                      ...(upstreams ?? []).map((upstream) => upstream.name),
+                    ]),
+                  ),
+                });
                 setExpandedUpstreams((current) => ({
                   ...current,
                   [nextIndex]: true,
@@ -492,20 +526,14 @@ export const useExternalEndpointForm = ({
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        const currentUpstreams =
-                          form.getValues("spec.upstreams") ?? [];
-                        const providerName =
-                          currentUpstreams[index]?.name?.trim() ||
-                          `provider-${index + 1}`;
-                        const routes = form.getValues("spec.model_routes");
-                        if (routes !== undefined) {
-                          form.setValue(
-                            "spec.model_routes",
-                            removeRouteProvider(routes, providerName),
-                            { shouldDirty: true },
-                          );
-                        }
-                        providerNameSnapshot.current = {};
+                        form.setValue(
+                          "spec.model_routes",
+                          removeRouteProvider(
+                            form.getValues("spec.model_routes"),
+                            field.name || "",
+                          ),
+                          { shouldDirty: true },
+                        );
                         remove(index);
                       }}
                       disabled={fields.length <= 1}
@@ -521,68 +549,6 @@ export const useExternalEndpointForm = ({
                         {...form.register(`spec.upstreams.${index}.name`)}
                       >
                         <Input
-                          onChange={(event) => {
-                            const nextName = event.target.value;
-                            const previousName =
-                              providerNameSnapshot.current[index] ||
-                              `provider-${index + 1}`;
-                            form.setValue(
-                              `spec.upstreams.${index}.name`,
-                              nextName,
-                              {
-                                shouldDirty: true,
-                                shouldValidate: true,
-                              },
-                            );
-                            const currentRoutes =
-                              form.getValues("spec.model_routes");
-                            if (
-                              currentRoutes !== undefined &&
-                              nextName.trim()
-                            ) {
-                              form.setValue(
-                                "spec.model_routes",
-                                renameRouteProvider(
-                                  currentRoutes,
-                                  previousName,
-                                  nextName.trim(),
-                                ),
-                                { shouldDirty: true },
-                              );
-                            }
-                            providerNameSnapshot.current[index] =
-                              nextName.trim() || previousName;
-                          }}
-                          onBlur={(event) => {
-                            const currentUpstreams =
-                              form.getValues("spec.upstreams") ?? [];
-                            const previousName =
-                              providerNameSnapshot.current[index] ||
-                              `provider-${index + 1}`;
-                            const nextName =
-                              event.target.value.trim() ||
-                              `provider-${index + 1}`;
-                            if (previousName !== nextName) {
-                              const currentRoutes =
-                                form.getValues("spec.model_routes");
-                              const routes: ModelRoute[] =
-                                currentRoutes ??
-                                routesFromLegacy(currentUpstreams);
-                              form.setValue(
-                                "spec.model_routes",
-                                routes.map((route) => ({
-                                  ...route,
-                                  targets: route.targets.map((target) =>
-                                    target.upstream === previousName
-                                      ? { ...target, upstream: nextName }
-                                      : target,
-                                  ),
-                                })),
-                                { shouldDirty: true },
-                              );
-                              providerNameSnapshot.current[index] = nextName;
-                            }
-                          }}
                           placeholder={t(
                             "external_endpoints.placeholders.provider",
                           )}
@@ -774,6 +740,10 @@ export const useExternalEndpointForm = ({
           onOpenChange={(open) => {
             if (!open) setQuickCreateTarget(null);
           }}
+          existingNames={[
+            ...fields.map((field) => field.name || ""),
+            ...(upstreams ?? []).map((upstream) => upstream.name?.trim() || ""),
+          ]}
           onCreate={handleQuickUpstreamCreate}
         />
       </>

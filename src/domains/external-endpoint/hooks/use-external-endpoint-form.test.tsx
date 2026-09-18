@@ -1,5 +1,6 @@
 import {
   act,
+  cleanup,
   fireEvent,
   render,
   renderHook,
@@ -10,7 +11,12 @@ import {
 import React from "react";
 import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
-import type { ModelRoute } from "@/domains/external-endpoint/types";
+import type {
+  ExternalEndpointSpec,
+  ModelRoute,
+} from "@/domains/external-endpoint/types";
+
+import { ResourceForm } from "@/foundation/components/ResourceForm";
 
 const submitEndpoint = vi.hoisted(() => vi.fn());
 
@@ -42,6 +48,7 @@ vi.mock("@refinedev/react-hook-form", async () => {
 });
 
 vi.mock("@refinedev/core", () => ({
+  useSaveButton: () => ({ label: "Save" }),
   useSelect: () => ({
     query: {
       data: {
@@ -171,6 +178,21 @@ function RoutingForm({ routes }: { routes: ModelRoute[] }) {
   });
   const { setValue } = form;
   React.useEffect(() => {
+    setValue(
+      "spec.upstreams",
+      [
+        ...new Set(
+          routes.flatMap((route) =>
+            route.targets.map((target) => target.upstream),
+          ),
+        ),
+      ].map((name) => ({
+        name,
+        upstream: { url: "https://example.com" },
+        model_mapping: {},
+        models: null,
+      })),
+    );
     setValue("spec.model_routes", routes);
   }, [setValue, routes]);
   return (
@@ -457,6 +479,13 @@ describe("route weight submission validation", () => {
         })),
       },
     ];
+    values.spec.upstreams = weights.map((_, index) => ({
+      name: `provider-${index + 1}`,
+      upstream: { url: "https://example.com/v1" },
+      model_mapping: {},
+      models: null,
+    }));
+    act(() => result.current.form.reset(values));
     await act(async () => {
       await result.current.form.refineCore.onFinish(values);
     });
@@ -929,5 +958,281 @@ describe("useExternalEndpointForm", () => {
     // query, so the edit form starts with an empty upstreams array and
     // no cards are rendered. The hint is implicitly covered by the
     // create-mode tests that render upstream fields.
+  });
+});
+
+vi.mock("@/foundation/hooks/use-on-back", () => ({ useOnBack: () => vi.fn() }));
+const upstreamFixture = (name?: string, url = "https://example.com") => ({
+  name,
+  upstream: { url },
+  model_mapping: {},
+  models: null,
+});
+const routeFixture = (model: string, upstream: string) => ({
+  model,
+  strategy: "fixed" as const,
+  targets: [{ upstream, upstream_model: "old-model", priority: 0, weight: 1 }],
+});
+function RoutingEditForm({ spec }: { spec: ExternalEndpointSpec }) {
+  const result = useExternalEndpointForm({ action: "edit" });
+  React.useEffect(() => {
+    result.form.reset({
+      api_version: "v1",
+      kind: "ExternalEndpoint",
+      metadata: { name: "review-only", workspace: "default" },
+      spec,
+    });
+  }, [result.form.reset, spec]);
+  return (
+    <ResourceForm
+      {...result.form}
+      submitBlocked={result.submitBlocked}
+      hideCancel
+    >
+      {result.specFields}
+    </ResourceForm>
+  );
+}
+function expandChannels() {
+  for (const b of screen.queryAllByRole("button")) {
+    if (b.getAttribute("aria-expanded") === "false") fireEvent.click(b);
+  }
+}
+async function submitRoutingForm() {
+  await act(async () => {
+    fireEvent.submit(screen.getByTestId("form"));
+  });
+}
+describe("routing state regression", () => {
+  it("renames a channel without stealing references during an intermediate name collision", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("a"), upstreamFixture("ab")],
+          model_routes: [routeFixture("one", "a"), routeFixture("two", "ab")],
+        }}
+      />,
+    );
+    expandChannels();
+    const input = screen.getAllByPlaceholderText(
+      "external_endpoints.placeholders.provider",
+    )[0];
+    fireEvent.change(input, { target: { value: "ab" } });
+    fireEvent.change(input, { target: { value: "abc" } });
+    fireEvent.blur(input);
+    // Field-array operations must not adopt edited names as new identities.
+    fireEvent.click(
+      screen.getByText("external_endpoints.actions.addModelService"),
+    );
+    const urls = screen.getAllByLabelText(
+      "external_endpoints.fields.upstreamUrl",
+    );
+    fireEvent.change(urls[urls.length - 1], {
+      target: { value: "https://third.example" },
+    });
+    await submitRoutingForm();
+    const spec = submitEndpoint.mock.lastCall?.[0].spec;
+    expect(spec.upstreams.map((u: any) => u.name)).toEqual([
+      "abc",
+      "ab",
+      "provider-1",
+    ]);
+    expect(spec.model_routes.map((r: any) => r.targets[0].upstream)).toEqual([
+      "abc",
+      "ab",
+    ]);
+  });
+  it("keeps references stable when clearing a name and swapping channel names", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("a"), upstreamFixture("b")],
+          model_routes: [routeFixture("one", "a"), routeFixture("two", "b")],
+        }}
+      />,
+    );
+    expandChannels();
+    const inputs = screen.getAllByPlaceholderText(
+      "external_endpoints.placeholders.provider",
+    );
+    fireEvent.change(inputs[0], { target: { value: "" } });
+    expect(inputs[0]).toHaveProperty("value", "");
+    fireEvent.change(inputs[0], { target: { value: "b" } });
+    fireEvent.change(inputs[1], { target: { value: "a" } });
+    await submitRoutingForm();
+    expect(
+      submitEndpoint.mock.lastCall?.[0].spec.model_routes.map(
+        (route: ModelRoute) => route.targets[0].upstream,
+      ),
+    ).toEqual(["b", "a"]);
+  });
+
+  it("keeps unnamed channels stable after deleting an earlier unused channel", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    const view = render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [
+            upstreamFixture(undefined, "https://a.example"),
+            upstreamFixture(undefined, "https://b.example"),
+            upstreamFixture(undefined, "https://c.example"),
+          ],
+          model_routes: [routeFixture("chat", "provider-2")],
+        }}
+      />,
+    );
+    const deletes = Array.from(
+      view.container.querySelectorAll("button"),
+    ).filter(
+      (b) =>
+        b.querySelector("svg.lucide-trash-2") && !b.getAttribute("aria-label"),
+    );
+    expect(deletes).toHaveLength(3);
+    fireEvent.click(deletes[0]);
+    await submitRoutingForm();
+    const spec = submitEndpoint.mock.lastCall?.[0].spec;
+    const target = spec.model_routes[0].targets[0].upstream;
+    expect(
+      spec.upstreams.find((u: any) => u.name === target).upstream.url,
+    ).toBe("https://b.example");
+  });
+  it("keeps legacy routes when quick-creating their target", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [
+            {
+              ...upstreamFixture("legacy"),
+              model_mapping: { chat: "old-model" },
+            },
+          ],
+          model_routes: null,
+        }}
+      />,
+    );
+    expect(screen.getByDisplayValue("chat")).toBeTruthy();
+    const provider = screen.getByRole("combobox", {
+      name: "external_endpoints.fields.provider",
+    });
+    fireEvent.change(provider, {
+      target: { value: "__quick_create_upstream__" },
+    });
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(
+      within(dialog).getByPlaceholderText(
+        "external_endpoints.placeholders.provider",
+      ),
+      { target: { value: "new-provider" } },
+    );
+    fireEvent.change(
+      within(dialog).getByPlaceholderText(
+        "external_endpoints.placeholders.upstreamUrl",
+      ),
+      { target: { value: "https://new.example" } },
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "buttons.save" }),
+    );
+    await submitRoutingForm();
+    const spec = submitEndpoint.mock.lastCall?.[0].spec;
+    expect(spec.model_routes).toEqual([
+      {
+        model: "chat",
+        strategy: "fixed",
+        targets: [
+          {
+            upstream: "new-provider",
+            upstream_model: "old-model",
+            priority: 0,
+            weight: 1,
+          },
+        ],
+      },
+    ]);
+    expect(spec.upstreams.map((u: any) => u.model_mapping)).toEqual([{}, {}]);
+  });
+  it("normalizes null routes before saving legacy data", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [
+            {
+              ...upstreamFixture("legacy"),
+              model_mapping: { chat: "old-model" },
+            },
+          ],
+          model_routes: null,
+        }}
+      />,
+    );
+    expect(screen.getByDisplayValue("chat")).toBeTruthy();
+    await submitRoutingForm();
+    expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].model).toBe(
+      "chat",
+    );
+  });
+  it("submits the visible input value without requiring blur", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("a")],
+          model_routes: [routeFixture("chat", "a")],
+        }}
+      />,
+    );
+    const input = screen.getByRole("textbox", {
+      name: "external_endpoints.fields.upstreamModelName",
+    });
+    input.focus();
+    fireEvent.change(input, { target: { value: "new-model" } });
+    expect((input as HTMLInputElement).value).toBe("new-model");
+    await submitRoutingForm();
+    const saved =
+      submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].targets[0]
+        .upstream_model;
+    expect(saved).toBe("new-model");
+  });
+  it("continues requiring weighted percentages to total 100", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    const route: ModelRoute = {
+      model: "chat",
+      strategy: "weighted",
+      targets: [
+        { upstream: "a", upstream_model: "m1", weight: 5 },
+        { upstream: "b", upstream_model: "m2", weight: 5 },
+      ],
+    };
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("a"), upstreamFixture("b")],
+          model_routes: [route],
+        }}
+      />,
+    );
+    expect(
+      (screen.getByTestId("form-submit") as HTMLButtonElement).disabled,
+    ).toBe(true);
+    await submitRoutingForm();
+    expect(submitEndpoint).not.toHaveBeenCalled();
   });
 });

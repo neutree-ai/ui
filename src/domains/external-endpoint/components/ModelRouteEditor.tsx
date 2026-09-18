@@ -1,20 +1,17 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { ModelRoute, ModelRouteTarget, UpstreamSpec } from "../types";
+import type { ModelRoute, ModelRouteTarget } from "../types";
 
 type Mode = "fixed" | "priority" | "weighted";
-
-const sameRoutes = (left: ModelRoute[], right: ModelRoute[]) =>
-  JSON.stringify(left) === JSON.stringify(right);
 
 type Props = {
   value?: ModelRoute[];
   onChange?: (value: ModelRoute[]) => void;
-  upstreams: UpstreamSpec[];
+  providers: { label: string; value: string }[];
   onQuickCreate?: (routeIndex: number, targetIndex: number) => void;
   focusModel?: string;
 };
@@ -22,20 +19,17 @@ type Props = {
 export default function ModelRouteEditor({
   value = [],
   onChange,
-  upstreams,
+  providers,
   onQuickCreate,
   focusModel,
 }: Props) {
   const { t } = useTranslation();
   const editorId = useId();
-  const [draft, setDraft] = useState<ModelRoute[]>(value);
-  const lastExternalValue = useRef(value);
   const routeIds = useRef<string[]>([]);
-  const draftRef = useRef<ModelRoute[]>(value);
   const nextRouteId = useRef(0);
   const editor = useRef<HTMLDivElement>(null);
   const focusedModel = useRef<string>();
-  const focusIndex = draft.findIndex((route) => route.model === focusModel);
+  const focusIndex = value.findIndex((route) => route.model === focusModel);
 
   const ensureRouteIds = (length: number) => {
     while (routeIds.current.length < length) {
@@ -43,14 +37,6 @@ export default function ModelRouteEditor({
     }
     routeIds.current = routeIds.current.slice(0, length);
   };
-
-  useEffect(() => {
-    if (!sameRoutes(value, lastExternalValue.current)) {
-      setDraft(value);
-      draftRef.current = value;
-      lastExternalValue.current = value;
-    }
-  }, [value]);
 
   useEffect(() => {
     if (!focusModel || focusedModel.current === focusModel || focusIndex < 0)
@@ -61,36 +47,15 @@ export default function ModelRouteEditor({
     focusedModel.current = focusModel;
   }, [focusModel, focusIndex]);
 
-  ensureRouteIds(draft.length);
+  ensureRouteIds(value.length);
 
-  const providers = upstreams.map((upstream, index) => ({
-    label:
-      upstream.name ||
-      `${t("external_endpoints.fields.provider")} ${index + 1}`,
-    value: upstream.name || `provider-${index + 1}`,
-  }));
+  const commit = (next: ModelRoute[]) => onChange?.(next);
 
-  const commit = (next: ModelRoute[]) => {
-    setDraft(next);
-    draftRef.current = next;
-    ensureRouteIds(next.length);
-    lastExternalValue.current = next;
-    onChange?.(next);
-  };
-
-  const updateDraft = (index: number, route: ModelRoute) => {
-    setDraft((current) => {
-      const next = current.slice();
-      next[index] = route;
-      draftRef.current = next;
-      return next;
-    });
-  };
-
-  const commitDraft = () => commit(draftRef.current);
+  const updateRoute = (index: number, route: ModelRoute) =>
+    commit(value.map((item, i) => (i === index ? route : item)));
 
   const setMode = (index: number, mode: Mode) => {
-    const route = draft[index];
+    const route = value[index];
     if (!route) return;
 
     let targets = route.targets.length
@@ -114,7 +79,7 @@ export default function ModelRouteEditor({
       weight: mode === "weighted" ? target.weight : undefined,
     }));
     commit(
-      draft.map((item, itemIndex) =>
+      value.map((item, itemIndex) =>
         itemIndex === index
           ? { ...route, strategy: mode, targets: normalized }
           : item,
@@ -126,26 +91,17 @@ export default function ModelRouteEditor({
     routeIndex: number,
     targetIndex: number,
     target: ModelRouteTarget,
-    immediate = false,
   ) => {
-    const route = draft[routeIndex];
+    const route = value[routeIndex];
     if (!route) return;
     const targets = route.targets.slice();
     targets[targetIndex] = target;
-    if (immediate) {
-      commit(
-        draft.map((item, i) =>
-          i === routeIndex ? { ...route, targets } : item,
-        ),
-      );
-    } else {
-      updateDraft(routeIndex, { ...route, targets });
-    }
+    updateRoute(routeIndex, { ...route, targets });
   };
 
   return (
     <div ref={editor} className="space-y-4">
-      {draft.map((route, index) => {
+      {value.map((route, index) => {
         const key = routeIds.current[index];
         const mode = route.strategy ?? "fixed";
         const hasActions = mode !== "fixed";
@@ -175,7 +131,7 @@ export default function ModelRouteEditor({
                 ) + 1;
           }
           commit(
-            draft.map((item, itemIndex) =>
+            value.map((item, itemIndex) =>
               itemIndex === index
                 ? { ...item, targets: [...item.targets, target] }
                 : item,
@@ -269,7 +225,7 @@ export default function ModelRouteEditor({
                               upstream: next,
                             };
                             commit(
-                              draft.map((item, itemIndex) =>
+                              value.map((item, itemIndex) =>
                                 itemIndex === index
                                   ? { ...item, targets }
                                   : item,
@@ -287,7 +243,6 @@ export default function ModelRouteEditor({
                               upstream_model: event.target.value,
                             })
                           }
-                          onBlur={commitDraft}
                           placeholder={t(
                             "external_endpoints.placeholders.upstreamModelName",
                           )}
@@ -307,26 +262,20 @@ export default function ModelRouteEditor({
                               max={100}
                               value={target.weight ?? ""}
                               onChange={(event) =>
-                                updateTarget(
-                                  index,
-                                  targetIndex,
-                                  {
-                                    ...target,
-                                    weight:
-                                      event.target.value === ""
-                                        ? undefined
-                                        : Math.min(
-                                            100,
-                                            Math.max(
-                                              1,
-                                              Number(event.target.value),
-                                            ),
+                                updateTarget(index, targetIndex, {
+                                  ...target,
+                                  weight:
+                                    event.target.value === ""
+                                      ? undefined
+                                      : Math.min(
+                                          100,
+                                          Math.max(
+                                            1,
+                                            Number(event.target.value),
                                           ),
-                                  },
-                                  true,
-                                )
+                                        ),
+                                })
                               }
-                              onBlur={commitDraft}
                               aria-label={t(
                                 "external_endpoints.fields.weightRatio",
                               )}
@@ -369,7 +318,6 @@ export default function ModelRouteEditor({
                                     : event.target.valueAsNumber,
                               })
                             }
-                            onBlur={commitDraft}
                           />
                         )}
                       </td>
@@ -386,7 +334,7 @@ export default function ModelRouteEditor({
                             )}
                             onClick={() =>
                               commit(
-                                draft.map((item, itemIndex) =>
+                                value.map((item, itemIndex) =>
                                   itemIndex === index
                                     ? {
                                         ...item,
@@ -443,7 +391,7 @@ export default function ModelRouteEditor({
                 aria-label={t("external_endpoints.actions.removeVirtualModel")}
                 onClick={() => {
                   routeIds.current.splice(index, 1);
-                  commit(draft.filter((_, itemIndex) => itemIndex !== index));
+                  commit(value.filter((_, itemIndex) => itemIndex !== index));
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -461,9 +409,8 @@ export default function ModelRouteEditor({
                   id={modelInputId}
                   value={route.model}
                   onChange={(event) =>
-                    updateDraft(index, { ...route, model: event.target.value })
+                    updateRoute(index, { ...route, model: event.target.value })
                   }
-                  onBlur={commitDraft}
                   placeholder={t(
                     "external_endpoints.placeholders.virtualModel",
                   )}
@@ -605,7 +552,7 @@ export default function ModelRouteEditor({
         variant="outline"
         onClick={() =>
           commit([
-            ...draft,
+            ...value,
             {
               model: "",
               strategy: "fixed",

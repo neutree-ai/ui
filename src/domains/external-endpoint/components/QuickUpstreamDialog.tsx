@@ -16,6 +16,7 @@ import type { UpstreamSpec } from "../types";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  existingNames: string[];
   onCreate: (name: string, upstream: UpstreamSpec) => void;
 };
 
@@ -30,6 +31,7 @@ export default function QuickUpstreamDialog({
   open,
   onOpenChange,
   onCreate,
+  existingNames,
 }: Props) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
@@ -49,10 +51,13 @@ export default function QuickUpstreamDialog({
     onOpenChange(nextOpen);
   };
 
+  const duplicateName = existingNames.includes(name.trim());
+
   const submit = () => {
     const trimmedName = name.trim();
     const trimmedUrl = url.trim();
-    if (!trimmedName || (type === "external" && !trimmedUrl)) return;
+    if (duplicateName || !trimmedName || (type === "external" && !trimmedUrl))
+      return;
 
     const upstream = blankUpstream();
     if (type === "endpoint_ref") {
@@ -85,6 +90,11 @@ export default function QuickUpstreamDialog({
               placeholder={t("external_endpoints.placeholders.provider")}
               autoFocus
             />
+            {duplicateName && (
+              <p className="text-destructive">
+                {t("external_endpoints.validation.duplicateProvider")}
+              </p>
+            )}
           </div>
           <div className="grid gap-2 text-sm text-muted-foreground">
             {t("external_endpoints.fields.upstreamType")}
@@ -138,7 +148,7 @@ export default function QuickUpstreamDialog({
           <Button
             type="button"
             onClick={submit}
-            disabled={!name.trim() || !url.trim()}
+            disabled={duplicateName || !name.trim() || !url.trim()}
           >
             {t("buttons.save")}
           </Button>

@@ -43,7 +43,7 @@ export type ExternalEndpointSpec = {
   route_type?: string;
   timeout: number | null;
   upstreams: UpstreamSpec[];
-  model_routes?: ModelRoute[];
+  model_routes?: ModelRoute[] | null;
 };
 
 /**
