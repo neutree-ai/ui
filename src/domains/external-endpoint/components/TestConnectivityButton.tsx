@@ -20,8 +20,9 @@ export default function TestConnectivityButton({
     <div className="flex items-center gap-3">
       <Button
         type="button"
-        variant="outline"
-        size="sm"
+        variant="secondary"
+        size="default"
+        className="border-transparent bg-blue-50 px-3 text-blue-600 shadow-none hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50"
         onClick={onTest}
         disabled={testing}
       >
@@ -52,7 +53,7 @@ export default function TestConnectivityButton({
             <>
               <XCircle className="h-4 w-4" />
               {t("external_endpoints.messages.testConnectivityFailed", {
-                error: result.error ?? "Unknown error",
+                error: result.error ?? t("common.errors.unknown"),
               })}
             </>
           )}
