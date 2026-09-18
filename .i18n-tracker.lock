@@ -21,7 +21,7 @@
   "src/pages/model-registries/create.tsx": "c2ce0d519c85a63cbff51df48d8453bd",
   "src/pages/model-registries/edit.tsx": "0f8edeacc4f79e9814958f468a96fb87",
   "src/pages/model-registries/list.tsx": "9a2390c87f7284ad5b133b75fd64cd15",
-  "src/pages/model-registries/show.tsx": "f97a91c19279feabf6194b15b7aa16bf",
+  "src/pages/model-registries/show.tsx": "504319ea3c79aee89aa36a175acd9039",
   "src/pages/model-catalogs/list.tsx": "c605c392cb13b47c389ff17fa2828478",
   "src/pages/model-catalogs/show.tsx": "0851b0568347ede9b210dddcb9ad0d00",
   "src/pages/image-registries/create.tsx": "5c916d2cd7f7367dbf5ba7297639f711",
@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "cb35c8f7f98c0e100f1868c32490dadc",
   "src/pages/endpoints/edit.tsx": "ef661bb90e2dfbc2be9ac65b92fbc3f1",
   "src/pages/endpoints/list.tsx": "db156fab1e39073dd7f991157ff3caaa",
-  "src/pages/endpoints/show.tsx": "377b1fca35f2cb916fdc1ae21ee9c8dc",
+  "src/pages/endpoints/show.tsx": "0edc709a0fd33cdc8bb26266212b8539",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "fd2b1c7affa795305445f8e307dea099",
   "src/pages/clusters/edit.tsx": "d636f55fd8591fabd56759bf0f46963e",
@@ -183,7 +183,7 @@
   "src/domains/endpoint/components/EmbeddingPlayground.tsx": "1fc239ccfdd889f71daf62d91bd18148",
   "src/domains/endpoint/components/EndpointEngine.tsx": "a5f3b8ff7c786e6259489f97f2420522",
   "src/domains/endpoint/components/EndpointLogTabs.tsx": "71bf177222c2ce9ad9211b8aae628ac7",
-  "src/domains/endpoint/components/EndpointModel.tsx": "b40ae4e58ffc68e04eb9a3f52f9bc29a",
+  "src/domains/endpoint/components/EndpointModel.tsx": "b085c4f3c7d7ad8819cb7962036fbab3",
   "src/domains/endpoint/components/EndpointPauseAction.tsx": "19e76a29447b39cb792fe6891ddcefb2",
   "src/domains/endpoint/components/FunctionDialog.tsx": "96e0b474a764a3fd7351a4ea99066d49",
   "src/domains/endpoint/components/FunctionsManager.tsx": "b20f5c293c07f48881c9708af0aa284f",
@@ -416,5 +416,6 @@
   "src/foundation/lib/middle-truncate.ts": "3c82129e02c91890e0f5e0a6a53fac4c",
   "src/domains/model-registry/components/RegistryUrl.tsx": "74809b55508cd1fad67d7afc9c826307",
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
-  "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991"
+  "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991",
+  "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8"
 }
