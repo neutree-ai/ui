@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
@@ -16,6 +22,7 @@ const translations: Record<string, string> = {
   "model_usage.daily.titleByKey": "Daily tokens by API key",
   "model_usage.daily.titleByModel": "Daily tokens by model",
   "model_usage.daily.titleDayByKey": "Tokens by API key · single day",
+  "model_usage.daily.titleDayByModel": "Tokens by model · single day",
   "model_usage.daily.backToPreset": "Back to last {{days}} days",
   "model_usage.daily.backToRange": "Back to {{range}}",
   "model_usage.daily.clickHint": "Click a day to scope the page to that day",
@@ -240,13 +247,16 @@ const rows: ApiUsageRecord[] = [
 
 const refetch = vi.fn();
 
+// The hook's answer for the current test; individual cases reassign it before
+// rendering so the loading, empty and error branches are reachable.
+let hookState: {
+  usageData: ApiUsageRecord[];
+  isLoading: boolean;
+  error: Error | null;
+} = { usageData: rows, isLoading: false, error: null };
+
 vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
-  useWorkspaceUsage: () => ({
-    usageData: rows,
-    isLoading: false,
-    error: null,
-    refetch,
-  }),
+  useWorkspaceUsage: () => ({ ...hookState, refetch }),
 }));
 
 const cardFor = (title: string) => {
@@ -290,6 +300,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   refetch.mockClear();
+  hookState = { usageData: rows, isLoading: false, error: null };
   render(<ModelUsageList />);
 });
 
@@ -448,5 +459,43 @@ describe("model usage chart controls", () => {
     expect(remaining).toHaveLength(1);
     expect(remaining[0].textContent).toContain("External");
     expect(remaining[0].textContent).toContain("openai-proxy");
+  });
+});
+
+describe("model usage states", () => {
+  const renderWith = (state: Partial<typeof hookState>) => {
+    cleanup();
+    hookState = { usageData: rows, isLoading: false, error: null, ...state };
+    render(<ModelUsageList />);
+  };
+
+  it("titles a single day scoped to one key", () => {
+    openSelect(0);
+    pickOption("Key 11");
+    fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
+
+    expect(screen.getByText("Tokens by model · single day")).toBeDefined();
+    expect(screen.getByText("By API key · 2026-09-01")).toBeDefined();
+  });
+
+  it("shows the loader until the first page of usage arrives", () => {
+    renderWith({ usageData: [], isLoading: true });
+
+    // The chart shows the loader; the tables below already know they are empty
+    // because they read the same slice of data.
+    expect(screen.getByTitle("Loading...")).toBeDefined();
+  });
+
+  it("shows the empty state when the window has no usage", () => {
+    renderWith({ usageData: [] });
+
+    // The chart and all three tables each say it in their own place.
+    expect(screen.getAllByText("model_usage.empty").length).toBe(4);
+  });
+
+  it("surfaces a failed usage request above the tables", () => {
+    renderWith({ usageData: [], error: new Error("usage rpc failed") });
+
+    expect(screen.getByText("usage rpc failed")).toBeDefined();
   });
 });
