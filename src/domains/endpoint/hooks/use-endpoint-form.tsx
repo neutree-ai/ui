@@ -86,10 +86,7 @@ import {
   MODEL_REGISTRY_SELECT,
   registryModelDelivery,
 } from "@/foundation/lib/model-registry-visibility";
-import {
-  registryModelDefaultVersion,
-  registryModelLabel,
-} from "@/foundation/lib/registry-model-display";
+import { registryModelLabel } from "@/foundation/lib/registry-model-display";
 import { cn } from "@/foundation/lib/utils";
 import {
   composeEndpointSpec,
@@ -1955,18 +1952,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     onChange={(value: string) => {
                       form.setValue("spec.model.name", value);
 
-                      // Fill in the version the registry reports, so the
-                      // reference is complete without opening "Show all options".
-                      const picked = modelsData.models.find(
-                        (e) => e.name === value,
-                      );
-                      const version = picked
-                        ? registryModelDefaultVersion(picked)
-                        : undefined;
-
-                      if (version) {
-                        form.setValue("spec.model.version", version);
-                      }
+                      // No version is filled in. The registry reports its
+                      // versions in its own order, so the first one is not
+                      // "the latest" — and for a model uploaded without a
+                      // version it is an id the registry generated, which then
+                      // becomes part of the name callers have to send
+                      // (`name:version`). Left empty, the endpoint serves the
+                      // bare model name and resolves the version at deploy
+                      // time; a user who wants a specific one states it under
+                      // "Show all options" or deploys from the model drawer
+                      // (NEU-771).
+                      form.setValue("spec.model.version", "");
 
                       // Cleared now and refilled when the detail read answers,
                       // so the previous model's parameters are never shown
@@ -1978,7 +1974,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               workspace,
                               registry: currentRegistry,
                               model: value,
-                              version,
                             }
                           : null,
                       );

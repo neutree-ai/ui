@@ -13,10 +13,7 @@ import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-v
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { registryUnavailability } from "@/foundation/lib/model-registry-availability";
-import {
-  registryModelDefaultVersion,
-  registryModelLabel,
-} from "@/foundation/lib/registry-model-display";
+import { registryModelLabel } from "@/foundation/lib/registry-model-display";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 const MODEL_PAGE_SIZE = 20;
@@ -78,7 +75,6 @@ export function CatalogModelSlots({
     slot: CatalogModelSlot;
     registry: string;
     model: string;
-    version?: string;
   } | null>(null);
 
   const slots = useMemo(() => readCatalogModelSlots(doc), [doc]);
@@ -137,7 +133,6 @@ export function CatalogModelSlots({
           workspace,
           registry: pending.registry,
           model: pending.model,
-          version: pending.version,
         }
       : {},
   );
@@ -183,7 +178,6 @@ export function CatalogModelSlots({
         writeCatalogModelSlot(doc, pending.slot, {
           registry: pending.registry,
           name: pending.model,
-          version: pending.version,
           info: pendingInfo,
         }),
       );
@@ -192,17 +186,17 @@ export function CatalogModelSlots({
   }, [pendingSettled, pendingInfo, pending, doc, onChange]);
 
   const handlePick = (slot: CatalogModelSlot, modelName: string) => {
-    const picked = models.models.find((model) => model.name === modelName);
-    const version = picked ? registryModelDefaultVersion(picked) : undefined;
-
+    // No version is pinned — see the endpoint form's model picker. A catalog
+    // that pins a registry-generated version makes every endpoint deployed
+    // from it serve `name:version` (NEU-771). A specific version is written in
+    // the YAML directly.
     onChange(
       writeCatalogModelSlot(doc, slot, {
         registry,
         name: modelName,
-        version,
       }),
     );
-    setPending({ slot, registry, model: modelName, version });
+    setPending({ slot, registry, model: modelName });
   };
 
   if (doc === null) {
