@@ -42,6 +42,7 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
           return (
             <FormItem
               data-testid={`field-${props.name}`}
+              data-form-option=""
               className={cn(
                 props.className,
                 props.isCheckbox
