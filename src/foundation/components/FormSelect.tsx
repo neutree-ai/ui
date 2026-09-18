@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 
 type SelectProps = SelectCoreProps & {
+  id?: string;
+  "aria-label"?: string;
   placeholder?: string;
   emptyMessage?: string;
   onChange?: (value: string) => void;
@@ -33,7 +35,11 @@ export const FormSelect = forwardRef<
       value={props.value}
     >
       <FormControl>
-        <SelectTrigger ref={triggerRef}>
+        <SelectTrigger
+          ref={triggerRef}
+          {...(props.id ? { id: props.id } : {})}
+          aria-label={props["aria-label"]}
+        >
           <SelectValue placeholder={props.placeholder ?? "Select"} />
         </SelectTrigger>
       </FormControl>

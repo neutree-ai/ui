@@ -5,15 +5,20 @@ import {
   renderHook,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import React from "react";
 import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
+import type { ModelRoute } from "@/domains/external-endpoint/types";
 
 const submitEndpoint = vi.hoisted(() => vi.fn());
 
 vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, values?: { model?: string }) =>
+      values?.model ? `${key}: ${values.model}` : key,
+  }),
 }));
 
 vi.mock("@/foundation/components/BaseStatus", () => ({
@@ -89,6 +94,8 @@ vi.mock("@/foundation/components/FormSelect", () => ({
   FormSelect: React.forwardRef(
     (
       props: {
+        id?: string;
+        "aria-label"?: string;
         value?: string;
         onChange?: (v: string) => void;
         options?: { label: string; value: string }[];
@@ -96,6 +103,8 @@ vi.mock("@/foundation/components/FormSelect", () => ({
       ref: any,
     ) => (
       <select
+        id={props.id}
+        aria-label={props["aria-label"]}
         ref={ref}
         data-testid="form-select-mock"
         value={props.value}
@@ -155,6 +164,216 @@ vi.mock("@/foundation/components/FormCombobox", () => ({
 }));
 
 import { useExternalEndpointForm } from "./use-external-endpoint-form";
+
+function RoutingForm({ routes }: { routes: ModelRoute[] }) {
+  const { form, specFields } = useExternalEndpointForm({ action: "edit" });
+  const { setValue } = form;
+  React.useEffect(() => {
+    setValue("spec.model_routes", routes);
+  }, [setValue, routes]);
+  return (
+    <FormProvider {...form}>
+      <form>
+        {specFields}
+        <button
+          type="button"
+          onClick={() => form.refineCore.onFinish(form.getValues())}
+        >
+          submit-capacity
+        </button>
+      </form>
+    </FormProvider>
+  );
+}
+
+describe("target concurrent request limits", () => {
+  it.each(["fixed", "priority"] as const)(
+    "edits and submits limits independently for %s targets",
+    async (strategy) => {
+      submitEndpoint.mockClear();
+      const route: ModelRoute = {
+        model: "chat",
+        strategy,
+        targets: Array.from(
+          { length: strategy === "fixed" ? 1 : 2 },
+          (_, index) => ({
+            upstream: "provider-1",
+            upstream_model: `model-${index}`,
+            priority: strategy === "priority" ? index * 20 : 0,
+            weight: 13,
+            max_inflight_requests: index === 0 ? 2 : 8,
+          }),
+        ),
+      };
+      render(<RoutingForm routes={[route]} />);
+      const limits = await screen.findAllByRole("spinbutton", {
+        name: "external_endpoints.fields.maxInflightRequests",
+      });
+      expect(limits).toHaveLength(route.targets.length);
+      expect(limits.map((input) => (input as HTMLInputElement).value)).toEqual(
+        strategy === "fixed" ? ["2"] : ["2", "8"],
+      );
+      for (const [index, input] of limits.entries()) {
+        fireEvent.change(input, { target: { value: String(index + 4) } });
+        fireEvent.blur(input);
+      }
+      await act(async () =>
+        fireEvent.click(screen.getByText("submit-capacity")),
+      );
+      expect(
+        submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].targets,
+      ).toEqual(
+        route.targets.map((target, index) => ({
+          ...target,
+          max_inflight_requests: index + 4,
+        })),
+      );
+
+      for (const value of ["", "0"]) {
+        fireEvent.change(limits[0], { target: { value } });
+        fireEvent.blur(limits[0]);
+        await act(async () =>
+          fireEvent.click(screen.getByText("submit-capacity")),
+        );
+        expect(
+          submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].targets[0]
+            .max_inflight_requests,
+        ).toBe(value === "" ? undefined : 0);
+      }
+      for (const value of ["-1", "1.5", "2147483648"]) {
+        fireEvent.change(limits[0], { target: { value } });
+        expect((limits[0] as HTMLInputElement).checkValidity()).toBe(false);
+      }
+    },
+  );
+});
+
+describe("routing rule editor", () => {
+  it("keeps hidden weighted capacity and updates the title while editing", async () => {
+    const route: ModelRoute = {
+      model: "weighted",
+      strategy: "weighted",
+      targets: [
+        {
+          upstream: "a",
+          upstream_model: "first",
+          weight: 50,
+          max_inflight_requests: 2,
+        },
+        {
+          upstream: "b",
+          upstream_model: "second",
+          weight: 50,
+          max_inflight_requests: 8,
+        },
+      ],
+    };
+    render(<RoutingForm routes={[route]} />);
+    expect(
+      screen.queryByRole("spinbutton", {
+        name: "external_endpoints.fields.maxInflightRequests",
+      }),
+    ).toBeNull();
+    fireEvent.change(
+      screen.getByLabelText("external_endpoints.fields.virtualModelName"),
+      { target: { value: "renamed" } },
+    );
+    expect(
+      screen.getByRole("heading", {
+        name: "external_endpoints.sections.routeConfiguration: renamed",
+      }),
+    ).toBeTruthy();
+    fireEvent.blur(
+      screen.getByLabelText("external_endpoints.fields.virtualModelName"),
+    );
+    const models = screen.getAllByLabelText(
+      "external_endpoints.fields.upstreamModelName",
+    );
+    fireEvent.change(models[0], { target: { value: "updated" } });
+    fireEvent.blur(models[0]);
+    await act(async () => fireEvent.click(screen.getByText("submit-capacity")));
+    expect(
+      submitEndpoint.mock.lastCall?.[0].spec.model_routes[0],
+    ).toMatchObject({
+      model: "renamed",
+      targets: [
+        { ...route.targets[0], upstream_model: "updated" },
+        route.targets[1],
+      ],
+    });
+  });
+
+  it("offers target actions only in multi-target strategies and follows refreshed data", () => {
+    const fixed: ModelRoute = {
+      model: "fixed",
+      strategy: "fixed",
+      targets: [{ upstream: "a", upstream_model: "first" }],
+    };
+    const { rerender } = render(<RoutingForm routes={[fixed]} />);
+    expect(
+      screen.queryByRole("button", {
+        name: "external_endpoints.actions.removeTarget",
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: "external_endpoints.actions.addWeightedTarget",
+      }),
+    ).toBeNull();
+    fireEvent.change(
+      screen.getByLabelText("external_endpoints.fields.routingMode"),
+      { target: { value: "priority" } },
+    );
+    const primary = screen.getByRole("table", {
+      name: "external_endpoints.sections.primaryTargets",
+    });
+    const backup = screen.getByRole("table", {
+      name: "external_endpoints.sections.fallbackTargets",
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.addPrimaryTarget",
+      }),
+    );
+    expect(within(primary).getAllByRole("spinbutton")).toHaveLength(2);
+    expect(within(backup).getAllByRole("spinbutton")).toHaveLength(1);
+    fireEvent.click(
+      within(primary).getAllByRole("button", {
+        name: "external_endpoints.actions.removeTarget",
+      })[1],
+    );
+    expect(within(primary).getAllByRole("spinbutton")).toHaveLength(1);
+    rerender(
+      <RoutingForm
+        routes={[
+          {
+            ...fixed,
+            strategy: "weighted",
+            targets: [{ ...fixed.targets[0], weight: 100 }],
+          },
+        ]}
+      />,
+    );
+    expect(
+      screen.getByLabelText("external_endpoints.fields.routingMode"),
+    ).toHaveProperty("value", "weighted");
+    expect(
+      screen.queryByRole("spinbutton", {
+        name: "external_endpoints.fields.maxInflightRequests",
+      }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.addWeightedTarget",
+      }),
+    );
+    expect(
+      screen.getAllByRole("spinbutton", {
+        name: "external_endpoints.fields.weightRatio",
+      }),
+    ).toHaveLength(2);
+  });
+});
 
 describe("route weight submission validation", () => {
   it.each([
@@ -411,7 +630,7 @@ describe("useExternalEndpointForm", () => {
 
       await waitFor(() =>
         expect(
-          screen.getByLabelText("external_endpoints.fields.virtualModel"),
+          screen.getByLabelText("external_endpoints.fields.virtualModelName"),
         ).toHaveProperty("value", ""),
       );
       expect(
@@ -433,13 +652,13 @@ describe("useExternalEndpointForm", () => {
         }),
       );
       expect(
-        screen.queryByLabelText("external_endpoints.fields.virtualModel"),
+        screen.queryByLabelText("external_endpoints.fields.virtualModelName"),
       ).toBeNull();
       fireEvent.click(
         screen.getByText("external_endpoints.actions.addVirtualModel"),
       );
       expect(
-        screen.getAllByLabelText("external_endpoints.fields.virtualModel"),
+        screen.getAllByLabelText("external_endpoints.fields.virtualModelName"),
       ).toHaveLength(1);
     });
 

@@ -53,6 +53,7 @@ function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
       seen.add(model);
       routes.push({
         model,
+        strategy: "fixed",
         targets: [
           {
             upstream: upstream.name || `provider-${index + 1}`,
@@ -100,8 +101,10 @@ function removeRouteProvider(
 
 export const useExternalEndpointForm = ({
   action,
+  focusModel,
 }: {
   action: "create" | "edit";
+  focusModel?: string;
 }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
@@ -169,7 +172,7 @@ export const useExternalEndpointForm = ({
       const nextIndex = (form.getValues("spec.upstreams") ?? []).length;
       append({ ...upstream, name });
       providerNameSnapshot.current[nextIndex] = name;
-      const routes = form.getValues("spec.model_routes") ?? [];
+      const routes: ModelRoute[] = form.getValues("spec.model_routes") ?? [];
       const { routeIndex, targetIndex } = quickCreateTarget;
       form.setValue(
         "spec.model_routes",
@@ -400,6 +403,7 @@ export const useExternalEndpointForm = ({
             className="col-span-4"
           >
             <ModelRouteEditor
+              focusModel={focusModel}
               value={effectiveModelRoutes as ModelRoute[]}
               upstreams={upstreams ?? []}
               onQuickCreate={(routeIndex, targetIndex) =>

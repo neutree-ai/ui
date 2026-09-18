@@ -53,7 +53,7 @@ export default function TestConnectivityButton({
             <>
               <XCircle className="h-4 w-4" />
               {t("external_endpoints.messages.testConnectivityFailed", {
-                error: result.error ?? "Unknown error",
+                error: result.error ?? t("common.errors.unknown"),
               })}
             </>
           )}

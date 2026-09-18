@@ -1,17 +1,17 @@
-import { useShow } from "@refinedev/core";
+import { useNavigation, useShow } from "@refinedev/core";
+import { ChevronRight } from "lucide-react";
 import CurlExample from "@/domains/external-endpoint/components/CurlExample";
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
 import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUpstreamAlert";
+import ModelRouteDetails from "@/domains/external-endpoint/components/ModelRouteDetails";
 import UpstreamStatusBadge from "@/domains/external-endpoint/components/UpstreamStatusBadge";
 import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavailable-models";
+import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
 import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
-import type {
-  ExternalEndpoint,
-  ModelRoute,
-} from "@/domains/external-endpoint/types";
+import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
@@ -20,6 +20,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 
 export const ExternalEndpointsShow = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation();
   const {
     query: { data, isLoading },
   } = useShow<ExternalEndpoint>();
@@ -50,13 +51,6 @@ export const ExternalEndpointsShow = () => {
   const upstreamName = (index: number) =>
     upstreams[index]?.name ||
     t("external_endpoints.sections.modelService", { index: index + 1 });
-  const routeMode = (targets: ModelRoute["targets"]) => {
-    if (targets.length <= 1)
-      return t("external_endpoints.options.fixedRouting");
-    return targets.some((target) => (target.priority ?? 0) !== 0)
-      ? t("external_endpoints.options.priorityRouting")
-      : t("external_endpoints.options.weightedRouting");
-  };
 
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
@@ -65,9 +59,6 @@ export const ExternalEndpointsShow = () => {
         status={<ExternalEndpointStatus {...record.status} />}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("external_endpoints.fields.type")}>
-              {t("external_endpoints.options.upstreamTypeExternal")}
-            </ShowPage.Meta>
             <ShowPage.Meta label={t("external_endpoints.fields.models")}>
               {allModels.length ? allModels.join(", ") : "-"}
             </ShowPage.Meta>
@@ -104,54 +95,16 @@ export const ExternalEndpointsShow = () => {
           >
             <div className="space-y-3">
               {record.spec.model_routes.map((route) => (
-                <div key={route.model} className="rounded-md bg-muted/35 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-base font-semibold text-foreground">
-                      {route.model}
-                    </div>
-                    <span className="rounded-md bg-background px-2 py-1 text-xs font-medium text-muted-foreground shadow-sm">
-                      {routeMode(route.targets)}
-                    </span>
-                  </div>
-                  <div className="mt-4 hidden grid-cols-[90px_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-4 border-b border-border/40 pb-2 text-xs font-medium text-muted-foreground sm:grid">
-                    <span>{t("external_endpoints.fields.role")}</span>
-                    <span>{t("external_endpoints.fields.provider")}</span>
-                    <span>
-                      {t("external_endpoints.fields.upstreamModelName")}
-                    </span>
-                    <span>
-                      {t("external_endpoints.fields.maxInflightRequests")}
-                    </span>
-                  </div>
-                  <div className="divide-y divide-border/40">
-                    {route.targets.map((target, index) => (
-                      <div
-                        key={`${target.upstream}-${target.upstream_model}-${index}`}
-                        className="grid grid-cols-1 gap-2 py-3 text-sm sm:grid-cols-[90px_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)] sm:items-center sm:gap-4"
-                      >
-                        <span className="font-medium text-foreground">
-                          {route.targets.length === 1
-                            ? t("external_endpoints.options.fixedRole")
-                            : index === 0
-                              ? t("external_endpoints.options.primaryRole")
-                              : t("external_endpoints.options.fallbackRole")}
-                        </span>
-                        <span className="min-w-0 truncate text-foreground">
-                          {target.upstream}
-                        </span>
-                        <code className="min-w-0 break-all text-xs text-foreground">
-                          {target.upstream_model || "-"}
-                        </code>
-                        <span className="text-muted-foreground">
-                          {route.targets.length > 1 && target.weight
-                            ? `${target.weight}%`
-                            : target.max_inflight_requests ||
-                              t("external_endpoints.fields.unlimited")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <ModelRouteDetails
+                  key={route.model}
+                  route={route}
+                  editUrl={navigation.editUrl(
+                    "external_endpoints",
+                    record.metadata.name,
+                    { ...record.metadata, query: { model: route.model } },
+                  )}
+                  serviceUrl={record.status?.service_url ?? undefined}
+                />
               ))}
             </div>
           </ShowPage.Section>
@@ -166,14 +119,19 @@ export const ExternalEndpointsShow = () => {
             <div className="divide-y divide-border/50">
               {upstreams.map((upstream, index) => {
                 const upstreamStatus = upstreamStatuses[index];
-                const upstreamModels =
-                  upstream.models ?? upstreamStatus?.models ?? [];
+                const mappings = getUpstreamModelMappings(
+                  record.spec,
+                  upstream,
+                );
+                const exposedCount = new Set(
+                  mappings.flatMap((mapping) => mapping.exposedModels),
+                ).size;
 
                 return (
                   <div key={index} className="py-4 first:pt-1 last:pb-1">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-semibold text-foreground">
+                        <span className="text-sm font-semibold text-foreground">
                           {upstreamName(index)}
                         </span>
                         <span className="rounded-md bg-background px-2 py-1 text-xs text-muted-foreground shadow-sm">
@@ -193,28 +151,68 @@ export const ExternalEndpointsShow = () => {
                     {upstreamStatus?.phase === "Failed" && (
                       <FailedUpstreamAlert status={upstreamStatus} />
                     )}
-                    <div className="mt-3 grid max-w-3xl grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(140px,0.6fr)]">
-                      <ShowPage.Row
-                        title={
-                          upstream.endpoint_ref
-                            ? t("external_endpoints.fields.endpointRef")
-                            : t("external_endpoints.fields.upstreamUrl")
-                        }
-                      >
-                        <code className="break-all text-xs font-normal">
-                          {upstream.endpoint_ref ||
-                            upstream.upstream?.url ||
-                            "-"}
-                        </code>
-                      </ShowPage.Row>
-                      <ShowPage.Row
-                        title={t("external_endpoints.fields.models")}
-                      >
-                        {upstreamModels.length
-                          ? upstreamModels.join(", ")
-                          : "-"}
-                      </ShowPage.Row>
-                    </div>
+                    <p className="mt-2 break-all text-xs text-muted-foreground">
+                      <span className="mr-2">
+                        {upstream.endpoint_ref
+                          ? t("external_endpoints.fields.endpointRef")
+                          : t("external_endpoints.fields.upstreamUrl")}
+                      </span>
+                      <code>
+                        {upstream.endpoint_ref || upstream.upstream?.url || "-"}
+                      </code>
+                    </p>
+                    <details className="group mt-3">
+                      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                        <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open:rotate-90" />
+                        {t("external_endpoints.messages.mappingSummary", {
+                          upstreamCount: mappings.length,
+                          exposedCount,
+                        })}
+                      </summary>
+                      {mappings.length ? (
+                        <div className="mt-3 overflow-hidden rounded-md border">
+                          <table className="w-full table-fixed text-left text-sm">
+                            <thead className="bg-muted/40 text-xs text-muted-foreground">
+                              <tr>
+                                <th className="w-1/3 px-3 py-2 font-medium">
+                                  {t(
+                                    "external_endpoints.fields.upstreamModelName",
+                                  )}
+                                </th>
+                                <th className="px-3 py-2 font-medium">
+                                  {t("external_endpoints.fields.virtualModel")}
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {mappings.map((mapping) => (
+                                <tr key={mapping.upstreamModel}>
+                                  <td className="break-all px-3 py-2 align-top font-mono text-xs">
+                                    {mapping.upstreamModel}
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {mapping.exposedModels.map((model) => (
+                                        <code
+                                          key={model}
+                                          className="max-w-full break-all rounded bg-muted px-2 py-1 text-xs"
+                                        >
+                                          {model}
+                                        </code>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {t("external_endpoints.messages.noModelMappings")}
+                        </p>
+                      )}
+                    </details>
                   </div>
                 );
               })}
