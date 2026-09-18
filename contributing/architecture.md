@@ -75,3 +75,7 @@ Pages are thin composition layers — they call an L2 form hook and pass the res
 - **No barrel re-exports** — import from source file directly
 - **Import paths** — within same subdirectory: relative; cross-subdirectory or cross-layer: `@/` alias
 - **Resource types** follow `Metadata + Spec + Status` pattern; `metadata->name` is the primary key
+- **Tailwind shadows** — a bare `shadow-[var(--token)]` is read as a shadow *colour* and renders
+  nothing, so use `[box-shadow:var(--token)]`, or `shadow-[shadow:var(--token)]` when the shadow
+  must compose with `ring-*`. `node tools/check-shadow-utilities.cjs` enforces this in the
+  pre-commit hook and CI (focus rings silently disappeared this way — see NEU-774 / SG-R-00010).
