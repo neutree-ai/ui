@@ -74,6 +74,22 @@ describe("form Enter submit rule", () => {
     ).toBe("allow");
   });
 
+  it("blocks Enter in a select, which is a setting option too", () => {
+    const form = buildForm({ options: 2, field: "<select></select>" });
+
+    expect(
+      decideFormEnterSubmit(buildEvent(form.querySelector("select")!), form),
+    ).toBe("block");
+  });
+
+  it("ignores an event that did not come from an element", () => {
+    const form = buildForm({ options: 2 });
+
+    expect(decideFormEnterSubmit(buildEvent(new EventTarget()), form)).toBe(
+      "allow",
+    );
+  });
+
   it("keeps the behavior of a widget that already claimed Enter", () => {
     const form = buildForm({ options: 2 });
 
