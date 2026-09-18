@@ -60,7 +60,7 @@ export function CatalogYamlEditor({
   return (
     <div
       className={cn(
-        "catalog-yaml-editor relative h-[28rem] min-h-[10rem] resize-y overflow-hidden rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] transition-colors hover:border-[var(--nt-stroke-neutral-trans-4)] focus-within:border-[var(--nt-stroke-outstanding-base)] focus-within:[box-shadow:var(--nt-outline-active-focus)]",
+        "catalog-yaml-editor relative h-[28rem] min-h-[10rem] resize-y overflow-hidden rounded-[var(--nt-radius-input)] border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] [box-shadow:var(--nt-effect-button-shadow-push-button-ordinary)] transition-colors hover:border-[var(--nt-stroke-neutral-trans-4)] focus-within:border-[var(--nt-stroke-outstanding-base)] focus-within:[box-shadow:var(--nt-outline-active-focus)]",
         className,
       )}
     >

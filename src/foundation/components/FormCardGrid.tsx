@@ -36,7 +36,7 @@ export default function FormCardGrid({
     <section
       data-testid={testId}
       className={cn(
-        "rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] shadow-[var(--nt-effect-dashboard-card-shadow-normal)]",
+        "rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] [box-shadow:var(--nt-effect-dashboard-card-shadow-normal)]",
         "first:mt-0",
         className,
       )}
