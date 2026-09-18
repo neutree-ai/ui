@@ -31,6 +31,10 @@ export default function ModelRouteDetails({
     (sum, target) => sum + (target.weight || 1),
     0,
   );
+  const rowClassName = cn(
+    "grid items-center text-left [&>*]:min-w-0 [&>*]:px-3",
+    showWeight ? "grid-cols-[4fr_5fr_1.5fr_1.5fr]" : "grid-cols-[4fr_5fr_3fr]",
+  );
   const primaryPriority = Math.min(
     ...route.targets.map((target) => target.priority ?? 0),
   );
@@ -100,72 +104,67 @@ export default function ModelRouteDetails({
       <div className="mt-3 overflow-x-auto">
         <table
           aria-label={route.model}
-          className="w-full min-w-[480px] table-fixed text-left text-sm [&_td]:px-3 [&_td]:py-3 [&_th]:px-3 [&_th]:py-2 [&_th]:font-medium"
+          className="block w-full min-w-[640px] text-left text-sm [&_td]:py-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium"
         >
-          <colgroup>
-            {showRole && <col className="w-[15%]" />}
-            <col className="w-[24%]" />
-            <col />
-            {showWeight && <col className="w-[18%]" />}
-            <col className="w-[24%]" />
-          </colgroup>
-          <thead className="border-b border-border/40 bg-muted/40 text-xs text-muted-foreground">
-            <tr>
-              {showRole && (
-                <th scope="col">{t("external_endpoints.fields.nodeRole")}</th>
-              )}
+          <thead className="block border-b border-border/40 bg-muted/40 text-xs text-muted-foreground">
+            <tr className={rowClassName}>
               <th scope="col">{t("external_endpoints.fields.provider")}</th>
               <th scope="col">
                 {t("external_endpoints.fields.upstreamModelName")}
               </th>
               {showWeight && (
-                <th scope="col" className="text-right">
+                <th scope="col">
                   {t("external_endpoints.fields.trafficWeight")}
                 </th>
               )}
-              <th scope="col" className="text-right">
+              <th scope="col">
                 {t("external_endpoints.fields.maxInflightRequests")}
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/40">
+          <tbody className="block divide-y divide-border/40">
             {route.targets.map((target, index) => (
-              <tr key={`${target.upstream}-${target.upstream_model}-${index}`}>
-                {showRole && (
-                  <td>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium",
-                        (target.priority ?? 0) === primaryPriority
-                          ? "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300"
-                          : "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
-                      )}
-                    >
+              <tr
+                className={rowClassName}
+                key={`${target.upstream}-${target.upstream_model}-${index}`}
+              >
+                <td>
+                  <div className="flex items-center justify-start gap-2">
+                    {showRole && (
                       <span
-                        aria-hidden="true"
-                        className="h-1.5 w-1.5 rounded-full bg-current"
-                      />
-                      {(target.priority ?? 0) === primaryPriority
-                        ? t("external_endpoints.options.primaryRole")
-                        : t("external_endpoints.options.fallbackRole")}
-                    </span>
-                  </td>
-                )}
-                <td className="break-all">{target.upstream}</td>
+                        className={cn(
+                          "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium",
+                          (target.priority ?? 0) === primaryPriority
+                            ? "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300"
+                            : "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 rounded-full bg-current"
+                        />
+                        {(target.priority ?? 0) === primaryPriority
+                          ? t("external_endpoints.options.primaryRole")
+                          : t("external_endpoints.options.fallbackRole")}
+                      </span>
+                    )}
+                    <span className="min-w-0 break-all">{target.upstream}</span>
+                  </div>
+                </td>
                 <td>
                   <code className="break-all text-xs">
                     {target.upstream_model || "-"}
                   </code>
                 </td>
                 {showWeight && (
-                  <td className="text-right tabular-nums">
+                  <td className="text-left tabular-nums">
                     {Number(
                       (((target.weight || 1) / totalWeight) * 100).toFixed(2),
                     )}
                     %
                   </td>
                 )}
-                <td className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
+                <td className="text-left tabular-nums text-muted-foreground">
                   {target.max_inflight_requests ||
                     t("external_endpoints.fields.unlimited")}
                 </td>

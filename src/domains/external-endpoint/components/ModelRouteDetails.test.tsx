@@ -90,18 +90,22 @@ describe("ModelRouteDetails", () => {
         name: "external_endpoints.fields.trafficWeight",
       }),
     ).toBeNull();
-    expect(screen.getAllByRole("columnheader")[0].textContent).toBe(
-      "external_endpoints.fields.nodeRole",
-    );
+    expect(
+      screen.getAllByRole("columnheader").map((cell) => cell.textContent),
+    ).toEqual([
+      "external_endpoints.fields.provider",
+      "external_endpoints.fields.upstreamModelName",
+      "external_endpoints.fields.maxInflightRequests",
+    ]);
     expect(
       screen
         .getAllByRole("row")
         .slice(1)
         .map((row) => within(row).getAllByRole("cell")[0].textContent),
     ).toEqual([
-      "external_endpoints.options.fallbackRole",
-      "external_endpoints.options.primaryRole",
-      "external_endpoints.options.primaryRole",
+      "external_endpoints.options.fallbackRolebackup",
+      "external_endpoints.options.primaryRoleprimary-a",
+      "external_endpoints.options.primaryRoleprimary-b",
     ]);
   });
 
