@@ -13,7 +13,7 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
 }));
 
 describe("ModelRouteDetails", () => {
-  it("keeps relative weights and concurrent request limits in separate columns", () => {
+  it("normalizes relative weights into percentages independently of concurrency", () => {
     render(
       <ModelRouteDetails
         editUrl="/edit"
@@ -38,7 +38,7 @@ describe("ModelRouteDetails", () => {
     ).toEqual([
       "external_endpoints.fields.provider",
       "external_endpoints.fields.upstreamModelName",
-      "external_endpoints.fields.weight",
+      "external_endpoints.fields.trafficWeight",
       "external_endpoints.fields.maxInflightRequests",
     ]);
     const rows = screen.getAllByRole("row").slice(1);
@@ -46,12 +46,12 @@ describe("ModelRouteDetails", () => {
       within(rows[0])
         .getAllByRole("cell")
         .map((cell) => cell.textContent),
-    ).toEqual(["a", "gpt-6-astra", "5", "2"]);
+    ).toEqual(["a", "gpt-6-astra", "50%", "2"]);
     expect(
       within(rows[1])
         .getAllByRole("cell")
         .map((cell) => cell.textContent),
-    ).toEqual(["b", "gpt-5.6", "5", "external_endpoints.fields.unlimited"]);
+    ).toEqual(["b", "gpt-5.6", "50%", "external_endpoints.fields.unlimited"]);
   });
 
   it("identifies the primary tier by priority instead of array order", () => {
@@ -62,19 +62,42 @@ describe("ModelRouteDetails", () => {
           model: "priority",
           strategy: "priority",
           targets: [
-            { upstream: "backup", upstream_model: "b", priority: 20 },
-            { upstream: "primary-a", upstream_model: "a", priority: 10 },
-            { upstream: "primary-b", upstream_model: "b", priority: 10 },
+            {
+              upstream: "backup",
+              upstream_model: "b",
+              priority: 20,
+              weight: 1,
+            },
+            {
+              upstream: "primary-a",
+              upstream_model: "a",
+              priority: 10,
+              weight: 1,
+            },
+            {
+              upstream: "primary-b",
+              upstream_model: "b",
+              priority: 10,
+              weight: 1,
+            },
           ],
         }}
       />,
       { wrapper: MemoryRouter },
     );
     expect(
+      screen.queryByRole("columnheader", {
+        name: "external_endpoints.fields.trafficWeight",
+      }),
+    ).toBeNull();
+    expect(screen.getAllByRole("columnheader")[0].textContent).toBe(
+      "external_endpoints.fields.nodeRole",
+    );
+    expect(
       screen
         .getAllByRole("row")
         .slice(1)
-        .map((row) => within(row).getAllByRole("cell")[2].textContent),
+        .map((row) => within(row).getAllByRole("cell")[0].textContent),
     ).toEqual([
       "external_endpoints.options.fallbackRole",
       "external_endpoints.options.primaryRole",
@@ -83,7 +106,9 @@ describe("ModelRouteDetails", () => {
   });
 
   it("uses strategy even for one target and defaults missing strategy to fixed", () => {
-    const targets = [{ upstream: "a", upstream_model: "a", priority: 10 }];
+    const targets = [
+      { upstream: "a", upstream_model: "a", priority: 10, weight: 1 },
+    ];
     const { rerender } = render(
       <ModelRouteDetails
         editUrl="/edit"
@@ -105,9 +130,30 @@ describe("ModelRouteDetails", () => {
     ).not.toBeNull();
     expect(
       screen.queryByRole("columnheader", {
-        name: "external_endpoints.fields.role",
+        name: "external_endpoints.fields.nodeRole",
       }),
     ).toBeNull();
+  });
+
+  it("hides persisted weights for fixed routes", () => {
+    render(
+      <ModelRouteDetails
+        editUrl="/edit"
+        route={{
+          model: "fixed",
+          strategy: "fixed",
+          targets: [{ upstream: "a", upstream_model: "a", weight: 1 }],
+        }}
+      />,
+      { wrapper: MemoryRouter },
+    );
+    expect(
+      screen.getAllByRole("columnheader").map((cell) => cell.textContent),
+    ).toEqual([
+      "external_endpoints.fields.provider",
+      "external_endpoints.fields.upstreamModelName",
+      "external_endpoints.fields.maxInflightRequests",
+    ]);
   });
 
   it("opens call examples for the selected virtual model in a dialog", () => {

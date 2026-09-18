@@ -413,7 +413,7 @@
   "src/foundation/components/InfoHint.tsx": "8e904dedae4bc761cc4c7bcbad2705ba",
   "src/foundation/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38",
   "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "a646b6ce96f81d21b2f619e83a4be039",
-  "src/domains/external-endpoint/components/ModelRouteDetails.tsx": "3c0f62d14fc4e818a3b3f63235af75b3",
+  "src/domains/external-endpoint/components/ModelRouteDetails.tsx": "884b039b201872c826bff26ebe834715",
   "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "cc408cd632aaa38618634123cc67c0d4",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e"
 }

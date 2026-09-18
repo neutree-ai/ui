@@ -1247,7 +1247,9 @@
 			"role": "Role",
 			"unlimited": "Unlimited",
 			"routingMode": "Routing Strategy",
-			"maxInflightRequests": "Max concurrent requests"
+			"maxInflightRequests": "Max concurrent requests",
+			"nodeRole": "Node Role",
+			"trafficWeight": "Traffic Weight"
 		},
 		"sections": {
 			"configuration": "Configuration",
