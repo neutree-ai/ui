@@ -166,7 +166,9 @@ vi.mock("@/foundation/components/FormCombobox", () => ({
 import { useExternalEndpointForm } from "./use-external-endpoint-form";
 
 function RoutingForm({ routes }: { routes: ModelRoute[] }) {
-  const { form, specFields } = useExternalEndpointForm({ action: "edit" });
+  const { form, specFields, submitBlocked } = useExternalEndpointForm({
+    action: "edit",
+  });
   const { setValue } = form;
   React.useEffect(() => {
     setValue("spec.model_routes", routes);
@@ -177,6 +179,7 @@ function RoutingForm({ routes }: { routes: ModelRoute[] }) {
         {specFields}
         <button
           type="button"
+          disabled={submitBlocked}
           onClick={() => form.refineCore.onFinish(form.getValues())}
         >
           submit-capacity
@@ -249,6 +252,39 @@ describe("target concurrent request limits", () => {
 });
 
 describe("routing rule editor", () => {
+  it("updates each route's weight feedback and submission availability while typing", () => {
+    render(
+      <RoutingForm
+        routes={[
+          {
+            model: "split",
+            strategy: "weighted",
+            targets: [
+              { upstream: "a", upstream_model: "first", weight: 5 },
+              { upstream: "b", upstream_model: "second", weight: 5 },
+            ],
+          },
+        ]}
+      />,
+    );
+    const save = screen.getByText("submit-capacity") as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    const weights = screen.getAllByLabelText(
+      "external_endpoints.fields.weightRatio",
+    );
+    const description = weights[0].getAttribute("aria-describedby");
+    expect(document.getElementById(description ?? "")?.textContent).toBe(
+      "external_endpoints.messages.weightTotalInvalid",
+    );
+    fireEvent.change(weights[0], { target: { value: "95" } });
+    expect(save.disabled).toBe(false);
+    expect(document.getElementById(description ?? "")?.textContent).toBe(
+      "external_endpoints.messages.weightTotalValid",
+    );
+    fireEvent.change(weights[1], { target: { value: "" } });
+    expect(save.disabled).toBe(true);
+  });
+
   it("keeps hidden weighted capacity and updates the title while editing", async () => {
     const route: ModelRoute = {
       model: "weighted",
@@ -419,7 +455,7 @@ describe("route weight submission validation", () => {
     });
     expect(submitEndpoint).toHaveBeenCalledTimes(allowed ? 1 : 0);
     expect(result.current.form.getFieldState("spec.model_routes").invalid).toBe(
-      !allowed,
+      false,
     );
   });
 

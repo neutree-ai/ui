@@ -126,12 +126,21 @@ export default function ModelRouteEditor({
     routeIndex: number,
     targetIndex: number,
     target: ModelRouteTarget,
+    immediate = false,
   ) => {
     const route = draft[routeIndex];
     if (!route) return;
     const targets = route.targets.slice();
     targets[targetIndex] = target;
-    updateDraft(routeIndex, { ...route, targets });
+    if (immediate) {
+      commit(
+        draft.map((item, i) =>
+          i === routeIndex ? { ...route, targets } : item,
+        ),
+      );
+    } else {
+      updateDraft(routeIndex, { ...route, targets });
+    }
   };
 
   return (
@@ -140,6 +149,11 @@ export default function ModelRouteEditor({
         const key = routeIds.current[index];
         const mode = route.strategy ?? "fixed";
         const hasActions = mode !== "fixed";
+        const weightTotal = route.targets.reduce(
+          (sum, target) => sum + (target.weight ?? 0),
+          0,
+        );
+        const weightTotalId = `${editorId}-${key}-weight-total`;
         const modelInputId = `${editorId}-${key}-model`;
         const strategyInputId = `${editorId}-${key}-strategy`;
         const primaryTargetIndices = route.targets.flatMap(
@@ -273,23 +287,30 @@ export default function ModelRouteEditor({
                           <div className="relative">
                             <Input
                               type="number"
+                              aria-invalid={weightTotal !== 100}
+                              aria-describedby={weightTotalId}
                               min={1}
                               max={100}
                               value={target.weight ?? ""}
                               onChange={(event) =>
-                                updateTarget(index, targetIndex, {
-                                  ...target,
-                                  weight:
-                                    event.target.value === ""
-                                      ? undefined
-                                      : Math.min(
-                                          100,
-                                          Math.max(
-                                            1,
-                                            Number(event.target.value),
+                                updateTarget(
+                                  index,
+                                  targetIndex,
+                                  {
+                                    ...target,
+                                    weight:
+                                      event.target.value === ""
+                                        ? undefined
+                                        : Math.min(
+                                            100,
+                                            Math.max(
+                                              1,
+                                              Number(event.target.value),
+                                            ),
                                           ),
-                                        ),
-                                })
+                                  },
+                                  true,
+                                )
                               }
                               onBlur={commitDraft}
                               aria-label={t(
@@ -523,16 +544,33 @@ export default function ModelRouteEditor({
                   route.model,
                 )}
                 {mode === "weighted" && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => addTarget(false)}
-                  >
-                    <Plus className="mr-1 h-4 w-4" />
-                    {t("external_endpoints.actions.addWeightedTarget")}
-                  </Button>
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addTarget(false)}
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      {t("external_endpoints.actions.addWeightedTarget")}
+                    </Button>
+                    <p
+                      id={weightTotalId}
+                      role="status"
+                      className={
+                        weightTotal === 100
+                          ? "text-sm text-green-700 dark:text-green-400"
+                          : "text-sm text-destructive"
+                      }
+                    >
+                      {t(
+                        weightTotal === 100
+                          ? "external_endpoints.messages.weightTotalValid"
+                          : "external_endpoints.messages.weightTotalInvalid",
+                        { total: weightTotal },
+                      )}
+                    </p>
+                  </div>
                 )}
               </div>
             )}

@@ -279,6 +279,19 @@ export const useExternalEndpointForm = ({
         return;
       }
       if (v.spec.model_routes !== undefined) {
+        // Weight feedback is rendered beside each route; still guard direct submissions.
+        if (
+          v.spec.model_routes.some(
+            (route) =>
+              route.strategy === "weighted" &&
+              route.targets.reduce(
+                (sum, target) => sum + (target.weight ?? 0),
+                0,
+              ) !== 100,
+          )
+        )
+          return;
+
         const seenModels = new Set<string>();
         const invalid = v.spec.model_routes.find((route) => {
           if (!route.strategy) return true;
@@ -295,23 +308,13 @@ export const useExternalEndpointForm = ({
           ) {
             return true;
           }
-          return (
-            route.targets.length > 1 &&
-            route.targets.every((target) => (target.priority ?? 0) === 0) &&
-            route.targets.reduce(
-              (sum, target) => sum + (target.weight ?? 0),
-              0,
-            ) !== 100
-          );
+          return false;
         });
         if (invalid) {
           form.setError("spec.model_routes", {
             type: "validate",
             message: invalid.model.trim()
-              ? invalid.targets.length > 1 &&
-                invalid.targets.every((target) => (target.priority ?? 0) === 0)
-                ? t("external_endpoints.validation.weightTotal")
-                : t("external_endpoints.validation.routeTargetRequired")
+              ? t("external_endpoints.validation.routeTargetRequired")
               : t("external_endpoints.validation.virtualModelRequired"),
           });
           return;
@@ -341,6 +344,12 @@ export const useExternalEndpointForm = ({
 
   return {
     form,
+    submitBlocked: effectiveModelRoutes.some(
+      (route) =>
+        route.strategy === "weighted" &&
+        route.targets.reduce((sum, target) => sum + (target.weight ?? 0), 0) !==
+          100,
+    ),
     metadataFields: (
       <FormCardGrid
         title={t("common.sections.basicInformation")}

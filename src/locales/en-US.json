@@ -1308,12 +1308,14 @@
 			"addWeightedTarget": "Add weighted target",
 			"removeTarget": "Remove upstream channel",
 			"removeVirtualModel": "Remove exposed model",
-			"quickCreateUpstream": "Quickly create upstream channel"
+			"quickCreateUpstream": "Quickly create upstream channel",
+			"viewModelMappings": "View model mappings",
+			"hideModelMappings": "Hide model mappings"
 		},
 		"messages": {
 			"curlExample": "Curl Example",
 			"unnamedModel": "Unnamed model",
-			"mappingSummary": "Model mappings · {{upstreamCount}} upstream models / {{exposedCount}} exposed models",
+			"mappingSummary": "({{upstreamCount}} upstream models / {{exposedCount}} exposed models)",
 			"noModelMappings": "No model mappings configured.",
 			"fixedRoutingHint": "Send all requests to the single upstream model configured below.",
 			"priorityRoutingHint": "Use active targets first. Use standby targets when no active target can accept a request, including when all are at capacity.",
@@ -1330,7 +1332,9 @@
 			"testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
 			"testConnectivityFailed": "Connection failed: {{error}}",
 			"testConnectivityError": "Request error: {{error}}",
-			"noFallbackTargets": "No fallback model services"
+			"noFallbackTargets": "No fallback model services",
+			"weightTotalValid": "Current total: {{total}}%",
+			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)"
 		},
 		"validation": {
 			"nameRequired": "Name is required",

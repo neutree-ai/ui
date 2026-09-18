@@ -4,12 +4,13 @@ import { ResourceForm } from "@/foundation/components/ResourceForm";
 
 export const ExternalEndpointsEdit = () => {
   const [searchParams] = useSearchParams();
-  const { form, metadataFields, specFields } = useExternalEndpointForm({
-    action: "edit",
-    focusModel: searchParams.get("model") ?? undefined,
-  });
+  const { form, metadataFields, specFields, submitBlocked } =
+    useExternalEndpointForm({
+      action: "edit",
+      focusModel: searchParams.get("model") ?? undefined,
+    });
   return (
-    <ResourceForm {...form}>
+    <ResourceForm {...form} submitBlocked={submitBlocked}>
       {metadataFields}
       {specFields}
     </ResourceForm>

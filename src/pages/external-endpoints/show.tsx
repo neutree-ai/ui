@@ -162,8 +162,14 @@ export const ExternalEndpointsShow = () => {
                       </code>
                     </p>
                     <details className="group mt-3">
-                      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                         <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open:rotate-90" />
+                        <span className="group-open:hidden">
+                          {t("external_endpoints.actions.viewModelMappings")}
+                        </span>
+                        <span className="hidden group-open:inline">
+                          {t("external_endpoints.actions.hideModelMappings")}
+                        </span>
                         {t("external_endpoints.messages.mappingSummary", {
                           upstreamCount: mappings.length,
                           exposedCount,
