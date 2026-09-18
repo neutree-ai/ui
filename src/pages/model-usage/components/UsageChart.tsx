@@ -57,7 +57,7 @@ const soften = (color: string) =>
 
 // The category axis has no ellipsis of its own — a long key name would run into
 // its neighbours, so shorten it and leave the full name to the tooltip.
-const shortLabel = (value: string, max = 8) =>
+export const shortLabel = (value: string, max = 8) =>
   value.length > max ? `${value.slice(0, max)}…` : value;
 
 // Converts a YYYY-MM-DD date into a compact M/D axis tick.
@@ -79,7 +79,7 @@ type TooltipPayload = {
   payload?: DayCategory;
 };
 
-const TrendTooltip = ({
+export const TrendTooltip = ({
   active,
   payload,
   label,
@@ -143,7 +143,7 @@ const TrendTooltip = ({
   );
 };
 
-const DayTooltip = ({
+export const DayTooltip = ({
   active,
   payload,
 }: {

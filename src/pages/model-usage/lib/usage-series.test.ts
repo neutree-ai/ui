@@ -66,6 +66,25 @@ describe("aggregateSeries", () => {
   });
 });
 
+describe("aggregateSeries", () => {
+  it("treats missing token counts as zero", () => {
+    const [series] = aggregateSeries(
+      [
+        record({
+          date: "2026-09-01",
+          prompt_tokens: null,
+          completion_tokens: null,
+          usage: 42,
+        }),
+      ],
+      byKey,
+      metaOfKey,
+    );
+
+    expect(series).toMatchObject({ prompt: 0, completion: 0, total: 42 });
+  });
+});
+
 describe("foldRemainder", () => {
   const series = [300, 200, 100, 50, 10].map((total, i) => ({
     key: `k${i}`,
@@ -102,12 +121,20 @@ describe("buildTrend", () => {
     const rows = [
       record({ date: "2026-09-02", api_key_id: "a", usage: 5 }),
       record({ date: "2026-09-01", api_key_id: "a", usage: 3 }),
+      // The RPC returns one record per key/endpoint/model, so a day usually has
+      // several rows for the same series and they have to add up.
+      record({
+        date: "2026-09-01",
+        api_key_id: "a",
+        endpoint_name: "other-endpoint",
+        usage: 4,
+      }),
       record({ date: "2026-09-01", api_key_id: "b", usage: 7 }),
     ];
     const series = aggregateSeries(rows, byKey, metaOfKey);
 
     expect(buildTrend(rows, series, byKey)).toEqual([
-      { date: "2026-09-01", a: 3, b: 7 },
+      { date: "2026-09-01", a: 7, b: 7 },
       { date: "2026-09-02", a: 5, b: 0 },
     ]);
   });
