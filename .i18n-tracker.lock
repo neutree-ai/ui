@@ -418,6 +418,6 @@
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
   "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
-  "src/pages/model-usage/components/UsageChart.tsx": "d8dcf85391b0cd0eceb1c7e77547e37c",
+  "src/pages/model-usage/components/UsageChart.tsx": "5c02d570f41fff730fae30708fe32a18",
   "src/pages/model-usage/lib/usage-series.ts": "084013afd860b377e183cfd27b7f88f8"
 }
