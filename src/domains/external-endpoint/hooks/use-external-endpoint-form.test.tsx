@@ -504,26 +504,47 @@ describe("route weight submission validation", () => {
     );
   });
 
-  it("rejects routes without an explicit strategy", async () => {
-    submitEndpoint.mockClear();
-    const { result } = renderHook(() =>
-      useExternalEndpointForm({ action: "create" }),
-    );
-    const values = result.current.form.getValues();
-    values.spec.model_routes = [
-      {
-        model: "chat",
-        targets: [{ upstream: "provider-1", upstream_model: "chat" }],
-      },
-    ];
-    await act(async () => {
-      await result.current.form.refineCore.onFinish(values);
-    });
-    expect(submitEndpoint).not.toHaveBeenCalled();
-    expect(result.current.form.getFieldState("spec.model_routes").invalid).toBe(
-      true,
-    );
-  });
+  it.each([undefined, null])(
+    "saves an unchanged route with strategy %s as fixed without changing targets",
+    async (strategy) => {
+      submitEndpoint.mockClear();
+      const { result } = renderHook(() =>
+        useExternalEndpointForm({ action: "edit" }),
+      );
+      const values = result.current.form.getValues();
+      values.spec.upstreams = [
+        {
+          name: "e2e-provider",
+          upstream: { url: "https://api.openai.com/v1" },
+          auth: { type: "bearer" },
+          model_mapping: {},
+          models: null,
+        },
+      ];
+      const targets = [
+        {
+          upstream: "e2e-provider",
+          upstream_model: "gpt-4o",
+          priority: 0,
+          weight: 1,
+          max_inflight_requests: 2,
+        },
+      ];
+      values.spec.model_routes = [{ model: "e2e-chat", strategy, targets }];
+      await act(async () => {
+        result.current.form.reset(values);
+      });
+      await act(async () => {
+        await result.current.form.refineCore.onFinish(
+          result.current.form.getValues(),
+        );
+      });
+      expect(submitEndpoint).toHaveBeenCalledOnce();
+      expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes).toEqual([
+        { model: "e2e-chat", strategy: "fixed", targets },
+      ]);
+    },
+  );
 });
 
 function CreateForm() {
