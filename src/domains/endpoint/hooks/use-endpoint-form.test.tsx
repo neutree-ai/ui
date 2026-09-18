@@ -6222,7 +6222,6 @@ describe("model picker", () => {
     });
 
     expect(formInstance?.getValues().spec.model.name).toBe("Qwen/Qwen3-8B");
-    // No version is pinned when a model is picked (NEU-771).
     expect(formInstance?.getValues().spec.model.version).toBe("");
   });
 

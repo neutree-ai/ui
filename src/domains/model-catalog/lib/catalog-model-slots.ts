@@ -138,12 +138,10 @@ export function writeCatalogModelSlot(
   if (!spec) return doc;
 
   const repoint = (holder: Mapping): Mapping => {
-    // `info` and `version` are dropped before the spread rather than
-    // overwritten with undefined, so a document that keeps neither carries no
-    // key for them — the returned document is right for any consumer, not only
-    // for a serializer that happens to erase undefined values. Both belong to
-    // the model being replaced: a version left standing would pin the previous
-    // model's version under the new model's name.
+    // `info` and `version` belong to the model being replaced, and are dropped
+    // before the spread rather than overwritten with undefined: a document
+    // that keeps neither carries no key for them, which is right for any
+    // consumer, not only for a serializer that erases undefined values.
     const {
       info: _replaced,
       version: _repointed,

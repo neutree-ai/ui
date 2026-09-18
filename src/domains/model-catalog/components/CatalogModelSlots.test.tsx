@@ -189,7 +189,6 @@ describe("CatalogModelSlots", () => {
 
     await waitFor(() => expect(onChange).toHaveBeenCalled());
     const doc = nextDoc(onChange);
-    // No version is pinned when a model is picked (NEU-771).
     expect(doc.spec.variants?.bf16.model).toMatchObject({
       registry: "huggingface",
       name: "qwen3-27b",

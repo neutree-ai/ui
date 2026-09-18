@@ -108,8 +108,6 @@ describe("writeCatalogModelSlot", () => {
     expect(next.metadata).toEqual(plain.metadata);
   });
 
-  // The version belongs to the model being replaced (NEU-771): a selection
-  // that pins none must not leave the previous model's version behind.
   it("drops a version the slot held when the selection pins none", () => {
     const pinned = {
       ...plain,

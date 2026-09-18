@@ -1952,16 +1952,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     onChange={(value: string) => {
                       form.setValue("spec.model.name", value);
 
-                      // No version is filled in. The registry reports its
-                      // versions in its own order, so the first one is not
-                      // "the latest" — and for a model uploaded without a
-                      // version it is an id the registry generated, which then
-                      // becomes part of the name callers have to send
-                      // (`name:version`). Left empty, the endpoint serves the
-                      // bare model name and resolves the version at deploy
-                      // time; a user who wants a specific one states it under
-                      // "Show all options" or deploys from the model drawer
-                      // (NEU-771).
+                      // Empty, so the endpoint serves the bare model name and
+                      // resolves the version as it deploys. A version here
+                      // becomes part of the name callers send
+                      // (`name:version`), and the registry lists versions in
+                      // its own order — the first is not the newest, and for a
+                      // model uploaded without one it is a generated id.
                       form.setValue("spec.model.version", "");
 
                       // Cleared now and refilled when the detail read answers,

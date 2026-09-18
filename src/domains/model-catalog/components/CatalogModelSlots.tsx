@@ -186,10 +186,9 @@ export function CatalogModelSlots({
   }, [pendingSettled, pendingInfo, pending, doc, onChange]);
 
   const handlePick = (slot: CatalogModelSlot, modelName: string) => {
-    // No version is pinned — see the endpoint form's model picker. A catalog
-    // that pins a registry-generated version makes every endpoint deployed
-    // from it serve `name:version` (NEU-771). A specific version is written in
-    // the YAML directly.
+    // No version: a pinned one becomes part of the served name of every
+    // endpoint deployed from this catalog. The YAML states one where a
+    // specific version is meant.
     onChange(
       writeCatalogModelSlot(doc, slot, {
         registry,
