@@ -235,6 +235,13 @@ describe("target concurrent request limits", () => {
       for (const value of ["", "0"]) {
         fireEvent.change(limits[0], { target: { value } });
         fireEvent.blur(limits[0]);
+        if (strategy === "priority") {
+          expect((limits[0] as HTMLInputElement).required).toBe(true);
+          expect((limits[0] as HTMLInputElement).checkValidity()).toBe(false);
+          fireEvent.change(limits[1], { target: { value } });
+          expect((limits[1] as HTMLInputElement).checkValidity()).toBe(true);
+          continue;
+        }
         await act(async () =>
           fireEvent.click(screen.getByText("submit-capacity")),
         );

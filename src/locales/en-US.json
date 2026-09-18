@@ -1276,7 +1276,8 @@
 			"selectProvider": "Select a model service",
 			"provider": "e.g. local-vllm",
 			"weight": "1-100%",
-			"maxInflightRequests": "Maximum concurrent requests"
+			"maxInflightRequests": "Maximum concurrent requests",
+			"primaryCapacity": "Enter concurrency limit"
 		},
 		"quickCreate": {
 			"title": "Quickly create upstream channel",
@@ -1336,7 +1337,8 @@
 			"testConnectivityError": "Request error: {{error}}",
 			"noFallbackTargets": "No fallback model services",
 			"weightTotalValid": "Current total: {{total}}%",
-			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)"
+			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
+			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full."
 		},
 		"validation": {
 			"nameRequired": "Name is required",

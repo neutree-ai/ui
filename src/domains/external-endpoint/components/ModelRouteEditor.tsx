@@ -182,7 +182,11 @@ export default function ModelRouteEditor({
             ),
           );
         };
-        const targetTable = (targetIndices: number[], label: string) => (
+        const targetTable = (
+          targetIndices: number[],
+          label: string,
+          requireCapacity = false,
+        ) => (
           <div className="overflow-x-auto">
             <table
               aria-label={label}
@@ -206,13 +210,23 @@ export default function ModelRouteEditor({
                       mode === "weighted"
                         ? undefined
                         : t(
-                            "external_endpoints.messages.maxInflightRequestsHint",
+                            requireCapacity
+                              ? "external_endpoints.messages.primaryCapacityRequired"
+                              : "external_endpoints.messages.maxInflightRequestsHint",
                           )
                     }
                   >
                     {mode === "weighted"
                       ? t("external_endpoints.fields.weightRatio")
                       : t("external_endpoints.fields.maxInflightRequests")}
+                    {requireCapacity && (
+                      <span
+                        className="ml-1 text-destructive"
+                        aria-hidden="true"
+                      >
+                        *
+                      </span>
+                    )}
                   </th>
                   {hasActions && (
                     <th scope="col" className="text-center">
@@ -328,18 +342,23 @@ export default function ModelRouteEditor({
                         ) : (
                           <Input
                             type="number"
-                            min={0}
+                            min={requireCapacity ? 1 : 0}
+                            required={requireCapacity}
                             max={2147483647}
                             step={1}
                             value={target.max_inflight_requests ?? ""}
                             placeholder={t(
-                              "external_endpoints.fields.unlimited",
+                              requireCapacity
+                                ? "external_endpoints.placeholders.primaryCapacity"
+                                : "external_endpoints.fields.unlimited",
                             )}
                             aria-label={t(
                               "external_endpoints.fields.maxInflightRequests",
                             )}
                             title={t(
-                              "external_endpoints.messages.maxInflightRequestsHint",
+                              requireCapacity
+                                ? "external_endpoints.messages.primaryCapacityRequired"
+                                : "external_endpoints.messages.maxInflightRequestsHint",
                             )}
                             onChange={(event) =>
                               updateTarget(index, targetIndex, {
@@ -498,7 +517,11 @@ export default function ModelRouteEditor({
                   {targetTable(
                     primaryTargetIndices,
                     t("external_endpoints.sections.primaryTargets"),
+                    true,
                   )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("external_endpoints.messages.primaryCapacityRequired")}
+                  </p>
                   <Button
                     type="button"
                     variant="outline"
