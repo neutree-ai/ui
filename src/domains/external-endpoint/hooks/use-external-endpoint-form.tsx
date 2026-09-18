@@ -156,7 +156,8 @@ export const useExternalEndpointForm = ({
   // Derive upstream types from form data — no separate state needed
   const upstreams = form.watch("spec.upstreams");
   const modelRoutes = form.watch("spec.model_routes");
-  const effectiveModelRoutes = modelRoutes ?? routesFromLegacy(upstreams ?? []);
+  const effectiveModelRoutes: ModelRoute[] =
+    modelRoutes ?? routesFromLegacy(upstreams ?? []);
   const providerNameSnapshot = useRef<Record<number, string>>({});
   const [quickCreateTarget, setQuickCreateTarget] = useState<{
     routeIndex: number;
