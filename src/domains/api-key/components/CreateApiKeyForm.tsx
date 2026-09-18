@@ -22,6 +22,7 @@ import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 
 type FormValues = {
@@ -72,6 +73,7 @@ export const CreateApiKeyForm = ({
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const [submitError, setSubmitError] = useState("");
   const { copy, copied } = useCopyToClipboard();
+  const onKeyDown = useFormEnterSubmitGuard();
 
   const { mutateAsync } = useCustomMutation();
   const invalidate = useInvalidate();
@@ -169,7 +171,11 @@ export const CreateApiKeyForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        onKeyDown={onKeyDown}
+        className="space-y-2"
+      >
         <FormFieldGroup
           {...form}
           name="workspace"

@@ -12,6 +12,7 @@ import type { FieldValues } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form as FormUI } from "@/components/ui/form";
 import { SaveButton } from "@/foundation/components/SaveButton";
+import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
 import { useOnBack } from "@/foundation/hooks/use-on-back";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { ResourceFormSubmitContext } from "./resource-form-submit-context";
@@ -79,6 +80,7 @@ export const ResourceForm = <
   const watchable = useRef<boolean>(false);
   const beforeSubmitHandlers = useRef(new Set<() => boolean | undefined>());
   const onBack = useOnBack();
+  const onKeyDown = useFormEnterSubmitGuard();
   const { t } = useTranslation();
 
   if (isWatchable && !watchable.current) {
@@ -117,7 +119,12 @@ export const ResourceForm = <
   return (
     <FormUI {...props}>
       <ResourceFormSubmitContext.Provider value={submitContext}>
-        <form {...formProps} onSubmit={onSubmit} data-testid="form">
+        <form
+          {...formProps}
+          onSubmit={onSubmit}
+          onKeyDown={onKeyDown}
+          data-testid="form"
+        >
           <div className="mx-auto w-full max-w-[1280px]">
             {title && (
               <div className="mb-4">
