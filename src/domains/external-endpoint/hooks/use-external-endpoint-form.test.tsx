@@ -1152,6 +1152,8 @@ describe("routing state regression", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "buttons.save" }),
     );
+    // The Radix native select emits empty while a newly added option mounts.
+    fireEvent.change(provider, { target: { value: "" } });
     await submitRoutingForm();
     const spec = submitEndpoint.mock.lastCall?.[0].spec;
     expect(spec.model_routes).toEqual([

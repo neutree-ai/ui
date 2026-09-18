@@ -215,6 +215,9 @@ export default function ModelRouteEditor({
                           )}
                           aria-label={t("external_endpoints.fields.provider")}
                           onChange={(next) => {
+                            // Radix's native form select can emit an empty value
+                            // while newly added options mount. This control cannot clear a target.
+                            if (!next) return;
                             if (next === "__quick_create_upstream__") {
                               onQuickCreate?.(index, targetIndex);
                               return;

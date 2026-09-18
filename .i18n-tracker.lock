@@ -417,7 +417,7 @@
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
   "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
-  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "00035189013aae2e5e412374ed00fdbf",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "f44f453b89666dada1ecb236b882703b",
   "src/domains/external-endpoint/components/ModelRouteDetails.tsx": "fbef6590e30ea174ab2c48206133c3fd",
   "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "290302e76ac6c0b7f735e4715cf3e733",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e"
