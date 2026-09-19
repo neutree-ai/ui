@@ -23,14 +23,15 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
   limitsToForm,
-  QUOTA_PERIODS,
-  type QuotaPeriod,
+  resolveQuotaPeriod,
   useApiKeyDisable,
   useApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
@@ -141,26 +142,41 @@ export const ApiKeyLimitsCard = ({
     }
   };
 
+  // Which quota is actually in force. Read it from the granularity the backend
+  // derived, never from whether token_quota exists: token_quota is deliberately
+  // retained in per-model mode so clearing the entry limits falls back to it,
+  // and showing it there would be a second, unenforced readout.
+  const granularity = limits.quota_granularity ?? "overall";
+  // Clamp the period to a known value so the i18n lookup never renders the raw
+  // key when the backend returns an unexpected period.
+  const period = resolveQuotaPeriod(
+    limits.quota_period ?? limits.token_quota?.period,
+  );
+
   // Token-quota consumption (current period) — computed by get_api_key_limits.
   const quota = limits.token_quota;
-  const hasQuota = !!quota?.limit && quota.limit > 0;
+  const hasQuota =
+    granularity === "overall" && !!quota?.limit && quota.limit > 0;
   const used = Number(quota?.used ?? 0) || 0;
   const limit = Number(quota?.limit ?? 0) || 0;
   // Prefer the backend-computed remaining (source of truth; may be negative to
   // convey overage); fall back to limit - used when it isn't provided.
   const remaining =
     typeof quota?.remaining === "number" ? quota.remaining : limit - used;
-  // Clamp the period to a known value so the i18n lookup never renders the raw
-  // key when the backend returns an unexpected period.
-  const period: QuotaPeriod = QUOTA_PERIODS.includes(
-    quota?.period as QuotaPeriod,
-  )
-    ? (quota?.period as QuotaPeriod)
-    : "monthly";
   const ratio = hasQuota ? used / limit : 0;
   const pct = Math.max(0, Math.min(100, ratio * 100));
   const over = hasQuota && used >= limit;
   const warn = !over && ratio >= 0.8;
+
+  // Per-model consumption: one row per allowlist entry that carries a limit.
+  // Entries without one are unlimited and carry no used/remaining at all, so
+  // they get no readout here — the editor below still lists them.
+  const perModelEntries =
+    granularity === "per_model"
+      ? (limits.allowed_models ?? []).filter(
+          (m) => typeof m.token_limit === "number",
+        )
+      : [];
 
   return (
     <Form {...form}>
@@ -265,6 +281,102 @@ export const ApiKeyLimitsCard = ({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Per-model consumption (current period) */}
+            {perModelEntries.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">
+                  {t("api_keys.limits.perModel.consumptionTitle")}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground">
+                      <tr className="text-left">
+                        <th className="py-1 pr-3 font-normal">
+                          {t("api_keys.fields.model")}
+                        </th>
+                        <th className="py-1 pr-3 font-normal">
+                          {t("api_keys.limits.perModel.limitColumn")}
+                        </th>
+                        <th className="py-1 pr-3 font-normal">
+                          {t("api_keys.limits.perModel.usedColumn")}
+                        </th>
+                        <th className="py-1 pr-3 font-normal">
+                          {t("api_keys.limits.perModel.remainingColumn")}
+                        </th>
+                        <th className="py-1 font-normal">
+                          {t("api_keys.limits.period")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {perModelEntries.map((entry) => {
+                        const entryUsed = Number(entry.used ?? 0) || 0;
+                        const entryLimit = Number(entry.token_limit ?? 0) || 0;
+                        // remaining is authoritative and may be negative: a soft
+                        // quota can be overshot before enforcement catches up.
+                        const entryRemaining =
+                          typeof entry.remaining === "number"
+                            ? entry.remaining
+                            : entryLimit - entryUsed;
+                        const exhausted = entryRemaining <= 0;
+                        return (
+                          <tr
+                            key={`${entry.type ?? ""}|${entry.endpoint_name ?? ""}|${entry.model}`}
+                            className="border-t"
+                          >
+                            <td className="py-1.5 pr-3">
+                              <div className="font-medium">{entry.model}</div>
+                              <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground">
+                                {entry.endpoint_name ? (
+                                  <span>{entry.endpoint_name}</span>
+                                ) : null}
+                                {entry.type ? (
+                                  <ModelSourceBadge
+                                    source={resolveModelSource(entry.type)}
+                                  />
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="h-5 font-normal"
+                                  >
+                                    {t("api_keys.models.anySource")}
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-1.5 pr-3 tabular-nums">
+                              {formatTokenQuota(entryLimit)}
+                            </td>
+                            <td className="py-1.5 pr-3 tabular-nums">
+                              {formatTokenQuota(entryUsed)}
+                            </td>
+                            <td
+                              className={cn(
+                                "py-1.5 pr-3 tabular-nums",
+                                exhausted && "text-destructive",
+                              )}
+                            >
+                              {exhausted
+                                ? t("api_keys.limits.perModel.exhausted", {
+                                    amount: formatTokenQuota(entryRemaining),
+                                  })
+                                : formatTokenQuota(entryRemaining)}
+                            </td>
+                            <td className="py-1.5">
+                              {t(`api_keys.limits.periods.${period}`)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("api_keys.limits.perModel.softQuotaNote")}
+                </p>
+              </div>
+            )}
+
             {/* Token-quota consumption */}
             {hasQuota && (
               <div className="space-y-1">
