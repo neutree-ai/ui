@@ -42,6 +42,9 @@ jobs:
       - name: Check i18n key references
         run: node tools/check-i18n-keys.cjs
 
+      - name: Check Tailwind shadow utilities
+        run: node tools/check-shadow-utilities.cjs
+
       - name: Run tests
         run: yarn test:coverage
 
