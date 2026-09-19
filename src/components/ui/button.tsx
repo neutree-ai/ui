@@ -5,18 +5,20 @@ import * as React from "react";
 import { cn } from "@/foundation/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--nt-radius-button)] text-sm font-medium [transition:background-color_var(--nt-motion-fast),border-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] focus-visible:outline-none focus-visible:shadow-[var(--nt-outline-active-focus)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  // Focus-visible follows the design system's button spec: 2px outline, 2px offset,
+  // stroke-outstanding-base (stroke-serious-base for the danger variant).
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--nt-radius-button)] text-sm font-medium [transition:background-color_var(--nt-motion-fast),border-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] focus-visible:[outline:2px_solid_var(--nt-focus-ring,var(--nt-stroke-outstanding-base))] focus-visible:[outline-offset:2px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-[var(--nt-fill-outstanding-base)] text-[var(--nt-text-neutral-ontint)] shadow-[var(--nt-effect-button-shadow-push-button-cta)] hover:bg-[var(--nt-fill-outstanding-bright)] active:bg-[var(--nt-fill-outstanding-dark)]",
+          "bg-[var(--nt-fill-outstanding-base)] text-[var(--nt-text-neutral-ontint)] [box-shadow:var(--nt-effect-button-shadow-push-button-cta)] hover:bg-[var(--nt-fill-outstanding-bright)] active:bg-[var(--nt-fill-outstanding-dark)]",
         destructive:
-          "bg-[var(--nt-fill-serious-base)] text-[var(--nt-text-neutral-ontint)] shadow-[var(--nt-effect-button-shadow-push-button-cta)] hover:bg-[var(--nt-fill-serious-bright)] focus-visible:shadow-[var(--nt-outline-active-focus-error)]",
+          "bg-[var(--nt-fill-serious-base)] text-[var(--nt-text-neutral-ontint)] [box-shadow:var(--nt-effect-button-shadow-push-button-cta)] hover:bg-[var(--nt-fill-serious-bright)] [--nt-focus-ring:var(--nt-stroke-serious-base)]",
         outline:
-          "border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-super)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] hover:border-[var(--nt-stroke-neutral-trans-4)] hover:bg-[var(--nt-fill-neutral-opaque-1)]",
+          "border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-white)] text-[var(--nt-text-neutral-super)] [box-shadow:var(--nt-effect-button-shadow-push-button-ordinary)] hover:border-[var(--nt-stroke-neutral-trans-4)] hover:bg-[var(--nt-fill-neutral-opaque-1)]",
         secondary:
-          "border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-super)] shadow-[var(--nt-effect-button-shadow-push-button-ordinary)] hover:bg-[var(--nt-fill-neutral-opaque-2)]",
+          "border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-super)] [box-shadow:var(--nt-effect-button-shadow-push-button-ordinary)] hover:bg-[var(--nt-fill-neutral-opaque-2)]",
         ghost:
           "text-[var(--nt-text-neutral-super)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)]",
         link: "text-[var(--nt-text-colorful-outstanding)] underline-offset-4 hover:underline",

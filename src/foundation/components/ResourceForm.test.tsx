@@ -1,7 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { FieldValues } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
+import { FormFieldGroup } from "./FormFieldGroup";
 import { ResourceForm } from "./ResourceForm";
 import { VariablesInput } from "./VariablesInput";
 
@@ -88,6 +90,41 @@ function VariablesForm({
         onChange={(next) => methods.setValue("args", next)}
         schema={variablesSchema}
       />
+    </ResourceForm>
+  );
+}
+
+function OptionFieldsForm({
+  onFinish,
+  options,
+}: {
+  onFinish: () => void;
+  options: number;
+}) {
+  const methods = useForm<FieldValues>({
+    defaultValues: { name: "initial" },
+  });
+  const formProps = {
+    ...methods,
+    refineCore: {
+      onFinish: vi.fn(async () => onFinish()),
+      formLoading: false,
+    },
+    saveButtonProps: {},
+  } as unknown as Parameters<typeof ResourceForm<FieldValues>>[0];
+
+  return (
+    <ResourceForm {...formProps} hideCancel>
+      {Array.from({ length: options }, (_, index) => (
+        <FormFieldGroup
+          key={index}
+          {...methods}
+          name="name"
+          label={`option-${index}`}
+        >
+          <input data-testid={`option-input-${index}`} />
+        </FormFieldGroup>
+      ))}
     </ResourceForm>
   );
 }
@@ -197,5 +234,49 @@ describe("ResourceForm", () => {
         screen.getByText("components.variablesInput.invalidJsonValue"),
       ).toBeTruthy();
     });
+  });
+
+  it("refuses Enter from a field of a complex form", () => {
+    render(<OptionFieldsForm onFinish={vi.fn()} options={2} />);
+
+    const handled = fireEvent.keyDown(screen.getByTestId("option-input-0"), {
+      key: "Enter",
+    });
+
+    expect(handled).toBe(false);
+  });
+
+  it("keeps Enter-to-submit in a single-option form", () => {
+    render(<OptionFieldsForm onFinish={vi.fn()} options={1} />);
+
+    const handled = fireEvent.keyDown(screen.getByTestId("option-input-0"), {
+      key: "Enter",
+    });
+
+    expect(handled).toBe(true);
+  });
+
+  it("lets the submit button take Enter", () => {
+    render(<OptionFieldsForm onFinish={vi.fn()} options={2} />);
+
+    const handled = fireEvent.keyDown(screen.getByTestId("form-submit"), {
+      key: "Enter",
+    });
+
+    expect(handled).toBe(true);
+  });
+
+  it("refuses the submit that follows a composing Enter", () => {
+    const onFinish = vi.fn();
+    render(<OptionFieldsForm onFinish={onFinish} options={2} />);
+
+    const leftToIme = fireEvent.keyDown(screen.getByTestId("option-input-0"), {
+      key: "Enter",
+      isComposing: true,
+    });
+    fireEvent.submit(screen.getByTestId("form"));
+
+    expect(leftToIme).toBe(true);
+    expect(onFinish).not.toHaveBeenCalled();
   });
 });
