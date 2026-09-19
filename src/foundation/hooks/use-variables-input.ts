@@ -11,9 +11,10 @@ type SchemaPropertyType =
   | "array";
 
 export interface SchemaProperty {
-  type: SchemaPropertyType;
+  type: SchemaPropertyType | SchemaPropertyType[];
   title?: string;
   description?: string;
+  pattern?: string;
 }
 
 export interface Schema {
@@ -27,6 +28,7 @@ export interface EditingRow {
 }
 
 export const INVALID_JSON_ERROR = "components.variablesInput.invalidJsonValue";
+const INVALID_PATTERN_ERROR = "components.variablesInput.invalidPatternValue";
 
 let nextEditingRowId = 0;
 
@@ -36,7 +38,11 @@ const createEditingRow = (): EditingRow => ({
   value: "",
 });
 
-const getDefaultValueForType = (type: SchemaPropertyType): string => {
+const getDefaultValueForType = (
+  type: SchemaPropertyType | SchemaPropertyType[],
+): string => {
+  if (Array.isArray(type)) return "";
+
   switch (type) {
     case "boolean":
       return "false";
@@ -162,6 +168,8 @@ export function useVariablesInput({
     if (!schema[key]) return rawValue;
 
     const type = schema[key].type;
+    if (Array.isArray(type)) return rawValue;
+
     if (type === "number" || type === "float") {
       return rawValue === "" ? "" : Number.parseFloat(rawValue);
     }
@@ -193,6 +201,12 @@ export function useVariablesInput({
 
       // Check if key already exists, including keys saved earlier in this batch.
       if (Object.hasOwn(nextValue, row.key)) continue;
+
+      const pattern = schema[row.key]?.pattern;
+      if (pattern && !new RegExp(pattern).test(row.value)) {
+        nextErrors[id] = INVALID_PATTERN_ERROR;
+        continue;
+      }
 
       const processedValue = processValue(row.key, row.value);
       if (
