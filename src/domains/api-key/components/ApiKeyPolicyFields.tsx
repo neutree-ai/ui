@@ -11,6 +11,8 @@ import {
   useWorkspaceModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 
 type ApiKeyPolicyFieldsProps = {
   // The react-hook-form instance whose values include the policy fields.
@@ -153,9 +155,10 @@ export const ApiKeyPolicyFields = ({
                       <span className="truncate max-w-[120px] text-xs text-muted-foreground">
                         {r.endpoint_name}
                       </span>
-                      <Badge variant="outline" className="h-5 font-normal">
-                        {t(`api_keys.models.${r.type}`)}
-                      </Badge>
+                      {/* The endpoint behind this pin is gone from the
+                          workspace listing, so only the derivation is left:
+                          internal is always self-hosted, external is unknown. */}
+                      <ModelSourceBadge source={resolveModelSource(r.type)} />
                     </>
                   ) : (
                     <Badge variant="outline" className="h-5 font-normal">

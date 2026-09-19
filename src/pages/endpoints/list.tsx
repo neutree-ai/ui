@@ -10,10 +10,12 @@ import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import { ListPage } from "@/foundation/components/ListPage";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const EndpointsList = () => {
@@ -69,6 +71,17 @@ export const EndpointsList = () => {
               const { model } = (row.original as Endpoint).spec;
               return <EndpointModel model={model} />;
             }}
+          />
+          {/* Source is derived, never stored, for an internal endpoint: the
+              platform runs it, so it is always self-hosted. */}
+          <Table.Column
+            header={t("modelSource.label")}
+            accessorKey="metadata"
+            id="model_source"
+            enableHiding
+            cell={() => (
+              <ModelSourceBadge source={resolveModelSource("internal")} />
+            )}
           />
           <Table.Column
             header={t("common.fields.task")}

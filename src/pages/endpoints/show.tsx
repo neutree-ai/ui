@@ -30,12 +30,14 @@ import type { Engine } from "@/domains/engine/types";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 
 const EndpointLogTabs = lazy(() =>
   import("@/domains/endpoint/components/EndpointLogTabs").then((m) => ({
@@ -227,6 +229,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     model={record.spec.model}
                     workspace={record.metadata.workspace}
                   />
+                </ShowPage.Meta>
+                <ShowPage.Meta label={t("modelSource.label")}>
+                  {/* Derived, not stored: an endpoint the platform runs is
+                      always self-hosted, so there is nothing to edit here. */}
+                  <ModelSourceBadge source={resolveModelSource("internal")} />
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.task")}>
                   <ModelTask task={record.spec.model?.task} />
