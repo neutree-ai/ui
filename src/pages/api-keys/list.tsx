@@ -49,6 +49,7 @@ import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm"
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
   rateSummary,
+  resolveQuotaPeriod,
   useAllApiKeyTraffic,
   useAllApiKeyUsage,
   useApiKeyDisable,
@@ -1040,17 +1041,24 @@ export const ApiKeysList = () => {
                           {shown.map((key) => {
                             const limits = key.spec.limits ?? {};
                             const usage = usageByKey.get(String(key.id));
+                            // A per-model key has no single pool, so the summary
+                            // returns a null token_limit for it: there is a
+                            // total used but no bar and no "exceeded" state to
+                            // derive from it (each model has its own).
+                            const usageLimit =
+                              usage?.token_limit && usage.token_limit > 0
+                                ? usage.token_limit
+                                : null;
                             const usageRatio =
-                              usage && usage.token_limit > 0
-                                ? usage.used / usage.token_limit
-                                : 0;
+                              usage && usageLimit ? usage.used / usageLimit : 0;
                             const usagePercent = Math.max(
                               0,
                               Math.min(100, usageRatio * 100),
                             );
-                            const usageOver = usage
-                              ? usage.used >= usage.token_limit
-                              : false;
+                            const usageOver =
+                              usage && usageLimit
+                                ? usage.used >= usageLimit
+                                : false;
                             const usageWarn = !usageOver && usageRatio >= 0.8;
                             return (
                               <tr key={key.id} className="border-t">
@@ -1125,30 +1133,63 @@ export const ApiKeysList = () => {
                                   </Badge>
                                 </td>
                                 <td>
-                                  {usage && usage.token_limit > 0 ? (
+                                  {usage ? (
                                     <div className="flex w-40 flex-col gap-1">
-                                      <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-                                        <span>
-                                          {formatTokenQuota(usage.used)} /{" "}
-                                          {formatTokenQuota(usage.token_limit)}
-                                        </span>
-                                        <span>{Math.round(usagePercent)}%</span>
-                                      </div>
-                                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
-                                        <div
-                                          className={cn(
-                                            "h-full",
-                                            usageOver
-                                              ? "bg-destructive"
-                                              : usageWarn
-                                                ? "bg-amber-500"
-                                                : "bg-primary",
+                                      <div className="flex items-center gap-1.5">
+                                        <Badge
+                                          variant="outline"
+                                          className="h-5 font-normal"
+                                        >
+                                          {t(
+                                            `api_keys.limits.granularity.${usage.granularity}`,
                                           )}
-                                          style={{
-                                            width: `${usagePercent}%`,
-                                          }}
-                                        />
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                          {t(
+                                            `api_keys.limits.periods.${resolveQuotaPeriod(usage.period)}`,
+                                          )}
+                                        </span>
                                       </div>
+                                      {usageLimit ? (
+                                        <>
+                                          <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+                                            <span>
+                                              {formatTokenQuota(usage.used)} /{" "}
+                                              {formatTokenQuota(usageLimit)}
+                                            </span>
+                                            <span>
+                                              {Math.round(usagePercent)}%
+                                            </span>
+                                          </div>
+                                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+                                            <div
+                                              className={cn(
+                                                "h-full",
+                                                usageOver
+                                                  ? "bg-destructive"
+                                                  : usageWarn
+                                                    ? "bg-amber-500"
+                                                    : "bg-primary",
+                                              )}
+                                              style={{
+                                                width: `${usagePercent}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </>
+                                      ) : (
+                                        // Per-model: the total is the only
+                                        // figure that means anything across
+                                        // models; the per-model split lives on
+                                        // the key's detail page.
+                                        <span className="text-xs text-muted-foreground tabular-nums">
+                                          {t("api_keys.limits.usedTotal", {
+                                            amount: formatTokenQuota(
+                                              usage.used,
+                                            ),
+                                          })}
+                                        </span>
+                                      )}
                                     </div>
                                   ) : (
                                     <span className="text-muted-foreground">
