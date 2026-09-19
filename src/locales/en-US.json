@@ -2099,7 +2099,6 @@
 		"title": "Model Usage",
 		"refresh": "Refresh",
 		"empty": "No usage in the selected window.",
-		"clearFocusDate": "Clear focused date",
 		"filters": {
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",
@@ -2129,7 +2128,14 @@
 			},
 			"titleByKey": "Daily tokens by API key",
 			"titleByModel": "Daily tokens by model",
-			"totalLabel": "total tokens"
+			"totalLabel": "total tokens",
+			"titleDayByKey": "Tokens by API key · single day",
+			"titleDayByModel": "Tokens by model · single day",
+			"otherKeys": "Other {{n}} API keys",
+			"otherAxisLabel": "Other {{n}} (total)",
+			"clickHint": "Click a day to scope the page to that day",
+			"backToPreset": "Back to last {{days}} days",
+			"backToRange": "Back to {{range}}"
 		},
 		"detail": {
 			"title": "Daily detail",
@@ -2142,6 +2148,8 @@
 		"chart": {
 			"line": "Line chart",
 			"bar": "Bar chart"
-		}
+		},
+		"byApiKeyOnDay": "By API key · {{date}}",
+		"byModelOnDay": "By model · {{date}}"
 	}
 }

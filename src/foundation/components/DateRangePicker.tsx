@@ -19,6 +19,14 @@ export type DateRange = { start: string; end: string };
 
 const DEFAULT_PRESETS = [7, 30, 90];
 
+// The control's label, shared with callers that need to name a range in copy
+// (e.g. the model-usage chart's "back to ..." button). A single-day range reads
+// as one date rather than "Sep 7 – Sep 7".
+export const formatRangeLabel = (value: DateRange): string =>
+  value.start === value.end
+    ? dayjs(value.start).format("MMM D")
+    : `${dayjs(value.start).format("MMM D")} – ${dayjs(value.end).format("MMM D")}`;
+
 // trailingRange returns the inclusive window covering the last `days` days up to
 // and including today.
 export function trailingRange(days: number): DateRange {
@@ -51,7 +59,7 @@ export function DateRangePicker({
   // react-day-picker extends the existing range instead of starting a new one,
   // so re-picking a narrower window inside the current one keeps the old start.
   const [draftStart, setDraftStart] = useState<string | null>(null);
-  const label = `${dayjs(value.start).format("MMM D")} – ${dayjs(value.end).format("MMM D")}`;
+  const label = formatRangeLabel(value);
   const selected: RdpRange = draftStart
     ? { from: dayjs(draftStart).toDate(), to: undefined }
     : { from: dayjs(value.start).toDate(), to: dayjs(value.end).toDate() };

@@ -27,13 +27,17 @@ export const PaginationControls = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  showPageSize = true,
   summary,
 }: {
   page: number;
   pageCount: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  // Callers that own the page size themselves (the model-usage cards keep it
+  // fixed) hide the rows-per-page control rather than render a dead one.
+  showPageSize?: boolean;
   summary?: ReactNode;
 }) => {
   const { t } = useTranslation();
@@ -44,26 +48,28 @@ export const PaginationControls = ({
     <div className="flex flex-col sm:flex-row gap-y-4 sm-gap-y-0 items-center justify-between">
       <div className="flex-1 text-sm text-muted-foreground">{summary}</div>
       <div className="flex relative flex-col-reverse gap-y-4 sm:gap-y-0 sm:flex-row items-center space-x-6 lg:space-x-8">
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">
-            {t("table.pagination.rowsPerPage")}
-          </p>
-          <Select
-            value={`${pageSize}`}
-            onValueChange={(value) => onPageSizeChange(Number(value))}
-          >
-            <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue placeholder={pageSize} />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZES.map((size) => (
-                <SelectItem key={size} value={`${size}`}>
-                  {size}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {showPageSize && onPageSizeChange ? (
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">
+              {t("table.pagination.rowsPerPage")}
+            </p>
+            <Select
+              value={`${pageSize}`}
+              onValueChange={(value) => onPageSizeChange(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pageSize} />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZES.map((size) => (
+                  <SelectItem key={size} value={`${size}`}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         <div className="flex w-fit items-center justify-center text-sm font-medium">
           {t("table.pagination.page", { current: page, total: pageCount })}
         </div>
