@@ -3,6 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AllowedModel, ApiKeyLimits } from "@/domains/api-key/types";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 import {
+  type ModelSource,
+  modelSourceRank,
+  resolveModelSource,
+} from "@/foundation/lib/model-source";
+import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   formatThousands,
   splitTokenQuota,
@@ -233,7 +238,14 @@ export type WorkspaceModelOption = {
   label: string;
   model: string;
   endpointName: string;
+  // The endpoint kind. Still the half of the allowlist triple that is written
+  // to the API, and still what `value` is keyed on, even though it is no longer
+  // shown as a badge — `source` displays instead.
   type: "internal" | "external";
+  // The displayed source label. Derived as `self-hosted` for every internal
+  // endpoint; read from the external endpoint's `neutree.ai/model-source`
+  // label otherwise, and `undefined` when it carries none.
+  source: ModelSource | undefined;
   phase: string | null;
 };
 
@@ -244,7 +256,10 @@ type WorkspaceEndpointRef = {
 };
 
 type WorkspaceExternalEndpointRef = {
-  metadata?: { name?: string | null } | null;
+  metadata?: {
+    name?: string | null;
+    labels?: Record<string, string> | null;
+  } | null;
   spec?: {
     upstreams?: {
       model_mapping?: Record<string, string> | null;
@@ -268,22 +283,26 @@ function exposedExternalModels(
   );
 }
 
-// Order the allowed-models options: status is the primary grouping (serving
-// endpoints first, so usable models surface at the top), and within the same
-// status, internal models are grouped before external ones, then a stable
+// Order the allowed-models options: source is the primary grouping, so the
+// picker can render one contiguous section per source and the cost profile of
+// a model is visible before anything else. Within a source, serving endpoints
+// come first (usable models at the top of their section), then a stable
 // alphabetical order (model, endpoint). A Degraded external endpoint is still
 // serving, so its models rank with the Running ones.
+//
+// Source-first still puts internal models first overall, because `self-hosted`
+// is the first preset and only internal endpoints ever carry it — the property
+// the IE/EE distinction in the picker rests on.
 export function compareWorkspaceModelOptions(
   a: WorkspaceModelOption,
   b: WorkspaceModelOption,
 ): number {
   const runningRank = (phase: string | null) =>
     phase === "Running" || phase === "Degraded" ? 0 : 1;
-  const typeRank = (type: WorkspaceModelOption["type"]) =>
-    type === "internal" ? 0 : 1;
   return (
+    modelSourceRank(a.source) - modelSourceRank(b.source) ||
+    (a.source ?? "").localeCompare(b.source ?? "") ||
     runningRank(a.phase) - runningRank(b.phase) ||
-    typeRank(a.type) - typeRank(b.type) ||
     a.model.localeCompare(b.model) ||
     a.endpointName.localeCompare(b.endpointName)
   );
@@ -325,6 +344,7 @@ export function useWorkspaceModels(
         model,
         endpointName,
         type: "internal",
+        source: resolveModelSource("internal"),
         phase: endpoint.status?.phase ?? null,
       });
     }
@@ -332,6 +352,7 @@ export function useWorkspaceModels(
     for (const endpoint of externalEndpointsData?.data ?? []) {
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
+      const source = resolveModelSource("external", endpoint.metadata?.labels);
       for (const model of exposedExternalModels(endpoint.spec)) {
         const trimmed = String(model ?? "").trim();
         if (!trimmed) continue;
@@ -341,6 +362,7 @@ export function useWorkspaceModels(
           model: trimmed,
           endpointName,
           type: "external",
+          source,
           phase: endpoint.status?.phase ?? null,
         });
       }
@@ -356,6 +378,7 @@ export function useWorkspaceModels(
 type ModelEndpoint = {
   name: string;
   type: "internal" | "external";
+  source: ModelSource | undefined;
   phase: string | null;
 };
 type ModelInfo = {
@@ -388,6 +411,7 @@ export function useWorkspaceModelMap(
         info.endpoints.push({
           name: option.endpointName,
           type: option.type,
+          source: option.source,
           phase: option.phase,
         });
       }

@@ -29,6 +29,11 @@ import {
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  EXTERNAL_MODEL_SOURCES,
+  MODEL_SOURCE_LABEL_KEY,
+  modelSourceTranslationKey,
+} from "@/foundation/lib/model-source";
 
 const emptyExternalUpstream: UpstreamSpec = {
   upstream: { url: "" },
@@ -52,6 +57,8 @@ export const useExternalEndpointForm = ({
       metadata: {
         name: "",
         workspace: isValidWorkspace(currentWorkspace) ? currentWorkspace : "",
+        // The source label lives in here, under MODEL_SOURCE_LABEL_KEY.
+        labels: {},
       },
       spec: {
         route_type: "/v1/chat/completions",
@@ -137,6 +144,31 @@ export const useExternalEndpointForm = ({
     [form],
   );
 
+  // Source label. Stored as a metadata label rather than a spec field, so it
+  // is read and written through the labels map instead of a registered form
+  // path — the key contains dots and a slash, which react-hook-form would read
+  // as a nested path.
+  //
+  // `self-hosted` is deliberately absent from the options: it is the derived
+  // source of internal endpoints, the backend rejects it here, and offering it
+  // would make two rows for the same model name indistinguishable in the
+  // API-key model picker.
+  const labels = form.watch("metadata.labels");
+  const modelSource = labels?.[MODEL_SOURCE_LABEL_KEY] ?? "";
+  const handleModelSourceChange = useCallback(
+    (value: string) => {
+      const next = { ...(form.getValues("metadata.labels") ?? {}) };
+      if (value) next[MODEL_SOURCE_LABEL_KEY] = value;
+      else delete next[MODEL_SOURCE_LABEL_KEY];
+      form.setValue("metadata.labels", next, { shouldDirty: true });
+    },
+    [form],
+  );
+  const modelSourceOptions = EXTERNAL_MODEL_SOURCES.map((source) => ({
+    label: t(modelSourceTranslationKey(source), { defaultValue: source }),
+    value: source,
+  }));
+
   // Fetch internal endpoints for the combobox
   const endpoints = useSelect({
     resource: "endpoints",
@@ -203,6 +235,19 @@ export const useExternalEndpointForm = ({
           }}
         >
           <WorkspaceField disabled={isEdit} />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
+          name="_modelSource"
+          label={t("modelSource.label")}
+          description={t("modelSource.externalHint")}
+        >
+          <FormSelect
+            value={modelSource}
+            onChange={handleModelSourceChange}
+            placeholder={t("modelSource.placeholder")}
+            options={modelSourceOptions}
+          />
         </FormFieldGroup>
       </FormCardGrid>
     ),

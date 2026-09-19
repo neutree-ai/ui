@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
@@ -247,21 +248,24 @@ describe("compareWorkspaceModelOptions", () => {
     value: `${over.model}:${over.endpointName}`,
     label: over.model,
     type: "internal",
+    source: over.type === "external" ? undefined : SELF_HOSTED_MODEL_SOURCE,
     phase: null,
     ...over,
   });
 
-  it("orders Running endpoints before non-running ones, regardless of type", () => {
+  it("orders Running endpoints before non-running ones within a source", () => {
     const paused = opt({
       model: "a",
       endpointName: "e1",
       type: "external",
+      source: "partner",
       phase: "Paused",
     });
     const running = opt({
       model: "z",
       endpointName: "e2",
-      type: "internal",
+      type: "external",
+      source: "partner",
       phase: "Running",
     });
     expect([paused, running].sort(compareWorkspaceModelOptions)).toEqual([
@@ -292,9 +296,9 @@ describe("compareWorkspaceModelOptions", () => {
   });
 
   it("groups internal before external within the same status", () => {
-    // Same status (Running), so a Running external model that sorts
-    // alphabetically before an internal one must still land after every
-    // Running internal model (type groups stay contiguous, internal first).
+    // Internal endpoints are always self-hosted, the first preset source, so a
+    // Running external model that sorts alphabetically before an internal one
+    // must still land after every Running internal model.
     const extA = opt({
       model: "aaa",
       endpointName: "e1",
@@ -335,7 +339,11 @@ describe("compareWorkspaceModelOptions", () => {
     expect([c, a, b].sort(compareWorkspaceModelOptions)).toEqual([b, a, c]);
   });
 
-  it("orders Running internal, Running external, then stopped internal", () => {
+  it("keeps each source contiguous, even across status", () => {
+    // Source is the primary grouping so the picker can render one heading per
+    // source: a stopped self-hosted model stays in the self-hosted section
+    // rather than sinking below the running external ones. Status still
+    // decides the order inside a section.
     const ie1 = opt({
       model: "ie-1",
       endpointName: "ie-1",
@@ -368,6 +376,63 @@ describe("compareWorkspaceModelOptions", () => {
     });
     expect(
       [ee2, ie3, ee1, ie2, ie1].sort(compareWorkspaceModelOptions),
-    ).toEqual([ie1, ie2, ee1, ee2, ie3]);
+    ).toEqual([ie1, ie2, ie3, ee1, ee2]);
+  });
+
+  it("orders sources by the preset list, unknown slugs then unlabelled last", () => {
+    const selfHosted = opt({
+      model: "m",
+      endpointName: "ie",
+      type: "internal",
+    });
+    const shared = opt({
+      model: "m",
+      endpointName: "ee-shared",
+      type: "external",
+      source: "internal-shared",
+    });
+    const custom = opt({
+      model: "m",
+      endpointName: "ee-custom",
+      type: "external",
+      source: "government-cloud",
+    });
+    const unlabelled = opt({
+      model: "m",
+      endpointName: "ee-plain",
+      type: "external",
+    });
+    expect(
+      [unlabelled, custom, shared, selfHosted].sort(
+        compareWorkspaceModelOptions,
+      ),
+    ).toEqual([selfHosted, shared, custom, unlabelled]);
+  });
+
+  it("keeps the internal and external rows for one model name apart", () => {
+    // The acceptance NEU-783 depends on: the same model name served by an
+    // internal and an external endpoint stays two distinguishable rows, and
+    // each keeps its own type + endpoint for the allowlist triple.
+    const internal = opt({
+      model: "qwen3",
+      endpointName: "qwen-ie",
+      type: "internal",
+      phase: "Running",
+    });
+    const external = opt({
+      model: "qwen3",
+      endpointName: "qwen-ee",
+      type: "external",
+      source: "third-party-public",
+      phase: "Running",
+    });
+    const sorted = [external, internal].sort(compareWorkspaceModelOptions);
+    expect(sorted).toEqual([internal, external]);
+    expect(sorted.map((o) => o.value)).toEqual([
+      "qwen3:qwen-ie",
+      "qwen3:qwen-ee",
+    ]);
+    expect(sorted[0]?.source).toBe(SELF_HOSTED_MODEL_SOURCE);
+    expect(sorted[1]?.source).toBe("third-party-public");
   });
 });

@@ -64,12 +64,14 @@ import type {
 } from "@/domains/api-key/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { ListPage } from "@/foundation/components/ListPage";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
@@ -144,9 +146,18 @@ function ModelsCell({
                 <span className="max-w-[140px] truncate">
                   {model.endpoint_name}
                 </span>
-                <Badge variant="outline" className="h-5 font-normal">
-                  {t(`api_keys.models.${model.type}`)}
-                </Badge>
+                {/* The source label replaces the old Internal/External badge.
+                    When the endpoint is no longer listed we fall back to the
+                    derivation, which is exact for internal endpoints. */}
+                <ModelSourceBadge
+                  source={
+                    endpoint
+                      ? endpoint.source
+                      : model.type
+                        ? resolveModelSource(model.type)
+                        : undefined
+                  }
+                />
                 {endpoint ? (
                   <Badge
                     variant="outline"

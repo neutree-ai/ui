@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { FormProvider } from "react-hook-form";
+import { FormProvider, type UseFormReturn } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
+import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
+import {
+  MODEL_SOURCE_LABEL_KEY,
+  SELF_HOSTED_MODEL_SOURCE,
+} from "@/foundation/lib/model-source";
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -88,7 +93,11 @@ vi.mock("@/foundation/components/FormSelect", () => ({
     ) => (
       <select
         ref={ref}
-        data-testid="form-select-mock"
+        data-testid={
+          props.options?.some((o) => o.value === "endpoint_ref")
+            ? "form-select-mock"
+            : "model-source-select-mock"
+        }
         value={props.value}
         onChange={(e) => props.onChange?.(e.target.value)}
       >
@@ -362,6 +371,50 @@ describe("useExternalEndpointForm", () => {
       expect(
         screen.queryByLabelText("external_endpoints.fields.endpointRef"),
       ).toBeNull();
+    });
+  });
+
+  describe("model source label", () => {
+    // The label is stored under a key containing dots and a slash, which
+    // react-hook-form would read as a nested path, so the field writes the
+    // whole labels map instead of registering a path.
+    let captured: UseFormReturn<ExternalEndpoint> | null = null;
+    function SourceForm() {
+      const { form, metadataFields } = useExternalEndpointForm({
+        action: "create",
+      });
+      captured = form as unknown as UseFormReturn<ExternalEndpoint>;
+      return (
+        <FormProvider {...form}>
+          <form>{metadataFields}</form>
+        </FormProvider>
+      );
+    }
+
+    const sourceSelect = () =>
+      screen.getByTestId("model-source-select-mock") as HTMLSelectElement;
+
+    it("offers every preset source except self-hosted", () => {
+      // self-hosted is the derived source of internal endpoints and the
+      // backend rejects it here; offering it would make the internal and
+      // external rows for one model name indistinguishable in the API-key
+      // model picker.
+      render(<SourceForm />);
+      const values = Array.from(sourceSelect().options).map((o) => o.value);
+      expect(values).toEqual([
+        "internal-shared",
+        "third-party-public",
+        "partner",
+      ]);
+      expect(values).not.toContain(SELF_HOSTED_MODEL_SOURCE);
+    });
+
+    it("writes the chosen source into metadata.labels", () => {
+      render(<SourceForm />);
+      fireEvent.change(sourceSelect(), { target: { value: "partner" } });
+      expect(captured?.getValues("metadata.labels")).toEqual({
+        [MODEL_SOURCE_LABEL_KEY]: "partner",
+      });
     });
   });
 

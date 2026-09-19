@@ -11,9 +11,11 @@ import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-ups
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 
 export const ExternalEndpointsShow = () => {
   const { t } = useTranslation();
@@ -52,6 +54,11 @@ export const ExternalEndpointsShow = () => {
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <ShowPage.Meta label={t("external_endpoints.fields.type")}>
               {t("external_endpoints.options.upstreamTypeExternal")}
+            </ShowPage.Meta>
+            <ShowPage.Meta label={t("modelSource.label")}>
+              <ModelSourceBadge
+                source={resolveModelSource("external", record.metadata?.labels)}
+              />
             </ShowPage.Meta>
             <ShowPage.Meta label={t("external_endpoints.fields.models")}>
               {allModels.length || "-"}

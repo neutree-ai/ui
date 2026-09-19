@@ -7,9 +7,11 @@ import {
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { ListPage } from "@/foundation/components/ListPage";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ExternalEndpointsList = () => {
@@ -57,6 +59,24 @@ export const ExternalEndpointsList = () => {
               mixed: t("external_endpoints.options.upstreamTypeMixed"),
             };
             return <Badge variant="outline">{labelMap[endpointType]}</Badge>;
+          }}
+        />
+        {/* Source label, stored on the endpoint as a metadata label. Note that
+            an external endpoint may legitimately be "internal-shared" — that
+            describes who runs the model, not the kind of endpoint. */}
+        <Table.Column
+          header={t("modelSource.label")}
+          accessorKey="metadata"
+          id="model_source"
+          enableHiding
+          cell={({ getValue }) => {
+            const metadata =
+              getValue() as unknown as ExternalEndpoint["metadata"];
+            return (
+              <ModelSourceBadge
+                source={resolveModelSource("external", metadata?.labels)}
+              />
+            );
           }}
         />
         <Table.Column

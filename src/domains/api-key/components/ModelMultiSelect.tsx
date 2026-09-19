@@ -18,6 +18,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { WorkspaceModelOption } from "@/domains/api-key/hooks/use-api-key-policy";
+import {
+  ModelSourceBadge,
+  useModelSourceLabel,
+} from "@/foundation/components/ModelSourceBadge";
 import { cn } from "@/foundation/lib/utils";
 
 type Option = WorkspaceModelOption;
@@ -74,10 +78,7 @@ export const ModelMultiSelect = ({
   const optionFor = (v: string) => options.find((o) => o.value === v);
   const phaseLabel = (phase: string | null) =>
     phase ? t(`status.phases.endpoint.${phase}`) : t("api_keys.models.unknown");
-  const typeLabel = (type: Option["type"]) =>
-    type === "external"
-      ? t("api_keys.models.external")
-      : t("api_keys.models.internal");
+  const sourceLabel = useModelSourceLabel();
 
   // cmdk's built-in filter re-orders items by match score, which would discard
   // the Running-first ordering the options already arrive in. Disable it
@@ -85,11 +86,23 @@ export const ModelMultiSelect = ({
   const query = search.trim().toLowerCase();
   const visibleOptions = query
     ? options.filter((o) =>
-        `${o.model} ${o.endpointName} ${typeLabel(o.type)} ${phaseLabel(o.phase)}`
+        `${o.model} ${o.endpointName} ${sourceLabel(o.source)} ${phaseLabel(o.phase)}`
           .toLowerCase()
           .includes(query),
       )
     : options;
+
+  // One section per source, in the order the options already arrive in
+  // (compareWorkspaceModelOptions sorts by source first, so each source's rows
+  // are contiguous). The heading is what makes the source obvious at a glance;
+  // the endpoint name under each row is what still tells apart two rows for the
+  // same model name served by different endpoints.
+  const groups: { source: Option["source"]; options: Option[] }[] = [];
+  for (const option of visibleOptions) {
+    const last = groups[groups.length - 1];
+    if (last && last.source === option.source) last.options.push(option);
+    else groups.push({ source: option.source, options: [option] });
+  }
 
   return (
     <div className="space-y-2">
@@ -126,45 +139,47 @@ export const ModelMultiSelect = ({
             />
             <CommandList className="max-h-60">
               <CommandEmpty>{t("api_keys.limits.noModels")}</CommandEmpty>
-              <CommandGroup>
-                {visibleOptions.map((o) => (
-                  <CommandItem
-                    key={o.value}
-                    value={o.value}
-                    onSelect={() => toggle(o.value)}
-                    className="group items-start gap-2"
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="truncate text-sm font-medium">
-                        {o.model}
+              {groups.map((group) => (
+                <CommandGroup
+                  key={group.source ?? "__unspecified__"}
+                  heading={sourceLabel(group.source)}
+                >
+                  {group.options.map((o) => (
+                    <CommandItem
+                      key={o.value}
+                      value={o.value}
+                      onSelect={() => toggle(o.value)}
+                      className="group items-start gap-2"
+                    >
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="truncate text-sm font-medium">
+                          {o.model}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
+                          <span className="truncate max-w-[180px]">
+                            {o.endpointName}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "h-5 font-normal",
+                              phaseClass(o.phase),
+                            )}
+                          >
+                            {phaseLabel(o.phase)}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
-                        <span className="truncate max-w-[180px]">
-                          {o.endpointName}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className="h-5 bg-background/80 font-normal group-data-[selected=true]:border-accent-foreground/30 group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground"
-                        >
-                          {typeLabel(o.type)}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className={cn("h-5 font-normal", phaseClass(o.phase))}
-                        >
-                          {phaseLabel(o.phase)}
-                        </Badge>
-                      </div>
-                    </div>
-                    <CheckIcon
-                      className={cn(
-                        "mt-1 ml-auto h-4 w-4",
-                        selected.has(o.value) ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+                      <CheckIcon
+                        className={cn(
+                          "mt-1 ml-auto h-4 w-4",
+                          selected.has(o.value) ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ))}
             </CommandList>
           </Command>
         </PopoverContent>
@@ -187,9 +202,7 @@ export const ModelMultiSelect = ({
                     <span className="truncate max-w-[120px] text-xs text-muted-foreground">
                       {option.endpointName}
                     </span>
-                    <Badge variant="outline" className="h-5 font-normal">
-                      {typeLabel(option.type)}
-                    </Badge>
+                    <ModelSourceBadge source={option.source} />
                     <Badge
                       variant="outline"
                       className={cn(
