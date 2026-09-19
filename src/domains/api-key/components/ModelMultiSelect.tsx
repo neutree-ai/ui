@@ -58,11 +58,16 @@ export const ModelMultiSelect = ({
   value,
   onChange,
   placeholder,
+  showSelected = true,
 }: {
   options: Option[];
   value: string[];
   onChange: (next: Option[]) => void;
   placeholder?: string;
+  // Whether to render the selection as chips below the dropdown. Off when the
+  // caller shows the selected models as its own rows (each carrying a per-model
+  // token limit), so the selection is not listed twice.
+  showSelected?: boolean;
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -184,7 +189,7 @@ export const ModelMultiSelect = ({
           </Command>
         </PopoverContent>
       </Popover>
-      {value.length > 0 && (
+      {showSelected && value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {value.map((v) => {
             const option = optionFor(v);

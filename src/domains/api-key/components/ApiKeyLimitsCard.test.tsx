@@ -32,6 +32,7 @@ vi.mock("@/domains/api-key/components/ProjectPicker", () => ({
 
 vi.mock("@/domains/api-key/hooks/use-api-key-policy", () => ({
   QUOTA_PERIODS: ["monthly"],
+  resolveQuotaPeriod: () => "monthly",
   apiKeyPolicyDefaults: () => ({}),
   buildApiKeyLimits: () => ({ rps: 10 }),
   limitsToForm: () => ({}),
