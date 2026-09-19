@@ -108,6 +108,20 @@ describe("writeCatalogModelSlot", () => {
     expect(next.metadata).toEqual(plain.metadata);
   });
 
+  it("drops a version the slot held when the selection pins none", () => {
+    const pinned = {
+      ...plain,
+      spec: { ...plain.spec, model: { ...plain.spec.model, version: "v1" } },
+    };
+
+    const next = writeCatalogModelSlot(pinned, catalogSlot, {
+      registry: "local-nfs",
+      name: "qwen3-8b",
+    }) as typeof plain;
+
+    expect(next.spec.model).not.toHaveProperty("version");
+  });
+
   // No registry reports a model's files, so the picker cannot fill `file` in.
   // A user repointing a GGUF catalog at their own copy still needs it.
   it("keeps the model file the slot already held", () => {
