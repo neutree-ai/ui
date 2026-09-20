@@ -1374,6 +1374,7 @@
 			"legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
 			"mode": "Request mode",
 			"all": "All modes",
+			"allModels": "All models",
 			"stream": "Streaming",
 			"nonStream": "Non-streaming",
 			"timeRange": "Time range",

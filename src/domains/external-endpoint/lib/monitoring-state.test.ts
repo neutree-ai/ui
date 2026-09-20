@@ -7,19 +7,37 @@ describe("monitoring navigation context", () => {
   it("preserves a deleted model without replacing it with the first current model", () => {
     const state = readMonitoringState(
       new URLSearchParams("model=deleted&from=1000&to=2000"),
-      ["new"],
     );
     expect(state.model).toBe("deleted");
     expect(state.refresh).toBe("");
     expect(state.absolute).toBe(true);
   });
+  it("defaults to all models without reserving a real model name", () => {
+    expect(readMonitoringState(new URLSearchParams()).model).toBeNull();
+    expect(readMonitoringState(new URLSearchParams("model=all")).model).toBe(
+      "all",
+    );
+    const props = getModelRoutingDashboardProps("https://grafana.example", {
+      workspace: "default",
+      endpoint: "ee",
+      model: null,
+      mode: "all",
+      from: "now-1h",
+      to: "now",
+      refresh: "30s",
+    });
+    expect(
+      new URL(buildGrafanaDashboardUrl(props)).searchParams.get(
+        "var-model_regex",
+      ),
+    ).toBe(JSON.stringify(".*"));
+  });
   it("rejects reversed absolute ranges and unsupported modes", () => {
     expect(
       readMonitoringState(
         new URLSearchParams("from=2000&to=1000&mode=arbitrary"),
-        ["chat"],
       ),
-    ).toMatchObject({ from: "now-1h", to: "now", mode: "all", model: "chat" });
+    ).toMatchObject({ from: "now-1h", to: "now", mode: "all", model: null });
   });
   it("round trips Unicode and query metacharacters into an exact dashboard scope", () => {
     const model = '中文"\\.+&model=other';
@@ -33,8 +51,8 @@ describe("monitoring navigation context", () => {
       refresh: "",
     });
     const url = new URL(buildGrafanaDashboardUrl(props));
-    expect(url.searchParams.getAll("var-model_literal")).toEqual([
-      JSON.stringify(model),
+    expect(url.searchParams.getAll("var-model_regex")).toEqual([
+      JSON.stringify(model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
     ]);
     expect(url.searchParams.get("var-endpoint_literal")).toBe(
       JSON.stringify("/workspace/default/external-endpoint/ee"),

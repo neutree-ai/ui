@@ -28,10 +28,7 @@ export default function ExternalEndpointMonitor({
   const { grafanaUrl, isLoading, error, refetch } = useSystemApi();
   const [params, setParams] = useSearchParams();
   const routes = record.spec.model_routes ?? [];
-  const state = readMonitoringState(
-    params,
-    routes.map((route) => route.model),
-  );
+  const state = readMonitoringState(params);
   const current = routes.find((route) => route.model === state.model);
   const [custom, setCustom] = useState(state.absolute);
   const localDateTime = (milliseconds: number) => {
@@ -50,7 +47,10 @@ export default function ExternalEndpointMonitor({
   const update = (changes: Record<string, string>) =>
     setParams((previous) => {
       const next = new URLSearchParams(previous);
-      for (const [key, value] of Object.entries(changes)) next.set(key, value);
+      for (const [key, value] of Object.entries(changes)) {
+        if (key === "model" && !value) next.delete(key);
+        else next.set(key, value);
+      }
       return next;
     });
   const props =
@@ -80,18 +80,25 @@ export default function ExternalEndpointMonitor({
             {t("external_endpoints.fields.virtualModel")}
           </label>
           <Select
-            value={state.model}
-            onValueChange={(model) => update({ model })}
+            value={state.model === null ? "all" : `model:${state.model}`}
+            onValueChange={(value) =>
+              update({ model: value === "all" ? "" : value.slice(6) })
+            }
           >
             <SelectTrigger id="monitor-model">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {!current && (
-                <SelectItem value={state.model}>{state.model}</SelectItem>
+              <SelectItem value="all">
+                {t("external_endpoints.monitor.allModels")}
+              </SelectItem>
+              {state.model !== null && !current && (
+                <SelectItem value={`model:${state.model}`}>
+                  {state.model}
+                </SelectItem>
               )}
               {routes.map((route) => (
-                <SelectItem key={route.model} value={route.model}>
+                <SelectItem key={route.model} value={`model:${route.model}`}>
                   {route.model}
                 </SelectItem>
               ))}
@@ -220,7 +227,7 @@ export default function ExternalEndpointMonitor({
           </form>
         )}
       </div>
-      {!current && (
+      {state.model !== null && !current && (
         <p
           role="status"
           className="rounded-md border border-orange-300 p-3 text-sm"

@@ -1,5 +1,5 @@
 const ranges = ["15m", "1h", "6h", "24h", "7d"];
-export function readMonitoringState(params: URLSearchParams, models: string[]) {
+export function readMonitoringState(params: URLSearchParams) {
   const from = params.get("from") ?? "now-1h";
   const to = params.get("to") ?? "now";
   const relative =
@@ -11,7 +11,7 @@ export function readMonitoringState(params: URLSearchParams, models: string[]) {
     Number(to) <= 8640000000000000;
   const mode = params.get("mode");
   return {
-    model: params.get("model") || models[0] || "",
+    model: params.get("model") || null,
     from: relative || absolute ? from : "now-1h",
     to: relative || absolute ? to : "now",
     mode: mode === "stream" || mode === "non_stream" ? mode : "all",

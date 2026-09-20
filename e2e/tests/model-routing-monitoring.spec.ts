@@ -69,14 +69,21 @@ test.describe("external endpoint monitoring", () => {
     ).toBeVisible({ timeout: 30000 });
     await iframe.scrollIntoViewIfNeeded();
     await page.mouse.wheel(0, 650);
-    const table = frame.getByRole("table").first();
+    await frame.getByRole("table").first().hover();
+    await page.mouse.wheel(0, 450);
+    const table = frame
+      .getByRole("region", {
+        name: "各目标实际分流 / Selected targets",
+        exact: true,
+      })
+      .getByRole("table");
     await expect(table.getByRole("row")).toHaveCount(2);
     await table.hover();
     await page.mouse.wheel(0, 900);
     await frame
       .getByRole("button", { name: "Expand row", exact: true })
       .click();
-    const capacity = frame.getByRole("table").nth(1);
+    const capacity = frame.getByRole("table").nth(2);
     await expect(capacity.getByRole("row")).toHaveCount(2);
     await expect(capacity).toContainText(/无限制|Unlimited/);
     await page.waitForLoadState("networkidle");
@@ -155,8 +162,8 @@ test.describe("external endpoint monitoring", () => {
     const src = await page
       .locator('iframe[title="Grafana Dashboard neutree-model-routing"]')
       .getAttribute("src");
-    expect(new URL(src!).searchParams.getAll("var-model_literal")).toEqual([
-      JSON.stringify(historical),
+    expect(new URL(src!).searchParams.getAll("var-model_regex")).toEqual([
+      JSON.stringify(historical.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
     ]);
     await expect
       .poll(() => queries.length, { timeout: 30000 })
@@ -177,5 +184,61 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       page.getByRole("button", { name: /Resume|恢复/ }),
     ).toBeDisabled();
+  });
+  test("defaults to all models and includes unknown-model failures", async ({
+    page,
+  }) => {
+    await page.goto(
+      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor`,
+    );
+    await expect(page.locator("#monitor-model")).toContainText(
+      /All models|全部模型/,
+    );
+    const iframe = page.locator(
+      'iframe[title="Grafana Dashboard neutree-model-routing"]',
+    );
+    const src = await iframe.getAttribute("src");
+    expect(new URL(src!).searchParams.get("var-model_regex")).toBe(
+      JSON.stringify(".*"),
+    );
+    await iframe.scrollIntoViewIfNeeded();
+    await page.mouse.wheel(0, 650);
+    const frame = page.frameLocator(
+      'iframe[title="Grafana Dashboard neutree-model-routing"]',
+    );
+    const models = frame.getByRole("region", {
+      name: "按模型请求与错误 / Requests and errors by model",
+      exact: true,
+    });
+    const unknown = models
+      .getByRole("row")
+      .filter({ hasText: "未识别或缺失 / Unknown" });
+    await expect(unknown).toBeVisible({ timeout: 30000 });
+    // Run scripts/monitoring/e2e.py with REAL_ENDPOINT_SCOPE first to seed an
+    // unknown-model failure. This asserts real stored traffic, not only a filter URL.
+    await expect
+      .poll(
+        async () => Number(await unknown.getByRole("cell").last().innerText()),
+        { timeout: 30000 },
+      )
+      .toBeGreaterThan(0);
+    await expect(
+      models.getByRole("row").filter({ hasText: model }),
+    ).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await page.locator("#monitor-model").click();
+    await page.getByRole("option", { name: model, exact: true }).click();
+    await expect(page.locator("#monitor-model")).toContainText(model);
+    await page.waitForLoadState("networkidle");
+    await page.locator("#monitor-model").click();
+    await page.getByRole("option", { name: /All models|全部模型/ }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expect(page.locator("#monitor-model")).toContainText(
+      /All models|全部模型/,
+    );
+    expect(new URLSearchParams(page.url().split("?")[1]).has("model")).toBe(
+      false,
+    );
   });
 });
