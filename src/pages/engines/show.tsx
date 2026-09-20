@@ -1,21 +1,17 @@
 import { useShow } from "@refinedev/core";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import EngineStatus from "@/domains/engine/components/EngineStatus";
 import JSONSchemaVisualizer from "@/domains/engine/components/JsonSchemaVisualizer";
+import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
+import { sortEngineVersionsNewestFirst } from "@/domains/engine/lib/version-order";
 import type { Engine } from "@/domains/engine/types";
+import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
+import { cn } from "@/foundation/lib/utils";
 
 export const EnginesShow = () => {
   const { t } = useTranslation();
@@ -26,20 +22,6 @@ export const EnginesShow = () => {
   } = useShow<Engine>({});
   const record = data?.data;
 
-  const [version, setVersion] = useState(
-    record?.spec.versions[0].version || "",
-  );
-
-  useEffect(() => {
-    if (record) {
-      // Use version from URL query param if valid, otherwise fall back to first version
-      const validVersion = record.spec.versions.find(
-        (v) => v.version === versionFromQuery,
-      );
-      setVersion(validVersion?.version || record.spec.versions[0]?.version);
-    }
-  }, [record, versionFromQuery]);
-
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
   }
@@ -48,9 +30,17 @@ export const EnginesShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const selectedVersion = record.spec.versions.find(
-    (v) => v.version === version,
-  );
+  const versions = record.spec.versions ?? [];
+  // Engines return versions in creation order, so the default comes from the
+  // comparison, not from `spec.versions[0]` — which used to select the oldest.
+  const newestFirst = sortEngineVersionsNewestFirst(versions);
+  const selected =
+    versions.find((version) => version.version === versionFromQuery) ??
+    newestFirst[0];
+  const showVersionList = newestFirst.length > 1;
+  const workspace = record.metadata.workspace ?? "";
+  const versionHref = (version: string) =>
+    `/${workspace}/engines/show/${record.metadata.name}?version=${encodeURIComponent(version)}`;
 
   return (
     <ShowPage
@@ -61,11 +51,15 @@ export const EnginesShow = () => {
     >
       <ShowPage.ObjectHeader
         title={record.metadata.name}
-        status={<EngineStatus {...record.status} />}
+        status={
+          isExceptionalEnginePhase(record.status?.phase) ? (
+            <EngineStatus {...record.status} />
+          ) : undefined
+        }
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <ShowPage.Meta label={t("common.fields.versions")}>
-              {record.spec.versions.length}
+              {versions.length}
             </ShowPage.Meta>
             <ShowPage.Meta label={t("engines.fields.supportedTasks")}>
               {record.spec.supported_tasks?.length ?? 0}
@@ -84,31 +78,62 @@ export const EnginesShow = () => {
             ))}
           </div>
         </ShowPage.Section>
-        <ShowPage.Section title={t("common.fields.versions")}>
-          <Select
-            value={version}
-            onValueChange={(v) => {
-              setVersion(v);
-            }}
+        <ShowPage.Section
+          title={t("common.fields.versions")}
+          // A single version has no list to scan; name it instead of leaving
+          // the schema unattributed.
+          description={
+            !showVersionList && selected ? (
+              <code className="font-mono">{selected.version}</code>
+            ) : undefined
+          }
+        >
+          <div
+            className={
+              showVersionList
+                ? "grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]"
+                : undefined
+            }
           >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t("engines.fields.engineVersion")} />
-            </SelectTrigger>
-            <SelectContent>
-              {record.spec.versions.map((v) => {
-                return (
-                  <SelectItem value={v.version} key={v.version}>
-                    {v.version}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-          {selectedVersion && (
-            <ShowPage.Row title={t("engines.fields.valuesSchema")}>
-              <JSONSchemaVisualizer schema={selectedVersion.values_schema} />
-            </ShowPage.Row>
-          )}
+            {showVersionList && (
+              <nav
+                aria-label={t("engines.versions.all")}
+                className="flex flex-wrap content-start gap-1 md:flex-col md:flex-nowrap"
+              >
+                {newestFirst.map((item, index) => (
+                  <Link
+                    key={item.version}
+                    href={versionHref(item.version)}
+                    aria-current={
+                      item.version === selected?.version ? "true" : undefined
+                    }
+                    className={cn(
+                      "flex items-center gap-2 rounded-[var(--nt-radius-input)] border border-transparent px-2 py-1.5 transition-colors hover:bg-muted/60",
+                      item.version === selected?.version &&
+                        "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-light)]",
+                    )}
+                  >
+                    <code className="font-mono text-xs text-[var(--nt-text-neutral-primary)]">
+                      {item.version}
+                    </code>
+                    {index === 0 && (
+                      <Badge
+                        variant="default"
+                        className="px-1.5 py-0 text-[10px] leading-4"
+                      >
+                        {t("engines.versions.latest")}
+                      </Badge>
+                    )}
+                  </Link>
+                ))}
+              </nav>
+            )}
+            {selected && (
+              <ShowPage.Row title={t("engines.fields.valuesSchema")}>
+                <JSONSchemaVisualizer schema={selected.values_schema} />
+              </ShowPage.Row>
+            )}
+          </div>
         </ShowPage.Section>
       </div>
     </ShowPage>

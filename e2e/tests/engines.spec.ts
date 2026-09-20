@@ -1,11 +1,29 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "../fixtures/base";
 import { MULTI_USER_TIMEOUT } from "../helpers/constants";
-import { ResourcePage } from "../helpers/resource-page";
 import { YamlImportHelper } from "../helpers/yaml-import";
 
 /** Known engines that exist in the test environment */
 const ENGINE_LLAMA = "llama-cpp";
 const ENGINE_VLLM = "vllm";
+
+const ENGINE_CARD = '[data-testid="engine-card"]';
+
+// The engines list is a card grid, not a table: one card per engine, with the
+// newest version and a hover list of the rest. Column sorting, column
+// visibility and the workspace column no longer exist on this page, so the
+// cases that asserted them were dropped rather than rewritten.
+async function gotoEngineList(
+  page: Page,
+  workspace = "default",
+): Promise<void> {
+  await page.goto(`/#/${workspace}/engines`);
+  await page.getByPlaceholder(/search by name/i).waitFor({ state: "visible" });
+}
+
+function engineCard(page: Page, name: string) {
+  return page.locator(`${ENGINE_CARD}[data-name="${name}"]`);
+}
 
 /** Build an Engine YAML document for import */
 function engineYaml(
@@ -26,178 +44,140 @@ spec:
 }
 
 test.describe("engines list", () => {
-  test("list page shows expected columns and known engines", {
+  test("list page shows the known engines as cards", {
     tag: ["@C2613049", "@C2613204"],
   }, async ({ engines }) => {
-    await engines.goToList();
+    await gotoEngineList(engines.page);
 
-    const headers = engines.table.root.locator("thead th");
-    await expect(headers.filter({ hasText: /name/i })).toBeVisible();
-    await expect(headers.filter({ hasText: /workspace/i })).toBeVisible();
-    await expect(headers.filter({ hasText: /status/i })).toBeVisible();
-    await expect(headers.filter({ hasText: /versions/i })).toBeVisible();
-    await expect(headers.filter({ hasText: /updated/i })).toBeVisible();
-
-    // Admin can see known engines
-    await engines.table.expectRowWithText(ENGINE_LLAMA);
-    await engines.table.expectRowWithText(ENGINE_VLLM);
+    await expect(engineCard(engines.page, ENGINE_LLAMA)).toBeVisible();
+    await expect(engineCard(engines.page, ENGINE_VLLM)).toBeVisible();
+    // The card title is the resource name, not a display name.
+    await expect(
+      engineCard(engines.page, ENGINE_LLAMA).getByRole("heading", {
+        name: ENGINE_LLAMA,
+      }),
+    ).toBeVisible();
   });
 
-  test("can sort by name", {
-    tag: "@C2613059",
-  }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.sort(/name/i);
+  test("search narrows the grid by engine name", async ({ engines }) => {
+    await gotoEngineList(engines.page);
+
+    await engines.page.getByPlaceholder(/search by name/i).fill(ENGINE_VLLM);
+
+    await expect(engineCard(engines.page, ENGINE_VLLM)).toBeVisible();
+    await expect(engineCard(engines.page, ENGINE_LLAMA)).toBeHidden();
   });
 
-  test("clicking name navigates to detail page", {
+  test("clicking a card opens the detail page", {
     tag: "@C2613050",
   }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.clickRowLink(ENGINE_LLAMA);
+    await gotoEngineList(engines.page);
+    await engineCard(engines.page, ENGINE_LLAMA).click();
 
     const showPage = engines.page.locator('[data-testid="show-page"]');
     await expect(showPage).toBeVisible();
     await expect(
-      showPage.getByText(ENGINE_LLAMA, { exact: true }),
+      showPage.getByRole("heading", { name: ENGINE_LLAMA }),
     ).toBeVisible();
   });
 
-  test("clicking workspace navigates to workspace detail", {
-    tag: "@C2613051",
-  }, async ({ engines }) => {
-    await engines.goToList();
-
-    const row = engines.table.rowWithText(ENGINE_LLAMA);
-    await row.getByRole("link", { name: "default" }).click();
-
-    // Should navigate to workspace show page
-    const showPage = engines.page.locator('[data-testid="show-page"]');
-    await expect(showPage).toBeVisible();
-    await expect(showPage.getByText("default", { exact: true })).toBeVisible();
-  });
-
-  test("status column shows engine phase", {
+  test("steady engines hide the status badge", {
     tag: "@C2613052",
   }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.waitForLoaded();
-    await expect(engines.table.headerCell(/status/i)).toBeVisible();
+    await gotoEngineList(engines.page);
 
-    const row = engines.table.rowWithText(ENGINE_LLAMA);
-    await expect(row.getByText("Created")).toBeVisible();
+    // Built-in engines are Created, the steady phase, which the card hides.
+    const card = engineCard(engines.page, ENGINE_LLAMA);
+    await expect(card.getByText("Created")).toBeHidden();
+    await expect(card.getByText("Failed")).toBeHidden();
   });
 
-  test("versions column shows engine versions", {
+  test("card summarizes versions and lists them on hover", {
     tag: "@C2613053",
   }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.waitForLoaded();
-    await expect(engines.table.headerCell(/versions/i)).toBeVisible();
+    await gotoEngineList(engines.page);
 
-    // vLLM exposes maintained versions in the builtin support window.
-    const row = engines.table.rowWithText(ENGINE_VLLM);
-    await expect(row.getByText("v0.17.1")).toBeVisible();
-    await expect(row.getByText("v0.24.0")).toBeVisible();
+    const card = engineCard(engines.page, ENGINE_VLLM);
+    // The card headlines the newest version, not the one the API returned first.
+    await expect(card.getByText("v0.24.0")).toBeVisible();
+
+    const versionTrigger = card.getByRole("button", { name: /versions/i });
+    await expect(versionTrigger).toBeVisible();
+    await versionTrigger.hover();
+
+    const hoverCard = engines.page.locator(
+      '[data-testid="engine-versions-hover-card"]',
+    );
+    await expect(hoverCard.getByText("All versions")).toBeVisible();
+    await expect(hoverCard.getByText("v0.17.1")).toBeVisible();
+    await expect(hoverCard.getByText("v0.24.0")).toBeVisible();
   });
 
-  test("can sort by updated time", {
-    tag: "@C2613054",
-  }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.sort(/updated/i);
+  test("single-version engine has no version entry point", async ({
+    engines,
+  }) => {
+    await gotoEngineList(engines.page);
+
+    const card = engineCard(engines.page, ENGINE_LLAMA);
+    await expect(card.getByText("v0.3.7")).toBeVisible();
+    await expect(card.getByRole("button", { name: /versions/i })).toBeHidden();
   });
 
-  test("can sort by created time", {
-    tag: "@C2613055",
-  }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.waitForLoaded();
-
-    // Created At column may be hidden by default
-    const createdHeader = engines.table.headerCell(/created/i);
-    if (!(await createdHeader.isVisible().catch(() => false))) {
-      await engines.table.toggleColumn(/created/i);
-    }
-
-    await engines.table.sort(/created/i);
-  });
-
-  test("can toggle column visibility", {
-    tag: "@C2613056",
-  }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.waitForLoaded();
-
-    await engines.table.toggleColumn(/status/i);
-    await expect(engines.table.headerCell(/status/i)).toBeHidden();
-
-    await engines.table.toggleColumn(/status/i);
-    await expect(engines.table.headerCell(/status/i)).toBeVisible();
-  });
-
-  test("no row actions on list page", {
+  test("no per-card actions", {
     tag: "@C2613233",
   }, async ({ engines }) => {
-    await engines.goToList();
-    await engines.table.waitForLoaded();
+    await gotoEngineList(engines.page);
 
-    const hasActions = await engines.table.hasRowActions(ENGINE_LLAMA);
-    expect(hasActions).toBe(false);
+    // canEdit/canDelete are both false for engines: the only interactive
+    // element inside a card is the version summary.
+    const card = engineCard(engines.page, ENGINE_VLLM);
+    await expect(
+      card.getByRole("button", { name: /edit|delete|actions|options/i }),
+    ).toBeHidden();
   });
 });
 
 test.describe("engines detail", () => {
-  test("detail page shows engine info with status and supported tasks", {
-    tag: ["@C2613208", "@C2613209"],
+  test("detail page shows engine info and supported tasks", {
+    tag: "@C2613208",
   }, async ({ engines }) => {
     await engines.goToShow(ENGINE_LLAMA);
 
     const showPage = engines.page.locator('[data-testid="show-page"]');
 
-    // C2613208: name, workspace, status, supported tasks visible
     await expect(
-      showPage.getByText(ENGINE_LLAMA, { exact: true }),
+      showPage.getByRole("heading", { name: ENGINE_LLAMA }),
     ).toBeVisible();
 
-    // Workspace
-    const workspaceDt = showPage.locator("dt", { hasText: /workspace/i });
-    await expect(workspaceDt).toBeVisible();
-    const workspaceDd = workspaceDt.locator("~ dd").first();
-    await expect(workspaceDd.getByRole("link")).toBeVisible();
+    // Created is the steady phase, so the header shows no status badge.
+    await expect(showPage.getByText("Created")).toBeHidden();
 
-    // Status
-    const statusDt = showPage.locator("dt", { hasText: /^status$/i });
-    await expect(statusDt).toBeVisible();
-
-    // Supported Tasks
-    const tasksDt = showPage.locator("dt", {
-      hasText: /supported tasks/i,
-    });
-    await expect(tasksDt).toBeVisible();
-
-    // C2613209: workspace link navigates to workspace detail
-    await workspaceDd.getByRole("link").click();
-    const wsShowPage = engines.page.locator('[data-testid="show-page"]');
-    await expect(wsShowPage).toBeVisible();
     await expect(
-      wsShowPage.getByText("default", { exact: true }),
+      showPage.getByRole("heading", { name: /supported tasks/i }),
+    ).toBeVisible();
+    await expect(
+      showPage.getByRole("heading", { name: /^versions$/i }),
+    ).toBeVisible();
+    await expect(
+      showPage.getByText("text-generation", { exact: true }).first(),
     ).toBeVisible();
   });
 
   test("detail page shows values schema for engine version", {
     tag: "@C2613210",
   }, async ({ engines }) => {
-    await engines.goToShow(ENGINE_LLAMA);
+    await engines.goToShow(ENGINE_VLLM);
 
     const showPage = engines.page.locator('[data-testid="show-page"]');
 
-    // Version selector should be visible
+    // The newest version is selected by default and the schema is rendered.
+    const versionList = showPage.getByRole("navigation", {
+      name: /all versions/i,
+    });
+    await expect(versionList).toBeVisible();
     await expect(
-      showPage.locator('button[role="combobox"]').first(),
-    ).toBeVisible();
-
-    // Values Schema section should be visible
+      versionList.getByRole("link", { name: /v0\.24\.0/ }),
+    ).toHaveAttribute("aria-current", "true");
     await expect(
       showPage.locator("dt", { hasText: /values schema/i }),
     ).toBeVisible();
@@ -210,29 +190,14 @@ test.describe("engines detail", () => {
     await engines.goToShow(ENGINE_VLLM);
 
     const showPage = engines.page.locator('[data-testid="show-page"]');
+    const versionList = showPage.getByRole("navigation", {
+      name: /all versions/i,
+    });
+    const older = versionList.getByRole("link", { name: /v0\.17\.1/ });
+    await older.click();
 
-    // Click the version selector
-    const versionSelect = showPage.locator('button[role="combobox"]').first();
-    await expect(versionSelect).toBeVisible();
-    const currentVersion = await versionSelect.innerText();
-
-    // Open and verify multiple options
-    await versionSelect.click();
-    const options = engines.page.getByRole("option");
-    await expect(options.first()).toBeVisible();
-    const count = await options.count();
-    expect(count).toBeGreaterThanOrEqual(2);
-
-    // Select a different version
-    for (let i = 0; i < count; i++) {
-      const text = await options.nth(i).innerText();
-      if (text !== currentVersion) {
-        await options.nth(i).click();
-        break;
-      }
-    }
-
-    // Values schema should still be visible after switch
+    await expect(older).toHaveAttribute("aria-current", "true");
+    await expect(engines.page).toHaveURL(/version=v0\.17\.1/);
     await expect(
       showPage.locator("dt", { hasText: /values schema/i }),
     ).toBeVisible();
@@ -267,21 +232,16 @@ test.describe("engines multi-user permissions", () => {
       testInfo.setTimeout(MULTI_USER_TIMEOUT);
 
       const testUser = await createTestUser(["engine:read"]);
-      const enginesPage = new ResourcePage(testUser.page, {
-        routeName: "engines",
-        workspaced: true,
-      });
+      await gotoEngineList(testUser.page);
 
-      await enginesPage.goToList();
-
-      // User with engine:read should see engine rows
-      const rowCount = await enginesPage.table.rows().count();
-      expect(rowCount).toBeGreaterThan(0);
+      expect(await testUser.page.locator(ENGINE_CARD).count()).toBeGreaterThan(
+        0,
+      );
     },
   );
 
   test(
-    "user without engine:read sees empty engines list",
+    "user without engine:read sees an empty engines list",
     {
       tag: "@C2613207",
       annotation: {
@@ -294,18 +254,12 @@ test.describe("engines multi-user permissions", () => {
 
       // Give an unrelated permission so the user can log in
       const testUser = await createTestUser(["role:read"]);
-      const enginesPage = new ResourcePage(testUser.page, {
-        routeName: "engines",
-        workspaced: true,
-      });
-
       await testUser.page.goto("/#/default/engines");
-      await enginesPage.table.waitForLoaded();
 
-      // User without engine:read should see empty table
       await expect(
-        testUser.page.locator('[data-testid="table-empty"]'),
+        testUser.page.getByText(/no engines in this workspace/i),
       ).toBeVisible();
+      expect(await testUser.page.locator(ENGINE_CARD).count()).toBe(0);
     },
   );
 });
@@ -319,12 +273,12 @@ test.describe("engines create permissions", () => {
   }, async ({ engines, yamlImport, apiHelper }) => {
     const name = `test-eng-adm-new-${Date.now()}`;
 
-    await engines.goToList();
+    await gotoEngineList(engines.page);
     await yamlImport.importYaml(engineYaml(name));
     await yamlImport.expectResults({ success: 1 });
     await yamlImport.close();
 
-    await engines.table.expectRowWithText(name);
+    await expect(engineCard(engines.page, name)).toBeVisible();
 
     // Cleanup
     await apiHelper.deleteEngine(name).catch(() => {});
@@ -346,17 +300,13 @@ test.describe("engines create permissions", () => {
 
       const name = `test-eng-glb-new-${Date.now()}`;
       const yamlHelper = new YamlImportHelper(testUser.page);
-      const engPage = new ResourcePage(testUser.page, {
-        routeName: "engines",
-        workspaced: true,
-      });
 
-      await engPage.goToList();
+      await gotoEngineList(testUser.page);
       await yamlHelper.importYaml(engineYaml(name));
       await yamlHelper.expectResults({ success: 1 });
       await yamlHelper.close();
 
-      await engPage.table.expectRowWithText(name);
+      await expect(engineCard(testUser.page, name)).toBeVisible();
 
       // Cleanup (admin deletes)
       await apiHelper.deleteEngine(name).catch(() => {});
@@ -385,18 +335,14 @@ test.describe("engines create permissions", () => {
 
       const name = `test-eng-no-new-${Date.now()}`;
       const yamlHelper = new YamlImportHelper(testUser.page);
-      const engPage = new ResourcePage(testUser.page, {
-        routeName: "engines",
-        workspaced: true,
-      });
 
-      await engPage.goToList();
+      await gotoEngineList(testUser.page);
       await yamlHelper.importYaml(engineYaml(name));
       await yamlHelper.expectResults({ errors: 1 });
       await yamlHelper.close();
 
       // Engine should NOT appear in the list
-      await engPage.table.expectNoRowWithText(name);
+      await expect(engineCard(testUser.page, name)).toHaveCount(0);
     },
   );
 });
@@ -411,7 +357,7 @@ test.describe("engines update permissions", () => {
     const name = `test-eng-adm-upd-${Date.now()}`;
     await apiHelper.createEngine(name, { version: "v1.0" });
 
-    await engines.goToList();
+    await gotoEngineList(engines.page);
     await yamlImport.importYaml(engineYaml(name, { version: "v2.0" }));
     await yamlImport.expectResults({ skipped: 1 });
     await yamlImport.close();
@@ -437,17 +383,13 @@ test.describe("engines update permissions", () => {
 
       const testUser = await createTestUser(["engine:read", "engine:update"]);
       const yamlHelper = new YamlImportHelper(testUser.page);
-      const engPage = new ResourcePage(testUser.page, {
-        routeName: "engines",
-        workspaced: true,
-      });
 
-      await engPage.goToList();
+      await gotoEngineList(testUser.page);
       await yamlHelper.importYaml(engineYaml(name, { version: "v2.0" }));
       await yamlHelper.expectResults({ skipped: 1 });
       await yamlHelper.close();
 
-      // Cleanup
+      // Cleanup (admin deletes)
       await apiHelper.deleteEngine(name).catch(() => {});
     },
   );
@@ -471,10 +413,6 @@ test.describe("engines update permissions", () => {
       // Without engine:read, checkResourceExists fails → import tries POST → 409 conflict
       const testUser = await createTestUser(["engine:create"]);
       const yamlHelper = new YamlImportHelper(testUser.page);
-      const _engPage = new ResourcePage(testUser.page, {
-        routeName: "engines",
-        workspaced: true,
-      });
 
       await testUser.page.goto("/#/default/engines");
       await yamlHelper.importYaml(engineYaml(name, { version: "v2.0" }));

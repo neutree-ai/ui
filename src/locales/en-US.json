@@ -825,6 +825,19 @@
 			"supportedTasks": "Supported Tasks",
 			"engineVersion": "Engine Version",
 			"valuesSchema": "Values Schema"
+		},
+		"card": {
+			"open": "Open {{name}}"
+		},
+		"list": {
+			"searchPlaceholder": "Search by name",
+			"empty": "No engines in this workspace."
+		},
+		"versions": {
+			"all": "All versions",
+			"count": "{{count}} versions",
+			"count_one": "1 version",
+			"latest": "Latest"
 		}
 	},
 	"endpoints": {
