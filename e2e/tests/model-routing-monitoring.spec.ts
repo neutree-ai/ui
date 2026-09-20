@@ -96,8 +96,18 @@ test.describe("external endpoint monitoring", () => {
       .locator('[data-griditem-key="grid-item-11"]')
       .scrollIntoViewIfNeeded();
     await frame
+      .getByRole("heading", {
+        name: "最新快照延迟 / Snapshot age",
+        exact: true,
+      })
+      .hover();
+    await page.mouse.wheel(0, 600);
+    await frame
       .getByRole("button", { name: "Expand row", exact: true })
       .click();
+    await frame
+      .locator('[data-griditem-key="grid-item-12"]')
+      .scrollIntoViewIfNeeded();
     const capacity = frame
       .getByRole("region", {
         name: "容量快照 / Capacity at selected end time",
