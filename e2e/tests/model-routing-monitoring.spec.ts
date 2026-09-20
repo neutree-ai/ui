@@ -67,7 +67,10 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       frame.getByText("完成请求 / Completed", { exact: true }),
     ).toBeVisible({ timeout: 30000 });
-    await iframe.scrollIntoViewIfNeeded();
+    await page
+      .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
+      .getByRole("heading", { name: "完成请求 / Completed", exact: true })
+      .hover();
     await page.mouse.wheel(0, 650);
     await frame.getByRole("table").first().hover();
     await page.mouse.wheel(0, 450);
@@ -84,6 +87,15 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       table.getByRole("columnheader", { name: "平均总耗时", exact: true }),
     ).toBeVisible();
+    await expect(table.getByRole("row").nth(1).getByRole("cell")).toHaveCount(
+      8,
+    );
+    await expect(
+      table.getByRole("row").nth(1).getByRole("cell").nth(5),
+    ).not.toContainText("—");
+    await expect(
+      table.getByRole("row").nth(1).getByRole("cell").nth(6),
+    ).not.toContainText("—");
     await table.hover();
     await page.mouse.wheel(0, 900);
     await frame
@@ -207,7 +219,10 @@ test.describe("external endpoint monitoring", () => {
     expect(new URL(src!).searchParams.get("var-model_regex")).toBe(
       JSON.stringify(".*"),
     );
-    await iframe.scrollIntoViewIfNeeded();
+    await page
+      .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
+      .getByRole("heading", { name: "完成请求 / Completed", exact: true })
+      .hover();
     await page.mouse.wheel(0, 650);
     const frame = page.frameLocator(
       'iframe[title="Grafana Dashboard neutree-model-routing"]',
@@ -287,6 +302,23 @@ test.describe("external endpoint monitoring", () => {
         exact: true,
       }),
     ).toBeVisible();
+    await page
+      .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
+      .getByRole("heading", { name: "完成请求 / Completed", exact: true })
+      .hover();
+    await page.mouse.wheel(0, 850);
+    const summary = frame.getByRole("region", {
+      name: "按模型请求与错误 / Requests and errors by model",
+      exact: true,
+    });
+    await expect(summary.getByRole("row")).toHaveCount(3, { timeout: 30000 });
+    await expect(
+      summary.getByRole("cell", { name: model, exact: true }),
+    ).toBeVisible();
+    await expect(
+      summary.getByRole("cell", { name: "test-model-weighted", exact: true }),
+    ).toBeVisible();
+    await page.waitForLoadState("networkidle");
     await page.locator("#monitor-model").click();
     await page
       .getByRole("checkbox", { name: "test-model-weighted", exact: true })
