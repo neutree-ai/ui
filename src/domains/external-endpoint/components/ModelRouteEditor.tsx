@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -115,7 +116,6 @@ export default function ModelRouteEditor({
         const strategyError = getRouteStrategyError(route);
         const weightTotalId = `${editorId}-${key}-weight-total`;
         const modelInputId = `${editorId}-${key}-model`;
-        const strategyInputId = `${editorId}-${key}-strategy`;
         const primaryTargetIndices = route.targets.flatMap(
           (target, targetIndex) =>
             (target.priority ?? 0) === 0 ? [targetIndex] : [],
@@ -204,42 +204,45 @@ export default function ModelRouteEditor({
                   return (
                     <tr key={targetIndex}>
                       <td>
-                        <FormSelect
-                          id={`${editorId}-${key}-${targetIndex}-provider`}
-                          value={target.upstream}
-                          options={[
-                            ...providers,
-                            {
-                              label: `+ ${t("external_endpoints.actions.quickCreateUpstream")}`,
-                              value: "__quick_create_upstream__",
-                            },
-                          ]}
-                          placeholder={t(
-                            "external_endpoints.placeholders.selectProvider",
-                          )}
-                          aria-label={t("external_endpoints.fields.provider")}
-                          onChange={(next) => {
-                            // Radix's native form select can emit an empty value
-                            // while newly added options mount. This control cannot clear a target.
-                            if (!next) return;
-                            if (next === "__quick_create_upstream__") {
-                              onQuickCreate?.(index, targetIndex);
-                              return;
-                            }
-                            const targets = route.targets.slice();
-                            targets[targetIndex] = {
-                              ...target,
-                              upstream: next,
-                            };
-                            commit(
-                              value.map((item, itemIndex) =>
-                                itemIndex === index
-                                  ? { ...item, targets }
-                                  : item,
-                              ),
-                            );
-                          }}
-                        />
+                        <FormItem className="space-y-0">
+                          <FormLabel className="sr-only">
+                            {t("external_endpoints.fields.provider")}
+                          </FormLabel>
+                          <FormSelect
+                            value={target.upstream}
+                            options={[
+                              ...providers,
+                              {
+                                label: `+ ${t("external_endpoints.actions.quickCreateUpstream")}`,
+                                value: "__quick_create_upstream__",
+                              },
+                            ]}
+                            placeholder={t(
+                              "external_endpoints.placeholders.selectProvider",
+                            )}
+                            onChange={(next) => {
+                              // Radix's native form select can emit an empty value
+                              // while newly added options mount. This control cannot clear a target.
+                              if (!next) return;
+                              if (next === "__quick_create_upstream__") {
+                                onQuickCreate?.(index, targetIndex);
+                                return;
+                              }
+                              const targets = route.targets.slice();
+                              targets[targetIndex] = {
+                                ...target,
+                                upstream: next,
+                              };
+                              commit(
+                                value.map((item, itemIndex) =>
+                                  itemIndex === index
+                                    ? { ...item, targets }
+                                    : item,
+                                ),
+                              );
+                            }}
+                          />
+                        </FormItem>
                       </td>
                       <td>
                         <Input
@@ -423,15 +426,11 @@ export default function ModelRouteEditor({
                   )}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label
-                  htmlFor={strategyInputId}
-                  className="text-xs font-medium text-muted-foreground"
-                >
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-medium text-muted-foreground">
                   {t("external_endpoints.fields.routingMode")}
-                </label>
+                </FormLabel>
                 <FormSelect
-                  id={strategyInputId}
                   value={mode}
                   onChange={(next) => setMode(index, next as Mode)}
                   options={[
@@ -448,7 +447,6 @@ export default function ModelRouteEditor({
                       value: "weighted",
                     },
                   ]}
-                  aria-label={t("external_endpoints.fields.routingMode")}
                 />
                 <p
                   className="text-xs leading-5 text-muted-foreground"
@@ -460,7 +458,7 @@ export default function ModelRouteEditor({
                       ? t("external_endpoints.messages.priorityRoutingHint")
                       : t("external_endpoints.messages.weightedRoutingHint")}
                 </p>
-              </div>
+              </FormItem>
             </div>
             {mode === "priority" ? (
               <div className="space-y-3">

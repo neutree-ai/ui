@@ -97,36 +97,41 @@ vi.mock("@/domains/external-endpoint/hooks/use-test-connectivity", () => ({
   }),
 }));
 
-vi.mock("@/foundation/components/FormSelect", () => ({
-  FormSelect: React.forwardRef(
-    (
-      props: {
-        id?: string;
-        "aria-label"?: string;
-        value?: string;
-        onChange?: (v: string) => void;
-        options?: { label: string; value: string }[];
-      },
-      ref: any,
-    ) => (
-      <select
-        id={props.id}
-        aria-label={props["aria-label"]}
-        ref={ref}
-        data-testid="form-select-mock"
-        value={props.value}
-        onChange={(e) => props.onChange?.(e.target.value)}
-      >
-        {!props.value && <option value="">placeholder</option>}
-        {props.options?.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+vi.mock("@/foundation/components/FormSelect", async () => {
+  const { FormControl } = await import("@/components/ui/form");
+  return {
+    FormSelect: React.forwardRef(
+      (
+        props: {
+          id?: string;
+          "aria-label"?: string;
+          value?: string;
+          onChange?: (v: string) => void;
+          options?: { label: string; value: string }[];
+        },
+        ref: any,
+      ) => (
+        <FormControl>
+          <select
+            {...(props.id ? { id: props.id } : {})}
+            aria-label={props["aria-label"]}
+            ref={ref}
+            data-testid="form-select-mock"
+            value={props.value}
+            onChange={(e) => props.onChange?.(e.target.value)}
+          >
+            {!props.value && <option value="">placeholder</option>}
+            {props.options?.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </FormControl>
+      ),
     ),
-  ),
-}));
+  };
+});
 
 vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
   default: React.forwardRef(
