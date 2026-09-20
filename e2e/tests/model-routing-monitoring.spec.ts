@@ -278,7 +278,7 @@ test.describe("external endpoint monitoring", () => {
     page,
   }) => {
     await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&model=${encodeURIComponent(model)}`,
+      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-6h&model=${encodeURIComponent(model)}`,
     );
     await page.waitForLoadState("networkidle");
     await page.locator("#monitor-model").click();
@@ -326,6 +326,28 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       summary.getByRole("cell", { name: "test-model-weighted", exact: true }),
     ).toBeVisible();
+    for (const [id, title] of [
+      [20, "各目标 P95 总耗时 / Target P95 duration"],
+      [21, "各目标 P99 总耗时 / Target P99 duration"],
+      [22, "各目标平均总耗时 / Target mean duration"],
+    ] as const) {
+      await frame
+        .locator(`[data-griditem-key="grid-item-${id}"]`)
+        .scrollIntoViewIfNeeded();
+      const chart = frame.getByRole("region", { name: title, exact: true });
+      await expect(
+        chart.getByRole("button", {
+          name: `${model} / qwen-internal / Qwen/Qwen2.5-0.5B-Instruct`,
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        chart.getByRole("button", {
+          name: "test-model-weighted / smartp1 / gpt-6-astra",
+          exact: true,
+        }),
+      ).toBeVisible();
+    }
     await page.waitForLoadState("networkidle");
     await page.locator("#monitor-model").click();
     await page
