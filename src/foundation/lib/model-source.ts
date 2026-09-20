@@ -13,9 +13,12 @@
  *
  * ## Where the value comes from
  *
- * - **External endpoints** store it, as the `neutree.ai/model-source` entry in
- *   `metadata.labels`. A label value is a free string, which is what makes the
- *   enum extensible without a migration.
+ * - **External endpoints** store it in `spec.model_sources`, a map keyed by the
+ *   client-facing model name. Per MODEL, not per endpoint: one endpoint
+ *   routinely fronts models of different origin, and a model may even have
+ *   routing targets on several upstreams, so neither the endpoint nor the
+ *   upstream resolves to one source. A value is a free string, which is what
+ *   makes the enum extensible without a migration.
  * - **Internal endpoints store nothing.** Their source is *derived*: an
  *   endpoint the platform runs is `self-hosted`, always, and asking an admin to
  *   re-type that would be a field with one legal answer.
@@ -30,8 +33,8 @@
  * external endpoint, and the backend rejects it if sent.
  */
 
-/** The `metadata.labels` key an external endpoint's source is stored under. */
-export const MODEL_SOURCE_LABEL_KEY = "neutree.ai/model-source";
+/** A map of client-facing model name -> source, as stored on an endpoint spec. */
+export type ModelSourceMap = Record<string, string> | null | undefined;
 
 /**
  * A source label value. Deliberately a bare `string`: the preset list below is
@@ -42,6 +45,17 @@ export type ModelSource = string;
 
 /** The source every internal endpoint derives, and no external endpoint may claim. */
 export const SELF_HOSTED_MODEL_SOURCE = "self-hosted";
+
+/**
+ * The source derived for a model an external endpoint reaches through an
+ * internal endpoint of this platform.
+ *
+ * Deliberately not `self-hosted`, even though the model really is hosted here:
+ * the row is still an external one, and `self-hosted` has to stay one-to-one
+ * with internal endpoints for the API-key picker to tell the two rows for one
+ * model name apart.
+ */
+export const INTERNAL_SHARED_MODEL_SOURCE = "internal-shared";
 
 /**
  * The presets offered in the UI, in the order they are shown and grouped.
@@ -74,11 +88,12 @@ export const EXTERNAL_MODEL_SOURCES: readonly ModelSource[] =
  */
 type ModelEndpointKind = "internal" | "external";
 
-/** Read the stored label off a resource's `metadata.labels`, if it has one. */
+/** Read one model's stored source off an endpoint's `spec.model_sources`. */
 export function readStoredModelSource(
-  labels: Record<string, string> | null | undefined,
+  modelSources: ModelSourceMap,
+  model: string,
 ): ModelSource | undefined {
-  const raw = labels?.[MODEL_SOURCE_LABEL_KEY];
+  const raw = modelSources?.[model];
   const trimmed = String(raw ?? "").trim();
   return trimmed === "" ? undefined : trimmed;
 }
@@ -94,10 +109,52 @@ export function readStoredModelSource(
  */
 export function resolveModelSource(
   kind: ModelEndpointKind,
-  labels?: Record<string, string> | null,
+  modelSources?: ModelSourceMap,
+  model?: string,
+  opts?: {
+    /**
+     * The model is reached through an upstream that points at an internal
+     * endpoint, which makes it internal by construction — so it resolves
+     * without the admin having to say anything. An explicit source still wins.
+     */
+    viaInternalEndpoint?: boolean;
+  },
 ): ModelSource | undefined {
   if (kind === "internal") return SELF_HOSTED_MODEL_SOURCE;
-  return readStoredModelSource(labels);
+  if (!model) return undefined;
+
+  return (
+    readStoredModelSource(modelSources, model) ??
+    (opts?.viaInternalEndpoint ? INTERNAL_SHARED_MODEL_SOURCE : undefined)
+  );
+}
+
+/**
+ * The client-facing model names an endpoint reaches through an upstream that
+ * points at an internal endpoint.
+ *
+ * Takes the bare upstream shape rather than the domain type so this stays in
+ * the foundation layer.
+ */
+export function modelsViaInternalEndpoint(
+  upstreams:
+    | {
+        endpoint_ref?: string | null;
+        model_mapping?: Record<string, string> | null;
+      }[]
+    | null
+    | undefined,
+): Set<string> {
+  const models = new Set<string>();
+
+  for (const upstream of upstreams ?? []) {
+    if (!String(upstream?.endpoint_ref ?? "").trim()) continue;
+    for (const model of Object.keys(upstream?.model_mapping ?? {})) {
+      models.add(model);
+    }
+  }
+
+  return models;
 }
 
 /**
@@ -139,9 +196,8 @@ export function modelSourceTranslationKey(source: ModelSource): string {
 export const WORKSPACE_MODEL_SOURCE_COLUMN = "source_label";
 
 /**
- * The sources an admin can pick for an external endpoint: the presets, plus
- * every value already in use on other external endpoints, in preset-then-
- * alphabetical order.
+ * The sources an admin can pick for a model: the presets, plus every value
+ * already in use on any external endpoint, in preset-then-alphabetical order.
  *
  * Including the in-use values is what keeps a free-text field from fragmenting.
  * The enum is open by design — the server stores any string — so the second
@@ -154,13 +210,15 @@ export const WORKSPACE_MODEL_SOURCE_COLUMN = "source_label";
  * out rather than offered.
  */
 export function externalModelSourceSuggestions(
-  labelsInUse: Iterable<Record<string, string> | null | undefined>,
+  mapsInUse: Iterable<ModelSourceMap>,
 ): ModelSource[] {
   const seen = new Set<ModelSource>(EXTERNAL_MODEL_SOURCES);
 
-  for (const labels of labelsInUse) {
-    const source = readStoredModelSource(labels);
-    if (source && source !== SELF_HOSTED_MODEL_SOURCE) seen.add(source);
+  for (const modelSources of mapsInUse) {
+    for (const raw of Object.values(modelSources ?? {})) {
+      const source = String(raw ?? "").trim();
+      if (source && source !== SELF_HOSTED_MODEL_SOURCE) seen.add(source);
+    }
   }
 
   return [...seen].sort((a, b) => {

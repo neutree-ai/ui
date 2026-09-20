@@ -63,6 +63,16 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> & {
    * `options`; otherwise a custom value would read back as "nothing selected".
    */
   allowCustomValue?: boolean;
+  /**
+   * Wrap the trigger in `FormControl` (the default).
+   *
+   * Turn it off when the combobox is not a registered form field: FormControl
+   * reads the enclosing field's state and stamps that field's id and
+   * aria-describedby onto the trigger, so an unregistered control inside some
+   * other field's group would borrow its labelling — and several of them would
+   * repeat one id.
+   */
+  asField?: boolean;
 };
 
 export const FormCombobox = forwardRef<
@@ -96,6 +106,33 @@ export const FormCombobox = forwardRef<
       ? trimmedSearch
       : null;
 
+  // Built once and placed either bare or inside FormControl: PopoverTrigger
+  // asChild clones its immediate child, so a wrapper component here would
+  // swallow the props and ref it injects.
+  const trigger = (
+    <Button
+      disabled={props.disabled}
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      className={cn(
+        "w-full justify-between overflow-hidden text-[var(--nt-text-neutral-primary)] hover:bg-[var(--nt-fill-neutral-white)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
+        !value() && "text-[var(--nt-text-neutral-quaternary)]",
+      )}
+    >
+      <span className="truncate flex-1 text-left">
+        {value()
+          ? // A custom value has no option to read a label from; show it
+            // as typed rather than falling through to the placeholder,
+            // which would read as "nothing selected".
+            (props.options?.find((option) => option.value === value())?.label ??
+            (props.allowCustomValue ? String(value()) : undefined))
+          : (props.placeholder ?? t("components.ui.combobox.select"))}
+      </span>
+      <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 text-[var(--nt-text-neutral-tertiary)]" />
+    </Button>
+  );
+
   return (
     <Popover
       open={open}
@@ -107,30 +144,11 @@ export const FormCombobox = forwardRef<
       }}
     >
       <PopoverTrigger asChild>
-        <FormControl>
-          <Button
-            disabled={props.disabled}
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className={cn(
-              "w-full justify-between overflow-hidden text-[var(--nt-text-neutral-primary)] hover:bg-[var(--nt-fill-neutral-white)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
-              !value() && "text-[var(--nt-text-neutral-quaternary)]",
-            )}
-          >
-            <span className="truncate flex-1 text-left">
-              {value()
-                ? // A custom value has no option to read a label from; show it
-                  // as typed rather than falling through to the placeholder,
-                  // which would read as "nothing selected".
-                  (props.options?.find((option) => option.value === value())
-                    ?.label ??
-                  (props.allowCustomValue ? String(value()) : undefined))
-                : (props.placeholder ?? t("components.ui.combobox.select"))}
-            </span>
-            <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 text-[var(--nt-text-neutral-tertiary)]" />
-          </Button>
-        </FormControl>
+        {props.asField === false ? (
+          trigger
+        ) : (
+          <FormControl>{trigger}</FormControl>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-[400px] max-w-full p-0">
         <Command className="rounded-lg border shadow-md" ref={ref}>

@@ -2,7 +2,13 @@ import { Plus, Trash2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useModelMappingRows } from "@/domains/external-endpoint/hooks/use-model-mapping-rows";
+import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  INTERNAL_SHARED_MODEL_SOURCE,
+  type ModelSourceMap,
+  modelSourceTranslationKey,
+} from "@/foundation/lib/model-source";
 import { cn } from "@/foundation/lib/utils";
 
 type ModelMappingEditorProps = {
@@ -11,6 +17,22 @@ type ModelMappingEditorProps = {
   disabled?: boolean;
   /** Known upstream models from test connectivity, used to warn on mismatches */
   availableModels?: string[];
+  /**
+   * Model sources live on the endpoint spec, not on this upstream, because a
+   * model can be routed across several upstreams. They are edited here anyway:
+   * this is the row where the admin names the model, and a separate list keyed
+   * by the same names would be two places to keep in step.
+   */
+  modelSources?: ModelSourceMap;
+  onModelSourceChange?: (model: string, source: string) => void;
+  modelSourceOptions?: { label: string; value: string }[];
+  /**
+   * This upstream points at an internal endpoint, so its models are internal by
+   * construction and resolve without the admin choosing anything. Shown as the
+   * placeholder rather than written in, so it stays a derivation: nothing is
+   * stored unless the admin overrides it.
+   */
+  viaInternalEndpoint?: boolean;
 };
 
 export default function ModelMappingEditor({
@@ -18,6 +40,10 @@ export default function ModelMappingEditor({
   onChange,
   disabled,
   availableModels,
+  modelSources,
+  onModelSourceChange,
+  modelSourceOptions,
+  viaInternalEndpoint,
 }: ModelMappingEditorProps) {
   const { t } = useTranslation();
   const { rows, duplicateIndices, updateRow, addRow, removeRow } =
@@ -25,9 +51,10 @@ export default function ModelMappingEditor({
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-5 text-xs font-medium text-muted-foreground">
+      <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-5 text-xs font-medium text-muted-foreground">
         <span>{t("external_endpoints.fields.upstreamModelName")}</span>
         <span>{t("external_endpoints.fields.exposedModelName")}</span>
+        <span>{t("modelSource.label")}</span>
         <span className="w-8" />
       </div>
       {rows.map((row, index) => {
@@ -39,7 +66,7 @@ export default function ModelMappingEditor({
           !availableModels.includes(row.value);
         return (
           <div key={index} className="space-y-1">
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-5">
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-5">
               <div>
                 <div className="relative">
                   <Input
@@ -69,6 +96,27 @@ export default function ModelMappingEditor({
                 )}
                 disabled={disabled}
                 className={cn(isDup && "border-destructive")}
+              />
+              {/* Keyed by the exposed name, so the source follows the model
+                  rather than this row's position. An unnamed row has nothing to
+                  key on yet. */}
+              <FormCombobox
+                value={row.key ? (modelSources?.[row.key] ?? "") : ""}
+                onChange={(next) =>
+                  onModelSourceChange?.(row.key, String(next))
+                }
+                placeholder={
+                  viaInternalEndpoint
+                    ? t(
+                        modelSourceTranslationKey(INTERNAL_SHARED_MODEL_SOURCE),
+                        { defaultValue: INTERNAL_SHARED_MODEL_SOURCE },
+                      )
+                    : t("modelSource.placeholder")
+                }
+                options={modelSourceOptions ?? []}
+                disabled={disabled || row.key === ""}
+                allowCustomValue
+                asField={false}
               />
               <Button
                 type="button"

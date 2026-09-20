@@ -5,6 +5,7 @@ import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 import {
   type ModelSource,
   modelSourceRank,
+  modelsViaInternalEndpoint,
   resolveModelSource,
 } from "@/foundation/lib/model-source";
 import {
@@ -263,7 +264,10 @@ type WorkspaceExternalEndpointRef = {
   spec?: {
     upstreams?: {
       model_mapping?: Record<string, string> | null;
+      endpoint_ref?: string | null;
     }[];
+    // Keyed by the client-facing model name; one endpoint's models can differ.
+    model_sources?: Record<string, string> | null;
   } | null;
   status?: { phase?: string | null } | null;
 };
@@ -352,7 +356,7 @@ export function useWorkspaceModels(
     for (const endpoint of externalEndpointsData?.data ?? []) {
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
-      const source = resolveModelSource("external", endpoint.metadata?.labels);
+      const viaInternal = modelsViaInternalEndpoint(endpoint.spec?.upstreams);
       for (const model of exposedExternalModels(endpoint.spec)) {
         const trimmed = String(model ?? "").trim();
         if (!trimmed) continue;
@@ -362,7 +366,14 @@ export function useWorkspaceModels(
           model: trimmed,
           endpointName,
           type: "external",
-          source,
+          // Resolved per model, not once per endpoint: two models of one
+          // endpoint can genuinely have different sources.
+          source: resolveModelSource(
+            "external",
+            endpoint.spec?.model_sources,
+            trimmed,
+            { viaInternalEndpoint: viaInternal.has(trimmed) },
+          ),
           phase: endpoint.status?.phase ?? null,
         });
       }

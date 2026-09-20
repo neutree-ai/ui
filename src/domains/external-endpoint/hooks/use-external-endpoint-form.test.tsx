@@ -3,10 +3,7 @@ import React from "react";
 import { FormProvider, type UseFormReturn } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
-import {
-  MODEL_SOURCE_LABEL_KEY,
-  SELF_HOSTED_MODEL_SOURCE,
-} from "@/foundation/lib/model-source";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -39,18 +36,14 @@ vi.mock("@refinedev/core", () => ({
     data: {
       data: [
         {
-          metadata: {
-            name: "sibling-partner",
-            labels: { "neutree.ai/model-source": "partner" },
-          },
+          metadata: { name: "sibling-partner" },
+          spec: { model_sources: { "some-model": "partner" } },
         },
         {
-          metadata: {
-            name: "sibling-custom",
-            labels: { "neutree.ai/model-source": "acme-research-lab" },
-          },
+          metadata: { name: "sibling-custom" },
+          spec: { model_sources: { "other-model": "acme-research-lab" } },
         },
-        { metadata: { name: "sibling-unlabelled" } },
+        { metadata: { name: "sibling-none" }, spec: {} },
       ],
     },
   }),
@@ -411,32 +404,47 @@ describe("useExternalEndpointForm", () => {
     });
   });
 
-  describe("model source label", () => {
-    // The label is stored under a key containing dots and a slash, which
-    // react-hook-form would read as a nested path, so the field writes the
-    // whole labels map instead of registering a path.
+  describe("model source", () => {
+    // The source is stored per model on spec.model_sources and edited in the
+    // model-mapping row, because one endpoint's models can have different
+    // sources. So the whole form is rendered, not just the metadata card.
     let captured: UseFormReturn<ExternalEndpoint> | null = null;
     function SourceForm() {
-      const { form, metadataFields } = useExternalEndpointForm({
+      const { form, metadataFields, specFields } = useExternalEndpointForm({
         action: "create",
       });
       captured = form as unknown as UseFormReturn<ExternalEndpoint>;
       return (
         <FormProvider {...form}>
-          <form>{metadataFields}</form>
+          <form>
+            {metadataFields}
+            {specFields}
+          </form>
         </FormProvider>
       );
     }
 
-    const sourceInput = () => screen.getByTestId("model-source-combobox-mock");
+    const sourceInput = () =>
+      screen.getAllByTestId("model-source-combobox-mock")[0];
     const offeredSources = () =>
       (
         screen
-          .getByTestId("model-source-options-mock")
+          .getAllByTestId("model-source-options-mock")[0]
           .getAttribute("data-values") ?? ""
       )
         .split(",")
         .filter(Boolean);
+
+    // The source hangs off the exposed model name, so a row has to name a model
+    // before it has anything to key a source on.
+    const nameModel = (model: string) => {
+      fireEvent.change(
+        screen.getAllByPlaceholderText(
+          "external_endpoints.placeholders.exposedModelName",
+        )[0],
+        { target: { value: model } },
+      );
+    };
 
     it("suggests the presets plus the values already in use, never self-hosted", () => {
       // The enum is open on the server, so the list is suggestions rather than
@@ -458,11 +466,12 @@ describe("useExternalEndpointForm", () => {
       expect(offeredSources()).not.toContain(SELF_HOSTED_MODEL_SOURCE);
     });
 
-    it("writes the chosen source into metadata.labels", () => {
+    it("writes the chosen source under the model name", () => {
       render(<SourceForm />);
+      nameModel("gpt-4o");
       fireEvent.change(sourceInput(), { target: { value: "partner" } });
-      expect(captured?.getValues("metadata.labels")).toEqual({
-        [MODEL_SOURCE_LABEL_KEY]: "partner",
+      expect(captured?.getValues("spec.model_sources")).toEqual({
+        "gpt-4o": "partner",
       });
     });
 
@@ -470,10 +479,19 @@ describe("useExternalEndpointForm", () => {
       // The whole point of the open enum: a brand-new source needs no code
       // change, no migration and no admin-maintained list.
       render(<SourceForm />);
+      nameModel("gpt-4o");
       fireEvent.change(sourceInput(), { target: { value: "new-lab" } });
-      expect(captured?.getValues("metadata.labels")).toEqual({
-        [MODEL_SOURCE_LABEL_KEY]: "new-lab",
+      expect(captured?.getValues("spec.model_sources")).toEqual({
+        "gpt-4o": "new-lab",
       });
+    });
+
+    it("ignores a source typed before the model is named", () => {
+      // Nothing to key it on yet; storing it under "" would attach it to a
+      // model that does not exist.
+      render(<SourceForm />);
+      fireEvent.change(sourceInput(), { target: { value: "partner" } });
+      expect(captured?.getValues("spec.model_sources") ?? {}).toEqual({});
     });
   });
 

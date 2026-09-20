@@ -11,7 +11,10 @@ import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { resolveModelSource } from "@/foundation/lib/model-source";
+import {
+  modelsViaInternalEndpoint,
+  resolveModelSource,
+} from "@/foundation/lib/model-source";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ExternalEndpointsList = () => {
@@ -65,21 +68,6 @@ export const ExternalEndpointsList = () => {
             an external endpoint may legitimately be "internal-shared" — that
             describes who runs the model, not the kind of endpoint. */}
         <Table.Column
-          header={t("modelSource.label")}
-          accessorKey="metadata"
-          id="model_source"
-          enableHiding
-          cell={({ getValue }) => {
-            const metadata =
-              getValue() as unknown as ExternalEndpoint["metadata"];
-            return (
-              <ModelSourceBadge
-                source={resolveModelSource("external", metadata?.labels)}
-              />
-            );
-          }}
-        />
-        <Table.Column
           header={t("external_endpoints.fields.models")}
           accessorKey="spec"
           id="models"
@@ -88,15 +76,26 @@ export const ExternalEndpointsList = () => {
             const spec = getValue() as unknown as ExternalEndpoint["spec"];
             const models = getExposedModels(spec);
             if (models.length === 0) return "-";
+            const viaInternal = modelsViaInternalEndpoint(spec?.upstreams);
             return (
-              <div className="flex flex-wrap gap-1">
+              // The source rides with each model rather than sitting in its own
+              // column: one endpoint's models can have different sources, so a
+              // single endpoint-level badge would be wrong.
+              <div className="flex flex-col gap-1">
                 {models.map((m) => (
-                  <code
-                    key={m}
-                    className="rounded bg-muted px-1.5 py-0.5 text-xs"
-                  >
-                    {m}
-                  </code>
+                  <div key={m} className="flex items-center gap-1">
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                      {m}
+                    </code>
+                    <ModelSourceBadge
+                      source={resolveModelSource(
+                        "external",
+                        spec?.model_sources,
+                        m,
+                        { viaInternalEndpoint: viaInternal.has(m) },
+                      )}
+                    />
+                  </div>
                 ))}
               </div>
             );

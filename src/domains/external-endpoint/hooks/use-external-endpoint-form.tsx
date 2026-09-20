@@ -31,7 +31,6 @@ import {
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   externalModelSourceSuggestions,
-  MODEL_SOURCE_LABEL_KEY,
   modelSourceTranslationKey,
 } from "@/foundation/lib/model-source";
 
@@ -57,7 +56,6 @@ export const useExternalEndpointForm = ({
       metadata: {
         name: "",
         workspace: isValidWorkspace(currentWorkspace) ? currentWorkspace : "",
-        // The source label lives in here, under MODEL_SOURCE_LABEL_KEY.
         labels: {},
       },
       spec: {
@@ -144,23 +142,24 @@ export const useExternalEndpointForm = ({
     [form],
   );
 
-  // Source label. Stored as a metadata label rather than a spec field, so it
-  // is read and written through the labels map instead of a registered form
-  // path — the key contains dots and a slash, which react-hook-form would read
-  // as a nested path.
+  // Model sources. Stored per MODEL on spec.model_sources, not on the endpoint
+  // and not on an upstream: one endpoint fronts models of different origin, and
+  // a model can have routing targets across several upstreams, so neither
+  // resolves to a single source.
   //
   // `self-hosted` is deliberately absent from the options: it is the derived
   // source of internal endpoints, the backend rejects it here, and offering it
   // would make two rows for the same model name indistinguishable in the
   // API-key model picker.
-  const labels = form.watch("metadata.labels");
-  const modelSource = labels?.[MODEL_SOURCE_LABEL_KEY] ?? "";
+  const modelSources = form.watch("spec.model_sources");
   const handleModelSourceChange = useCallback(
-    (value: string) => {
-      const next = { ...(form.getValues("metadata.labels") ?? {}) };
-      if (value) next[MODEL_SOURCE_LABEL_KEY] = value;
-      else delete next[MODEL_SOURCE_LABEL_KEY];
-      form.setValue("metadata.labels", next, { shouldDirty: true });
+    (model: string, value: string) => {
+      if (!model) return;
+
+      const next = { ...(form.getValues("spec.model_sources") ?? {}) };
+      if (value) next[model] = value;
+      else delete next[model];
+      form.setValue("spec.model_sources", next, { shouldDirty: true });
     },
     [form],
   );
@@ -177,8 +176,8 @@ export const useExternalEndpointForm = ({
   const modelSourceOptions = externalModelSourceSuggestions(
     (siblingEndpoints?.data ?? []).map(
       (item) =>
-        (item as { metadata?: { labels?: Record<string, string> | null } })
-          .metadata?.labels,
+        (item as { spec?: { model_sources?: Record<string, string> | null } })
+          .spec?.model_sources,
     ),
   ).map((source) => ({
     label: t(modelSourceTranslationKey(source), { defaultValue: source }),
@@ -251,20 +250,6 @@ export const useExternalEndpointForm = ({
           }}
         >
           <WorkspaceField disabled={isEdit} />
-        </FormFieldGroup>
-        <FormFieldGroup
-          {...form}
-          name="_modelSource"
-          label={t("modelSource.label")}
-          description={t("modelSource.externalHint")}
-        >
-          <FormCombobox
-            value={modelSource}
-            onChange={(next) => handleModelSourceChange(String(next))}
-            placeholder={t("modelSource.placeholder")}
-            options={modelSourceOptions}
-            allowCustomValue
-          />
         </FormFieldGroup>
       </FormCardGrid>
     ),
@@ -510,6 +495,10 @@ export const useExternalEndpointForm = ({
                   >
                     <ModelMappingEditor
                       availableModels={availableModelsMap[index]}
+                      modelSources={modelSources}
+                      onModelSourceChange={handleModelSourceChange}
+                      modelSourceOptions={modelSourceOptions}
+                      viaInternalEndpoint={currentType === "endpoint_ref"}
                     />
                   </FormFieldGroup>
                 </div>
