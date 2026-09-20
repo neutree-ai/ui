@@ -15,6 +15,7 @@ export type AuthSpec = {
 };
 
 export type UpstreamSpec = {
+  name?: string;
   upstream?: { url: string } | null;
   auth?: AuthSpec | null;
   endpoint_ref?: string;
@@ -22,12 +23,29 @@ export type UpstreamSpec = {
   models: string[] | null;
 };
 
+export type ModelRouteTarget = {
+  upstream: string;
+  upstream_model: string;
+  priority?: number;
+  weight?: number;
+  max_inflight_requests?: number;
+};
+
+export type ModelRoute = {
+  model: string;
+  strategy?: "fixed" | "priority" | "weighted" | null;
+  retryable_conditions?: string[];
+  max_attempts?: number;
+  targets: ModelRouteTarget[];
+};
+
 export type ExternalEndpointSpec = {
   route_type?: string;
   timeout: number | null;
   upstreams: UpstreamSpec[];
   /**
-   * Each model's source, keyed by the CLIENT-FACING model name.
+   * Each model's source, keyed by the CLIENT-FACING model name (a route's
+   * `model`).
    *
    * Per model rather than per endpoint or per upstream: one endpoint routinely
    * fronts models of different origin, and a model can have routing targets on
@@ -35,6 +53,7 @@ export type ExternalEndpointSpec = {
    * means "unspecified".
    */
   model_sources?: Record<string, string> | null;
+  model_routes?: ModelRoute[] | null;
 };
 
 /**

@@ -4,11 +4,16 @@ import { useTranslation } from "@/foundation/lib/i18n";
 
 export const ExternalEndpointsCreate = () => {
   const { t } = useTranslation();
-  const { form, metadataFields, specFields } = useExternalEndpointForm({
-    action: "create",
-  });
+  const { form, metadataFields, specFields, submitBlocked } =
+    useExternalEndpointForm({
+      action: "create",
+    });
   return (
-    <ResourceForm {...form} title={t("external_endpoints.create")}>
+    <ResourceForm
+      {...form}
+      submitBlocked={submitBlocked}
+      title={t("external_endpoints.create")}
+    >
       {metadataFields}
       {specFields}
     </ResourceForm>

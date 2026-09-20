@@ -241,10 +241,10 @@
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "faa9a8e7dfade8a200eb601d021b1814",
   "src/pages/external-endpoints/create.tsx": "b5439551b4bedc80ab76a86ddf68dc75",
   "src/pages/external-endpoints/edit.tsx": "e6fdd4684d41f910da1e2ca2ddf4cbd9",
-  "src/pages/external-endpoints/list.tsx": "de14ea8fb0302360ffc62ee0a62b3b8f",
-  "src/pages/external-endpoints/show.tsx": "966c71dbf1f9bc392af75c375dfd009c",
-  "src/domains/external-endpoint/types.ts": "6e6d5539f3ff2bee82e72623ff2a29cc",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "ce020893a5e4b42a944d5dfab9a80e4c",
+  "src/pages/external-endpoints/list.tsx": "792f9bad0d38ed7f747f0d02e3b875b8",
+  "src/pages/external-endpoints/show.tsx": "9871505a31563e93a203b2256a5ab606",
+  "src/domains/external-endpoint/types.ts": "3a358d624da131e808244858b135596a",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "0b23592ec7a74a522598cc0aed0663a6",
   "src/domains/external-endpoint/components/CurlExample.tsx": "5183a8958c58627f671b3d80313f016f",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "ddcc260a2c5be44d29b82e5ec4435da7",
   "src/domains/external-endpoint/components/ModelMappingEditor.tsx": "e2286aed5f785ee2d9159eff68f2c003",
@@ -309,7 +309,7 @@
   "src/domains/api-key/components/ApiKeyPolicyFields.tsx": "87cfdd803dbbe2c4c89e2f6616b8f0ff",
   "src/domains/api-key/components/ApiKeyRankingOverview.tsx": "d9da002aebbec89d7a2468f4d8d69201",
   "src/domains/api-key/components/ModelMultiSelect.tsx": "fd24dc91acc9891bc991ca2cb25b1c2a",
-  "src/domains/api-key/hooks/use-api-key-policy.ts": "fd3b024187874c9f1a715249b81a5195",
+  "src/domains/api-key/hooks/use-api-key-policy.ts": "a4eeb92bad526c132d96326247375a5d",
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
   "src/pages/model-catalogs/edit.tsx": "a64fdc003da2f38f5da03d87f05772a9",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
@@ -423,5 +423,6 @@
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "4597330921763f8859aabf34ab94e11b",
-  "src/foundation/components/ModelSourceBadge.tsx": "e6934fd8683358d313d0b4d53ed4683b"
+  "src/foundation/components/ModelSourceBadge.tsx": "e6934fd8683358d313d0b4d53ed4683b",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "bcfc9af02717ab0657e542841fc13b2d"
 }

@@ -46,7 +46,7 @@ export const ExternalEndpointsList = () => {
           )}
         />
         <Table.Column
-          header={t("external_endpoints.fields.type")}
+          header={t("external_endpoints.fields.upstreamType")}
           accessorKey="spec"
           id="type"
           enableHiding
@@ -57,7 +57,7 @@ export const ExternalEndpointsList = () => {
             const labelMap: Record<ExternalEndpointType, string> = {
               external: t("external_endpoints.options.upstreamTypeExternal"),
               endpoint_ref: t(
-                "external_endpoints.options.upstreamTypeEndpointRef",
+                "external_endpoints.options.upstreamTypeInternal",
               ),
               mixed: t("external_endpoints.options.upstreamTypeMixed"),
             };
