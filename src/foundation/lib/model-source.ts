@@ -88,14 +88,23 @@ export const EXTERNAL_MODEL_SOURCES: readonly ModelSource[] =
  */
 type ModelEndpointKind = "internal" | "external";
 
-/** Read one model's stored source off an endpoint's `spec.model_sources`. */
+/**
+ * Read one model's stored source off an endpoint's `spec.model_sources`.
+ *
+ * A stored `self-hosted` is ignored rather than returned. The server rejects
+ * that value on an external endpoint, but a row written before the guard — or
+ * through any path that ever bypasses it — must not be able to make an external
+ * row render as self-hosted: that is the one-to-one mapping the API-key picker
+ * leans on to tell the internal and external rows for a model name apart.
+ */
 export function readStoredModelSource(
   modelSources: ModelSourceMap,
   model: string,
 ): ModelSource | undefined {
   const raw = modelSources?.[model];
   const trimmed = String(raw ?? "").trim();
-  return trimmed === "" ? undefined : trimmed;
+  if (trimmed === "" || trimmed === SELF_HOSTED_MODEL_SOURCE) return undefined;
+  return trimmed;
 }
 
 /**

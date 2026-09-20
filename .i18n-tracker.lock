@@ -422,7 +422,7 @@
   "src/pages/model-usage/lib/usage-series.ts": "084013afd860b377e183cfd27b7f88f8",
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
-  "src/foundation/lib/model-source.ts": "4597330921763f8859aabf34ab94e11b",
+  "src/foundation/lib/model-source.ts": "49dd990574050e47c619f5dae72ebf98",
   "src/foundation/components/ModelSourceBadge.tsx": "e6934fd8683358d313d0b4d53ed4683b",
   "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "bcfc9af02717ab0657e542841fc13b2d"
 }

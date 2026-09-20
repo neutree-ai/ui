@@ -74,6 +74,33 @@ describe("resolveModelSource", () => {
     expect(resolveModelSource("external", { qwen: "partner" })).toBeUndefined();
   });
 
+  it("never reports self-hosted for an external endpoint that claims it", () => {
+    // The server rejects this value here, but a row written before that guard
+    // must not be able to impersonate an internal endpoint: the picker tells the
+    // two rows for one model name apart by exactly this.
+    expect(
+      resolveModelSource(
+        "external",
+        { qwen: SELF_HOSTED_MODEL_SOURCE },
+        "qwen",
+      ),
+    ).toBeUndefined();
+    expect(
+      readStoredModelSource({ qwen: SELF_HOSTED_MODEL_SOURCE }, "qwen"),
+    ).toBeUndefined();
+    // ...and it falls through to the derivation rather than blocking it.
+    expect(
+      resolveModelSource(
+        "external",
+        { qwen: SELF_HOSTED_MODEL_SOURCE },
+        "qwen",
+        {
+          viaInternalEndpoint: true,
+        },
+      ),
+    ).toBe(INTERNAL_SHARED_MODEL_SOURCE);
+  });
+
   it("keeps self-hosted out of the values offered for an external endpoint", () => {
     expect(readStoredModelSource({}, "qwen")).toBeUndefined();
     expect(EXTERNAL_MODEL_SOURCES).not.toContain(SELF_HOSTED_MODEL_SOURCE);
