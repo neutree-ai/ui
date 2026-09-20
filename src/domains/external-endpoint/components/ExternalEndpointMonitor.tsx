@@ -34,8 +34,18 @@ export default function ExternalEndpointMonitor({
   );
   const current = routes.find((route) => route.model === state.model);
   const [custom, setCustom] = useState(state.absolute);
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
+  const localDateTime = (milliseconds: number) => {
+    const date = new Date(milliseconds);
+    return new Date(milliseconds - date.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+  };
+  const [start, setStart] = useState(() =>
+    localDateTime(state.absolute ? Number(state.from) : Date.now() - 3600000),
+  );
+  const [end, setEnd] = useState(() =>
+    localDateTime(state.absolute ? Number(state.to) : Date.now()),
+  );
   const [rangeError, setRangeError] = useState(false);
   const update = (changes: Record<string, string>) =>
     setParams((previous) => {
@@ -258,7 +268,9 @@ export default function ExternalEndpointMonitor({
       </p>
       {props ? (
         <>
-          <GrafanaDashboard {...props} className="h-[1450px]" />
+          <div className="h-[1450px]">
+            <GrafanaDashboard {...props} />
+          </div>
           <p className="text-xs text-muted-foreground">
             {t("external_endpoints.monitor.embedHelp")}
           </p>
