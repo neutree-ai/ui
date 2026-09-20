@@ -17,13 +17,19 @@ import { buildEmbeddingCurlCommand } from "@/domains/external-endpoint/lib/build
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
 
 type CurlExampleProps = {
   serviceUrl: string;
   models: string[];
+  className?: string;
 };
 
-export default function CurlExample({ serviceUrl, models }: CurlExampleProps) {
+export default function CurlExample({
+  serviceUrl,
+  models,
+  className,
+}: CurlExampleProps) {
   const { t } = useTranslation();
   const { current: workspace } = useWorkspace();
   const [selectedModel, setSelectedModel] = useState(models[0] || "model-name");
@@ -42,7 +48,7 @@ export default function CurlExample({ serviceUrl, models }: CurlExampleProps) {
   })();
 
   return (
-    <Card className="mt-4">
+    <Card className={cn("mt-4", className)}>
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
         <CardTitle className="text-sm">
           {t("external_endpoints.messages.curlExample")}
@@ -66,6 +72,7 @@ export default function CurlExample({ serviceUrl, models }: CurlExampleProps) {
             variant="ghost"
             size="icon"
             className="h-7 w-7"
+            aria-label={t("buttons.copy")}
             onClick={() =>
               copy(curlCommand, {
                 successMessage: t("components.apiKey.copySuccess"),
