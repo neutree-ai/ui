@@ -1135,10 +1135,15 @@ export const ApiKeysList = () => {
                                 <td>
                                   {usage ? (
                                     <div className="flex w-40 flex-col gap-1">
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                                        {/* nowrap: the granularity label ("Per-model
+                                            quota") is wider than what is left of the
+                                            w-40 cell once the period sits beside it,
+                                            and h-5 pins the badge height — without
+                                            this the second line escapes the border. */}
                                         <Badge
                                           variant="outline"
-                                          className="h-5 font-normal"
+                                          className="h-5 shrink-0 whitespace-nowrap font-normal"
                                         >
                                           {t(
                                             `api_keys.limits.granularity.${usage.granularity}`,
