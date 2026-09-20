@@ -8,15 +8,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormControl, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { UpstreamSpec } from "../types";
+import { type EndpointOption, EndpointRefSelect } from "./EndpointRefSelect";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingNames: string[];
+  endpointOptions: EndpointOption[];
   onCreate: (name: string, upstream: UpstreamSpec) => void;
 };
 
@@ -32,17 +35,20 @@ export default function QuickUpstreamDialog({
   onOpenChange,
   onCreate,
   existingNames,
+  endpointOptions,
 }: Props) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
   const [type, setType] = useState("external");
   const [url, setUrl] = useState("");
+  const [endpointRef, setEndpointRef] = useState("");
   const [credential, setCredential] = useState("");
 
   const reset = () => {
     setName("");
     setType("external");
     setUrl("");
+    setEndpointRef("");
     setCredential("");
   };
 
@@ -53,16 +59,22 @@ export default function QuickUpstreamDialog({
 
   const duplicateName = existingNames.includes(name.trim());
 
+  const canCreate =
+    !duplicateName &&
+    !!name.trim() &&
+    (type === "external"
+      ? !!url.trim()
+      : endpointOptions.some((option) => option.value === endpointRef));
+
   const submit = () => {
     const trimmedName = name.trim();
     const trimmedUrl = url.trim();
-    if (duplicateName || !trimmedName || (type === "external" && !trimmedUrl))
-      return;
+    if (!canCreate) return;
 
     const upstream = blankUpstream();
     if (type === "endpoint_ref") {
       upstream.upstream = null;
-      upstream.endpoint_ref = trimmedUrl;
+      upstream.endpoint_ref = endpointRef;
       upstream.auth = null;
     } else {
       upstream.upstream = { url: trimmedUrl };
@@ -115,20 +127,28 @@ export default function QuickUpstreamDialog({
               ]}
             />
           </div>
-          <div className="grid gap-2 text-sm text-muted-foreground">
-            {type === "external"
-              ? t("external_endpoints.fields.upstreamUrl")
-              : t("external_endpoints.fields.endpointRef")}
-            <Input
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-              placeholder={
-                type === "external"
-                  ? t("external_endpoints.placeholders.upstreamUrl")
-                  : t("external_endpoints.placeholders.endpointRef")
-              }
-            />
-          </div>
+          <FormItem className="grid gap-2 space-y-0 text-sm text-muted-foreground">
+            <FormLabel>
+              {type === "external"
+                ? t("external_endpoints.fields.upstreamUrl")
+                : t("external_endpoints.fields.endpointRef")}
+            </FormLabel>
+            {type === "external" ? (
+              <FormControl>
+                <Input
+                  value={url}
+                  onChange={(event) => setUrl(event.target.value)}
+                  placeholder={t("external_endpoints.placeholders.upstreamUrl")}
+                />
+              </FormControl>
+            ) : (
+              <EndpointRefSelect
+                options={endpointOptions}
+                value={endpointRef}
+                onChange={(value) => setEndpointRef(String(value))}
+              />
+            )}
+          </FormItem>
           {type === "external" && (
             <div className="grid gap-2 text-sm text-muted-foreground">
               {t("external_endpoints.fields.credential")}
@@ -145,11 +165,7 @@ export default function QuickUpstreamDialog({
           <Button type="button" variant="outline" onClick={() => close(false)}>
             {t("buttons.cancel")}
           </Button>
-          <Button
-            type="button"
-            onClick={submit}
-            disabled={duplicateName || !name.trim() || !url.trim()}
-          >
+          <Button type="button" onClick={submit} disabled={!canCreate}>
             {t("buttons.save")}
           </Button>
         </DialogFooter>

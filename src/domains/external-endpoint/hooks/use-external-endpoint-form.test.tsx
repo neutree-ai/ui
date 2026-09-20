@@ -1208,6 +1208,63 @@ describe("routing state regression", () => {
     ]);
     expect(spec.upstreams.map((u: any) => u.model_mapping)).toEqual([{}, {}]);
   });
+  it("quick-creates an endpoint reference from the shared instance options", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("existing")],
+          model_routes: [routeFixture("chat", "existing")],
+        }}
+      />,
+    );
+    fireEvent.change(
+      screen.getByRole("combobox", {
+        name: "external_endpoints.fields.provider",
+      }),
+      { target: { value: "__quick_create_upstream__" } },
+    );
+    const dialog = within(screen.getByRole("dialog"));
+    fireEvent.change(
+      dialog.getByPlaceholderText("external_endpoints.placeholders.provider"),
+      {
+        target: { value: "internal-new" },
+      },
+    );
+    fireEvent.change(
+      dialog.getByPlaceholderText(
+        "external_endpoints.placeholders.upstreamUrl",
+      ),
+      {
+        target: { value: "https://external.example" },
+      },
+    );
+    fireEvent.change(dialog.getByTestId("form-select-mock"), {
+      target: { value: "endpoint_ref" },
+    });
+    const save = dialog.getByRole("button", {
+      name: "buttons.save",
+    }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    expect(dialog.getByText("endpoint-running")).toBeTruthy();
+    expect(dialog.getByText("status.phases.endpoint.Running")).toBeTruthy();
+    expect(dialog.getByText("status.phases.endpoint.Deploying")).toBeTruthy();
+    const picker = dialog.getByTestId("form-combobox-mock");
+    fireEvent.change(picker, { target: { value: "missing-instance" } });
+    expect(save.disabled).toBe(true);
+    fireEvent.change(picker, { target: { value: "endpoint-running" } });
+    expect(save.disabled).toBe(false);
+    fireEvent.click(save);
+    await submitRoutingForm();
+    const spec = submitEndpoint.mock.lastCall?.[0].spec;
+    expect(spec.model_routes[0].targets[0].upstream).toBe("internal-new");
+    const created = spec.upstreams.find((u: any) => u.name === "internal-new");
+    expect(created.endpoint_ref).toBe("endpoint-running");
+    expect(created.upstream).toBeUndefined();
+    expect(created.auth).toBeUndefined();
+  });
   it("normalizes null routes before saving legacy data", async () => {
     cleanup();
     submitEndpoint.mockClear();

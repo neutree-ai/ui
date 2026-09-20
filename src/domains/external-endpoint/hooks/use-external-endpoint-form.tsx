@@ -9,6 +9,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import { EndpointRefSelect } from "@/domains/external-endpoint/components/EndpointRefSelect";
 import ModelRouteEditor from "@/domains/external-endpoint/components/ModelRouteEditor";
 import QuickUpstreamDialog from "@/domains/external-endpoint/components/QuickUpstreamDialog";
 import TestConnectivityButton from "@/domains/external-endpoint/components/TestConnectivityButton";
@@ -23,9 +24,7 @@ import type {
   ModelRoute,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
-import EndpointStatus from "@/foundation/components/EndpointStatus";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
@@ -665,27 +664,8 @@ export const useExternalEndpointForm = ({
                             label={t("external_endpoints.fields.endpointRef")}
                             className="col-span-4 xs:col-span-1"
                           >
-                            <FormCombobox
-                              placeholder={t(
-                                "external_endpoints.placeholders.selectEndpointRef",
-                              )}
+                            <EndpointRefSelect
                               options={endpointOptions}
-                              renderOption={(option) => {
-                                const endpoint =
-                                  option as (typeof endpointOptions)[number];
-                                return (
-                                  <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                                    <span className="truncate">
-                                      {endpoint.label}
-                                    </span>
-                                    {endpoint.status?.phase ? (
-                                      <span className="shrink-0">
-                                        <EndpointStatus {...endpoint.status} />
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                );
-                              }}
                               onChange={(val) => {
                                 const ref = String(val);
                                 form.setValue(
@@ -731,6 +711,7 @@ export const useExternalEndpointForm = ({
             ...fields.map((field) => field.name || ""),
             ...(upstreams ?? []).map((upstream) => upstream.name?.trim() || ""),
           ]}
+          endpointOptions={endpointOptions}
           onCreate={handleQuickUpstreamCreate}
         />
       </>
