@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { EndpointLogTabs } from "./EndpointLogTabs";
@@ -98,5 +98,16 @@ describe("EndpointLogTabs toolbar", () => {
 
     expect(screen.getByTestId("endpoint-log-toolbar")).toBeTruthy();
     expect(screen.getByRole("combobox")).toBeTruthy();
+  });
+
+  it("switches the active replica", () => {
+    logSources.deployments = [makeDeployment(2, ["logs"])];
+
+    render(<EndpointLogTabs endpoint={endpoint} />);
+
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: "replica-1" }));
+
+    expect(screen.getByRole("combobox").textContent).toContain("replica-1");
   });
 });
