@@ -15,6 +15,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import type { UpstreamSpec } from "../types";
 import { type EndpointOption, EndpointRefSelect } from "./EndpointRefSelect";
 
+import UpstreamNameLabel from "./UpstreamNameLabel";
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -94,20 +96,22 @@ export default function QuickUpstreamDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
-          <div className="grid gap-2 text-sm text-muted-foreground">
-            {t("external_endpoints.fields.provider")}
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={t("external_endpoints.placeholders.provider")}
-              autoFocus
-            />
+          <FormItem className="grid gap-2 space-y-0 text-sm text-muted-foreground">
+            <UpstreamNameLabel />
+            <FormControl>
+              <Input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t("external_endpoints.placeholders.provider")}
+                autoFocus
+              />
+            </FormControl>
             {duplicateName && (
               <p className="text-destructive">
                 {t("external_endpoints.validation.duplicateProvider")}
               </p>
             )}
-          </div>
+          </FormItem>
           <div className="grid gap-2 text-sm text-muted-foreground">
             {t("external_endpoints.fields.upstreamType")}
             <FormSelect

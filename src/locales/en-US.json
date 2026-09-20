@@ -1229,6 +1229,7 @@
 		"title": "External Endpoints",
 		"create": "Create External Endpoint",
 		"fields": {
+			"upstreamName": "Upstream Name",
 			"provider": "Upstream Channel",
 			"virtualModel": "Exposed Model Name",
 			"virtualModelName": "Exposed Model Name",
@@ -1324,6 +1325,7 @@
 			"hideModelMappings": "Hide model mappings"
 		},
 		"messages": {
+			"upstreamNameHint": "Give this upstream a recognizable name. When configuring routes for an exposed model, select this name in the Upstream Channel field to choose where requests are forwarded.",
 			"curlExample": "Curl Example",
 			"unnamedModel": "Unnamed model",
 			"mappingSummary": "({{upstreamCount}} upstream models / {{exposedCount}} exposed models)",

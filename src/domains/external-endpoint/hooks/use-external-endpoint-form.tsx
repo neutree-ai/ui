@@ -8,6 +8,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { EndpointRefSelect } from "@/domains/external-endpoint/components/EndpointRefSelect";
 import ModelRouteEditor from "@/domains/external-endpoint/components/ModelRouteEditor";
@@ -34,6 +40,7 @@ import {
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import UpstreamNameLabel from "../components/UpstreamNameLabel";
 
 const emptyExternalUpstream: UpstreamSpec = {
   upstream: { url: "" },
@@ -529,17 +536,26 @@ export const useExternalEndpointForm = ({
                   </div>
                   <CollapsibleContent className="pt-4">
                     <div className="grid grid-cols-4 items-start gap-x-4 gap-y-4 xs:grid-cols-1">
-                      <FormFieldGroup
-                        {...form}
-                        label={t("external_endpoints.fields.provider")}
-                        {...form.register(`spec.upstreams.${index}.name`)}
-                      >
-                        <Input
-                          placeholder={t(
-                            "external_endpoints.placeholders.provider",
-                          )}
-                        />
-                      </FormFieldGroup>
+                      <FormField
+                        control={form.control}
+                        name={`spec.upstreams.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem
+                            data-testid={`field-spec.upstreams.${index}.name`}
+                          >
+                            <UpstreamNameLabel />
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder={t(
+                                  "external_endpoints.placeholders.provider",
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <FormFieldGroup
                         {...form}
                         name={`_upstreamType_${index}`}
