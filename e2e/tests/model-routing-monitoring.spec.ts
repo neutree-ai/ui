@@ -67,13 +67,9 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       frame.getByText("完成请求 / Completed", { exact: true }),
     ).toBeVisible({ timeout: 30000 });
-    await page
-      .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
-      .getByRole("heading", { name: "完成请求 / Completed", exact: true })
-      .hover();
-    await page.mouse.wheel(0, 850);
-    await frame.getByRole("table").first().hover();
-    await page.mouse.wheel(0, 450);
+    await frame
+      .locator('[data-griditem-key="grid-item-8"]')
+      .scrollIntoViewIfNeeded();
     const table = frame
       .getByRole("region", {
         name: "各目标实际分流 / Selected targets",
@@ -96,12 +92,18 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       table.getByRole("row").nth(1).getByRole("cell").nth(6),
     ).not.toContainText("—");
-    await table.hover();
-    await page.mouse.wheel(0, 900);
+    await frame
+      .locator('[data-griditem-key="grid-item-11"]')
+      .scrollIntoViewIfNeeded();
     await frame
       .getByRole("button", { name: "Expand row", exact: true })
       .click();
-    const capacity = frame.getByRole("table").nth(2);
+    const capacity = frame
+      .getByRole("region", {
+        name: "容量快照 / Capacity at selected end time",
+        exact: true,
+      })
+      .getByRole("table");
     await expect(capacity.getByRole("row")).toHaveCount(2);
     await expect(capacity).toContainText(/无限制|Unlimited/);
     await page.waitForLoadState("networkidle");
@@ -219,14 +221,12 @@ test.describe("external endpoint monitoring", () => {
     expect(new URL(src!).searchParams.get("var-model_regex")).toBe(
       JSON.stringify(".*"),
     );
-    await page
-      .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
-      .getByRole("heading", { name: "完成请求 / Completed", exact: true })
-      .hover();
-    await page.mouse.wheel(0, 850);
     const frame = page.frameLocator(
       'iframe[title="Grafana Dashboard neutree-model-routing"]',
     );
+    await frame
+      .locator('[data-griditem-key="grid-item-13"]')
+      .scrollIntoViewIfNeeded();
     const models = frame.getByRole("region", {
       name: "按模型请求与错误 / Requests and errors by model",
       exact: true,
@@ -302,11 +302,9 @@ test.describe("external endpoint monitoring", () => {
         exact: true,
       }),
     ).toBeVisible();
-    await page
-      .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
-      .getByRole("heading", { name: "完成请求 / Completed", exact: true })
-      .hover();
-    await page.mouse.wheel(0, 1000);
+    await frame
+      .locator('[data-griditem-key="grid-item-13"]')
+      .scrollIntoViewIfNeeded();
     const summary = frame.getByRole("region", {
       name: "按模型请求与错误 / Requests and errors by model",
       exact: true,
