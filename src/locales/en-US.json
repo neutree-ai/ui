@@ -1527,6 +1527,7 @@
 			"enable": "Enable",
 			"actions": "Actions",
 			"moreLimitedModels": "+{{count}} more",
+			"resetsOn": "Resets {{date}}",
 			"usedTotal": "{{amount}} used",
 			"granularity": {
 				"overall": "Overall quota",

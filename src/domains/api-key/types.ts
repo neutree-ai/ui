@@ -50,6 +50,12 @@ export type ApiKeyLimits = {
   // "monthly"). Authoritative in per-model mode, where token_quota.period may be
   // absent but every entry limit still resets on this period.
   quota_period?: string;
+  // When the current window started and when it starts over, both computed by
+  // the server: CURRENT_DATE is the database's date, and a browser a timezone
+  // away would disagree by a day right at a boundary — exactly when someone is
+  // checking whether their quota has reset.
+  quota_period_start?: string;
+  quota_resets_at?: string;
 };
 
 export type ApiKey = {

@@ -159,6 +159,9 @@ export const ApiKeyLimitsCard = ({
   const period = resolveQuotaPeriod(
     limits.quota_period ?? limits.token_quota?.period,
   );
+  // Server-computed; absent on an older response, in which case the period name
+  // is shown on its own rather than a date this client guessed.
+  const resetsAt = limits.quota_resets_at;
 
   // Token-quota consumption (current period) — computed by get_api_key_limits.
   const quota = limits.token_quota;
@@ -378,7 +381,16 @@ export const ApiKeyLimitsCard = ({
                                 : formatTokenQuota(entryRemaining)}
                             </td>
                             <td className="py-1.5">
-                              {t(`api_keys.limits.periods.${period}`)}
+                              <div>
+                                {t(`api_keys.limits.periods.${period}`)}
+                              </div>
+                              {resetsAt ? (
+                                <div className="text-xs text-muted-foreground">
+                                  {t("api_keys.limits.resetsOn", {
+                                    date: resetsAt,
+                                  })}
+                                </div>
+                              ) : null}
                             </td>
                           </tr>
                         );
@@ -417,6 +429,9 @@ export const ApiKeyLimitsCard = ({
                   {t("api_keys.limits.remainingLabel")}:{" "}
                   {formatTokenQuota(remaining)} ·{" "}
                   {t(`api_keys.limits.periods.${period}`)}
+                  {resetsAt
+                    ? ` · ${t("api_keys.limits.resetsOn", { date: resetsAt })}`
+                    : ""}
                 </div>
               </div>
             )}
