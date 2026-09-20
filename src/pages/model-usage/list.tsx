@@ -1,23 +1,6 @@
 import { useParsed } from "@refinedev/core";
-import {
-  BarChart3,
-  LineChart as LineChartIcon,
-  RefreshCw,
-  X,
-} from "lucide-react";
-import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { RefreshCw } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,58 +25,47 @@ import type { ApiUsageRecord } from "@/domains/api-key/types";
 import {
   type DateRange,
   DateRangePicker,
+  formatRangeLabel,
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { ListPage } from "@/foundation/components/ListPage";
-import { Loader } from "@/foundation/components/Loader";
+import { PaginationControls } from "@/foundation/components/PaginationControls";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import {
+  formatTick,
+  UsageChart,
+} from "@/pages/model-usage/components/UsageChart";
+import {
+  aggregateSeries,
+  buildTrend,
+  foldRemainder,
+  type UsageSeries,
+} from "@/pages/model-usage/lib/usage-series";
 
-type NamedTotals = {
-  key: string;
-  name: string;
-  description?: string | null;
-  prompt: number;
-  completion: number;
-  total: number;
-};
-
-// A point on the daily line chart: `date` plus one numeric key per series
-// (an API key in "all keys" mode, or a model when a single key is selected).
-type DailyRow = {
-  date: string;
-  [series: string]: number | string;
-};
-
-// A chart series: stable `key` (used as the recharts dataKey + legend toggle
-// identity) and a human `name` for the legend/tooltip.
-type Series = { key: string; name: string; description?: string | null };
-
-// Distinct colors for the per-series lines; cycles if there are more series
-// than colors.
-const SERIES_COLORS = [
-  "hsl(217 91% 60%)",
-  "hsl(142 71% 45%)",
-  "hsl(38 92% 50%)",
-  "hsl(271 81% 56%)",
-  "hsl(0 84% 60%)",
-  "hsl(199 89% 48%)",
-  "hsl(330 81% 60%)",
-  "hsl(160 84% 39%)",
-  "hsl(48 96% 53%)",
-  "hsl(240 5% 50%)",
-];
-
-const CHART_MARGIN = { top: 4, right: 8, bottom: 0, left: 4 };
+const RANGE_PRESETS = [7, 30, 90];
+// The window the page opens on, and the fallback when nothing else was picked.
+const DEFAULT_RANGE_DAYS = 30;
+// How many API keys get their own line/bar before the rest folds into "other".
+// It bounds the tooltip row count: at 8 the tooltip is ~200px inside the 240px
+// chart card, and every extra series pushes it closer to spilling out.
+const TOP_K = 8;
+// Rows per page in the tables under the chart. A busy workspace has 50+ keys on
+// a single day, which made the page thousands of pixels tall.
+// The two breakdown cards are a glanceable ranking, so they page at 10; the
+// per-record table is where people hunt for a specific request, so it shows 50.
+const CARD_PAGE_SIZE = 10;
+const DETAIL_PAGE_SIZE = 50;
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
   const workspace = (params?.workspace as string) ?? "";
 
-  const [range, setRange] = useState<DateRange>(() => trailingRange(30));
+  const [range, setRange] = useState<DateRange>(() =>
+    trailingRange(DEFAULT_RANGE_DAYS),
+  );
   const [apiKeyId, setApiKeyId] = useState<string>("");
   const [endpointType, setEndpointType] = useState<string>("");
   const [model, setModel] = useState("");
@@ -101,14 +73,57 @@ export const ModelUsageList = () => {
   const [chartType, setChartType] = useState<"line" | "bar">("line");
   // Series toggled off via the (clickable) chart legend.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
-  // Day focused by clicking a chart point — narrows the detail table.
-  const [focusDate, setFocusDate] = useState<string>("");
+  // The range to come back to after drilling into a day, so the way back is
+  // whatever the reader was looking at — a preset or their own custom window.
+  const [lastRange, setLastRange] = useState<DateRange | null>(null);
 
   const { usageData, isLoading, error, refetch } = useWorkspaceUsage(
     workspace,
     range.start,
     range.end,
   );
+
+  // Picking a day in the chart narrows the range itself to that day — there is
+  // no second "focused day" state, so every panel on the page follows the same
+  // scope and the date control is both the state and the way back.
+  const isSingleDay = range.start === range.end;
+
+  const changeRange = useCallback((next: DateRange) => {
+    setRange(next);
+    // Remember where to come back to. A single day picked in the calendar is
+    // itself a drill-down, so it is not a place to come back to.
+    if (next.start !== next.end) setLastRange(next);
+  }, []);
+
+  const pickDay = useCallback(
+    (day: string) => {
+      setLastRange((previous) =>
+        range.start === range.end ? previous : range,
+      );
+      setRange({ start: day, end: day });
+    },
+    [range],
+  );
+
+  const resetRange = useCallback(
+    () => setRange(lastRange ?? trailingRange(DEFAULT_RANGE_DAYS)),
+    [lastRange],
+  );
+
+  // "Back to last 30 days" when the previous range was a preset, otherwise name
+  // the window the reader picked themselves.
+  const backLabel = useMemo(() => {
+    const target = lastRange ?? trailingRange(DEFAULT_RANGE_DAYS);
+    const preset = RANGE_PRESETS.find((days) => {
+      const candidate = trailingRange(days);
+      return candidate.start === target.start && candidate.end === target.end;
+    });
+    return preset
+      ? t("model_usage.daily.backToPreset", { days: preset })
+      : t("model_usage.daily.backToRange", {
+          range: formatRangeLabel(target),
+        });
+  }, [lastRange, t]);
 
   // Filter dropdown options are derived entirely from the usage RPC rows. The
   // RPC (SECURITY DEFINER) already returns the id + name of every key visible to
@@ -137,6 +152,10 @@ export const ModelUsageList = () => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [usageData]);
 
+  // What the closed control shows: the key's name, one line. The description
+  // stays in the list, where there is room for it.
+  const selectedKey = keyOptions.find((k) => k.id === apiKeyId);
+
   const filtered = useMemo(
     () =>
       usageData.filter(
@@ -151,57 +170,94 @@ export const ModelUsageList = () => {
     [usageData, apiKeyId, endpointType, model],
   );
 
-  // With "All API keys" each line is an API key; once a key is picked we drill
-  // into that key's per-model usage over time.
+  // With "All API keys" each series is an API key; once a key is picked we drill
+  // into that key's per-model usage instead.
   const groupByModel = Boolean(apiKeyId);
-  const { data: dailyData, series } = useMemo(
-    () => aggregateDaily(filtered, groupByModel),
-    [filtered, groupByModel],
+  const seriesKey = useCallback(
+    (r: ApiUsageRecord) =>
+      groupByModel ? (r.model_name ?? "-") : r.api_key_id,
+    [groupByModel],
+  );
+  const seriesMeta = useCallback(
+    (r: ApiUsageRecord) =>
+      groupByModel
+        ? { name: r.model_name ?? "-", description: null }
+        : {
+            name: r.api_key_display_name || r.api_key_name,
+            description: r.api_key_description || null,
+          },
+    [groupByModel],
+  );
+
+  // Multi-day: the top TOP_K series each get a line, the rest fold into one
+  // "other" series. A single key's models are few enough to show in full.
+  const series = useMemo(
+    () =>
+      foldRemainder(
+        aggregateSeries(filtered, seriesKey, seriesMeta),
+        groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
+        (count) => t("model_usage.daily.otherKeys", { n: count }),
+      ),
+    [filtered, groupByModel, seriesKey, seriesMeta, t],
+  );
+  const trendData = useMemo(
+    () => buildTrend(filtered, series, seriesKey),
+    [filtered, series, seriesKey],
+  );
+  // Single day: same folding, but the chart shows one bar per series with its
+  // prompt/completion split.
+  const dayCategories = useMemo(
+    () =>
+      isSingleDay
+        ? foldRemainder(
+            aggregateSeries(filtered, seriesKey, seriesMeta),
+            groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
+            (count) => t("model_usage.daily.otherKeys", { n: count }),
+          )
+        : [],
+    [filtered, groupByModel, isSingleDay, seriesKey, seriesMeta, t],
   );
 
   const byKey = useMemo(
     () =>
-      aggregateBy(
+      aggregateSeries(
         filtered,
         (r) => r.api_key_id,
-        (r) => r.api_key_display_name || r.api_key_name,
-        (r) => r.api_key_description,
+        (r) => ({
+          name: r.api_key_display_name || r.api_key_name,
+          description: r.api_key_description || null,
+        }),
       ),
     [filtered],
   );
   const byModel = useMemo(
     () =>
-      aggregateBy(
+      aggregateSeries(
         filtered,
         (r) => r.model_name ?? "-",
-        (r) => r.model_name ?? "-",
+        (r) => ({ name: r.model_name ?? "-", description: null }),
       ),
     [filtered],
   );
 
-  // Detail rows, optionally narrowed to the day clicked in the chart.
-  const detailRows = useMemo(() => {
-    const rows = focusDate
-      ? filtered.filter((r) => r.date === focusDate)
-      : filtered;
-    return [...rows].sort(
-      (a, b) => b.date.localeCompare(a.date) || (b.usage ?? 0) - (a.usage ?? 0),
-    );
-  }, [filtered, focusDate]);
+  const detailRows = useMemo(
+    () =>
+      [...filtered].sort(
+        (a, b) =>
+          b.date.localeCompare(a.date) || (b.usage ?? 0) - (a.usage ?? 0),
+      ),
+    [filtered],
+  );
 
   const totalTokens = filtered.reduce((sum, r) => sum + (r.usage ?? 0), 0);
-  const seriesName = (key: string) =>
-    series.find((s) => s.key === key)?.name ?? key;
-  const seriesDescription = (key: string) =>
-    series.find((s) => s.key === key)?.description;
+  // The tables reset to page 1 when the scope changes — and only then. The
+  // usage RPC polls every minute and hands back new arrays, which must not
+  // throw the reader back to page 1.
+  const scopeKey = [range.start, range.end, apiKeyId, endpointType, model].join(
+    "|",
+  );
 
-  // Clicking a day in either chart focuses (or clears) the detail table.
-  const onPick = (e: { activeLabel?: string | number }) => {
-    const day = typeof e?.activeLabel === "string" ? e.activeLabel : "";
-    if (day) setFocusDate((prev) => (prev === day ? "" : day));
-  };
-
-  const toggleSeries = (key: string) => {
+  const onToggleSeries = (key: string) => {
     if (!key) return;
     setHidden((prev) => {
       const next = new Set(prev);
@@ -214,67 +270,9 @@ export const ModelUsageList = () => {
     });
   };
 
-  // Axes / grid / tooltip / legend are identical across line and bar modes, so
-  // share them as a keyed child array between the two chart elements (recharts
-  // flattens arrays of children when detecting axis/legend components).
-  const commonAxes = [
-    <CartesianGrid
-      key="grid"
-      strokeDasharray="3 3"
-      vertical={false}
-      stroke="hsl(var(--border))"
-    />,
-    <XAxis
-      key="x"
-      dataKey="date"
-      tickFormatter={formatTick}
-      tickLine={false}
-      axisLine={false}
-      fontSize={11}
-      interval="preserveStartEnd"
-    />,
-    <YAxis
-      key="y"
-      tickFormatter={(v) => formatTokens(v) ?? ""}
-      tickLine={false}
-      axisLine={false}
-      fontSize={11}
-      width={48}
-    />,
-    <Tooltip
-      key="tip"
-      content={
-        <UsageTooltip
-          seriesName={seriesName}
-          seriesDescription={seriesDescription}
-        />
-      }
-    />,
-    <Legend
-      key="legend"
-      wrapperStyle={{ fontSize: 11 }}
-      onClick={(o) => toggleSeries(String(o.dataKey ?? ""))}
-      formatter={(_val, entry) => {
-        const key = String(entry?.dataKey ?? "");
-        return (
-          <span
-            className="inline-flex items-baseline align-middle leading-tight"
-            style={{
-              cursor: "pointer",
-              opacity: hidden.has(key) ? 0.35 : 1,
-            }}
-          >
-            <span>{seriesName(key)}</span>
-            {seriesDescription(key) ? (
-              <span className="ml-1 text-[10px] font-normal">
-                - {seriesDescription(key)}
-              </span>
-            ) : null}
-          </span>
-        );
-      }}
-    />,
-  ];
+  // A day-scoped table says which day it is, so it never reads as the range view.
+  const scopeTitle = (base: string, withDay: string) =>
+    isSingleDay ? withDay : base;
 
   return (
     <ListPage
@@ -293,110 +291,25 @@ export const ModelUsageList = () => {
         </Button>
       }
     >
-      <div className="mb-4 rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] p-4">
-        <div className="flex items-baseline justify-between mb-2">
-          <span className="text-sm font-medium">
-            {groupByModel
-              ? t("model_usage.daily.titleByModel")
-              : t("model_usage.daily.titleByKey")}
-          </span>
-          <div className="flex items-center gap-3">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-semibold tabular-nums">
-                {formatTokens(totalTokens)}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {t("model_usage.daily.totalLabel")}
-              </span>
-            </div>
-            <div className="inline-flex rounded-md border p-0.5">
-              <Button
-                type="button"
-                variant={chartType === "line" ? "secondary" : "ghost"}
-                size="sm"
-                className="h-7 px-2"
-                aria-label={t("model_usage.chart.line")}
-                title={t("model_usage.chart.line")}
-                onClick={() => setChartType("line")}
-              >
-                <LineChartIcon className="size-4" />
-              </Button>
-              <Button
-                type="button"
-                variant={chartType === "bar" ? "secondary" : "ghost"}
-                size="sm"
-                className="h-7 px-2"
-                aria-label={t("model_usage.chart.bar")}
-                title={t("model_usage.chart.bar")}
-                onClick={() => setChartType("bar")}
-              >
-                <BarChart3 className="size-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-        <div className="h-[240px]">
-          {isLoading && dailyData.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
-              <Loader className="w-8 text-muted-foreground" />
-            </div>
-          ) : dailyData.length === 0 ? (
-            <EmptyState className="flex h-full items-center justify-center">
-              {t("model_usage.empty")}
-            </EmptyState>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              {chartType === "bar" ? (
-                <BarChart
-                  data={dailyData}
-                  margin={CHART_MARGIN}
-                  onClick={onPick}
-                >
-                  {commonAxes}
-                  {series.map((s, i) => (
-                    <Bar
-                      key={s.key}
-                      dataKey={s.key}
-                      name={s.name}
-                      stackId="usage"
-                      hide={hidden.has(s.key)}
-                      fill={SERIES_COLORS[i % SERIES_COLORS.length]}
-                      radius={
-                        i === series.length - 1 ? [3, 3, 0, 0] : undefined
-                      }
-                    />
-                  ))}
-                </BarChart>
-              ) : (
-                <LineChart
-                  data={dailyData}
-                  margin={CHART_MARGIN}
-                  onClick={onPick}
-                >
-                  {commonAxes}
-                  {series.map((s, i) => (
-                    <Line
-                      key={s.key}
-                      type="monotone"
-                      dataKey={s.key}
-                      name={s.name}
-                      hide={hidden.has(s.key)}
-                      stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                      strokeWidth={2}
-                      dot={{ r: 2 }}
-                      activeDot={{ r: 4 }}
-                      connectNulls
-                    />
-                  ))}
-                </LineChart>
-              )}
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
+      <UsageChart
+        series={series}
+        trendData={trendData}
+        dayCategories={dayCategories}
+        isSingleDay={isSingleDay}
+        groupByModel={groupByModel}
+        chartType={chartType}
+        onChartTypeChange={setChartType}
+        hidden={hidden}
+        onToggleSeries={onToggleSeries}
+        totalTokens={totalTokens}
+        isLoading={isLoading}
+        backLabel={backLabel}
+        onPickDay={pickDay}
+        onResetRange={resetRange}
+      />
 
       <div className="mb-4 flex flex-wrap items-center gap-2 [&>button]:h-8 [&_input]:h-8 [&_[role=combobox]]:h-8">
-        <DateRangePicker className="h-8" value={range} onChange={setRange} />
+        <DateRangePicker className="h-8" value={range} onChange={changeRange} />
         <Select
           value={apiKeyId || "all"}
           onValueChange={(v) => {
@@ -408,7 +321,19 @@ export const ModelUsageList = () => {
           }}
         >
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t("model_usage.filters.apiKey")} />
+            <SelectValue placeholder={t("model_usage.filters.apiKey")}>
+              {/* The control always has a value — "all" is the no-filter
+                  entry — so what it shows is spelled out rather than left to
+                  the selected item's own markup, which is two lines tall. */}
+              <ApiKeyLabel
+                variant="inline"
+                name={
+                  apiKeyId
+                    ? (selectedKey?.name ?? apiKeyId)
+                    : t("model_usage.filters.allApiKeys")
+                }
+              />
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
@@ -446,53 +371,189 @@ export const ModelUsageList = () => {
           value={model}
           onChange={(e) => setModel(e.target.value)}
         />
-        {focusDate ? (
-          <Button
-            type="button"
-            variant="secondary"
-            className="gap-1 px-3 font-normal"
-            aria-label={t("model_usage.clearFocusDate")}
-            title={t("model_usage.clearFocusDate")}
-            onClick={() => setFocusDate("")}
-          >
-            {formatTick(focusDate)}
-            <X className="size-3.5" />
-          </Button>
-        ) : null}
       </div>
 
       {error ? (
         <div className="text-sm text-destructive mb-2">{error.message}</div>
       ) : null}
 
+      {/* Side by side and stretched to one height — a paired read is the point,
+          and a shorter breakdown just leaves white space under its rows rather
+          than a visibly short column. */}
       <div className="grid gap-4 md:grid-cols-2">
         <UsageTable
-          title={t("model_usage.byApiKey")}
+          title={scopeTitle(
+            t("model_usage.byApiKey"),
+            t("model_usage.byApiKeyOnDay", { date: range.start }),
+          )}
           nameHeader={t("model_usage.apiKey")}
           rows={byKey}
+          resetKey={scopeKey}
         />
         <UsageTable
-          title={t("model_usage.byModel")}
+          title={scopeTitle(
+            t("model_usage.byModel"),
+            t("model_usage.byModelOnDay", { date: range.start }),
+          )}
           nameHeader={t("model_usage.model")}
           rows={byModel}
+          resetKey={scopeKey}
         />
       </div>
 
       <div className="mt-4">
-        <DetailTable rows={detailRows} />
+        <DetailTable rows={detailRows} resetKey={scopeKey} />
       </div>
     </ListPage>
   );
 };
 
-// DetailTable is the per-day breakdown (date / type / endpoint / model /
-// prompt / completion / total) — one row per usage record, the granularity the
-// PM asked to keep from the old API-key detail view.
-const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
+// The three tables share one page size and one reset rule: back to page 1 when
+// the scope changes, never when the 60s poll refreshes the rows.
+function usePagedRows<T>(rows: T[], resetKey: string, pageSize: number) {
+  // Deriving the page from the scope key instead of resetting it in an effect:
+  // the scope changed on the last render means we are back on page 1, and no
+  // effect has to fire (or fight) the interaction that changed the scope.
+  const [state, setState] = useState({ key: resetKey, page: 1 });
+  const page = state.key === resetKey ? state.page : 1;
+  const setPage = (next: number) => setState({ key: resetKey, page: next });
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  return {
+    page: currentPage,
+    pageCount,
+    setPage,
+    pagedRows: rows.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+  };
+}
+
+const CardPager = ({
+  page,
+  pageCount,
+  pageSize,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) => {
   const { t } = useTranslation();
   return (
-    <div className="border rounded-md">
-      <div className="px-4 py-2 text-sm font-medium border-b">
+    <div className="border-t border-[var(--nt-stroke-neutral-trans-2)] px-4 py-2">
+      <PaginationControls
+        page={page}
+        pageCount={pageCount}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+        showPageSize={false}
+        summary={t("table.pagination.totalItems", { total })}
+      />
+    </div>
+  );
+};
+
+const UsageTable = ({
+  title,
+  nameHeader,
+  rows,
+  resetKey,
+}: {
+  title: string;
+  nameHeader: string;
+  rows: UsageSeries[];
+  resetKey: string;
+}) => {
+  const { t } = useTranslation();
+  const { page, pageCount, setPage, pagedRows } = usePagedRows(
+    rows,
+    resetKey,
+    CARD_PAGE_SIZE,
+  );
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
+      <div className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-2 text-sm font-medium">
+        {title}
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{nameHeader}</TableHead>
+            <TableHead className="w-[160px] text-right">
+              {t("model_usage.promptTokens")}
+            </TableHead>
+            <TableHead className="w-[160px] text-right">
+              {t("model_usage.completionTokens")}
+            </TableHead>
+            <TableHead className="w-[160px] text-right">
+              {t("model_usage.totalTokens")}
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={4}
+                className="text-center py-8 text-muted-foreground"
+              >
+                {t("model_usage.empty")}
+              </TableCell>
+            </TableRow>
+          ) : (
+            pagedRows.map((r) => (
+              <TableRow key={r.key}>
+                <TableCell className="max-w-[160px]">
+                  <ApiKeyLabel name={r.name} description={r.description} />
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatTokens(r.prompt)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatTokens(r.completion)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs font-medium">
+                  {formatTokens(r.total)}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+      {pageCount > 1 ? (
+        <CardPager
+          page={page}
+          pageCount={pageCount}
+          pageSize={CARD_PAGE_SIZE}
+          total={rows.length}
+          onPageChange={setPage}
+        />
+      ) : null}
+    </div>
+  );
+};
+
+// DetailTable is the per-record breakdown (date / key / type / endpoint / model
+// / prompt / completion / total) — the granularity the PM asked to keep from the
+// old API-key detail view.
+const DetailTable = ({
+  rows,
+  resetKey,
+}: {
+  rows: ApiUsageRecord[];
+  resetKey: string;
+}) => {
+  const { t } = useTranslation();
+  const { page, pageCount, setPage, pagedRows } = usePagedRows(
+    rows,
+    resetKey,
+    DETAIL_PAGE_SIZE,
+  );
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
+      <div className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-2 text-sm font-medium">
         {t("model_usage.detail.title")}
       </div>
       <Table>
@@ -531,7 +592,7 @@ const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((r, i) => (
+            pagedRows.map((r, i) => (
               <TableRow
                 key={`${r.date}-${r.api_key_id}-${r.endpoint_name}-${r.model_name}-${i}`}
               >
@@ -572,6 +633,15 @@ const DetailTable = ({ rows }: { rows: ApiUsageRecord[] }) => {
           )}
         </TableBody>
       </Table>
+      {pageCount > 1 ? (
+        <CardPager
+          page={page}
+          pageCount={pageCount}
+          pageSize={DETAIL_PAGE_SIZE}
+          total={rows.length}
+          onPageChange={setPage}
+        />
+      ) : null}
     </div>
   );
 };
@@ -588,190 +658,3 @@ const EndpointTypeBadge = ({ type }: { type: string | null }) => {
   }
   return <span className="text-muted-foreground">-</span>;
 };
-
-const UsageTable = ({
-  title,
-  nameHeader,
-  rows,
-}: {
-  title: string;
-  nameHeader: string;
-  rows: NamedTotals[];
-}) => {
-  const { t } = useTranslation();
-  return (
-    <div className="border rounded-md">
-      <div className="px-4 py-2 text-sm font-medium border-b">{title}</div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{nameHeader}</TableHead>
-            <TableHead className="text-right">
-              {t("model_usage.promptTokens")}
-            </TableHead>
-            <TableHead className="text-right">
-              {t("model_usage.completionTokens")}
-            </TableHead>
-            <TableHead className="text-right">
-              {t("model_usage.totalTokens")}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={4}
-                className="text-center py-8 text-muted-foreground"
-              >
-                {t("model_usage.empty")}
-              </TableCell>
-            </TableRow>
-          ) : (
-            rows.map((r) => (
-              <TableRow key={r.key}>
-                <TableCell className="max-w-[160px]">
-                  <ApiKeyLabel name={r.name} description={r.description} />
-                </TableCell>
-                <TableCell className="text-right font-mono text-xs">
-                  {formatTokens(r.prompt)}
-                </TableCell>
-                <TableCell className="text-right font-mono text-xs">
-                  {formatTokens(r.completion)}
-                </TableCell>
-                <TableCell className="text-right font-mono text-xs font-medium">
-                  {formatTokens(r.total)}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
-};
-
-const UsageTooltip = ({
-  active,
-  payload,
-  label,
-  seriesName,
-  seriesDescription,
-}: {
-  active?: boolean;
-  payload?: Array<{ dataKey: string; value: number; color: string }>;
-  label?: string;
-  seriesName: (key: string) => string;
-  seriesDescription: (key: string) => string | null | undefined;
-}) => {
-  const { t } = useTranslation();
-  if (!active || !payload || payload.length === 0) return null;
-  const rows = payload.filter((p) => (p.value ?? 0) > 0);
-  if (rows.length === 0) return null;
-  const total = rows.reduce((sum, p) => sum + (p.value ?? 0), 0);
-  return (
-    <div className="rounded border bg-popover px-2 py-1 text-xs shadow">
-      <div className="font-medium mb-1">{label}</div>
-      {rows.map((p) => (
-        <div
-          key={p.dataKey}
-          className="flex items-center gap-1.5 text-muted-foreground"
-        >
-          <span
-            className="inline-block size-2 rounded-sm"
-            style={{ backgroundColor: p.color }}
-          />
-          <span className="max-w-[160px] truncate">
-            <span className="block truncate text-foreground">
-              {seriesName(p.dataKey)}
-            </span>
-            {seriesDescription(p.dataKey) ? (
-              <span className="block truncate text-[10px]">
-                {seriesDescription(p.dataKey)}
-              </span>
-            ) : null}
-          </span>
-          <span className="ml-auto font-mono">{formatTokens(p.value)}</span>
-        </div>
-      ))}
-      <div className="mt-1 flex border-t pt-1">
-        <span>{t("model_usage.daily.tooltip.total")}</span>
-        <span className="ml-auto font-mono">{formatTokens(total)}</span>
-      </div>
-    </div>
-  );
-};
-
-// aggregateDaily buckets usage into per-day totals for each series — one series
-// per API key, or per model when `byModel` is set — for a multi-line chart.
-// Returns the chart rows and the series list (sorted by total desc).
-function aggregateDaily(
-  rows: ApiUsageRecord[],
-  byModel: boolean,
-): { data: DailyRow[]; series: Series[] } {
-  const byDate = new Map<string, Record<string, number>>();
-  const totals = new Map<string, number>();
-  const names = new Map<string, string>();
-  const descriptions = new Map<string, string | null | undefined>();
-  for (const r of rows) {
-    const key = byModel ? (r.model_name ?? "-") : r.api_key_id;
-    const name = byModel
-      ? (r.model_name ?? "-")
-      : r.api_key_display_name || r.api_key_name;
-    names.set(key, name);
-    if (!byModel) descriptions.set(key, r.api_key_description);
-    const day = byDate.get(r.date) ?? {};
-    day[key] = (day[key] ?? 0) + (r.usage ?? 0);
-    byDate.set(r.date, day);
-    totals.set(key, (totals.get(key) ?? 0) + (r.usage ?? 0));
-  }
-  const series = [...totals.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([key]) => ({
-      key,
-      name: names.get(key) ?? key,
-      description: descriptions.get(key),
-    }));
-  const data = [...byDate.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, perSeries]) => {
-      const row: DailyRow = { date };
-      for (const s of series) {
-        row[s.key] = perSeries[s.key] ?? 0;
-      }
-      return row;
-    });
-  return { data, series };
-}
-
-function aggregateBy(
-  rows: ApiUsageRecord[],
-  keyOf: (r: ApiUsageRecord) => string,
-  nameOf: (r: ApiUsageRecord) => string,
-  descriptionOf?: (r: ApiUsageRecord) => string | null | undefined,
-): NamedTotals[] {
-  const byKey = new Map<string, NamedTotals>();
-  for (const r of rows) {
-    const k = keyOf(r);
-    const cur = byKey.get(k) ?? {
-      key: k,
-      name: nameOf(r),
-      description: descriptionOf?.(r),
-      prompt: 0,
-      completion: 0,
-      total: 0,
-    };
-    cur.prompt += r.prompt_tokens ?? 0;
-    cur.completion += r.completion_tokens ?? 0;
-    cur.total += r.usage ?? 0;
-    byKey.set(k, cur);
-  }
-  return [...byKey.values()].sort((a, b) => b.total - a.total);
-}
-
-// Converts a YYYY-MM-DD date into a compact M/D axis tick.
-function formatTick(date: string): string {
-  const parts = date.split("-");
-  if (parts.length !== 3) return date;
-  return `${Number(parts[1])}/${Number(parts[2])}`;
-}

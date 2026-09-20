@@ -86,10 +86,7 @@ import {
   MODEL_REGISTRY_SELECT,
   registryModelDelivery,
 } from "@/foundation/lib/model-registry-visibility";
-import {
-  registryModelDefaultVersion,
-  registryModelLabel,
-} from "@/foundation/lib/registry-model-display";
+import { registryModelLabel } from "@/foundation/lib/registry-model-display";
 import { cn } from "@/foundation/lib/utils";
 import {
   composeEndpointSpec,
@@ -1955,18 +1952,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     onChange={(value: string) => {
                       form.setValue("spec.model.name", value);
 
-                      // Fill in the version the registry reports, so the
-                      // reference is complete without opening "Show all options".
-                      const picked = modelsData.models.find(
-                        (e) => e.name === value,
-                      );
-                      const version = picked
-                        ? registryModelDefaultVersion(picked)
-                        : undefined;
-
-                      if (version) {
-                        form.setValue("spec.model.version", version);
-                      }
+                      // Empty, so the endpoint serves the bare model name and
+                      // resolves the version as it deploys. A version here
+                      // becomes part of the name callers send
+                      // (`name:version`), and the registry lists versions in
+                      // its own order — the first is not the newest, and for a
+                      // model uploaded without one it is a generated id.
+                      form.setValue("spec.model.version", "");
 
                       // Cleared now and refilled when the detail read answers,
                       // so the previous model's parameters are never shown
@@ -1978,7 +1970,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               workspace,
                               registry: currentRegistry,
                               model: value,
-                              version,
                             }
                           : null,
                       );

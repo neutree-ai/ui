@@ -30,6 +30,7 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
@@ -57,6 +58,7 @@ export const ApiKeyLimitsCard = ({
   const { disable, enable } = useApiKeyDisable();
   const { mutateAsync } = useCustomMutation();
   const invalidate = useInvalidate();
+  const onKeyDown = useFormEnterSubmitGuard();
   const [limits, setLimits] = useState<ApiKeyLimits>({});
   const form = useForm<
     ApiKeyPolicyFormValues & {
@@ -162,7 +164,11 @@ export const ApiKeyLimitsCard = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSave)} className="mt-4 space-y-4">
+      <form
+        onSubmit={form.handleSubmit(onSave)}
+        onKeyDown={onKeyDown}
+        className="mt-4 space-y-4"
+      >
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xl font-semibold">

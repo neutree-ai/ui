@@ -192,8 +192,8 @@ describe("CatalogModelSlots", () => {
     expect(doc.spec.variants?.bf16.model).toMatchObject({
       registry: "huggingface",
       name: "qwen3-27b",
-      version: "v1",
     });
+    expect(doc.spec.variants?.bf16.model).not.toHaveProperty("version");
     expect(doc.spec.features).toEqual(recipeDoc.spec.features);
     expect(doc.metadata).toEqual(recipeDoc.metadata);
   });

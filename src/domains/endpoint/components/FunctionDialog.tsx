@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
 import type { ChatFunction } from "@/foundation/types/chat-types";
 
 interface FunctionDialogProps {
@@ -88,6 +89,7 @@ export function FunctionDialog({
       parameters: '{\n  "type": "object",\n  "properties": {\n  }\n}',
     },
   });
+  const onKeyDown = useFormEnterSubmitGuard();
 
   const parametersValue = watch("parameters");
 
@@ -188,8 +190,12 @@ export function FunctionDialog({
           </DropdownMenu>
         </div>
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form
+          onSubmit={handleFormSubmit}
+          onKeyDown={onKeyDown}
+          className="space-y-4"
+        >
+          <div className="space-y-2" data-form-option="">
             <Label htmlFor="name">
               {t("components.playground.chat.functionName")}
             </Label>
@@ -209,7 +215,7 @@ export function FunctionDialog({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-form-option="">
             <Label htmlFor="description">
               {t("components.playground.chat.functionDescription")}
             </Label>
@@ -227,7 +233,7 @@ export function FunctionDialog({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-form-option="">
             <Label htmlFor="parameters">
               {t("components.playground.chat.parameters")}
             </Label>

@@ -130,7 +130,7 @@
 		"projectId": "v0Ljpi-IWabEY-BiaBKL"
 	},
 	"lint-staged": {
-		"*.{ts,tsx,js,jsx,json,jsonc}": [
+		"*.{ts,tsx,js,jsx,cjs,mjs,json,jsonc}": [
 			"biome check --write --no-errors-on-unmatched"
 		]
 	}

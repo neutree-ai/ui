@@ -6222,7 +6222,7 @@ describe("model picker", () => {
     });
 
     expect(formInstance?.getValues().spec.model.name).toBe("Qwen/Qwen3-8B");
-    expect(formInstance?.getValues().spec.model.version).toBe("v2");
+    expect(formInstance?.getValues().spec.model.version).toBe("");
   });
 
   // The controller's field belongs to the combobox alone: a wrapper around it
@@ -6286,7 +6286,7 @@ describe("model picker", () => {
     });
 
     expect(formInstance?.getValues().spec.model.name).toBe(deepModel.name);
-    expect(formInstance?.getValues().spec.model.version).toBe("v1");
+    expect(formInstance?.getValues().spec.model.version).toBe("");
   });
 });
 
