@@ -32,7 +32,22 @@ vi.mock(
       await importOriginal<
         typeof import("@/domains/api-key/hooks/use-api-key-policy")
       >();
-    return { ...actual, useWorkspaceModels: () => [] };
+    return {
+      ...actual,
+      // One external option, so a row matching it can be shown with the source
+      // the workspace actually reports rather than one guessed from its side.
+      useWorkspaceModels: () => [
+        {
+          value: "external:ep-vendor:gpt-4o",
+          label: "gpt-4o",
+          model: "gpt-4o",
+          endpointName: "ep-vendor",
+          type: "external" as const,
+          source: "third-party-public",
+          phase: "Running",
+        },
+      ],
+    };
   },
 );
 
@@ -127,5 +142,29 @@ describe("ApiKeyPolicyFields", () => {
         screen.getByText("api_keys.limits.perModel.overlapError"),
       ).toBeTruthy();
     });
+  });
+});
+
+describe("model source on the allowlist rows", () => {
+  it("shows the workspace's source for an external row, not Unspecified", () => {
+    // The source belongs to the model. Deriving it from the row's IE/EE side
+    // yields nothing for every external row, which is what made the detail page
+    // read "Unspecified" for models that had a source set.
+    render(
+      <Harness
+        models={[
+          {
+            value: "external:ep-vendor:gpt-4o",
+            model: "gpt-4o",
+            type: "external",
+            endpoint_name: "ep-vendor",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByText("modelSource.values.third-party-public"),
+    ).toBeTruthy();
   });
 });

@@ -30,6 +30,7 @@ export const ModelQuotaRows = ({
   onChange,
   overlapping,
   quotaPeriodLabel,
+  sourceByValue,
 }: {
   rows: PolicyModelRow[];
   onChange: (next: PolicyModelRow[]) => void;
@@ -38,6 +39,9 @@ export const ModelQuotaRows = ({
   // them; flagging the rows here is what keeps that out of a submit error.
   overlapping: Set<string>;
   quotaPeriodLabel: string;
+  // Source per row, from the workspace model options. A row's `type` alone
+  // cannot give it: the source belongs to the model, not to the IE/EE side.
+  sourceByValue?: Map<string, string | undefined>;
 }) => {
   const { t } = useTranslation();
 
@@ -65,7 +69,14 @@ export const ModelQuotaRows = ({
                   </span>
                 ) : null}
                 {row.type ? (
-                  <ModelSourceBadge source={resolveModelSource(row.type)} />
+                  <ModelSourceBadge
+                    source={
+                      sourceByValue?.get(row.value) ??
+                      // A row whose option is gone (a removed endpoint) keeps
+                      // whatever its side implies, which is exact for internal.
+                      (row.type ? resolveModelSource(row.type) : undefined)
+                    }
+                  />
                 ) : (
                   <Badge variant="outline" className="h-5 font-normal">
                     {t("api_keys.models.anySource")}

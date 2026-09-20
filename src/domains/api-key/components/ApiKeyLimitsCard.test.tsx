@@ -38,6 +38,11 @@ vi.mock("@/domains/api-key/hooks/use-api-key-policy", () => ({
   limitsToForm: () => ({}),
   useApiKeyDisable: () => ({ disable: vi.fn(), enable: vi.fn() }),
   useApiKeyLimits: () => ({ load }),
+  // The card reads each entry's source from the workspace options rather than
+  // deriving it from the entry's IE/EE side.
+  useModelSourceByValue: () => new Map(),
+  modelOptionValue: (type: string, endpoint: string, model: string) =>
+    `${type}:${endpoint}:${model}`,
 }));
 
 import { ApiKeyLimitsCard } from "./ApiKeyLimitsCard";

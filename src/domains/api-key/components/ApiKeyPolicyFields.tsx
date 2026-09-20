@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormField } from "@/components/ui/form";
@@ -41,6 +42,10 @@ export const ApiKeyPolicyFields = ({
 }: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
   const modelOptions = useWorkspaceModels(workspace);
+  const sourceByValue = useMemo(
+    () => new Map(modelOptions.map((o) => [o.value, o.source])),
+    [modelOptions],
+  );
   const modelRows = (form.watch("models") as PolicyModelRow[]) ?? [];
   // Rows the picker can represent (pinned to a currently-served endpoint) versus
   // ones it can't — migrated any-source entries and pins to a now-missing
@@ -131,6 +136,7 @@ export const ApiKeyPolicyFields = ({
                 {rows.length > 0 ? (
                   <>
                     <ModelQuotaRows
+                      sourceByValue={sourceByValue}
                       rows={rows}
                       onChange={field.onChange}
                       overlapping={overlapping}

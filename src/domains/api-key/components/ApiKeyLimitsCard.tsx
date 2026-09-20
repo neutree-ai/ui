@@ -23,9 +23,11 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
   limitsToForm,
+  modelOptionValue,
   resolveQuotaPeriod,
   useApiKeyDisable,
   useApiKeyLimits,
+  useModelSourceByValue,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -56,6 +58,11 @@ export const ApiKeyLimitsCard = ({
 }) => {
   const { t } = useTranslation();
   const { load } = useApiKeyLimits();
+  // The source belongs to the model, so it is read from the same workspace
+  // options the picker uses rather than derived from the entry's IE/EE side —
+  // that only ever yields self-hosted for internal entries and nothing at all
+  // for external ones.
+  const sourceByValue = useModelSourceByValue(workspace);
   const { disable, enable } = useApiKeyDisable();
   const { mutateAsync } = useCustomMutation();
   const invalidate = useInvalidate();
@@ -332,7 +339,15 @@ export const ApiKeyLimitsCard = ({
                                 ) : null}
                                 {entry.type ? (
                                   <ModelSourceBadge
-                                    source={resolveModelSource(entry.type)}
+                                    source={
+                                      sourceByValue.get(
+                                        modelOptionValue(
+                                          entry.type,
+                                          entry.endpoint_name ?? "",
+                                          entry.model,
+                                        ),
+                                      ) ?? resolveModelSource(entry.type)
+                                    }
                                   />
                                 ) : (
                                   <Badge

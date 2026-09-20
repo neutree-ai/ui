@@ -387,7 +387,7 @@ type WorkspaceExternalEndpointRef = {
   status?: { phase?: string | null } | null;
 };
 
-const modelOptionValue = (
+export const modelOptionValue = (
   type: WorkspaceModelOption["type"],
   endpointName: string,
   model: string,
@@ -519,6 +519,26 @@ type ModelInfo = {
 };
 
 // Map of model name -> serving info for a workspace.
+/**
+ * Source of each allowlist entry, keyed by the row/option `value`
+ * ("<type>:<endpoint>:<model>").
+ *
+ * The source is a property of the MODEL, so it cannot be derived from a row's
+ * `type` alone — that only ever yields self-hosted for internal rows and
+ * nothing for external ones. It is read from the same workspace options the
+ * picker is built from, so every screen showing an allowlist entry agrees.
+ */
+export function useModelSourceByValue(
+  workspace: string | undefined,
+): Map<string, string | undefined> {
+  const options = useWorkspaceModels(workspace);
+
+  return useMemo(
+    () => new Map(options.map((option) => [option.value, option.source])),
+    [options],
+  );
+}
+
 export function useWorkspaceModelMap(
   workspace: string | undefined,
 ): Map<string, ModelInfo> {
