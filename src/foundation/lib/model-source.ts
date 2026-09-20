@@ -138,6 +138,37 @@ export function modelSourceTranslationKey(source: ModelSource): string {
  */
 export const WORKSPACE_MODEL_SOURCE_COLUMN = "source_label";
 
+/**
+ * The sources an admin can pick for an external endpoint: the presets, plus
+ * every value already in use on other external endpoints, in preset-then-
+ * alphabetical order.
+ *
+ * Including the in-use values is what keeps a free-text field from fragmenting.
+ * The enum is open by design — the server stores any string — so the second
+ * person to need "acme-research-lab" must be able to find it in the list rather
+ * than retype it and risk "acme-research-labs". No storage backs this: the set
+ * is derived from the endpoints themselves, so it maintains itself.
+ *
+ * `self-hosted` can never appear: it is derived for internal endpoints and the
+ * server rejects it here, so a stored one (however it got there) is filtered
+ * out rather than offered.
+ */
+export function externalModelSourceSuggestions(
+  labelsInUse: Iterable<Record<string, string> | null | undefined>,
+): ModelSource[] {
+  const seen = new Set<ModelSource>(EXTERNAL_MODEL_SOURCES);
+
+  for (const labels of labelsInUse) {
+    const source = readStoredModelSource(labels);
+    if (source && source !== SELF_HOSTED_MODEL_SOURCE) seen.add(source);
+  }
+
+  return [...seen].sort((a, b) => {
+    const rank = modelSourceRank(a) - modelSourceRank(b);
+    return rank !== 0 ? rank : a.localeCompare(b);
+  });
+}
+
 /** Read the source label out of a `get_workspace_models` row. */
 export function modelSourceFromWorkspaceModelRow(
   row: Record<string, unknown> | null | undefined,

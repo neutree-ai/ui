@@ -29,10 +29,12 @@ function Harness({
   fieldValue,
   required = false,
   renderOption,
+  allowCustomValue,
 }: {
   fieldValue: unknown;
   required?: boolean;
   renderOption?: (option: (typeof OPTIONS)[number]) => React.ReactNode;
+  allowCustomValue?: boolean;
 }) {
   const form = useForm<FieldValues>({ defaultValues: { task: fieldValue } });
   return (
@@ -42,6 +44,7 @@ function Harness({
           options={OPTIONS}
           placeholder="Select task"
           renderOption={renderOption}
+          allowCustomValue={allowCustomValue}
         />
       </FormFieldGroup>
     </Form>
@@ -129,5 +132,45 @@ describe("FormCombobox", () => {
 
     expect(markedRow?.textContent).toBe("Text Embedding");
     expect(cursorRow?.textContent).not.toBe("Text Embedding");
+  });
+});
+
+describe("FormCombobox with allowCustomValue", () => {
+  // i18n is live in this file, so the search box cannot be found by its
+  // translation key; cmdk marks its input with this attribute.
+  const searchBox = () =>
+    document.querySelector("[cmdk-input]") as HTMLInputElement;
+
+  it("offers the typed text as a value of its own", () => {
+    render(<Harness fieldValue="" allowCustomValue />);
+    fireEvent.click(getTrigger());
+    fireEvent.change(searchBox(), { target: { value: "acme-research-lab" } });
+    expect(screen.getByText(/acme-research-lab/)).toBeTruthy();
+  });
+
+  it("does not offer text that already matches an option value", () => {
+    // Otherwise the list would show the option and a duplicate "use this"
+    // row for the same value.
+    render(<Harness fieldValue="" allowCustomValue />);
+    fireEvent.click(getTrigger());
+    fireEvent.change(searchBox(), { target: { value: "text-generation" } });
+    // Only the real option row is present; no "use this" duplicate beside it.
+    expect(screen.getAllByText(/Text Generation/)).toHaveLength(1);
+  });
+
+  it("shows a stored custom value on the trigger instead of the placeholder", () => {
+    // A value with no matching option would otherwise read as "nothing
+    // selected", which is how a saved custom source would appear on reopen.
+    render(<Harness fieldValue="acme-research-lab" allowCustomValue />);
+    expect(getTrigger().textContent).toContain("acme-research-lab");
+  });
+
+  it("leaves the trigger blank for an unlisted value when custom values are off", () => {
+    // Pre-existing behaviour, unchanged: with no matching option there is no
+    // label to show, and the placeholder is only used for an empty value. The
+    // allowCustomValue fallback above is what stops a saved custom source from
+    // reading this way.
+    render(<Harness fieldValue="acme-research-lab" />);
+    expect(getTrigger().textContent).toBe("");
   });
 });

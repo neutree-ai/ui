@@ -1,4 +1,4 @@
-import { useSelect } from "@refinedev/core";
+import { useList, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -30,7 +30,7 @@ import {
 } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
-  EXTERNAL_MODEL_SOURCES,
+  externalModelSourceSuggestions,
   MODEL_SOURCE_LABEL_KEY,
   modelSourceTranslationKey,
 } from "@/foundation/lib/model-source";
@@ -164,7 +164,23 @@ export const useExternalEndpointForm = ({
     },
     [form],
   );
-  const modelSourceOptions = EXTERNAL_MODEL_SOURCES.map((source) => ({
+  // Every external endpoint in the workspace, read only for the source values
+  // already in use. The preset list is a starting point, not the whole set —
+  // see externalModelSourceSuggestions for why the in-use values matter.
+  const { data: siblingEndpoints } = useList({
+    resource: "external_endpoints",
+    pagination: { mode: "off" },
+    meta: { workspace: currentWorkspace, workspaced: true },
+    queryOptions: { enabled: isValidWorkspace(currentWorkspace) },
+  });
+
+  const modelSourceOptions = externalModelSourceSuggestions(
+    (siblingEndpoints?.data ?? []).map(
+      (item) =>
+        (item as { metadata?: { labels?: Record<string, string> | null } })
+          .metadata?.labels,
+    ),
+  ).map((source) => ({
     label: t(modelSourceTranslationKey(source), { defaultValue: source }),
     value: source,
   }));
@@ -242,11 +258,12 @@ export const useExternalEndpointForm = ({
           label={t("modelSource.label")}
           description={t("modelSource.externalHint")}
         >
-          <FormSelect
+          <FormCombobox
             value={modelSource}
-            onChange={handleModelSourceChange}
+            onChange={(next) => handleModelSourceChange(String(next))}
             placeholder={t("modelSource.placeholder")}
             options={modelSourceOptions}
+            allowCustomValue
           />
         </FormFieldGroup>
       </FormCardGrid>

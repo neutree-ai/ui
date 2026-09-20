@@ -50,6 +50,19 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> & {
   value?: string | number | BaseRecord | null;
   disabled?: boolean;
   renderOption?: (option: FormComboboxOption) => ReactNode;
+  /**
+   * Let the user commit whatever they typed as the value, not just pick a
+   * listed option.
+   *
+   * Opt-in, because for most fields the option list IS the contract and a typo
+   * would become a silent new value. It is meant for fields whose set of values
+   * is genuinely open — where `options` is a set of suggestions (presets plus
+   * whatever is already in use) rather than an enumeration.
+   *
+   * When on, the current value is shown on the trigger even if it is not in
+   * `options`; otherwise a custom value would read back as "nothing selected".
+   */
+  allowCustomValue?: boolean;
 };
 
 export const FormCombobox = forwardRef<
@@ -58,6 +71,7 @@ export const FormCombobox = forwardRef<
 >(({ ...props }, ref) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const value = () => {
     if (
@@ -71,8 +85,27 @@ export const FormCombobox = forwardRef<
     return props.value;
   };
 
+  // The typed text, offered as a value of its own when it is not already one of
+  // the options. Matching against `value` (not `label`) is deliberate: options
+  // may carry a translated label, and what gets stored is the value.
+  const trimmedSearch = search.trim();
+  const customValue =
+    props.allowCustomValue &&
+    trimmedSearch !== "" &&
+    !props.options?.some((option) => String(option.value) === trimmedSearch)
+      ? trimmedSearch
+      : null;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // Drop a half-typed search so reopening starts from the full list
+        // rather than a filter the user has forgotten about.
+        if (!next) setSearch("");
+      }}
+    >
       <PopoverTrigger asChild>
         <FormControl>
           <Button
@@ -87,8 +120,12 @@ export const FormCombobox = forwardRef<
           >
             <span className="truncate flex-1 text-left">
               {value()
-                ? props.options?.find((option) => option.value === value())
-                    ?.label
+                ? // A custom value has no option to read a label from; show it
+                  // as typed rather than falling through to the placeholder,
+                  // which would read as "nothing selected".
+                  (props.options?.find((option) => option.value === value())
+                    ?.label ??
+                  (props.allowCustomValue ? String(value()) : undefined))
                 : (props.placeholder ?? t("components.ui.combobox.select"))}
             </span>
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 text-[var(--nt-text-neutral-tertiary)]" />
@@ -98,14 +135,39 @@ export const FormCombobox = forwardRef<
       <PopoverContent className="w-[400px] max-w-full p-0">
         <Command className="rounded-lg border shadow-md" ref={ref}>
           <CommandInput
+            value={search}
+            onValueChange={setSearch}
             placeholder={t(
-              "components.ui.combobox.placeholders.SearchPlaceholder",
+              props.allowCustomValue
+                ? "components.ui.combobox.placeholders.SearchOrTypePlaceholder"
+                : "components.ui.combobox.placeholders.SearchPlaceholder",
             )}
           />
           <CommandList>
             <CommandEmpty>
               {t("components.ui.combobox.messages.noResults")}
             </CommandEmpty>
+            {customValue && (
+              <CommandGroup>
+                <CommandItem
+                  // cmdk filters items by this value against the search text;
+                  // using the search itself keeps the row from filtering
+                  // itself out.
+                  value={customValue}
+                  onSelect={() => {
+                    props.onChange?.(customValue);
+                    setSearch("");
+                    setOpen(false);
+                  }}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {t("components.ui.combobox.useCustomValue", {
+                      value: customValue,
+                    })}
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            )}
             <CommandGroup
               heading={t("components.ui.combobox.headings.suggestions")}
             >

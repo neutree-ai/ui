@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   EXTERNAL_MODEL_SOURCES,
+  externalModelSourceSuggestions,
   MODEL_SOURCE_LABEL_KEY,
   modelSourceFromWorkspaceModelRow,
   modelSourceRank,
@@ -120,5 +121,56 @@ describe("modelSourceFromWorkspaceModelRow", () => {
       }),
     ).toBeUndefined();
     expect(modelSourceFromWorkspaceModelRow(null)).toBeUndefined();
+  });
+});
+
+describe("externalModelSourceSuggestions", () => {
+  const labelled = (source: string) => ({ [MODEL_SOURCE_LABEL_KEY]: source });
+
+  it("offers the presets when nothing is in use yet", () => {
+    expect(externalModelSourceSuggestions([])).toEqual([
+      ...EXTERNAL_MODEL_SOURCES,
+    ]);
+  });
+
+  it("adds values already in use, after the presets", () => {
+    // This is what keeps an open enum from fragmenting: the second person to
+    // need a custom source finds it in the list instead of retyping it.
+    expect(
+      externalModelSourceSuggestions([
+        labelled("acme-research-lab"),
+        labelled("partner"),
+        null,
+        undefined,
+        {},
+      ]),
+    ).toEqual([...EXTERNAL_MODEL_SOURCES, "acme-research-lab"]);
+  });
+
+  it("sorts unknown values alphabetically among themselves", () => {
+    expect(
+      externalModelSourceSuggestions([
+        labelled("zeta-lab"),
+        labelled("alpha-lab"),
+      ]),
+    ).toEqual([...EXTERNAL_MODEL_SOURCES, "alpha-lab", "zeta-lab"]);
+  });
+
+  it("never offers self-hosted, even if one is somehow stored", () => {
+    // self-hosted is derived for internal endpoints and rejected by the server
+    // here; offering it would collapse the IE/EE distinction the API-key model
+    // picker depends on.
+    expect(
+      externalModelSourceSuggestions([labelled(SELF_HOSTED_MODEL_SOURCE)]),
+    ).not.toContain(SELF_HOSTED_MODEL_SOURCE);
+  });
+
+  it("does not repeat a preset that is also in use", () => {
+    expect(
+      externalModelSourceSuggestions([
+        labelled("partner"),
+        labelled("partner"),
+      ]),
+    ).toEqual([...EXTERNAL_MODEL_SOURCES]);
   });
 });

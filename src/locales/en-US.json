@@ -1545,8 +1545,10 @@
 		"ui": {
 			"combobox": {
 				"select": "Select",
+				"useCustomValue": "Use \"{{value}}\"",
 				"placeholders": {
-					"SearchPlaceholder": "Type a command or search..."
+					"SearchPlaceholder": "Type a command or search...",
+					"SearchOrTypePlaceholder": "Search, or type a new value..."
 				},
 				"messages": {
 					"noResults": "No results found"

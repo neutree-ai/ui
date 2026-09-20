@@ -33,6 +33,27 @@ vi.mock("@refinedev/react-hook-form", async () => {
 });
 
 vi.mock("@refinedev/core", () => ({
+  // The form lists sibling external endpoints to collect the model-source
+  // values already in use, so the suggestion list is presets + in-use.
+  useList: () => ({
+    data: {
+      data: [
+        {
+          metadata: {
+            name: "sibling-partner",
+            labels: { "neutree.ai/model-source": "partner" },
+          },
+        },
+        {
+          metadata: {
+            name: "sibling-custom",
+            labels: { "neutree.ai/model-source": "acme-research-lab" },
+          },
+        },
+        { metadata: { name: "sibling-unlabelled" } },
+      ],
+    },
+  }),
   useSelect: () => ({
     query: {
       data: {
@@ -126,11 +147,15 @@ vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
 }));
 
 vi.mock("@/foundation/components/FormCombobox", () => ({
+  // Two comboboxes are rendered (upstream endpoint_ref, and the model source),
+  // so the testid has to distinguish them or queries match both. The source one
+  // is the only one that accepts a typed value.
   FormCombobox: ({
     onChange,
     placeholder,
     options,
     renderOption,
+    allowCustomValue,
   }: {
     onChange?: (v: string) => void;
     placeholder?: string;
@@ -139,16 +164,28 @@ vi.mock("@/foundation/components/FormCombobox", () => ({
       label: string;
       value: string;
     }) => React.ReactNode;
+    allowCustomValue?: boolean;
   }) => (
     <div>
       <input
-        data-testid="form-combobox-mock"
+        data-testid={
+          allowCustomValue ? "model-source-combobox-mock" : "form-combobox-mock"
+        }
         placeholder={placeholder}
         onChange={(e) => onChange?.(e.target.value)}
       />
-      {options?.map((option) => (
-        <div key={option.value}>{renderOption?.(option) ?? option.label}</div>
-      ))}
+      <div
+        data-testid={
+          allowCustomValue
+            ? "model-source-options-mock"
+            : "combobox-options-mock"
+        }
+        data-values={(options ?? []).map((o) => o.value).join(",")}
+      >
+        {options?.map((option) => (
+          <div key={option.value}>{renderOption?.(option) ?? option.label}</div>
+        ))}
+      </div>
     </div>
   ),
 }));
@@ -391,29 +428,51 @@ describe("useExternalEndpointForm", () => {
       );
     }
 
-    const sourceSelect = () =>
-      screen.getByTestId("model-source-select-mock") as HTMLSelectElement;
+    const sourceInput = () => screen.getByTestId("model-source-combobox-mock");
+    const offeredSources = () =>
+      (
+        screen
+          .getByTestId("model-source-options-mock")
+          .getAttribute("data-values") ?? ""
+      )
+        .split(",")
+        .filter(Boolean);
 
-    it("offers every preset source except self-hosted", () => {
-      // self-hosted is the derived source of internal endpoints and the
-      // backend rejects it here; offering it would make the internal and
-      // external rows for one model name indistinguishable in the API-key
-      // model picker.
+    it("suggests the presets plus the values already in use, never self-hosted", () => {
+      // The enum is open on the server, so the list is suggestions rather than
+      // an enumeration: presets first, then whatever sibling endpoints already
+      // use, so the second person to need a custom source picks it instead of
+      // retyping it slightly differently.
+      //
+      // self-hosted stays out regardless: it is the derived source of internal
+      // endpoints and the backend rejects it here; offering it would make the
+      // internal and external rows for one model name indistinguishable in the
+      // API-key model picker.
       render(<SourceForm />);
-      const values = Array.from(sourceSelect().options).map((o) => o.value);
-      expect(values).toEqual([
+      expect(offeredSources()).toEqual([
         "internal-shared",
         "third-party-public",
         "partner",
+        "acme-research-lab",
       ]);
-      expect(values).not.toContain(SELF_HOSTED_MODEL_SOURCE);
+      expect(offeredSources()).not.toContain(SELF_HOSTED_MODEL_SOURCE);
     });
 
     it("writes the chosen source into metadata.labels", () => {
       render(<SourceForm />);
-      fireEvent.change(sourceSelect(), { target: { value: "partner" } });
+      fireEvent.change(sourceInput(), { target: { value: "partner" } });
       expect(captured?.getValues("metadata.labels")).toEqual({
         [MODEL_SOURCE_LABEL_KEY]: "partner",
+      });
+    });
+
+    it("accepts a value that is not offered at all", () => {
+      // The whole point of the open enum: a brand-new source needs no code
+      // change, no migration and no admin-maintained list.
+      render(<SourceForm />);
+      fireEvent.change(sourceInput(), { target: { value: "new-lab" } });
+      expect(captured?.getValues("metadata.labels")).toEqual({
+        [MODEL_SOURCE_LABEL_KEY]: "new-lab",
       });
     });
   });
