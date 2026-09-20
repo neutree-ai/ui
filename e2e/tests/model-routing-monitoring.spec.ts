@@ -13,6 +13,7 @@ test.describe("external endpoint monitoring", () => {
   test("keeps model, mode, time and pause state through reload, with valid Grafana queries", async ({
     page,
   }) => {
+    test.setTimeout(60000); // Multiple real Grafana reloads and query batches.
     const errors: string[] = [];
     page.on("pageerror", (error) => {
       // Grafana 11.5 unconditionally calls window.caches.keys() in its root
