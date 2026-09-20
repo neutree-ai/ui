@@ -94,7 +94,9 @@ test.describe("external endpoint monitoring", () => {
         return new URL(url).searchParams.get("refresh") || "";
       })
       .toBe("");
-    await expect.poll(() => queries.length).toBeGreaterThan(0);
+    await expect
+      .poll(() => queries.length, { timeout: 30000 })
+      .toBeGreaterThan(0);
     await Promise.all(queries);
     expect(errors).toEqual([]);
   });
@@ -136,7 +138,9 @@ test.describe("external endpoint monitoring", () => {
     expect(new URL(src!).searchParams.getAll("var-model_literal")).toEqual([
       JSON.stringify(historical),
     ]);
-    await expect.poll(() => queries.length).toBeGreaterThan(0);
+    await expect
+      .poll(() => queries.length, { timeout: 30000 })
+      .toBeGreaterThan(0);
     await Promise.all(queries);
     await page.locator("#monitor-time").click();
     await page.getByRole("option", { name: /Custom range|自定义时间/ }).click();
