@@ -1293,6 +1293,7 @@
 		"options": {
 			"chatCompletions": "Chat Completions",
 			"upstreamTypeExternal": "External",
+			"upstreamTypeInternal": "Internal",
 			"upstreamTypeEndpointRef": "Endpoint Ref",
 			"upstreamTypeMixed": "Mixed",
 			"fixedRouting": "Single Route",

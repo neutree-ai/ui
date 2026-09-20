@@ -137,7 +137,7 @@ export const ExternalEndpointsShow = () => {
                         <span className="rounded-md bg-background px-2 py-1 text-xs text-muted-foreground shadow-sm">
                           {upstream.endpoint_ref
                             ? t(
-                                "external_endpoints.options.upstreamTypeEndpointRef",
+                                "external_endpoints.options.upstreamTypeInternal",
                               )
                             : t(
                                 "external_endpoints.options.upstreamTypeExternal",
