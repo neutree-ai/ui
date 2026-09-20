@@ -11,7 +11,7 @@ export function readMonitoringState(params: URLSearchParams) {
     Number(to) <= 8640000000000000;
   const mode = params.get("mode");
   return {
-    model: params.get("model") || null,
+    models: [...new Set(params.getAll("model").filter(Boolean))],
     from: relative || absolute ? from : "now-1h",
     to: relative || absolute ? to : "now",
     mode: mode === "stream" || mode === "non_stream" ? mode : "all",

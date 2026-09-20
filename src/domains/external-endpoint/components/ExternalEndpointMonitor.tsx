@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { useId, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -29,7 +36,19 @@ export default function ExternalEndpointMonitor({
   const [params, setParams] = useSearchParams();
   const routes = record.spec.model_routes ?? [];
   const state = readMonitoringState(params);
-  const current = routes.find((route) => route.model === state.model);
+  const current =
+    state.models.length === 1
+      ? routes.find((route) => route.model === state.models[0])
+      : undefined;
+  const modelPickerId = useId();
+  const [modelsOpen, setModelsOpen] = useState(false);
+  const [draftModels, setDraftModels] = useState(state.models);
+  const modelOptions = [
+    ...new Set([...routes.map((route) => route.model), ...state.models]),
+  ];
+  const historical = state.models.some(
+    (model) => !routes.some((route) => route.model === model),
+  );
   const [custom, setCustom] = useState(state.absolute);
   const localDateTime = (milliseconds: number) => {
     const date = new Date(milliseconds);
@@ -58,7 +77,7 @@ export default function ExternalEndpointMonitor({
       ? getModelRoutingDashboardProps(grafanaUrl, {
           workspace: record.metadata.workspace,
           endpoint: record.metadata.name,
-          model: state.model,
+          models: state.models,
           mode: state.mode,
           from: state.from,
           to: state.to,
@@ -79,31 +98,83 @@ export default function ExternalEndpointMonitor({
           <label htmlFor="monitor-model" className="text-sm">
             {t("external_endpoints.fields.virtualModel")}
           </label>
-          <Select
-            value={state.model === null ? "all" : `model:${state.model}`}
-            onValueChange={(value) =>
-              update({ model: value === "all" ? "" : value.slice(6) })
-            }
+          <Popover
+            open={modelsOpen}
+            onOpenChange={(open) => {
+              setModelsOpen(open);
+              if (open) setDraftModels(state.models);
+            }}
           >
-            <SelectTrigger id="monitor-model">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
+            <PopoverTrigger asChild>
+              <Button
+                id="monitor-model"
+                variant="outline"
+                role="combobox"
+                aria-expanded={modelsOpen}
+                className="w-full justify-between"
+              >
+                <span className="truncate" title={state.models.join(", ")}>
+                  {state.models.length
+                    ? state.models.join(", ")
+                    : t("external_endpoints.monitor.allModels")}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[--radix-popover-trigger-width] min-w-64 p-3"
+              align="start"
+            >
+              <label
+                htmlFor={`${modelPickerId}-all`}
+                className="flex cursor-pointer items-center gap-2 border-b pb-2 text-sm"
+              >
+                <Checkbox
+                  id={`${modelPickerId}-all`}
+                  checked={draftModels.length === 0}
+                  onCheckedChange={() => setDraftModels([])}
+                />
                 {t("external_endpoints.monitor.allModels")}
-              </SelectItem>
-              {state.model !== null && !current && (
-                <SelectItem value={`model:${state.model}`}>
-                  {state.model}
-                </SelectItem>
-              )}
-              {routes.map((route) => (
-                <SelectItem key={route.model} value={`model:${route.model}`}>
-                  {route.model}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              </label>
+              <div className="max-h-64 overflow-y-auto py-2">
+                {modelOptions.map((model, index) => (
+                  <label
+                    key={model}
+                    htmlFor={`${modelPickerId}-${index}`}
+                    className="flex cursor-pointer items-center gap-2 py-2 text-sm"
+                  >
+                    <Checkbox
+                      id={`${modelPickerId}-${index}`}
+                      checked={draftModels.includes(model)}
+                      onCheckedChange={(checked) =>
+                        setDraftModels((previous) =>
+                          checked
+                            ? [...previous, model]
+                            : previous.filter((item) => item !== model),
+                        )
+                      }
+                    />
+                    <span className="break-all">{model}</span>
+                  </label>
+                ))}
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setParams((previous) => {
+                    const next = new URLSearchParams(previous);
+                    next.delete("model");
+                    for (const model of draftModels)
+                      next.append("model", model);
+                    return next;
+                  });
+                  setModelsOpen(false);
+                }}
+              >
+                {t("external_endpoints.monitor.apply")}
+              </Button>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="w-40 space-y-1">
           <label htmlFor="monitor-mode" className="text-sm">
@@ -227,7 +298,7 @@ export default function ExternalEndpointMonitor({
           </form>
         )}
       </div>
-      {state.model !== null && !current && (
+      {historical && (
         <p
           role="status"
           className="rounded-md border border-orange-300 p-3 text-sm"

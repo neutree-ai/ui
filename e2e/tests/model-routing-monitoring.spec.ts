@@ -78,6 +78,12 @@ test.describe("external endpoint monitoring", () => {
       })
       .getByRole("table");
     await expect(table.getByRole("row")).toHaveCount(2);
+    await expect(
+      table.getByRole("columnheader", { name: "P99 总耗时", exact: true }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole("columnheader", { name: "平均总耗时", exact: true }),
+    ).toBeVisible();
     await table.hover();
     await page.mouse.wheel(0, 900);
     await frame
@@ -227,11 +233,13 @@ test.describe("external endpoint monitoring", () => {
     ).toBeVisible();
     await page.waitForLoadState("networkidle");
     await page.locator("#monitor-model").click();
-    await page.getByRole("option", { name: model, exact: true }).click();
+    await page.getByRole("checkbox", { name: model, exact: true }).check();
+    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
     await expect(page.locator("#monitor-model")).toContainText(model);
     await page.waitForLoadState("networkidle");
     await page.locator("#monitor-model").click();
-    await page.getByRole("option", { name: /All models|全部模型/ }).click();
+    await page.getByRole("checkbox", { name: /All models|全部模型/ }).check();
+    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
     await page.waitForLoadState("networkidle");
     await page.reload();
     await expect(page.locator("#monitor-model")).toContainText(
@@ -239,6 +247,53 @@ test.describe("external endpoint monitoring", () => {
     );
     expect(new URLSearchParams(page.url().split("?")[1]).has("model")).toBe(
       false,
+    );
+  });
+  test("applies multiple models together and shows all latency statistics", async ({
+    page,
+  }) => {
+    await page.goto(
+      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&model=${encodeURIComponent(model)}`,
+    );
+    await page.waitForLoadState("networkidle");
+    await page.locator("#monitor-model").click();
+    await page
+      .getByRole("checkbox", { name: "test-model-weighted", exact: true })
+      .check();
+    expect(
+      new URLSearchParams(page.url().split("?")[1]).getAll("model"),
+    ).toEqual([model]);
+    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expect(page.locator("#monitor-model")).toContainText(
+      "test-model-weighted",
+    );
+    expect(
+      new URLSearchParams(page.url().split("?")[1]).getAll("model"),
+    ).toEqual([model, "test-model-weighted"]);
+    const frame = page.frameLocator(
+      'iframe[title="Grafana Dashboard neutree-model-routing"]',
+    );
+    await expect(
+      frame.getByRole("heading", {
+        name: "P99 总耗时 / Duration",
+        exact: true,
+      }),
+    ).toBeVisible({ timeout: 30000 });
+    await expect(
+      frame.getByRole("heading", {
+        name: "平均总耗时 / Mean duration",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.locator("#monitor-model").click();
+    await page
+      .getByRole("checkbox", { name: "test-model-weighted", exact: true })
+      .uncheck();
+    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
+    await expect(page.locator("#monitor-model")).not.toContainText(
+      "test-model-weighted",
     );
   });
 });

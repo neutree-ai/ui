@@ -90,7 +90,7 @@ export const getModelRoutingDashboardProps = (
   context: {
     workspace: string;
     endpoint: string;
-    model: string | null;
+    models: string[];
     mode: string;
     from: string;
     to: string;
@@ -108,9 +108,11 @@ export const getModelRoutingDashboardProps = (
         `/workspace/${context.workspace}/external-endpoint/${context.endpoint}`,
       ),
       model_regex: JSON.stringify(
-        context.model === null
+        context.models.length === 0
           ? ".*"
-          : context.model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+          : context.models
+              .map((model) => model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+              .join("|"),
       ),
       mode: context.mode === "all" ? "stream|non_stream|unknown" : context.mode,
     },
