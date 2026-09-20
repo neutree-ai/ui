@@ -84,3 +84,32 @@ export const getEndpointSplitDashboardProps = (
     },
   },
 });
+
+export const getModelRoutingDashboardProps = (
+  grafanaUrl: string,
+  context: {
+    workspace: string;
+    endpoint: string;
+    model: string;
+    mode: string;
+    from: string;
+    to: string;
+    refresh: string;
+  },
+): GrafanaDashboardProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "neutree-model-routing",
+    variables: {
+      ...getCommonVariables(),
+      endpoint: `/workspace/${context.workspace}/external-endpoint/${context.endpoint}`,
+      model: context.model,
+      mode: context.mode === "all" ? "stream|non_stream|unknown" : context.mode,
+    },
+  },
+  initialFrom: context.from,
+  initialTo: context.to,
+  initialRefresh: context.refresh,
+  hideVariables: true,
+  hideTimePicker: true,
+});
