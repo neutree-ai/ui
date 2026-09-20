@@ -427,6 +427,6 @@
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "6f6b0d366eac07e34feaf39a3e61ba0a",
-  "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "f7d531f4a8dfb8ef412c93946c43f38f",
+  "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "20871eb07164060ddeff1508d1d64b4f",
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e"
 }

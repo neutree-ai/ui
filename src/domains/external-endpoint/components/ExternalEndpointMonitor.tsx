@@ -66,10 +66,7 @@ export default function ExternalEndpointMonitor({
   const update = (changes: Record<string, string>) =>
     setParams((previous) => {
       const next = new URLSearchParams(previous);
-      for (const [key, value] of Object.entries(changes)) {
-        if (key === "model" && !value) next.delete(key);
-        else next.set(key, value);
-      }
+      for (const [key, value] of Object.entries(changes)) next.set(key, value);
       return next;
     });
   const props =
