@@ -15,13 +15,3 @@ import type { RegistryModel } from "@/foundation/types/model-types";
 export function registryModelLabel(model: RegistryModel): string {
   return model.versions?.find((version) => version.alias)?.alias || model.name;
 }
-
-/**
- * The version to fill in when a model is picked, or undefined when the registry
- * reported none. The first one, in the registry's own order.
- */
-export function registryModelDefaultVersion(
-  model: RegistryModel,
-): string | undefined {
-  return model.versions?.[0]?.name || undefined;
-}

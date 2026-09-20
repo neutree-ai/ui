@@ -138,13 +138,15 @@ export function writeCatalogModelSlot(
   if (!spec) return doc;
 
   const repoint = (holder: Mapping): Mapping => {
-    // `info` is dropped before the spread rather than overwritten with
-    // undefined, so a document that keeps no parameters carries no key for
-    // them — the returned document is right for any consumer, not only for a
-    // serializer that happens to erase undefined values.
-    const { info: _replaced, ...kept } = isMapping(holder.model)
-      ? holder.model
-      : {};
+    // `info` and `version` belong to the model being replaced, and are dropped
+    // before the spread rather than overwritten with undefined: a document
+    // that keeps neither carries no key for them, which is right for any
+    // consumer, not only for a serializer that erases undefined values.
+    const {
+      info: _replaced,
+      version: _repointed,
+      ...kept
+    } = isMapping(holder.model) ? holder.model : {};
 
     return {
       ...holder,
