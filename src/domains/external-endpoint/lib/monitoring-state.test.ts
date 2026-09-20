@@ -54,6 +54,11 @@ describe("monitoring navigation context", () => {
     expect(url.searchParams.getAll("var-model_regex")).toEqual([
       JSON.stringify(model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
     ]);
+    const matcher = new RegExp(
+      `^${JSON.parse(url.searchParams.get("var-model_regex")!)}$`,
+    );
+    expect(matcher.test(model)).toBe(true);
+    expect(matcher.test(model.replace(".+", "anything"))).toBe(false);
     expect(url.searchParams.get("var-endpoint_literal")).toBe(
       JSON.stringify("/workspace/default/external-endpoint/ee"),
     );

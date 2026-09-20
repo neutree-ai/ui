@@ -223,7 +223,7 @@ test.describe("external endpoint monitoring", () => {
       )
       .toBeGreaterThan(0);
     await expect(
-      models.getByRole("row").filter({ hasText: model }),
+      models.getByRole("cell", { name: model, exact: true }),
     ).toBeVisible();
     await page.waitForLoadState("networkidle");
     await page.locator("#monitor-model").click();
