@@ -561,12 +561,26 @@ type ApiKeyUsage = {
   token_limit: number | null;
   used: number;
   remaining: number | null;
+  // The most utilised LIMITED model of a per-model key — the one figure a list
+  // can honestly show when limits differ per model and some models have none.
+  // Null for an overall-quota key, and for a per-model key whose limited models
+  // have no recorded usage yet.
+  top_model: string | null;
+  top_model_type: string | null;
+  top_model_used: number | null;
+  top_model_limit: number | null;
+  // Limited models only; unlimited ones have no ratio and do not compete.
+  limited_models: number;
 };
 
 // Bulk per-API-key overall quota usage for a workspace, keyed by api_key_id.
 // Backed by get_api_keys_usage_summary (one call). Powers the list usage column.
 export function useAllApiKeyUsage(
   workspace: string | undefined,
+  // The keys actually being rendered. The per-model figures cost
+  // keys x models x days to compute, so the summary is scoped to one page;
+  // omitting this asks the server for the whole workspace.
+  apiKeyIds?: string[],
 ): Map<string, ApiKeyUsage> {
   const { mutateAsync } = useCustomMutation();
   const [byKey, setByKey] = useState<Map<string, ApiKeyUsage>>(new Map());
@@ -581,7 +595,10 @@ export function useAllApiKeyUsage(
         const res = await mutateAsync({
           url: "/rpc/get_api_keys_usage_summary",
           method: "post",
-          values: { p_workspace: workspace },
+          values: {
+            p_workspace: workspace,
+            p_api_key_ids: apiKeyIds?.length ? apiKeyIds : null,
+          },
         });
         const rows =
           (res.data as ({ api_key_id: string } & ApiKeyUsage)[]) ?? [];
@@ -598,6 +615,11 @@ export function useAllApiKeyUsage(
             token_limit: numberOrNull(r.token_limit),
             used: Number(r.used),
             remaining: numberOrNull(r.remaining),
+            top_model: r.top_model ?? null,
+            top_model_type: r.top_model_type ?? null,
+            top_model_used: numberOrNull(r.top_model_used),
+            top_model_limit: numberOrNull(r.top_model_limit),
+            limited_models: Number(r.limited_models ?? 0),
           });
         }
         if (!cancelled) setByKey(m);
@@ -608,7 +630,8 @@ export function useAllApiKeyUsage(
     return () => {
       cancelled = true;
     };
-  }, [mutateAsync, workspace]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mutateAsync, workspace, (apiKeyIds ?? []).join(",")]);
   return byKey;
 }
 

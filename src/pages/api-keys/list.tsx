@@ -250,7 +250,6 @@ export const ApiKeysList = () => {
   // caller's per-workspace permissions while aggregating. Passing `scoped`
   // here would turn All Workspaces into undefined and skip the request.
   const trafficByKey = useAllApiKeyTraffic(workspace);
-  const usageByKey = useAllApiKeyUsage(scoped);
   const modelMap = useWorkspaceModelMap(scoped);
   const { data: keysData } = useList<ApiKey>({
     resource: "api_keys",
@@ -332,6 +331,10 @@ export const ApiKeysList = () => {
   const pageGroups = grouped;
   const pageKeys = pageGroups.flatMap((group) => group.shown);
   const pageKeyIds = pageKeys.map((key) => key.id);
+  // Scoped to the page: the per-model figures cost keys x models x days to
+  // compute, so asking for the whole workspace would grow with the workspace
+  // rather than with what is on screen.
+  const usageByKey = useAllApiKeyUsage(scoped, pageKeyIds);
   const selectedPageKeyCount = pageKeyIds.filter((id) =>
     selected.has(id),
   ).length;
@@ -1060,6 +1063,25 @@ export const ApiKeysList = () => {
                                 ? usage.used >= usageLimit
                                 : false;
                             const usageWarn = !usageOver && usageRatio >= 0.8;
+                            // The most utilised limited model of a per-model
+                            // key. Unlimited models never appear here: they have
+                            // no denominator to be a ratio of.
+                            const topModelLimit =
+                              usage?.top_model_limit &&
+                              usage.top_model_limit > 0 &&
+                              usage.top_model
+                                ? usage.top_model_limit
+                                : null;
+                            const topModelRatio = topModelLimit
+                              ? (usage?.top_model_used ?? 0) / topModelLimit
+                              : 0;
+                            const topModelPercent = Math.max(
+                              0,
+                              Math.min(100, topModelRatio * 100),
+                            );
+                            const topModelOver = topModelRatio >= 1;
+                            const topModelWarn =
+                              !topModelOver && topModelRatio >= 0.8;
                             return (
                               <tr key={key.id} className="border-t">
                                 <td>
@@ -1182,11 +1204,65 @@ export const ApiKeysList = () => {
                                             />
                                           </div>
                                         </>
+                                      ) : topModelLimit ? (
+                                        // Per-model: no single pool to divide
+                                        // by, so the list shows the model
+                                        // closest to its limit — the one thing
+                                        // that answers "does this key need
+                                        // attention". The rest are on the
+                                        // detail page.
+                                        <>
+                                          <div className="flex items-baseline justify-between gap-1 text-xs text-muted-foreground">
+                                            <span
+                                              className="truncate"
+                                              title={usage.top_model ?? ""}
+                                            >
+                                              {usage.top_model}
+                                            </span>
+                                            <span className="shrink-0 tabular-nums">
+                                              {Math.round(topModelPercent)}%
+                                            </span>
+                                          </div>
+                                          <div className="flex items-baseline justify-between gap-1 text-xs text-muted-foreground tabular-nums">
+                                            <span>
+                                              {formatTokenQuota(
+                                                usage.top_model_used ?? 0,
+                                              )}{" "}
+                                              /{" "}
+                                              {formatTokenQuota(topModelLimit)}
+                                            </span>
+                                            {usage.limited_models > 1 && (
+                                              <span className="shrink-0">
+                                                {t(
+                                                  "api_keys.limits.moreLimitedModels",
+                                                  {
+                                                    count:
+                                                      usage.limited_models - 1,
+                                                  },
+                                                )}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+                                            <div
+                                              className={cn(
+                                                "h-full",
+                                                topModelOver
+                                                  ? "bg-destructive"
+                                                  : topModelWarn
+                                                    ? "bg-amber-500"
+                                                    : "bg-primary",
+                                              )}
+                                              style={{
+                                                width: `${topModelPercent}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </>
                                       ) : (
-                                        // Per-model: the total is the only
-                                        // figure that means anything across
-                                        // models; the per-model split lives on
-                                        // the key's detail page.
+                                        // Per-model, but no limited model has
+                                        // recorded usage yet: the total is all
+                                        // there is to say.
                                         <span className="text-xs text-muted-foreground tabular-nums">
                                           {t("api_keys.limits.usedTotal", {
                                             amount: formatTokenQuota(
