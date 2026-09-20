@@ -33,9 +33,11 @@ describe("monitoring navigation context", () => {
       refresh: "",
     });
     const url = new URL(buildGrafanaDashboardUrl(props));
-    expect(url.searchParams.getAll("var-model")).toEqual([model]);
-    expect(url.searchParams.get("var-endpoint")).toBe(
-      "/workspace/default/external-endpoint/ee",
+    expect(url.searchParams.getAll("var-model_literal")).toEqual([
+      JSON.stringify(model),
+    ]);
+    expect(url.searchParams.get("var-endpoint_literal")).toBe(
+      JSON.stringify("/workspace/default/external-endpoint/ee"),
     );
     expect(url.searchParams.get("var-mode")).toBe("stream|non_stream|unknown");
     expect(url.searchParams.has("refresh")).toBe(false);

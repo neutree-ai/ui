@@ -102,8 +102,12 @@ export const getModelRoutingDashboardProps = (
     dashboardId: "neutree-model-routing",
     variables: {
       ...getCommonVariables(),
-      endpoint: `/workspace/${context.workspace}/external-endpoint/${context.endpoint}`,
-      model: context.model,
+      // Encode once as PromQL string literals. Grafana 11 formatters differ
+      // in quote/backslash escaping; raw interpolation preserves this encoding.
+      endpoint_literal: JSON.stringify(
+        `/workspace/${context.workspace}/external-endpoint/${context.endpoint}`,
+      ),
+      model_literal: JSON.stringify(context.model),
       mode: context.mode === "all" ? "stream|non_stream|unknown" : context.mode,
     },
   },

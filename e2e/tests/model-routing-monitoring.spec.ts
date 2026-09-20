@@ -14,7 +14,25 @@ test.describe("external endpoint monitoring", () => {
     page,
   }) => {
     const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("pageerror", (error) => {
+      // Grafana 11.5 unconditionally calls window.caches.keys() in its root
+      // component. CacheStorage is absent on an HTTP LAN origin. Keep this
+      // separately reported; it is unrelated to panel rendering/query errors.
+      if (
+        error.message ===
+          "Cannot read properties of undefined (reading 'keys')" &&
+        error.stack?.includes("mf.componentDidMount") &&
+        error.stack.includes(":3030/public/build/")
+      ) {
+        test.info().annotations.push({
+          type: "environment",
+          description:
+            "Grafana 11.5 icon-cache cleanup requires a secure origin; dev Grafana uses HTTP.",
+        });
+      } else {
+        errors.push(error.message);
+      }
+    });
     const queries: Promise<void>[] = [];
     page.on("response", (response) => {
       if (
@@ -47,6 +65,10 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       frame.getByText("完成请求 / Completed", { exact: true }),
     ).toBeVisible({ timeout: 30000 });
+    await iframe.scrollIntoViewIfNeeded();
+    await page.mouse.wheel(0, 650);
+    const table = frame.getByRole("table").first();
+    await expect(table.getByRole("row")).toHaveCount(2);
     await page.locator("#monitor-mode").click();
     await page.getByRole("option", { name: /^(Streaming|流式)$/ }).click();
     await expect(iframe).toHaveAttribute("src", /var-mode=stream/);
@@ -64,6 +86,14 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       frame.getByText("完成请求 / Completed", { exact: true }),
     ).toBeVisible({ timeout: 30000 });
+    await expect
+      .poll(async () => {
+        const url = await frame
+          .locator("body")
+          .evaluate(() => window.location.href);
+        return new URL(url).searchParams.get("refresh") || "";
+      })
+      .toBe("");
     await expect.poll(() => queries.length).toBeGreaterThan(0);
     await Promise.all(queries);
     expect(errors).toEqual([]);
@@ -72,6 +102,24 @@ test.describe("external endpoint monitoring", () => {
   test("preserves a historical model and rejects an invalid absolute time range", async ({
     page,
   }) => {
+    const queries: Promise<void>[] = [];
+    page.on("response", (response) => {
+      if (
+        response.url().includes("/api/ds/query") &&
+        response.request().method() === "POST"
+      ) {
+        queries.push(
+          (async () => {
+            expect(response.status()).toBe(200);
+            const result = await response.json();
+            for (const frame of Object.values(result.results ?? {}) as {
+              error?: string;
+            }[])
+              expect(frame.error).toBeFalsy();
+          })(),
+        );
+      }
+    });
     const historical = '历史"\\.+&model=other';
     await page.goto(
       `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&model=${encodeURIComponent(historical)}`,
@@ -85,9 +133,11 @@ test.describe("external endpoint monitoring", () => {
     const src = await page
       .locator('iframe[title="Grafana Dashboard neutree-model-routing"]')
       .getAttribute("src");
-    expect(new URL(src!).searchParams.getAll("var-model")).toEqual([
-      historical,
+    expect(new URL(src!).searchParams.getAll("var-model_literal")).toEqual([
+      JSON.stringify(historical),
     ]);
+    await expect.poll(() => queries.length).toBeGreaterThan(0);
+    await Promise.all(queries);
     await page.locator("#monitor-time").click();
     await page.getByRole("option", { name: /Custom range|自定义时间/ }).click();
     await page.locator("#monitor-from").fill("2026-09-20T12:00");
