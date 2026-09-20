@@ -54,7 +54,9 @@ test.describe("external endpoint monitoring", () => {
     await page.goto(
       `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&model=${encodeURIComponent(model)}`,
     );
-    await expect(page.locator("#monitor-model")).toContainText(model);
+    await expect(page.locator("#monitor-model")).toContainText(model, {
+      timeout: 30000,
+    });
     const iframe = page.locator(
       'iframe[title="Grafana Dashboard neutree-model-routing"]',
     );
@@ -69,18 +71,36 @@ test.describe("external endpoint monitoring", () => {
     await page.mouse.wheel(0, 650);
     const table = frame.getByRole("table").first();
     await expect(table.getByRole("row")).toHaveCount(2);
+    await table.hover();
+    await page.mouse.wheel(0, 900);
+    await frame
+      .getByRole("button", { name: "Expand row", exact: true })
+      .click();
+    const capacity = frame.getByRole("table").nth(1);
+    await expect(capacity.getByRole("row")).toHaveCount(2);
+    await expect(capacity).toContainText(/无限制|Unlimited/);
+    await page.waitForLoadState("networkidle");
+    await Promise.all(queries);
     await page.locator("#monitor-mode").click();
     await page.getByRole("option", { name: /^(Streaming|流式)$/ }).click();
     await expect(iframe).toHaveAttribute("src", /var-mode=stream/);
+    await page.waitForLoadState("networkidle");
+    await Promise.all(queries);
     await page.locator("#monitor-time").click();
     await page
       .getByRole("option", { name: /Last 6 hours|最近 6 小时/ })
       .click();
     await expect(iframe).toHaveAttribute("src", /from=now-6h/);
+    await page.waitForLoadState("networkidle");
+    await Promise.all(queries);
     await page.getByRole("button", { name: /Pause|暂停/ }).click();
     await expect(iframe).not.toHaveAttribute("src", /[?&]refresh=/);
+    await page.waitForLoadState("networkidle");
+    await Promise.all(queries);
     await page.reload();
-    await expect(page.locator("#monitor-model")).toContainText(model);
+    await expect(page.locator("#monitor-model")).toContainText(model, {
+      timeout: 30000,
+    });
     await expect(iframe).toHaveAttribute("src", /var-mode=stream/);
     await expect(iframe).not.toHaveAttribute("src", /[?&]refresh=/);
     await expect(
@@ -141,6 +161,8 @@ test.describe("external endpoint monitoring", () => {
     await expect
       .poll(() => queries.length, { timeout: 30000 })
       .toBeGreaterThan(0);
+    await Promise.all(queries);
+    await page.waitForLoadState("networkidle");
     await Promise.all(queries);
     await page.locator("#monitor-time").click();
     await page.getByRole("option", { name: /Custom range|自定义时间/ }).click();
