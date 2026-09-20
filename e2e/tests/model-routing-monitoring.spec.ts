@@ -71,7 +71,7 @@ test.describe("external endpoint monitoring", () => {
       .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
       .getByRole("heading", { name: "完成请求 / Completed", exact: true })
       .hover();
-    await page.mouse.wheel(0, 650);
+    await page.mouse.wheel(0, 850);
     await frame.getByRole("table").first().hover();
     await page.mouse.wheel(0, 450);
     const table = frame
@@ -223,7 +223,7 @@ test.describe("external endpoint monitoring", () => {
       .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
       .getByRole("heading", { name: "完成请求 / Completed", exact: true })
       .hover();
-    await page.mouse.wheel(0, 650);
+    await page.mouse.wheel(0, 850);
     const frame = page.frameLocator(
       'iframe[title="Grafana Dashboard neutree-model-routing"]',
     );
@@ -306,7 +306,7 @@ test.describe("external endpoint monitoring", () => {
       .frameLocator('iframe[title="Grafana Dashboard neutree-model-routing"]')
       .getByRole("heading", { name: "完成请求 / Completed", exact: true })
       .hover();
-    await page.mouse.wheel(0, 850);
+    await page.mouse.wheel(0, 1000);
     const summary = frame.getByRole("region", {
       name: "按模型请求与错误 / Requests and errors by model",
       exact: true,
