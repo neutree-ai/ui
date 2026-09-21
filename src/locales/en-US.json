@@ -858,7 +858,9 @@
 			"enumSummary": "one of {{values}}",
 			"expandDescription": "Show the full description of {{name}}",
 			"copyJson": "Copy JSON",
-			"toggleNested": "Expand or collapse {{name}}"
+			"toggleNested": "Expand or collapse {{name}}",
+			"enumAll": "{{count}} allowed values",
+			"enumAll_one": "1 allowed value"
 		}
 	},
 	"endpoints": {

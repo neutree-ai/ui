@@ -34,6 +34,9 @@ vi.mock("@/foundation/lib/i18n", () => ({
       }
       if (key === "engines.schema.required") return "required";
       if (key === "engines.schema.copyJson") return "Copy JSON";
+      if (key === "engines.schema.enumAll") {
+        return `${options?.count} allowed values`;
+      }
       return key;
     },
   }),
@@ -45,16 +48,12 @@ vi.mock("@/foundation/hooks/use-is-truncated", () => ({
   useIsTruncated: () => true,
 }));
 
-vi.mock("@/components/ui/dialog", () => ({
-  Dialog: ({ children }: { children: ReactNode }) => <>{children}</>,
-  DialogTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
-  DialogContent: ({ children }: { children: ReactNode }) => (
-    <div data-testid="description-dialog">{children}</div>
+vi.mock("@/components/ui/popover", () => ({
+  Popover: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PopoverTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PopoverContent: ({ children }: { children: ReactNode }) => (
+    <div data-testid="row-details">{children}</div>
   ),
-  DialogHeader: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DialogTitle: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 const schema = {
@@ -150,7 +149,7 @@ describe("ValueSchemaTable", () => {
     expect(row("health_path")).toBeNull();
   });
 
-  it("summarizes an enum instead of listing every value", () => {
+  it("names the enum values inline", () => {
     renderTable();
 
     expect(row("rope_scaling.type")?.textContent).toContain(
@@ -158,18 +157,33 @@ describe("ValueSchemaTable", () => {
     );
   });
 
-  it("opens a description dialog that pretty-prints embedded JSON", () => {
+  it("opens a floating details panel with the full text and JSON example", () => {
     renderTable();
 
     fireEvent.click(screen.getByRole("button", { name: "expand command" }));
 
-    // Every row renders its dialog inline in this mock; pick the command one.
-    const dialog = screen
-      .getAllByTestId("description-dialog")
+    // Every row renders its panel inline in this mock; pick the command one.
+    const panel = screen
+      .getAllByTestId("row-details")
       .find((element) => element.textContent?.includes("Starts the workload"))!;
-    expect(dialog.textContent).toContain("Starts the workload. Example:");
-    expect(dialog.querySelector("pre")?.textContent).toContain('"port": 8000');
+    expect(panel.textContent).toContain("Starts the workload. Example:");
+    expect(panel.querySelector("pre")?.textContent).toContain('"port": 8000');
     expect(screen.getByRole("button", { name: "Copy JSON" })).toBeTruthy();
+  });
+
+  it("lists every enum value in the details panel", () => {
+    renderTable();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "expand rope_scaling.type" }),
+    );
+
+    const panel = screen
+      .getAllByTestId("row-details")
+      .find((element) => element.textContent?.includes("allowed values"))!;
+    expect(panel.textContent).toContain("2 allowed values");
+    expect(panel.textContent).toContain("linear");
+    expect(panel.textContent).toContain("dynamic");
   });
 
   it("renders an empty state for a version that declares nothing", () => {

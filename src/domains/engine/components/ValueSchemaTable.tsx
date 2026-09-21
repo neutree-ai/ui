@@ -7,14 +7,12 @@ import {
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -92,7 +90,10 @@ function DefaultCell({ row }: { row: ValueSchemaRow }) {
   );
 }
 
-function DescriptionDialog({ row }: { row: ValueSchemaRow }) {
+/** Floating panel for one row: the full description plus every enum value.
+ *  It renders through a portal, so opening it never changes the row or table
+ *  height. */
+function RowDetails({ row }: { row: ValueSchemaRow }) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
   const segments = useMemo(
@@ -102,17 +103,16 @@ function DescriptionDialog({ row }: { row: ValueSchemaRow }) {
   const jsonBlock = segments.find((segment) => segment.kind === "json");
 
   return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm">{row.path}</span>
-          <span className="text-xs font-normal text-muted-foreground">
-            {row.types.join(" | ")}
-            {row.required ? ` · ${t("engines.schema.required")}` : ""}
-          </span>
-        </DialogTitle>
-      </DialogHeader>
-      <div className="max-h-[50vh] space-y-2 overflow-auto text-sm leading-6 text-muted-foreground">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs">{row.path}</span>
+        <span className="text-xs text-muted-foreground">
+          {row.types.join(" | ")}
+          {row.required ? ` · ${t("engines.schema.required")}` : ""}
+        </span>
+      </div>
+
+      <div className="max-h-[40vh] space-y-2 overflow-auto text-xs leading-5 text-muted-foreground">
         {segments.map((segment, index) =>
           segment.kind === "json" ? (
             <pre
@@ -126,8 +126,27 @@ function DescriptionDialog({ row }: { row: ValueSchemaRow }) {
           ),
         )}
       </div>
+
+      {row.enumValues ? (
+        <div className="space-y-1.5 border-t pt-2.5">
+          <div className="text-xs text-muted-foreground">
+            {t("engines.schema.enumAll", { count: row.enumValues.length })}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {row.enumValues.map((value) => (
+              <code
+                key={String(value)}
+                className="rounded-[var(--nt-radius-checkbox)] border px-1.5 py-0.5 font-mono text-xs"
+              >
+                {String(value)}
+              </code>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {jsonBlock ? (
-        <div className="flex justify-end">
+        <div className="flex justify-end border-t pt-2.5">
           <Button
             type="button"
             variant="outline"
@@ -144,30 +163,48 @@ function DescriptionDialog({ row }: { row: ValueSchemaRow }) {
           </Button>
         </div>
       ) : null}
-    </DialogContent>
+    </div>
   );
 }
 
-function DescriptionCell({ row }: { row: ValueSchemaRow }) {
+function DetailsCell({ row }: { row: ValueSchemaRow }) {
   const { t } = useTranslation();
-  const ref = useRef<HTMLDivElement>(null);
-  const isTruncated = useIsTruncated(ref);
-
-  if (!row.description) {
-    return <span className="text-muted-foreground">-</span>;
-  }
+  const descriptionRef = useRef<HTMLDivElement>(null);
+  const enumRef = useRef<HTMLDivElement>(null);
+  const descriptionTruncated = useIsTruncated(descriptionRef);
+  const enumTruncated = useIsTruncated(enumRef);
+  const needsDetails = descriptionTruncated || enumTruncated;
 
   return (
     <div className="flex items-start gap-1.5">
-      <div
-        ref={ref}
-        className="line-clamp-2 min-w-0 flex-1 text-xs leading-5 text-muted-foreground"
-      >
-        {row.description}
+      <div className="min-w-0 flex-1 space-y-1">
+        {row.description ? (
+          <div
+            ref={descriptionRef}
+            className="line-clamp-2 text-xs leading-5 text-muted-foreground"
+          >
+            {row.description}
+          </div>
+        ) : (
+          // A parameter can legitimately carry no description (nested children
+          // of a real engine schema do) — its enum still has to show.
+          <span className="text-muted-foreground">-</span>
+        )}
+        {row.enumValues ? (
+          <div
+            ref={enumRef}
+            data-testid="value-schema-enum"
+            className="truncate text-xs text-muted-foreground"
+          >
+            {t("engines.schema.enumSummary", {
+              values: row.enumValues.map(String).join(" · "),
+            })}
+          </div>
+        ) : null}
       </div>
-      {isTruncated ? (
-        <Dialog>
-          <DialogTrigger asChild>
+      {needsDetails ? (
+        <Popover>
+          <PopoverTrigger asChild>
             <Button
               type="button"
               variant="ghost"
@@ -179,9 +216,11 @@ function DescriptionCell({ row }: { row: ValueSchemaRow }) {
             >
               <Maximize2 className="size-3" />
             </Button>
-          </DialogTrigger>
-          <DescriptionDialog row={row} />
-        </Dialog>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-[420px]">
+            <RowDetails row={row} />
+          </PopoverContent>
+        </Popover>
       ) : null}
     </div>
   );
@@ -298,13 +337,13 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                 data-path={row.id}
               >
                 <TableCell className="align-top">
-                  <span className="flex min-w-0 items-center gap-2">
+                  <div className="flex min-w-0 items-start gap-2">
                     {row.hasChildren ? (
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 shrink-0 text-muted-foreground"
+                        className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground"
                         aria-expanded={!collapsed.has(row.id)}
                         aria-label={t("engines.schema.toggleNested", {
                           name: row.path,
@@ -320,36 +359,44 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                     ) : row.depth > 0 ? (
                       <span className="w-5 shrink-0" />
                     ) : null}
-                    <span
-                      className={cn(
-                        "truncate text-sm",
-                        row.title ? "font-medium" : "font-mono text-xs",
-                      )}
-                      title={row.title ?? row.path}
-                    >
-                      {row.title ?? row.path}
-                    </span>
-                    {row.required ? (
-                      <span className="inline-flex shrink-0 items-center rounded-md border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
-                        {t("engines.schema.required")}
-                      </span>
-                    ) : null}
-                  </span>
-                  {row.title ? (
-                    <span
-                      className="block truncate pl-7 font-mono text-xs text-muted-foreground"
-                      title={row.path}
-                    >
-                      {row.path}
-                    </span>
-                  ) : null}
-                  {row.hasChildren && !collapsed.has(row.id) ? (
-                    <span className="mt-1 block pl-7 text-xs text-muted-foreground">
-                      {t("engines.schema.nestedCount", {
-                        count: row.childCount,
-                      })}
-                    </span>
-                  ) : null}
+                    {/* Everything in the cell shares one left edge: the label,
+                        the machine name underneath and the nested count. */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={cn(
+                            "truncate",
+                            row.title
+                              ? "text-sm font-medium"
+                              : "font-mono text-xs",
+                          )}
+                          title={row.title ?? row.path}
+                        >
+                          {row.title ?? row.path}
+                        </span>
+                        {row.required ? (
+                          <span className="inline-flex shrink-0 items-center rounded-md border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+                            {t("engines.schema.required")}
+                          </span>
+                        ) : null}
+                      </div>
+                      {row.title ? (
+                        <span
+                          className="block truncate font-mono text-xs text-muted-foreground"
+                          title={row.path}
+                        >
+                          {row.path}
+                        </span>
+                      ) : null}
+                      {row.hasChildren && !collapsed.has(row.id) ? (
+                        <span className="block text-xs text-muted-foreground">
+                          {t("engines.schema.nestedCount", {
+                            count: row.childCount,
+                          })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell className="align-top">
                   <TypeCell row={row} />
@@ -358,23 +405,7 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                   <DefaultCell row={row} />
                 </TableCell>
                 <TableCell className="align-top">
-                  <DescriptionCell row={row} />
-                  {row.enumValues ? (
-                    <span
-                      className="mt-1 inline-flex max-w-full items-center gap-1 rounded-md border bg-[var(--nt-fill-neutral-opaque-1)] px-2 py-0.5 text-xs text-muted-foreground"
-                      title={row.enumValues.map(String).join(", ")}
-                    >
-                      {t("engines.schema.enumSummary", {
-                        values: row.enumValues
-                          .slice(0, 2)
-                          .map(String)
-                          .join(" · "),
-                      })}
-                      {row.enumValues.length > 2
-                        ? ` +${row.enumValues.length - 2}`
-                        : ""}
-                    </span>
-                  ) : null}
+                  <DetailsCell row={row} />
                 </TableCell>
               </TableRow>
             ))}
