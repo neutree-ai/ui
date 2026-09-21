@@ -145,7 +145,6 @@ export interface GrafanaDashboardProps {
   initialTo?: string;
   initialRefresh?: string;
   hideVariables?: boolean;
-  hideTimePicker?: boolean;
   className?: string;
   /** Custom CSS to inject into the iframe (only works for same-origin) */
   customCSS?: string;
@@ -157,7 +156,6 @@ export default function GrafanaDashboard({
   initialTo = "now",
   initialRefresh = "30s",
   hideVariables = false,
-  hideTimePicker = false,
   className,
   customCSS,
 }: GrafanaDashboardProps) {
@@ -172,7 +170,6 @@ export default function GrafanaDashboard({
         initialTo,
         initialRefresh,
         hideVariables,
-        hideTimePicker,
       }),
     [
       dashboardConfig,
@@ -181,7 +178,6 @@ export default function GrafanaDashboard({
       initialTo,
       initialRefresh,
       hideVariables,
-      hideTimePicker,
     ],
   );
 

@@ -104,15 +104,6 @@ describe("buildGrafanaDashboardUrl", () => {
     expect(url).toContain("_dash.hideVariables=true");
   });
 
-  it("appends hideTimePicker flag", () => {
-    const url = buildGrafanaDashboardUrl({
-      ...baseConfig,
-      hideTimePicker: true,
-    });
-
-    expect(url).toContain("_dash.hideTimePicker=true");
-  });
-
   it("omits refresh param when empty string", () => {
     const url = buildGrafanaDashboardUrl({
       ...baseConfig,

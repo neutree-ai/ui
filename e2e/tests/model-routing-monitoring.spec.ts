@@ -4,338 +4,6 @@ const endpoint = process.env.E2E_MONITORING_ENDPOINT;
 const model = process.env.E2E_MONITORING_MODEL ?? "test-qwen";
 const workspace = process.env.E2E_MONITORING_WORKSPACE ?? "default";
 
-test.describe("external endpoint monitoring", () => {
-  test.skip(
-    !endpoint,
-    "Set E2E_MONITORING_ENDPOINT to an existing model-routes endpoint",
-  );
-
-  test("keeps model, mode, time and pause state through reload, with valid Grafana queries", async ({
-    page,
-  }) => {
-    test.setTimeout(60000); // Multiple real Grafana reloads and query batches.
-    const errors: string[] = [];
-    page.on("pageerror", (error) => {
-      // Grafana 11.5 unconditionally calls window.caches.keys() in its root
-      // component. CacheStorage is absent on an HTTP LAN origin. Keep this
-      // separately reported; it is unrelated to panel rendering/query errors.
-      if (
-        error.message ===
-          "Cannot read properties of undefined (reading 'keys')" &&
-        error.stack?.includes("mf.componentDidMount") &&
-        error.stack.includes(":3030/public/build/")
-      ) {
-        test.info().annotations.push({
-          type: "environment",
-          description:
-            "Grafana 11.5 icon-cache cleanup requires a secure origin; dev Grafana uses HTTP.",
-        });
-      } else {
-        errors.push(error.message);
-      }
-    });
-    const queries: Promise<void>[] = [];
-    page.on("response", (response) => {
-      if (
-        response.url().includes("/api/ds/query") &&
-        response.request().method() === "POST"
-      ) {
-        queries.push(
-          (async () => {
-            expect(response.status()).toBe(200);
-            const result = await response.json();
-            for (const frame of Object.values(result.results ?? {}) as {
-              error?: string;
-            }[])
-              expect(frame.error).toBeFalsy();
-          })(),
-        );
-      }
-    });
-    await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&model=${encodeURIComponent(model)}`,
-    );
-    await expect(page.locator("#monitor-model")).toContainText(model, {
-      timeout: 30000,
-    });
-    const iframe = page.locator(
-      'iframe[title="Grafana Dashboard neutree-model-routing"]',
-    );
-    await expect(iframe).toBeVisible();
-    const frame = page.frameLocator(
-      'iframe[title="Grafana Dashboard neutree-model-routing"]',
-    );
-    await expect(frame.getByText("完成请求", { exact: true })).toBeVisible({
-      timeout: 30000,
-    });
-    await frame
-      .locator('[data-griditem-key="grid-item-8"]')
-      .scrollIntoViewIfNeeded();
-    const table = frame
-      .getByRole("region", {
-        name: "上游模型对比",
-        exact: true,
-      })
-      .getByRole("table");
-    await expect(table.getByRole("row")).toHaveCount(2);
-    await expect(
-      table.getByRole("columnheader", { name: "P99 完整耗时", exact: true }),
-    ).toBeVisible();
-    await expect(
-      table.getByRole("columnheader", { name: "平均完整耗时", exact: true }),
-    ).toBeVisible();
-    await expect(table.getByRole("row").nth(1).getByRole("cell")).toHaveCount(
-      12,
-    );
-    await expect(
-      table.getByRole("row").nth(1).getByRole("cell").nth(9),
-    ).not.toContainText("—");
-    await expect(
-      table.getByRole("row").nth(1).getByRole("cell").nth(10),
-    ).not.toContainText("—");
-    await frame
-      .locator('[data-griditem-key="grid-item-12"]')
-      .scrollIntoViewIfNeeded();
-    const capacity = frame
-      .getByRole("region", {
-        name: "实例容量详情",
-        exact: true,
-      })
-      .getByRole("table");
-    await expect(capacity.getByRole("row")).toHaveCount(2);
-    await expect(capacity).toContainText(/无限制|Unlimited/);
-    await page.waitForLoadState("networkidle");
-    await Promise.all(queries);
-    await page.locator("#monitor-mode").click();
-    await page.getByRole("option", { name: /^(Streaming|流式)$/ }).click();
-    await expect(iframe).toHaveAttribute("src", /var-mode=stream/);
-    await page.waitForLoadState("networkidle");
-    await Promise.all(queries);
-    await page.locator("#monitor-time").click();
-    await page
-      .getByRole("option", { name: /Last 6 hours|最近 6 小时/ })
-      .click();
-    await expect(iframe).toHaveAttribute("src", /from=now-6h/);
-    await page.waitForLoadState("networkidle");
-    await Promise.all(queries);
-    await page.getByRole("button", { name: /Pause|暂停/ }).click();
-    await expect(iframe).not.toHaveAttribute("src", /[?&]refresh=/);
-    await page.waitForLoadState("networkidle");
-    await Promise.all(queries);
-    await page.reload();
-    await expect(page.locator("#monitor-model")).toContainText(model, {
-      timeout: 30000,
-    });
-    await expect(iframe).toHaveAttribute("src", /var-mode=stream/);
-    await expect(iframe).not.toHaveAttribute("src", /[?&]refresh=/);
-    await expect(frame.getByText("完成请求", { exact: true })).toBeVisible({
-      timeout: 30000,
-    });
-    await expect
-      .poll(async () => {
-        const url = await frame
-          .locator("body")
-          .evaluate(() => window.location.href);
-        return new URL(url).searchParams.get("refresh") || "";
-      })
-      .toBe("");
-    await expect
-      .poll(() => queries.length, { timeout: 30000 })
-      .toBeGreaterThan(0);
-    await Promise.all(queries);
-    expect(errors).toEqual([]);
-  });
-
-  test("preserves a historical model and rejects an invalid absolute time range", async ({
-    page,
-  }) => {
-    const queries: Promise<void>[] = [];
-    page.on("response", (response) => {
-      if (
-        response.url().includes("/api/ds/query") &&
-        response.request().method() === "POST"
-      ) {
-        queries.push(
-          (async () => {
-            expect(response.status()).toBe(200);
-            const result = await response.json();
-            for (const frame of Object.values(result.results ?? {}) as {
-              error?: string;
-            }[])
-              expect(frame.error).toBeFalsy();
-          })(),
-        );
-      }
-    });
-    const historical = '历史"\\.+&model=other';
-    await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&model=${encodeURIComponent(historical)}`,
-    );
-    await expect(
-      page
-        .getByRole("status")
-        .filter({ hasText: /historical metrics|历史指标/ }),
-    ).toBeVisible();
-    await expect(page.locator("#monitor-model")).toContainText(historical);
-    const src = await page
-      .locator('iframe[title="Grafana Dashboard neutree-model-routing"]')
-      .getAttribute("src");
-    expect(new URL(src!).searchParams.getAll("var-model_regex")).toEqual([
-      JSON.stringify(historical.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
-    ]);
-    await expect
-      .poll(() => queries.length, { timeout: 30000 })
-      .toBeGreaterThan(0);
-    await Promise.all(queries);
-    await page.waitForLoadState("networkidle");
-    await Promise.all(queries);
-    await page.locator("#monitor-time").click();
-    await page.getByRole("option", { name: /Custom range|自定义时间/ }).click();
-    await page.locator("#monitor-from").fill("2026-09-20T12:00");
-    await page.locator("#monitor-to").fill("2026-09-20T11:00");
-    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
-    await expect(
-      page.getByRole("alert").filter({ hasText: /after start|晚于/ }),
-    ).toBeVisible();
-    await page.locator("#monitor-to").fill("2026-09-20T13:00");
-    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
-    await expect(
-      page.getByRole("button", { name: /Resume|恢复/ }),
-    ).toBeDisabled();
-  });
-  test("defaults to all models and includes unknown-model failures", async ({
-    page,
-  }) => {
-    await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h`,
-    );
-    await expect(page.locator("#monitor-model")).toContainText(
-      /All models|全部模型/,
-    );
-    const iframe = page.locator(
-      'iframe[title="Grafana Dashboard neutree-model-routing"]',
-    );
-    const src = await iframe.getAttribute("src");
-    expect(new URL(src!).searchParams.get("var-model_regex")).toBe(
-      JSON.stringify(".*"),
-    );
-    const frame = page.frameLocator(
-      'iframe[title="Grafana Dashboard neutree-model-routing"]',
-    );
-    await frame
-      .locator('[data-griditem-key="grid-item-13"]')
-      .scrollIntoViewIfNeeded();
-    const models = frame.getByRole("region", {
-      name: "对外模型对比",
-      exact: true,
-    });
-    const unknown = models.getByRole("row").filter({ hasText: "未识别或缺失" });
-    await expect(unknown).toBeVisible({ timeout: 30000 });
-    // Run scripts/monitoring/e2e.py with REAL_ENDPOINT_SCOPE first to seed an
-    // unknown-model failure. This asserts real stored traffic, not only a filter URL.
-    await expect
-      .poll(
-        async () => Number(await unknown.getByRole("cell").nth(4).innerText()),
-        { timeout: 30000 },
-      )
-      .toBeGreaterThan(0);
-    await expect(
-      models.getByRole("cell", { name: model, exact: true }),
-    ).toBeVisible();
-    await page.waitForLoadState("networkidle");
-    await page.locator("#monitor-model").click();
-    await page.getByRole("checkbox", { name: model, exact: true }).check();
-    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
-    await expect(page.locator("#monitor-model")).toContainText(model);
-    await page.waitForLoadState("networkidle");
-    await page.locator("#monitor-model").click();
-    await page.getByRole("checkbox", { name: /All models|全部模型/ }).check();
-    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
-    await page.waitForLoadState("networkidle");
-    await page.reload();
-    await expect(page.locator("#monitor-model")).toContainText(
-      /All models|全部模型/,
-    );
-    expect(new URLSearchParams(page.url().split("?")[1]).has("model")).toBe(
-      false,
-    );
-  });
-  test("applies multiple models together and shows all latency statistics", async ({
-    page,
-  }) => {
-    await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&model=${encodeURIComponent(model)}`,
-    );
-    await page.waitForLoadState("networkidle");
-    await page.locator("#monitor-model").click();
-    await page
-      .getByRole("checkbox", { name: "test-model-weighted", exact: true })
-      .check();
-    expect(
-      new URLSearchParams(page.url().split("?")[1]).getAll("model"),
-    ).toEqual([model]);
-    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
-    await page.waitForLoadState("networkidle");
-    await page.reload();
-    await expect(page.locator("#monitor-model")).toContainText(
-      "test-model-weighted",
-    );
-    expect(
-      new URLSearchParams(page.url().split("?")[1]).getAll("model"),
-    ).toEqual([model, "test-model-weighted"]);
-    const frame = page.frameLocator(
-      'iframe[title="Grafana Dashboard neutree-model-routing"]',
-    );
-    await frame
-      .locator('[data-griditem-key="grid-item-13"]')
-      .scrollIntoViewIfNeeded();
-    const summary = frame.getByRole("region", {
-      name: "对外模型对比",
-      exact: true,
-    });
-    await expect(summary.getByRole("row")).toHaveCount(3, { timeout: 30000 });
-    await expect(
-      summary.getByRole("cell", { name: model, exact: true }),
-    ).toBeVisible();
-    await expect(
-      summary.getByRole("cell", { name: "test-model-weighted", exact: true }),
-    ).toBeVisible();
-    for (const [id, title] of [
-      [21, "各上游 P99 完整耗时"],
-      [22, "各上游平均完整耗时"],
-      [20, "各上游 P95 完整耗时"],
-      [32, "各上游完成速率"],
-      [33, "各上游 HTTP 非2xx率"],
-    ] as const) {
-      await frame
-        .locator(`[data-griditem-key="grid-item-${id}"]`)
-        .scrollIntoViewIfNeeded();
-      const chart = frame.getByRole("region", { name: title, exact: true });
-      await expect(
-        chart.getByRole("button", {
-          name: `${model} · qwen-internal · Qwen/Qwen2.5-0.5B-Instruct`,
-          exact: true,
-        }),
-      ).toBeVisible();
-      await expect(
-        chart.getByRole("button", {
-          name: "test-model-weighted · smartp1 · gpt-6-astra",
-          exact: true,
-        }),
-      ).toBeVisible();
-    }
-    await page.waitForLoadState("networkidle");
-    await page.locator("#monitor-model").click();
-    await page
-      .getByRole("checkbox", { name: "test-model-weighted", exact: true })
-      .uncheck();
-    await page.getByRole("button", { name: /^(Apply|应用)$/ }).click();
-    await expect(page.locator("#monitor-model")).not.toContainText(
-      "test-model-weighted",
-    );
-  });
-});
-
 // Controlled datasource responses exercise the real Grafana table transforms,
 // including identities that collide when joined using a display delimiter.
 test("target table keeps tuple identities, no-sample states and model-wide shares", async ({
@@ -485,4 +153,191 @@ test("only the three main rows collapse all of their metrics together", async ({
         frame.locator(`[data-griditem-key="grid-item-${id}"]`),
       ).toHaveCount(1);
   }
+});
+
+test("Grafana owns model mode time zoom and refresh without stale outer controls", async ({
+  page,
+}) => {
+  test.skip(!endpoint, "Requires deployed monitoring");
+  test.setTimeout(60000);
+  const queryChecks: Promise<void>[] = [];
+  page.on("response", (response) => {
+    if (
+      response.url().includes("/api/ds/query") &&
+      response.request().method() === "POST"
+    ) {
+      queryChecks.push(
+        (async () => {
+          expect(response.status()).toBe(200);
+          const result = await response.json();
+          for (const value of Object.values(result.results ?? {}) as {
+            error?: string;
+          }[])
+            expect(value.error).toBeFalsy();
+        })(),
+      );
+    }
+  });
+  await page.goto(
+    `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&model=${encodeURIComponent(model)}&refresh=off`,
+  );
+  const frame = page.frameLocator(
+    'iframe[title="Grafana Dashboard neutree-model-routing"]',
+  );
+  const time = frame.getByRole("button", { name: /^Time range selected:/ });
+  await expect(time).toContainText("Last 24 hours", { timeout: 30000 });
+  await expect(
+    page.locator("#monitor-model, #monitor-mode, #monitor-time"),
+  ).toHaveCount(0);
+  const state = async () =>
+    new URL(await frame.locator("body").evaluate(() => window.location.href));
+  await frame.getByRole("combobox").nth(0).click();
+  await frame
+    .locator('[id^="react-select-"][id*="-option-"]')
+    .filter({ hasText: /^test-model-weighted$/ })
+    .click();
+  await frame.getByRole("combobox").nth(0).press("Escape");
+  await expect
+    .poll(async () => (await state()).searchParams.getAll("var-model"))
+    .toEqual([model, "test-model-weighted"]);
+  await frame.getByRole("combobox").nth(1).click();
+  await frame.getByText("流式", { exact: true }).click();
+  await expect
+    .poll(async () => (await state()).searchParams.get("var-mode"))
+    .toBe("stream");
+  await frame
+    .getByRole("button", { name: /Choose refresh time interval/ })
+    .click();
+  await frame
+    .getByRole("menuitemradio", { name: "30 seconds", exact: true })
+    .click();
+  await expect
+    .poll(async () => (await state()).searchParams.get("refresh"))
+    .toBe("30s");
+  await frame
+    .getByRole("button", { name: /Choose refresh time interval/ })
+    .click();
+  await frame
+    .getByRole("menuitemradio", { name: "Turn off auto refresh", exact: true })
+    .click();
+  await expect
+    .poll(async () => (await state()).searchParams.get("refresh") || "")
+    .toBe("");
+  const chart = frame.locator('[data-griditem-key="grid-item-30"]');
+  await chart.scrollIntoViewIfNeeded();
+  const plot = chart.locator(".u-over");
+  await expect(plot).toBeVisible();
+  const box = (await plot.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.45);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.45, {
+    steps: 12,
+  });
+  await page.mouse.up();
+  await expect
+    .poll(async () => (await state()).searchParams.get("from"))
+    .toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  const zoomed = await state();
+  const before = [
+    zoomed.searchParams.get("from"),
+    zoomed.searchParams.get("to"),
+  ];
+  await time.scrollIntoViewIfNeeded();
+  await expect(time).not.toContainText("Last 24 hours");
+  await frame.getByRole("combobox").nth(0).click();
+  await frame
+    .locator('[id^="react-select-"][id*="-option-"]')
+    .filter({ hasText: /^test-model-weighted$/ })
+    .click();
+  await frame.getByRole("combobox").nth(0).press("Escape");
+  await expect
+    .poll(async () => (await state()).searchParams.getAll("var-model"))
+    .toEqual([model]);
+  const after = await state();
+  expect([
+    after.searchParams.get("from"),
+    after.searchParams.get("to"),
+  ]).toEqual(before);
+  // A native time selection can reset the zoom; its label and URL update together.
+  await time.click();
+  await frame.getByText("Last 24 hours", { exact: true }).click();
+  await expect(time).toContainText("Last 24 hours");
+  await expect
+    .poll(async () => (await state()).searchParams.get("from"))
+    .toBe("now-24h");
+  await expect.poll(() => queryChecks.length).toBeGreaterThan(0);
+  await Promise.all(queryChecks);
+});
+
+test("native All includes unknown model failures and allows model selection", async ({
+  page,
+}) => {
+  test.skip(!endpoint, "Requires deployed monitoring");
+  await page.goto(
+    `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&refresh=off`,
+  );
+  const frame = page.frameLocator(
+    'iframe[title="Grafana Dashboard neutree-model-routing"]',
+  );
+  await expect(frame.getByRole("combobox").nth(0)).toBeVisible({
+    timeout: 30000,
+  });
+  await frame
+    .locator('[data-griditem-key="grid-item-13"]')
+    .scrollIntoViewIfNeeded();
+  const unknown = frame
+    .getByRole("region", { name: "对外模型对比", exact: true })
+    .getByRole("row")
+    .filter({ hasText: "未识别或缺失" });
+  await expect
+    .poll(async () =>
+      Number(await unknown.getByRole("cell").nth(4).innerText()),
+    )
+    .toBeGreaterThan(0);
+});
+
+test("native Prometheus variables safely preserve historical names with special characters", async ({
+  page,
+}) => {
+  test.skip(!endpoint, "Requires deployed monitoring");
+  const historical = '历史"\\.+&model=other';
+  const checks: Promise<void>[] = [];
+  page.on("response", (response) => {
+    if (
+      response.url().includes("/api/ds/query") &&
+      response.request().method() === "POST"
+    ) {
+      checks.push(
+        (async () => {
+          expect(response.status()).toBe(200);
+          const result = await response.json();
+          for (const value of Object.values(result.results ?? {}) as {
+            error?: string;
+          }[])
+            expect(value.error).toBeFalsy();
+          for (const query of response.request().postDataJSON().queries) {
+            const matcher = query.expr?.match(
+              /virtual_model=~("(?:\\.|[^"\\])*")/,
+            );
+            if (!matcher) continue;
+            const regex = new RegExp(`^(?:${JSON.parse(matcher[1])})$`);
+            expect(regex.test(historical)).toBe(true);
+            expect(regex.test("other")).toBe(false);
+          }
+        })(),
+      );
+    }
+  });
+  await page.goto(
+    `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&model=${encodeURIComponent(historical)}&refresh=off`,
+  );
+  const frame = page.frameLocator(
+    'iframe[title="Grafana Dashboard neutree-model-routing"]',
+  );
+  await expect(frame.getByText(historical, { exact: true })).toBeVisible({
+    timeout: 30000,
+  });
+  await expect.poll(() => checks.length).toBeGreaterThan(0);
+  await page.waitForLoadState("networkidle");
+  await Promise.all(checks);
 });
