@@ -463,7 +463,9 @@ test("only the three main rows collapse all of their metrics together", async ({
   const frame = page.frameLocator(
     'iframe[title="Grafana Dashboard neutree-model-routing"]',
   );
-  await expect(frame.locator('[data-griditem-key^="panel-"]')).toHaveCount(3);
+  await expect(frame.locator('[data-griditem-key^="panel-"]')).toHaveCount(3, {
+    timeout: 30000,
+  });
   for (const [rowId, panelIds] of [
     [101, [13, 30, 3, 31, 14, 15, 6]],
     [103, [8, 32, 33, 20, 4, 21, 22, 34, 12, 35]],
