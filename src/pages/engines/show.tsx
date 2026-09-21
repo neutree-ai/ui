@@ -98,7 +98,10 @@ export const EnginesShow = () => {
             {showVersionList && (
               <nav
                 aria-label={t("engines.versions.all")}
-                className="flex flex-wrap content-start gap-1 md:max-h-[420px] md:flex-col md:flex-nowrap md:overflow-auto md:pr-1"
+                // Sticky so the list stays visible while the schema scrolls,
+                // and as tall as the viewport allows: a short list hides the
+                // fact that there is more below it.
+                className="flex flex-wrap content-start gap-1 md:sticky md:top-0 md:max-h-[calc(100vh-11rem)] md:flex-col md:flex-nowrap md:self-start md:overflow-auto md:pr-1"
               >
                 {newestFirst.map((item, index) => (
                   <Link

@@ -418,7 +418,9 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                       {row.hasChildren ? (
                         // Shown expanded and collapsed: collapsed is exactly
                         // when the count is the only hint of what is inside.
-                        <span className="block text-xs text-muted-foreground">
+                        // Attached information, so it stays quieter than the
+                        // machine name above it.
+                        <span className="block text-xs text-[var(--nt-text-neutral-quaternary)]">
                           {t("engines.schema.nestedCount", {
                             count: row.childCount,
                           })}
