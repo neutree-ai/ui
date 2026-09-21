@@ -91,17 +91,18 @@ export const EnginesShow = () => {
           <div
             className={
               showVersionList
-                ? "grid gap-4 md:grid-cols-[260px_minmax(0,1fr)]"
+                ? // Master-detail: the card stays inside the viewport and the
+                  // schema scrolls in its own column. Without the cap a
+                  // 235-parameter schema makes the section ~10k px tall, which
+                  // leaves the whole left column white below the version list.
+                  "flex flex-col gap-4 md:max-h-[calc(100vh-14rem)] md:flex-row"
                 : undefined
             }
           >
             {showVersionList && (
               <nav
                 aria-label={t("engines.versions.all")}
-                // Sticky so the list stays visible while the schema scrolls,
-                // and as tall as the viewport allows: a short list hides the
-                // fact that there is more below it.
-                className="flex flex-wrap content-start gap-1 md:sticky md:top-0 md:max-h-[calc(100vh-11rem)] md:flex-col md:flex-nowrap md:self-start md:overflow-auto md:pr-1"
+                className="flex flex-wrap content-start gap-1 md:w-[260px] md:shrink-0 md:flex-col md:flex-nowrap md:overflow-auto md:pr-1"
               >
                 {newestFirst.map((item, index) => (
                   <Link
@@ -132,9 +133,11 @@ export const EnginesShow = () => {
               </nav>
             )}
             {selected && (
-              <ShowPage.Row title={t("engines.fields.valuesSchema")}>
-                <ValueSchemaTable schema={selected.values_schema} />
-              </ShowPage.Row>
+              <div className="min-w-0 md:flex-1 md:overflow-auto">
+                <ShowPage.Row title={t("engines.fields.valuesSchema")}>
+                  <ValueSchemaTable schema={selected.values_schema} />
+                </ShowPage.Row>
+              </div>
             )}
           </div>
         </ShowPage.Section>

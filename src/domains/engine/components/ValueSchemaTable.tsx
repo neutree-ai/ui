@@ -337,7 +337,9 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
 
       <div className="overflow-hidden rounded-md border">
         <Table>
-          <TableHeader>
+          {/* The schema pane scrolls inside the section, so the column labels
+              have to travel with it. */}
+          <TableHeader className="sticky top-0 z-10">
             <TableRow>
               <TableHead className="w-[26%]">
                 {t("engines.schema.columns.parameter")}
