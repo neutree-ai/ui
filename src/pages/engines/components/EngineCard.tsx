@@ -1,11 +1,18 @@
+import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import EngineStatus from "@/domains/engine/components/EngineStatus";
 import { EngineVersionSummary } from "@/domains/engine/components/EngineVersionSummary";
 import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
 import { newestEngineVersion } from "@/domains/engine/lib/version-order";
 import type { Engine } from "@/domains/engine/types";
 import { Link } from "@/foundation/components/Link";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type EngineCardProps = {
@@ -20,10 +27,13 @@ type EngineCardProps = {
  */
 export function EngineCard({ engine, onSelectVersion }: EngineCardProps) {
   const { t } = useTranslation();
+  const versionRef = useRef<HTMLSpanElement>(null);
+  const versionIsTruncated = useIsTruncated(versionRef);
   const name = engine.metadata.name;
   const workspace = engine.metadata.workspace ?? "";
   const versions = engine.spec.versions ?? [];
   const newest = newestEngineVersion(versions);
+  const newestLabel = newest?.version ?? "-";
   const tasks = engine.spec.supported_tasks ?? [];
   const showsStatus = isExceptionalEnginePhase(engine.status?.phase);
 
@@ -60,24 +70,43 @@ export function EngineCard({ engine, onSelectVersion }: EngineCardProps) {
           </div>
         )}
 
-        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-3">
+        <div className="mt-auto flex items-center gap-2 border-t pt-3">
           <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--nt-text-neutral-quaternary)]">
             {t("engines.versions.latest")}
           </span>
-          {/* Debug and backport builds ship long version tags, so let the chip
-					    shrink and ellipsize rather than pushing the count off the card. */}
-          <Badge
-            data-testid="engine-latest-version"
-            variant="outline"
-            className="max-w-full overflow-hidden font-mono"
-          >
-            <span className="truncate" title={newest?.version ?? "-"}>
-              {newest?.version ?? "-"}
-            </span>
-          </Badge>
+          {/* Debug and backport builds ship long version tags. The chip gives up
+						 width instead of wrapping the row. It is its own link to the same
+						 detail page so it can sit above the card's stretched link: a
+						 truncated value has to stay reachable by hover AND keyboard focus,
+						 which a non-interactive chip under the overlay cannot do. */}
+          <div className="min-w-0 flex-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/${workspace}/engines/show/${name}`}
+                  className="relative z-20 block max-w-full rounded-[var(--nt-radius-input)] focus-visible:[outline:2px_solid_var(--nt-stroke-outstanding-base)] focus-visible:[outline-offset:2px]"
+                >
+                  <Badge
+                    data-testid="engine-latest-version"
+                    variant="outline"
+                    className="max-w-full overflow-hidden font-mono"
+                  >
+                    <span ref={versionRef} className="truncate">
+                      {newestLabel}
+                    </span>
+                  </Badge>
+                </Link>
+              </TooltipTrigger>
+              {versionIsTruncated && (
+                <TooltipContent className="max-w-[420px] break-all font-mono">
+                  {newestLabel}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
           {/* Only the hover-card trigger needs to sit above the card's stretched
 					    link; the rest of the row stays clickable as part of the card. */}
-          <div className="relative z-20 ml-auto">
+          <div className="relative z-20 shrink-0">
             <EngineVersionSummary
               versions={versions}
               onSelectVersion={onSelectVersion}

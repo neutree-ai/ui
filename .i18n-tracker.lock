@@ -427,7 +427,8 @@
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "6f6b0d366eac07e34feaf39a3e61ba0a",
   "src/domains/engine/lib/version-order.ts": "57c606f184bcd770ce96e7fac9f970a1",
-  "src/pages/engines/components/EngineCard.tsx": "997161cc7ee773ef54b89a13c508d5a2",
+  "src/pages/engines/components/EngineCard.tsx": "747b6cf1ba1fb686a82b4c4157fd540e",
   "src/domains/engine/lib/engine-phase.ts": "1bb3903b2a1640871eb06a0584adb6d6",
-  "src/domains/engine/components/EngineVersionSummary.tsx": "bac5ca522cf6e30466d048024b45fc6c"
+  "src/domains/engine/components/EngineVersionSummary.tsx": "bac5ca522cf6e30466d048024b45fc6c",
+  "src/foundation/hooks/use-is-truncated.ts": "a31ecc11a497dbca0a4c42d108a9fc76"
 }
