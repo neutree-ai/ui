@@ -430,7 +430,7 @@
   "src/domains/engine/lib/engine-phase.ts": "1bb3903b2a1640871eb06a0584adb6d6",
   "src/domains/engine/components/EngineVersionSummary.tsx": "bac5ca522cf6e30466d048024b45fc6c",
   "src/foundation/hooks/use-is-truncated.ts": "079a617505330fb8dd01ba95afe6567d",
-  "src/domains/engine/components/ValueSchemaTable.tsx": "7cf9571f873da2995e3a78c267d99530",
+  "src/domains/engine/components/ValueSchemaTable.tsx": "872fc071a54b5358274e6f16b314c7ef",
   "src/domains/engine/lib/value-schema-rows.ts": "e98b4aed26e1e580a3e7713d9535693f",
   "src/foundation/components/EmptyValue.tsx": "e51d4159a69829d6588db03d2f233b2a"
 }

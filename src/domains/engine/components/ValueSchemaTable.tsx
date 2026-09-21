@@ -335,11 +335,17 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-md border">
+      {/* The toolbar sits outside the scroller, so search stays reachable
+          however far down the parameter list you are. The cap goes on the
+          Table primitive's own wrapper (it owns a scroll container already):
+          capping an outer div instead would leave the sticky header pinned to
+          the wrong box and scrolling away with the rows. */}
+      <div className="[&>div]:max-h-[calc(100vh-22rem)] [&>div]:overflow-auto">
         <Table>
-          {/* The schema pane scrolls inside the section, so the column labels
-              have to travel with it. */}
-          <TableHeader className="sticky top-0 z-10">
+          {/* The table scrolls inside the section, so the column labels travel
+              with it. The primitive's header is translucent; a sticky header
+              needs an opaque fill or the rows show through it. */}
+          <TableHeader className="sticky top-0 z-10 bg-[var(--nt-fill-neutral-opaque-2)]">
             <TableRow>
               <TableHead className="w-[26%]">
                 {t("engines.schema.columns.parameter")}
