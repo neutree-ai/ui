@@ -1527,6 +1527,8 @@
 			"enable": "Enable",
 			"actions": "Actions",
 			"moreLimitedModels": "+{{count}} more",
+			"saveSuccess": "Configuration saved",
+			"saveError": "Could not save the configuration",
 			"resetsOn": "Resets {{date}}",
 			"usedTotal": "{{amount}} used",
 			"granularity": {

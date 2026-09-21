@@ -2,12 +2,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mutateAsync = vi.fn();
+const openNotification = vi.fn();
 const invalidate = vi.fn();
 const load = vi.fn();
 
 vi.mock("@refinedev/core", () => ({
   useCustomMutation: () => ({ mutateAsync }),
   useInvalidate: () => invalidate,
+  useNotification: () => ({ open: openNotification }),
 }));
 
 vi.mock("@refinedev/react-hook-form", async () => {
@@ -89,5 +91,60 @@ describe("ApiKeyLimitsCard", () => {
     expect(onSaved).toHaveBeenCalled();
     expect(screen.getByDisplayValue("New name")).toBeTruthy();
     expect(screen.getByDisplayValue("New description")).toBeTruthy();
+    expect(openNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "success" }),
+    );
+  });
+
+  it("reports a failed save instead of looking like a successful one", async () => {
+    // handleSubmit swallows the rejection, so without an explicit notification
+    // a failure is indistinguishable from a success on screen.
+    mutateAsync.mockRejectedValueOnce(new Error("boom"));
+    render(
+      <ApiKeyLimitsCard
+        apiKeyId="key-1"
+        workspace="default"
+        projectId="project-1"
+        displayName="Old name"
+        description="Old description"
+      />,
+    );
+
+    const name = await screen.findByDisplayValue("Old name");
+    fireEvent.change(name, { target: { value: "New name" } });
+    fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+
+    await waitFor(() =>
+      expect(openNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "error" }),
+      ),
+    );
+  });
+
+  it("discards edits when cancelled, and offers it only once something changed", async () => {
+    render(
+      <ApiKeyLimitsCard
+        apiKeyId="key-1"
+        workspace="default"
+        projectId="project-1"
+        displayName="Old name"
+        description="Old description"
+      />,
+    );
+
+    const name = await screen.findByDisplayValue("Old name");
+    const cancel = screen.getByRole("button", {
+      name: "buttons.cancel",
+    }) as HTMLButtonElement;
+    expect(cancel.disabled).toBe(true);
+
+    fireEvent.change(name, { target: { value: "New name" } });
+    await waitFor(() => expect(cancel.disabled).toBe(false));
+
+    fireEvent.click(cancel);
+    await waitFor(() =>
+      expect(screen.getByDisplayValue("Old name")).toBeTruthy(),
+    );
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 });

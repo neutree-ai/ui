@@ -1,4 +1,8 @@
-import { useCustomMutation, useInvalidate } from "@refinedev/core";
+import {
+  useCustomMutation,
+  useInvalidate,
+  useNotification,
+} from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { MoreHorizontal, Power, PowerOff } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -29,6 +33,7 @@ import {
   useApiKeyLimits,
   useModelSourceByValue,
 } from "@/domains/api-key/hooks/use-api-key-policy";
+import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
@@ -57,6 +62,7 @@ export const ApiKeyLimitsCard = ({
   onSaved?: () => unknown;
 }) => {
   const { t } = useTranslation();
+  const { open: openNotification } = useNotification();
   const { load } = useApiKeyLimits();
   // The source belongs to the model, so it is read from the same workspace
   // options the picker uses rather than derived from the entry's IE/EE side —
@@ -110,6 +116,26 @@ export const ApiKeyLimitsCard = ({
   const [toggling, setToggling] = useState(false);
 
   const onSave = async (values: FieldValues) => {
+    try {
+      await saveConfiguration(values);
+      openNotification?.({
+        type: "success",
+        message: t("api_keys.limits.saveSuccess"),
+      });
+    } catch (cause) {
+      // Surfaced rather than rethrown: handleSubmit swallows the rejection, so
+      // without this a failed save looked exactly like a successful one.
+      openNotification?.({
+        type: "error",
+        message: apiKeyActionErrorMessage(
+          cause,
+          t("api_keys.limits.saveError"),
+        ),
+      });
+    }
+  };
+
+  const saveConfiguration = async (values: FieldValues) => {
     await mutateAsync({
       url: "/rpc/update_api_key_configuration",
       method: "post",
@@ -437,7 +463,21 @@ export const ApiKeyLimitsCard = ({
             )}
 
             <ApiKeyPolicyFields form={form} workspace={workspace} />
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {/* Discards the edits and goes back to what is stored — the form
+                  is on the detail page, so there is nowhere to navigate away
+                  to. Disabled while nothing has changed, so it never looks
+                  like it would undo more than it does. */}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  form.formState.isSubmitting || !form.formState.isDirty
+                }
+                onClick={() => form.reset()}
+              >
+                {t("buttons.cancel")}
+              </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {t("buttons.save")}
               </Button>
