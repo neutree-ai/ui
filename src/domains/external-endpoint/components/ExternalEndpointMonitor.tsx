@@ -305,10 +305,10 @@ export default function ExternalEndpointMonitor({
       )}
       {current && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4 text-sm">
-          <div>
-            <p className="font-medium">
+          <details className="min-w-0 flex-1">
+            <summary className="cursor-pointer font-medium">
               {t("external_endpoints.monitor.currentConfig")}
-            </p>
+            </summary>
             <p className="mt-1 text-muted-foreground">
               {current.strategy === "weighted"
                 ? t("external_endpoints.options.weightedRouting")
@@ -317,12 +317,12 @@ export default function ExternalEndpointMonitor({
                   : t("external_endpoints.options.fixedRouting")}
               {current.targets.map((target) => (
                 <span
-                  key={`${target.upstream}/${target.upstream_model}`}
+                  key={JSON.stringify([target.upstream, target.upstream_model])}
                   className="ml-3 inline-block break-all"
                 >
                   {target.upstream} / {target.upstream_model}
                   {current.strategy === "weighted"
-                    ? ` (${target.weight ?? 1}%)`
+                    ? ` (${t("external_endpoints.fields.weight")}: ${target.weight ?? 1})`
                     : current.strategy === "priority"
                       ? ` (${t("external_endpoints.monitor.priority")}: ${target.priority ?? 0})`
                       : ""}
@@ -332,7 +332,7 @@ export default function ExternalEndpointMonitor({
             <p className="mt-1 text-xs text-muted-foreground">
               {t("external_endpoints.monitor.configHint")}
             </p>
-          </div>
+          </details>
           <Button variant="outline" onClick={onViewConfiguration}>
             {t("external_endpoints.monitor.viewConfig")}
           </Button>
@@ -343,7 +343,11 @@ export default function ExternalEndpointMonitor({
       </p>
       {props ? (
         <>
-          <div className="h-[1450px]">
+          <div
+            role="region"
+            className="h-[calc(100dvh-18rem)] min-h-[480px]"
+            aria-label={t("external_endpoints.monitor.chartArea")}
+          >
             <GrafanaDashboard {...props} />
           </div>
           <p className="text-xs text-muted-foreground">
