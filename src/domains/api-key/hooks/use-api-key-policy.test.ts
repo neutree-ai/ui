@@ -650,3 +650,48 @@ describe("buildApiKeyLimits per-model quota", () => {
     ]);
   });
 });
+
+describe("per-model quota round trip", () => {
+  it("persists the chosen period when there is no overall amount", () => {
+    // The period lives on token_quota, which a per-model key has no amount for.
+    // Emitting nothing here made the backend fall back to monthly, silently
+    // discarding the user's choice.
+    const limits = buildApiKeyLimits({
+      ...apiKeyPolicyDefaults(),
+      quota_period: "weekly",
+      models: [row({ model: "gpt-4o", limit_amount: "500", limit_unit: "K" })],
+    });
+    expect(limits.token_quota).toEqual({ period: "weekly" });
+  });
+
+  it("does not invent a token_quota for a key with no limits at all", () => {
+    const limits = buildApiKeyLimits({
+      ...apiKeyPolicyDefaults(),
+      quota_period: "weekly",
+      models: [row({ model: "gpt-4o" })],
+    });
+    expect(limits.token_quota).toBeUndefined();
+  });
+
+  it("keeps a partially pinned entry from being broadened on save", () => {
+    // { model, type } means "any external endpoint". Flattening it to { model }
+    // would widen the entry to every endpoint of every type.
+    const stored: ApiKeyLimits = {
+      allowed_models: [{ model: "gpt-4o", type: "external" }],
+    };
+    const rebuilt = buildApiKeyLimits(limitsToForm(stored));
+    expect(rebuilt.allowed_models).toEqual([
+      { model: "gpt-4o", type: "external" },
+    ]);
+  });
+
+  it("keeps an endpoint-only entry too", () => {
+    const stored: ApiKeyLimits = {
+      allowed_models: [{ model: "gpt-4o", endpoint_name: "ep-a" }],
+    };
+    const rebuilt = buildApiKeyLimits(limitsToForm(stored));
+    expect(rebuilt.allowed_models).toEqual([
+      { model: "gpt-4o", endpoint_name: "ep-a" },
+    ]);
+  });
+});

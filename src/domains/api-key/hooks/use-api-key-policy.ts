@@ -192,10 +192,13 @@ export function buildApiKeyLimits(
   for (const r of values.models ?? []) {
     const model = String(r.model ?? "").trim();
     if (!model) continue;
-    const pinned = !r.wildcard && !!r.type && !!r.endpoint_name;
-    const entry: AllowedModel = pinned
-      ? { model, type: r.type, endpoint_name: r.endpoint_name }
-      : { model };
+    // Emit whichever dimensions the row carries. A row the picker produced has
+    // both; a stored entry that pins only one (which the backend allows, and a
+    // CLI can write) must keep it -- dropping `type` would widen "any external
+    // endpoint" into "any endpoint at all" on the next save.
+    const entry: AllowedModel = { model };
+    if (r.type) entry.type = r.type;
+    if (r.endpoint_name) entry.endpoint_name = r.endpoint_name;
     // An absent token_limit is the only way to say "unlimited"; 0 is rejected by
     // the backend, so an empty or unusable amount emits no field at all.
     const tokenLimit = modelRowTokenLimit(r);
@@ -210,6 +213,16 @@ export function buildApiKeyLimits(
     allowed.push(entry);
   }
   if (allowed.length > 0) limits.allowed_models = allowed;
+  // A key has exactly one quota period, but it is stored on token_quota — which
+  // a per-model key has no amount for. Without this, choosing weekly alongside
+  // per-model limits wrote no period at all and the backend silently fell back
+  // to monthly.
+  if (
+    limits.token_quota === undefined &&
+    allowed.some((e) => e.token_limit !== undefined)
+  ) {
+    limits.token_quota = { period: values.quota_period };
+  }
   if (opts?.disabled) limits.disabled = true;
   return limits;
 }
@@ -254,15 +267,26 @@ export function limitsToForm(
     // keys off entirely otherwise rather than carrying undefined around.
     if (typeof m.used === "number") quota.used = m.used;
     if (typeof m.remaining === "number") quota.remaining = m.remaining;
-    return m.type && m.endpoint_name
-      ? {
-          value: modelOptionValue(m.type, m.endpoint_name, m.model),
-          model: m.model,
-          type: m.type,
-          endpoint_name: m.endpoint_name,
-          ...quota,
-        }
-      : { value: m.model, model: m.model, wildcard: true, ...quota };
+    if (m.type && m.endpoint_name) {
+      return {
+        value: modelOptionValue(m.type, m.endpoint_name, m.model),
+        model: m.model,
+        type: m.type,
+        endpoint_name: m.endpoint_name,
+        ...quota,
+      };
+    }
+    // Not a row the picker can represent, so it stays a wildcard row -- but the
+    // dimension it does pin is kept, so a save round-trips the entry instead of
+    // broadening it.
+    return {
+      value: m.model,
+      model: m.model,
+      wildcard: true,
+      ...(m.type ? { type: m.type } : {}),
+      ...(m.endpoint_name ? { endpoint_name: m.endpoint_name } : {}),
+      ...quota,
+    };
   });
   return v;
 }
@@ -284,6 +308,10 @@ function stripComputed(limits: ApiKeyLimits | null | undefined): ApiKeyLimits {
   if (l.token_quota) {
     const { limit, period } = l.token_quota;
     if (limit && limit > 0) l.token_quota = { limit, period };
+    // A per-model key carries the period with no overall amount; keeping the
+    // bare { period } is what stops disable/enable from resetting the key to
+    // the backend's default period.
+    else if (period) l.token_quota = { period };
     else delete l.token_quota;
   }
   // get_api_key_limits folds per-entry used/remaining into the allowlist and
@@ -295,6 +323,8 @@ function stripComputed(limits: ApiKeyLimits | null | undefined): ApiKeyLimits {
   }
   delete l.quota_granularity;
   delete l.quota_period;
+  delete l.quota_period_start;
+  delete l.quota_resets_at;
   return l;
 }
 
@@ -617,7 +647,10 @@ export function useAllApiKeyUsage(
           method: "post",
           values: {
             p_workspace: workspace,
-            p_api_key_ids: apiKeyIds?.length ? apiKeyIds : null,
+            // An empty array is an empty filter (this page has no keys);
+            // null means "no filter" and makes the RPC aggregate the whole
+            // workspace, which is exactly what this argument exists to avoid.
+            p_api_key_ids: apiKeyIds ?? null,
           },
         });
         const rows =
