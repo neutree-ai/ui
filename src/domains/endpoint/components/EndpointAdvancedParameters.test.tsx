@@ -7,10 +7,12 @@ const copyMock = vi.fn();
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({
-    t: (key: string, options?: { count?: number }) =>
+    t: (key: string, options?: { count?: number; name?: string }) =>
       key === "endpoints.messages.parameterCount"
         ? `${options?.count} parameters`
-        : key,
+        : key === "endpoints.messages.expandParameterValue"
+          ? `${key} ${options?.name}`
+          : key,
   }),
 }));
 
@@ -35,16 +37,26 @@ vi.mock("@/foundation/components/ShowPage", () => ({
   },
 }));
 
-vi.mock("@/components/ui/tooltip", () => ({
-  Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
-  TooltipContent: ({ children }: { children: ReactNode }) => (
-    <span data-testid="tooltip-content">{children}</span>
+vi.mock("@/components/ui/popover", () => ({
+  Popover: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PopoverTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PopoverContent: ({ children }: { children: ReactNode }) => (
+    <span data-testid="parameter-value-details">{children}</span>
   ),
 }));
 
+// jsdom has no layout, so a truncation measurement never reads true; the panel
+// path is exercised by faking the measurement.
+const truncatedMock = vi.fn(() => true);
+vi.mock("@/foundation/hooks/use-is-truncated", () => ({
+  useIsTruncated: () => truncatedMock(),
+}));
+
 describe("EndpointAdvancedParameters", () => {
-  beforeEach(() => copyMock.mockClear());
+  beforeEach(() => {
+    copyMock.mockClear();
+    truncatedMock.mockReturnValue(true);
+  });
 
   it("does not render when both parameter groups are empty", () => {
     const { container } = render(
@@ -114,5 +126,92 @@ describe("EndpointAdvancedParameters", () => {
       successMessage: "components.apiKey.copySuccess",
       errorMessage: "components.apiKey.errors.copyFailed",
     });
+  });
+
+  it("shows the full value JSON-indented, because the cell can only show a slice", () => {
+    render(
+      <EndpointAdvancedParameters
+        engineParameters={{
+          additional_config: {
+            ascend_compilation_config: { enable_npugraph_ex: true },
+            enable_cpu_binding: true,
+          },
+        }}
+        environmentVariables={undefined}
+      />,
+    );
+
+    // The cell keeps one line for the sake of the table…
+    expect(
+      screen.getAllByText(
+        '{"ascend_compilation_config":{"enable_npugraph_ex":true},"enable_cpu_binding":true}',
+      ).length,
+    ).toBeGreaterThan(0);
+
+    // …and the card hands back the structure that the line had to drop.
+    const [panel] = screen.getAllByTestId("parameter-value-details");
+    const text = panel.textContent ?? "";
+    expect(text).toContain('\n  "ascend_compilation_config"');
+    expect(text).toContain('{\n    "enable_npugraph_ex": true\n  }');
+  });
+
+  it("indents a value that arrives as a JSON string", () => {
+    render(
+      <EndpointAdvancedParameters
+        engineParameters={{ additional_config: '{"a":[1,2]}' }}
+        environmentVariables={undefined}
+      />,
+    );
+
+    const [panel] = screen.getAllByTestId("parameter-value-details");
+    expect(panel.textContent).toContain("additional_config");
+    expect(panel.querySelector("pre")?.textContent).toBe(
+      '{\n  "a": [\n    1,\n    2\n  ]\n}',
+    );
+  });
+
+  it("leaves a plain string and a primitive untouched in the panel", () => {
+    render(
+      <EndpointAdvancedParameters
+        engineParameters={{ max_model_len: 8192, dtype: "bfloat16" }}
+        environmentVariables={undefined}
+      />,
+    );
+
+    const texts = screen
+      .getAllByTestId("parameter-value-details")
+      .map((node) => node.querySelector("pre")?.textContent);
+    expect(texts).toContain("8192");
+    expect(texts).toContain("bfloat16");
+  });
+
+  it("offers the expand control only while the value is cut off", () => {
+    truncatedMock.mockReturnValue(false);
+    render(
+      <EndpointAdvancedParameters
+        engineParameters={{ max_model_len: 8192 }}
+        environmentVariables={undefined}
+      />,
+    );
+
+    // A value that fits needs no control: the button has to mean "there is more".
+    expect(screen.queryByTestId("parameter-value-details")).toBeNull();
+  });
+
+  it("labels the expand control after the parameter it belongs to", () => {
+    render(
+      <EndpointAdvancedParameters
+        engineParameters={{ additional_config: { a: 1 } }}
+        environmentVariables={undefined}
+      />,
+    );
+
+    const value = screen.getByText('{"a":1}');
+    expect(value.className).toContain("truncate");
+    expect(
+      screen.getByRole("button", {
+        name: "endpoints.messages.expandParameterValue additional_config",
+      }),
+    ).toBeTruthy();
   });
 });
