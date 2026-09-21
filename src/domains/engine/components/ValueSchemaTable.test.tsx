@@ -25,8 +25,7 @@ vi.mock("@/foundation/lib/i18n", () => ({
       if (key === "engines.schema.filteredCount") {
         return `${options?.visible} of ${options?.total} parameters`;
       }
-      if (key === "engines.schema.enumSummary")
-        return `one of ${options?.values}`;
+      if (key === "engines.schema.enumLead") return "one of";
       if (key === "engines.schema.expandDescription")
         return `expand ${options?.name}`;
       if (key === "engines.schema.toggleNested") {
@@ -149,12 +148,17 @@ describe("ValueSchemaTable", () => {
     expect(row("health_path")).toBeNull();
   });
 
-  it("names the enum values inline", () => {
+  it("shows the enum values inline as tags", () => {
     renderTable();
 
-    expect(row("rope_scaling.type")?.textContent).toContain(
-      "one of linear · dynamic",
+    const inline = row("rope_scaling.type")?.querySelector(
+      '[data-testid="value-schema-enum"]',
     );
+    expect(inline?.textContent).toContain("one of");
+    expect(inline?.textContent).toContain("linear");
+    expect(inline?.textContent).toContain("dynamic");
+    // Tags, not prose: each value is its own element.
+    expect(inline?.querySelectorAll("code").length).toBe(2);
   });
 
   it("opens a floating details panel with the full text and JSON example", () => {

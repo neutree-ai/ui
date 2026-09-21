@@ -855,7 +855,7 @@
 			"nestedCount_one": "1 nested parameter",
 			"empty": "This version declares no parameters.",
 			"allowsAdditional": "This schema also accepts parameters it does not list.",
-			"enumSummary": "one of {{values}}",
+			"enumLead": "one of",
 			"expandDescription": "Show the full description of {{name}}",
 			"copyJson": "Copy JSON",
 			"toggleNested": "Expand or collapse {{name}}",

@@ -194,11 +194,32 @@ function DetailsCell({ row }: { row: ValueSchemaRow }) {
           <div
             ref={enumRef}
             data-testid="value-schema-enum"
-            className="truncate text-xs text-muted-foreground"
+            className="flex h-5 flex-nowrap items-center gap-1 overflow-hidden"
+            // A clipped tag would otherwise stop mid-word; fade the last few
+            // pixels so the cut reads as "there is more" next to the expand
+            // control instead of looking broken.
+            style={
+              enumTruncated
+                ? {
+                    maskImage:
+                      "linear-gradient(to right, black calc(100% - 18px), transparent)",
+                  }
+                : undefined
+            }
           >
-            {t("engines.schema.enumSummary", {
-              values: row.enumValues.map(String).join(" · "),
-            })}
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {t("engines.schema.enumLead")}
+            </span>
+            {/* Same tag treatment as the details panel, so a value looks the
+                same wherever it appears; the row grows no taller for it. */}
+            {row.enumValues.map((value) => (
+              <code
+                key={String(value)}
+                className="shrink-0 rounded-[var(--nt-radius-checkbox)] border bg-background px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
+              >
+                {String(value)}
+              </code>
+            ))}
           </div>
         ) : null}
       </div>
