@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import EngineStatus from "@/domains/engine/components/EngineStatus";
-import JSONSchemaVisualizer from "@/domains/engine/components/JsonSchemaVisualizer";
+import { ValueSchemaTable } from "@/domains/engine/components/ValueSchemaTable";
 import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
 import { sortEngineVersionsNewestFirst } from "@/domains/engine/lib/version-order";
 import type { Engine } from "@/domains/engine/types";
@@ -130,7 +130,7 @@ export const EnginesShow = () => {
             )}
             {selected && (
               <ShowPage.Row title={t("engines.fields.valuesSchema")}>
-                <JSONSchemaVisualizer schema={selected.values_schema} />
+                <ValueSchemaTable schema={selected.values_schema} />
               </ShowPage.Row>
             )}
           </div>
