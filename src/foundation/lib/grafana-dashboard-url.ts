@@ -14,6 +14,7 @@ export interface GrafanaDashboardUrlOptions {
   initialTo?: string;
   initialRefresh?: string;
   hideVariables?: boolean;
+  hideTimePicker?: boolean;
 }
 
 export function buildGrafanaDashboardUrl({
@@ -23,6 +24,7 @@ export function buildGrafanaDashboardUrl({
   initialTo = "now",
   initialRefresh = "30s",
   hideVariables = false,
+  hideTimePicker = false,
 }: GrafanaDashboardUrlOptions): string {
   const url = new URL(
     `/d/${dashboardConfig.dashboardId}`,
@@ -59,6 +61,9 @@ export function buildGrafanaDashboardUrl({
   let result = `${url.toString()}&kiosk`;
   if (hideVariables) {
     result += "&_dash.hideVariables=true";
+  }
+  if (hideTimePicker) {
+    result += "&_dash.hideTimePicker=true";
   }
   return result;
 }
