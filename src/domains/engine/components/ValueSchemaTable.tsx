@@ -181,7 +181,7 @@ function DetailsCell({ row }: { row: ValueSchemaRow }) {
         {row.description ? (
           <div
             ref={descriptionRef}
-            className="line-clamp-2 text-xs leading-5 text-muted-foreground"
+            className="line-clamp-2 break-words text-xs leading-5 text-muted-foreground"
           >
             {row.description}
           </div>
@@ -194,7 +194,7 @@ function DetailsCell({ row }: { row: ValueSchemaRow }) {
           <div
             ref={enumRef}
             data-testid="value-schema-enum"
-            className="flex h-5 flex-nowrap items-center gap-1 overflow-hidden"
+            className="flex h-5 min-w-0 flex-nowrap items-center gap-1 overflow-hidden"
             // A clipped tag would otherwise stop mid-word; fade the last few
             // pixels so the cut reads as "there is more" next to the expand
             // control instead of looking broken.
@@ -357,7 +357,10 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                 data-testid="value-schema-row"
                 data-path={row.id}
               >
-                <TableCell className="align-top">
+                {/* `max-w-0` keeps a cell's content from sizing the column: an
+                    unbreakable parameter name or a row of enum tags would
+                    otherwise stretch the table past its container. */}
+                <TableCell className="max-w-0 align-top">
                   <div className="flex min-w-0 items-start gap-2">
                     {row.hasChildren ? (
                       <Button
@@ -419,13 +422,13 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="align-top">
+                <TableCell className="max-w-0 align-top">
                   <TypeCell row={row} />
                 </TableCell>
-                <TableCell className="align-top">
+                <TableCell className="max-w-0 align-top">
                   <DefaultCell row={row} />
                 </TableCell>
-                <TableCell className="align-top">
+                <TableCell className="max-w-0 align-top">
                   <DetailsCell row={row} />
                 </TableCell>
               </TableRow>
