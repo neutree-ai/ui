@@ -13,7 +13,7 @@ import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
-import { Table } from "@/foundation/components/Table";
+import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveModelSource } from "@/foundation/lib/model-source";
 import type { BaseStatus } from "@/foundation/types/basic-types";
@@ -38,12 +38,10 @@ export const EndpointsList = () => {
           enableBatchDelete
           searchField="metadata->>name"
           refineCoreProps={{
-            sorters: {
-              initial: [
-                { field: "status_sort_priority", order: "asc" },
-                { field: "metadata->creation_timestamp", order: "desc" },
-              ],
-            },
+            // Newest first, like every other list. An endpoint the controller
+            // has not reported a status for yet used to sort behind failed and
+            // deleted ones, so a freshly created one landed on the last page.
+            sorters: defaultSorters,
           }}
           filters={({ filters, setFilters }) => (
             <ModelTaskFilter filters={filters} setFilters={setFilters} />
