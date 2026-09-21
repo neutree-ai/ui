@@ -1,4 +1,4 @@
-import { useSelect } from "@refinedev/core";
+import { useList, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -24,9 +24,11 @@ import { useTestConnectivity } from "@/domains/external-endpoint/hooks/use-test-
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
+import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import { getRouteStrategyError } from "@/domains/external-endpoint/lib/validate-route-strategy";
 import type {
   ExternalEndpoint,
+  ExternalEndpointSpec,
   ModelRoute,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
@@ -40,6 +42,10 @@ import {
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  externalModelSourceSuggestions,
+  modelSourceTranslationKey,
+} from "@/foundation/lib/model-source";
 import UpstreamNameLabel from "../components/UpstreamNameLabel";
 
 const emptyExternalUpstream: UpstreamSpec = {
@@ -170,6 +176,70 @@ export const useExternalEndpointForm = ({
   const upstreams: UpstreamSpec[] = form.watch("spec.upstreams");
   const modelRoutes = form.watch("spec.model_routes");
   const effectiveModelRoutes: ModelRoute[] = modelRoutes ?? [];
+
+  // Model sources. Stored per MODEL on spec.model_sources, keyed by the route's
+  // model name: one endpoint fronts models of different origin, and a model can
+  // have targets across several upstreams, so neither the endpoint nor an
+  // upstream resolves to a single source.
+  //
+  // `self-hosted` is deliberately absent from the options: it is the derived
+  // source of internal endpoints, the backend rejects it here, and offering it
+  // would make two rows for the same model name indistinguishable in the
+  // API-key model picker.
+  const modelSources = form.watch("spec.model_sources");
+  const handleModelSourceChange = useCallback(
+    (model: string, value: string) => {
+      if (!model) return;
+
+      const next = { ...(form.getValues("spec.model_sources") ?? {}) };
+      if (value) next[model] = value;
+      else delete next[model];
+      form.setValue("spec.model_sources", next, { shouldDirty: true });
+    },
+    [form],
+  );
+
+  // Every external endpoint in the workspace, read only for the source values
+  // already in use — the presets are a starting point, not the whole set.
+  const { data: siblingEndpoints } = useList({
+    resource: "external_endpoints",
+    pagination: { mode: "off" },
+    meta: { workspace: currentWorkspace, workspaced: true },
+    queryOptions: { enabled: isValidWorkspace(currentWorkspace) },
+  });
+
+  const modelSourceOptions = externalModelSourceSuggestions([
+    // What this form has already assigned, for the models it currently has.
+    // Without it a value typed for the first model is not offered for the
+    // second, which is exactly where retyping it slightly differently would
+    // fragment the set.
+    {
+      modelSources,
+      models: effectiveModelRoutes.map((route) => route.model),
+    },
+    // Sibling endpoints, counted only for the models they still serve: nothing
+    // prunes spec.model_sources when a model is removed, and suggesting a value
+    // whose last user is gone is the opposite of what this list is for.
+    ...(siblingEndpoints?.data ?? []).map((item) => {
+      const spec =
+        (item as { spec?: ExternalEndpointSpec | null }).spec ?? null;
+      return {
+        modelSources: spec?.model_sources,
+        models: getExposedModels(spec),
+      };
+    }),
+  ]).map((source) => ({
+    label: t(modelSourceTranslationKey(source), { defaultValue: source }),
+    value: source,
+  }));
+
+  // Providers backed by an internal endpoint: a route whose targets all land
+  // there is internal by construction.
+  const internalProviders = new Set(
+    (upstreams ?? [])
+      .filter((upstream) => String(upstream?.endpoint_ref ?? "").trim())
+      .map((upstream) => String(upstream?.name ?? "")),
+  );
   const [quickCreateTarget, setQuickCreateTarget] = useState<{
     routeIndex: number;
     targetIndex: number;
@@ -428,6 +498,10 @@ export const useExternalEndpointForm = ({
           >
             <ModelRouteEditor
               focusModel={focusModel}
+              modelSources={modelSources}
+              onModelSourceChange={handleModelSourceChange}
+              modelSourceOptions={modelSourceOptions}
+              internalProviders={internalProviders}
               value={effectiveModelRoutes as ModelRoute[]}
               // Stable reference values, current editable display names.
               providers={fields.map((field, index) => ({

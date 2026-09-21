@@ -1536,8 +1536,6 @@
 			"empty": "No data"
 		},
 		"models": {
-			"internal": "Internal",
-			"external": "External",
 			"unknown": "Unknown",
 			"anySource": "Any source"
 		},
@@ -1617,8 +1615,11 @@
 		"ui": {
 			"combobox": {
 				"select": "Select",
+				"clearSelection": "Clear selection",
+				"useCustomValue": "Use \"{{value}}\"",
 				"placeholders": {
-					"SearchPlaceholder": "Type a command or search..."
+					"SearchPlaceholder": "Type a command or search...",
+					"SearchOrTypePlaceholder": "Search, or type a new value..."
 				},
 				"messages": {
 					"noResults": "No results found"
@@ -2164,6 +2165,18 @@
 	},
 	"file": {
 		"title": "File"
+	},
+	"modelSource": {
+		"label": "Model source",
+		"unspecified": "Unspecified",
+		"placeholder": "Select a model source",
+		"externalHint": "Where this endpoint's models come from. Self-hosted is reserved for endpoints the platform runs and is not offered here.",
+		"values": {
+			"self-hosted": "Self-hosted",
+			"internal-shared": "Internally shared",
+			"third-party-public": "Third-party public",
+			"partner": "Partner"
+		}
 	},
 	"model_usage": {
 		"title": "Model Usage",

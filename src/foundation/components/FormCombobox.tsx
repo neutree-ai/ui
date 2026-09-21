@@ -50,6 +50,35 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> & {
   value?: string | number | BaseRecord | null;
   disabled?: boolean;
   renderOption?: (option: FormComboboxOption) => ReactNode;
+  /**
+   * Let the user commit whatever they typed as the value, not just pick a
+   * listed option.
+   *
+   * Opt-in, because for most fields the option list IS the contract and a typo
+   * would become a silent new value. It is meant for fields whose set of values
+   * is genuinely open — where `options` is a set of suggestions (presets plus
+   * whatever is already in use) rather than an enumeration.
+   *
+   * When on, the current value is shown on the trigger even if it is not in
+   * `options`; otherwise a custom value would read back as "nothing selected".
+   */
+  allowCustomValue?: boolean;
+  /**
+   * Picking the option that is already selected clears the field (the default,
+   * matching the sibling Combobox). Turn it off for a field that must always
+   * hold a value, where clearing it would only ever be a mis-click.
+   */
+  allowUnselect?: boolean;
+  /**
+   * Wrap the trigger in `FormControl` (the default).
+   *
+   * Turn it off when the combobox is not a registered form field: FormControl
+   * reads the enclosing field's state and stamps that field's id and
+   * aria-describedby onto the trigger, so an unregistered control inside some
+   * other field's group would borrow its labelling — and several of them would
+   * repeat one id.
+   */
+  asField?: boolean;
 };
 
 export const FormCombobox = forwardRef<
@@ -58,6 +87,7 @@ export const FormCombobox = forwardRef<
 >(({ ...props }, ref) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const value = () => {
     if (
@@ -71,41 +101,117 @@ export const FormCombobox = forwardRef<
     return props.value;
   };
 
+  // The typed text, offered as a value of its own when it is not already one of
+  // the options. Matching against `value` (not `label`) is deliberate: options
+  // may carry a translated label, and what gets stored is the value.
+  const trimmedSearch = search.trim();
+  const customValue =
+    props.allowCustomValue &&
+    trimmedSearch !== "" &&
+    !props.options?.some((option) => String(option.value) === trimmedSearch)
+      ? trimmedSearch
+      : null;
+
+  // Built once and placed either bare or inside FormControl: PopoverTrigger
+  // asChild clones its immediate child, so a wrapper component here would
+  // swallow the props and ref it injects.
+  const trigger = (
+    <Button
+      disabled={props.disabled}
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      className={cn(
+        "w-full justify-between overflow-hidden text-[var(--nt-text-neutral-primary)] hover:bg-[var(--nt-fill-neutral-white)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
+        !value() && "text-[var(--nt-text-neutral-quaternary)]",
+      )}
+    >
+      <span className="truncate flex-1 text-left">
+        {value()
+          ? // A custom value has no option to read a label from; show it
+            // as typed rather than falling through to the placeholder,
+            // which would read as "nothing selected".
+            (props.options?.find((option) => option.value === value())?.label ??
+            (props.allowCustomValue ? String(value()) : undefined))
+          : (props.placeholder ?? t("components.ui.combobox.select"))}
+      </span>
+      <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 text-[var(--nt-text-neutral-tertiary)]" />
+    </Button>
+  );
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // Drop a half-typed search so reopening starts from the full list
+        // rather than a filter the user has forgotten about.
+        if (!next) setSearch("");
+      }}
+    >
       <PopoverTrigger asChild>
-        <FormControl>
-          <Button
-            disabled={props.disabled}
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className={cn(
-              "w-full justify-between overflow-hidden text-[var(--nt-text-neutral-primary)] hover:bg-[var(--nt-fill-neutral-white)] focus-visible:[box-shadow:var(--nt-outline-active-focus)] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:border-[var(--nt-stroke-neutral-trans-3)] disabled:bg-[var(--nt-fill-neutral-trans-3)] disabled:text-[var(--nt-text-neutral-tertiary)] disabled:opacity-100 disabled:shadow-none disabled:hover:border-[var(--nt-stroke-neutral-trans-3)] disabled:hover:bg-[var(--nt-fill-neutral-trans-3)] disabled:[&_svg]:opacity-50",
-              !value() && "text-[var(--nt-text-neutral-quaternary)]",
-            )}
-          >
-            <span className="truncate flex-1 text-left">
-              {value()
-                ? props.options?.find((option) => option.value === value())
-                    ?.label
-                : (props.placeholder ?? t("components.ui.combobox.select"))}
-            </span>
-            <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 text-[var(--nt-text-neutral-tertiary)]" />
-          </Button>
-        </FormControl>
+        {props.asField === false ? (
+          trigger
+        ) : (
+          <FormControl>{trigger}</FormControl>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-[400px] max-w-full p-0">
         <Command className="rounded-lg border shadow-md" ref={ref}>
           <CommandInput
+            value={search}
+            onValueChange={setSearch}
             placeholder={t(
-              "components.ui.combobox.placeholders.SearchPlaceholder",
+              props.allowCustomValue
+                ? "components.ui.combobox.placeholders.SearchOrTypePlaceholder"
+                : "components.ui.combobox.placeholders.SearchPlaceholder",
             )}
           />
           <CommandList>
             <CommandEmpty>
               {t("components.ui.combobox.messages.noResults")}
             </CommandEmpty>
+            {(props.allowUnselect ?? true) && value() ? (
+              // An explicit row, not only "pick the selected option again":
+              // this field's empty state is meaningful ("unspecified"), and a
+              // toggle you have to guess at is one users ask about rather than
+              // find.
+              <CommandGroup>
+                <CommandItem
+                  value="__clear__"
+                  onSelect={() => {
+                    props.onChange?.("");
+                    setSearch("");
+                    setOpen(false);
+                  }}
+                >
+                  <span className="min-w-0 flex-1 truncate text-[var(--nt-text-neutral-tertiary)]">
+                    {t("components.ui.combobox.clearSelection")}
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            ) : null}
+            {customValue && (
+              <CommandGroup>
+                <CommandItem
+                  // cmdk filters items by this value against the search text;
+                  // using the search itself keeps the row from filtering
+                  // itself out.
+                  value={customValue}
+                  onSelect={() => {
+                    props.onChange?.(customValue);
+                    setSearch("");
+                    setOpen(false);
+                  }}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {t("components.ui.combobox.useCustomValue", {
+                      value: customValue,
+                    })}
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            )}
             <CommandGroup
               heading={t("components.ui.combobox.headings.suggestions")}
             >
@@ -136,7 +242,12 @@ export const FormCombobox = forwardRef<
                         if (option.disabled) {
                           return;
                         }
-                        props.onChange?.(option.value);
+                        const unselect =
+                          (props.allowUnselect ?? true) && isSelected;
+                        // "" is how a cleared field is written: callers read it
+                        // as "no value" and drop the entry rather than storing
+                        // an empty string.
+                        props.onChange?.(unselect ? "" : option.value);
                         setOpen(false);
                       }}
                     >

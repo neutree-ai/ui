@@ -43,6 +43,16 @@ export type ExternalEndpointSpec = {
   route_type?: string;
   timeout: number | null;
   upstreams: UpstreamSpec[];
+  /**
+   * Each model's source, keyed by the CLIENT-FACING model name (a route's
+   * `model`).
+   *
+   * Per model rather than per endpoint or per upstream: one endpoint routinely
+   * fronts models of different origin, and a model can have routing targets on
+   * several upstreams, so neither resolves to a single source. A missing entry
+   * means "unspecified".
+   */
+  model_sources?: Record<string, string> | null;
   model_routes?: ModelRoute[] | null;
 };
 
