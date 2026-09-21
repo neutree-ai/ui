@@ -161,13 +161,14 @@ test("Grafana owns model mode time zoom and refresh without stale outer controls
   test.skip(!endpoint, "Requires deployed monitoring");
   test.setTimeout(60000);
   const queryChecks: Promise<void>[] = [];
-  page.on("response", (response) => {
+  page.on("requestfinished", (request) => {
     if (
-      response.url().includes("/api/ds/query") &&
-      response.request().method() === "POST"
+      request.url().includes("/api/ds/query") &&
+      request.method() === "POST"
     ) {
       queryChecks.push(
         (async () => {
+          const response = (await request.response())!;
           expect(response.status()).toBe(200);
           const result = await response.json();
           for (const value of Object.values(result.results ?? {}) as {
@@ -223,6 +224,7 @@ test("Grafana owns model mode time zoom and refresh without stale outer controls
   await expect
     .poll(async () => (await state()).searchParams.get("refresh") || "")
     .toBe("");
+  await page.waitForLoadState("networkidle");
   const chart = frame.locator('[data-griditem-key="grid-item-30"]');
   await chart.scrollIntoViewIfNeeded();
   const plot = chart.locator(".u-over");
@@ -237,6 +239,7 @@ test("Grafana owns model mode time zoom and refresh without stale outer controls
   await expect
     .poll(async () => (await state()).searchParams.get("from"))
     .toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  await page.waitForLoadState("networkidle");
   const zoomed = await state();
   const before = [
     zoomed.searchParams.get("from"),
@@ -253,6 +256,7 @@ test("Grafana owns model mode time zoom and refresh without stale outer controls
   await expect
     .poll(async () => (await state()).searchParams.getAll("var-model"))
     .toEqual([model]);
+  await page.waitForLoadState("networkidle");
   const after = await state();
   expect([
     after.searchParams.get("from"),
@@ -266,6 +270,7 @@ test("Grafana owns model mode time zoom and refresh without stale outer controls
     .poll(async () => (await state()).searchParams.get("from"))
     .toBe("now-24h");
   await expect.poll(() => queryChecks.length).toBeGreaterThan(0);
+  await page.waitForLoadState("networkidle");
   await Promise.all(queryChecks);
 });
 
@@ -302,13 +307,14 @@ test("native Prometheus variables safely preserve historical names with special 
   test.skip(!endpoint, "Requires deployed monitoring");
   const historical = '历史"\\.+&model=other';
   const checks: Promise<void>[] = [];
-  page.on("response", (response) => {
+  page.on("requestfinished", (request) => {
     if (
-      response.url().includes("/api/ds/query") &&
-      response.request().method() === "POST"
+      request.url().includes("/api/ds/query") &&
+      request.method() === "POST"
     ) {
       checks.push(
         (async () => {
+          const response = (await request.response())!;
           expect(response.status()).toBe(200);
           const result = await response.json();
           for (const value of Object.values(result.results ?? {}) as {
