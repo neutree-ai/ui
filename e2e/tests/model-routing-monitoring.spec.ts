@@ -53,7 +53,7 @@ test.describe("external endpoint monitoring", () => {
       }
     });
     await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&model=${encodeURIComponent(model)}`,
+      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&model=${encodeURIComponent(model)}`,
     );
     await expect(page.locator("#monitor-model")).toContainText(model, {
       timeout: 30000,
@@ -65,53 +65,49 @@ test.describe("external endpoint monitoring", () => {
     const frame = page.frameLocator(
       'iframe[title="Grafana Dashboard neutree-model-routing"]',
     );
-    await expect(
-      frame.getByText("完成请求 / Completed", { exact: true }),
-    ).toBeVisible({ timeout: 30000 });
+    await expect(frame.getByText("完成请求", { exact: true })).toBeVisible({
+      timeout: 30000,
+    });
     await frame
       .locator('[data-griditem-key="grid-item-8"]')
       .scrollIntoViewIfNeeded();
     const table = frame
       .getByRole("region", {
-        name: "各目标实际分流 / Selected targets",
+        name: "上游模型对比",
         exact: true,
       })
       .getByRole("table");
     await expect(table.getByRole("row")).toHaveCount(2);
     await expect(
-      table.getByRole("columnheader", { name: "P99 总耗时", exact: true }),
+      table.getByRole("columnheader", { name: "P99 完整耗时", exact: true }),
     ).toBeVisible();
     await expect(
-      table.getByRole("columnheader", { name: "平均总耗时", exact: true }),
+      table.getByRole("columnheader", { name: "平均完整耗时", exact: true }),
     ).toBeVisible();
     await expect(table.getByRole("row").nth(1).getByRole("cell")).toHaveCount(
-      8,
+      12,
     );
     await expect(
-      table.getByRole("row").nth(1).getByRole("cell").nth(5),
+      table.getByRole("row").nth(1).getByRole("cell").nth(9),
     ).not.toContainText("—");
     await expect(
-      table.getByRole("row").nth(1).getByRole("cell").nth(6),
+      table.getByRole("row").nth(1).getByRole("cell").nth(10),
     ).not.toContainText("—");
     await frame
-      .locator('[data-griditem-key="grid-item-11"]')
+      .locator('[data-griditem-key="panel-50"]')
       .scrollIntoViewIfNeeded();
     await frame
       .getByRole("heading", {
-        name: "最新快照延迟 / Snapshot age",
+        name: "实例容量详情（全部调用类型）",
         exact: true,
       })
-      .hover();
-    await page.mouse.wheel(0, 600);
-    await frame
-      .getByRole("button", { name: "Expand row", exact: true })
       .click();
     await frame
       .locator('[data-griditem-key="grid-item-12"]')
       .scrollIntoViewIfNeeded();
     const capacity = frame
       .getByRole("region", {
-        name: "容量快照 / Capacity at selected end time",
+        name: "实例容量详情",
         exact: true,
       })
       .getByRole("table");
@@ -141,9 +137,9 @@ test.describe("external endpoint monitoring", () => {
     });
     await expect(iframe).toHaveAttribute("src", /var-mode=stream/);
     await expect(iframe).not.toHaveAttribute("src", /[?&]refresh=/);
-    await expect(
-      frame.getByText("完成请求 / Completed", { exact: true }),
-    ).toBeVisible({ timeout: 30000 });
+    await expect(frame.getByText("完成请求", { exact: true })).toBeVisible({
+      timeout: 30000,
+    });
     await expect
       .poll(async () => {
         const url = await frame
@@ -220,7 +216,7 @@ test.describe("external endpoint monitoring", () => {
     page,
   }) => {
     await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor`,
+      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h`,
     );
     await expect(page.locator("#monitor-model")).toContainText(
       /All models|全部模型/,
@@ -239,18 +235,16 @@ test.describe("external endpoint monitoring", () => {
       .locator('[data-griditem-key="grid-item-13"]')
       .scrollIntoViewIfNeeded();
     const models = frame.getByRole("region", {
-      name: "按模型请求与错误 / Requests and errors by model",
+      name: "对外模型对比",
       exact: true,
     });
-    const unknown = models
-      .getByRole("row")
-      .filter({ hasText: "未识别或缺失 / Unknown" });
+    const unknown = models.getByRole("row").filter({ hasText: "未识别或缺失" });
     await expect(unknown).toBeVisible({ timeout: 30000 });
     // Run scripts/monitoring/e2e.py with REAL_ENDPOINT_SCOPE first to seed an
     // unknown-model failure. This asserts real stored traffic, not only a filter URL.
     await expect
       .poll(
-        async () => Number(await unknown.getByRole("cell").last().innerText()),
+        async () => Number(await unknown.getByRole("cell").nth(4).innerText()),
         { timeout: 30000 },
       )
       .toBeGreaterThan(0);
@@ -279,7 +273,7 @@ test.describe("external endpoint monitoring", () => {
     page,
   }) => {
     await page.goto(
-      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-6h&model=${encodeURIComponent(model)}`,
+      `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&model=${encodeURIComponent(model)}`,
     );
     await page.waitForLoadState("networkidle");
     await page.locator("#monitor-model").click();
@@ -301,23 +295,11 @@ test.describe("external endpoint monitoring", () => {
     const frame = page.frameLocator(
       'iframe[title="Grafana Dashboard neutree-model-routing"]',
     );
-    await expect(
-      frame.getByRole("heading", {
-        name: "P99 总耗时 / Duration",
-        exact: true,
-      }),
-    ).toBeVisible({ timeout: 30000 });
-    await expect(
-      frame.getByRole("heading", {
-        name: "平均总耗时 / Mean duration",
-        exact: true,
-      }),
-    ).toBeVisible();
     await frame
       .locator('[data-griditem-key="grid-item-13"]')
       .scrollIntoViewIfNeeded();
     const summary = frame.getByRole("region", {
-      name: "按模型请求与错误 / Requests and errors by model",
+      name: "对外模型对比",
       exact: true,
     });
     await expect(summary.getByRole("row")).toHaveCount(3, { timeout: 30000 });
@@ -327,10 +309,21 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       summary.getByRole("cell", { name: "test-model-weighted", exact: true }),
     ).toBeVisible();
+    await frame
+      .locator('[data-griditem-key="panel-104"]')
+      .scrollIntoViewIfNeeded();
+    await frame
+      .getByRole("heading", {
+        name: "更多上游耗时：P99、平均完整耗时",
+        exact: true,
+      })
+      .click();
     for (const [id, title] of [
-      [20, "各目标 P95 总耗时 / Target P95 duration"],
-      [21, "各目标 P99 总耗时 / Target P99 duration"],
-      [22, "各目标平均总耗时 / Target mean duration"],
+      [21, "各上游 P99 完整耗时"],
+      [22, "各上游平均完整耗时"],
+      [20, "各上游 P95 完整耗时"],
+      [32, "各上游完成速率"],
+      [33, "各上游 HTTP 非2xx率"],
     ] as const) {
       await frame
         .locator(`[data-griditem-key="grid-item-${id}"]`)
@@ -338,13 +331,13 @@ test.describe("external endpoint monitoring", () => {
       const chart = frame.getByRole("region", { name: title, exact: true });
       await expect(
         chart.getByRole("button", {
-          name: `${model} / qwen-internal / Qwen/Qwen2.5-0.5B-Instruct`,
+          name: `${model} · qwen-internal · Qwen/Qwen2.5-0.5B-Instruct`,
           exact: true,
         }),
       ).toBeVisible();
       await expect(
         chart.getByRole("button", {
-          name: "test-model-weighted / smartp1 / gpt-6-astra",
+          name: "test-model-weighted · smartp1 · gpt-6-astra",
           exact: true,
         }),
       ).toBeVisible();
@@ -359,4 +352,121 @@ test.describe("external endpoint monitoring", () => {
       "test-model-weighted",
     );
   });
+});
+
+// Controlled datasource responses exercise the real Grafana table transforms,
+// including identities that collide when joined using a display delimiter.
+test("target table keeps tuple identities, no-sample states and model-wide shares", async ({
+  page,
+}) => {
+  test.skip(!endpoint, "Requires the deployed monitoring dashboard");
+  const rows = [
+    {
+      virtual_model: "route",
+      upstream: "A",
+      upstream_model: "shared",
+      values: [320, 0.8, 16, 0.95, 2, 3, 2.8, 1, 304],
+    },
+    {
+      virtual_model: "route",
+      upstream: "B",
+      upstream_model: "shared",
+      values: [80, 0.2, 80, 0, -1, 0, -1, -1, 0],
+    },
+    {
+      virtual_model: "a / b",
+      upstream: "c",
+      upstream_model: 'shared"\\',
+      values: [0, -1, 0, -1, -1, 0, -1, -1, 0],
+    },
+    {
+      virtual_model: "a",
+      upstream: "b / c",
+      upstream_model: 'shared"\\',
+      values: [10, 1, 0, 1, 1, 0, 1.5, 0.5, 10],
+    },
+  ];
+  await page.route("**/api/ds/query*", async (route) => {
+    const body = route.request().postDataJSON();
+    if (
+      !body?.queries?.some((q: { expr?: string }) =>
+        q.expr?.includes('"metric_column", "模型内分流"'),
+      )
+    ) {
+      await route.continue();
+      return;
+    }
+    const results: Record<string, unknown> = {};
+    for (const [index, query] of body.queries.entries()) {
+      const column = query.expr.match(/"metric_column", "([^"]+)"/)[1];
+      results[query.refId] = {
+        status: 200,
+        frames: rows.map(({ values, ...identity }) => ({
+          schema: {
+            refId: query.refId,
+            meta: { type: "numeric-multi", custom: { resultType: "vector" } },
+            fields: [
+              { name: "Time", type: "time" },
+              {
+                name: "Value",
+                type: "number",
+                labels: { ...identity, metric_column: column },
+              },
+            ],
+          },
+          data: { values: [[1789950000000], [values[index]]] },
+        })),
+      };
+    }
+    await route.fulfill({ json: { results } });
+  });
+  await page.goto(
+    `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&refresh=off`,
+  );
+  const frame = page.frameLocator(
+    'iframe[title="Grafana Dashboard neutree-model-routing"]',
+  );
+  await frame
+    .locator('[data-griditem-key="grid-item-8"]')
+    .scrollIntoViewIfNeeded();
+  const table = frame
+    .getByRole("region", { name: "上游模型对比", exact: true })
+    .getByRole("table");
+  await expect(table.getByRole("row")).toHaveCount(5);
+  const dataRows = table
+    .getByRole("row")
+    .filter({ has: frame.getByRole("cell") });
+  // Sorting by completed count keeps the two ambiguous identities separate.
+  const cells = await dataRows.evaluateAll((rs) =>
+    rs.map((r) =>
+      Array.from(r.querySelectorAll('[role="cell"]')).map((c) => c.textContent),
+    ),
+  );
+  expect(cells.map((r) => r.slice(0, 3))).toEqual([
+    ["route", "A", "shared"],
+    ["route", "B", "shared"],
+    ["a", "b / c", 'shared"\\'],
+    ["a / b", "c", 'shared"\\'],
+  ]);
+  expect(cells[0][6]).toMatch(/95/);
+  expect(cells[1][4]).toMatch(/20/);
+  expect(cells[1][6]).toMatch(/^0/);
+  expect(cells[1][7]).toBe("无成功样本");
+  expect(cells[3][6]).toBe("—");
+  // Bring the whole embedded viewport into view before opening its popup.
+  await page
+    .locator('iframe[title="Grafana Dashboard neutree-model-routing"]')
+    .scrollIntoViewIfNeeded();
+  // Grafana's column filter acts after the query: the remaining B row stays 20%.
+  await table
+    .getByRole("columnheader", { name: "上游", exact: true })
+    .getByRole("button")
+    .last()
+    .click();
+  await frame.getByRole("checkbox", { name: "B", exact: true }).check();
+  await frame.getByRole("button", { name: "Ok", exact: true }).click();
+  await expect(table.getByRole("row")).toHaveCount(2);
+  await expect(
+    table.getByRole("row").nth(1).getByRole("cell").nth(4),
+  ).toHaveText("20.0%");
 });
