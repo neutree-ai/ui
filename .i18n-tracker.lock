@@ -96,7 +96,7 @@
   "src/foundation/providers/auth-provider/index.ts": "b020feb6296355591297213c06e79a7f",
   "src/foundation/lib/column-visibility-storage.ts": "1c01bd1a7acbeac08880f87e23fbfb51",
   "src/foundation/lib/constant.ts": "7ba88946322ba84f6d56091fcb3c624e",
-  "src/foundation/lib/grafana-dashboard-configs.ts": "a3e2d712ee40360f5ce056959cf3ebd4",
+  "src/foundation/lib/grafana-dashboard-configs.ts": "dea8e711ae7b65a3d639b7141035c7ef",
   "src/foundation/lib/i18n.ts": "7ca93a505420fdfee78bb9d88ffcc272",
   "src/foundation/lib/plural.ts": "5d10922518b7de7bf6db90ce2e078f5f",
   "src/foundation/lib/unit.ts": "364e1f56b690042e2823558b0a435817",
@@ -202,7 +202,7 @@
   "src/domains/cluster/components/NodeIPsField.tsx": "c252ebd7c87fb4bcf58fae1a2be15c65",
   "src/domains/api-key/types.ts": "159af61d6c195d33d68111c076f0f051",
   "src/foundation/lib/yaml-transform.ts": "fc6cdbf1799ec200546afc649acedf4f",
-  "src/foundation/lib/grafana-dashboard-url.ts": "a457d0bef7f683a9185b163f79630278",
+  "src/foundation/lib/grafana-dashboard-url.ts": "6b01b907b6259d75b852a3a3f80d6de8",
   "src/foundation/lib/sidebar-active.ts": "d4a316c595e9fc8d751d6b7961d26023",
   "src/foundation/providers/delete-provider.tsx": "5d75bb2942e38df99b7f4cc3f2115678",
   "src/foundation/providers/notification-provider.ts": "e5c362d105d384b20439efe3c0446035",
@@ -427,6 +427,6 @@
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "6f6b0d366eac07e34feaf39a3e61ba0a",
-  "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "28e622805987c3531ff6eec93b9cb7ba",
+  "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "52984c44dc95a342eb567fa6ff5a24fb",
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e"
 }

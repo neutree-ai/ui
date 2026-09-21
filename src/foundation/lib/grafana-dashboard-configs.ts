@@ -107,19 +107,11 @@ export const getModelRoutingDashboardProps = (
       endpoint_literal: JSON.stringify(
         `/workspace/${context.workspace}/external-endpoint/${context.endpoint}`,
       ),
-      model_regex: JSON.stringify(
-        context.models.length === 0
-          ? ".*"
-          : context.models
-              .map((model) => model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-              .join("|"),
-      ),
+      model: context.models.length ? context.models : GRAFANA_VAR_ALL,
       mode: context.mode === "all" ? "stream|non_stream|unknown" : context.mode,
     },
   },
   initialFrom: context.from,
   initialTo: context.to,
   initialRefresh: context.refresh,
-  hideVariables: true,
-  hideTimePicker: true,
 });

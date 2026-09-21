@@ -27,10 +27,8 @@ describe("monitoring navigation context", () => {
       refresh: "30s",
     });
     expect(
-      new URL(buildGrafanaDashboardUrl(props)).searchParams.get(
-        "var-model_regex",
-      ),
-    ).toBe(JSON.stringify(".*"));
+      new URL(buildGrafanaDashboardUrl(props)).searchParams.get("var-model"),
+    ).toBe("$__all");
   });
   it("rejects reversed absolute ranges and unsupported modes", () => {
     expect(
@@ -51,20 +49,14 @@ describe("monitoring navigation context", () => {
       refresh: "",
     });
     const url = new URL(buildGrafanaDashboardUrl(props));
-    expect(url.searchParams.getAll("var-model_regex")).toEqual([
-      JSON.stringify(model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
-    ]);
-    const matcher = new RegExp(
-      `^${JSON.parse(url.searchParams.get("var-model_regex")!)}$`,
-    );
-    expect(matcher.test(model)).toBe(true);
-    expect(matcher.test(model.replace(".+", "anything"))).toBe(false);
+    expect(url.searchParams.getAll("var-model")).toEqual([model]);
     expect(url.searchParams.get("var-endpoint_literal")).toBe(
       JSON.stringify("/workspace/default/external-endpoint/ee"),
     );
     expect(url.searchParams.get("var-mode")).toBe("stream|non_stream|unknown");
     expect(url.searchParams.has("refresh")).toBe(false);
-    expect(url.searchParams.get("_dash.hideTimePicker")).toBe("true");
+    expect(url.searchParams.has("_dash.hideTimePicker")).toBe(false);
+    expect(url.searchParams.has("_dash.hideVariables")).toBe(false);
   });
   it("preserves multiple exact models, including historical names and regex characters", () => {
     const params = new URLSearchParams("model=a.b&model=c|d&model=a.b&model=");
@@ -79,13 +71,8 @@ describe("monitoring navigation context", () => {
       to: "now",
       refresh: "30s",
     });
-    const value = new URL(buildGrafanaDashboardUrl(props)).searchParams.get(
-      "var-model_regex",
-    )!;
-    const matcher = new RegExp(`^(?:${JSON.parse(value)})$`);
-    expect(matcher.test("a.b")).toBe(true);
-    expect(matcher.test("c|d")).toBe(true);
-    expect(matcher.test("axb")).toBe(false);
-    expect(matcher.test("c")).toBe(false);
+    expect(
+      new URL(buildGrafanaDashboardUrl(props)).searchParams.getAll("var-model"),
+    ).toEqual(["a.b", "c|d"]);
   });
 });
