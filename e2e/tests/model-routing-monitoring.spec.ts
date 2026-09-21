@@ -94,15 +94,6 @@ test.describe("external endpoint monitoring", () => {
       table.getByRole("row").nth(1).getByRole("cell").nth(10),
     ).not.toContainText("—");
     await frame
-      .locator('[data-griditem-key="panel-50"]')
-      .scrollIntoViewIfNeeded();
-    await frame
-      .getByRole("heading", {
-        name: "实例容量详情（全部调用类型）",
-        exact: true,
-      })
-      .click();
-    await frame
       .locator('[data-griditem-key="grid-item-12"]')
       .scrollIntoViewIfNeeded();
     const capacity = frame
@@ -309,15 +300,6 @@ test.describe("external endpoint monitoring", () => {
     await expect(
       summary.getByRole("cell", { name: "test-model-weighted", exact: true }),
     ).toBeVisible();
-    await frame
-      .locator('[data-griditem-key="panel-104"]')
-      .scrollIntoViewIfNeeded();
-    await frame
-      .getByRole("heading", {
-        name: "更多上游耗时：P99、平均完整耗时",
-        exact: true,
-      })
-      .click();
     for (const [id, title] of [
       [21, "各上游 P99 完整耗时"],
       [22, "各上游平均完整耗时"],
@@ -469,4 +451,36 @@ test("target table keeps tuple identities, no-sample states and model-wide share
   await expect(
     table.getByRole("row").nth(1).getByRole("cell").nth(4),
   ).toHaveText("20.0%");
+});
+
+test("only the three main rows collapse all of their metrics together", async ({
+  page,
+}) => {
+  test.skip(!endpoint, "Requires the deployed monitoring dashboard");
+  await page.goto(
+    `/#/${workspace}/external-endpoints/show/${endpoint}?tab=monitor&from=now-24h&refresh=off`,
+  );
+  const frame = page.frameLocator(
+    'iframe[title="Grafana Dashboard neutree-model-routing"]',
+  );
+  await expect(frame.locator('[data-griditem-key^="panel-"]')).toHaveCount(3);
+  for (const [rowId, panelIds] of [
+    [101, [13, 30, 3, 31, 14, 15, 6]],
+    [103, [8, 32, 33, 20, 4, 21, 22, 34, 12, 35]],
+  ] as const) {
+    const row = frame.locator(`[data-griditem-key="panel-${rowId}"]`);
+    await row.scrollIntoViewIfNeeded();
+    await row
+      .getByRole("button", { name: "Collapse row", exact: true })
+      .click();
+    for (const id of panelIds)
+      await expect(
+        frame.locator(`[data-griditem-key="grid-item-${id}"]`),
+      ).toHaveCount(0);
+    await row.getByRole("button", { name: "Expand row", exact: true }).click();
+    for (const id of panelIds)
+      await expect(
+        frame.locator(`[data-griditem-key="grid-item-${id}"]`),
+      ).toHaveCount(1);
+  }
 });
