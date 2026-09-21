@@ -41,9 +41,19 @@ function compareNaturally(a: string, b: string): number {
   return 0;
 }
 
-/** Ascending order: negative when `a` is older than `b`, 0 when equal. */
+/**
+ * Ascending order: negative when `a` is older than `b`, 0 when equal.
+ *
+ * A version that parses outranks one that does not, so a free-form package tag
+ * such as `qwen38` can never take over as "latest" from a real release like
+ * `v0.25.0`.
+ */
 export function compareEngineVersions(a: string, b: string): number {
-  if (validate(a) && validate(b)) return compareVersions(a, b);
+  const aIsVersion = validate(a);
+  const bIsVersion = validate(b);
+  if (aIsVersion && bIsVersion) return compareVersions(a, b);
+  if (aIsVersion) return 1;
+  if (bIsVersion) return -1;
   return compareNaturally(a, b);
 }
 

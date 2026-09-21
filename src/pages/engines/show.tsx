@@ -91,14 +91,14 @@ export const EnginesShow = () => {
           <div
             className={
               showVersionList
-                ? "grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]"
+                ? "grid gap-4 md:grid-cols-[260px_minmax(0,1fr)]"
                 : undefined
             }
           >
             {showVersionList && (
               <nav
                 aria-label={t("engines.versions.all")}
-                className="flex flex-wrap content-start gap-1 md:flex-col md:flex-nowrap"
+                className="flex flex-wrap content-start gap-1 md:max-h-[420px] md:flex-col md:flex-nowrap md:overflow-auto md:pr-1"
               >
                 {newestFirst.map((item, index) => (
                   <Link
@@ -108,18 +108,18 @@ export const EnginesShow = () => {
                       item.version === selected?.version ? "true" : undefined
                     }
                     className={cn(
-                      "flex items-center gap-2 rounded-[var(--nt-radius-input)] border border-transparent px-2 py-1.5 transition-colors hover:bg-muted/60",
+                      "flex flex-wrap items-start gap-2 rounded-[var(--nt-radius-input)] border border-transparent px-2 py-1.5 transition-colors hover:bg-muted/60",
                       item.version === selected?.version &&
                         "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-light)]",
                     )}
                   >
-                    <code className="font-mono text-xs text-[var(--nt-text-neutral-primary)]">
+                    <code className="min-w-0 flex-1 break-all font-mono text-xs leading-5 text-[var(--nt-text-neutral-primary)]">
                       {item.version}
                     </code>
                     {index === 0 && (
                       <Badge
                         variant="default"
-                        className="px-1.5 py-0 text-[10px] leading-4"
+                        className="mt-0.5 px-1.5 py-0 text-[10px] leading-4"
                       >
                         {t("engines.versions.latest")}
                       </Badge>

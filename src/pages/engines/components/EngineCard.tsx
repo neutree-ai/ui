@@ -60,16 +60,20 @@ export function EngineCard({ engine, onSelectVersion }: EngineCardProps) {
           </div>
         )}
 
-        <div className="relative z-20 mt-auto flex items-center gap-2 border-t pt-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--nt-text-neutral-quaternary)]">
+        <div className="relative z-20 mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-3">
+          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--nt-text-neutral-quaternary)]">
             {t("engines.versions.latest")}
           </span>
+          {/* Debug and backport builds ship long version tags, so let the chip
+					    shrink and ellipsize rather than pushing the count off the card. */}
           <Badge
             data-testid="engine-latest-version"
             variant="outline"
-            className="font-mono"
+            className="max-w-full overflow-hidden font-mono"
           >
-            {newest?.version ?? "-"}
+            <span className="truncate" title={newest?.version ?? "-"}>
+              {newest?.version ?? "-"}
+            </span>
           </Badge>
           <div className="ml-auto">
             <EngineVersionSummary

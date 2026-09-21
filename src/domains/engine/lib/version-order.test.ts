@@ -35,6 +35,17 @@ describe("compareEngineVersions", () => {
     expect(() => compareEngineVersions("latest", "v1.0.0")).not.toThrow();
     expect(() => compareEngineVersions("", "v1.0.0")).not.toThrow();
   });
+
+  it("keeps a free-form tag from outranking a real version", () => {
+    // Packages shipped in the field carry tags like `qwen38` next to releases.
+    expect(compareEngineVersions("qwen38", "v0.25.0")).toBeLessThan(0);
+    expect(compareEngineVersions("v0.25.0", "qwen38")).toBeGreaterThan(0);
+  });
+
+  it("falls back to natural order when neither side is a version", () => {
+    expect(compareEngineVersions("b5878", "b5879")).toBeLessThan(0);
+    expect(compareEngineVersions("b5879", "b6000")).toBeLessThan(0);
+  });
 });
 
 describe("newestEngineVersion", () => {
