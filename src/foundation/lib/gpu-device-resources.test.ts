@@ -11,7 +11,10 @@ import {
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
   filterGpuDeviceResourceRows,
-  getGpuCellGridStyle,
+  GPU_GRID_CELL_CLASS,
+  GPU_GRID_CLASS,
+  GPU_GRID_FRAME_CLASS,
+  GPU_GRID_STYLE,
   sumMatchingDeviceAvailableResources,
 } from "./gpu-device-resources";
 
@@ -2399,23 +2402,27 @@ describe("gpu device resource helpers", () => {
   });
 });
 
-describe("getGpuCellGridStyle", () => {
-  it("grows the grid box with its tracks so a narrow container scrolls", () => {
-    // The min width has to match what the track floor actually demands.
-    // Anything smaller lets the rounded frame clip cards off the right edge
-    // instead of handing the overflow to the scroll container around it.
-    expect(getGpuCellGridStyle(4)).toEqual({
-      gridTemplateColumns: "repeat(4, minmax(172px, 1fr))",
-      minWidth: "688px",
-      boxSizing: "content-box",
+describe("gpu grid layout", () => {
+  it("leaves the column count to the browser so rows can wrap", () => {
+    // A fixed count cannot hold both ends of this: eight cards on one node used
+    // to sit in a single row that carried half of them off-screen.
+    expect(GPU_GRID_STYLE).toEqual({
+      gridTemplateColumns: "repeat(auto-fit, minmax(188px, 1fr))",
     });
   });
 
-  it("asks for no width when a node reports no devices", () => {
-    expect(getGpuCellGridStyle(0)).toEqual({
-      gridTemplateColumns: "repeat(0, minmax(172px, 1fr))",
-      minWidth: "0px",
-      boxSizing: "content-box",
-    });
+  it("rules rows and columns from the cells, not from divide-x", () => {
+    // `divide-x` targets every sibling after the first in DOM order, so on a
+    // wrapped grid it draws a stray left rule on each row's first card and no
+    // horizontal rule at all.
+    expect(GPU_GRID_CLASS).not.toContain("divide-");
+    expect(GPU_GRID_CELL_CLASS).toContain("border-b");
+    expect(GPU_GRID_CELL_CLASS).toContain("border-r");
+  });
+
+  it("hangs the trailing rules under the frame's clip", () => {
+    expect(GPU_GRID_CLASS).toContain("-mr-px");
+    expect(GPU_GRID_CLASS).toContain("-mb-px");
+    expect(GPU_GRID_FRAME_CLASS).toContain("overflow-hidden");
   });
 });

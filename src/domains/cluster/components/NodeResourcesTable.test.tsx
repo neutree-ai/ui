@@ -143,7 +143,7 @@ describe("NodeResourcesTable", () => {
     ).toBeNull();
   });
 
-  it("aligns expanded node GPU cards to at most four shared columns", () => {
+  it("lets expanded node GPU cards wrap instead of pinning them to a count", () => {
     const devices = Array.from({ length: 5 }, (_, index) => ({
       uuid: `GPU-${index + 1}`,
       product: "Tesla-T4",
@@ -178,13 +178,15 @@ describe("NodeResourcesTable", () => {
     const grids = screen.getAllByTestId("gpu-device-grid");
     expect(grids).toHaveLength(2);
     for (const grid of grids) {
+      // The column count is the browser's call, so a node with more cards than
+      // fit wraps onto another row rather than scrolling them out of reach.
       expect(grid.style.gridTemplateColumns).toBe(
-        "repeat(4, minmax(172px, 1fr))",
+        "repeat(auto-fit, minmax(188px, 1fr))",
       );
+      expect(grid.style.minWidth).toBe("");
     }
 
-    // Five cards wrap to a second row and one card keeps the same four-column
-    // topology, so both nodes need three placeholders.
-    expect(screen.getAllByTestId("gpu-device-grid-empty-cell")).toHaveLength(6);
+    // Nothing is left to pad: the wrapped rows are the topology now.
+    expect(screen.queryByTestId("gpu-device-grid-empty-cell")).toBeNull();
   });
 });
