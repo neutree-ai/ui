@@ -60,7 +60,7 @@ export function EngineCard({ engine, onSelectVersion }: EngineCardProps) {
           </div>
         )}
 
-        <div className="relative z-20 mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-3">
+        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-3">
           <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--nt-text-neutral-quaternary)]">
             {t("engines.versions.latest")}
           </span>
@@ -75,7 +75,9 @@ export function EngineCard({ engine, onSelectVersion }: EngineCardProps) {
               {newest?.version ?? "-"}
             </span>
           </Badge>
-          <div className="ml-auto">
+          {/* Only the hover-card trigger needs to sit above the card's stretched
+					    link; the rest of the row stays clickable as part of the card. */}
+          <div className="relative z-20 ml-auto">
             <EngineVersionSummary
               versions={versions}
               onSelectVersion={onSelectVersion}

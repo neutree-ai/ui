@@ -72,7 +72,12 @@ test.describe("engines list", () => {
     tag: "@C2613050",
   }, async ({ engines }) => {
     await gotoEngineList(engines.page);
-    await engineCard(engines.page, ENGINE_LLAMA).click();
+    // Follow the card's stretched link directly. Clicking the card's centre can
+    // land on the version summary once a long version wraps the bottom row, and
+    // the title itself sits under the link rather than being the link.
+    await engineCard(engines.page, ENGINE_LLAMA)
+      .getByRole("link", { name: new RegExp(`open ${ENGINE_LLAMA}`, "i") })
+      .click();
 
     const showPage = engines.page.locator('[data-testid="show-page"]');
     await expect(showPage).toBeVisible();
