@@ -205,8 +205,18 @@ export function modelSourceTranslationKey(source: ModelSource): string {
 export const WORKSPACE_MODEL_SOURCE_COLUMN = "source_label";
 
 /**
+ * One endpoint's contribution to the suggestion list: what it has assigned, and
+ * which models it actually exposes.
+ */
+type ModelSourceUsage = {
+  modelSources: ModelSourceMap;
+  /** Client-facing names the endpoint currently serves. */
+  models: Iterable<string>;
+};
+
+/**
  * The sources an admin can pick for a model: the presets, plus every value
- * already in use on any external endpoint, in preset-then-alphabetical order.
+ * still in use, in preset-then-alphabetical order.
  *
  * Including the in-use values is what keeps a free-text field from fragmenting.
  * The enum is open by design — the server stores any string — so the second
@@ -214,18 +224,23 @@ export const WORKSPACE_MODEL_SOURCE_COLUMN = "source_label";
  * than retype it and risk "acme-research-labs". No storage backs this: the set
  * is derived from the endpoints themselves, so it maintains itself.
  *
+ * "In use" means a model that still exists. Nothing prunes spec.model_sources
+ * when a model is removed, so an endpoint keeps entries for models it no longer
+ * serves; counting those would keep suggesting a value that nothing uses any
+ * more, which is the opposite of the list's purpose.
+ *
  * `self-hosted` can never appear: it is derived for internal endpoints and the
  * server rejects it here, so a stored one (however it got there) is filtered
  * out rather than offered.
  */
 export function externalModelSourceSuggestions(
-  mapsInUse: Iterable<ModelSourceMap>,
+  usage: Iterable<ModelSourceUsage>,
 ): ModelSource[] {
   const seen = new Set<ModelSource>(EXTERNAL_MODEL_SOURCES);
 
-  for (const modelSources of mapsInUse) {
-    for (const raw of Object.values(modelSources ?? {})) {
-      const source = String(raw ?? "").trim();
+  for (const { modelSources, models } of usage) {
+    for (const model of models) {
+      const source = String(modelSources?.[model] ?? "").trim();
       if (source && source !== SELF_HOSTED_MODEL_SOURCE) seen.add(source);
     }
   }

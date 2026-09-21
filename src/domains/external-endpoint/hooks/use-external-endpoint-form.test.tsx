@@ -57,11 +57,26 @@ vi.mock("@refinedev/core", () => ({
       data: [
         {
           metadata: { name: "sibling-partner" },
-          spec: { model_sources: { "some-model": "partner" } },
+          spec: {
+            model_sources: { "some-model": "partner" },
+            upstreams: [{ model_mapping: { "some-model": "upstream" } }],
+          },
         },
         {
           metadata: { name: "sibling-custom" },
-          spec: { model_sources: { "other-model": "acme-research-lab" } },
+          spec: {
+            model_sources: { "other-model": "acme-research-lab" },
+            upstreams: [{ model_mapping: { "other-model": "upstream" } }],
+          },
+        },
+        // A source left behind by a model this endpoint no longer serves: the
+        // list is derived from what is in use, so it must not contribute.
+        {
+          metadata: { name: "sibling-stale" },
+          spec: {
+            model_sources: { removed: "retired-lab" },
+            upstreams: [{ model_mapping: { kept: "upstream" } }],
+          },
         },
         { metadata: { name: "sibling-none" }, spec: {} },
       ],

@@ -166,8 +166,14 @@ describe("modelSourceFromWorkspaceModelRow", () => {
 });
 
 describe("externalModelSourceSuggestions", () => {
-  const using = (...sources: string[]) =>
-    Object.fromEntries(sources.map((source, i) => [`model-${i}`, source]));
+  // One endpoint's contribution: what it assigned, and which models it still
+  // serves. A source whose model is gone must not count.
+  const using = (...sources: string[]) => ({
+    modelSources: Object.fromEntries(
+      sources.map((source, i) => [`model-${i}`, source]),
+    ),
+    models: sources.map((_, i) => `model-${i}`),
+  });
 
   it("offers the presets when nothing is in use yet", () => {
     expect(externalModelSourceSuggestions([])).toEqual([
@@ -182,9 +188,22 @@ describe("externalModelSourceSuggestions", () => {
       externalModelSourceSuggestions([
         using("acme-research-lab"),
         using("partner"),
-        null,
-        undefined,
-        {},
+        { modelSources: null, models: [] },
+        { modelSources: undefined, models: [] },
+        { modelSources: {}, models: [] },
+      ]),
+    ).toEqual([...EXTERNAL_MODEL_SOURCES, "acme-research-lab"]);
+  });
+
+  it("ignores a source whose model the endpoint no longer serves", () => {
+    // The server prunes these on write, but a client reading a row written
+    // before that guard must not resurrect the value either.
+    expect(
+      externalModelSourceSuggestions([
+        {
+          modelSources: { gone: "retired-lab", live: "acme-research-lab" },
+          models: ["live"],
+        },
       ]),
     ).toEqual([...EXTERNAL_MODEL_SOURCES, "acme-research-lab"]);
   });
@@ -196,9 +215,6 @@ describe("externalModelSourceSuggestions", () => {
   });
 
   it("never offers self-hosted, even if one is somehow stored", () => {
-    // self-hosted is derived for internal endpoints and rejected by the server
-    // here; offering it would collapse the IE/EE distinction the API-key model
-    // picker depends on.
     expect(
       externalModelSourceSuggestions([using(SELF_HOSTED_MODEL_SOURCE)]),
     ).not.toContain(SELF_HOSTED_MODEL_SOURCE);

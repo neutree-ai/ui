@@ -24,9 +24,11 @@ import { useTestConnectivity } from "@/domains/external-endpoint/hooks/use-test-
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
+import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import { getRouteStrategyError } from "@/domains/external-endpoint/lib/validate-route-strategy";
 import type {
   ExternalEndpoint,
+  ExternalEndpointSpec,
   ModelRoute,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
@@ -206,13 +208,27 @@ export const useExternalEndpointForm = ({
     queryOptions: { enabled: isValidWorkspace(currentWorkspace) },
   });
 
-  const modelSourceOptions = externalModelSourceSuggestions(
-    (siblingEndpoints?.data ?? []).map(
-      (item) =>
-        (item as { spec?: { model_sources?: Record<string, string> | null } })
-          .spec?.model_sources,
-    ),
-  ).map((source) => ({
+  const modelSourceOptions = externalModelSourceSuggestions([
+    // What this form has already assigned, for the models it currently has.
+    // Without it a value typed for the first model is not offered for the
+    // second, which is exactly where retyping it slightly differently would
+    // fragment the set.
+    {
+      modelSources,
+      models: effectiveModelRoutes.map((route) => route.model),
+    },
+    // Sibling endpoints, counted only for the models they still serve: nothing
+    // prunes spec.model_sources when a model is removed, and suggesting a value
+    // whose last user is gone is the opposite of what this list is for.
+    ...(siblingEndpoints?.data ?? []).map((item) => {
+      const spec =
+        (item as { spec?: ExternalEndpointSpec | null }).spec ?? null;
+      return {
+        modelSources: spec?.model_sources,
+        models: getExposedModels(spec),
+      };
+    }),
+  ]).map((source) => ({
     label: t(modelSourceTranslationKey(source), { defaultValue: source }),
     value: source,
   }));
