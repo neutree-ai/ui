@@ -34,6 +34,7 @@ import {
   type ValueSchemaRow,
 } from "@/domains/engine/lib/value-schema-rows";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -74,7 +75,7 @@ function TypeCell({ row }: { row: ValueSchemaRow }) {
 function DefaultCell({ row }: { row: ValueSchemaRow }) {
   const { t } = useTranslation();
   const value = row.hasDefault ? formatDefaultValue(row.defaultValue) : "";
-  if (!value) return <span className="text-muted-foreground">-</span>;
+  if (!value) return <EmptyValue />;
 
   return (
     <Tooltip>
@@ -188,7 +189,7 @@ function DetailsCell({ row }: { row: ValueSchemaRow }) {
         ) : (
           // A parameter can legitimately carry no description (nested children
           // of a real engine schema do) — its enum still has to show.
-          <span className="text-muted-foreground">-</span>
+          <EmptyValue />
         )}
         {row.enumValues ? (
           <div
@@ -367,7 +368,7 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground"
+                        className="h-5 w-5 shrink-0 text-muted-foreground"
                         aria-expanded={!collapsed.has(row.id)}
                         aria-label={t("engines.schema.toggleNested", {
                           name: row.path,
@@ -387,9 +388,11 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                         the machine name underneath and the nested count. */}
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-2">
+                        {/* One consistent line box (leading-5) keeps the 20px
+                            chevron centred on the label whatever the font size. */}
                         <span
                           className={cn(
-                            "truncate",
+                            "truncate leading-5",
                             row.title
                               ? "text-sm font-medium"
                               : "font-mono text-xs",
@@ -412,7 +415,9 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                           {row.path}
                         </span>
                       ) : null}
-                      {row.hasChildren && !collapsed.has(row.id) ? (
+                      {row.hasChildren ? (
+                        // Shown expanded and collapsed: collapsed is exactly
+                        // when the count is the only hint of what is inside.
                         <span className="block text-xs text-muted-foreground">
                           {t("engines.schema.nestedCount", {
                             count: row.childCount,
