@@ -54,7 +54,7 @@
   "src/components/ui/dialog.tsx": "4695f56494b2b616e7a268af67c2fb42",
   "src/components/ui/dropdown-menu.tsx": "e03a035dc5a4edcde5099ceca0dc43c4",
   "src/components/ui/form.tsx": "65f10ecc394cfdf4651952a46e2da742",
-  "src/components/ui/hover-card.tsx": "07859729ca64591628eb747186189997",
+  "src/components/ui/hover-card.tsx": "f8996aa994816fbd5c7728da332dd4f6",
   "src/components/ui/input.tsx": "009b3f7853d99e31b4d31d11c7ef3e8f",
   "src/components/ui/label.tsx": "94936802965106b940908ea93ab6ca58",
   "src/components/ui/loading.tsx": "913dd92acdf36488b43493ece7f7259a",
