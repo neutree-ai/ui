@@ -69,19 +69,18 @@ export const EndpointsList = () => {
             enableHiding
             cell={({ row }) => {
               const { model } = (row.original as Endpoint).spec;
-              return <EndpointModel model={model} />;
+              return (
+                // The badge rides with the model name, as it does on the
+                // external endpoint list: the source is a property of the
+                // model, and a column of its own would repeat one value down
+                // the whole page — an internal endpoint is run by the platform,
+                // so it is always self-hosted.
+                <div className="flex items-center gap-1">
+                  <EndpointModel model={model} />
+                  <ModelSourceBadge source={resolveModelSource("internal")} />
+                </div>
+              );
             }}
-          />
-          {/* Source is derived, never stored, for an internal endpoint: the
-              platform runs it, so it is always self-hosted. */}
-          <Table.Column
-            header={t("modelSource.label")}
-            accessorKey="metadata"
-            id="model_source"
-            enableHiding
-            cell={() => (
-              <ModelSourceBadge source={resolveModelSource("internal")} />
-            )}
           />
           <Table.Column
             header={t("common.fields.task")}

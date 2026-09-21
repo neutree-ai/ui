@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { type FieldValues, useForm } from "react-hook-form";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { Form } from "@/components/ui/form";
 import { FormCombobox } from "./FormCombobox";
@@ -172,5 +173,63 @@ describe("FormCombobox with allowCustomValue", () => {
     // reading this way.
     render(<Harness fieldValue="acme-research-lab" />);
     expect(getTrigger().textContent).toBe("");
+  });
+});
+
+describe("FormCombobox clearing", () => {
+  const searchBox = () =>
+    document.querySelector("[cmdk-input]") as HTMLInputElement;
+
+  // ComboboxProps intersects its own onChange with Command's DOM handler, so
+  // the prop is taken as-is and handed straight through.
+  function ClearHarness({
+    onChange,
+  }: {
+    onChange: ComponentProps<typeof FormCombobox>["onChange"];
+  }) {
+    const form = useForm<FieldValues>({
+      defaultValues: { task: "text-generation" },
+    });
+    return (
+      <Form {...form}>
+        <FormFieldGroup {...form} name="task" label="Task">
+          <FormCombobox
+            options={OPTIONS}
+            placeholder="Select task"
+            onChange={onChange}
+          />
+        </FormFieldGroup>
+      </Form>
+    );
+  }
+
+  it("offers an explicit way to clear a set value", () => {
+    // The empty state is meaningful for optional fields, and a toggle the user
+    // has to guess at is one they ask about rather than find.
+    const onChange = vi.fn();
+    render(<ClearHarness onChange={onChange} />);
+    fireEvent.click(getTrigger());
+    fireEvent.click(screen.getByText("Clear selection"));
+    expect(onChange).toHaveBeenCalledWith("");
+  });
+
+  it("does not offer it when nothing is selected", () => {
+    render(<Harness fieldValue="" />);
+    fireEvent.click(getTrigger());
+    expect(screen.queryByText("Clear selection")).toBeNull();
+  });
+
+  it("clears when the selected option is picked again", () => {
+    const onChange = vi.fn();
+    render(<ClearHarness onChange={onChange} />);
+    fireEvent.click(getTrigger());
+    fireEvent.change(searchBox(), { target: { value: "Text Generation" } });
+    // The trigger also reads "Text Generation"; the row is the one in the list.
+    fireEvent.click(
+      document.querySelectorAll("[cmdk-item]")[
+        document.querySelectorAll("[cmdk-item]").length - 1
+      ] as HTMLElement,
+    );
+    expect(onChange).toHaveBeenCalledWith("");
   });
 });

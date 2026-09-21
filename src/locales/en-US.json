@@ -1615,6 +1615,7 @@
 		"ui": {
 			"combobox": {
 				"select": "Select",
+				"clearSelection": "Clear selection",
 				"useCustomValue": "Use \"{{value}}\"",
 				"placeholders": {
 					"SearchPlaceholder": "Type a command or search...",

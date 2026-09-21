@@ -64,6 +64,12 @@ type ComboboxProps = ComponentPropsWithoutRef<typeof Command> & {
    */
   allowCustomValue?: boolean;
   /**
+   * Picking the option that is already selected clears the field (the default,
+   * matching the sibling Combobox). Turn it off for a field that must always
+   * hold a value, where clearing it would only ever be a mis-click.
+   */
+  allowUnselect?: boolean;
+  /**
    * Wrap the trigger in `FormControl` (the default).
    *
    * Turn it off when the combobox is not a registered form field: FormControl
@@ -165,6 +171,26 @@ export const FormCombobox = forwardRef<
             <CommandEmpty>
               {t("components.ui.combobox.messages.noResults")}
             </CommandEmpty>
+            {(props.allowUnselect ?? true) && value() ? (
+              // An explicit row, not only "pick the selected option again":
+              // this field's empty state is meaningful ("unspecified"), and a
+              // toggle you have to guess at is one users ask about rather than
+              // find.
+              <CommandGroup>
+                <CommandItem
+                  value="__clear__"
+                  onSelect={() => {
+                    props.onChange?.("");
+                    setSearch("");
+                    setOpen(false);
+                  }}
+                >
+                  <span className="min-w-0 flex-1 truncate text-[var(--nt-text-neutral-tertiary)]">
+                    {t("components.ui.combobox.clearSelection")}
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            ) : null}
             {customValue && (
               <CommandGroup>
                 <CommandItem
@@ -216,7 +242,12 @@ export const FormCombobox = forwardRef<
                         if (option.disabled) {
                           return;
                         }
-                        props.onChange?.(option.value);
+                        const unselect =
+                          (props.allowUnselect ?? true) && isSelected;
+                        // "" is how a cleared field is written: callers read it
+                        // as "no value" and drop the entry rather than storing
+                        // an empty string.
+                        props.onChange?.(unselect ? "" : option.value);
                         setOpen(false);
                       }}
                     >
