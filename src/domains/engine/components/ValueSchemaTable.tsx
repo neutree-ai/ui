@@ -5,7 +5,7 @@ import {
   Maximize2,
   Search,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -44,6 +44,14 @@ import { SchemaTypeIcon } from "./SchemaTypeIcon";
 type ValueSchemaTableProps = {
   schema: unknown;
 };
+
+/**
+ * ShowPage's scroll container carries 4px of top padding, and sticky offsets
+ * are measured from its content edge. Both sticky pieces in this table cancel
+ * that padding so they meet the container's top edge instead of leaving a
+ * sliver of the row behind visible.
+ */
+const SHOW_PAGE_SCROLL_PADDING = 4;
 
 /** Type cell: one icon + label per union branch, arrays keep their item type. */
 function TypeCell({ row }: { row: ValueSchemaRow }) {
@@ -256,6 +264,22 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
   );
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarHeight, setToolbarHeight] = useState(0);
+
+  // The page scrolls this table, so both the toolbar and the column labels
+  // stick to it. The header needs the toolbar's measured height as its offset,
+  // otherwise the toolbar would cover it.
+  useEffect(() => {
+    const element = toolbarRef.current;
+    if (!element) return undefined;
+    const measure = () => setToolbarHeight(element.offsetHeight);
+    measure();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const visibleRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -315,7 +339,13 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div
+        ref={toolbarRef}
+        // No top padding and a matching negative offset: ShowPage's scroll
+        // container has 4px of top padding, and without cancelling it a sliver
+        // of the row behind shows above the stuck toolbar.
+        className="sticky -top-1 z-20 -mx-1 flex flex-wrap items-center justify-between gap-2 bg-[var(--nt-fill-neutral-white)] px-1 pb-2"
+      >
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -335,17 +365,19 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
         </span>
       </div>
 
-      {/* The toolbar sits outside the scroller, so search stays reachable
-          however far down the parameter list you are. The cap goes on the
-          Table primitive's own wrapper (it owns a scroll container already):
-          capping an outer div instead would leave the sticky header pinned to
-          the wrong box and scrolling away with the rows. */}
-      <div className="[&>div]:max-h-[calc(100vh-22rem)] [&>div]:overflow-auto">
+      {/* The page scrolls the table: one scrollbar beats nesting a scroll area
+          inside the page. The toolbar and the header stick to that scroll so
+          search and column labels stay reachable. */}
+      <div className="[&>div]:overflow-visible">
         <Table>
-          {/* The table scrolls inside the section, so the column labels travel
-              with it. The primitive's header is translucent; a sticky header
-              needs an opaque fill or the rows show through it. */}
-          <TableHeader className="sticky top-0 z-10 bg-[var(--nt-fill-neutral-opaque-2)]">
+          {/* The primitive's header is translucent; a sticky header needs an
+              opaque fill or the rows show through it. */}
+          <TableHeader
+            className="sticky z-10 bg-[var(--nt-fill-neutral-opaque-2)]"
+            style={{
+              top: Math.max(toolbarHeight - SHOW_PAGE_SCROLL_PADDING, 0),
+            }}
+          >
             <TableRow>
               <TableHead className="w-[26%]">
                 {t("engines.schema.columns.parameter")}
