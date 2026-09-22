@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   buildValueSchemaRows,
+  filterValueSchemaRows,
   formatDefaultValue,
   splitDescriptionJson,
+  valueSchemaTypeOptions,
 } from "./value-schema-rows";
 
 describe("buildValueSchemaRows", () => {
@@ -214,5 +216,105 @@ describe("splitDescriptionJson", () => {
     expect(segments).toEqual([
       { kind: "text", value: "Context size for the model." },
     ]);
+  });
+});
+
+describe("value schema filters", () => {
+  const rows = buildValueSchemaRows({
+    type: "object",
+    required: ["command"],
+    properties: {
+      command: { type: "string", description: "Starts the workload." },
+      gpu_memory: { type: "integer" },
+      rope_scaling: {
+        type: "object",
+        description: "RoPE scaling configuration",
+        required: ["factor"],
+        properties: {
+          factor: { type: "number" },
+          type: { type: "string", enum: ["linear", "dynamic"] },
+        },
+      },
+      served_model_name: { type: "array", items: { type: "string" } },
+    },
+  }).rows;
+
+  it("offers the labels the type cell shows, alphabetically", () => {
+    expect(valueSchemaTypeOptions(rows)).toEqual([
+      "array<string>",
+      "integer",
+      "number",
+      "object",
+      "string",
+    ]);
+  });
+
+  it("returns null when nothing is filtered, so collapse state still applies", () => {
+    expect(
+      filterValueSchemaRows(rows, {
+        query: "  ",
+        type: "",
+        onlyRequired: false,
+      }),
+    ).toBeNull();
+  });
+
+  it("keeps the ancestors of a match so a nested row still reads as a path", () => {
+    const visible = filterValueSchemaRows(rows, {
+      query: "factor",
+      type: "",
+      onlyRequired: false,
+    });
+
+    expect(visible?.map((row) => row.path)).toEqual([
+      "rope_scaling",
+      "rope_scaling.factor",
+    ]);
+  });
+
+  it("filters by the array item type the type column renders", () => {
+    const visible = filterValueSchemaRows(rows, {
+      query: "",
+      type: "array<string>",
+      onlyRequired: false,
+    });
+
+    expect(visible?.map((row) => row.path)).toEqual(["served_model_name"]);
+  });
+
+  it("filters to required parameters and keeps their ancestors", () => {
+    const visible = filterValueSchemaRows(rows, {
+      query: "",
+      type: "",
+      onlyRequired: true,
+    });
+
+    expect(visible?.map((row) => row.path)).toEqual([
+      "command",
+      "rope_scaling",
+      "rope_scaling.factor",
+    ]);
+  });
+
+  it("applies every active part of the filter together", () => {
+    // `rope_scaling.type` is a string and matches the text, so it shows with
+    // its ancestor…
+    expect(
+      filterValueSchemaRows(rows, {
+        query: "scaling",
+        type: "string",
+        onlyRequired: false,
+      })?.map((row) => row.path),
+    ).toEqual(["rope_scaling", "rope_scaling.type"]);
+
+    // …but it is not required, so adding that part drops the match. The
+    // ancestor is context for a match, never a match of its own.
+    expect(
+      filterValueSchemaRows(rows, {
+        query: "scaling",
+        type: "string",
+        onlyRequired: true,
+      }),
+    ).toEqual([]);
   });
 });

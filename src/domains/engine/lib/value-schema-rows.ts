@@ -152,6 +152,83 @@ export function buildValueSchemaRows(schema: unknown): ValueSchemaRows {
   };
 }
 
+/**
+ * The type cell labels an array with its item type (`array<integer>`) and every
+ * union branch separately, so the type filter has to offer the same labels —
+ * one function keeps the cell and the filter from drifting apart.
+ */
+export function typeBranchLabel(branch: string, row: ValueSchemaRow): string {
+  return branch === "array" && row.itemType ? `array<${row.itemType}>` : branch;
+}
+
+function typeBranchLabels(row: ValueSchemaRow): string[] {
+  const branches = row.types.length > 0 ? row.types : ["unknown"];
+  return branches.map((branch) => typeBranchLabel(branch, row));
+}
+
+/** Every type label a filter can offer, alphabetical so the list is stable. */
+export function valueSchemaTypeOptions(rows: ValueSchemaRow[]): string[] {
+  const labels = new Set<string>();
+  for (const row of rows) {
+    for (const label of typeBranchLabels(row)) labels.add(label);
+  }
+  return [...labels].sort((a, b) => a.localeCompare(b));
+}
+
+type ValueSchemaFilter = {
+  /** Free text over the dotted path and the description. */
+  query: string;
+  /** One of `valueSchemaTypeOptions`, or "" for every type. */
+  type: string;
+  onlyRequired: boolean;
+};
+
+export function isValueSchemaFilterActive(filter: ValueSchemaFilter): boolean {
+  return (
+    filter.query.trim() !== "" || filter.type !== "" || filter.onlyRequired
+  );
+}
+
+/**
+ * The rows the table shows for a filter, or null when nothing is filtered (the
+ * caller then applies its own collapsed state).
+ *
+ * A row has to satisfy every active part of the filter. Matching children keep
+ * their ancestors, because a nested row on its own (`factor`) does not say
+ * where it belongs — an ancestor is context rather than a match.
+ */
+export function filterValueSchemaRows(
+  rows: ValueSchemaRow[],
+  filter: ValueSchemaFilter,
+): ValueSchemaRow[] | null {
+  if (!isValueSchemaFilterActive(filter)) return null;
+
+  const query = filter.query.trim().toLowerCase();
+  const matching = rows.filter((row) => {
+    if (filter.onlyRequired && !row.required) return false;
+    if (filter.type && !typeBranchLabels(row).includes(filter.type)) {
+      return false;
+    }
+    if (!query) return true;
+    return (
+      row.path.toLowerCase().includes(query) ||
+      row.description.toLowerCase().includes(query)
+    );
+  });
+
+  const keep = new Set<string>();
+  for (const row of matching) {
+    keep.add(row.id);
+    let parentId = row.parentId;
+    while (parentId) {
+      keep.add(parentId);
+      parentId =
+        rows.find((candidate) => candidate.id === parentId)?.parentId ?? null;
+    }
+  }
+  return rows.filter((row) => keep.has(row.id));
+}
+
 /** Defaults are machine values: keep strings quoted so `""` is not blank. */
 export function formatDefaultValue(value: unknown): string {
   if (value === undefined) return "";

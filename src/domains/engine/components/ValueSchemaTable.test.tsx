@@ -32,6 +32,12 @@ vi.mock("@/foundation/lib/i18n", () => ({
         return `Expand or collapse ${options?.name}`;
       }
       if (key === "engines.schema.required") return "required";
+      if (key === "engines.schema.filters.type") return "Type";
+      if (key === "engines.schema.filters.allTypes") return "All types";
+      if (key === "engines.schema.filters.onlyRequired") return "Required only";
+      if (key === "engines.schema.noMatches") {
+        return "No parameters match the filters.";
+      }
       if (key === "engines.schema.copyJson") return "Copy JSON";
       if (key === "engines.schema.enumAll") {
         return `${options?.count} allowed values`;
@@ -146,6 +152,55 @@ describe("ValueSchemaTable", () => {
     expect(row("rope_scaling.factor")).toBeTruthy();
     expect(row("rope_scaling")).toBeTruthy();
     expect(row("health_path")).toBeNull();
+  });
+
+  it("narrows to required parameters from the toolbar", () => {
+    renderTable();
+
+    expect(row("health_path")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Required only" }));
+
+    // `command` is the only required parameter; the rest goes, and the count
+    // reports what is left of the whole schema.
+    expect(row("command")).toBeTruthy();
+    expect(row("health_path")).toBeNull();
+    expect(row("rope_scaling.factor")).toBeNull();
+    expect(screen.getByText("1 of 6 parameters")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Required only" }));
+
+    expect(row("health_path")).toBeTruthy();
+    expect(screen.getByText("6 parameters")).toBeTruthy();
+  });
+
+  it("says so when a filter matches nothing", () => {
+    renderTable();
+
+    fireEvent.change(
+      screen.getByPlaceholderText("engines.schema.searchPlaceholder"),
+      { target: { value: "no such parameter" } },
+    );
+
+    expect(screen.getByTestId("value-schema-no-matches")).toBeTruthy();
+    expect(screen.queryAllByTestId("value-schema-row")).toHaveLength(0);
+  });
+
+  it("only offers the required switch when the schema has required fields", () => {
+    // Built-in packages declare none, and a switch that can only empty the
+    // table is not worth showing.
+    renderTable({
+      type: "object",
+      properties: {
+        dtype: { type: "string" },
+        block_size: { type: "integer" },
+      },
+    });
+
+    expect(
+      screen.queryByRole("checkbox", { name: "Required only" }),
+    ).toBeNull();
+    expect(screen.getByTestId("value-schema-type-filter")).toBeTruthy();
   });
 
   it("keeps rows past the indent cap attached to their parent", () => {

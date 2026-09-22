@@ -848,9 +848,15 @@
 			},
 			"required": "required",
 			"searchPlaceholder": "Search parameters",
+			"filters": {
+				"type": "Type",
+				"allTypes": "All types",
+				"onlyRequired": "Required only"
+			},
 			"parameterCount": "{{count}} parameters",
 			"parameterCount_one": "1 parameter",
 			"filteredCount": "{{visible}} of {{total}} parameters",
+			"noMatches": "No parameters match the filters.",
 			"nestedCount": "{{count}} nested parameters",
 			"nestedCount_one": "1 nested parameter",
 			"empty": "This version declares no parameters.",

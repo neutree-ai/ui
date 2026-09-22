@@ -7,12 +7,22 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -29,9 +39,13 @@ import {
 import { getTypeColorClass } from "@/domains/engine/lib/schema-type-color";
 import {
   buildValueSchemaRows,
+  filterValueSchemaRows,
   formatDefaultValue,
+  isValueSchemaFilterActive,
   splitDescriptionJson,
+  typeBranchLabel,
   type ValueSchemaRow,
+  valueSchemaTypeOptions,
 } from "@/domains/engine/lib/value-schema-rows";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
@@ -80,9 +94,7 @@ function TypeCell({ row }: { row: ValueSchemaRow }) {
           >
             <SchemaTypeIcon type={branch} />
             <span className="text-muted-foreground">
-              {branch === "array" && row.itemType
-                ? `array<${row.itemType}>`
-                : branch}
+              {typeBranchLabel(branch, row)}
             </span>
           </span>
         </span>
@@ -273,9 +285,20 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
     [schema],
   );
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [onlyRequired, setOnlyRequired] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [toolbarHeight, setToolbarHeight] = useState(0);
+  const typeOptions = useMemo(() => valueSchemaTypeOptions(rows), [rows]);
+  // Built-in packages declare no `required` at all (vLLM, SGLang, llama.cpp),
+  // so on those the switch could only ever empty the table. Show it where it
+  // can do something — and keep it while it is on, so switching to a version
+  // without required parameters cannot strand the user on an empty table.
+  const hasRequiredParameters = useMemo(
+    () => rows.some((row) => row.required),
+    [rows],
+  );
 
   // The page scrolls this table, so both the toolbar and the column labels
   // stick to it. The header needs the toolbar's measured height as its offset,
@@ -291,40 +314,32 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
     return () => observer.disconnect();
   }, []);
 
+  const filtering = isValueSchemaFilterActive({
+    query: search,
+    type: typeFilter,
+    onlyRequired,
+  });
+
   const visibleRows = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const matching = rows.filter((row) =>
-      query
-        ? row.path.toLowerCase().includes(query) ||
-          row.description.toLowerCase().includes(query)
-        : true,
-    );
-    if (!query) {
-      return matching.filter((row) => {
-        // Hide children whose ancestor is collapsed.
-        let parentId = row.parentId;
-        while (parentId) {
-          if (collapsed.has(parentId)) return false;
-          parentId =
-            rows.find((candidate) => candidate.id === parentId)?.parentId ??
-            null;
-        }
-        return true;
-      });
-    }
-    // While searching keep the ancestors of a match so paths stay readable.
-    const keep = new Set<string>();
-    for (const row of matching) {
-      keep.add(row.id);
+    // Any active filter decides what is on screen and brings the ancestors of
+    // a match along; a collapsed parent must not hide a row that matched.
+    const filtered = filterValueSchemaRows(rows, {
+      query: search,
+      type: typeFilter,
+      onlyRequired,
+    });
+    if (filtered) return filtered;
+    return rows.filter((row) => {
+      // Hide children whose ancestor is collapsed.
       let parentId = row.parentId;
       while (parentId) {
-        keep.add(parentId);
+        if (collapsed.has(parentId)) return false;
         parentId =
           rows.find((candidate) => candidate.id === parentId)?.parentId ?? null;
       }
-    }
-    return rows.filter((row) => keep.has(row.id));
-  }, [rows, search, collapsed]);
+      return true;
+    });
+  }, [rows, search, typeFilter, onlyRequired, collapsed]);
 
   const toggle = (id: string) =>
     setCollapsed((current) => {
@@ -356,17 +371,59 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
         // of the row behind shows above the stuck toolbar.
         className="sticky -top-1 z-20 -mx-1 flex flex-wrap items-center justify-between gap-2 bg-[var(--nt-fill-neutral-white)] px-1 pb-2"
       >
-        <div className="relative max-w-xs flex-1">
-          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder={t("engines.schema.searchPlaceholder")}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <div className="relative max-w-xs flex-1">
+            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-8"
+              placeholder={t("engines.schema.searchPlaceholder")}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <Separator orientation="vertical" className="h-6" />
+          <Select
+            value={typeFilter || "all"}
+            onValueChange={(value) =>
+              setTypeFilter(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger
+              className="w-[150px]"
+              aria-label={t("engines.schema.filters.type")}
+              data-testid="value-schema-type-filter"
+            >
+              <SelectValue placeholder={t("engines.schema.filters.type")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {t("engines.schema.filters.allTypes")}
+              </SelectItem>
+              {typeOptions.map((option) => (
+                <SelectItem key={option} value={option} className="font-mono">
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasRequiredParameters || onlyRequired ? (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="value-schema-only-required"
+                checked={onlyRequired}
+                onCheckedChange={(checked) => setOnlyRequired(checked === true)}
+              />
+              <Label
+                htmlFor="value-schema-only-required"
+                className="text-sm font-normal"
+              >
+                {t("engines.schema.filters.onlyRequired")}
+              </Label>
+            </div>
+          ) : null}
         </div>
         <span className="text-xs text-muted-foreground">
-          {search.trim()
+          {filtering
             ? t("engines.schema.filteredCount", {
                 visible: visibleRows.length,
                 total: rows.length,
@@ -402,6 +459,17 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {visibleRows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="text-muted-foreground"
+                  data-testid="value-schema-no-matches"
+                >
+                  {t("engines.schema.noMatches")}
+                </TableCell>
+              </TableRow>
+            ) : null}
             {visibleRows.map((row) => (
               <TableRow
                 key={row.id}
