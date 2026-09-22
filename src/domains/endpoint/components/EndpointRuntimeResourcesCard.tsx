@@ -19,8 +19,11 @@ import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   GPU_CELL_CLASS,
+  GPU_GRID_CELL_CLASS,
+  GPU_GRID_CLASS,
+  GPU_GRID_FRAME_CLASS,
+  GPU_GRID_STYLE,
   GPU_USAGE_TEXT_CLASS,
-  getGpuCellGridStyle,
 } from "@/foundation/lib/gpu-device-resources";
 import {
   formatMiBAsGiB,
@@ -356,7 +359,6 @@ function Replica({
             <Host
               key={node.nodeId}
               node={node}
-              maxCols={group.maxNodeDeviceCount}
               requestedCpu={requestedCpu}
               requestedMemory={requestedMemory}
               acceleratorType={acceleratorType}
@@ -372,7 +374,6 @@ function Replica({
 
 function Host({
   node,
-  maxCols,
   requestedCpu,
   requestedMemory,
   acceleratorType,
@@ -380,7 +381,6 @@ function Host({
   t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
-  maxCols: number;
   requestedCpu: string;
   requestedMemory: string;
   acceleratorType: string | null;
@@ -412,11 +412,8 @@ function Host({
           </span>
         </div>
 
-        <div className="mt-3 overflow-x-auto pb-1">
-          <div
-            className="grid divide-x divide-[var(--nt-stroke-neutral-trans-2)] overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
-            style={getGpuCellGridStyle(maxCols)}
-          >
+        <div className={cn("mt-3", GPU_GRID_FRAME_CLASS)}>
+          <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>
             {node.devices.map((device, deviceIndex) => (
               <GpuCell
                 key={device.uuid || deviceIndex}
@@ -426,11 +423,6 @@ function Host({
                 onCopyUuid={onCopyUuid}
                 t={t}
               />
-            ))}
-            {Array.from({
-              length: Math.max(0, maxCols - node.deviceCount),
-            }).map((_, emptyIndex) => (
-              <div className="min-h-[96px]" key={`empty-${emptyIndex}`} />
             ))}
           </div>
         </div>
@@ -455,7 +447,10 @@ function GpuCell({
   const gpuNumber = device.order ?? deviceIndex + 1;
 
   return (
-    <div data-testid="runtime-gpu-cell" className={GPU_CELL_CLASS}>
+    <div
+      data-testid="runtime-gpu-cell"
+      className={cn(GPU_CELL_CLASS, GPU_GRID_CELL_CLASS)}
+    >
       <div className="flex min-w-0 items-center gap-1">
         <span className="whitespace-nowrap text-sm font-semibold leading-5">
           {t("clusters.fields.gpuNumber")} {gpuNumber}

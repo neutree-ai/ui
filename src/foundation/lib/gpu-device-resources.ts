@@ -79,28 +79,50 @@ type PhysicalCardUsageOptions = {
 
 export const GPU_DEVICE_FILTER_ALL = "__all__";
 
-/** Narrowest a GPU cell can get before its VRAM bar and labels stop being
- * readable. Below this the row scrolls horizontally rather than compressing. */
-const GPU_GRID_MIN_COLUMN_WIDTH = 172;
+/** Narrowest a GPU cell can get before its readings stop being readable.
+ *
+ * This is a measurement, not a taste call: the cluster cell puts the "VRAM"
+ * label, a `15.0 / 80.0 GiB` value and a percentage on one line, and the value
+ * starts ellipsising below ~188px. The product name survives that, because it
+ * has a tooltip; a truncated reading has no way back. An earlier 172px floor
+ * was sized for the endpoint cell alone — which carries no label column and no
+ * percentage — and is too tight for the cluster cell, so the two now share the
+ * larger figure. */
+const GPU_GRID_MIN_COLUMN_WIDTH = 188;
 
-/** Style for a one-row-per-node grid of GPU cells.
+/** Frame around a grid of GPU cells.
  *
- * `minWidth` is not redundant with the track floor. A grid box sizes to its
- * container, so tracks held at `minmax(172px, …)` overflow that box once the
- * container is narrower than `columns * 172` — and the rounded frame clips them,
- * which hides cards outright instead of letting an ancestor scroll to them.
- * Growing the box with its tracks is what turns the overflow into scrolling, so
- * the two numbers have to be derived together.
+ * `overflow-hidden` is load-bearing, not decoration: it clips the trailing
+ * rules the grid pushes one pixel past its own box (`GPU_GRID_CLASS`), so the
+ * frame's edge stays a single line. */
+export const GPU_GRID_FRAME_CLASS =
+  "overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]";
+
+/** The grid itself.
  *
- * `content-box` opts this one element out of the global border-box default so
- * the frame's own border sits outside that width. Under border-box the border
- * eats into it and the last cell loses its right edge to the same clip.
- */
-export const getGpuCellGridStyle = (columns: number) => ({
-  gridTemplateColumns: `repeat(${columns}, minmax(${GPU_GRID_MIN_COLUMN_WIDTH}px, 1fr))`,
-  minWidth: `${columns * GPU_GRID_MIN_COLUMN_WIDTH}px`,
-  boxSizing: "content-box" as const,
-});
+ * The trailing pixel hangs under the frame's clip so the last column does not
+ * double up with the frame's own right border.
+ *
+ * The lattice is drawn by the cells, not by the grid: each cell carries a
+ * right and a bottom rule (`GPU_GRID_CELL_CLASS`). `divide-x` cannot do this
+ * job — it targets every sibling after the first *in DOM order*, so in a
+ * wrapping grid it puts a stray left rule on each row's first card and no
+ * horizontal rule anywhere. Two rows of cards shipped with no rule between
+ * them for exactly that reason. */
+export const GPU_GRID_CLASS = "grid -mb-px -mr-px";
+
+/** Column count is the browser's call: as many 188px columns as fit, with the
+ * rest wrapped onto further rows. A fixed count cannot do both jobs at once —
+ * it either compresses cards past the readability floor or pushes the overflow
+ * off-screen, where half a node's cards are invisible until the reader drags a
+ * scrollbar. */
+export const GPU_GRID_STYLE = {
+  gridTemplateColumns: `repeat(auto-fit, minmax(${GPU_GRID_MIN_COLUMN_WIDTH}px, 1fr))`,
+} as const;
+
+/** One cell's share of the lattice. */
+export const GPU_GRID_CELL_CLASS =
+  "border-b border-r border-[var(--nt-stroke-neutral-trans-2)]";
 
 /* A GPU cell is one card rendered by two callers: the cluster device grid and
  * the endpoint runtime grid. They show different numbers, but they are the same

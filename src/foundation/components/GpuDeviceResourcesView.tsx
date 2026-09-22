@@ -35,9 +35,12 @@ import {
   GPU_CELL_CLASS,
   GPU_CELL_INERT_CLASS,
   GPU_DEVICE_FILTER_ALL,
+  GPU_GRID_CELL_CLASS,
+  GPU_GRID_CLASS,
+  GPU_GRID_FRAME_CLASS,
+  GPU_GRID_STYLE,
   GPU_USAGE_TEXT_CLASS,
   type GpuDeviceResourceRow,
-  getGpuCellGridStyle,
   getGpuDeviceResourceFilterOptions,
 } from "@/foundation/lib/gpu-device-resources";
 import { formatToDecimal } from "@/foundation/lib/unit";
@@ -93,7 +96,6 @@ type GpuDeviceResourcesViewProps = {
   showResourceControls?: boolean;
   resourceControlsTestId?: string;
   showNodeColumn?: boolean;
-  gridColumns?: number;
   request?: GpuDeviceRequestFitContext;
 };
 
@@ -428,7 +430,6 @@ export function GpuDeviceResourcesView({
   showResourceControls = false,
   resourceControlsTestId = "gpu-device-resource-toolbar",
   showNodeColumn = true,
-  gridColumns,
   request,
 }: GpuDeviceResourcesViewProps) {
   const [productFilter, setProductFilter] = useState(GPU_DEVICE_FILTER_ALL);
@@ -473,13 +474,6 @@ export function GpuDeviceResourcesView({
     [visibleRows],
   );
   const healthyCount = visibleRows.filter((row) => row.healthy).length;
-  const effectiveGridColumns = Math.max(
-    1,
-    Math.round(gridColumns ?? visibleRows.length),
-  );
-  const emptyGridCellCount =
-    (effectiveGridColumns - (visibleRows.length % effectiveGridColumns)) %
-    effectiveGridColumns;
   const hasSelectedAccelerator = Boolean(
     selectedAccelerator?.type || selectedAccelerator?.product,
   );
@@ -640,11 +634,11 @@ export function GpuDeviceResourcesView({
       )}
 
       {variant === "grid" ? (
-        <div className="overflow-x-auto">
+        <div className={GPU_GRID_FRAME_CLASS}>
           <div
             data-testid="gpu-device-grid"
-            className="grid divide-x divide-[var(--nt-stroke-neutral-trans-2)] overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
-            style={getGpuCellGridStyle(effectiveGridColumns)}
+            className={GPU_GRID_CLASS}
+            style={GPU_GRID_STYLE}
           >
             {visibleRows.map((row) => (
               <div
@@ -655,6 +649,7 @@ export function GpuDeviceResourcesView({
                 className={cn(
                   "relative",
                   GPU_CELL_CLASS,
+                  GPU_GRID_CELL_CLASS,
                   !row.healthy && GPU_CELL_INERT_CLASS,
                 )}
                 title={row.product || undefined}
@@ -715,14 +710,6 @@ export function GpuDeviceResourcesView({
                   unavailable={!row.healthy}
                 />
               </div>
-            ))}
-            {Array.from({ length: emptyGridCellCount }, (_, emptyIndex) => (
-              <div
-                aria-hidden="true"
-                className="min-h-[116px]"
-                data-testid="gpu-device-grid-empty-cell"
-                key={`empty-${emptyIndex}`}
-              />
             ))}
           </div>
         </div>

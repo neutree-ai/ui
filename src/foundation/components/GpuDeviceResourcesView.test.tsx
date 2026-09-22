@@ -453,13 +453,12 @@ describe("GpuDeviceResourcesView", () => {
     );
   });
 
-  it("pads a node device grid to the shared topology column count", () => {
+  it("lets the device grid wrap instead of pinning it to a column count", () => {
     render(
       <GpuDeviceResourcesView
         nodeResources={nodeResources}
         labels={labels}
         variant="grid"
-        gridColumns={4}
         showHeader={false}
         showFilters={false}
         showSummary={false}
@@ -467,10 +466,14 @@ describe("GpuDeviceResourcesView", () => {
       />,
     );
 
-    expect(
-      screen.getByTestId("gpu-device-grid").style.gridTemplateColumns,
-    ).toBe("repeat(4, minmax(172px, 1fr))");
-    expect(screen.getAllByTestId("gpu-device-grid-empty-cell")).toHaveLength(3);
+    const grid = screen.getByTestId("gpu-device-grid");
+    expect(grid.style.gridTemplateColumns).toBe(
+      "repeat(auto-fit, minmax(188px, 1fr))",
+    );
+    // Without a fixed column count the row has no shape left to pad to, and a
+    // min-width would put the overflow back on a scrollbar.
+    expect(grid.style.minWidth).toBe("");
+    expect(screen.queryByTestId("gpu-device-grid-empty-cell")).toBeNull();
   });
 
   it("uses free and allocated labels when no request fit context is provided", () => {
