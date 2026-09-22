@@ -1502,7 +1502,7 @@
 			"optional": "Optional",
 			"concurrency": "Max concurrent",
 			"allowedModels": "Allowed models",
-			"allowedModelsHint": "Leave empty to allow all models. Each selection is scoped to a specific internal/external endpoint.",
+			"allowedModelsHint": "Pick the models this key may call, then set an optional token limit on any of them. Leave the list empty to allow all models.",
 			"rps": "Requests per second (RPS)",
 			"rpm": "Requests per minute (RPM)",
 			"selectModel": "Select a model",
@@ -1525,7 +1525,31 @@
 			"statusQuotaExceeded": "Quota exceeded",
 			"disable": "Disable",
 			"enable": "Enable",
-			"actions": "Actions"
+			"actions": "Actions",
+			"moreLimitedModels": "+{{count}} more",
+			"saveSuccess": "Configuration saved",
+			"saveError": "Could not save the configuration",
+			"resetsOn": "Resets {{date}}",
+			"usedTotal": "{{amount}} used",
+			"granularity": {
+				"overall": "Overall quota",
+				"per_model": "Per-model quota"
+			},
+			"perModel": {
+				"hint": "A model with no limit is unlimited. Setting a limit on any model switches the key to per-model quotas and suspends the overall quota.",
+				"emptyAllowlist": "All models are allowed, so there is nothing to attach a per-model limit to. Select models above to set per-model quotas, or use the overall quota below.",
+				"unlimited": "Unlimited",
+				"limitLabel": "Token limit for {{model}}",
+				"overallSuspended": "Not enforced while this key uses per-model quotas. It is kept, and takes effect again once every per-model limit is cleared.",
+				"overlap": "This entry overlaps another entry for {{model}}. An entry with no endpoint matches every endpoint of the model.",
+				"overlapError": "Entries for the same model must not overlap once one of them has a token limit.",
+				"consumptionTitle": "Per-model consumption",
+				"limitColumn": "Limit",
+				"usedColumn": "Used",
+				"remainingColumn": "Remaining",
+				"exhausted": "Exhausted ({{amount}})",
+				"softQuotaNote": "Quotas are enforced eventually, not in real time, so usage can briefly exceed a limit. Usage recorded before a per-model limit was configured is not counted here."
+			}
 		},
 		"ranking": {
 			"title": "API key ranking overview",

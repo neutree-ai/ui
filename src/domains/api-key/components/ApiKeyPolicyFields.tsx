@@ -1,18 +1,24 @@
-import { X } from "lucide-react";
+import { useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
+import { FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ModelMultiSelect } from "@/domains/api-key/components/ModelMultiSelect";
+import { ModelQuotaRows } from "@/domains/api-key/components/ModelQuotaRows";
 import { TokenQuotaField } from "@/domains/api-key/components/TokenQuotaField";
 import {
+  formQuotaGranularity,
   isPositiveIntLimit,
+  overlappingModelRowValues,
   type PolicyModelRow,
+  resolveQuotaPeriod,
   useWorkspaceModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { resolveModelSource } from "@/foundation/lib/model-source";
+import {
+  DEFAULT_TOKEN_QUOTA_UNIT,
+  isValidTokenQuota,
+} from "@/foundation/lib/token-quota";
 
 type ApiKeyPolicyFieldsProps = {
   // The react-hook-form instance whose values include the policy fields.
@@ -22,24 +28,34 @@ type ApiKeyPolicyFieldsProps = {
   workspace: string;
 };
 
-// API-key limits editor: Token quota, RPS, RPM, concurrency, allowed models.
-// Every limit is optional. Embedded in API key create + edit.
+// API-key limits editor: allowed models (each with an optional per-model token
+// limit), token quota, RPS, RPM, concurrency. Every limit is optional. Embedded
+// in API key create + edit.
+//
+// Allowed models come first because the quota depends on them: a per-model limit
+// hangs off an allowlist entry, so there is nothing to configure until a model
+// has been picked, and picking one is what makes the per-model granularity
+// available at all.
 export const ApiKeyPolicyFields = ({
   form,
   workspace,
 }: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
   const modelOptions = useWorkspaceModels(workspace);
+  const sourceByValue = useMemo(
+    () => new Map(modelOptions.map((o) => [o.value, o.source])),
+    [modelOptions],
+  );
   const modelRows = (form.watch("models") as PolicyModelRow[]) ?? [];
-  // Split the selected rows into ones the picker can represent (pinned to a
-  // currently-served endpoint) and ones it can't — migrated wildcard entries and
-  // pins to a now-missing endpoint. The latter are shown as read-only chips and
-  // preserved on every change, so editing an unrelated field never drops them.
+  // Rows the picker can represent (pinned to a currently-served endpoint) versus
+  // ones it can't — migrated any-source entries and pins to a now-missing
+  // endpoint. The latter are not selectable in the dropdown, but they are real
+  // allowlist entries: they stay in the row list, keep their limit, and are
+  // preserved across every unrelated edit.
   const optionValues = new Set(modelOptions.map((o) => o.value));
   const optionsLoaded = modelOptions.length > 0;
   const isPreserved = (r: PolicyModelRow) =>
     !!r.wildcard || (optionsLoaded && !optionValues.has(r.value));
-  const preservedRows = modelRows.filter(isPreserved);
   const selectedModels = [
     ...new Set(modelRows.filter((r) => !isPreserved(r)).map((r) => r.value)),
   ];
@@ -50,17 +66,115 @@ export const ApiKeyPolicyFields = ({
       isPositiveIntLimit(v) || t("api_keys.limits.invalidPositiveInt"),
   };
 
+  // Mutual exclusion, derived rather than stored: the moment any allowlist entry
+  // carries a limit the key's overall pool stops being enforced, and clearing
+  // every entry limit brings it back. The overall quota is kept (greyed out, not
+  // erased) so that fallback is one keystroke away.
+  const granularity = formQuotaGranularity(modelRows);
+  const perModel = granularity === "per_model";
+  const overlapping = overlappingModelRowValues(modelRows);
+  const quotaPeriodLabel = t(
+    `api_keys.limits.periods.${resolveQuotaPeriod(form.watch("quota_period"))}`,
+  );
+
+  // Blocks submit on the two things the backend would otherwise reject with a
+  // raw SQL error: overlapping entries for a model that carries a limit, and an
+  // amount that does not resolve to a whole positive number of tokens.
+  const validateModels = (rows: PolicyModelRow[] | undefined) => {
+    const all = rows ?? [];
+    if (overlappingModelRowValues(all).size > 0) {
+      return t("api_keys.limits.perModel.overlapError");
+    }
+    const invalid = all.some(
+      (r) =>
+        !isValidTokenQuota(
+          r.limit_amount ?? "",
+          r.limit_unit ?? DEFAULT_TOKEN_QUOTA_UNIT,
+        ),
+    );
+    return invalid ? t("api_keys.limits.invalidTokenQuota") : true;
+  };
+
   return (
     <div className="space-y-3">
+      {/* Allowed models + per-model quota */}
+      <div className="space-y-2 rounded-md border p-3">
+        <div className="text-sm font-medium">
+          {t("api_keys.limits.allowedModels")}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {t("api_keys.limits.allowedModelsHint")}
+        </p>
+        <FormField
+          control={form.control}
+          name="models"
+          rules={{ validate: validateModels }}
+          render={({ field, fieldState }) => {
+            const rows = (field.value as PolicyModelRow[]) ?? [];
+            return (
+              <div className="space-y-2">
+                <ModelMultiSelect
+                  options={modelOptions}
+                  value={selectedModels}
+                  showSelected={false}
+                  onChange={(options) => {
+                    // Re-selecting keeps each row's existing limit: the picker
+                    // only decides membership, never the quota on a row.
+                    const byValue = new Map(rows.map((r) => [r.value, r]));
+                    field.onChange([
+                      ...options.map((option) => ({
+                        ...byValue.get(option.value),
+                        value: option.value,
+                        model: option.model,
+                        type: option.type,
+                        endpoint_name: option.endpointName,
+                      })),
+                      ...rows.filter(isPreserved),
+                    ]);
+                  }}
+                />
+                {rows.length > 0 ? (
+                  <>
+                    <ModelQuotaRows
+                      sourceByValue={sourceByValue}
+                      rows={rows}
+                      onChange={field.onChange}
+                      overlapping={overlapping}
+                      quotaPeriodLabel={quotaPeriodLabel}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t("api_keys.limits.perModel.hint")}
+                    </p>
+                  </>
+                ) : (
+                  // No entries, so no per-model limit is possible; say why here
+                  // rather than leaving the greyed-out overall quota unexplained.
+                  <p className="text-xs text-muted-foreground">
+                    {t("api_keys.limits.perModel.emptyAllowlist")}
+                  </p>
+                )}
+                {fieldState.error?.message && (
+                  <p className="text-sm text-destructive">
+                    {fieldState.error.message}
+                  </p>
+                )}
+              </div>
+            );
+          }}
+        />
+      </div>
+
       {/* Token quota */}
       <div className="space-y-2 rounded-md border p-3">
         <div className="text-sm font-medium">
           {t("api_keys.limits.quotaTitle")}
         </div>
         <p className="text-xs text-muted-foreground">
-          {t("api_keys.limits.quotaHint")}
+          {perModel
+            ? t("api_keys.limits.perModel.overallSuspended")
+            : t("api_keys.limits.quotaHint")}
         </p>
-        <TokenQuotaField form={form} />
+        <TokenQuotaField form={form} amountDisabled={perModel} />
       </div>
 
       {/* Access control */}
@@ -112,77 +226,6 @@ export const ApiKeyPolicyFields = ({
               />
             </FormFieldGroup>
           </div>
-        </div>
-
-        {/* Allowed models */}
-        <div className="space-y-2">
-          <span className="text-sm">{t("api_keys.limits.allowedModels")}</span>
-          <p className="text-xs text-muted-foreground">
-            {t("api_keys.limits.allowedModelsHint")}
-          </p>
-          <ModelMultiSelect
-            options={modelOptions}
-            value={selectedModels}
-            onChange={(options) =>
-              form.setValue(
-                "models",
-                [
-                  ...options.map((option) => ({
-                    value: option.value,
-                    model: option.model,
-                    type: option.type,
-                    endpoint_name: option.endpointName,
-                  })),
-                  ...preservedRows,
-                ],
-                { shouldDirty: true },
-              )
-            }
-          />
-          {preservedRows.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {preservedRows.map((r) => (
-                <div
-                  key={r.value}
-                  className="flex max-w-full items-center gap-1.5 rounded-md border bg-muted/40 py-1 pl-2 pr-1"
-                  title={r.model}
-                >
-                  <span className="truncate max-w-[160px] text-xs font-medium">
-                    {r.model}
-                  </span>
-                  {r.type && r.endpoint_name ? (
-                    <>
-                      <span className="truncate max-w-[120px] text-xs text-muted-foreground">
-                        {r.endpoint_name}
-                      </span>
-                      {/* The endpoint behind this pin is gone from the
-                          workspace listing, so only the derivation is left:
-                          internal is always self-hosted, external is unknown. */}
-                      <ModelSourceBadge source={resolveModelSource(r.type)} />
-                    </>
-                  ) : (
-                    <Badge variant="outline" className="h-5 font-normal">
-                      {t("api_keys.models.anySource")}
-                    </Badge>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      form.setValue(
-                        "models",
-                        modelRows.filter((x) => x !== r),
-                        { shouldDirty: true },
-                      )
-                    }
-                    className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground"
-                    aria-label={t("buttons.delete")}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
