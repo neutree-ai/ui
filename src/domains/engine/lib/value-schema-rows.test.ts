@@ -64,6 +64,45 @@ describe("buildValueSchemaRows", () => {
     expect(rows[3].enumValues).toEqual(["linear", "dynamic"]);
   });
 
+  it("records the parent name so deep rows can stay attached to it", () => {
+    const { rows } = buildValueSchemaRows({
+      type: "object",
+      properties: {
+        serving: {
+          type: "object",
+          properties: {
+            placement: {
+              type: "object",
+              properties: { weight: { type: "integer" } },
+            },
+          },
+        },
+      },
+    });
+
+    expect(rows.map((row) => row.parentName)).toEqual([
+      null,
+      "serving",
+      "placement",
+    ]);
+    // An array of objects addresses its members, but the parent is still the
+    // array field itself.
+    const arrayRows = buildValueSchemaRows({
+      type: "object",
+      properties: {
+        volumes: {
+          type: "array",
+          items: { type: "object", properties: { name: { type: "string" } } },
+        },
+      },
+    }).rows;
+    expect(arrayRows[1]).toMatchObject({
+      path: "volumes[].name",
+      parentId: "volumes",
+      parentName: "volumes",
+    });
+  });
+
   it("reads children of an array of objects through the items schema", () => {
     const { rows } = buildValueSchemaRows({
       type: "object",

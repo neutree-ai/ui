@@ -53,6 +53,17 @@ type ValueSchemaTableProps = {
  */
 const SHOW_PAGE_SCROLL_PADDING = 4;
 
+/**
+ * Nested children indent under their parent. The step is capped so a deeply
+ * nested schema (imported packages can nest arbitrarily) cannot squeeze the
+ * parameter name out of its column. Past the cap the indent alone stops
+ * telling two levels apart, so the label switches to `parent.name` — two rows
+ * that share an indent are still distinguishable, and the full dotted path
+ * stays in the tooltip.
+ */
+const NESTED_INDENT_STEP = 16;
+const MAX_NESTED_INDENT_LEVELS = 3;
+
 /** Type cell: one icon + label per union branch, arrays keep their item type. */
 function TypeCell({ row }: { row: ValueSchemaRow }) {
   const branches = row.types.length > 0 ? row.types : ["unknown"];
@@ -81,7 +92,6 @@ function TypeCell({ row }: { row: ValueSchemaRow }) {
 }
 
 function DefaultCell({ row }: { row: ValueSchemaRow }) {
-  const { t } = useTranslation();
   const value = row.hasDefault ? formatDefaultValue(row.defaultValue) : "";
   if (!value) return <EmptyValue />;
 
@@ -402,7 +412,14 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                     unbreakable parameter name or a row of enum tags would
                     otherwise stretch the table past its container. */}
                 <TableCell className="max-w-0 align-top">
-                  <div className="flex min-w-0 items-start gap-2">
+                  <div
+                    className="flex min-w-0 items-start gap-2"
+                    style={{
+                      paddingLeft:
+                        Math.min(row.depth, MAX_NESTED_INDENT_LEVELS) *
+                        NESTED_INDENT_STEP,
+                    }}
+                  >
                     {row.hasChildren ? (
                       <Button
                         type="button"
@@ -437,9 +454,24 @@ export function ValueSchemaTable({ schema }: ValueSchemaTableProps) {
                               ? "text-sm font-medium"
                               : "font-mono text-xs",
                           )}
-                          title={row.title ?? row.path}
+                          // Nested rows show the field name and let the indent
+                          // carry the hierarchy: the dotted path runs past the
+                          // column at three levels and would truncate on every
+                          // row. The full path stays in the tooltip.
+                          title={row.path}
                         >
-                          {row.title ?? row.path}
+                          {row.title ??
+                            (row.depth > MAX_NESTED_INDENT_LEVELS &&
+                            row.parentName ? (
+                              <>
+                                <span className="text-muted-foreground">
+                                  {row.parentName}.
+                                </span>
+                                {row.name}
+                              </>
+                            ) : (
+                              row.name
+                            ))}
                         </span>
                         {row.required ? (
                           <span className="inline-flex shrink-0 items-center rounded-md border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">

@@ -36,6 +36,12 @@ export type ValueSchemaRow = {
   description: string;
   enumValues: unknown[] | null;
   depth: number;
+  /**
+   * Machine name of the enclosing field, or null for a top-level one. The
+   * table stops indenting after a few levels, so past that point the label
+   * uses this to stay attached to its parent.
+   */
+  parentName: string | null;
   parentId: string | null;
   hasChildren: boolean;
   childCount: number;
@@ -63,7 +69,12 @@ function buildRows(
   properties: Record<string, JsonSchemaNode>,
   requiredNames: Set<string>,
   rows: ValueSchemaRow[],
-  options: { parentId: string | null; pathPrefix: string; depth: number },
+  options: {
+    parentId: string | null;
+    parentName: string | null;
+    pathPrefix: string;
+    depth: number;
+  },
 ): void {
   for (const [name, node] of Object.entries(properties)) {
     if (!isNode(node)) continue;
@@ -99,6 +110,7 @@ function buildRows(
         typeof node.description === "string" ? node.description.trim() : "",
       enumValues: normalizeEnum(node),
       depth: options.depth,
+      parentName: options.parentName,
       parentId: options.parentId,
       hasChildren: Boolean(
         childProperties && Object.keys(childProperties).length > 0,
@@ -110,6 +122,7 @@ function buildRows(
     if (childProperties) {
       buildRows(childProperties, childRequired, rows, {
         parentId: path,
+        parentName: name,
         pathPrefix: childPrefix,
         depth: options.depth + 1,
       });
@@ -128,6 +141,7 @@ export function buildValueSchemaRows(schema: unknown): ValueSchemaRows {
   const rows: ValueSchemaRow[] = [];
   buildRows(schema.properties, new Set(schema.required ?? []), rows, {
     parentId: null,
+    parentName: null,
     pathPrefix: "",
     depth: 0,
   });

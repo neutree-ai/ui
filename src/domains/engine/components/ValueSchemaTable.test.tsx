@@ -148,6 +148,58 @@ describe("ValueSchemaTable", () => {
     expect(row("health_path")).toBeNull();
   });
 
+  it("keeps rows past the indent cap attached to their parent", () => {
+    renderTable({
+      type: "object",
+      properties: {
+        serving: {
+          type: "object",
+          properties: {
+            placement: {
+              type: "object",
+              properties: {
+                affinity: {
+                  type: "object",
+                  properties: {
+                    weights: {
+                      type: "object",
+                      properties: { weight: { type: "integer" } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const indent = (path: string) =>
+      (row(path)?.querySelector("div[style]") as HTMLElement | null)?.style
+        .paddingLeft;
+    const label = (path: string) =>
+      row(path)?.querySelector("span[title]")?.getAttribute("title");
+
+    // The indent grows a level at a time, then stops so a deep schema cannot
+    // squeeze the name out of its column.
+    expect(indent("serving.placement")).toBe("16px");
+    expect(indent("serving.placement.affinity")).toBe("32px");
+    expect(indent("serving.placement.affinity.weights")).toBe("48px");
+    expect(indent("serving.placement.affinity.weights.weight")).toBe("48px");
+
+    // Past the cap the indent no longer separates two levels, so the row
+    // names its parent instead. The full path stays reachable.
+    expect(row("serving.placement.affinity.weights")?.textContent).toContain(
+      "weights",
+    );
+    expect(
+      row("serving.placement.affinity.weights.weight")?.textContent,
+    ).toContain("weights.weight");
+    expect(label("serving.placement.affinity.weights.weight")).toBe(
+      "serving.placement.affinity.weights.weight",
+    );
+  });
+
   it("shows the enum values inline as tags", () => {
     renderTable();
 
