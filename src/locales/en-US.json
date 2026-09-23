@@ -1285,8 +1285,7 @@
 			"provider": "e.g. local-vllm",
 			"weight": "1-100%",
 			"maxInflightRequests": "Maximum concurrent requests",
-			"primaryCapacity": "Enter concurrency limit",
-			"searchUpstreamModels": "Search models..."
+			"primaryCapacity": "Enter concurrency limit"
 		},
 		"quickCreate": {
 			"title": "Quickly create upstream channel",
@@ -1323,8 +1322,7 @@
 			"removeVirtualModel": "Remove exposed model",
 			"quickCreateUpstream": "Quickly create upstream channel",
 			"viewModelMappings": "View model mappings",
-			"hideModelMappings": "Hide model mappings",
-			"selectUpstreamModel": "Select upstream model"
+			"hideModelMappings": "Hide model mappings"
 		},
 		"messages": {
 			"upstreamNameHint": "Give this upstream a recognizable name. When configuring routes for an exposed model, select this name in the Upstream Channel field to choose where requests are forwarded.",

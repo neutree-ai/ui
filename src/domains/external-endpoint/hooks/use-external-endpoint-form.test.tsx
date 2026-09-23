@@ -1230,8 +1230,8 @@ describe("routing state regression", () => {
       })[0],
     );
     fireEvent.click(
-      screen.getByRole("button", {
-        name: "external_endpoints.actions.selectUpstreamModel",
+      screen.getByRole("combobox", {
+        name: "external_endpoints.fields.upstreamModelName",
       }),
     );
     expect(modelListQuery).toHaveBeenLastCalledWith(
@@ -1577,7 +1577,7 @@ describe("routing state regression", () => {
         }}
       />,
     );
-    const input = screen.getByRole("textbox", {
+    const input = screen.getByRole("combobox", {
       name: "external_endpoints.fields.upstreamModelName",
     });
     input.focus();

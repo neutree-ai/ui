@@ -7,6 +7,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import UpstreamModelInput from "./UpstreamModelInput";
 
@@ -24,12 +25,26 @@ beforeAll(() => {
 afterEach(cleanup);
 const request = { endpoint_ref: "first", workspace: "default" };
 const result = (models: string[]) => ({ data: { success: true, models } });
-const open = () =>
-  fireEvent.click(
-    screen.getByRole("button", {
-      name: "external_endpoints.actions.selectUpstreamModel",
-    }),
+const open = () => fireEvent.click(screen.getByRole("combobox"));
+function ControlledInput({
+  onChange,
+  request,
+}: {
+  onChange: (value: string) => void;
+  request?: { endpoint_ref: string; workspace: string };
+}) {
+  const [value, setValue] = useState("manual-model");
+  return (
+    <UpstreamModelInput
+      value={value}
+      request={request}
+      onChange={(next) => {
+        setValue(next);
+        onChange(next);
+      }}
+    />
   );
+}
 function setup(
   custom = vi
     .fn()
@@ -42,11 +57,7 @@ function setup(
       dataProvider={{ default: provider }}
       options={{ disableTelemetry: true }}
     >
-      <UpstreamModelInput
-        value="manual-model"
-        onChange={onChange}
-        request={payload}
-      />
+      <ControlledInput onChange={onChange} request={payload} />
     </Refine>
   );
   return { ...render(ui()), custom, onChange, ui };
@@ -61,12 +72,9 @@ describe("upstream model selection", () => {
     expect(custom).toHaveBeenCalledWith(
       expect.objectContaining({ method: "post", payload: request }),
     );
-    fireEvent.change(
-      screen.getByPlaceholderText(
-        "external_endpoints.placeholders.searchUpstreamModels",
-      ),
-      { target: { value: "Model-B" } },
-    );
+    fireEvent.change(screen.getByRole("combobox"), {
+      target: { value: "Model-B" },
+    });
     expect(screen.queryByRole("option", { name: "model-a" })).toBeNull();
     fireEvent.click(screen.getByRole("option", { name: "org/Model-B" }));
     expect(onChange).toHaveBeenCalledWith("org/Model-B");
@@ -93,14 +101,9 @@ describe("upstream model selection", () => {
           ? "external_endpoints.messages.noModelSuggestions"
           : "external_endpoints.messages.modelListFailed",
       );
-      fireEvent.keyDown(
-        screen.getByPlaceholderText(
-          "external_endpoints.placeholders.searchUpstreamModels",
-        ),
-        { key: "Escape" },
-      );
+      fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
       fireEvent.change(
-        screen.getByRole("textbox", {
+        screen.getByRole("combobox", {
           name: "external_endpoints.fields.upstreamModelName",
         }),
         { target: { value: "private-model" } },
@@ -108,6 +111,34 @@ describe("upstream model selection", () => {
       expect(onChange).toHaveBeenCalledWith("private-model");
     },
   );
+
+  it("retains custom text on Enter and blur without selecting the first suggestion", async () => {
+    setup();
+    open();
+    await screen.findByRole("option", { name: "model-a" });
+    const input = screen.getByRole("combobox");
+    fireEvent.change(input, { target: { value: "model" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect((input as HTMLInputElement).value).toBe("model");
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.change(input, { target: { value: "private-model" } });
+    fireEvent.blur(input);
+    expect((input as HTMLInputElement).value).toBe("private-model");
+    expect(screen.queryByRole("listbox")).toBeNull();
+  });
+
+  it("supports keyboard selection and shows all models again when reopened", async () => {
+    setup();
+    open();
+    await screen.findByRole("option", { name: "org/Model-B" });
+    const input = screen.getByRole("combobox");
+    fireEvent.change(input, { target: { value: "Model-B" } });
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect((input as HTMLInputElement).value).toBe("org/Model-B");
+    open();
+    await screen.findByRole("option", { name: "model-a" });
+  });
 
   it("does not replace the new channel's models with an older request", async () => {
     let resolveFirst!: (value: ReturnType<typeof result>) => void;
@@ -144,8 +175,8 @@ describe("upstream model selection", () => {
         <UpstreamModelInput value="" onChange={onChange} />
       </Refine>,
     );
-    expect(screen.getByRole("button").hasAttribute("disabled")).toBe(true);
-    fireEvent.change(screen.getByRole("textbox"), {
+    expect(screen.queryByRole("button")).toBeNull();
+    fireEvent.change(screen.getByRole("combobox"), {
       target: { value: "manual" },
     });
     expect(onChange).toHaveBeenCalledWith("manual");

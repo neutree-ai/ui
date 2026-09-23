@@ -431,6 +431,6 @@
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "2d53cd583a12e48137c1555f921e4ec0",
   "src/domains/api-key/components/ModelQuotaRows.tsx": "3c9e6069f4b7ad5e7b351b20ae387b15",
   "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
-  "src/domains/external-endpoint/components/UpstreamModelInput.tsx": "2e2524fbdb9454ab4c5cd55cfdabf16e",
+  "src/domains/external-endpoint/components/UpstreamModelInput.tsx": "a0ab7e51b7b1e6d867c06ca1bc4fe41e",
   "src/domains/external-endpoint/lib/get-upstream-model-request.ts": "b9f94969a068efb6459f0e2ec78d42b3"
 }
