@@ -728,7 +728,8 @@ describe("provider rename and legacy migration", () => {
       const upstreamTrigger = screen
         .getAllByRole("button")
         .find((button) => button.querySelector(".lucide-chevron-down"));
-      if (upstreamTrigger) fireEvent.click(upstreamTrigger);
+      if (upstreamTrigger?.getAttribute("aria-expanded") === "false")
+        fireEvent.click(upstreamTrigger);
       const input = view.getByPlaceholderText(
         "external_endpoints.placeholders.provider",
       );
@@ -932,7 +933,7 @@ describe("useExternalEndpointForm", () => {
 
     it("removes an upstream when remove button is clicked", async () => {
       renderCreateForm();
-      // Add two upstreams first so the first one can be removed.
+      // Add two upstreams to verify deleting one preserves the other.
       fireEvent.click(
         screen.getByText("external_endpoints.actions.addModelService"),
       );
@@ -946,8 +947,10 @@ describe("useExternalEndpointForm", () => {
         ).toHaveLength(2);
       });
 
-      // Remove the first upstream (trash buttons are now enabled)
-      const removeButtons = screen.getAllByRole("button", { name: "" });
+      // Remove the first upstream.
+      const removeButtons = screen.getAllByRole("button", {
+        name: "external_endpoints.actions.removeUpstream",
+      });
       const trashButton = removeButtons.find(
         (btn) => btn.querySelector(".lucide-trash-2") !== null,
       );
@@ -1179,6 +1182,62 @@ async function submitRoutingForm() {
   });
 }
 describe("routing state regression", () => {
+  it("removes the last upstream and its routes, then allows a replacement", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("only")],
+          model_routes: [routeFixture("chat", "only")],
+        }}
+      />,
+    );
+    const removeButton = screen.getAllByRole("button", {
+      name: "external_endpoints.actions.removeUpstream",
+    })[0];
+    expect(removeButton.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(removeButton);
+    expect(
+      screen.queryByLabelText("external_endpoints.fields.upstreamUrl"),
+    ).toBeNull();
+    await submitRoutingForm();
+    expect(submitEndpoint.mock.lastCall?.[0].spec.upstreams).toEqual([]);
+    expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes).toEqual([]);
+    fireEvent.click(
+      screen.getByText("external_endpoints.actions.addModelService"),
+    );
+    expect(
+      screen.getByLabelText("external_endpoints.fields.upstreamUrl"),
+    ).toBeTruthy();
+  });
+
+  it("keeps an edited channel collapsed after deleting an earlier channel", () => {
+    cleanup();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("first"), upstreamFixture("second")],
+          model_routes: [],
+        }}
+      />,
+    );
+    const second = screen.getByRole("button", { name: /second/ });
+    fireEvent.click(second);
+    expect(second.getAttribute("aria-expanded")).toBe("false");
+    const removeButton = screen.getAllByRole("button", {
+      name: "external_endpoints.actions.removeUpstream",
+    })[0];
+    fireEvent.click(removeButton);
+    expect(
+      screen
+        .getByRole("button", { name: /second/ })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+  });
+
   it("renames a channel without stealing references during an intermediate name collision", async () => {
     cleanup();
     submitEndpoint.mockClear();
@@ -1276,7 +1335,8 @@ describe("routing state regression", () => {
       view.container.querySelectorAll("button"),
     ).filter(
       (b) =>
-        b.querySelector("svg.lucide-trash-2") && !b.getAttribute("aria-label"),
+        b.getAttribute("aria-label") ===
+        "external_endpoints.actions.removeUpstream",
     );
     expect(deletes).toHaveLength(3);
     fireEvent.click(deletes[0]);
@@ -1607,7 +1667,9 @@ describe("strategy constraints regression", () => {
       />,
     );
     const deletes = screen
-      .getAllByRole("button", { name: "" })
+      .getAllByRole("button", {
+        name: "external_endpoints.actions.removeUpstream",
+      })
       .filter((b) => b.querySelector("svg.lucide-trash-2"));
     fireEvent.click(deletes[0]);
     await submitRoutingForm();
