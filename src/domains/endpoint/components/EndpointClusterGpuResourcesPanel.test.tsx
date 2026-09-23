@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
@@ -35,6 +36,12 @@ const translations: Record<string, string> = {
 };
 
 const t = (key: string) => translations[key] ?? key;
+
+// The panel's device cards hang a tooltip off each product badge. The app
+// mounts one TooltipProvider in its layout, so the panel only ever renders
+// inside one; these tests render it in isolation and stand one in.
+const renderPanel = (ui: ReactElement) =>
+  render(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
 
 const findByExactLabel = (cards: HTMLElement[], label: string) => {
   const card = cards.find((item) => within(item).queryByText(label));
@@ -135,7 +142,7 @@ const withProduct = (
 
 describe("EndpointClusterGpuResourcesPanel", () => {
   it("shows node GPU device cards when virtualization is disabled but devices exist", () => {
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
@@ -167,7 +174,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   });
 
   it("uses aggregate capacity in the summary and fully free devices in cards", () => {
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
@@ -190,16 +197,14 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   });
 
   it("keeps healthy GPU indicators native and out of the tab order", () => {
-    render(
-      <TooltipProvider delayDuration={0}>
-        <EndpointClusterGpuResourcesPanel
-          resourceInfo={resourceInfo}
-          currentCluster="cluster-a"
-          selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
-          virtualizationEnabled={false}
-          t={t}
-        />
-      </TooltipProvider>,
+    renderPanel(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        t={t}
+      />,
     );
 
     const healthyIndicator = screen.getByRole("img", { name: "Usable" });
@@ -215,28 +220,26 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const nodeA = resourceInfo.node_resources?.["node-a"];
     if (!nodeA) throw new Error("node fixture is incomplete");
 
-    render(
-      <TooltipProvider delayDuration={0}>
-        <EndpointClusterGpuResourcesPanel
-          resourceInfo={{
-            ...resourceInfo,
-            node_resources: {
-              "node-a": {
-                ...nodeA,
-                devices: nodeA.devices?.map((device) =>
-                  device.uuid === "GPU-free"
-                    ? { ...device, health: false }
-                    : device,
-                ),
-              },
+    renderPanel(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={{
+          ...resourceInfo,
+          node_resources: {
+            "node-a": {
+              ...nodeA,
+              devices: nodeA.devices?.map((device) =>
+                device.uuid === "GPU-free"
+                  ? { ...device, health: false }
+                  : device,
+              ),
             },
-          }}
-          currentCluster="cluster-a"
-          selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
-          virtualizationEnabled={false}
-          t={t}
-        />
-      </TooltipProvider>,
+          },
+        }}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        t={t}
+      />,
     );
 
     const unhealthyIndicator = screen.getByRole("img", {
@@ -253,7 +256,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   });
 
   it("uses fractional card capacity when checking physical GPU requests", () => {
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
@@ -290,7 +293,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const nodeA = resourceInfo.node_resources?.["node-a"];
     if (!nodeA) throw new Error("node fixture is incomplete");
 
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={{
           ...resourceInfo,
@@ -339,7 +342,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
   it("marks GPU devices unusable when the same node cannot fit the request", () => {
     const nodeA = resourceInfo.node_resources?.["node-a"];
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={{
           ...resourceInfo,
@@ -401,7 +404,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       },
     };
 
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         schedulingNodeResources={schedulingNodeResources}
@@ -456,7 +459,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       },
     };
 
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         schedulingNodeResources={schedulingNodeResources}
@@ -490,7 +493,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   });
 
   it("falls back to compact node summaries when devices are missing", () => {
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={{
           ...resourceInfo,
@@ -544,7 +547,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   });
 
   it("shows resource units in card titles instead of appending them to every value", () => {
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
@@ -587,12 +590,12 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toBeTruthy();
   });
 
-  it("shows a long GPU product name in full on the device card", () => {
+  it("shows a long GPU product name in full on the device card", async () => {
     // The card is only ~180px wide, so a vendor-prefixed name used to be
     // clipped with no way to read the rest of it.
     const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
 
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={withProduct(resourceInfo, longProduct)}
         currentCluster="cluster-a"
@@ -606,23 +609,33 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const productBadge = within(card).getByText(longProduct);
 
     // jsdom does no layout, so the class is the only thing that can pin "cuts
-    // the name off instead of running past the card"; the title carries the
-    // full name. The text also has to sit in an element of its own: an
-    // `inline-flex` turns bare text into an anonymous flex item that refuses to
-    // shrink below its own width, so the badge would clip nothing and the name
-    // would spill over the card's edge. It is a child of the card itself, not
-    // of the header row's first column, so it can use the whole card width
-    // rather than stopping where the status icon's column begins.
+    // the name off instead of running past the card". The text also has to sit
+    // in an element of its own: an `inline-flex` turns bare text into an
+    // anonymous flex item that refuses to shrink below its own width, so the
+    // badge would clip nothing and the name would spill over the card's edge.
+    // It is a child of the card itself, not of the header row's first column,
+    // so it can use the whole card width rather than stopping where the status
+    // icon's column begins.
     expect(productBadge.tagName).toBe("SPAN");
     expect(productBadge.className).toContain("truncate");
     expect(productBadge.parentElement?.parentElement).toBe(card);
-    expect(productBadge.parentElement?.getAttribute("title")).toBe(longProduct);
+
+    // The full name survives the truncation, on hover and on keyboard focus:
+    // a truncated label with no way back to its text is not readable, and a
+    // native title would leave keyboard users with no way back at all.
+    const badge = productBadge.parentElement as HTMLElement;
+    expect(badge.getAttribute("title")).toBeNull();
+    expect(badge.getAttribute("tabindex")).toBe("0");
+
+    fireEvent.focus(badge);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe(longProduct);
   });
 
   it("shows the cluster's reported GPU products in the header badge, not the preset product", () => {
     // A catalog/recipe preset can carry a product (e.g. "L4") the cluster does
     // not have; the "GPU Type" badge must reflect the cluster's actual GPUs.
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
@@ -640,7 +653,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   });
 
   it("keeps the header badge on cluster products when the preset accelerator matches", () => {
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
@@ -660,7 +673,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     // A recipe/catalog preset can carry a product name the cluster does not
     // report at all; the summary must fall back to the full pool instead of
     // rendering an all-dashes board (NEU-501).
-    render(
+    renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"

@@ -565,21 +565,32 @@ function GpuDeviceCard({
           but only as much of it as the name needs. Sharing the header row kept
           the badge inside that grid's first column, so a long name was cut off
           at 172px of the card's 204px while the status icon's column sat empty
-          beside it. The name truncates at the badge's edge — with the full name
-          on the title — rather than wrapping: at one word per line a vendor
-          prefix turns a two-line badge into a taller card, and the card's job is
-          the reading under it. `w-fit` is what keeps a short name a compact
-          badge instead of a full-width band; without a width in a grid it would
-          stretch. The text needs an element of its own to truncate in, too: an
+          beside it. `w-fit` is what keeps a short name a compact badge instead
+          of a full-width band; without a width in a grid it would stretch.
+
+          A name that does not fit is truncated rather than wrapped: at one word
+          per line a vendor prefix turns a two-line badge into a taller card,
+          and the card's job is the reading under it. Truncating means the full
+          name has to stay reachable, and a native title is not enough — it never
+          opens for a keyboard user. It hangs off the tooltip the rest of the app
+          uses, with the badge itself as the trigger so hover and focus both
+          reach it. The text needs an element of its own to truncate in, too: an
           `inline-flex` turns bare text into an anonymous flex item that refuses
           to shrink below its own width. */}
-      <Badge
-        variant="outline"
-        className="w-fit max-w-full min-w-0 text-xs"
-        title={row.product}
-      >
-        <span className="min-w-0 truncate">{row.product || "-"}</span>
-      </Badge>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge
+            variant="outline"
+            tabIndex={0}
+            className="w-fit max-w-full min-w-0 cursor-help text-xs"
+          >
+            <span className="min-w-0 truncate">{row.product || "-"}</span>
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-md break-all">
+          {row.product || "-"}
+        </TooltipContent>
+      </Tooltip>
       <div className="grid gap-2">
         <GpuMeterRow
           label={t("clusters.fields.memoryUsage")}
