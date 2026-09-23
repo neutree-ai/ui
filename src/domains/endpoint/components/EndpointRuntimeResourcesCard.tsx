@@ -1,4 +1,5 @@
 import { Copy, Layers, Server } from "lucide-react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   GPU_CELL_CLASS,
   GPU_GRID_CELL_CLASS,
@@ -444,6 +446,8 @@ function GpuCell({
   onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
+  const productRef = useRef<HTMLSpanElement>(null);
+  const productTruncated = useIsTruncated(productRef);
   const gpuNumber = device.order ?? deviceIndex + 1;
 
   return (
@@ -477,8 +481,16 @@ function GpuCell({
       <Tooltip>
         <TooltipTrigger asChild>
           <span
+            ref={productRef}
             data-testid="runtime-gpu-product"
-            className="mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground"
+            // Focusable while it is clipping, not just hoverable: the tooltip is
+            // then the only way to read the name in full, and a hover-only
+            // affordance leaves a keyboard user with the ellipsis and nothing
+            // else. It drops out of the tab order once the name fits — a tab
+            // stop that opens a tooltip saying what is already on screen is
+            // noise between the controls that do something.
+            tabIndex={productTruncated ? 0 : undefined}
+            className="mt-1 block min-w-0 cursor-help truncate text-xs leading-4 text-muted-foreground focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
           >
             {acceleratorType && <>{acceleratorType} · </>}
             {device.product || "-"}

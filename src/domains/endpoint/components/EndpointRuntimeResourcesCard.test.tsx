@@ -6,6 +6,15 @@ import EndpointRuntimeResourcesCard, {
 } from "./EndpointRuntimeResourcesCard";
 
 const copyMock = vi.fn();
+// jsdom lays nothing out, so the real measurement always says "not clipped".
+// The flag stands in for it, and lets one test pin the other half: a name that
+// fits is not a tab stop.
+const truncation = vi.hoisted(() => ({ value: false }));
+
+vi.mock("@/foundation/hooks/use-is-truncated", () => ({
+  useIsTruncated: () => truncation.value,
+}));
+
 const translations: Record<string, string> = {
   "clusters.actions.copyUuid": "Copy UUID",
   "clusters.acceleratorTypes.nvidia_gpu": "NVIDIA GPU",
@@ -68,6 +77,7 @@ const t4 = {
 describe("EndpointRuntimeResourcesCard", () => {
   beforeEach(() => {
     copyMock.mockClear();
+    truncation.value = false;
   });
 
   it("renders multiple replicas with single-node and multi-node host topology", () => {
@@ -492,6 +502,61 @@ describe("EndpointRuntimeResourcesCard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "GPU 1 Copy UUID" }));
     expect(copyMock).toHaveBeenCalledWith("GPU-t4-01", expect.any(Object));
+  });
+
+  it("keeps the truncated GPU product reachable from the keyboard", async () => {
+    const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
+    truncation.value = true;
+
+    render(
+      <EndpointRuntimeResourcesCard
+        resources={{
+          summary: null,
+          replicas: [
+            {
+              instance_id: "endpoint-abc",
+              replica_id: "endpoint-abc-0",
+              node_id: "gpu-node-01",
+              devices: [{ ...t4, uuid: "GPU-long-01", product: longProduct }],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const product = screen.getByTestId("runtime-gpu-product");
+    expect(product.textContent).toBe(longProduct);
+    // Truncated, so the tooltip is the only way to the whole name — which means
+    // hover alone is not enough: the cell has to be a tab stop.
+    expect(product.getAttribute("tabindex")).toBe("0");
+
+    fireEvent.focus(product);
+
+    expect((await screen.findByRole("tooltip")).textContent).toContain(
+      longProduct,
+    );
+  });
+
+  it("leaves a product name that fits out of the tab order", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        resources={{
+          summary: null,
+          replicas: [
+            {
+              instance_id: "endpoint-abc",
+              replica_id: "endpoint-abc-0",
+              node_id: "gpu-node-01",
+              devices: [t4],
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("runtime-gpu-product").getAttribute("tabindex"),
+    ).toBeNull();
   });
 
   it("renders the replica and allocated card summary outside the card", () => {
