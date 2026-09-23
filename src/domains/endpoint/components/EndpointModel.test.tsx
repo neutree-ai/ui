@@ -53,6 +53,17 @@ describe("EndpointModel", () => {
     expect(screen.getByText("-")).toBeTruthy();
   });
 
+  // The other shape of the same endpoint: the form keeps the block and fills in
+  // only the task the gateway routes on, so `spec.model` is truthy with an empty
+  // name and the model column rendered an empty cell.
+  it("renders the placeholder when the model block names no model", () => {
+    render(
+      <EndpointModel model={model({ name: "", task: "text-generation" })} />,
+    );
+
+    expect(screen.getByText("-")).toBeTruthy();
+  });
+
   // NEU-736: on the endpoint detail page the registry opens the registry, and
   // the model opens that model's drawer inside it.
   it("links the registry and the model when given a workspace", () => {
