@@ -296,11 +296,11 @@
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
   "src/domains/endpoint/lib/vgpu.ts": "f469e7def2573f6b5f0eb3e78a905817",
   "src/domains/endpoint/lib/resource-status.ts": "b25e2b007027de95133e2558fa32c6ec",
-  "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "31f4fb088a183fba1606150adddddd81",
+  "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "e01bcb1ca0d3320111cfc36071f4d146",
   "src/domains/cluster/lib/resource-status.ts": "9e759f014c4589740efe23ebdaf8bf74",
   "src/foundation/lib/gpu-device-resources.ts": "3b39f0e47c43bead4fd3f9ed117572f3",
-  "src/foundation/components/GpuDeviceResourcesView.tsx": "e6d39129cd2d476c4cdd6f8cfaca7b73",
-  "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "d286859e8d21256a44442eb4fff3c6c3",
+  "src/foundation/components/GpuDeviceResourcesView.tsx": "e5cd8f716112d5e65c94ac64985e79c4",
+  "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "f8f84367c67989802a4afe17046de082",
   "src/domains/cluster/lib/accelerator-virtualization.ts": "d6ef94dfc840b468601b67e640b0c7bd",
   "src/domains/api-key/components/ApiKeyLimitsCard.tsx": "bd74dac8a03c8ab472fc48b0144205ef",
   "src/domains/api-key/components/ApiKeyPerformanceCard.tsx": "1508301fdfb2a474634bcb31837c0f47",
@@ -431,5 +431,5 @@
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "2d53cd583a12e48137c1555f921e4ec0",
   "src/domains/api-key/components/ModelQuotaRows.tsx": "3c9e6069f4b7ad5e7b351b20ae387b15",
   "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
-  "src/foundation/hooks/use-is-truncated.ts": "079a617505330fb8dd01ba95afe6567d"
+  "src/foundation/hooks/use-is-truncated.ts": "0cf7cb247f3944b09562b5c27e5b68c8"
 }

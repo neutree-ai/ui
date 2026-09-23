@@ -537,7 +537,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
   });
 
-  it("leaves a product name that fits out of the tab order", () => {
+  it("leaves a product name that fits alone", () => {
     render(
       <EndpointRuntimeResourcesCard
         resources={{
@@ -557,6 +557,14 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(
       screen.getByTestId("runtime-gpu-product").getAttribute("tabindex"),
     ).toBeNull();
+    const product = screen.getByTestId("runtime-gpu-product");
+    // Nothing to reveal, so nothing announces itself: no help cursor and no
+    // tooltip repeating the line under the pointer.
+    expect(product.className).not.toContain("cursor-help");
+
+    fireEvent.mouseEnter(product);
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
   it("renders the replica and allocated card summary outside the card", () => {

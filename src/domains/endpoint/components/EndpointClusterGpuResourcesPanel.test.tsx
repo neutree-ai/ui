@@ -1,9 +1,18 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import { EndpointClusterGpuResourcesPanel } from "./EndpointClusterGpuResourcesPanel";
+
+// jsdom lays nothing out, so the real measurement always says "not clipped".
+// The flag stands in for it: off everywhere except the truncation test, which
+// is also the state every other test would be in on a wide screen.
+const truncation = vi.hoisted(() => ({ value: false }));
+
+vi.mock("@/foundation/hooks/use-is-truncated", () => ({
+  useIsTruncated: () => truncation.value,
+}));
 
 vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   useCopyToClipboard: () => ({
@@ -141,6 +150,10 @@ const withProduct = (
 });
 
 describe("EndpointClusterGpuResourcesPanel", () => {
+  beforeEach(() => {
+    truncation.value = false;
+  });
+
   it("shows node GPU device cards when virtualization is disabled but devices exist", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
@@ -594,6 +607,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     // The card is only ~180px wide, so a vendor-prefixed name used to be
     // clipped with no way to read the rest of it.
     const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
+    truncation.value = true;
 
     renderPanel(
       <EndpointClusterGpuResourcesPanel
@@ -626,10 +640,37 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const badge = productBadge.parentElement as HTMLElement;
     expect(badge.getAttribute("title")).toBeNull();
     expect(badge.getAttribute("tabindex")).toBe("0");
+    expect(badge.className).toContain("cursor-help");
 
     fireEvent.focus(badge);
 
     expect((await screen.findByRole("tooltip")).textContent).toBe(longProduct);
+  });
+
+  it("leaves a product name that fits alone", async () => {
+    renderPanel(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        t={t}
+      />,
+    );
+
+    const [card] = screen.getAllByTestId("endpoint-gpu-device-card");
+    const productBadge = within(card).getByText("Tesla-T4");
+    const badge = productBadge.parentElement as HTMLElement;
+
+    // Nothing to reveal, so nothing announces itself: no tab stop, no help
+    // cursor and no tooltip repeating the line under the pointer.
+    expect(badge.getAttribute("tabindex")).toBeNull();
+    expect(badge.className).not.toContain("cursor-help");
+
+    fireEvent.focus(badge);
+    fireEvent.mouseEnter(badge);
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
   it("shows the cluster's reported GPU products in the header badge, not the preset product", () => {

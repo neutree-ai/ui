@@ -466,6 +466,15 @@ describe("GpuDeviceResourcesView", () => {
     expect(
       screen.getByTestId("gpu-cell-product").getAttribute("tabindex"),
     ).toBe(null);
+    // Nothing to reveal, so nothing announces itself: no help cursor and no
+    // tooltip repeating the line under the pointer.
+    expect(screen.getByTestId("gpu-cell-product").className).not.toContain(
+      "cursor-help",
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("gpu-cell-product"));
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "GPU 1 Copy UUID" }));
     expect(copyMock).toHaveBeenCalledWith(
