@@ -11,15 +11,21 @@ import {
   type ModelSourceMap,
   modelSourceTranslationKey,
 } from "@/foundation/lib/model-source";
+import type { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 import { getRouteStrategyError } from "../lib/validate-route-strategy";
 import type { ModelRoute, ModelRouteTarget } from "../types";
+import UpstreamModelInput from "./UpstreamModelInput";
 
 type Mode = "fixed" | "priority" | "weighted";
 
 type Props = {
   value?: ModelRoute[];
   onChange?: (value: ModelRoute[]) => void;
-  providers: { label: string; value: string }[];
+  providers: {
+    label: string;
+    value: string;
+    modelListRequest?: ReturnType<typeof getUpstreamModelRequest>;
+  }[];
   onQuickCreate?: (routeIndex: number, targetIndex: number) => void;
   focusModel?: string;
   /**
@@ -276,20 +282,20 @@ export default function ModelRouteEditor({
                         </FormItem>
                       </td>
                       <td>
-                        <Input
+                        <UpstreamModelInput
+                          key={target.upstream}
                           value={target.upstream_model}
-                          onChange={(event) =>
+                          request={
+                            providers.find(
+                              (provider) => provider.value === target.upstream,
+                            )?.modelListRequest
+                          }
+                          onChange={(model) =>
                             updateTarget(index, targetIndex, {
                               ...target,
-                              upstream_model: event.target.value,
+                              upstream_model: model,
                             })
                           }
-                          placeholder={t(
-                            "external_endpoints.placeholders.upstreamModelName",
-                          )}
-                          aria-label={t(
-                            "external_endpoints.fields.upstreamModelName",
-                          )}
                         />
                       </td>
                       <td>

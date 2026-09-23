@@ -20,6 +20,13 @@ import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
 const submitEndpoint = vi.hoisted(() => vi.fn());
+const modelListQuery = vi.hoisted(() =>
+  vi.fn(() => ({
+    data: { data: { success: true, models: ["selected-model"] } },
+    isFetching: false,
+    isError: false,
+  })),
+);
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({
@@ -49,6 +56,7 @@ vi.mock("@refinedev/react-hook-form", async () => {
 });
 
 vi.mock("@refinedev/core", () => ({
+  useCustom: modelListQuery,
   useSaveButton: () => ({ label: "Save" }),
   // The form lists sibling external endpoints to collect the model-source
   // values already in use, so the suggestion list is presets + in-use.
@@ -1173,7 +1181,11 @@ function RoutingEditForm({ spec }: { spec: ExternalEndpointSpec }) {
 }
 function expandChannels() {
   for (const b of screen.queryAllByRole("button")) {
-    if (b.getAttribute("aria-expanded") === "false") fireEvent.click(b);
+    if (
+      b.getAttribute("aria-expanded") === "false" &&
+      !b.hasAttribute("aria-haspopup")
+    )
+      fireEvent.click(b);
   }
 }
 async function submitRoutingForm() {
@@ -1182,6 +1194,72 @@ async function submitRoutingForm() {
   });
 }
 describe("routing state regression", () => {
+  it("selects a model using the remaining channel's original credential identity after deletion and edits", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    modelListQuery.mockClear();
+    globalThis.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+    HTMLElement.prototype.scrollIntoView = () => {};
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [
+            upstreamFixture("a", "https://a.example/v1"),
+            upstreamFixture("b", "https://b.example/v1"),
+          ],
+          model_routes: [routeFixture("public-alias", "b")],
+        }}
+      />,
+    );
+    fireEvent.change(
+      screen.getAllByLabelText("external_endpoints.fields.upstreamName")[1],
+      { target: { value: "renamed-b" } },
+    );
+    fireEvent.change(
+      screen.getAllByLabelText("external_endpoints.fields.upstreamUrl")[1],
+      { target: { value: "https://new-b.example/v1" } },
+    );
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: "external_endpoints.actions.removeUpstream",
+      })[0],
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.selectUpstreamModel",
+      }),
+    );
+    expect(modelListQuery).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        config: {
+          payload: {
+            upstream: { url: "https://new-b.example/v1" },
+            auth: { type: "bearer", credential: "" },
+            workspace: "default",
+            name: "review-only",
+            stored_upstream_url: "https://b.example/v1",
+          },
+        },
+        queryOptions: expect.objectContaining({ enabled: true }),
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("option", { name: "selected-model" }),
+    );
+    await submitRoutingForm();
+    expect(
+      submitEndpoint.mock.lastCall?.[0].spec.model_routes[0],
+    ).toMatchObject({
+      model: "public-alias",
+      targets: [{ upstream: "renamed-b", upstream_model: "selected-model" }],
+    });
+  });
+
   it("removes the last upstream and its routes, then allows a replacement", async () => {
     cleanup();
     submitEndpoint.mockClear();

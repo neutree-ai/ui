@@ -1285,7 +1285,8 @@
 			"provider": "e.g. local-vllm",
 			"weight": "1-100%",
 			"maxInflightRequests": "Maximum concurrent requests",
-			"primaryCapacity": "Enter concurrency limit"
+			"primaryCapacity": "Enter concurrency limit",
+			"searchUpstreamModels": "Search models..."
 		},
 		"quickCreate": {
 			"title": "Quickly create upstream channel",
@@ -1322,7 +1323,8 @@
 			"removeVirtualModel": "Remove exposed model",
 			"quickCreateUpstream": "Quickly create upstream channel",
 			"viewModelMappings": "View model mappings",
-			"hideModelMappings": "Hide model mappings"
+			"hideModelMappings": "Hide model mappings",
+			"selectUpstreamModel": "Select upstream model"
 		},
 		"messages": {
 			"upstreamNameHint": "Give this upstream a recognizable name. When configuring routes for an exposed model, select this name in the Upstream Channel field to choose where requests are forwarded.",
@@ -1350,7 +1352,9 @@
 			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
 			"weightRequired": "Enter an integer weight from 1 to 100 for every target.",
 			"primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
-			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full."
+			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full.",
+			"modelListFailed": "Could not load models. You can enter a model name manually.",
+			"noModelSuggestions": "No matching models. You can enter a model name manually."
 		},
 		"validation": {
 			"nameRequired": "Name is required",

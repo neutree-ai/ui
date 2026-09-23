@@ -244,7 +244,7 @@
   "src/pages/external-endpoints/list.tsx": "792f9bad0d38ed7f747f0d02e3b875b8",
   "src/pages/external-endpoints/show.tsx": "9871505a31563e93a203b2256a5ab606",
   "src/domains/external-endpoint/types.ts": "3a358d624da131e808244858b135596a",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "febf6325b62b63fd68d14cd0a9785a2c",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "36c50096f45b45a4953f3060568e0fa9",
   "src/domains/external-endpoint/components/CurlExample.tsx": "f24ac9cf5fd5477963f7908423692798",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "ddcc260a2c5be44d29b82e5ec4435da7",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "aef504b00a7ee2db2ff13d55784c114d",
@@ -422,7 +422,7 @@
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "f8d5d73eea90c7728d1717fb813ab86b",
   "src/foundation/components/ModelSourceBadge.tsx": "e6934fd8683358d313d0b4d53ed4683b",
-  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "bcfc9af02717ab0657e542841fc13b2d",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "7e27c3be409b37dc6c38eefabbb824cf",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
   "src/domains/external-endpoint/lib/validate-route-strategy.ts": "a6fa0e3cb9dab1c4211dd74f0e8bca66",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
@@ -430,5 +430,7 @@
   "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "8981e7575ae07c139af1cdfd8988ccdc",
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "2d53cd583a12e48137c1555f921e4ec0",
   "src/domains/api-key/components/ModelQuotaRows.tsx": "3c9e6069f4b7ad5e7b351b20ae387b15",
-  "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2"
+  "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
+  "src/domains/external-endpoint/components/UpstreamModelInput.tsx": "2e2524fbdb9454ab4c5cd55cfdabf16e",
+  "src/domains/external-endpoint/lib/get-upstream-model-request.ts": "b9f94969a068efb6459f0e2ec78d42b3"
 }
