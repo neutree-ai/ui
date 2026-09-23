@@ -449,6 +449,21 @@ function GpuCell({
   const productRef = useRef<HTMLSpanElement>(null);
   const productTruncated = useIsTruncated(productRef);
   const gpuNumber = device.order ?? deviceIndex + 1;
+  const productLabel = (
+    <span
+      ref={productRef}
+      data-testid="runtime-gpu-product"
+      tabIndex={productTruncated ? 0 : undefined}
+      className={cn(
+        "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
+        productTruncated &&
+          "cursor-help focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
+      )}
+    >
+      {acceleratorType && <>{acceleratorType} · </>}
+      {device.product || "-"}
+    </span>
+  );
 
   return (
     <div
@@ -478,28 +493,21 @@ function GpuCell({
         </Button>
       </div>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            ref={productRef}
-            data-testid="runtime-gpu-product"
-            // Focusable while it is clipping, not just hoverable: the tooltip is
-            // then the only way to read the name in full, and a hover-only
-            // affordance leaves a keyboard user with the ellipsis and nothing
-            // else. It drops out of the tab order once the name fits — a tab
-            // stop that opens a tooltip saying what is already on screen is
-            // noise between the controls that do something.
-            tabIndex={productTruncated ? 0 : undefined}
-            className="mt-1 block min-w-0 cursor-help truncate text-xs leading-4 text-muted-foreground focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
-          >
-            {acceleratorType && <>{acceleratorType} · </>}
-            {device.product || "-"}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          {[acceleratorType, device.product].filter(Boolean).join(" · ") || "-"}
-        </TooltipContent>
-      </Tooltip>
+      {/* Clipped, the tooltip is the only way to read the name in full, so it
+          has to answer to focus as well as hover. Fitting, it answers neither —
+          a popup repeating the line under the pointer, behind a help cursor and
+          a tab stop, is furniture. */}
+      {productTruncated ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
+          <TooltipContent>
+            {[acceleratorType, device.product].filter(Boolean).join(" · ") ||
+              "-"}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        productLabel
+      )}
 
       <div className="mt-2">
         <VramBar

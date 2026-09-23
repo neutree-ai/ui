@@ -390,6 +390,20 @@ const GpuGridCell = ({
 }) => {
   const productRef = useRef<HTMLSpanElement>(null);
   const productTruncated = useIsTruncated(productRef);
+  const productLabel = (
+    <span
+      ref={productRef}
+      data-testid="gpu-cell-product"
+      tabIndex={productTruncated ? 0 : undefined}
+      className={cn(
+        "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
+        productTruncated &&
+          "cursor-help focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
+      )}
+    >
+      {row.product || "-"}
+    </span>
+  );
 
   return (
     // An out-of-service card is dimmed by surface and text tokens rather than a
@@ -439,25 +453,21 @@ const GpuGridCell = ({
       </div>
       {/* The product used to live on the cell's `title` alone: a pointer could
           read it, a keyboard could not — and it is the one thing that tells two
-          cards of the same node apart. It gets a line of its own now, truncated,
-          with the full name on the shared tooltip. It joins the tab order only
-          while it is clipping: a focus stop whose tooltip repeats what is
-          already on screen is noise between the controls that do something. */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            ref={productRef}
-            data-testid="gpu-cell-product"
-            tabIndex={productTruncated ? 0 : undefined}
-            className="mt-1 block min-w-0 cursor-help truncate text-xs leading-4 text-muted-foreground focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
-          >
+          cards of the same node apart. It gets a line of its own now, truncated.
+          The tooltip — and the tab stop, and the help cursor that announces it —
+          belongs to the clipped state only: hung on a name that already fits, it
+          would say what the reader is looking at, and take a tab stop away from
+          the controls that do something. */}
+      {productTruncated ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
+          <TooltipContent className="max-w-md break-all">
             {row.product || "-"}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-md break-all">
-          {row.product || "-"}
-        </TooltipContent>
-      </Tooltip>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        productLabel
+      )}
       <GridResourceUsage
         label={labels.memoryUsage}
         remainingLabel={labels.remaining}

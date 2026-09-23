@@ -1,5 +1,5 @@
 import { CircleAlert, CircleCheck, Copy, Cpu } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   buildGpuCardResourceRows,
   buildGpuDeviceResourceRows,
@@ -497,6 +498,22 @@ function GpuDeviceCard({
   copyUuid: (uuid: string) => void;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
+  const productRef = useRef<HTMLSpanElement>(null);
+  const productTruncated = useIsTruncated(productRef);
+  const productBadge = (
+    <Badge
+      variant="outline"
+      tabIndex={productTruncated ? 0 : undefined}
+      className={cn(
+        "w-fit max-w-full min-w-0 text-xs",
+        productTruncated && "cursor-help",
+      )}
+    >
+      <span ref={productRef} className="min-w-0 truncate">
+        {row.product || "-"}
+      </span>
+    </Badge>
+  );
   const statusText = row.healthy
     ? usable
       ? t("clusters.options.usable")
@@ -574,23 +591,21 @@ function GpuDeviceCard({
           name has to stay reachable, and a native title is not enough — it never
           opens for a keyboard user. It hangs off the tooltip the rest of the app
           uses, with the badge itself as the trigger so hover and focus both
-          reach it. The text needs an element of its own to truncate in, too: an
-          `inline-flex` turns bare text into an anonymous flex item that refuses
-          to shrink below its own width. */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge
-            variant="outline"
-            tabIndex={0}
-            className="w-fit max-w-full min-w-0 cursor-help text-xs"
-          >
-            <span className="min-w-0 truncate">{row.product || "-"}</span>
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-md break-all">
-          {row.product || "-"}
-        </TooltipContent>
-      </Tooltip>
+          reach it. The tooltip, the tab stop and the help cursor all belong to
+          the clipped state: a name that fits has nothing to reveal. The text
+          needs an element of its own to truncate in, too: an `inline-flex` turns
+          bare text into an anonymous flex item that refuses to shrink below its
+          own width. */}
+      {productTruncated ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{productBadge}</TooltipTrigger>
+          <TooltipContent className="max-w-md break-all">
+            {row.product || "-"}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        productBadge
+      )}
       <div className="grid gap-2">
         <GpuMeterRow
           label={t("clusters.fields.memoryUsage")}
