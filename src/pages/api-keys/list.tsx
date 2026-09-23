@@ -49,6 +49,7 @@ import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm"
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
   rateSummary,
+  resolveQuotaPeriod,
   useAllApiKeyTraffic,
   useAllApiKeyUsage,
   useApiKeyDisable,
@@ -64,12 +65,14 @@ import type {
 } from "@/domains/api-key/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { ListPage } from "@/foundation/components/ListPage";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { resolveModelSource } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
@@ -144,9 +147,18 @@ function ModelsCell({
                 <span className="max-w-[140px] truncate">
                   {model.endpoint_name}
                 </span>
-                <Badge variant="outline" className="h-5 font-normal">
-                  {t(`api_keys.models.${model.type}`)}
-                </Badge>
+                {/* The source label replaces the old Internal/External badge.
+                    When the endpoint is no longer listed we fall back to the
+                    derivation, which is exact for internal endpoints. */}
+                <ModelSourceBadge
+                  source={
+                    endpoint
+                      ? endpoint.source
+                      : model.type
+                        ? resolveModelSource(model.type)
+                        : undefined
+                  }
+                />
                 {endpoint ? (
                   <Badge
                     variant="outline"
@@ -238,7 +250,6 @@ export const ApiKeysList = () => {
   // caller's per-workspace permissions while aggregating. Passing `scoped`
   // here would turn All Workspaces into undefined and skip the request.
   const trafficByKey = useAllApiKeyTraffic(workspace);
-  const usageByKey = useAllApiKeyUsage(scoped);
   const modelMap = useWorkspaceModelMap(scoped);
   const { data: keysData } = useList<ApiKey>({
     resource: "api_keys",
@@ -320,6 +331,10 @@ export const ApiKeysList = () => {
   const pageGroups = grouped;
   const pageKeys = pageGroups.flatMap((group) => group.shown);
   const pageKeyIds = pageKeys.map((key) => key.id);
+  // Scoped to the page: the per-model figures cost keys x models x days to
+  // compute, so asking for the whole workspace would grow with the workspace
+  // rather than with what is on screen.
+  const usageByKey = useAllApiKeyUsage(scoped, pageKeyIds);
   const selectedPageKeyCount = pageKeyIds.filter((id) =>
     selected.has(id),
   ).length;
@@ -1029,18 +1044,44 @@ export const ApiKeysList = () => {
                           {shown.map((key) => {
                             const limits = key.spec.limits ?? {};
                             const usage = usageByKey.get(String(key.id));
+                            // A per-model key has no single pool, so the summary
+                            // returns a null token_limit for it: there is a
+                            // total used but no bar and no "exceeded" state to
+                            // derive from it (each model has its own).
+                            const usageLimit =
+                              usage?.token_limit && usage.token_limit > 0
+                                ? usage.token_limit
+                                : null;
                             const usageRatio =
-                              usage && usage.token_limit > 0
-                                ? usage.used / usage.token_limit
-                                : 0;
+                              usage && usageLimit ? usage.used / usageLimit : 0;
                             const usagePercent = Math.max(
                               0,
                               Math.min(100, usageRatio * 100),
                             );
-                            const usageOver = usage
-                              ? usage.used >= usage.token_limit
-                              : false;
+                            const usageOver =
+                              usage && usageLimit
+                                ? usage.used >= usageLimit
+                                : false;
                             const usageWarn = !usageOver && usageRatio >= 0.8;
+                            // The most utilised limited model of a per-model
+                            // key. Unlimited models never appear here: they have
+                            // no denominator to be a ratio of.
+                            const topModelLimit =
+                              usage?.top_model_limit &&
+                              usage.top_model_limit > 0 &&
+                              usage.top_model
+                                ? usage.top_model_limit
+                                : null;
+                            const topModelRatio = topModelLimit
+                              ? (usage?.top_model_used ?? 0) / topModelLimit
+                              : 0;
+                            const topModelPercent = Math.max(
+                              0,
+                              Math.min(100, topModelRatio * 100),
+                            );
+                            const topModelOver = topModelRatio >= 1;
+                            const topModelWarn =
+                              !topModelOver && topModelRatio >= 0.8;
                             return (
                               <tr key={key.id} className="border-t">
                                 <td>
@@ -1114,30 +1155,122 @@ export const ApiKeysList = () => {
                                   </Badge>
                                 </td>
                                 <td>
-                                  {usage && usage.token_limit > 0 ? (
+                                  {usage ? (
                                     <div className="flex w-40 flex-col gap-1">
-                                      <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-                                        <span>
-                                          {formatTokenQuota(usage.used)} /{" "}
-                                          {formatTokenQuota(usage.token_limit)}
-                                        </span>
-                                        <span>{Math.round(usagePercent)}%</span>
-                                      </div>
-                                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
-                                        <div
-                                          className={cn(
-                                            "h-full",
-                                            usageOver
-                                              ? "bg-destructive"
-                                              : usageWarn
-                                                ? "bg-amber-500"
-                                                : "bg-primary",
+                                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                                        {/* nowrap: the granularity label ("Per-model
+                                            quota") is wider than what is left of the
+                                            w-40 cell once the period sits beside it,
+                                            and h-5 pins the badge height — without
+                                            this the second line escapes the border. */}
+                                        <Badge
+                                          variant="outline"
+                                          className="h-5 shrink-0 whitespace-nowrap font-normal"
+                                        >
+                                          {t(
+                                            `api_keys.limits.granularity.${usage.granularity}`,
                                           )}
-                                          style={{
-                                            width: `${usagePercent}%`,
-                                          }}
-                                        />
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                          {t(
+                                            `api_keys.limits.periods.${resolveQuotaPeriod(usage.period)}`,
+                                          )}
+                                        </span>
                                       </div>
+                                      {usageLimit ? (
+                                        <>
+                                          <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+                                            <span>
+                                              {formatTokenQuota(usage.used)} /{" "}
+                                              {formatTokenQuota(usageLimit)}
+                                            </span>
+                                            <span>
+                                              {Math.round(usagePercent)}%
+                                            </span>
+                                          </div>
+                                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+                                            <div
+                                              className={cn(
+                                                "h-full",
+                                                usageOver
+                                                  ? "bg-destructive"
+                                                  : usageWarn
+                                                    ? "bg-amber-500"
+                                                    : "bg-primary",
+                                              )}
+                                              style={{
+                                                width: `${usagePercent}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </>
+                                      ) : topModelLimit ? (
+                                        // Per-model: no single pool to divide
+                                        // by, so the list shows the model
+                                        // closest to its limit — the one thing
+                                        // that answers "does this key need
+                                        // attention". The rest are on the
+                                        // detail page.
+                                        <>
+                                          <div className="flex items-baseline justify-between gap-1 text-xs text-muted-foreground">
+                                            <span
+                                              className="truncate"
+                                              title={usage.top_model ?? ""}
+                                            >
+                                              {usage.top_model}
+                                            </span>
+                                            <span className="shrink-0 tabular-nums">
+                                              {Math.round(topModelPercent)}%
+                                            </span>
+                                          </div>
+                                          <div className="flex items-baseline justify-between gap-1 text-xs text-muted-foreground tabular-nums">
+                                            <span>
+                                              {formatTokenQuota(
+                                                usage.top_model_used ?? 0,
+                                              )}{" "}
+                                              /{" "}
+                                              {formatTokenQuota(topModelLimit)}
+                                            </span>
+                                            {usage.limited_models > 1 && (
+                                              <span className="shrink-0">
+                                                {t(
+                                                  "api_keys.limits.moreLimitedModels",
+                                                  {
+                                                    count:
+                                                      usage.limited_models - 1,
+                                                  },
+                                                )}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+                                            <div
+                                              className={cn(
+                                                "h-full",
+                                                topModelOver
+                                                  ? "bg-destructive"
+                                                  : topModelWarn
+                                                    ? "bg-amber-500"
+                                                    : "bg-primary",
+                                              )}
+                                              style={{
+                                                width: `${topModelPercent}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </>
+                                      ) : (
+                                        // Per-model, but no limited model has
+                                        // recorded usage yet: the total is all
+                                        // there is to say.
+                                        <span className="text-xs text-muted-foreground tabular-nums">
+                                          {t("api_keys.limits.usedTotal", {
+                                            amount: formatTokenQuota(
+                                              usage.used,
+                                            ),
+                                          })}
+                                        </span>
+                                      )}
                                     </div>
                                   ) : (
                                     <span className="text-muted-foreground">

@@ -223,7 +223,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getAllByText("Physical VRAM")).toHaveLength(2);
   });
 
-  it("keeps the GPU row scrollable instead of clipping cards in a narrow container", () => {
+  it("wraps the GPU row instead of putting cards behind a scrollbar", () => {
     render(
       <EndpointRuntimeResourcesCard
         resources={{
@@ -244,13 +244,16 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    // The rounded frame around the cells clips its own overflow, so the grid
-    // has to claim the width its tracks demand. Without that the scroller
-    // around it sees nothing to scroll and the last cards are simply cut off.
+    // A node can hold more cards than fit on one line. The grid wraps them
+    // rather than claiming a width of its own: cards behind a horizontal
+    // scrollbar are cards the reader never sees.
     const grid = screen.getAllByTestId("runtime-gpu-cell")[0]
       .parentElement as HTMLElement;
-    expect(grid.style.minWidth).toBe("516px");
-    expect(grid.parentElement?.className).toContain("overflow-x-auto");
+    expect(grid.style.gridTemplateColumns).toBe(
+      "repeat(auto-fit, minmax(188px, 1fr))",
+    );
+    expect(grid.style.minWidth).toBe("");
+    expect(grid.parentElement?.className).toContain("overflow-hidden");
   });
 
   it("falls back to a dash when physical VRAM is unavailable", () => {

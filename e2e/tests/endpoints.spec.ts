@@ -171,6 +171,20 @@ test.describe("endpoints", () => {
       await endpoints.table.sort(/created/i);
     });
 
+    // TODO: needs a TestRail case id
+    test("newest endpoint comes first by default", async ({ endpoints }) => {
+      await endpoints.goToList();
+      await endpoints.table.waitForLoaded();
+
+      const rows = await endpoints.table.rows().allInnerTexts();
+      const newest = rows.findIndex((row) => row.includes(epNames.sort));
+      const older = rows.findIndex((row) => row.includes(epNames.base));
+
+      expect(newest).toBeGreaterThanOrEqual(0);
+      expect(older).toBeGreaterThanOrEqual(0);
+      expect(newest).toBeLessThan(older);
+    });
+
     test("can toggle column visibility", { tag: "@C2613261" }, async ({
       endpoints,
     }) => {

@@ -70,13 +70,6 @@ export const NodeResourcesTable = ({
   framed = true,
   className,
 }: NodeResourcesTableProps) => {
-  const gpuGridColumns = Math.min(
-    4,
-    Math.max(
-      1,
-      ...Object.values(nodeResources).map((node) => node.devices?.length ?? 0),
-    ),
-  );
   const sortedNodeEntries = Object.entries(nodeResources).sort(
     ([, left], [, right]) => {
       const leftHasGpu =
@@ -281,7 +274,6 @@ export const NodeResourcesTable = ({
                           showNodeColumn={false}
                           showHeader={false}
                           variant="grid"
-                          gridColumns={gpuGridColumns}
                         />
                       </div>
                     </TableCell>

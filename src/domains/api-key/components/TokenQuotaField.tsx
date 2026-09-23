@@ -1,43 +1,29 @@
-import type { ComponentProps } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Input } from "@/components/ui/input";
+import { ThousandsInput } from "@/domains/api-key/components/ThousandsInput";
 import { QUOTA_PERIODS } from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import {
-  formatThousands,
   isValidTokenQuota,
   TOKEN_QUOTA_UNITS,
 } from "@/foundation/lib/token-quota";
 
-// Amount input that re-groups digits with thousands separators as you type
-// (10000 → 10,000). Receives value/onChange from FormFieldGroup's cloneElement.
-const ThousandsInput = ({
-  value,
-  onChange,
-  ...rest
-}: {
-  value?: string;
-  onChange?: (value: string) => void;
-} & Omit<ComponentProps<typeof Input>, "value" | "onChange">) => (
-  <Input
-    {...rest}
-    type="text"
-    inputMode="decimal"
-    value={value ?? ""}
-    onChange={(e) => onChange?.(formatThousands(e.target.value))}
-  />
-);
-
 // Token quota editor: amount + unit (Tokens/K/M/B) + reset period. The token
 // count written to the backend is amount × unit; leaving the amount empty means
 // no quota.
+//
+// `amountDisabled` greys out the amount and unit while a per-model limit is in
+// force: the two granularities are mutually exclusive, so the overall pool is
+// not enforced then. The period stays editable — it is the key's single quota
+// period and the per-model limits reset on it too.
 export const TokenQuotaField = ({
   form,
+  amountDisabled = false,
 }: {
   // biome-ignore lint/suspicious/noExplicitAny: shared across forms with extra fields.
   form: UseFormReturn<any>;
+  amountDisabled?: boolean;
 }) => {
   const { t } = useTranslation();
 
@@ -52,11 +38,15 @@ export const TokenQuotaField = ({
           // in Tokens, so validity depends on the current unit selection.
           rules={{
             validate: (v: string) =>
+              amountDisabled ||
               isValidTokenQuota(v, form.getValues("quota_unit")) ||
               t("api_keys.limits.invalidTokenQuota"),
           }}
         >
-          <ThousandsInput placeholder={t("api_keys.limits.optional")} />
+          <ThousandsInput
+            disabled={amountDisabled}
+            placeholder={t("api_keys.limits.optional")}
+          />
         </FormFieldGroup>
       </div>
       <div className="w-32">
@@ -69,6 +59,7 @@ export const TokenQuotaField = ({
           rules={{ deps: ["quota_limit"] }}
         >
           <FormCombobox
+            disabled={amountDisabled}
             options={TOKEN_QUOTA_UNITS.map((u) => ({
               label: t(`api_keys.limits.units.${u}`),
               value: u,

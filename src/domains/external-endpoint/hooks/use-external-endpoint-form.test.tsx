@@ -9,14 +9,15 @@ import {
   within,
 } from "@testing-library/react";
 import React from "react";
-import { FormProvider } from "react-hook-form";
+import { FormProvider, type UseFormReturn } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type {
+  ExternalEndpoint,
   ExternalEndpointSpec,
   ModelRoute,
 } from "@/domains/external-endpoint/types";
-
 import { ResourceForm } from "@/foundation/components/ResourceForm";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
 const submitEndpoint = vi.hoisted(() => vi.fn());
 
@@ -49,6 +50,38 @@ vi.mock("@refinedev/react-hook-form", async () => {
 
 vi.mock("@refinedev/core", () => ({
   useSaveButton: () => ({ label: "Save" }),
+  // The form lists sibling external endpoints to collect the model-source
+  // values already in use, so the suggestion list is presets + in-use.
+  useList: () => ({
+    data: {
+      data: [
+        {
+          metadata: { name: "sibling-partner" },
+          spec: {
+            model_sources: { "some-model": "partner" },
+            upstreams: [{ model_mapping: { "some-model": "upstream" } }],
+          },
+        },
+        {
+          metadata: { name: "sibling-custom" },
+          spec: {
+            model_sources: { "other-model": "acme-research-lab" },
+            upstreams: [{ model_mapping: { "other-model": "upstream" } }],
+          },
+        },
+        // A source left behind by a model this endpoint no longer serves: the
+        // list is derived from what is in use, so it must not contribute.
+        {
+          metadata: { name: "sibling-stale" },
+          spec: {
+            model_sources: { removed: "retired-lab" },
+            upstreams: [{ model_mapping: { kept: "upstream" } }],
+          },
+        },
+        { metadata: { name: "sibling-none" }, spec: {} },
+      ],
+    },
+  }),
   useSelect: () => ({
     query: {
       data: {
@@ -148,11 +181,14 @@ vi.mock("@/domains/external-endpoint/components/TimeoutInput", () => ({
 }));
 
 vi.mock("@/foundation/components/FormCombobox", () => ({
+  // Several comboboxes are rendered; the per-model source one is the only one
+  // that accepts a typed value, so that is what the testid keys off.
   FormCombobox: ({
     onChange,
     placeholder,
     options,
     renderOption,
+    allowCustomValue,
   }: {
     onChange?: (v: string) => void;
     placeholder?: string;
@@ -161,16 +197,28 @@ vi.mock("@/foundation/components/FormCombobox", () => ({
       label: string;
       value: string;
     }) => React.ReactNode;
+    allowCustomValue?: boolean;
   }) => (
     <div>
       <input
-        data-testid="form-combobox-mock"
+        data-testid={
+          allowCustomValue ? "model-source-combobox-mock" : "form-combobox-mock"
+        }
         placeholder={placeholder}
         onChange={(e) => onChange?.(e.target.value)}
       />
-      {options?.map((option) => (
-        <div key={option.value}>{renderOption?.(option) ?? option.label}</div>
-      ))}
+      <div
+        data-testid={
+          allowCustomValue
+            ? "model-source-options-mock"
+            : "combobox-options-mock"
+        }
+        data-values={(options ?? []).map((o) => o.value).join(",")}
+      >
+        {options?.map((option) => (
+          <div key={option.value}>{renderOption?.(option) ?? option.label}</div>
+        ))}
+      </div>
     </div>
   ),
 }));
@@ -680,7 +728,8 @@ describe("provider rename and legacy migration", () => {
       const upstreamTrigger = screen
         .getAllByRole("button")
         .find((button) => button.querySelector(".lucide-chevron-down"));
-      if (upstreamTrigger) fireEvent.click(upstreamTrigger);
+      if (upstreamTrigger?.getAttribute("aria-expanded") === "false")
+        fireEvent.click(upstreamTrigger);
       const input = view.getByPlaceholderText(
         "external_endpoints.placeholders.provider",
       );
@@ -884,7 +933,7 @@ describe("useExternalEndpointForm", () => {
 
     it("removes an upstream when remove button is clicked", async () => {
       renderCreateForm();
-      // Add two upstreams first so the first one can be removed.
+      // Add two upstreams to verify deleting one preserves the other.
       fireEvent.click(
         screen.getByText("external_endpoints.actions.addModelService"),
       );
@@ -898,8 +947,10 @@ describe("useExternalEndpointForm", () => {
         ).toHaveLength(2);
       });
 
-      // Remove the first upstream (trash buttons are now enabled)
-      const removeButtons = screen.getAllByRole("button", { name: "" });
+      // Remove the first upstream.
+      const removeButtons = screen.getAllByRole("button", {
+        name: "external_endpoints.actions.removeUpstream",
+      });
       const trashButton = removeButtons.find(
         (btn) => btn.querySelector(".lucide-trash-2") !== null,
       );
@@ -973,6 +1024,97 @@ describe("useExternalEndpointForm", () => {
     });
   });
 
+  describe("model source", () => {
+    // The source is stored per model on spec.model_sources and edited in the
+    // route card, because one endpoint's models can have different sources and
+    // a model can even be routed across several upstreams.
+    let captured: UseFormReturn<ExternalEndpoint> | null = null;
+    function SourceForm() {
+      const { form, metadataFields, specFields } = useExternalEndpointForm({
+        action: "create",
+      });
+      captured = form as unknown as UseFormReturn<ExternalEndpoint>;
+      return (
+        <FormProvider {...form}>
+          <form>
+            {metadataFields}
+            {specFields}
+          </form>
+        </FormProvider>
+      );
+    }
+
+    const sourceInput = () =>
+      screen.getAllByTestId("model-source-combobox-mock")[0];
+    const offeredSources = () =>
+      (
+        screen
+          .getAllByTestId("model-source-options-mock")[0]
+          .getAttribute("data-values") ?? ""
+      )
+        .split(",")
+        .filter(Boolean);
+
+    // The source hangs off the model name, so a route has to name a model
+    // before there is anything to key a source on.
+    const nameModel = (model: string) => {
+      fireEvent.change(
+        screen.getAllByLabelText(
+          "external_endpoints.fields.virtualModelName",
+        )[0],
+        { target: { value: model } },
+      );
+    };
+
+    it("suggests the presets plus the values already in use, never self-hosted", () => {
+      // The enum is open on the server, so the list is suggestions rather than
+      // an enumeration: presets first, then whatever sibling endpoints already
+      // use, so the second person to need a custom source picks it instead of
+      // retyping it slightly differently.
+      //
+      // self-hosted stays out regardless: it is the derived source of internal
+      // endpoints and the backend rejects it here; offering it would make the
+      // internal and external rows for one model name indistinguishable in the
+      // API-key model picker.
+      render(<SourceForm />);
+      expect(offeredSources()).toEqual([
+        "internal-shared",
+        "third-party-public",
+        "partner",
+        "acme-research-lab",
+      ]);
+      expect(offeredSources()).not.toContain(SELF_HOSTED_MODEL_SOURCE);
+    });
+
+    it("writes the chosen source under the model name", () => {
+      render(<SourceForm />);
+      nameModel("gpt-4o");
+      fireEvent.change(sourceInput(), { target: { value: "partner" } });
+      expect(captured?.getValues("spec.model_sources")).toEqual({
+        "gpt-4o": "partner",
+      });
+    });
+
+    it("accepts a value that is not offered at all", () => {
+      // The whole point of the open enum: a brand-new source needs no code
+      // change, no migration and no admin-maintained list.
+      render(<SourceForm />);
+      nameModel("gpt-4o");
+      fireEvent.change(sourceInput(), { target: { value: "new-lab" } });
+      expect(captured?.getValues("spec.model_sources")).toEqual({
+        "gpt-4o": "new-lab",
+      });
+    });
+
+    it("ignores a source typed before the model is named", () => {
+      // Nothing to key it on yet; storing it under "" would attach it to a
+      // model that does not exist.
+      render(<SourceForm />);
+      fireEvent.change(sourceInput(), { target: { value: "partner" } });
+      expect(captured?.getValues("spec.model_sources") ?? {}).toEqual({});
+    });
+  });
+
   describe("edit mode", () => {
     it("does not initialize a new route before existing data loads", () => {
       const { result } = renderHook(() =>
@@ -1040,6 +1182,62 @@ async function submitRoutingForm() {
   });
 }
 describe("routing state regression", () => {
+  it("removes the last upstream and its routes, then allows a replacement", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("only")],
+          model_routes: [routeFixture("chat", "only")],
+        }}
+      />,
+    );
+    const removeButton = screen.getAllByRole("button", {
+      name: "external_endpoints.actions.removeUpstream",
+    })[0];
+    expect(removeButton.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(removeButton);
+    expect(
+      screen.queryByLabelText("external_endpoints.fields.upstreamUrl"),
+    ).toBeNull();
+    await submitRoutingForm();
+    expect(submitEndpoint.mock.lastCall?.[0].spec.upstreams).toEqual([]);
+    expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes).toEqual([]);
+    fireEvent.click(
+      screen.getByText("external_endpoints.actions.addModelService"),
+    );
+    expect(
+      screen.getByLabelText("external_endpoints.fields.upstreamUrl"),
+    ).toBeTruthy();
+  });
+
+  it("keeps an edited channel collapsed after deleting an earlier channel", () => {
+    cleanup();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("first"), upstreamFixture("second")],
+          model_routes: [],
+        }}
+      />,
+    );
+    const second = screen.getByRole("button", { name: /second/ });
+    fireEvent.click(second);
+    expect(second.getAttribute("aria-expanded")).toBe("false");
+    const removeButton = screen.getAllByRole("button", {
+      name: "external_endpoints.actions.removeUpstream",
+    })[0];
+    fireEvent.click(removeButton);
+    expect(
+      screen
+        .getByRole("button", { name: /second/ })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+  });
+
   it("renames a channel without stealing references during an intermediate name collision", async () => {
     cleanup();
     submitEndpoint.mockClear();
@@ -1137,7 +1335,8 @@ describe("routing state regression", () => {
       view.container.querySelectorAll("button"),
     ).filter(
       (b) =>
-        b.querySelector("svg.lucide-trash-2") && !b.getAttribute("aria-label"),
+        b.getAttribute("aria-label") ===
+        "external_endpoints.actions.removeUpstream",
     );
     expect(deletes).toHaveLength(3);
     fireEvent.click(deletes[0]);
@@ -1468,7 +1667,9 @@ describe("strategy constraints regression", () => {
       />,
     );
     const deletes = screen
-      .getAllByRole("button", { name: "" })
+      .getAllByRole("button", {
+        name: "external_endpoints.actions.removeUpstream",
+      })
       .filter((b) => b.querySelector("svg.lucide-trash-2"));
     fireEvent.click(deletes[0]);
     await submitRoutingForm();

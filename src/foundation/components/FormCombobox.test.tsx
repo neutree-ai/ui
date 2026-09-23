@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { type FieldValues, useForm } from "react-hook-form";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { Form } from "@/components/ui/form";
 import { FormCombobox } from "./FormCombobox";
@@ -29,10 +30,12 @@ function Harness({
   fieldValue,
   required = false,
   renderOption,
+  allowCustomValue,
 }: {
   fieldValue: unknown;
   required?: boolean;
   renderOption?: (option: (typeof OPTIONS)[number]) => React.ReactNode;
+  allowCustomValue?: boolean;
 }) {
   const form = useForm<FieldValues>({ defaultValues: { task: fieldValue } });
   return (
@@ -42,6 +45,7 @@ function Harness({
           options={OPTIONS}
           placeholder="Select task"
           renderOption={renderOption}
+          allowCustomValue={allowCustomValue}
         />
       </FormFieldGroup>
     </Form>
@@ -129,5 +133,103 @@ describe("FormCombobox", () => {
 
     expect(markedRow?.textContent).toBe("Text Embedding");
     expect(cursorRow?.textContent).not.toBe("Text Embedding");
+  });
+});
+
+describe("FormCombobox with allowCustomValue", () => {
+  // i18n is live in this file, so the search box cannot be found by its
+  // translation key; cmdk marks its input with this attribute.
+  const searchBox = () =>
+    document.querySelector("[cmdk-input]") as HTMLInputElement;
+
+  it("offers the typed text as a value of its own", () => {
+    render(<Harness fieldValue="" allowCustomValue />);
+    fireEvent.click(getTrigger());
+    fireEvent.change(searchBox(), { target: { value: "acme-research-lab" } });
+    expect(screen.getByText(/acme-research-lab/)).toBeTruthy();
+  });
+
+  it("does not offer text that already matches an option value", () => {
+    // Otherwise the list would show the option and a duplicate "use this"
+    // row for the same value.
+    render(<Harness fieldValue="" allowCustomValue />);
+    fireEvent.click(getTrigger());
+    fireEvent.change(searchBox(), { target: { value: "text-generation" } });
+    // Only the real option row is present; no "use this" duplicate beside it.
+    expect(screen.getAllByText(/Text Generation/)).toHaveLength(1);
+  });
+
+  it("shows a stored custom value on the trigger instead of the placeholder", () => {
+    // A value with no matching option would otherwise read as "nothing
+    // selected", which is how a saved custom source would appear on reopen.
+    render(<Harness fieldValue="acme-research-lab" allowCustomValue />);
+    expect(getTrigger().textContent).toContain("acme-research-lab");
+  });
+
+  it("leaves the trigger blank for an unlisted value when custom values are off", () => {
+    // Pre-existing behaviour, unchanged: with no matching option there is no
+    // label to show, and the placeholder is only used for an empty value. The
+    // allowCustomValue fallback above is what stops a saved custom source from
+    // reading this way.
+    render(<Harness fieldValue="acme-research-lab" />);
+    expect(getTrigger().textContent).toBe("");
+  });
+});
+
+describe("FormCombobox clearing", () => {
+  const searchBox = () =>
+    document.querySelector("[cmdk-input]") as HTMLInputElement;
+
+  // ComboboxProps intersects its own onChange with Command's DOM handler, so
+  // the prop is taken as-is and handed straight through.
+  function ClearHarness({
+    onChange,
+  }: {
+    onChange: ComponentProps<typeof FormCombobox>["onChange"];
+  }) {
+    const form = useForm<FieldValues>({
+      defaultValues: { task: "text-generation" },
+    });
+    return (
+      <Form {...form}>
+        <FormFieldGroup {...form} name="task" label="Task">
+          <FormCombobox
+            options={OPTIONS}
+            placeholder="Select task"
+            onChange={onChange}
+          />
+        </FormFieldGroup>
+      </Form>
+    );
+  }
+
+  it("offers an explicit way to clear a set value", () => {
+    // The empty state is meaningful for optional fields, and a toggle the user
+    // has to guess at is one they ask about rather than find.
+    const onChange = vi.fn();
+    render(<ClearHarness onChange={onChange} />);
+    fireEvent.click(getTrigger());
+    fireEvent.click(screen.getByText("Clear selection"));
+    expect(onChange).toHaveBeenCalledWith("");
+  });
+
+  it("does not offer it when nothing is selected", () => {
+    render(<Harness fieldValue="" />);
+    fireEvent.click(getTrigger());
+    expect(screen.queryByText("Clear selection")).toBeNull();
+  });
+
+  it("clears when the selected option is picked again", () => {
+    const onChange = vi.fn();
+    render(<ClearHarness onChange={onChange} />);
+    fireEvent.click(getTrigger());
+    fireEvent.change(searchBox(), { target: { value: "Text Generation" } });
+    // The trigger also reads "Text Generation"; the row is the one in the list.
+    fireEvent.click(
+      document.querySelectorAll("[cmdk-item]")[
+        document.querySelectorAll("[cmdk-item]").length - 1
+      ] as HTMLElement,
+    );
+    expect(onChange).toHaveBeenCalledWith("");
   });
 });

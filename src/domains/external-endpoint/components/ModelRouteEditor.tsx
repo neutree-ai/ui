@@ -3,8 +3,14 @@ import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  INTERNAL_SHARED_MODEL_SOURCE,
+  type ModelSourceMap,
+  modelSourceTranslationKey,
+} from "@/foundation/lib/model-source";
 import { getRouteStrategyError } from "../lib/validate-route-strategy";
 import type { ModelRoute, ModelRouteTarget } from "../types";
 
@@ -16,6 +22,21 @@ type Props = {
   providers: { label: string; value: string }[];
   onQuickCreate?: (routeIndex: number, targetIndex: number) => void;
   focusModel?: string;
+  /**
+   * Each model's source, keyed by the route's `model`. Edited here because this
+   * is where the admin names the model; a separate list keyed by the same names
+   * would be two places to keep in step.
+   */
+  modelSources?: ModelSourceMap;
+  onModelSourceChange?: (model: string, source: string) => void;
+  modelSourceOptions?: { label: string; value: string }[];
+  /**
+   * Provider names whose upstream points at an internal endpoint. A route whose
+   * targets all resolve there is internal by construction, so its source is
+   * derived and the admin does not have to choose one. "All", not "any": a model
+   * that also falls back to a third party is not purely internal.
+   */
+  internalProviders?: Set<string>;
 };
 
 export default function ModelRouteEditor({
@@ -24,6 +45,10 @@ export default function ModelRouteEditor({
   providers,
   onQuickCreate,
   focusModel,
+  modelSources,
+  onModelSourceChange,
+  modelSourceOptions,
+  internalProviders,
 }: Props) {
   const { t } = useTranslation();
   const editorId = useId();
@@ -116,6 +141,12 @@ export default function ModelRouteEditor({
         const strategyError = getRouteStrategyError(route);
         const weightTotalId = `${editorId}-${key}-weight-total`;
         const modelInputId = `${editorId}-${key}-model`;
+        const targets = route.targets ?? [];
+        const routeIsInternal =
+          targets.length > 0 &&
+          targets.every((target) =>
+            internalProviders?.has(String(target.upstream ?? "")),
+          );
         const primaryTargetIndices = route.targets.flatMap(
           (target, targetIndex) =>
             (target.priority ?? 0) === 0 ? [targetIndex] : [],
@@ -407,7 +438,7 @@ export default function ModelRouteEditor({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <label
                   htmlFor={modelInputId}
@@ -426,6 +457,31 @@ export default function ModelRouteEditor({
                   )}
                 />
               </div>
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-medium text-muted-foreground">
+                  {t("modelSource.label")}
+                </FormLabel>
+                <FormCombobox
+                  value={route.model ? (modelSources?.[route.model] ?? "") : ""}
+                  onChange={(next) =>
+                    onModelSourceChange?.(route.model, String(next))
+                  }
+                  placeholder={
+                    routeIsInternal
+                      ? t(
+                          modelSourceTranslationKey(
+                            INTERNAL_SHARED_MODEL_SOURCE,
+                          ),
+                          { defaultValue: INTERNAL_SHARED_MODEL_SOURCE },
+                        )
+                      : t("modelSource.placeholder")
+                  }
+                  options={modelSourceOptions ?? []}
+                  disabled={!route.model}
+                  allowCustomValue
+                  asField={false}
+                />
+              </FormItem>
               <FormItem className="space-y-1.5">
                 <FormLabel className="text-xs font-medium text-muted-foreground">
                   {t("external_endpoints.fields.routingMode")}
