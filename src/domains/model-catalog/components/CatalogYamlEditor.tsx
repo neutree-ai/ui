@@ -4,9 +4,7 @@ import {
   type ChangeEvent,
   createElement,
   type ReactNode,
-  type UIEvent,
   useMemo,
-  useRef,
 } from "react";
 import { cn } from "@/foundation/lib/utils";
 import "./CatalogYamlEditor.css";
@@ -43,19 +41,18 @@ export function CatalogYamlEditor({
   ariaLabel,
   className,
 }: Props) {
-  const highlightRef = useRef<HTMLPreElement>(null);
   const highlighted = useMemo(() => {
-    const tree = lowlight.highlight("yaml", value || "\n");
+    // A textarea keeps a last, empty line when the text ends in a newline; the
+    // highlight layer drops that trailing break. Left alone, the layer is 20px
+    // shorter than the textarea's own content box, which hands the textarea
+    // back its private scrolling — and the caret back out of step with the
+    // text. Give the layer the line the textarea is counting.
+    const source = value ? (value.endsWith("\n") ? `${value}\n` : value) : "\n";
+    const tree = lowlight.highlight("yaml", source);
     return tree.children.map((node, index) =>
       renderHighlightedNode(node, String(index)),
     );
   }, [value]);
-
-  const syncScroll = (event: UIEvent<HTMLTextAreaElement>) => {
-    if (!highlightRef.current) return;
-    highlightRef.current.scrollTop = event.currentTarget.scrollTop;
-    highlightRef.current.scrollLeft = event.currentTarget.scrollLeft;
-  };
 
   return (
     <div
@@ -64,25 +61,47 @@ export function CatalogYamlEditor({
         className,
       )}
     >
-      <pre
-        ref={highlightRef}
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre p-3 font-mono text-xs leading-5 text-[var(--nt-text-neutral-primary)]"
-      >
-        <code>{highlighted}</code>
-      </pre>
-      <textarea
-        data-testid="catalog-spec-yaml"
-        aria-label={ariaLabel}
-        className="absolute inset-0 size-full overflow-auto whitespace-pre border-0 bg-transparent p-3 font-mono text-xs leading-5 text-transparent caret-[var(--nt-text-neutral-primary)] outline-none [text-shadow:none] selection:bg-[var(--nt-fill-outstanding-light)]"
-        style={{ WebkitTextFillColor: "transparent" }}
-        value={value}
-        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-          onChange(event.target.value)
-        }
-        onScroll={syncScroll}
-        spellCheck={false}
-      />
+      {/* One scroller carries both layers, and that is the whole point of this
+          structure. Syncing a textarea's own scrolling onto an overlay by hand
+          cannot work: the two elements do not have the same box, because only
+          the textarea's scrollbars take space out of it — a horizontal one
+          shortens its viewport by ~15px, a vertical one narrows it by the same,
+          and their content extents end up 20-35px apart on a catalog with a
+          long description line. The overlay then stops scrolling while the
+          textarea keeps going, and the caret is drawn a line or two away from
+          the text it belongs to. Scrolling the shared parent moves the glyphs
+          and the caret together, so they cannot drift apart. */}
+      <div className="absolute inset-0 overflow-auto">
+        {/* Sized by the highlight layer, so the textarea is always exactly as
+            large as the text it has to cover. `min-h-full` keeps the caret
+            reachable in the empty space under a short document. */}
+        <div className="relative min-h-full w-max min-w-full">
+          <pre
+            aria-hidden="true"
+            className="pointer-events-none whitespace-pre p-3 font-mono text-xs leading-5 text-[var(--nt-text-neutral-primary)]"
+          >
+            <code>{highlighted}</code>
+          </pre>
+          <textarea
+            data-testid="catalog-spec-yaml"
+            aria-label={ariaLabel}
+            wrap="off"
+            className="absolute inset-0 overflow-hidden whitespace-pre border-0 bg-transparent p-3 font-mono text-xs leading-5 text-transparent caret-[var(--nt-text-neutral-primary)] outline-none [text-shadow:none] selection:bg-[var(--nt-fill-outstanding-light)]"
+            style={{ WebkitTextFillColor: "transparent" }}
+            value={value}
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
+              // The textarea never scrolls itself — its box is the size of its
+              // text — but the browser can still leave a small internal offset
+              // behind after a keystroke that lengthened the line the caret is
+              // on, and that offset would show up as the same drift. Reset it.
+              event.currentTarget.scrollTop = 0;
+              event.currentTarget.scrollLeft = 0;
+              onChange(event.target.value);
+            }}
+            spellCheck={false}
+          />
+        </div>
+      </div>
     </div>
   );
 }
