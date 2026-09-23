@@ -825,6 +825,48 @@
 			"supportedTasks": "Supported Tasks",
 			"engineVersion": "Engine Version",
 			"valuesSchema": "Values Schema"
+		},
+		"card": {
+			"open": "Open {{name}}"
+		},
+		"list": {
+			"searchPlaceholder": "Search by name",
+			"empty": "No engines in this workspace."
+		},
+		"versions": {
+			"all": "All versions",
+			"count": "{{count}} versions",
+			"count_one": "1 version",
+			"latest": "Latest"
+		},
+		"schema": {
+			"columns": {
+				"parameter": "Parameter",
+				"type": "Type",
+				"default": "Default",
+				"description": "Description"
+			},
+			"required": "required",
+			"searchPlaceholder": "Search parameters",
+			"filters": {
+				"type": "Type",
+				"allTypes": "All types",
+				"onlyRequired": "Required only"
+			},
+			"parameterCount": "{{count}} parameters",
+			"parameterCount_one": "1 parameter",
+			"filteredCount": "{{visible}} of {{total}} parameters",
+			"noMatches": "No parameters match the filters.",
+			"nestedCount": "{{count}} nested parameters",
+			"nestedCount_one": "1 nested parameter",
+			"empty": "This version declares no parameters.",
+			"allowsAdditional": "This schema also accepts parameters it does not list.",
+			"enumLead": "one of",
+			"expandDescription": "Show the full description of {{name}}",
+			"copyJson": "Copy JSON",
+			"toggleNested": "Expand or collapse {{name}}",
+			"enumAll": "{{count}} allowed values",
+			"enumAll_one": "1 allowed value"
 		}
 	},
 	"endpoints": {
