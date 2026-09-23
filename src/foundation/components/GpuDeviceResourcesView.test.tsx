@@ -5,6 +5,14 @@ import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import { GpuDeviceResourcesView } from "./GpuDeviceResourcesView";
 
 const copyMock = vi.fn();
+// jsdom lays nothing out, so the real measurement always says "not clipped".
+// The flag stands in for it: off everywhere except the truncation test, which
+// is also the state every other test would be in on a wide screen.
+const truncation = vi.hoisted(() => ({ value: false }));
+
+vi.mock("@/foundation/hooks/use-is-truncated", () => ({
+  useIsTruncated: () => truncation.value,
+}));
 
 vi.mock("@/components/ui/progress", () => ({
   Progress: ({ value, className }: { value: number; className?: string }) => (
@@ -104,6 +112,7 @@ const nodeResources: Record<string, NodeResourceStatus> = {
 describe("GpuDeviceResourcesView", () => {
   beforeEach(() => {
     copyMock.mockClear();
+    truncation.value = false;
   });
 
   it("renders GPU number, copyable UUID, remaining pools, and no slots column", () => {
@@ -370,29 +379,31 @@ describe("GpuDeviceResourcesView", () => {
 
   it("renders an unhealthy card as out of service rather than idle", () => {
     render(
-      <GpuDeviceResourcesView
-        nodeResources={{
-          "node-a": {
-            ...nodeResources["node-a"],
-            devices: [
-              {
-                uuid: "GPU-dead",
-                product: "Tesla-T4",
-                health: false,
-                // How the backend reports an unhealthy device: both pools zeroed.
-                allocatable: { memory_mib: 0, core_units: 0 },
-                available: { memory_mib: 0, core_units: 0 },
-              },
-            ],
-          },
-        }}
-        labels={labels}
-        variant="grid"
-        showHeader={false}
-        showFilters={false}
-        showSummary={false}
-        showNodeColumn={false}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <GpuDeviceResourcesView
+          nodeResources={{
+            "node-a": {
+              ...nodeResources["node-a"],
+              devices: [
+                {
+                  uuid: "GPU-dead",
+                  product: "Tesla-T4",
+                  health: false,
+                  // How the backend reports an unhealthy device: both pools zeroed.
+                  allocatable: { memory_mib: 0, core_units: 0 },
+                  available: { memory_mib: 0, core_units: 0 },
+                },
+              ],
+            },
+          }}
+          labels={labels}
+          variant="grid"
+          showHeader={false}
+          showFilters={false}
+          showSummary={false}
+          showNodeColumn={false}
+        />
+      </TooltipProvider>,
     );
 
     expect(screen.getByText("Unhealthy")).toBeTruthy();
@@ -422,15 +433,17 @@ describe("GpuDeviceResourcesView", () => {
 
   it("renders a compact device grid for node details", () => {
     render(
-      <GpuDeviceResourcesView
-        nodeResources={nodeResources}
-        labels={labels}
-        variant="grid"
-        showHeader={false}
-        showFilters={false}
-        showSummary={false}
-        showNodeColumn={false}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <GpuDeviceResourcesView
+          nodeResources={nodeResources}
+          labels={labels}
+          variant="grid"
+          showHeader={false}
+          showFilters={false}
+          showSummary={false}
+          showNodeColumn={false}
+        />
+      </TooltipProvider>,
     );
 
     expect(screen.queryByRole("table")).toBeNull();
@@ -444,7 +457,15 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.getByText("7.5 GiB")).toBeTruthy();
     expect(screen.getByText("50")).toBeTruthy();
     expect(screen.getAllByTestId("progress")).toHaveLength(2);
-    expect(screen.queryByText("Tesla-T4")).toBeNull();
+    // The cell used to hide the product behind a native `title`, so this line
+    // read the other way round: the name was asserted *absent* from the grid.
+    // It is visible now — two cards of one node are told apart by it.
+    expect(screen.getByTestId("gpu-cell-product").textContent).toBe("Tesla-T4");
+    // And it stays out of the tab order while nothing is clipped: its tooltip
+    // would only repeat what is already on screen.
+    expect(
+      screen.getByTestId("gpu-cell-product").getAttribute("tabindex"),
+    ).toBe(null);
 
     fireEvent.click(screen.getByRole("button", { name: "GPU 1 Copy UUID" }));
     expect(copyMock).toHaveBeenCalledWith(
@@ -453,17 +474,62 @@ describe("GpuDeviceResourcesView", () => {
     );
   });
 
+  it("keeps a truncated cell product reachable from the keyboard", async () => {
+    const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
+    truncation.value = true;
+
+    render(
+      <TooltipProvider delayDuration={0}>
+        <GpuDeviceResourcesView
+          nodeResources={{
+            "node-a": {
+              ...nodeResources["node-a"],
+              devices: [
+                {
+                  uuid: "GPU-long-01",
+                  product: longProduct,
+                  health: true,
+                  allocatable: { memory_mib: 81920, core_units: 100 },
+                  available: { memory_mib: 81920, core_units: 100 },
+                },
+              ],
+            },
+          }}
+          labels={labels}
+          variant="grid"
+          showHeader={false}
+          showFilters={false}
+          showSummary={false}
+          showNodeColumn={false}
+        />
+      </TooltipProvider>,
+    );
+
+    const product = screen.getByTestId("gpu-cell-product");
+    expect(product.textContent).toBe(longProduct);
+    expect(product.getAttribute("tabindex")).toBe("0");
+    // Nothing carries the name as a native title any more: it is either visible
+    // or it is on the tooltip, and both are reachable without a pointer.
+    expect(product.closest("[title]")).toBeNull();
+
+    fireEvent.focus(product);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe(longProduct);
+  });
+
   it("lets the device grid wrap instead of pinning it to a column count", () => {
     render(
-      <GpuDeviceResourcesView
-        nodeResources={nodeResources}
-        labels={labels}
-        variant="grid"
-        showHeader={false}
-        showFilters={false}
-        showSummary={false}
-        showNodeColumn={false}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <GpuDeviceResourcesView
+          nodeResources={nodeResources}
+          labels={labels}
+          variant="grid"
+          showHeader={false}
+          showFilters={false}
+          showSummary={false}
+          showNodeColumn={false}
+        />
+      </TooltipProvider>,
     );
 
     const grid = screen.getByTestId("gpu-device-grid");
