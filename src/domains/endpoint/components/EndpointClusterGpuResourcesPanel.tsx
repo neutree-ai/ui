@@ -552,14 +552,19 @@ function GpuDeviceCard({
             <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
           </Button>
           {/* Product names are long enough to overflow this card (e.g.
-              "NVIDIA-GeForce-RTX-4090"), so the badge wraps instead of
-              truncating — the model is the point of the card. */}
+              "NVIDIA_RTX_5000_Ada_Generation"), so the badge wraps instead of
+              truncating — the model is the point of the card. The text needs an
+              element of its own to wrap in: `break-words` on the badge cannot
+              reach it, because an `inline-flex` turns bare text into an
+              anonymous flex item that refuses to shrink below its own width,
+              and the badge's border then wraps nothing while the name spills
+              across the card's edge. */}
           <Badge
             variant="outline"
-            className="max-w-full min-w-0 break-words text-xs"
+            className="max-w-full min-w-0 text-xs"
             title={row.product}
           >
-            {row.product || "-"}
+            <span className="min-w-0 break-words">{row.product || "-"}</span>
           </Badge>
         </div>
         {row.healthy ? (

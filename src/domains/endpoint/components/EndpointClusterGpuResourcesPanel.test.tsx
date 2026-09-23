@@ -590,7 +590,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   it("shows a long GPU product name in full on the device card", () => {
     // The card is only ~180px wide, so a vendor-prefixed name used to be
     // clipped with no way to read the rest of it.
-    const longProduct = "NVIDIA-GeForce-RTX-4090";
+    const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
 
     render(
       <EndpointClusterGpuResourcesPanel
@@ -606,9 +606,14 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const productBadge = within(card).getByText(longProduct);
 
     // jsdom does no layout, so the class is the only thing that can pin "wraps
-    // rather than clips"; the title is the hover fallback.
+    // rather than clips"; the title is the hover fallback. The name also has to
+    // sit in an element of its own: `break-words` on the badge alone reaches
+    // nothing, because the bare text becomes an anonymous flex item that
+    // refuses to shrink, and the badge then wraps nothing while the name runs
+    // past the card's edge.
+    expect(productBadge.tagName).toBe("SPAN");
     expect(productBadge.className).not.toContain("truncate");
-    expect(productBadge.getAttribute("title")).toBe(longProduct);
+    expect(productBadge.parentElement?.getAttribute("title")).toBe(longProduct);
   });
 
   it("shows the cluster's reported GPU products in the header badge, not the preset product", () => {
