@@ -535,7 +535,7 @@ function GpuDeviceCard({
       )}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
           <Button
             type="button"
             variant="ghost"
@@ -551,21 +551,6 @@ function GpuDeviceCard({
             <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
             <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
           </Button>
-          {/* Product names are long enough to overflow this card (e.g.
-              "NVIDIA_RTX_5000_Ada_Generation"), so the badge wraps instead of
-              truncating — the model is the point of the card. The text needs an
-              element of its own to wrap in: `break-words` on the badge cannot
-              reach it, because an `inline-flex` turns bare text into an
-              anonymous flex item that refuses to shrink below its own width,
-              and the badge's border then wraps nothing while the name spills
-              across the card's edge. */}
-          <Badge
-            variant="outline"
-            className="max-w-full min-w-0 text-xs"
-            title={row.product}
-          >
-            <span className="min-w-0 break-words">{row.product || "-"}</span>
-          </Badge>
         </div>
         {row.healthy ? (
           statusIndicator
@@ -576,6 +561,25 @@ function GpuDeviceCard({
           </Tooltip>
         )}
       </div>
+      {/* The product sits on a row of its own and takes the card's whole width,
+          but only as much of it as the name needs. Sharing the header row kept
+          the badge inside that grid's first column, so a long name was cut off
+          at 172px of the card's 204px while the status icon's column sat empty
+          beside it. The name truncates at the badge's edge — with the full name
+          on the title — rather than wrapping: at one word per line a vendor
+          prefix turns a two-line badge into a taller card, and the card's job is
+          the reading under it. `w-fit` is what keeps a short name a compact
+          badge instead of a full-width band; without a width in a grid it would
+          stretch. The text needs an element of its own to truncate in, too: an
+          `inline-flex` turns bare text into an anonymous flex item that refuses
+          to shrink below its own width. */}
+      <Badge
+        variant="outline"
+        className="w-fit max-w-full min-w-0 text-xs"
+        title={row.product}
+      >
+        <span className="min-w-0 truncate">{row.product || "-"}</span>
+      </Badge>
       <div className="grid gap-2">
         <GpuMeterRow
           label={t("clusters.fields.memoryUsage")}

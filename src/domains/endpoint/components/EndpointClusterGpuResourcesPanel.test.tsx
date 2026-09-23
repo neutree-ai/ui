@@ -605,14 +605,17 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const [card] = screen.getAllByTestId("endpoint-gpu-device-card");
     const productBadge = within(card).getByText(longProduct);
 
-    // jsdom does no layout, so the class is the only thing that can pin "wraps
-    // rather than clips"; the title is the hover fallback. The name also has to
-    // sit in an element of its own: `break-words` on the badge alone reaches
-    // nothing, because the bare text becomes an anonymous flex item that
-    // refuses to shrink, and the badge then wraps nothing while the name runs
-    // past the card's edge.
+    // jsdom does no layout, so the class is the only thing that can pin "cuts
+    // the name off instead of running past the card"; the title carries the
+    // full name. The text also has to sit in an element of its own: an
+    // `inline-flex` turns bare text into an anonymous flex item that refuses to
+    // shrink below its own width, so the badge would clip nothing and the name
+    // would spill over the card's edge. It is a child of the card itself, not
+    // of the header row's first column, so it can use the whole card width
+    // rather than stopping where the status icon's column begins.
     expect(productBadge.tagName).toBe("SPAN");
-    expect(productBadge.className).not.toContain("truncate");
+    expect(productBadge.className).toContain("truncate");
+    expect(productBadge.parentElement?.parentElement).toBe(card);
     expect(productBadge.parentElement?.getAttribute("title")).toBe(longProduct);
   });
 
