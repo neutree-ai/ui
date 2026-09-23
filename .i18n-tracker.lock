@@ -354,7 +354,7 @@
   "src/domains/model-registry/components/RegistryModelsTable.tsx": "aa440ebff1957b3de628cbe950cdba31",
   "src/foundation/components/MetadataTimestampMeta.tsx": "159be54605a2a4bf9da4204a4c00dfd9",
   "src/domains/endpoint/components/EndpointAccessSummary.tsx": "bfc5d6c12fe0d59695aece9c31360a35",
-  "src/domains/endpoint/components/EndpointAdvancedParameters.tsx": "747ce1445ef75df6316c942332856247",
+  "src/domains/endpoint/components/EndpointAdvancedParameters.tsx": "bd4d7cd8139ff99ae5dbf32a13d38084",
   "src/domains/engine/lib/resolve-capabilities.ts": "9a444cc413dae9066a7983c28c1d0fba",
   "src/domains/cluster/lib/upgrade-versions.ts": "0b8da429b7f5a4c73d1ee2cada4556ae",
   "src/domains/model-registry/components/ModelReadme.tsx": "e8e45aebce1d71183af5530dd1befb6b",
@@ -430,5 +430,6 @@
   "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "8981e7575ae07c139af1cdfd8988ccdc",
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "6f6b0d366eac07e34feaf39a3e61ba0a",
   "src/domains/api-key/components/ModelQuotaRows.tsx": "3c9e6069f4b7ad5e7b351b20ae387b15",
-  "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2"
+  "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
+  "src/foundation/hooks/use-is-truncated.ts": "079a617505330fb8dd01ba95afe6567d"
 }
