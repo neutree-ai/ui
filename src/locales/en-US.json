@@ -1351,8 +1351,8 @@
 			"weightRequired": "Enter an integer weight from 1 to 100 for every target.",
 			"primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
 			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full.",
-			"modelListFailed": "Could not load models. You can enter a model name manually.",
-			"noModelSuggestions": "No matching models. You can enter a model name manually."
+			"upstreamConnectionFailed": "Upstream connection failed",
+			"checkUpstreamConnection": "Check the upstream URL, API key and network connectivity."
 		},
 		"validation": {
 			"nameRequired": "Name is required",

@@ -9,7 +9,9 @@ import {
 } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import UpstreamModelInput from "./UpstreamModelInput";
+import UpstreamModelInput, {
+  UpstreamConnectionWarning,
+} from "./UpstreamModelInput";
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -57,6 +59,7 @@ function setup(
       dataProvider={{ default: provider }}
       options={{ disableTelemetry: true }}
     >
+      <UpstreamConnectionWarning request={payload} />
       <ControlledInput onChange={onChange} request={payload} />
     </Refine>
   );
@@ -96,11 +99,21 @@ describe("upstream model selection", () => {
               );
       const { onChange } = setup(custom);
       open();
-      await screen.findByText(
-        scenario === "empty"
-          ? "external_endpoints.messages.noModelSuggestions"
-          : "external_endpoints.messages.modelListFailed",
-      );
+      await waitFor(() => expect(screen.queryByText("loading")).toBeNull());
+      expect(screen.getByRole("listbox").textContent).toBe("");
+      if (scenario === "empty") {
+        expect(
+          screen.queryByRole("button", {
+            name: "external_endpoints.messages.upstreamConnectionFailed",
+          }),
+        ).toBeNull();
+      } else {
+        expect(
+          screen.getByRole("button", {
+            name: "external_endpoints.messages.upstreamConnectionFailed",
+          }),
+        ).toBeTruthy();
+      }
       fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
       fireEvent.change(
         screen.getByRole("combobox", {
@@ -161,6 +174,39 @@ describe("upstream model selection", () => {
       screen.queryByRole("option", { name: "stale-first-model" }),
     ).toBeNull();
     expect(screen.getByRole("option", { name: "second-model" })).toBeTruthy();
+  });
+
+  it("clears a channel warning when its connection settings change or a retry succeeds", async () => {
+    const custom = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { success: false } })
+      .mockResolvedValue(result(["healthy-model"]));
+    const { rerender, ui } = setup(custom);
+    open();
+    await screen.findByRole("button", {
+      name: "external_endpoints.messages.upstreamConnectionFailed",
+    });
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+    open();
+    await screen.findByRole("option", { name: "healthy-model" });
+    expect(
+      screen.queryByRole("button", {
+        name: "external_endpoints.messages.upstreamConnectionFailed",
+      }),
+    ).toBeNull();
+    custom.mockResolvedValue({ data: { success: false } });
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+    open();
+    await screen.findByRole("button", {
+      name: "external_endpoints.messages.upstreamConnectionFailed",
+    });
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+    rerender(ui({ endpoint_ref: "new-channel", workspace: "default" }));
+    expect(
+      screen.queryByRole("button", {
+        name: "external_endpoints.messages.upstreamConnectionFailed",
+      }),
+    ).toBeNull();
   });
 
   it("keeps manual input usable without a configured upstream", () => {

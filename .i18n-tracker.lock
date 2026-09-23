@@ -422,7 +422,7 @@
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "f8d5d73eea90c7728d1717fb813ab86b",
   "src/foundation/components/ModelSourceBadge.tsx": "e6934fd8683358d313d0b4d53ed4683b",
-  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "7e27c3be409b37dc6c38eefabbb824cf",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "7b0ad641298f141f3994de9f71a80b03",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
   "src/domains/external-endpoint/lib/validate-route-strategy.ts": "a6fa0e3cb9dab1c4211dd74f0e8bca66",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
@@ -431,6 +431,6 @@
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "2d53cd583a12e48137c1555f921e4ec0",
   "src/domains/api-key/components/ModelQuotaRows.tsx": "3c9e6069f4b7ad5e7b351b20ae387b15",
   "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
-  "src/domains/external-endpoint/components/UpstreamModelInput.tsx": "a0ab7e51b7b1e6d867c06ca1bc4fe41e",
+  "src/domains/external-endpoint/components/UpstreamModelInput.tsx": "6fb9c2a8fb83e106e83c090f42341569",
   "src/domains/external-endpoint/lib/get-upstream-model-request.ts": "b9f94969a068efb6459f0e2ec78d42b3"
 }
