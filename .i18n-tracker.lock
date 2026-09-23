@@ -352,7 +352,7 @@
   "src/domains/model-registry/components/RegistryModelsTable.tsx": "aa440ebff1957b3de628cbe950cdba31",
   "src/foundation/components/MetadataTimestampMeta.tsx": "159be54605a2a4bf9da4204a4c00dfd9",
   "src/domains/endpoint/components/EndpointAccessSummary.tsx": "bfc5d6c12fe0d59695aece9c31360a35",
-  "src/domains/endpoint/components/EndpointAdvancedParameters.tsx": "bd4d7cd8139ff99ae5dbf32a13d38084",
+  "src/domains/endpoint/components/EndpointAdvancedParameters.tsx": "212e9284cf0fff66f76c1f9c00382297",
   "src/domains/engine/lib/resolve-capabilities.ts": "9a444cc413dae9066a7983c28c1d0fba",
   "src/domains/cluster/lib/upgrade-versions.ts": "0b8da429b7f5a4c73d1ee2cada4556ae",
   "src/domains/model-registry/components/ModelReadme.tsx": "e8e45aebce1d71183af5530dd1befb6b",
@@ -434,7 +434,8 @@
   "src/pages/engines/components/EngineCard.tsx": "747b6cf1ba1fb686a82b4c4157fd540e",
   "src/domains/engine/lib/engine-phase.ts": "1bb3903b2a1640871eb06a0584adb6d6",
   "src/domains/engine/components/EngineVersionSummary.tsx": "bac5ca522cf6e30466d048024b45fc6c",
-  "src/domains/engine/components/ValueSchemaTable.tsx": "287777eaa2c74bc935eb8646c705a134",
+  "src/domains/engine/components/ValueSchemaTable.tsx": "a16f5a3b89695f5ae4ef5c538fb239ba",
   "src/domains/engine/lib/value-schema-rows.ts": "9c1c57d5ab644096d04f379dd47f7d74",
-  "src/foundation/components/EmptyValue.tsx": "e51d4159a69829d6588db03d2f233b2a"
+  "src/foundation/components/EmptyValue.tsx": "e51d4159a69829d6588db03d2f233b2a",
+  "src/foundation/components/ExpandableCell.tsx": "2af68f5cdcd0ece064150e56b0360fe3"
 }

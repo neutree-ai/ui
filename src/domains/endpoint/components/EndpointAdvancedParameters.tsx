@@ -1,11 +1,6 @@
-import { Check, Copy, Maximize2 } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -14,6 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ExpandableCell,
+  ExpandPanel,
+} from "@/foundation/components/ExpandableCell";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
@@ -83,14 +82,11 @@ function ParameterValueDetails({
   value: unknown;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs">{name}</span>
-      </div>
+    <ExpandPanel label={name}>
       <pre className="max-h-[40vh] overflow-auto rounded-md border bg-[var(--nt-fill-neutral-opaque-1)] p-3 font-mono text-xs leading-5 text-foreground">
         {formatParameterValueExpanded(value) || "-"}
       </pre>
-    </div>
+    </ExpandPanel>
   );
 }
 
@@ -109,36 +105,17 @@ function ParameterValue({ name, value }: { name: string; value: unknown }) {
         </span>
       </TableCell>
       <TableCell className="max-w-0">
-        <div className="flex items-start gap-1.5">
-          <div className="min-w-0 flex-1">
-            <code ref={valueRef} className="block truncate font-mono text-xs">
-              {displayValue || "-"}
-            </code>
-          </div>
-          {/* Only a value that is actually cut off gets the control: the button
-              is the affordance, so it has to mean "there is more". Same
-              treatment as the engine schema table. */}
-          {valueTruncated ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 shrink-0 text-[var(--nt-text-neutral-quaternary)] hover:text-[var(--nt-text-neutral-secondary)]"
-                  aria-label={t("endpoints.messages.expandParameterValue", {
-                    name,
-                  })}
-                >
-                  <Maximize2 className="size-3" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-[420px]">
-                <ParameterValueDetails name={name} value={value} />
-              </PopoverContent>
-            </Popover>
-          ) : null}
-        </div>
+        {/* Only a value that is actually cut off gets the control: the button
+            is the affordance, so it has to mean "there is more". */}
+        <ExpandableCell
+          truncated={valueTruncated}
+          label={t("endpoints.messages.expandParameterValue", { name })}
+          panel={<ParameterValueDetails name={name} value={value} />}
+        >
+          <code ref={valueRef} className="block truncate font-mono text-xs">
+            {displayValue || "-"}
+          </code>
+        </ExpandableCell>
       </TableCell>
       <TableCell className="w-12 text-right">
         <Button

@@ -1,20 +1,9 @@
-import {
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  Maximize2,
-  Search,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -49,6 +38,10 @@ import {
 } from "@/domains/engine/lib/value-schema-rows";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
+import {
+  ExpandableCell,
+  ExpandPanel,
+} from "@/foundation/components/ExpandableCell";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -134,15 +127,15 @@ function RowDetails({ row }: { row: ValueSchemaRow }) {
   const jsonBlock = segments.find((segment) => segment.kind === "json");
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs">{row.path}</span>
+    <ExpandPanel
+      label={row.path}
+      meta={
         <span className="text-xs text-muted-foreground">
           {row.types.join(" | ")}
           {row.required ? ` · ${t("engines.schema.required")}` : ""}
         </span>
-      </div>
-
+      }
+    >
       <div className="max-h-[40vh] space-y-2 overflow-auto text-xs leading-5 text-muted-foreground">
         {segments.map((segment, index) =>
           segment.kind === "json" ? (
@@ -194,7 +187,7 @@ function RowDetails({ row }: { row: ValueSchemaRow }) {
           </Button>
         </div>
       ) : null}
-    </div>
+    </ExpandPanel>
   );
 }
 
@@ -207,74 +200,57 @@ function DetailsCell({ row }: { row: ValueSchemaRow }) {
   const needsDetails = descriptionTruncated || enumTruncated;
 
   return (
-    <div className="flex items-start gap-1.5">
-      <div className="min-w-0 flex-1 space-y-1">
-        {row.description ? (
-          <div
-            ref={descriptionRef}
-            className="line-clamp-2 break-words text-xs leading-5 text-muted-foreground"
-          >
-            {row.description}
-          </div>
-        ) : (
-          // A parameter can legitimately carry no description (nested children
-          // of a real engine schema do) — its enum still has to show.
-          <EmptyValue />
-        )}
-        {row.enumValues ? (
-          <div
-            ref={enumRef}
-            data-testid="value-schema-enum"
-            className="flex h-5 min-w-0 flex-nowrap items-center gap-1 overflow-hidden"
-            // A clipped tag would otherwise stop mid-word; fade the last few
-            // pixels so the cut reads as "there is more" next to the expand
-            // control instead of looking broken.
-            style={
-              enumTruncated
-                ? {
-                    maskImage:
-                      "linear-gradient(to right, black calc(100% - 18px), transparent)",
-                  }
-                : undefined
-            }
-          >
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {t("engines.schema.enumLead")}
-            </span>
-            {/* Same tag treatment as the details panel, so a value looks the
-                same wherever it appears; the row grows no taller for it. */}
-            {row.enumValues.map((value) => (
-              <code
-                key={String(value)}
-                className="shrink-0 rounded-[var(--nt-radius-checkbox)] border bg-background px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
-              >
-                {String(value)}
-              </code>
-            ))}
-          </div>
-        ) : null}
-      </div>
-      {needsDetails ? (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 shrink-0 text-[var(--nt-text-neutral-quaternary)] hover:text-[var(--nt-text-neutral-secondary)]"
-              aria-label={t("engines.schema.expandDescription", {
-                name: row.path,
-              })}
+    <ExpandableCell
+      truncated={needsDetails}
+      label={t("engines.schema.expandDescription", { name: row.path })}
+      contentClassName="space-y-1"
+      panel={<RowDetails row={row} />}
+    >
+      {row.description ? (
+        <div
+          ref={descriptionRef}
+          className="line-clamp-2 break-words text-xs leading-5 text-muted-foreground"
+        >
+          {row.description}
+        </div>
+      ) : (
+        // A parameter can legitimately carry no description (nested children
+        // of a real engine schema do) — its enum still has to show.
+        <EmptyValue />
+      )}
+      {row.enumValues ? (
+        <div
+          ref={enumRef}
+          data-testid="value-schema-enum"
+          className="flex h-5 min-w-0 flex-nowrap items-center gap-1 overflow-hidden"
+          // A clipped tag would otherwise stop mid-word; fade the last few
+          // pixels so the cut reads as "there is more" next to the expand
+          // control instead of looking broken.
+          style={
+            enumTruncated
+              ? {
+                  maskImage:
+                    "linear-gradient(to right, black calc(100% - 18px), transparent)",
+                }
+              : undefined
+          }
+        >
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {t("engines.schema.enumLead")}
+          </span>
+          {/* Same tag treatment as the details panel, so a value looks the
+              same wherever it appears; the row grows no taller for it. */}
+          {row.enumValues.map((value) => (
+            <code
+              key={String(value)}
+              className="shrink-0 rounded-[var(--nt-radius-checkbox)] border bg-background px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
             >
-              <Maximize2 className="size-3" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-[420px]">
-            <RowDetails row={row} />
-          </PopoverContent>
-        </Popover>
+              {String(value)}
+            </code>
+          ))}
+        </div>
       ) : null}
-    </div>
+    </ExpandableCell>
   );
 }
 
