@@ -174,9 +174,6 @@ export const useExternalEndpointForm = ({
     routeIndex: number;
     targetIndex: number;
   } | null>(null);
-  const [expandedUpstreams, setExpandedUpstreams] = useState<
-    Record<number, boolean>
-  >({});
 
   const handleQuickUpstreamCreate = useCallback(
     (name: string, upstream: UpstreamSpec) => {
@@ -450,7 +447,6 @@ export const useExternalEndpointForm = ({
               variant="outline"
               size="sm"
               onClick={() => {
-                const nextIndex = fields.length;
                 append({
                   ...emptyExternalUpstream,
                   name: nextProviderName(
@@ -460,10 +456,6 @@ export const useExternalEndpointForm = ({
                     ]),
                   ),
                 });
-                setExpandedUpstreams((current) => ({
-                  ...current,
-                  [nextIndex]: true,
-                }));
               }}
             >
               <Plus className="mr-1 h-4 w-4" />
@@ -476,20 +468,14 @@ export const useExternalEndpointForm = ({
               return (
                 <Collapsible
                   key={field.id}
-                  open={isEdit || (expandedUpstreams[index] ?? false)}
-                  onOpenChange={(open) =>
-                    setExpandedUpstreams((current) => ({
-                      ...current,
-                      [index]: open,
-                    }))
-                  }
+                  defaultOpen
                   className="rounded-md bg-muted/35 px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <CollapsibleTrigger asChild>
                       <button
                         type="button"
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        className="group flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
                           {index + 1}
@@ -511,7 +497,7 @@ export const useExternalEndpointForm = ({
                                 )}
                           </span>
                         </span>
-                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                       </button>
                     </CollapsibleTrigger>
                     <Button
@@ -529,7 +515,9 @@ export const useExternalEndpointForm = ({
                         );
                         remove(index);
                       }}
-                      disabled={fields.length <= 1}
+                      aria-label={t(
+                        "external_endpoints.actions.removeUpstream",
+                      )}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

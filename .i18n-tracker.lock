@@ -244,7 +244,7 @@
   "src/pages/external-endpoints/list.tsx": "36ec899afd361b3408cebaf5555b09f1",
   "src/pages/external-endpoints/show.tsx": "407f05fc28f2a734e830a0e73e723eba",
   "src/domains/external-endpoint/types.ts": "5548ae3d670cdbdabd1508e7b6d691fb",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "18e2a6832629d1d85e34c5e8bf358d92",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "a60f5b8fefa2c0cc8b4da2a596a37615",
   "src/domains/external-endpoint/components/CurlExample.tsx": "f24ac9cf5fd5477963f7908423692798",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "ddcc260a2c5be44d29b82e5ec4435da7",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "aef504b00a7ee2db2ff13d55784c114d",
@@ -426,7 +426,7 @@
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
-  "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "6f6b0d366eac07e34feaf39a3e61ba0a",
+  "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "2d53cd583a12e48137c1555f921e4ec0",
   "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "52984c44dc95a342eb567fa6ff5a24fb",
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e"
 }
