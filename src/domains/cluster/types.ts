@@ -87,6 +87,7 @@ export type Cluster = {
 };
 
 export type ClusterSpec = {
+  zcache?: ZCacheSpec;
   /**
    * The type of the cluster.
    * supported: 'ssh' | 'kubernetes'
@@ -109,6 +110,7 @@ type NodeProvisionStatus =
   (typeof NodeProvisionStatus)[keyof typeof NodeProvisionStatus];
 
 export type ClusterStatus = BaseStatus<ClusterPhase> & {
+  zcache?: ZCacheStatus;
   image: string | null;
   dashboard_url: string | null;
   /**
@@ -154,3 +156,34 @@ enum ClusterPhase {
   DELETING = "Deleting",
   DELETED = "Deleted",
 }
+
+export type ZCacheSpec = {
+  enabled: boolean;
+  l1_size_gib: number;
+  target_nodes: string[];
+};
+export type ZCacheStatus = {
+  phase: "Applied" | "Reconciling" | "Failed";
+  message?: string;
+  observed_at?: string;
+  observation_error?: string;
+  current?: ZCacheSpec;
+  nodes?: {
+    name: string;
+    runtime: string;
+    cache: string;
+    capacity_bytes: number;
+    reason?: string;
+  }[];
+  candidates?: { name: string; selectable: boolean; reason?: string }[];
+  change?: { operation_id?: string; phase: string; message?: string };
+  operations?: {
+    id: string;
+    phase: string;
+    kind: string;
+    created_at?: string;
+    completed_at?: string;
+    message?: string;
+    nodes?: { name: string; phase: string; reason?: string }[];
+  }[];
+};
