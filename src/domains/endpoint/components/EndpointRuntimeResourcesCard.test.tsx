@@ -569,6 +569,35 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
+  it("shows a dash when the device reports no product name", async () => {
+    truncation.value = true;
+
+    render(
+      <EndpointRuntimeResourcesCard
+        resources={{
+          summary: null,
+          replicas: [
+            {
+              instance_id: "endpoint-abc",
+              replica_id: "endpoint-abc-0",
+              node_id: "gpu-node-01",
+              devices: [{ ...t4, uuid: "GPU-noproduct", product: "" }],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const product = screen.getByTestId("runtime-gpu-product");
+    // Both the line and its tooltip fall back to the same dash rather than
+    // printing an empty line, or an empty popup over one.
+    expect(product.textContent).toBe("-");
+
+    fireEvent.focus(product);
+
+    expect((await screen.findByRole("tooltip")).textContent).toBe("-");
+  });
+
   it("renders the replica and allocated card summary outside the card", () => {
     render(
       <EndpointRuntimeResourcesSummary
