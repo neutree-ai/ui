@@ -2,11 +2,13 @@ import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { v4 as uuidv4 } from "uuid";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelCacheFields } from "@/domains/cluster/components/ModelCacheFields";
 import NodeIPsField from "@/domains/cluster/components/NodeIPsField";
+import { ZCacheFields } from "@/domains/cluster/components/ZCacheFields";
 import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/accelerator-virtualization";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import type { Cluster } from "@/domains/cluster/types";
@@ -31,6 +33,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     // unsaved changes to the server state (NEU-500). Populate from the
     // initial fetch only.
     refineCoreProps: {
+      successNotification: (data) =>
+        data?.data?.spec?.zcache
+          ? { message: t("clusters.zcache.saved"), type: "success" }
+          : undefined,
       queryOptions: {
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
@@ -73,6 +79,19 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       form.formState.touchedFields,
     );
 
+    if (
+      isEdit &&
+      transformedValues.spec.zcache &&
+      form.refineCore.query?.data?.data.status?.zcache?.phase === "Failed"
+    ) {
+      transformedValues.metadata = {
+        ...transformedValues.metadata,
+        annotations: {
+          ...transformedValues.metadata.annotations,
+          "neutree.ai/zcache-retry": uuidv4(),
+        },
+      };
+    }
     return originalOnFinish(transformedValues);
   };
 
@@ -224,6 +243,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   model_caches: [],
                 });
                 form.setValue("spec.accelerator_virtualization", undefined);
+                form.setValue("spec.zcache", undefined);
               } else if (value === "kubernetes") {
                 form.setValue("spec.config", {
                   kubernetes_config: {
@@ -354,6 +374,9 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           <Input />
         </FormFieldGroup>
       </FormCardGrid>
+    ) : null,
+    zcacheFields: isKubernetes ? (
+      <ZCacheFields form={form} isEdit={isEdit} />
     ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
       <FormCardGrid
