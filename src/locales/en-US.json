@@ -2132,11 +2132,8 @@
 		},
 		"routing": {
 			"target": "Routing target",
-			"filters": "Routing filters",
-			"requestModel": "Request model (exact)",
 			"upstream": "Upstream",
 			"upstreamModel": "Upstream model",
-			"allModes": "All call types",
 			"timeHint": "Logs use request start time. Expand the date range if a long request started earlier."
 		}
 	},

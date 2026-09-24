@@ -148,9 +148,7 @@ describe("routing log links", () => {
       end: new Date(1789885800456).toISOString(),
     });
     expect(screen.queryByText("workspace-chart")).toBeNull();
-    expect(
-      screen.getByLabelText("ai_traces.routing.requestModel"),
-    ).toHaveProperty("value", "model/with & spaces");
+    expect(screen.queryByText("ai_traces.routing.filters")).toBeNull();
   });
   it("falls back to a valid calendar range for malformed dashboard times", () => {
     context.params = {

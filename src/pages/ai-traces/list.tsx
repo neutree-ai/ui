@@ -71,20 +71,14 @@ export const AITracesList = () => {
   const [requestId, setRequestId] = useState(() =>
     String(params?.request_id ?? ""),
   );
-  const [requestModel, setRequestModel] = useState(() =>
-    String(params?.request_model ?? ""),
-  );
-  const [upstream, setUpstream] = useState(() =>
-    String(params?.upstream ?? ""),
-  );
-  const [upstreamModel, setUpstreamModel] = useState(() =>
-    String(params?.upstream_model ?? ""),
-  );
-  const [requestMode, setRequestMode] = useState(() =>
+  // Dashboard drill-down links still scope the query to a model/target.
+  const requestModel = String(params?.request_model ?? "");
+  const upstream = String(params?.upstream ?? "");
+  const upstreamModel = String(params?.upstream_model ?? "");
+  const requestMode =
     params?.request_mode === "stream" || params?.request_mode === "non_stream"
       ? params.request_mode
-      : "",
-  );
+      : "";
   const [range, setRange] = useState<DateRange>(() => {
     const from = Number(params?.from);
     const to = Number(params?.to);
@@ -322,54 +316,6 @@ export const AITracesList = () => {
         </Select>
       </div>
 
-      <details
-        className="mb-4 rounded-md border p-3"
-        open={routingFilters || undefined}
-      >
-        <summary className="cursor-pointer text-sm font-medium">
-          {t("ai_traces.routing.filters")}
-        </summary>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(
-            [
-              ["requestModel", requestModel, setRequestModel],
-              ["upstream", upstream, setUpstream],
-              ["upstreamModel", upstreamModel, setUpstreamModel],
-            ] as const
-          ).map(([key, value, setter]) => (
-            <Input
-              key={key}
-              className="h-8 w-[200px]"
-              aria-label={t(`ai_traces.routing.${key}`)}
-              placeholder={t(`ai_traces.routing.${key}`)}
-              value={value}
-              onChange={(e) => setter(e.target.value)}
-            />
-          ))}
-          <Select
-            value={requestMode || "all"}
-            onValueChange={(v) => setRequestMode(v === "all" ? "" : v)}
-          >
-            <SelectTrigger
-              className="h-8 w-[160px]"
-              aria-label={t("ai_traces.detail.stream")}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {t("ai_traces.routing.allModes")}
-              </SelectItem>
-              <SelectItem value="stream">
-                {t("ai_traces.detail.streamOn")}
-              </SelectItem>
-              <SelectItem value="non_stream">
-                {t("ai_traces.detail.streamOff")}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </details>
       {preciseRange && (
         <p className="mb-3 text-xs text-muted-foreground">
           {dayjs(range.start).format("YYYY-MM-DD HH:mm:ss")} –{" "}
