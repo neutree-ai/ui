@@ -122,6 +122,18 @@ describe("ZCacheFields", () => {
     );
     expect(submit).not.toHaveBeenCalled();
   });
+  it("can disable runtime even after clearing the target selection", async () => {
+    const submit = vi.fn();
+    render(<Form onSubmit={submit} status={observed} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "a" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "b" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "clusters.zcache.enable" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(submit).toHaveBeenCalled());
+    expect(submit.mock.calls[0][0].spec.zcache.enabled).toBe(false);
+  });
   it("explains bootstrap before enabling runtime on a new cluster", () => {
     render(<Form onSubmit={vi.fn()} isEdit={false} />);
     expect(screen.getByText("clusters.zcache.createHint")).toBeTruthy();

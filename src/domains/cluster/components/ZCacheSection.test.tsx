@@ -20,6 +20,20 @@ vi.mock("@/foundation/components/Timestamp", () => ({
 }));
 
 describe("ZCacheSection", () => {
+  it("does not label newly saved intent as applied using an old observation", () => {
+    const cluster = {
+      spec: { zcache: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } },
+      status: {
+        zcache: {
+          phase: "Applied",
+          current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+        },
+      },
+    } as unknown as Cluster;
+    render(<ZCacheSection cluster={cluster} />);
+    expect(screen.getByText("clusters.zcache.reconciling")).toBeTruthy();
+  });
+
   it("shows rejected submission separately from current nodes and historical operations", () => {
     const cluster = {
       spec: { zcache: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } },
