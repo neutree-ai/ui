@@ -122,46 +122,6 @@ describe("AITracesList API key filter", () => {
   });
 });
 
-describe("routing log links", () => {
-  it("keeps exact times and target filters from the dashboard, without a workspace-wide chart", () => {
-    context.params = {
-      workspace: "design-lab",
-      endpoint_name: "router",
-      endpoint_type: "external-endpoint",
-      request_model: "model/with & spaces",
-      upstream: "provider",
-      upstream_model: "m",
-      from: "1789882200123",
-      to: "1789885800456",
-    };
-    render(<AITracesList />);
-    const { queryKey } =
-      context.query.mock.calls[context.query.mock.calls.length - 1][0];
-    expect(queryKey[1]).toMatchObject({
-      endpoint_name: "router",
-      request_model: "model/with & spaces",
-      upstream: "provider",
-      upstream_model: "m",
-      start: new Date(1789882200123).toISOString(),
-      end: new Date(1789885800456).toISOString(),
-    });
-    expect(screen.queryByText("workspace-chart")).toBeNull();
-    expect(screen.queryByText("ai_traces.routing.filters")).toBeNull();
-  });
-  it("falls back to a valid calendar range for malformed dashboard times", () => {
-    context.params = {
-      workspace: "design-lab",
-      from: "99999999999999999999",
-      to: "NaN",
-    };
-    render(<AITracesList />);
-    const { queryKey } =
-      context.query.mock.calls[context.query.mock.calls.length - 1][0];
-    expect(Number.isFinite(Date.parse(queryKey[1].start))).toBe(true);
-    expect(screen.getByText("workspace-chart")).toBeTruthy();
-  });
-});
-
 describe("request ID search", () => {
   it("trims the exact ID, preserves the scope and time window, and can be cleared", () => {
     render(<AITracesList />);

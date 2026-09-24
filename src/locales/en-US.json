@@ -2133,8 +2133,7 @@
 		"routing": {
 			"target": "Routing target",
 			"upstream": "Upstream",
-			"upstreamModel": "Upstream model",
-			"timeHint": "Logs use request start time. Expand the date range if a long request started earlier."
+			"upstreamModel": "Upstream model"
 		}
 	},
 	"permissions": {

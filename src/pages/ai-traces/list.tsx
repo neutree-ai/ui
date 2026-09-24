@@ -54,13 +54,9 @@ export const AITracesList = () => {
   const isAllWorkspaces = workspace === ALL_WORKSPACES;
   const colSpan = isAllWorkspaces ? 13 : 12;
 
-  const [endpointName, setEndpointName] = useState(() =>
-    String(params?.endpoint_name ?? ""),
-  );
-  const [endpointType, setEndpointType] = useState(() =>
-    String(params?.endpoint_type ?? ""),
-  );
-  const [status, setStatus] = useState(() => String(params?.status ?? ""));
+  const [endpointName, setEndpointName] = useState("");
+  const [endpointType, setEndpointType] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
   const [model, setModel] = useState("");
   // Pre-fill the api-key filter from ?api_key_id=… so the API-key detail page's
   // "view call logs" link lands here scoped to that key.
@@ -71,37 +67,15 @@ export const AITracesList = () => {
   const [requestId, setRequestId] = useState(() =>
     String(params?.request_id ?? ""),
   );
-  // Dashboard drill-down links still scope the query to a model/target.
-  const requestModel = String(params?.request_model ?? "");
-  const upstream = String(params?.upstream ?? "");
-  const upstreamModel = String(params?.upstream_model ?? "");
-  const [range, setRange] = useState<DateRange>(() => {
-    const from = Number(params?.from);
-    const to = Number(params?.to);
-    if (
-      Number.isFinite(from) &&
-      Number.isFinite(to) &&
-      from > 0 &&
-      to >= from &&
-      dayjs(from).isValid() &&
-      dayjs(to).isValid()
-    ) {
-      return { start: dayjs(from).toISOString(), end: dayjs(to).toISOString() };
-    }
-    return trailingRange(7);
-  });
-  const preciseRange = range.start.includes("T");
-  const routingFilters = Boolean(requestModel || upstream || upstreamModel);
+  const [range, setRange] = useState<DateRange>(() => trailingRange(7));
   const scoped = Boolean(
     requestId.trim() ||
-      routingFilters ||
       endpointName ||
       endpointType ||
       status ||
       model ||
       apiKeyId ||
-      finishReason ||
-      preciseRange,
+      finishReason,
   );
   const [selected, setSelected] = useState<AITrace | null>(null);
 
@@ -133,14 +107,8 @@ export const AITracesList = () => {
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
     request_id: requestId.trim() || undefined,
-    request_model: requestModel.trim() || undefined,
-    upstream: upstream.trim() || undefined,
-    upstream_model: upstreamModel.trim() || undefined,
-    // Dashboard links carry exact instants; calendar selections cover whole days.
-    start: preciseRange
-      ? range.start
-      : dayjs(range.start).startOf("day").toISOString(),
-    end: preciseRange ? range.end : dayjs(range.end).endOf("day").toISOString(),
+    start: dayjs(range.start).startOf("day").toISOString(),
+    end: dayjs(range.end).endOf("day").toISOString(),
     limit: LIMIT,
   };
 
@@ -308,15 +276,6 @@ export const AITracesList = () => {
           </SelectContent>
         </Select>
       </div>
-
-      {preciseRange && (
-        <p className="mb-3 text-xs text-muted-foreground">
-          {dayjs(range.start).format("YYYY-MM-DD HH:mm:ss")} –{" "}
-          {dayjs(range.end).format("YYYY-MM-DD HH:mm:ss")}
-          {" · "}
-          {t("ai_traces.routing.timeHint")}
-        </p>
-      )}
 
       {error ? (
         <div className="text-sm text-destructive mb-2">
