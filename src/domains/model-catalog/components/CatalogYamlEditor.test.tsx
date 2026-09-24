@@ -40,7 +40,15 @@ describe("CatalogYamlEditor", () => {
     expect(onChange).toHaveBeenCalledWith("kind: ModelCatalog");
   });
 
-  it("synchronizes the highlight layer with textarea scrolling", () => {
+  // The text and the caret have to move together. They used to be kept in step
+  // by copying the textarea's scroll offsets onto the highlight layer, which
+  // silently failed past the point where the two elements stop agreeing on
+  // their extent — the textarea's scrollbars take space out of its own box, so
+  // on a catalog with a long line it can still scroll while the overlay is
+  // already at its end, leaving the caret a line or two away from the text
+  // under it. They are now scrolled by one shared parent, which is the property
+  // this pins: nothing between the two layers scrolls on its own.
+  it("scrolls the text and the highlight layer with one shared parent", () => {
     const { container } = render(
       <CatalogYamlEditor
         value="kind: ModelCatalog"
@@ -52,13 +60,10 @@ describe("CatalogYamlEditor", () => {
     const highlight = container.querySelector("pre");
     if (!highlight) throw new Error("highlight layer was not rendered");
 
-    Object.defineProperties(textarea, {
-      scrollTop: { configurable: true, value: 120 },
-      scrollLeft: { configurable: true, value: 36 },
-    });
-    fireEvent.scroll(textarea);
-
-    expect(highlight.scrollTop).toBe(120);
-    expect(highlight.scrollLeft).toBe(36);
+    const scroller = textarea.parentElement?.parentElement;
+    expect(scroller).toBe(highlight.parentElement?.parentElement);
+    expect(scroller).not.toBe(container.firstElementChild);
+    expect(scroller?.contains(textarea)).toBe(true);
+    expect(scroller?.contains(highlight)).toBe(true);
   });
 });

@@ -1,5 +1,5 @@
 import { CircleAlert, CircleCheck, Copy, Cpu, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import {
   type MetricBarSeries,
 } from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   buildGpuDeviceResourceRows,
   filterGpuDeviceResourceRows,
@@ -377,6 +378,121 @@ const getDeviceStatusLabel = (
   return labels.allocated;
 };
 
+/** One card of the compact device grid. */
+const GpuGridCell = ({
+  row,
+  labels,
+  copy,
+}: {
+  row: GpuDeviceResourceRow;
+  labels: GpuDeviceResourcesViewLabels;
+  copy: ReturnType<typeof useCopyToClipboard>["copy"];
+}) => {
+  const productRef = useRef<HTMLSpanElement>(null);
+  const productTruncated = useIsTruncated(productRef);
+  const productLabel = (
+    <span
+      ref={productRef}
+      data-testid="gpu-cell-product"
+      tabIndex={productTruncated ? 0 : undefined}
+      className={cn(
+        "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
+        productTruncated &&
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
+      )}
+    >
+      {row.product || "-"}
+    </span>
+  );
+
+  return (
+    // An out-of-service card is dimmed by surface and text tokens rather than a
+    // blanket opacity, so the Unhealthy badge below keeps its full contrast.
+    <div
+      className={cn(
+        "relative",
+        GPU_CELL_CLASS,
+        GPU_GRID_CELL_CLASS,
+        !row.healthy && GPU_CELL_INERT_CLASS,
+      )}
+    >
+      <span
+        className={cn(
+          "absolute right-2.5 top-2.5 flex items-center gap-1 text-xs font-medium",
+          row.healthy ? "text-emerald-600" : "text-destructive",
+        )}
+      >
+        {row.healthy ? (
+          <CircleCheck className="h-3.5 w-3.5" />
+        ) : (
+          <CircleAlert className="h-3.5 w-3.5" />
+        )}
+        {row.healthy ? labels.healthy : labels.unhealthy}
+      </span>
+      <div className="flex min-w-0 items-center gap-1">
+        <span className="whitespace-nowrap text-sm font-semibold leading-5">
+          {labels.gpuNumber} {row.gpuNumber}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          title={labels.copyUuid}
+          aria-label={`${labels.gpuNumber} ${row.gpuNumber} ${labels.copyUuid}`}
+          className="h-6 w-6 shrink-0 text-muted-foreground"
+          onClick={() =>
+            copy(row.uuid, {
+              successMessage: labels.copyUuidSuccess,
+              errorMessage: labels.copyUuidFailed,
+            })
+          }
+        >
+          <Copy className="h-3.5 w-3.5" />
+          <span className="sr-only">{labels.copyUuid}</span>
+        </Button>
+      </div>
+      {/* The product used to live on the cell's `title` alone: a pointer could
+          read it, a keyboard could not — and it is the one thing that tells two
+          cards of the same node apart. It gets a line of its own now, truncated.
+          The tooltip — and the tab stop with it — belongs to the clipped state
+          only: hung on a name that already fits, it would say what the reader is
+          looking at, and take a tab stop away from the controls that do
+          something. The cursor stays a cursor either way; a question mark is the
+          help affordance, and this line is a value, not a help topic. */}
+      {productTruncated ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
+          <TooltipContent className="max-w-md break-all">
+            {row.product || "-"}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        productLabel
+      )}
+      <GridResourceUsage
+        label={labels.memoryUsage}
+        remainingLabel={labels.remaining}
+        pool={row.memory}
+        unit="GiB"
+        valueScale={VRAM_VALUE_SCALE}
+        precision={VRAM_VALUE_PRECISION}
+        unavailable={!row.healthy}
+        series="blue"
+      />
+      <GridResourceUsage
+        label={labels.coreUsage}
+        remainingLabel={labels.remaining}
+        pool={row.core}
+        // Core keeps its own fill: this cell carries two bars, and the Nodes
+        // legend colour-codes which is which. The endpoint cell has one bar and
+        // needs no such pairing.
+        series="cyan"
+        unavailable={!row.healthy}
+      />
+    </div>
+  );
+};
+
 const GpuDeviceHealthIndicator = ({
   healthy,
   labels,
@@ -641,75 +757,12 @@ export function GpuDeviceResourcesView({
             style={GPU_GRID_STYLE}
           >
             {visibleRows.map((row) => (
-              <div
+              <GpuGridCell
                 key={`${row.nodeName}:${row.uuid}`}
-                // An out-of-service card is dimmed by surface and text tokens
-                // rather than a blanket opacity, so the Unhealthy badge below
-                // keeps its full contrast.
-                className={cn(
-                  "relative",
-                  GPU_CELL_CLASS,
-                  GPU_GRID_CELL_CLASS,
-                  !row.healthy && GPU_CELL_INERT_CLASS,
-                )}
-                title={row.product || undefined}
-              >
-                <span
-                  className={cn(
-                    "absolute right-2.5 top-2.5 flex items-center gap-1 text-xs font-medium",
-                    row.healthy ? "text-emerald-600" : "text-destructive",
-                  )}
-                >
-                  {row.healthy ? (
-                    <CircleCheck className="h-3.5 w-3.5" />
-                  ) : (
-                    <CircleAlert className="h-3.5 w-3.5" />
-                  )}
-                  {row.healthy ? labels.healthy : labels.unhealthy}
-                </span>
-                <div className="flex min-w-0 items-center gap-1">
-                  <span className="whitespace-nowrap text-sm font-semibold leading-5">
-                    {labels.gpuNumber} {row.gpuNumber}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    title={labels.copyUuid}
-                    aria-label={`${labels.gpuNumber} ${row.gpuNumber} ${labels.copyUuid}`}
-                    className="h-6 w-6 shrink-0 text-muted-foreground"
-                    onClick={() =>
-                      copy(row.uuid, {
-                        successMessage: labels.copyUuidSuccess,
-                        errorMessage: labels.copyUuidFailed,
-                      })
-                    }
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span className="sr-only">{labels.copyUuid}</span>
-                  </Button>
-                </div>
-                <GridResourceUsage
-                  label={labels.memoryUsage}
-                  remainingLabel={labels.remaining}
-                  pool={row.memory}
-                  unit="GiB"
-                  valueScale={VRAM_VALUE_SCALE}
-                  precision={VRAM_VALUE_PRECISION}
-                  unavailable={!row.healthy}
-                  series="blue"
-                />
-                <GridResourceUsage
-                  label={labels.coreUsage}
-                  remainingLabel={labels.remaining}
-                  pool={row.core}
-                  // Core keeps its own fill: this cell carries two bars, and the
-                  // Nodes legend colour-codes which is which. The endpoint cell
-                  // has one bar and needs no such pairing.
-                  series="cyan"
-                  unavailable={!row.healthy}
-                />
-              </div>
+                row={row}
+                labels={labels}
+                copy={copy}
+              />
             ))}
           </div>
         </div>

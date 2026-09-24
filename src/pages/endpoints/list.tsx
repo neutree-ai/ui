@@ -73,9 +73,13 @@ export const EndpointsList = () => {
                 // model, and a column of its own would repeat one value down
                 // the whole page — an internal endpoint is run by the platform,
                 // so it is always self-hosted.
+                // No model, no source: a Flex endpoint shows "-" alone rather
+                // than labelling a model it does not have.
                 <div className="flex items-center gap-1">
                   <EndpointModel model={model} />
-                  <ModelSourceBadge source={resolveModelSource("internal")} />
+                  {model?.name && (
+                    <ModelSourceBadge source={resolveModelSource("internal")} />
+                  )}
                 </div>
               );
             }}
