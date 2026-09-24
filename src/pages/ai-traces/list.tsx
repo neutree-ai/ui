@@ -52,7 +52,7 @@ export const AITracesList = () => {
   // "All workspaces" aggregates traces across workspaces, so show a workspace
   // column to disambiguate rows (it is redundant on a single-workspace view).
   const isAllWorkspaces = workspace === ALL_WORKSPACES;
-  const colSpan = isAllWorkspaces ? 12 : 11;
+  const colSpan = isAllWorkspaces ? 13 : 12;
 
   const [endpointName, setEndpointName] = useState(() =>
     String(params?.endpoint_name ?? ""),
@@ -392,6 +392,9 @@ export const AITracesList = () => {
               <TableHead className="w-[180px]">
                 {t("ai_traces.columns.time")}
               </TableHead>
+              <TableHead className="min-w-[250px]">
+                {t("ai_traces.columns.requestId")}
+              </TableHead>
               {isAllWorkspaces && (
                 <TableHead className="w-[140px]">
                   {t("ai_traces.columns.workspace")}
@@ -454,6 +457,9 @@ export const AITracesList = () => {
                     timestamp={row.time}
                     format="YYYY-MM-DD HH:mm:ss"
                   />
+                </TableCell>
+                <TableCell className="font-mono text-xs whitespace-nowrap">
+                  {row.request_id}
                 </TableCell>
                 {isAllWorkspaces && (
                   <TableCell className="text-sm truncate max-w-[140px]">

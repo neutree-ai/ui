@@ -2024,6 +2024,7 @@
 			"allFinishReasons": "All finish reasons"
 		},
 		"columns": {
+			"requestId": "Request ID",
 			"time": "Time",
 			"workspace": "Workspace",
 			"endpoint": "Endpoint",
