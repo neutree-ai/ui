@@ -2009,6 +2009,7 @@
 			"totalRequests": "{{total}} total"
 		},
 		"filters": {
+			"requestId": "Request ID (exact match)",
 			"endpoint": "Endpoint name",
 			"endpointType": "Endpoint type",
 			"allTypes": "All types",
@@ -2023,6 +2024,7 @@
 			"allFinishReasons": "All finish reasons"
 		},
 		"columns": {
+			"requestId": "Request ID",
 			"time": "Time",
 			"workspace": "Workspace",
 			"endpoint": "Endpoint",
@@ -2127,6 +2129,11 @@
 				"thinking": "Thinking",
 				"unknown": "Content block"
 			}
+		},
+		"routing": {
+			"target": "Routing target",
+			"upstream": "Upstream",
+			"upstreamModel": "Upstream model"
 		}
 	},
 	"permissions": {

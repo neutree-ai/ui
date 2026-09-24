@@ -1,6 +1,8 @@
 import { clientPostgrest, REST_URL } from "@/foundation/lib/api";
 
 export type AITrace = {
+  upstream?: string;
+  upstream_model?: string;
   request_id: string;
   time: string;
   workspace: string;
@@ -37,6 +39,10 @@ type AITraceStatsResponse = {
 };
 
 type AITraceListParams = {
+  request_id?: string;
+  request_model?: string;
+  upstream?: string;
+  upstream_model?: string;
   workspace: string;
   endpoint_name?: string;
   endpoint_type?: string;

@@ -135,6 +135,12 @@ const MetaGrid = ({ trace }: { trace: AITrace }) => {
       <MetaRow label={t("ai_traces.detail.responseModel")}>
         {trace.response_model || "-"}
       </MetaRow>
+      <MetaRow label={t("ai_traces.routing.upstream")}>
+        {trace.upstream || "—"}
+      </MetaRow>
+      <MetaRow label={t("ai_traces.routing.upstreamModel")}>
+        {trace.upstream_model || "—"}
+      </MetaRow>
       <MetaRow label={t("ai_traces.detail.stream")}>
         {trace.stream ? (
           <Badge variant="secondary">{t("ai_traces.detail.streamOn")}</Badge>

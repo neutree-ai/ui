@@ -52,7 +52,7 @@ export const AITracesList = () => {
   // "All workspaces" aggregates traces across workspaces, so show a workspace
   // column to disambiguate rows (it is redundant on a single-workspace view).
   const isAllWorkspaces = workspace === ALL_WORKSPACES;
-  const colSpan = isAllWorkspaces ? 11 : 10;
+  const colSpan = isAllWorkspaces ? 13 : 12;
 
   const [endpointName, setEndpointName] = useState("");
   const [endpointType, setEndpointType] = useState<string>("");
@@ -64,7 +64,19 @@ export const AITracesList = () => {
     () => (params?.api_key_id as string) ?? "",
   );
   const [finishReason, setFinishReason] = useState<string>("");
+  const [requestId, setRequestId] = useState(() =>
+    String(params?.request_id ?? ""),
+  );
   const [range, setRange] = useState<DateRange>(() => trailingRange(7));
+  const scoped = Boolean(
+    requestId.trim() ||
+      endpointName ||
+      endpointType ||
+      status ||
+      model ||
+      apiKeyId ||
+      finishReason,
+  );
   const [selected, setSelected] = useState<AITrace | null>(null);
 
   // Workspace's API keys — for both the filter dropdown and id→name resolution
@@ -94,7 +106,7 @@ export const AITracesList = () => {
     model: model.trim() || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
-    // Date-range filter → inclusive [start-of-day, end-of-day] timestamps.
+    request_id: requestId.trim() || undefined,
     start: dayjs(range.start).startOf("day").toISOString(),
     end: dayjs(range.end).endOf("day").toISOString(),
     limit: LIMIT,
@@ -165,7 +177,7 @@ export const AITracesList = () => {
         </Button>
       }
     >
-      <TraceStatsChart workspace={workspace} range={range} />
+      {!scoped && <TraceStatsChart workspace={workspace} range={range} />}
 
       <div className="mb-4 flex flex-wrap items-center gap-2 [&>button]:h-8 [&_input]:h-8 [&_[role=combobox]]:h-8">
         <DateRangePicker
@@ -173,6 +185,13 @@ export const AITracesList = () => {
           value={range}
           onChange={setRange}
           presets={TRACE_RANGE_PRESETS}
+        />
+        <Input
+          className="w-[280px]"
+          aria-label={t("ai_traces.filters.requestId")}
+          placeholder={t("ai_traces.filters.requestId")}
+          value={requestId}
+          onChange={(e) => setRequestId(e.target.value)}
         />
         <Input
           className="w-[200px]"
@@ -271,6 +290,9 @@ export const AITracesList = () => {
               <TableHead className="w-[180px]">
                 {t("ai_traces.columns.time")}
               </TableHead>
+              <TableHead className="min-w-[250px]">
+                {t("ai_traces.columns.requestId")}
+              </TableHead>
               {isAllWorkspaces && (
                 <TableHead className="w-[140px]">
                   {t("ai_traces.columns.workspace")}
@@ -281,6 +303,7 @@ export const AITracesList = () => {
                 {t("ai_traces.columns.app")}
               </TableHead>
               <TableHead>{t("ai_traces.columns.model")}</TableHead>
+              <TableHead>{t("ai_traces.routing.target")}</TableHead>
               <TableHead className="w-[90px]">
                 {t("ai_traces.columns.status")}
               </TableHead>
@@ -333,6 +356,9 @@ export const AITracesList = () => {
                     format="YYYY-MM-DD HH:mm:ss"
                   />
                 </TableCell>
+                <TableCell className="font-mono text-xs whitespace-nowrap">
+                  {row.request_id}
+                </TableCell>
                 {isAllWorkspaces && (
                   <TableCell className="text-sm truncate max-w-[140px]">
                     {row.workspace || (
@@ -352,7 +378,19 @@ export const AITracesList = () => {
                   )}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {row.response_model || row.request_model || "-"}
+                  {row.request_model || row.response_model || "-"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {row.upstream || row.upstream_model ? (
+                    <>
+                      <div>{row.upstream || "—"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {row.upstream_model || "—"}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={row.response_status} />
