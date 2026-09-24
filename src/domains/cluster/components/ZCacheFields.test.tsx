@@ -2,6 +2,7 @@ import type { UseFormReturnType } from "@refinedev/react-hook-form";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
+import { transformClusterValues } from "../lib/transform-cluster-values";
 import type { Cluster, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
 
@@ -18,16 +19,21 @@ function Form({
   onSubmit,
   status,
   isEdit = true,
+  legacy = false,
 }: {
   onSubmit: (data: Cluster) => void;
   status?: ZCacheStatus;
   isEdit?: boolean;
+  legacy?: boolean;
 }) {
   const form = useForm<Cluster>({
     defaultValues: {
       spec: {
         type: "kubernetes",
-        zcache: { enabled: true, l1_size_gib: 8, target_nodes: ["a", "b"] },
+        config: {},
+        zcache: legacy
+          ? undefined
+          : { enabled: true, l1_size_gib: 8, target_nodes: ["a", "b"] },
       },
     },
   });
@@ -67,6 +73,14 @@ const observed: ZCacheStatus = {
 };
 
 describe("ZCacheFields", () => {
+  it("keeps ZCache absent when an existing cluster is saved without enabling it", async () => {
+    const submit = vi.fn();
+    render(<Form onSubmit={submit} legacy />);
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(submit).toHaveBeenCalled());
+    const payload = transformClusterValues(submit.mock.calls[0][0], true);
+    expect(payload.spec).not.toHaveProperty("zcache");
+  });
   it("sends a numeric capacity and preserves the successful node when removing a failed node", async () => {
     const submit = vi.fn();
     render(<Form onSubmit={submit} status={observed} />);
