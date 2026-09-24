@@ -34,6 +34,7 @@ import { type AITrace, fetchAITrace } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { StatusBadge } from "../status";
+import { RoutingDetails } from "./RoutingDetails";
 
 type Props = {
   trace: AITrace | null;
@@ -87,6 +88,7 @@ export const TraceDetailDrawer = ({ trace, open, onOpenChange }: Props) => {
                 </div>
               ) : (
                 <>
+                  <RoutingDetails routing={detail?.routing} />
                   <BodySection
                     key={`${trace.request_id}-request`}
                     title={t("ai_traces.detail.request")}

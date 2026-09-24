@@ -13,8 +13,13 @@ vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+const context = vi.hoisted(() => ({
+  params: { workspace: "design-lab" } as Record<string, string>,
+  query: vi.fn(),
+}));
+
 vi.mock("@refinedev/core", () => ({
-  useParsed: () => ({ params: { workspace: "design-lab" } }),
+  useParsed: () => ({ params: context.params }),
   useList: () => ({ data: { data: apiKeys } }),
 }));
 
@@ -23,19 +28,19 @@ vi.mock("@refinedev/core", () => ({
 const listState = vi.hoisted(() => ({ items: [] as unknown[] }));
 
 vi.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: () => ({
-    data: {
-      pages: [{ items: listState.items, next_before: "" }],
-      pageParams: [],
-    },
-    isLoading: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    fetchNextPage: vi.fn(),
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useInfiniteQuery: (options: unknown) => {
+    context.query(options);
+    return {
+      data: { pages: [{ items: listState.items, next_before: "" }], pageParams: [] },
+      isLoading: false,
+      isFetching: false,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+      error: null,
+      refetch: vi.fn(),
+    };
+  },
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
@@ -57,7 +62,7 @@ vi.mock("@/pages/ai-traces/components/StatusCodeFilter", () => ({
   StatusCodeFilter: () => null,
 }));
 vi.mock("@/pages/ai-traces/components/TraceStatsChart", () => ({
-  TraceStatsChart: () => null,
+  TraceStatsChart: () => <div>workspace-chart</div>,
 }));
 vi.mock("@/pages/ai-traces/components/TraceDetailDrawer", () => ({
   TraceDetailDrawer: () => null,
@@ -90,6 +95,7 @@ function selectKey(name: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   listState.items = [];
+  context.params = { workspace: "design-lab" };
 });
 
 const trace = (overrides: Partial<AITrace> = {}): AITrace => ({
@@ -171,5 +177,49 @@ describe("AITracesList readings column", () => {
         "whitespace-nowrap",
       );
     }
+  });
+});
+
+describe("routing log links", () => {
+  it("keeps exact times and target filters from the dashboard, without a workspace-wide chart", () => {
+    context.params = {
+      workspace: "design-lab",
+      endpoint_name: "router",
+      endpoint_type: "external-endpoint",
+      request_model: "model/with & spaces",
+      upstream: "provider",
+      upstream_model: "m",
+      request_mode: "non_stream",
+      from: "1789882200123",
+      to: "1789885800456",
+    };
+    render(<AITracesList />);
+    const { queryKey } =
+      context.query.mock.calls[context.query.mock.calls.length - 1][0];
+    expect(queryKey[1]).toMatchObject({
+      endpoint_name: "router",
+      request_model: "model/with & spaces",
+      upstream: "provider",
+      upstream_model: "m",
+      request_mode: "non_stream",
+      start: new Date(1789882200123).toISOString(),
+      end: new Date(1789885800456).toISOString(),
+    });
+    expect(screen.queryByText("workspace-chart")).toBeNull();
+    expect(
+      screen.getByLabelText("ai_traces.routing.requestModel"),
+    ).toHaveProperty("value", "model/with & spaces");
+  });
+  it("falls back to a valid calendar range for malformed dashboard times", () => {
+    context.params = {
+      workspace: "design-lab",
+      from: "99999999999999999999",
+      to: "NaN",
+    };
+    render(<AITracesList />);
+    const { queryKey } =
+      context.query.mock.calls[context.query.mock.calls.length - 1][0];
+    expect(Number.isFinite(Date.parse(queryKey[1].start))).toBe(true);
+    expect(screen.getByText("workspace-chart")).toBeTruthy();
   });
 });

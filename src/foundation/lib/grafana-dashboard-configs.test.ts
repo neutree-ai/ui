@@ -5,6 +5,7 @@ import {
   GRAFANA_VAR_ALL,
   getClusterSplitDashboardProps,
   getEndpointSplitDashboardProps,
+  getModelRoutingDashboardProps,
   getOverviewDashboardProps,
 } from "./grafana-dashboard-configs";
 
@@ -67,5 +68,24 @@ describe("getEndpointSplitDashboardProps", () => {
         Endpoint: "endpoint-a",
       });
     },
+  );
+});
+
+it("uses an absolute console hash route for routing log links", () => {
+  const props = getModelRoutingDashboardProps("https://grafana.example", {
+    workspace: "ws",
+    endpoint: "router & test",
+    models: [],
+    mode: "all",
+    from: "now-1h",
+    to: "now",
+    refresh: "30s",
+  });
+  const link = props.dashboardConfig.variables?.logs_url as string;
+  expect(link).toContain(
+    `${window.location.origin}${window.location.pathname}#/ws/ai-traces?`,
+  );
+  expect(new URLSearchParams(link.split("?")[1]).get("endpoint_name")).toBe(
+    "router & test",
   );
 });
