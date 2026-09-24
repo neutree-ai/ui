@@ -104,7 +104,6 @@ export const getModelRoutingDashboardProps = (
       ...getCommonVariables(),
       // Encode once as PromQL string literals. Grafana 11 formatters differ
       // in quote/backslash escaping; raw interpolation preserves this encoding.
-      logs_url: `${window.location.origin}${window.location.pathname}#/${encodeURIComponent(context.workspace)}/ai-traces?endpoint_type=external-endpoint&endpoint_name=${encodeURIComponent(context.endpoint)}`,
       endpoint_literal: JSON.stringify(
         `/workspace/${context.workspace}/external-endpoint/${context.endpoint}`,
       ),
