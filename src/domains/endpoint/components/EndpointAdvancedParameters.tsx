@@ -117,12 +117,16 @@ function ParameterValue({ name, value }: { name: string; value: unknown }) {
           </code>
         </ExpandableCell>
       </TableCell>
-      <TableCell className="w-12 text-right">
+      {/* The copy control sits beside the expand control in every row, so it
+          carries the same weight and the same box: one muted token, one icon
+          size. `pl-0` pulls it up against the value cell instead of leaving a
+          gutter between two controls that read as a pair. */}
+      <TableCell className="w-7 p-2 pl-0 text-right">
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-5 w-5 shrink-0 text-[var(--nt-text-neutral-quaternary)] hover:text-[var(--nt-text-neutral-secondary)]"
           title={t("api_keys.buttons.copy")}
           aria-label={`${name} ${t("api_keys.buttons.copy")}`}
           onClick={() =>
@@ -132,11 +136,7 @@ function ParameterValue({ name, value }: { name: string; value: unknown }) {
             })
           }
         >
-          {copied ? (
-            <Check className="size-3.5" />
-          ) : (
-            <Copy className="size-3.5" />
-          )}
+          {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
         </Button>
       </TableCell>
     </TableRow>
@@ -169,7 +169,7 @@ function ParameterGroup({
                 {t("common.fields.name")}
               </TableHead>
               <TableHead>{t("endpoints.fields.parameterValue")}</TableHead>
-              <TableHead className="w-12" />
+              <TableHead className="w-7" />
             </TableRow>
           </TableHeader>
           <TableBody>
