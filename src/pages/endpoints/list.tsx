@@ -13,7 +13,7 @@ import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
-import { defaultSorters, Table } from "@/foundation/components/Table";
+import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveModelSource } from "@/foundation/lib/model-source";
 import type { BaseStatus } from "@/foundation/types/basic-types";
@@ -38,10 +38,17 @@ export const EndpointsList = () => {
           enableBatchDelete
           searchField="metadata->>name"
           refineCoreProps={{
-            // Newest first, like every other list. An endpoint the controller
-            // has not reported a status for yet used to sort behind failed and
-            // deleted ones, so a freshly created one landed on the last page.
-            sorters: defaultSorters,
+            // Status first, newest first inside a rank. Product decision: the
+            // default leads with the states an operator acts on, not with the
+            // newest row. The ranks themselves belong to
+            // `status_sort_priority` in the database, so moving failed ahead of
+            // paused is a migration, not a line here.
+            sorters: {
+              initial: [
+                { field: "status_sort_priority", order: "asc" },
+                { field: "metadata->creation_timestamp", order: "desc" },
+              ],
+            },
           }}
           filters={({ filters, setFilters }) => (
             <ModelTaskFilter filters={filters} setFilters={setFilters} />
