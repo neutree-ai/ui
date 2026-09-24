@@ -34,7 +34,6 @@ import { type AITrace, fetchAITrace } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { StatusBadge } from "../status";
-import { RoutingDetails } from "./RoutingDetails";
 
 type Props = {
   trace: AITrace | null;
@@ -88,7 +87,6 @@ export const TraceDetailDrawer = ({ trace, open, onOpenChange }: Props) => {
                 </div>
               ) : (
                 <>
-                  <RoutingDetails routing={detail?.routing} />
                   <BodySection
                     key={`${trace.request_id}-request`}
                     title={t("ai_traces.detail.request")}
@@ -136,6 +134,12 @@ const MetaGrid = ({ trace }: { trace: AITrace }) => {
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.responseModel")}>
         {trace.response_model || "-"}
+      </MetaRow>
+      <MetaRow label={t("ai_traces.routing.upstream")}>
+        {trace.upstream || "—"}
+      </MetaRow>
+      <MetaRow label={t("ai_traces.routing.upstreamModel")}>
+        {trace.upstream_model || "—"}
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.stream")}>
         {trace.stream ? (

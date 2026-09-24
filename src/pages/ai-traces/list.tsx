@@ -68,6 +68,9 @@ export const AITracesList = () => {
     () => (params?.api_key_id as string) ?? "",
   );
   const [finishReason, setFinishReason] = useState<string>("");
+  const [requestId, setRequestId] = useState(() =>
+    String(params?.request_id ?? ""),
+  );
   const [requestModel, setRequestModel] = useState(() =>
     String(params?.request_model ?? ""),
   );
@@ -76,15 +79,6 @@ export const AITracesList = () => {
   );
   const [upstreamModel, setUpstreamModel] = useState(() =>
     String(params?.upstream_model ?? ""),
-  );
-  const [gatewayInstance, setGatewayInstance] = useState(() =>
-    String(params?.gateway_instance ?? ""),
-  );
-  const [routingResult, setRoutingResult] = useState(() =>
-    String(params?.routing_result ?? ""),
-  );
-  const [routingReason, setRoutingReason] = useState(() =>
-    String(params?.routing_reason ?? ""),
   );
   const [requestMode, setRequestMode] = useState(() =>
     params?.request_mode === "stream" || params?.request_mode === "non_stream"
@@ -108,16 +102,11 @@ export const AITracesList = () => {
   });
   const preciseRange = range.start.includes("T");
   const routingFilters = Boolean(
-    requestModel ||
-      upstream ||
-      upstreamModel ||
-      gatewayInstance ||
-      routingResult ||
-      routingReason ||
-      requestMode,
+    requestModel || upstream || upstreamModel || requestMode,
   );
   const scoped = Boolean(
-    routingFilters ||
+    requestId.trim() ||
+      routingFilters ||
       endpointName ||
       endpointType ||
       status ||
@@ -155,12 +144,10 @@ export const AITracesList = () => {
     model: model.trim() || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
+    request_id: requestId.trim() || undefined,
     request_model: requestModel.trim() || undefined,
     upstream: upstream.trim() || undefined,
     upstream_model: upstreamModel.trim() || undefined,
-    gateway_instance: gatewayInstance.trim() || undefined,
-    routing_result: routingResult || undefined,
-    routing_reason: routingReason || undefined,
     request_mode: requestMode || undefined,
     // Dashboard links carry exact instants; calendar selections cover whole days.
     start: preciseRange
@@ -243,6 +230,13 @@ export const AITracesList = () => {
           value={range}
           onChange={setRange}
           presets={TRACE_RANGE_PRESETS}
+        />
+        <Input
+          className="w-[280px]"
+          aria-label={t("ai_traces.filters.requestId")}
+          placeholder={t("ai_traces.filters.requestId")}
+          value={requestId}
+          onChange={(e) => setRequestId(e.target.value)}
         />
         <Input
           className="w-[200px]"
@@ -341,7 +335,6 @@ export const AITracesList = () => {
               ["requestModel", requestModel, setRequestModel],
               ["upstream", upstream, setUpstream],
               ["upstreamModel", upstreamModel, setUpstreamModel],
-              ["gatewayInstance", gatewayInstance, setGatewayInstance],
             ] as const
           ).map(([key, value, setter]) => (
             <Input
@@ -353,55 +346,6 @@ export const AITracesList = () => {
               onChange={(e) => setter(e.target.value)}
             />
           ))}
-          <Select
-            value={routingResult || "all"}
-            onValueChange={(v) => setRoutingResult(v === "all" ? "" : v)}
-          >
-            <SelectTrigger
-              className="h-8 w-[180px]"
-              aria-label={t("ai_traces.routing.result")}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {t("ai_traces.routing.allResults")}
-              </SelectItem>
-              {["selected", "unassigned", "not_evaluated"].map((v) => (
-                <SelectItem key={v} value={v}>
-                  {t(`ai_traces.routing.results.${v}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={routingReason || "all"}
-            onValueChange={(v) => setRoutingReason(v === "all" ? "" : v)}
-          >
-            <SelectTrigger
-              className="h-8 w-[230px]"
-              aria-label={t("ai_traces.routing.reason")}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {t("ai_traces.routing.allReasons")}
-              </SelectItem>
-              {[
-                "priority_weight",
-                "capacity_filtered",
-                "capacity_exhausted",
-                "model_not_found",
-                "no_available_target",
-                "counter_unavailable",
-              ].map((v) => (
-                <SelectItem key={v} value={v}>
-                  {t(`ai_traces.routing.reasons.${v}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select
             value={requestMode || "all"}
             onValueChange={(v) => setRequestMode(v === "all" ? "" : v)}
@@ -533,19 +477,15 @@ export const AITracesList = () => {
                   {row.request_model || row.response_model || "-"}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {row.routing?.selected ? (
+                  {row.upstream || row.upstream_model ? (
                     <>
-                      <div>{row.routing.selected.upstream}</div>
+                      <div>{row.upstream || "—"}</div>
                       <div className="text-xs text-muted-foreground">
-                        {row.routing.selected.upstream_model}
+                        {row.upstream_model || "—"}
                       </div>
                     </>
                   ) : (
-                    <span className="text-xs text-muted-foreground">
-                      {row.routing
-                        ? t(`ai_traces.routing.results.${row.routing.result}`)
-                        : t("ai_traces.routing.unrecorded")}
-                    </span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell>

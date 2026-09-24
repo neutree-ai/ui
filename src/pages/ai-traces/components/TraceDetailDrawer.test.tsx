@@ -57,7 +57,6 @@ vi.mock("@/foundation/components/ShowButton", () => ({
   ShowButton: () => <button type="button">show</button>,
 }));
 
-import { RoutingDetails } from "./RoutingDetails";
 import { TraceDetailDrawer } from "./TraceDetailDrawer";
 
 const trace = {
@@ -88,51 +87,29 @@ describe("TraceDetailDrawer", () => {
   });
 });
 
-describe("RoutingDetails", () => {
-  it("distinguishes an old log from a request that could not select a target", () => {
-    const { rerender } = render(<RoutingDetails />);
-    expect(screen.getByText("ai_traces.routing.unrecorded")).toBeTruthy();
-    rerender(
-      <RoutingDetails
-        routing={{ result: "unassigned", reason: "capacity_exhausted" }}
-      />,
-    );
-    expect(screen.queryByText("ai_traces.routing.unrecorded")).toBeNull();
-    expect(
-      screen.getByText("ai_traces.routing.reasons.capacity_exhausted"),
-    ).toBeTruthy();
-  });
-  it("shows captured candidates and reports a truncated history", () => {
-    render(
-      <RoutingDetails
-        routing={{
-          result: "selected",
-          reason: "capacity_filtered",
-          selected: {
-            upstream: "b",
-            upstream_model: "m2",
-            priority: 1,
-            weight: 1,
-            max_inflight_requests: 0,
-            inflight: 0,
-          },
-          skipped: [
-            {
-              upstream: "a",
-              upstream_model: "m1",
-              priority: 0,
-              weight: 1,
-              max_inflight_requests: 2,
-              inflight: 2,
-              reason: "capacity_exhausted",
-            },
-          ],
-          skipped_total: 40,
+it("shows the final destination separately from the request and response models", () => {
+  render(
+    <TooltipProvider>
+      <TraceDetailDrawer
+        trace={{
+          ...trace,
+          request_model: "public-model",
+          response_model: "response-model",
+          upstream: "provider",
+          upstream_model: "mapped-model",
         }}
-      />,
-    );
-    expect(screen.getByText("b / m2")).toBeTruthy();
-    expect(screen.getByText("a / m1")).toBeTruthy();
-    expect(screen.getByText("ai_traces.routing.truncated")).toBeTruthy();
-  });
+        open
+        onOpenChange={vi.fn()}
+      />
+    </TooltipProvider>,
+  );
+  for (const value of [
+    "public-model",
+    "response-model",
+    "provider",
+    "mapped-model",
+  ]) {
+    expect(screen.getByText(value)).toBeTruthy();
+  }
+  expect(screen.queryByText("ai_traces.routing.reason")).toBeNull();
 });
