@@ -30,7 +30,7 @@ export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   return (
     <ShowPage.Section title={t("clusters.zcache.title")}>
       <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <ShowPage.Row title={t("clusters.zcache.configurationResult")}>
             {result}
           </ShowPage.Row>
@@ -43,6 +43,9 @@ export function ZCacheSection({ cluster }: { cluster: Cluster }) {
             {status?.observed_at
               ? `${ready} / ${nodes.length}`
               : t("clusters.zcache.unknown")}
+          </ShowPage.Row>
+          <ShowPage.Row title={t("clusters.zcache.configuredVersion")}>
+            {status?.configured_runtime_version || t("clusters.zcache.unknown")}
           </ShowPage.Row>
         </div>
         {status?.message && (
