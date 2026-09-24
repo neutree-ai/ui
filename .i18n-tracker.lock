@@ -436,6 +436,6 @@
   "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "96935aff2929ec6ac093da27b4268263",
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e",
   "src/foundation/hooks/use-is-truncated.ts": "0cf7cb247f3944b09562b5c27e5b68c8",
-  "src/domains/cluster/components/ZCacheFields.tsx": "df7a12cc90c5946983d31a6c45c93299",
-  "src/domains/cluster/components/ZCacheSection.tsx": "b2d5187334ec5061ca7965eb91ebad49"
+  "src/domains/cluster/components/ZCacheFields.tsx": "aa0b98673b54947eeb4e42abf0530b5d",
+  "src/domains/cluster/components/ZCacheSection.tsx": "56fc0a34da735bf60a72345c45c79e80"
 }
