@@ -529,6 +529,8 @@ describe("EndpointRuntimeResourcesCard", () => {
     // Truncated, so the tooltip is the only way to the whole name — which means
     // hover alone is not enough: the cell has to be a tab stop.
     expect(product.getAttribute("tabindex")).toBe("0");
+    // Still no help cursor: this is a value, not a help topic.
+    expect(product.className).not.toContain("cursor-help");
 
     fireEvent.focus(product);
 

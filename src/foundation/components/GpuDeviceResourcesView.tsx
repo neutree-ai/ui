@@ -398,7 +398,7 @@ const GpuGridCell = ({
       className={cn(
         "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
         productTruncated &&
-          "cursor-help focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
       )}
     >
       {row.product || "-"}
@@ -454,10 +454,11 @@ const GpuGridCell = ({
       {/* The product used to live on the cell's `title` alone: a pointer could
           read it, a keyboard could not — and it is the one thing that tells two
           cards of the same node apart. It gets a line of its own now, truncated.
-          The tooltip — and the tab stop, and the help cursor that announces it —
-          belongs to the clipped state only: hung on a name that already fits, it
-          would say what the reader is looking at, and take a tab stop away from
-          the controls that do something. */}
+          The tooltip — and the tab stop with it — belongs to the clipped state
+          only: hung on a name that already fits, it would say what the reader is
+          looking at, and take a tab stop away from the controls that do
+          something. The cursor stays a cursor either way; a question mark is the
+          help affordance, and this line is a value, not a help topic. */}
       {productTruncated ? (
         <Tooltip>
           <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
