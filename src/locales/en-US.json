@@ -1990,6 +1990,7 @@
 	"ai_traces": {
 		"title": "Access Log",
 		"empty": "No access logs in the selected window.",
+		"forbidden": "You do not have permission to view access logs.",
 		"refresh": "Refresh",
 		"stats": {
 			"title": "Requests",
