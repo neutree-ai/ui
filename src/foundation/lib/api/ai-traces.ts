@@ -43,7 +43,6 @@ type AITraceListParams = {
   request_model?: string;
   upstream?: string;
   upstream_model?: string;
-  request_mode?: string;
   workspace: string;
   endpoint_name?: string;
   endpoint_type?: string;
