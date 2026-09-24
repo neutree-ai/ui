@@ -568,7 +568,9 @@
 			"noOperations": "No operation records.",
 			"saved": "Configuration saved. Check ZCache on the cluster details page for the application result.",
 			"retryHint": "Save again to retry this failed configuration.",
-			"reportedCapacity": "ZCache configured L1 (GiB)"
+			"reportedCapacity": "ZCache configured L1 (GiB)",
+			"configuredVersion": "Configured Runtime version",
+			"capacityHint": "Start with 1 GiB per node and adjust for workload needs. ZCache checks node capacity before applying. Changing L1 affects all target nodes and may recreate cache processes and clear cached data."
 		}
 	},
 	"model_registries": {
