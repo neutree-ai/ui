@@ -60,6 +60,9 @@ export function ZCacheFields({
           </FormFieldGroup>
           {enabled && (
             <>
+              <p className="col-span-full text-sm text-muted-foreground">
+                {t("clusters.zcache.capacityHint")}
+              </p>
               <FormFieldGroup
                 {...form}
                 name="spec.zcache.l1_size_gib"
