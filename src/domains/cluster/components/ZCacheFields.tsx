@@ -45,7 +45,12 @@ export function ZCacheFields({
                   "spec.zcache",
                   {
                     enabled: value === true,
-                    l1_size_gib: form.getValues("spec.zcache.l1_size_gib") || 1,
+                    l1_size_gib:
+                      Number.isInteger(
+                        form.getValues("spec.zcache.l1_size_gib"),
+                      ) && form.getValues("spec.zcache.l1_size_gib") > 0
+                        ? form.getValues("spec.zcache.l1_size_gib")
+                        : 1,
                     target_nodes: selected,
                   },
                   { shouldDirty: true, shouldValidate: true },
@@ -61,6 +66,7 @@ export function ZCacheFields({
                 label={t("clusters.zcache.capacity")}
                 rules={{
                   validate: (value) =>
+                    form.getValues("spec.zcache.enabled") !== true ||
                     (Number.isInteger(Number(value)) &&
                       Number(value) >= 1 &&
                       Number(value) <= 2147483647) ||
@@ -135,7 +141,7 @@ export function ZCacheFields({
                   type="hidden"
                   {...form.register("spec.zcache.target_nodes", {
                     validate: (value) =>
-                      !enabled ||
+                      form.getValues("spec.zcache.enabled") !== true ||
                       (value?.length ?? 0) > 0 ||
                       t("clusters.zcache.selectNodes"),
                   })}

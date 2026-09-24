@@ -438,6 +438,6 @@
   "src/foundation/components/Section.tsx": "c545240df77551f8779b1c50f5021927",
   "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d",
   "src/foundation/components/ServiceUrls.tsx": "dc5a564260648a8098c2b4f176792b89",
-  "src/domains/cluster/components/ZCacheFields.tsx": "df7a12cc90c5946983d31a6c45c93299",
-  "src/domains/cluster/components/ZCacheSection.tsx": "b2d5187334ec5061ca7965eb91ebad49"
+  "src/domains/cluster/components/ZCacheFields.tsx": "aa0b98673b54947eeb4e42abf0530b5d",
+  "src/domains/cluster/components/ZCacheSection.tsx": "56fc0a34da735bf60a72345c45c79e80"
 }

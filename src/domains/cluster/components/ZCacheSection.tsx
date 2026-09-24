@@ -8,7 +8,18 @@ export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   const status = cluster.status?.zcache;
   const nodes = status?.nodes ?? [];
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
-  const phase = status?.phase ?? "Reconciling";
+  const desired = cluster.spec.zcache;
+  const current = status?.current;
+  const matches = !desired?.enabled
+    ? !current?.enabled
+    : current?.enabled &&
+      current.l1_size_gib === desired.l1_size_gib &&
+      [...(current.target_nodes ?? [])].sort().join("\n") ===
+        [...desired.target_nodes].sort().join("\n");
+  const phase =
+    status?.phase === "Applied" && !matches
+      ? "Reconciling"
+      : (status?.phase ?? "Reconciling");
   const result = t(
     phase === "Applied"
       ? "clusters.zcache.applied"
