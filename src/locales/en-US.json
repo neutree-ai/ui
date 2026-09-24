@@ -564,7 +564,7 @@
 			"noRuntimeNodes": "No runtime nodes observed.",
 			"operations": "Recent operations (up to 10)",
 			"submission": "Current submission:",
-			"notAccepted": "No operation has been accepted yet.",
+			"notAccepted": "Operation acceptance has not been confirmed.",
 			"noOperations": "No operation records.",
 			"saved": "Configuration saved. Check ZCache on the cluster details page for the application result.",
 			"retryHint": "Save again to retry this failed configuration.",
