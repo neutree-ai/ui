@@ -189,7 +189,6 @@ describe("routing log links", () => {
       request_model: "model/with & spaces",
       upstream: "provider",
       upstream_model: "m",
-      request_mode: "non_stream",
       from: "1789882200123",
       to: "1789885800456",
     };
@@ -201,7 +200,6 @@ describe("routing log links", () => {
       request_model: "model/with & spaces",
       upstream: "provider",
       upstream_model: "m",
-      request_mode: "non_stream",
       start: new Date(1789882200123).toISOString(),
       end: new Date(1789885800456).toISOString(),
     });

@@ -75,10 +75,6 @@ export const AITracesList = () => {
   const requestModel = String(params?.request_model ?? "");
   const upstream = String(params?.upstream ?? "");
   const upstreamModel = String(params?.upstream_model ?? "");
-  const requestMode =
-    params?.request_mode === "stream" || params?.request_mode === "non_stream"
-      ? params.request_mode
-      : "";
   const [range, setRange] = useState<DateRange>(() => {
     const from = Number(params?.from);
     const to = Number(params?.to);
@@ -95,9 +91,7 @@ export const AITracesList = () => {
     return trailingRange(7);
   });
   const preciseRange = range.start.includes("T");
-  const routingFilters = Boolean(
-    requestModel || upstream || upstreamModel || requestMode,
-  );
+  const routingFilters = Boolean(requestModel || upstream || upstreamModel);
   const scoped = Boolean(
     requestId.trim() ||
       routingFilters ||
@@ -142,7 +136,6 @@ export const AITracesList = () => {
     request_model: requestModel.trim() || undefined,
     upstream: upstream.trim() || undefined,
     upstream_model: upstreamModel.trim() || undefined,
-    request_mode: requestMode || undefined,
     // Dashboard links carry exact instants; calendar selections cover whole days.
     start: preciseRange
       ? range.start
