@@ -194,7 +194,7 @@
   "src/domains/endpoint/components/ResourcesCard.tsx": "a0abe5eee7ba64c873df47333bf3f7fd",
   "src/domains/endpoint/components/SliderWithInput.tsx": "115cfe56a0c6ea05a7fed3aa8dfed3fb",
   "src/domains/endpoint/components/VirtualLog.tsx": "9f0aae0f2ec30cb6fbfc94546fde0f82",
-  "src/domains/cluster/types.ts": "6a053d512fd93a8ced5c358d71be6526",
+  "src/domains/cluster/types.ts": "7fde6f317af3fcaae0f8efffa909a9ca",
   "src/domains/cluster/lib/get-ray-dashboard-proxy.ts": "a4a3c75f58c68ee9dca572ad3a70c62b",
   "src/domains/cluster/hooks/use-cluster-monitor-panels.ts": "9b1755f6538148e43f76f6f7aab08420",
   "src/domains/cluster/components/ClusterStatus.tsx": "5ddd108e4c3237b3e08c0beb093b455a",
@@ -438,6 +438,6 @@
   "src/foundation/components/Section.tsx": "c545240df77551f8779b1c50f5021927",
   "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d",
   "src/foundation/components/ServiceUrls.tsx": "dc5a564260648a8098c2b4f176792b89",
-  "src/domains/cluster/components/ZCacheFields.tsx": "aa0b98673b54947eeb4e42abf0530b5d",
-  "src/domains/cluster/components/ZCacheSection.tsx": "56fc0a34da735bf60a72345c45c79e80"
+  "src/domains/cluster/components/ZCacheFields.tsx": "9731a46ddff295d14205d399ffb2e1fd",
+  "src/domains/cluster/components/ZCacheSection.tsx": "8b6eb26661d005d9ffd83861809f9564"
 }
