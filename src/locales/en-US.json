@@ -2158,7 +2158,7 @@
 			"reasons": {
 				"priority_weight": "Selected by priority and weight",
 				"capacity_filtered": "Selected after excluding full candidates",
-				"capacity_exhausted": "All checked targets were at capacity",
+				"capacity_exhausted": "Concurrency limit reached",
 				"model_not_found": "No matching model route",
 				"no_available_target": "No selectable target",
 				"counter_unavailable": "Unable to check capacity"
