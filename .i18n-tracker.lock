@@ -210,7 +210,7 @@
   "src/foundation/providers/data-provider/utils/clean-internal-fields.ts": "86fabe5db09d9fe17c44b007c81ede57",
   "src/domains/cluster/lib/calc-resource-usage.ts": "d0ff80aa6adcec22fb512bcabf65db54",
   "src/domains/cluster/lib/get-cache-type.ts": "2c082b5338dcd2fa18335dcbbc65bada",
-  "src/domains/cluster/lib/transform-cluster-values.ts": "de6fa24a31fc43b5ac1bd926c8d83a52",
+  "src/domains/cluster/lib/transform-cluster-values.ts": "f172cb243d587e7b0b7ef4fb60f708b6",
   "src/domains/cluster/lib/get-access-mode-label.ts": "89a508f6534b3952ed5e56ddc3347f7d",
   "src/domains/cluster/lib/validate-node-ips.ts": "813b3badf54f49726292b4b50ef8871c",
   "src/domains/cluster/hooks/use-model-cache-fields.ts": "1bb1f6cda885bdc3a0247102e2ea8f19",
