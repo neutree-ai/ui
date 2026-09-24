@@ -21,7 +21,15 @@ export function transformClusterValues(
   isEdit = false,
   touchedFields?: TouchedFields,
 ): Cluster {
-  const transformed = { ...values };
+  const transformed = { ...values, spec: { ...values.spec } };
+  if (transformed.spec.type !== "kubernetes") delete transformed.spec.zcache;
+  if (transformed.spec.zcache) {
+    transformed.spec.zcache = {
+      ...transformed.spec.zcache,
+      l1_size_gib: Number(transformed.spec.zcache.l1_size_gib),
+      target_nodes: [...(transformed.spec.zcache.target_nodes ?? [])],
+    };
+  }
   const config = transformed.spec.config;
   const sshPrivateKeyTouched = isTouchedField(touchedFields, [
     "spec",
