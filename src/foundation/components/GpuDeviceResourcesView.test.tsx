@@ -520,6 +520,8 @@ describe("GpuDeviceResourcesView", () => {
     // Nothing carries the name as a native title any more: it is either visible
     // or it is on the tooltip, and both are reachable without a pointer.
     expect(product.closest("[title]")).toBeNull();
+    // Still no help cursor: this is a value, not a help topic.
+    expect(product.className).not.toContain("cursor-help");
 
     fireEvent.focus(product);
 

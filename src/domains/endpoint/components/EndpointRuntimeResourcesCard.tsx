@@ -457,7 +457,7 @@ function GpuCell({
       className={cn(
         "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
         productTruncated &&
-          "cursor-help focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
       )}
     >
       {acceleratorType && <>{acceleratorType} · </>}
@@ -495,8 +495,9 @@ function GpuCell({
 
       {/* Clipped, the tooltip is the only way to read the name in full, so it
           has to answer to focus as well as hover. Fitting, it answers neither —
-          a popup repeating the line under the pointer, behind a help cursor and
-          a tab stop, is furniture. */}
+          a popup repeating the line under the pointer, and a tab stop, is
+          furniture. The cursor stays a cursor either way: a question mark is the
+          help affordance, and this line is a value, not a help topic. */}
       {productTruncated ? (
         <Tooltip>
           <TooltipTrigger asChild>{productLabel}</TooltipTrigger>

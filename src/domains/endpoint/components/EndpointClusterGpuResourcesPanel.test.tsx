@@ -640,7 +640,9 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const badge = productBadge.parentElement as HTMLElement;
     expect(badge.getAttribute("title")).toBeNull();
     expect(badge.getAttribute("tabindex")).toBe("0");
-    expect(badge.className).toContain("cursor-help");
+    // A question mark is the help cursor, and this badge is a value: the
+    // ellipsis and the tooltip carry the truncation, the cursor carries nothing.
+    expect(badge.className).not.toContain("cursor-help");
 
     fireEvent.focus(badge);
 

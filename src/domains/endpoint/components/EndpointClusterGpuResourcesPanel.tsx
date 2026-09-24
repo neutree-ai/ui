@@ -504,10 +504,7 @@ function GpuDeviceCard({
     <Badge
       variant="outline"
       tabIndex={productTruncated ? 0 : undefined}
-      className={cn(
-        "w-fit max-w-full min-w-0 text-xs",
-        productTruncated && "cursor-help",
-      )}
+      className="w-fit max-w-full min-w-0 text-xs"
     >
       <span ref={productRef} className="min-w-0 truncate">
         {row.product || "-"}
@@ -591,11 +588,12 @@ function GpuDeviceCard({
           name has to stay reachable, and a native title is not enough — it never
           opens for a keyboard user. It hangs off the tooltip the rest of the app
           uses, with the badge itself as the trigger so hover and focus both
-          reach it. The tooltip, the tab stop and the help cursor all belong to
-          the clipped state: a name that fits has nothing to reveal. The text
-          needs an element of its own to truncate in, too: an `inline-flex` turns
-          bare text into an anonymous flex item that refuses to shrink below its
-          own width. */}
+          reach it, and both belong to the clipped state: a name that fits has
+          nothing to reveal and nothing to focus for. The cursor stays a cursor
+          either way — a question mark is the help affordance, and this is a
+          value. The text needs an element of its own to truncate in, too: an
+          `inline-flex` turns bare text into an anonymous flex item that refuses
+          to shrink below its own width. */}
       {productTruncated ? (
         <Tooltip>
           <TooltipTrigger asChild>{productBadge}</TooltipTrigger>
