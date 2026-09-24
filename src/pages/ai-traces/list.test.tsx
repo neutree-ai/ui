@@ -165,3 +165,35 @@ describe("routing log links", () => {
     expect(screen.getByText("workspace-chart")).toBeTruthy();
   });
 });
+
+describe("request ID search", () => {
+  it("trims the exact ID, preserves the scope and time window, and can be cleared", () => {
+    render(<AITracesList />);
+    const original = context.query.mock.lastCall?.[0].queryKey[1];
+    const input = screen.getByLabelText("ai_traces.filters.requestId");
+    fireEvent.change(input, { target: { value: " req/with & spaces " } });
+    expect(context.query.mock.lastCall?.[0].queryKey[1]).toMatchObject({
+      workspace: "design-lab",
+      request_id: "req/with & spaces",
+      start: original.start,
+      end: original.end,
+    });
+    expect(screen.queryByText("workspace-chart")).toBeNull();
+    fireEvent.change(input, { target: { value: "" } });
+    expect(
+      context.query.mock.lastCall?.[0].queryKey[1].request_id,
+    ).toBeUndefined();
+    expect(screen.getByText("workspace-chart")).toBeTruthy();
+  });
+  it("initializes the ID from a link", () => {
+    context.params.request_id = "request-from-link";
+    render(<AITracesList />);
+    expect(screen.getByLabelText("ai_traces.filters.requestId")).toHaveProperty(
+      "value",
+      "request-from-link",
+    );
+    expect(context.query.mock.lastCall?.[0].queryKey[1].request_id).toBe(
+      "request-from-link",
+    );
+  });
+});

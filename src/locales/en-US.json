@@ -2009,6 +2009,7 @@
 			"totalRequests": "{{total}} total"
 		},
 		"filters": {
+			"requestId": "Request ID (exact match)",
 			"endpoint": "Endpoint name",
 			"endpointType": "Endpoint type",
 			"allTypes": "All types",
@@ -2129,40 +2130,13 @@
 			}
 		},
 		"routing": {
-			"title": "Routing",
 			"target": "Routing target",
 			"filters": "Routing filters",
 			"requestModel": "Request model (exact)",
 			"upstream": "Upstream",
 			"upstreamModel": "Upstream model",
-			"gatewayInstance": "Gateway instance",
-			"result": "Routing result",
-			"reason": "Selection reason",
-			"allResults": "All routing results",
-			"allReasons": "All selection reasons",
 			"allModes": "All call types",
-			"unrecorded": "Routing information not collected",
-			"priority": "Priority",
-			"weight": "Weight",
-			"capacity": "In-flight / limit",
-			"unlimited": "Unlimited",
-			"skipped": "Skipped candidates",
-			"truncated": "Showing {{shown}} of {{total}} skipped candidates.",
-			"capacityHint": "Capacity was observed on this gateway instance before admission. A selected target does not prove the upstream received the request.",
-			"timeHint": "Logs use request start time. Expand the date range if a long request started earlier.",
-			"results": {
-				"selected": "Target selected",
-				"unassigned": "No available target",
-				"not_evaluated": "Routing not reached"
-			},
-			"reasons": {
-				"priority_weight": "Selected by priority and weight",
-				"capacity_filtered": "Selected after excluding full candidates",
-				"capacity_exhausted": "Concurrency limit reached",
-				"model_not_found": "No matching model route",
-				"no_available_target": "No selectable target",
-				"counter_unavailable": "Unable to check capacity"
-			}
+			"timeHint": "Logs use request start time. Expand the date range if a long request started earlier."
 		}
 	},
 	"permissions": {
