@@ -52,11 +52,15 @@ export const AITracesList = () => {
   // "All workspaces" aggregates traces across workspaces, so show a workspace
   // column to disambiguate rows (it is redundant on a single-workspace view).
   const isAllWorkspaces = workspace === ALL_WORKSPACES;
-  const colSpan = isAllWorkspaces ? 11 : 10;
+  const colSpan = isAllWorkspaces ? 12 : 11;
 
-  const [endpointName, setEndpointName] = useState("");
-  const [endpointType, setEndpointType] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+  const [endpointName, setEndpointName] = useState(() =>
+    String(params?.endpoint_name ?? ""),
+  );
+  const [endpointType, setEndpointType] = useState(() =>
+    String(params?.endpoint_type ?? ""),
+  );
+  const [status, setStatus] = useState(() => String(params?.status ?? ""));
   const [model, setModel] = useState("");
   // Pre-fill the api-key filter from ?api_key_id=… so the API-key detail page's
   // "view call logs" link lands here scoped to that key.
@@ -64,7 +68,64 @@ export const AITracesList = () => {
     () => (params?.api_key_id as string) ?? "",
   );
   const [finishReason, setFinishReason] = useState<string>("");
-  const [range, setRange] = useState<DateRange>(() => trailingRange(7));
+  const [requestModel, setRequestModel] = useState(() =>
+    String(params?.request_model ?? ""),
+  );
+  const [upstream, setUpstream] = useState(() =>
+    String(params?.upstream ?? ""),
+  );
+  const [upstreamModel, setUpstreamModel] = useState(() =>
+    String(params?.upstream_model ?? ""),
+  );
+  const [gatewayInstance, setGatewayInstance] = useState(() =>
+    String(params?.gateway_instance ?? ""),
+  );
+  const [routingResult, setRoutingResult] = useState(() =>
+    String(params?.routing_result ?? ""),
+  );
+  const [routingReason, setRoutingReason] = useState(() =>
+    String(params?.routing_reason ?? ""),
+  );
+  const [requestMode, setRequestMode] = useState(() =>
+    params?.request_mode === "stream" || params?.request_mode === "non_stream"
+      ? params.request_mode
+      : "",
+  );
+  const [range, setRange] = useState<DateRange>(() => {
+    const from = Number(params?.from);
+    const to = Number(params?.to);
+    if (
+      Number.isFinite(from) &&
+      Number.isFinite(to) &&
+      from > 0 &&
+      to >= from &&
+      dayjs(from).isValid() &&
+      dayjs(to).isValid()
+    ) {
+      return { start: dayjs(from).toISOString(), end: dayjs(to).toISOString() };
+    }
+    return trailingRange(7);
+  });
+  const preciseRange = range.start.includes("T");
+  const routingFilters = Boolean(
+    requestModel ||
+      upstream ||
+      upstreamModel ||
+      gatewayInstance ||
+      routingResult ||
+      routingReason ||
+      requestMode,
+  );
+  const scoped = Boolean(
+    routingFilters ||
+      endpointName ||
+      endpointType ||
+      status ||
+      model ||
+      apiKeyId ||
+      finishReason ||
+      preciseRange,
+  );
   const [selected, setSelected] = useState<AITrace | null>(null);
 
   // Workspace's API keys — for both the filter dropdown and id→name resolution
@@ -94,9 +155,18 @@ export const AITracesList = () => {
     model: model.trim() || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
-    // Date-range filter → inclusive [start-of-day, end-of-day] timestamps.
-    start: dayjs(range.start).startOf("day").toISOString(),
-    end: dayjs(range.end).endOf("day").toISOString(),
+    request_model: requestModel.trim() || undefined,
+    upstream: upstream.trim() || undefined,
+    upstream_model: upstreamModel.trim() || undefined,
+    gateway_instance: gatewayInstance.trim() || undefined,
+    routing_result: routingResult || undefined,
+    routing_reason: routingReason || undefined,
+    request_mode: requestMode || undefined,
+    // Dashboard links carry exact instants; calendar selections cover whole days.
+    start: preciseRange
+      ? range.start
+      : dayjs(range.start).startOf("day").toISOString(),
+    end: preciseRange ? range.end : dayjs(range.end).endOf("day").toISOString(),
     limit: LIMIT,
   };
 
@@ -165,7 +235,7 @@ export const AITracesList = () => {
         </Button>
       }
     >
-      <TraceStatsChart workspace={workspace} range={range} />
+      {!scoped && <TraceStatsChart workspace={workspace} range={range} />}
 
       <div className="mb-4 flex flex-wrap items-center gap-2 [&>button]:h-8 [&_input]:h-8 [&_[role=combobox]]:h-8">
         <DateRangePicker
@@ -258,6 +328,113 @@ export const AITracesList = () => {
         </Select>
       </div>
 
+      <details
+        className="mb-4 rounded-md border p-3"
+        open={routingFilters || undefined}
+      >
+        <summary className="cursor-pointer text-sm font-medium">
+          {t("ai_traces.routing.filters")}
+        </summary>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(
+            [
+              ["requestModel", requestModel, setRequestModel],
+              ["upstream", upstream, setUpstream],
+              ["upstreamModel", upstreamModel, setUpstreamModel],
+              ["gatewayInstance", gatewayInstance, setGatewayInstance],
+            ] as const
+          ).map(([key, value, setter]) => (
+            <Input
+              key={key}
+              className="h-8 w-[200px]"
+              aria-label={t(`ai_traces.routing.${key}`)}
+              placeholder={t(`ai_traces.routing.${key}`)}
+              value={value}
+              onChange={(e) => setter(e.target.value)}
+            />
+          ))}
+          <Select
+            value={routingResult || "all"}
+            onValueChange={(v) => setRoutingResult(v === "all" ? "" : v)}
+          >
+            <SelectTrigger
+              className="h-8 w-[180px]"
+              aria-label={t("ai_traces.routing.result")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {t("ai_traces.routing.allResults")}
+              </SelectItem>
+              {["selected", "unassigned", "not_evaluated"].map((v) => (
+                <SelectItem key={v} value={v}>
+                  {t(`ai_traces.routing.results.${v}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={routingReason || "all"}
+            onValueChange={(v) => setRoutingReason(v === "all" ? "" : v)}
+          >
+            <SelectTrigger
+              className="h-8 w-[230px]"
+              aria-label={t("ai_traces.routing.reason")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {t("ai_traces.routing.allReasons")}
+              </SelectItem>
+              {[
+                "priority_weight",
+                "capacity_filtered",
+                "capacity_exhausted",
+                "model_not_found",
+                "no_available_target",
+                "counter_unavailable",
+              ].map((v) => (
+                <SelectItem key={v} value={v}>
+                  {t(`ai_traces.routing.reasons.${v}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={requestMode || "all"}
+            onValueChange={(v) => setRequestMode(v === "all" ? "" : v)}
+          >
+            <SelectTrigger
+              className="h-8 w-[160px]"
+              aria-label={t("ai_traces.detail.stream")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {t("ai_traces.routing.allModes")}
+              </SelectItem>
+              <SelectItem value="stream">
+                {t("ai_traces.detail.streamOn")}
+              </SelectItem>
+              <SelectItem value="non_stream">
+                {t("ai_traces.detail.streamOff")}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </details>
+      {preciseRange && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          {dayjs(range.start).format("YYYY-MM-DD HH:mm:ss")} –{" "}
+          {dayjs(range.end).format("YYYY-MM-DD HH:mm:ss")}
+          {" · "}
+          {t("ai_traces.routing.timeHint")}
+        </p>
+      )}
+
       {error ? (
         <div className="text-sm text-destructive mb-2">
           {(error as Error).message}
@@ -281,6 +458,7 @@ export const AITracesList = () => {
                 {t("ai_traces.columns.app")}
               </TableHead>
               <TableHead>{t("ai_traces.columns.model")}</TableHead>
+              <TableHead>{t("ai_traces.routing.target")}</TableHead>
               <TableHead className="w-[90px]">
                 {t("ai_traces.columns.status")}
               </TableHead>
@@ -352,7 +530,23 @@ export const AITracesList = () => {
                   )}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {row.response_model || row.request_model || "-"}
+                  {row.request_model || row.response_model || "-"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {row.routing?.selected ? (
+                    <>
+                      <div>{row.routing.selected.upstream}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {row.routing.selected.upstream_model}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {row.routing
+                        ? t(`ai_traces.routing.results.${row.routing.result}`)
+                        : t("ai_traces.routing.unrecorded")}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={row.response_status} />

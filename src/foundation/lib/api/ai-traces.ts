@@ -1,6 +1,26 @@
 import { clientPostgrest, REST_URL } from "@/foundation/lib/api";
 
+export type TraceRoutingTarget = {
+  upstream: string;
+  upstream_model: string;
+  priority: number;
+  weight: number;
+  max_inflight_requests: number;
+  inflight?: number;
+  reason?: string;
+};
+
+export type TraceRouting = {
+  result: string;
+  reason?: string;
+  gateway_instance?: string;
+  selected?: TraceRoutingTarget;
+  skipped?: TraceRoutingTarget[];
+  skipped_total?: number;
+};
+
 export type AITrace = {
+  routing?: TraceRouting;
   request_id: string;
   time: string;
   workspace: string;
@@ -37,6 +57,13 @@ type AITraceStatsResponse = {
 };
 
 type AITraceListParams = {
+  request_model?: string;
+  upstream?: string;
+  upstream_model?: string;
+  gateway_instance?: string;
+  routing_result?: string;
+  routing_reason?: string;
+  request_mode?: string;
   workspace: string;
   endpoint_name?: string;
   endpoint_type?: string;
