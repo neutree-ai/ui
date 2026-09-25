@@ -304,6 +304,18 @@ export const VariablesInput = React.forwardRef<
         });
       }
 
+      if (Array.isArray(type)) {
+        return (
+          <Input
+            type="text"
+            value={formatPrimitiveValue(val)}
+            pattern={schema[key].pattern}
+            onChange={(e) => handleUpdateValue(key, e.target.value)}
+            className="w-full"
+          />
+        );
+      }
+
       switch (type) {
         case "boolean":
           return (
@@ -359,6 +371,7 @@ export const VariablesInput = React.forwardRef<
           return (
             <Input
               value={formatPrimitiveValue(val)}
+              pattern={schema[key].pattern}
               onChange={(e) => handleUpdateValue(key, e.target.value)}
               className="w-full"
             />
@@ -403,6 +416,28 @@ export const VariablesInput = React.forwardRef<
               value: row.value,
               onChange: (next) => handleEditingValueChange(row.id, next),
             })}
+          </div>
+        );
+      }
+
+      if (Array.isArray(type)) {
+        return (
+          <div className="space-y-1">
+            <Input
+              type="text"
+              placeholder={t("components.variablesInput.newValue")}
+              value={row.value}
+              pattern={schema[row.key].pattern}
+              aria-invalid={Boolean(editingRowErrors[row.id])}
+              onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
+              onBlur={() => saveEditingRowNow(row.id)}
+              className="w-full"
+            />
+            {editingRowErrors[row.id] && (
+              <p className="text-xs text-destructive">
+                {t(editingRowErrors[row.id])}
+              </p>
+            )}
           </div>
         );
       }
