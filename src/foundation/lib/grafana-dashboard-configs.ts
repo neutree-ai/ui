@@ -84,3 +84,34 @@ export const getEndpointSplitDashboardProps = (
     },
   },
 });
+
+export const getModelRoutingDashboardProps = (
+  grafanaUrl: string,
+  context: {
+    workspace: string;
+    endpoint: string;
+    models: string[];
+    mode: string;
+    from: string;
+    to: string;
+    refresh: string;
+  },
+): GrafanaDashboardProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "neutree-model-routing",
+    variables: {
+      ...getCommonVariables(),
+      // Encode once as PromQL string literals. Grafana 11 formatters differ
+      // in quote/backslash escaping; raw interpolation preserves this encoding.
+      endpoint_literal: JSON.stringify(
+        `/workspace/${context.workspace}/external-endpoint/${context.endpoint}`,
+      ),
+      model: context.models.length ? context.models : GRAFANA_VAR_ALL,
+      mode: context.mode === "all" ? "stream|non_stream|unknown" : context.mode,
+    },
+  },
+  initialFrom: context.from,
+  initialTo: context.to,
+  initialRefresh: context.refresh,
+});

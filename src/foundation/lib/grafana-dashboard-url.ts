@@ -4,7 +4,7 @@ export interface GrafanaDashboardConfig {
   orgId?: number;
   theme?: "light" | "dark";
   timezone?: string;
-  variables?: Record<string, string>;
+  variables?: Record<string, string | string[]>;
 }
 
 export interface GrafanaDashboardUrlOptions {
@@ -52,7 +52,9 @@ export function buildGrafanaDashboardUrl({
 
   if (dashboardConfig.variables) {
     for (const [key, value] of Object.entries(dashboardConfig.variables)) {
-      url.searchParams.append(`var-${key}`, value);
+      for (const item of Array.isArray(value) ? value : [value]) {
+        url.searchParams.append(`var-${key}`, item);
+      }
     }
   }
 

@@ -1366,6 +1366,18 @@
 			"routeTargetRequired": "Select a model service and enter its upstream model",
 			"weightTotal": "Weighted targets must total 100%",
 			"duplicateProvider": "Model service names must be unique"
+		},
+		"monitor": {
+			"overview": "Overview",
+			"title": "Monitoring",
+			"view": "View monitoring",
+			"legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
+			"viewConfig": "View configuration",
+			"scope": "Completed routing requests; latency covers final HTTP 2xx only. Concurrency includes all request modes.",
+			"chartArea": "Chart area (scroll inside to view details)",
+			"loading": "Loading monitoring configuration…",
+			"configError": "Could not load monitoring configuration.",
+			"retry": "Retry"
 		}
 	},
 	"user_profiles": {
