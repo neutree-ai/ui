@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AITraceRequestError } from "@/foundation/lib/api/ai-traces";
 import { AITracesList } from "@/pages/ai-traces/list";
 
 vi.mock("react-i18next", () => ({
@@ -18,6 +19,7 @@ vi.mock("@refinedev/core", () => ({
 
 // The traces themselves are not under test: the list is empty, which keeps the
 // table out of the picture, and the query never runs.
+let queryError: Error | null = null;
 vi.mock("@tanstack/react-query", () => ({
   useInfiniteQuery: () => ({
     data: { pages: [{ items: [], next_before: "" }], pageParams: [] },
@@ -26,7 +28,7 @@ vi.mock("@tanstack/react-query", () => ({
     isFetchingNextPage: false,
     hasNextPage: false,
     fetchNextPage: vi.fn(),
-    error: null,
+    error: queryError,
     refetch: vi.fn(),
   }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
@@ -82,6 +84,7 @@ function selectKey(name: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  queryError = null;
 });
 
 describe("AITracesList API key filter", () => {
@@ -110,5 +113,27 @@ describe("AITracesList API key filter", () => {
     selectKey("plain-key");
 
     expect(apiKeyTrigger().textContent).toContain("plain-key");
+  });
+});
+
+describe("AITracesList without trace permission", () => {
+  it("explains the missing permission instead of an empty, erroring page", () => {
+    queryError = new AITraceRequestError(403, "insufficient permissions");
+
+    render(<AITracesList />);
+
+    expect(screen.getByText("ai_traces.forbidden")).toBeTruthy();
+    expect(screen.queryByText(/insufficient permissions/)).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryAllByRole("combobox")).toHaveLength(0);
+  });
+
+  it("still shows other failures above the list", () => {
+    queryError = new AITraceRequestError(500, "ai-traces request failed: 500");
+
+    render(<AITracesList />);
+
+    expect(screen.getByText("ai-traces request failed: 500")).toBeTruthy();
+    expect(screen.getByRole("table")).toBeTruthy();
   });
 });

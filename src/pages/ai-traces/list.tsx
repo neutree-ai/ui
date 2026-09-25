@@ -26,11 +26,16 @@ import {
   DateRangePicker,
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
-import { type AITrace, fetchAITraces } from "@/foundation/lib/api/ai-traces";
+import {
+  type AITrace,
+  fetchAITraces,
+  isAITraceForbidden,
+} from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -121,6 +126,9 @@ export const AITracesList = () => {
     // cursor for the next, strictly-older page; empty means no more records.
     getNextPageParam: (lastPage) => lastPage.next_before || undefined,
     enabled: Boolean(workspace),
+    // A 403 will not change on retry; show the permission message at once.
+    retry: (failureCount, error) =>
+      !isAITraceForbidden(error) && failureCount < 3,
   });
 
   const handleRefresh = () => {
@@ -147,6 +155,20 @@ export const AITracesList = () => {
     observer.observe(el);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Without trace-read permission every part of the page would be empty, so
+  // say why once instead of rendering the chart, filters and table.
+  if (isAITraceForbidden(error)) {
+    return (
+      <ListPage
+        title={t("ai_traces.title")}
+        canCreate={false}
+        breadcrumb={false}
+      >
+        <EmptyState variant="page">{t("ai_traces.forbidden")}</EmptyState>
+      </ListPage>
+    );
+  }
 
   return (
     <ListPage

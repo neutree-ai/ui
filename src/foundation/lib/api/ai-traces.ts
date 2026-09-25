@@ -50,6 +50,21 @@ type AITraceListParams = {
   before?: string;
 };
 
+export class AITraceRequestError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AITraceRequestError";
+  }
+}
+
+// 403: the caller may not read traces in this workspace — a standing fact
+// about the user to explain, not a failure to report.
+export const isAITraceForbidden = (error: unknown): boolean =>
+  error instanceof AITraceRequestError && error.status === 403;
+
 async function apiGet<T>(url: string, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = {};
   const auth = clientPostgrest.headers.Authorization;
@@ -66,7 +81,8 @@ async function apiGet<T>(url: string, signal?: AbortSignal): Promise<T> {
     } catch {
       // ignore JSON parse error
     }
-    throw new Error(
+    throw new AITraceRequestError(
+      res.status,
       `ai-traces request failed: ${res.status} ${detail || res.statusText}`,
     );
   }
