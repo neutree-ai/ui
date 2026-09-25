@@ -11,15 +11,23 @@ import {
   type ModelSourceMap,
   modelSourceTranslationKey,
 } from "@/foundation/lib/model-source";
+import type { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 import { getRouteStrategyError } from "../lib/validate-route-strategy";
 import type { ModelRoute, ModelRouteTarget } from "../types";
+import UpstreamModelInput, {
+  UpstreamConnectionWarning,
+} from "./UpstreamModelInput";
 
 type Mode = "fixed" | "priority" | "weighted";
 
 type Props = {
   value?: ModelRoute[];
   onChange?: (value: ModelRoute[]) => void;
-  providers: { label: string; value: string }[];
+  providers: {
+    label: string;
+    value: string;
+    modelListRequest?: ReturnType<typeof getUpstreamModelRequest>;
+  }[];
   onQuickCreate?: (routeIndex: number, targetIndex: number) => void;
   focusModel?: string;
   /**
@@ -232,64 +240,68 @@ export default function ModelRouteEditor({
                     upstream: "",
                     upstream_model: "",
                   };
+                  const modelListRequest = providers.find(
+                    (provider) => provider.value === target.upstream,
+                  )?.modelListRequest;
                   return (
                     <tr key={targetIndex}>
                       <td>
-                        <FormItem className="space-y-0">
+                        <FormItem className="space-y-0 flex items-center gap-2">
                           <FormLabel className="sr-only">
                             {t("external_endpoints.fields.provider")}
                           </FormLabel>
-                          <FormSelect
-                            value={target.upstream}
-                            options={[
-                              ...providers,
-                              {
-                                label: `+ ${t("external_endpoints.actions.quickCreateUpstream")}`,
-                                value: "__quick_create_upstream__",
-                              },
-                            ]}
-                            placeholder={t(
-                              "external_endpoints.placeholders.selectProvider",
-                            )}
-                            onChange={(next) => {
-                              // Radix's native form select can emit an empty value
-                              // while newly added options mount. This control cannot clear a target.
-                              if (!next) return;
-                              if (next === "__quick_create_upstream__") {
-                                onQuickCreate?.(index, targetIndex);
-                                return;
-                              }
-                              const targets = route.targets.slice();
-                              targets[targetIndex] = {
-                                ...target,
-                                upstream: next,
-                              };
-                              commit(
-                                value.map((item, itemIndex) =>
-                                  itemIndex === index
-                                    ? { ...item, targets }
-                                    : item,
-                                ),
-                              );
-                            }}
+                          <div className="min-w-0 flex-1">
+                            <FormSelect
+                              value={target.upstream}
+                              options={[
+                                ...providers,
+                                {
+                                  label: `+ ${t("external_endpoints.actions.quickCreateUpstream")}`,
+                                  value: "__quick_create_upstream__",
+                                },
+                              ]}
+                              placeholder={t(
+                                "external_endpoints.placeholders.selectProvider",
+                              )}
+                              onChange={(next) => {
+                                // Radix's native form select can emit an empty value
+                                // while newly added options mount. This control cannot clear a target.
+                                if (!next) return;
+                                if (next === "__quick_create_upstream__") {
+                                  onQuickCreate?.(index, targetIndex);
+                                  return;
+                                }
+                                const targets = route.targets.slice();
+                                targets[targetIndex] = {
+                                  ...target,
+                                  upstream: next,
+                                };
+                                commit(
+                                  value.map((item, itemIndex) =>
+                                    itemIndex === index
+                                      ? { ...item, targets }
+                                      : item,
+                                  ),
+                                );
+                              }}
+                            />
+                          </div>
+                          <UpstreamConnectionWarning
+                            request={modelListRequest}
                           />
                         </FormItem>
                       </td>
                       <td>
-                        <Input
+                        <UpstreamModelInput
+                          key={target.upstream}
                           value={target.upstream_model}
-                          onChange={(event) =>
+                          request={modelListRequest}
+                          onChange={(model) =>
                             updateTarget(index, targetIndex, {
                               ...target,
-                              upstream_model: event.target.value,
+                              upstream_model: model,
                             })
                           }
-                          placeholder={t(
-                            "external_endpoints.placeholders.upstreamModelName",
-                          )}
-                          aria-label={t(
-                            "external_endpoints.fields.upstreamModelName",
-                          )}
                         />
                       </td>
                       <td>

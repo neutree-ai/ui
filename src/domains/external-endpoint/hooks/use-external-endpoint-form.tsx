@@ -47,6 +47,7 @@ import {
   modelSourceTranslationKey,
 } from "@/foundation/lib/model-source";
 import UpstreamNameLabel from "../components/UpstreamNameLabel";
+import { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 
 const emptyExternalUpstream: UpstreamSpec = {
   upstream: { url: "" },
@@ -159,14 +160,17 @@ export const useExternalEndpointForm = ({
 
   // Field-array operations rebuild values from the edited form. Retain each
   // row's original reference by its stable RHF id until submission.
-  const channelNames = useRef(new Map<string, string>());
+  const channelReferences = useRef(
+    new Map<string, { name: string; url: string }>(),
+  );
   const fields = upstreamFields.map((field) => {
-    const name =
-      channelNames.current.get(field.id) ??
-      (field as { name?: string }).name ??
-      "";
-    channelNames.current.set(field.id, name);
-    return { ...field, name };
+    const initial = field as unknown as UpstreamSpec;
+    const reference = channelReferences.current.get(field.id) ?? {
+      name: initial.name ?? "",
+      url: initial.upstream?.url ?? "",
+    };
+    channelReferences.current.set(field.id, reference);
+    return { ...field, name: reference.name, storedUrl: reference.url };
   });
   const isEdit = action === "edit";
 
@@ -504,6 +508,16 @@ export const useExternalEndpointForm = ({
               providers={fields.map((field, index) => ({
                 value: field.name || "",
                 label: upstreams?.[index]?.name || field.name || "",
+                modelListRequest: getUpstreamModelRequest(
+                  upstreams?.[index],
+                  currentWorkspace,
+                  isEdit
+                    ? {
+                        name: form.getValues("metadata.name") ?? "",
+                        url: field.storedUrl,
+                      }
+                    : undefined,
+                ),
               }))}
               onQuickCreate={(routeIndex, targetIndex) =>
                 setQuickCreateTarget({ routeIndex, targetIndex })
@@ -711,12 +725,7 @@ export const useExternalEndpointForm = ({
                                   ? (form.getValues("metadata.name") ?? "")
                                   : "";
                                 const storedUpstreamUrl = isEdit
-                                  ? ((
-                                      form.refineCore.query?.data?.data as
-                                        | ExternalEndpoint
-                                        | undefined
-                                    )?.spec?.upstreams?.[index]?.upstream
-                                      ?.url ?? "")
+                                  ? field.storedUrl
                                   : "";
                                 await connectivity.test(index, {
                                   type: "external",
