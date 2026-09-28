@@ -1,4 +1,5 @@
 import { Copy, Layers, Server } from "lucide-react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   GPU_CELL_CLASS,
   GPU_GRID_CELL_CLASS,
@@ -444,7 +446,24 @@ function GpuCell({
   onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
+  const productRef = useRef<HTMLSpanElement>(null);
+  const productTruncated = useIsTruncated(productRef);
   const gpuNumber = device.order ?? deviceIndex + 1;
+  const productLabel = (
+    <span
+      ref={productRef}
+      data-testid="runtime-gpu-product"
+      tabIndex={productTruncated ? 0 : undefined}
+      className={cn(
+        "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
+        productTruncated &&
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
+      )}
+    >
+      {acceleratorType && <>{acceleratorType} · </>}
+      {device.product || "-"}
+    </span>
+  );
 
   return (
     <div
@@ -474,20 +493,22 @@ function GpuCell({
         </Button>
       </div>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            data-testid="runtime-gpu-product"
-            className="mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground"
-          >
-            {acceleratorType && <>{acceleratorType} · </>}
-            {device.product || "-"}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          {[acceleratorType, device.product].filter(Boolean).join(" · ") || "-"}
-        </TooltipContent>
-      </Tooltip>
+      {/* Clipped, the tooltip is the only way to read the name in full, so it
+          has to answer to focus as well as hover. Fitting, it answers neither —
+          a popup repeating the line under the pointer, and a tab stop, is
+          furniture. The cursor stays a cursor either way: a question mark is the
+          help affordance, and this line is a value, not a help topic. */}
+      {productTruncated ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
+          <TooltipContent>
+            {[acceleratorType, device.product].filter(Boolean).join(" · ") ||
+              "-"}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        productLabel
+      )}
 
       <div className="mt-2">
         <VramBar

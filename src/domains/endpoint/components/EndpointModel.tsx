@@ -12,7 +12,12 @@ export default function EndpointModel({
 }) {
   // A Flex endpoint serves a workload Neutree neither fetches nor names, so it
   // has no model to show. Same empty state as ModelTask, rather than a blank.
-  if (!model) {
+  //
+  // Tested on the name, not on the block: the form submits an engine that
+  // brings its own workload with `spec.model` still present — it carries the
+  // task the gateway routes on and nothing else — so a truthy block with an
+  // empty name is the *usual* shape here, and it rendered as an empty string.
+  if (!model?.name) {
     return <span className="text-muted-foreground">-</span>;
   }
 
