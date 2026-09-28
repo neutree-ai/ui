@@ -439,7 +439,7 @@ export const useExternalEndpointForm = ({
     metadataFields: (
       <FormCardGrid
         title={t("common.sections.basicInformation")}
-        className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none"
+        className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground"
       >
         <FormFieldGroup
           {...form}
@@ -477,7 +477,7 @@ export const useExternalEndpointForm = ({
       <>
         <FormCardGrid
           title={t("external_endpoints.sections.configuration")}
-          className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none"
+          className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground"
         >
           <FormFieldGroup
             {...form}
@@ -490,7 +490,7 @@ export const useExternalEndpointForm = ({
         </FormCardGrid>
         <FormCardGrid
           title={t("external_endpoints.sections.virtualModels")}
-          className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none"
+          className="border-0 shadow-sm [&>div:first-child>h2]:text-lg [&_label]:text-xs [&_label]:text-muted-foreground"
         >
           <FormFieldGroup
             {...form}
@@ -525,7 +525,7 @@ export const useExternalEndpointForm = ({
             />
           </FormFieldGroup>
         </FormCardGrid>
-        <FormCardGrid className="border-0 shadow-sm [&_label]:text-xs [&_label]:text-muted-foreground [&_input]:border-border/50 [&_input]:shadow-none">
+        <FormCardGrid className="border-0 shadow-sm [&_label]:text-xs [&_label]:text-muted-foreground">
           <div className="col-span-4 flex items-center justify-between border-b border-border/40 pb-3">
             <h2 className="text-lg font-semibold text-foreground">
               {t("external_endpoints.sections.modelServices")}
