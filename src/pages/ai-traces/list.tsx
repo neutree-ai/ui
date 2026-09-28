@@ -368,13 +368,18 @@ export const AITracesList = () => {
                     }
                   />
                 </TableCell>
-                <TableCell className="text-right font-mono text-xs">
+                {/* Readings stay on one line: a wrapped value lifts its row
+                    out of the grid and reads as a second format in the same
+                    column. Tok/s names its unit in the header and leaves it
+                    out of the cells, so a longer reading widens the column
+                    instead of breaking inside it. */}
+                <TableCell className="text-right font-mono text-xs whitespace-nowrap">
                   {formatTokens(row.total_tokens) ?? "-"}
                 </TableCell>
-                <TableCell className="text-right font-mono text-xs">
+                <TableCell className="text-right font-mono text-xs whitespace-nowrap">
                   {formatThroughput(row.completion_tokens, row.duration_ms)}
                 </TableCell>
-                <TableCell className="text-right font-mono text-xs">
+                <TableCell className="text-right font-mono text-xs whitespace-nowrap">
                   {formatDuration(row.duration_ms)}
                 </TableCell>
                 <TableCell className="text-xs font-mono">
@@ -420,7 +425,9 @@ function userAgentToApp(ua?: string): string {
   return m ? m[0] : ua.slice(0, 24);
 }
 
-// formatThroughput renders completion tokens per second as "X.X tok/s".
+// formatThroughput renders completion tokens per second as "X.X". The unit is
+// the column header's job; repeating "tok/s" in every row is what pushed the
+// larger readings past the width the column allows.
 function formatThroughput(
   completionTokens?: number,
   durationMs?: number,
@@ -429,7 +436,7 @@ function formatThroughput(
     return <span className="text-muted-foreground">-</span>;
   }
   const tps = completionTokens / (durationMs / 1000);
-  return `${tps.toFixed(1)} tok/s`;
+  return tps.toFixed(1);
 }
 
 // formatDuration renders the request duration in seconds with 2 decimals.
