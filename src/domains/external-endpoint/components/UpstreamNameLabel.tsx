@@ -11,8 +11,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
 export default function UpstreamNameLabel() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-1">
-      <FormLabel className="text-sm font-normal text-muted-foreground">
+    <div className="inline-flex items-center gap-1">
+      <FormLabel className="text-sm font-normal leading-[22px] text-muted-foreground">
         {t("external_endpoints.fields.upstreamName")}
       </FormLabel>
       <TooltipProvider>

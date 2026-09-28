@@ -11,6 +11,11 @@ import { type RefObject, useEffect, useState } from "react";
 export function useIsTruncated(ref: RefObject<HTMLElement | null>): boolean {
   const [isTruncated, setIsTruncated] = useState(false);
 
+  // Deliberately re-subscribed after every render, not once per ref. A caller
+  // is allowed to move the element when the answer changes — wrapping a clipped
+  // name in its tooltip, say — and that remounts it. An observer left on the
+  // node that was replaced goes on reporting the size of a detached element
+  // (0x0, which reads as "fits") and flips the answer straight back.
   useEffect(() => {
     const element = ref.current;
     if (!element) return undefined;
@@ -27,7 +32,7 @@ export function useIsTruncated(ref: RefObject<HTMLElement | null>): boolean {
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [ref]);
+  });
 
   return isTruncated;
 }

@@ -16,12 +16,14 @@ type Props = {
   route: ModelRoute;
   editUrl: string;
   serviceUrl?: string;
+  onViewMonitoring?: () => void;
 };
 
 export default function ModelRouteDetails({
   route,
   editUrl,
   serviceUrl,
+  onViewMonitoring,
 }: Props) {
   const { t } = useTranslation();
   const strategy = route.strategy ?? "fixed";
@@ -70,6 +72,16 @@ export default function ModelRouteDetails({
           <Button asChild variant="ghost" size="sm" className="h-7 px-2">
             <Link to={editUrl}>{t("buttons.edit")}</Link>
           </Button>
+          {onViewMonitoring && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={onViewMonitoring}
+            >
+              {t("external_endpoints.monitor.view")}
+            </Button>
+          )}
           <Dialog>
             <DialogTrigger asChild>
               <Button
