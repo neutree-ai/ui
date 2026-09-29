@@ -52,7 +52,7 @@ export const AITracesList = () => {
   // "All workspaces" aggregates traces across workspaces, so show a workspace
   // column to disambiguate rows (it is redundant on a single-workspace view).
   const isAllWorkspaces = workspace === ALL_WORKSPACES;
-  const colSpan = isAllWorkspaces ? 13 : 12;
+  const colSpan = isAllWorkspaces ? 12 : 11;
 
   const [endpointName, setEndpointName] = useState("");
   const [endpointType, setEndpointType] = useState<string>("");
@@ -64,18 +64,9 @@ export const AITracesList = () => {
     () => (params?.api_key_id as string) ?? "",
   );
   const [finishReason, setFinishReason] = useState<string>("");
-  const [requestId, setRequestId] = useState(() =>
-    String(params?.request_id ?? ""),
-  );
   const [range, setRange] = useState<DateRange>(() => trailingRange(7));
   const scoped = Boolean(
-    requestId.trim() ||
-      endpointName ||
-      endpointType ||
-      status ||
-      model ||
-      apiKeyId ||
-      finishReason,
+    endpointName || endpointType || status || model || apiKeyId || finishReason,
   );
   const [selected, setSelected] = useState<AITrace | null>(null);
 
@@ -106,7 +97,6 @@ export const AITracesList = () => {
     model: model.trim() || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
-    request_id: requestId.trim() || undefined,
     start: dayjs(range.start).startOf("day").toISOString(),
     end: dayjs(range.end).endOf("day").toISOString(),
     limit: LIMIT,
@@ -185,13 +175,6 @@ export const AITracesList = () => {
           value={range}
           onChange={setRange}
           presets={TRACE_RANGE_PRESETS}
-        />
-        <Input
-          className="w-[280px]"
-          aria-label={t("ai_traces.filters.requestId")}
-          placeholder={t("ai_traces.filters.requestId")}
-          value={requestId}
-          onChange={(e) => setRequestId(e.target.value)}
         />
         <Input
           className="w-[200px]"
@@ -290,9 +273,6 @@ export const AITracesList = () => {
               <TableHead className="w-[180px]">
                 {t("ai_traces.columns.time")}
               </TableHead>
-              <TableHead className="min-w-[250px]">
-                {t("ai_traces.columns.requestId")}
-              </TableHead>
               {isAllWorkspaces && (
                 <TableHead className="w-[140px]">
                   {t("ai_traces.columns.workspace")}
@@ -356,9 +336,6 @@ export const AITracesList = () => {
                     format="YYYY-MM-DD HH:mm:ss"
                   />
                 </TableCell>
-                <TableCell className="font-mono text-xs whitespace-nowrap">
-                  {row.request_id}
-                </TableCell>
                 {isAllWorkspaces && (
                   <TableCell className="text-sm truncate max-w-[140px]">
                     {row.workspace || (
@@ -378,7 +355,9 @@ export const AITracesList = () => {
                   )}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {row.request_model || row.response_model || "-"}
+                  {row.request_model || row.response_model || (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm">
                   {row.upstream || row.upstream_model ? (
