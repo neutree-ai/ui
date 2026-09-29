@@ -9,6 +9,7 @@ import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUp
 import ModelRouteDetails from "@/domains/external-endpoint/components/ModelRouteDetails";
 import UpstreamStatusBadge from "@/domains/external-endpoint/components/UpstreamStatusBadge";
 import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
+import { getEndpointType } from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavailable-models";
 import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
@@ -50,6 +51,12 @@ export const ExternalEndpointsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
+  const endpointType = getEndpointType(record.spec);
+  const endpointTypeLabels = {
+    external: t("external_endpoints.options.upstreamTypeExternal"),
+    endpoint_ref: t("external_endpoints.options.upstreamTypeInternal"),
+    mixed: t("external_endpoints.options.upstreamTypeMixed"),
+  };
   const allModels = getExposedModels(record.spec);
   const modelsViaRef = modelsViaInternalEndpoint(record.spec?.upstreams);
   const upstreamStatuses = matchUpstreamStatuses(
@@ -76,6 +83,9 @@ export const ExternalEndpointsShow = () => {
         status={<ExternalEndpointStatus {...record.status} />}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("external_endpoints.fields.type")}>
+              {endpointType ? endpointTypeLabels[endpointType] : "—"}
+            </ShowPage.Meta>
             <ShowPage.Meta label={t("external_endpoints.fields.models")}>
               {allModels.length}
             </ShowPage.Meta>
