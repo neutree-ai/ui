@@ -11,6 +11,7 @@ export const ClustersCreate = () => {
     clusterConfigurationFields,
     providerFields,
     routerFields,
+    zcacheFields,
     acceleratorVirtualizationFields,
     modelCacheFields,
     authFields,
@@ -23,6 +24,7 @@ export const ClustersCreate = () => {
         {providerFields}
         {authFields}
         {routerFields}
+        {zcacheFields}
         {acceleratorVirtualizationFields}
         {modelCacheFields}
       </FormSectionStack>

@@ -21,7 +21,21 @@ export function transformClusterValues(
   isEdit = false,
   touchedFields?: TouchedFields,
 ): Cluster {
-  const transformed = { ...values };
+  const transformed = { ...values, spec: { ...values.spec } };
+  // Registering the unchecked form field creates { enabled: undefined } on
+  // legacy records. Preserve absence unless the user actually chose a value.
+  if (
+    transformed.spec.type !== "kubernetes" ||
+    typeof transformed.spec.zcache?.enabled !== "boolean"
+  )
+    delete transformed.spec.zcache;
+  if (transformed.spec.zcache) {
+    transformed.spec.zcache = {
+      ...transformed.spec.zcache,
+      l1_size_gib: Number(transformed.spec.zcache.l1_size_gib ?? 0),
+      target_nodes: [...(transformed.spec.zcache.target_nodes ?? [])],
+    };
+  }
   const config = transformed.spec.config;
   const sshPrivateKeyTouched = isTouchedField(touchedFields, [
     "spec",
