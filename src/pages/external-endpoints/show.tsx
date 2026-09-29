@@ -121,10 +121,7 @@ export const ExternalEndpointsShow = () => {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="monitor" className="mt-4">
-          <ExternalEndpointMonitor
-            record={record}
-            onViewConfiguration={() => selectTab("overview")}
-          />
+          <ExternalEndpointMonitor record={record} />
         </TabsContent>
         <TabsContent value="overview">
           <div className="mt-4 space-y-4">

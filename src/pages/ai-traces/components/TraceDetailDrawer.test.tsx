@@ -86,3 +86,30 @@ describe("TraceDetailDrawer", () => {
     ).toBeTruthy();
   });
 });
+
+it("shows the final destination separately from the request and response models", () => {
+  render(
+    <TooltipProvider>
+      <TraceDetailDrawer
+        trace={{
+          ...trace,
+          request_model: "public-model",
+          response_model: "response-model",
+          upstream: "provider",
+          upstream_model: "mapped-model",
+        }}
+        open
+        onOpenChange={vi.fn()}
+      />
+    </TooltipProvider>,
+  );
+  for (const value of [
+    "public-model",
+    "response-model",
+    "provider",
+    "mapped-model",
+  ]) {
+    expect(screen.getByText(value)).toBeTruthy();
+  }
+  expect(screen.queryByText("ai_traces.routing.reason")).toBeNull();
+});

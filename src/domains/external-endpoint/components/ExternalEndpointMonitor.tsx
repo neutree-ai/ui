@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { readMonitoringState } from "@/domains/external-endpoint/lib/monitoring-state";
@@ -5,16 +6,16 @@ import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getModelRoutingDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
+import { buildGrafanaDashboardUrl } from "@/foundation/lib/grafana-dashboard-url";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export default function ExternalEndpointMonitor({
   record,
-  onViewConfiguration,
 }: {
   record: ExternalEndpoint;
-  onViewConfiguration: () => void;
 }) {
   const { t } = useTranslation();
+  const { resolvedTheme } = useTheme();
   const { grafanaUrl, isLoading, error, refetch } = useSystemApi();
   const [params] = useSearchParams();
   // Navigation only supplies initial context. Grafana owns subsequent changes.
@@ -27,6 +28,11 @@ export default function ExternalEndpointMonitor({
           ...state,
         })
       : null;
+
+  const grafanaLink = props
+    ? new URL(buildGrafanaDashboardUrl({ ...props, resolvedTheme }))
+    : null;
+  grafanaLink?.searchParams.delete("kiosk");
 
   if (!record.spec.model_routes?.length)
     return (
@@ -41,9 +47,17 @@ export default function ExternalEndpointMonitor({
         <p className="text-xs text-muted-foreground">
           {t("external_endpoints.monitor.scope")}
         </p>
-        <Button variant="outline" onClick={onViewConfiguration}>
-          {t("external_endpoints.monitor.viewConfig")}
-        </Button>
+        {grafanaLink && (
+          <Button variant="outline" asChild>
+            <a
+              href={grafanaLink.toString()}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("external_endpoints.monitor.openGrafana")}
+            </a>
+          </Button>
+        )}
       </div>
       {props ? (
         <div
