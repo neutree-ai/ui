@@ -2021,7 +2021,7 @@
 			"allStatuses": "All statuses",
 			"statusSearch": "Type or pick a status code",
 			"statusHint": "Enter a 3-digit status code (100–599).",
-			"model": "Model",
+			"model": "Request model",
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",
 			"finishReason": "Finish",
@@ -2033,7 +2033,7 @@
 			"workspace": "Workspace",
 			"endpoint": "Endpoint",
 			"app": "App",
-			"model": "Model",
+			"model": "Request model",
 			"status": "Status",
 			"apiKey": "API key",
 			"tokens": "Tokens",
@@ -2135,7 +2135,7 @@
 			}
 		},
 		"routing": {
-			"target": "Routing target",
+			"target": "Upstream target",
 			"upstream": "Upstream",
 			"upstreamModel": "Upstream model"
 		}

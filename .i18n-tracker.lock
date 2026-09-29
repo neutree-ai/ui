@@ -285,7 +285,7 @@
   "src/foundation/hooks/use-refine-field-array.ts": "7dbaa5d3a0ea2c6db1c09da0863f1b74",
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "8e580fedb30e8e802c5060d25a886a99",
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "3518ba31f791c430b2afe655cc2d2c08",
-  "src/pages/ai-traces/list.tsx": "3bb26487e6b657fcadeb4e84b4f3a8d3",
+  "src/pages/ai-traces/list.tsx": "717af880cdbf03f174260603871f9d2c",
   "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "762c21b6c9677bdc15cf30359570910a",
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "b3ad2234ffd9b0f92b41dfe951bc60d6",
   "src/foundation/lib/api/ai-traces.ts": "47b91e28af22e542181628e5e43ea1b6",
