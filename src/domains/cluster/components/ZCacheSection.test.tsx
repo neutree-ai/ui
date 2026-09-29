@@ -1,9 +1,18 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ZCacheSection } from "./ZCacheSection";
 
+const capability = vi.hoisted(() => ({ value: true as boolean | undefined }));
+vi.mock("@/foundation/hooks/use-system-api", () => ({
+  useSystemApi: () => ({
+    systemInfo: { capabilities: { zcache: capability.value } },
+  }),
+}));
+beforeEach(() => {
+  capability.value = true;
+});
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -64,3 +73,14 @@ describe("ZCacheSection", () => {
     expect(screen.getByText(/old-operation/)).toBeTruthy();
   });
 });
+
+it.each([false, undefined])(
+  "hides cache details without provider capability (%s)",
+  (value) => {
+    capability.value = value;
+    const { container } = render(
+      <ZCacheSection cluster={{ spec: {} } as Cluster} />,
+    );
+    expect(container.textContent).toBe("");
+  },
+);
