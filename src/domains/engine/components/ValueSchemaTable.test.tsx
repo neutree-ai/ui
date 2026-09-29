@@ -61,6 +61,39 @@ vi.mock("@/components/ui/popover", () => ({
   ),
 }));
 
+// A native select keeps the toolbar's own wiring under test (which value it
+// hands the filter) without depending on Radix's pointer handling in jsdom.
+vi.mock("@/components/ui/select", () => ({
+  Select: ({
+    value,
+    onValueChange,
+    children,
+  }: {
+    value: string;
+    onValueChange: (value: string) => void;
+    children: ReactNode;
+  }) => (
+    <select
+      data-testid="value-schema-type-filter"
+      value={value}
+      onChange={(event) => onValueChange(event.target.value)}
+    >
+      {children}
+    </select>
+  ),
+  SelectTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+  SelectValue: () => null,
+  SelectContent: ({ children }: { children: ReactNode }) => <>{children}</>,
+  SelectItem: ({ value, children }: { value: string; children: ReactNode }) => (
+    <option value={value}>{children}</option>
+  ),
+}));
+
+const copyMock = vi.fn();
+vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
+  useCopyToClipboard: () => ({ copy: copyMock, copied: false }),
+}));
+
 const schema = {
   type: "object",
   required: ["command"],
@@ -203,6 +236,26 @@ describe("ValueSchemaTable", () => {
     expect(screen.getByTestId("value-schema-type-filter")).toBeTruthy();
   });
 
+  it("narrows by the type picked in the toolbar", () => {
+    renderTable();
+
+    fireEvent.change(screen.getByTestId("value-schema-type-filter"), {
+      target: { value: "number" },
+    });
+
+    // Only `rope_scaling.factor` is a number; its parent stays as context.
+    expect(row("rope_scaling.factor")).toBeTruthy();
+    expect(row("rope_scaling")).toBeTruthy();
+    expect(row("health_path")).toBeNull();
+    expect(screen.getByText("2 of 6 parameters")).toBeTruthy();
+
+    // The "all types" entry clears the filter again.
+    fireEvent.change(screen.getByTestId("value-schema-type-filter"), {
+      target: { value: "all" },
+    });
+    expect(row("health_path")).toBeTruthy();
+  });
+
   it("keeps rows past the indent cap attached to their parent", () => {
     renderTable({
       type: "object",
@@ -282,6 +335,21 @@ describe("ValueSchemaTable", () => {
     expect(screen.getByRole("button", { name: "Copy JSON" })).toBeTruthy();
   });
 
+  it("copies the pretty-printed example rather than the cell's one line", () => {
+    copyMock.mockClear();
+    renderTable();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy JSON" }));
+
+    expect(copyMock).toHaveBeenCalledWith(
+      '{\n  "port": 8000\n}',
+      expect.objectContaining({
+        successMessage: "components.apiKey.copySuccess",
+        errorMessage: "components.apiKey.errors.copyFailed",
+      }),
+    );
+  });
+
   it("lists every enum value in the details panel", () => {
     renderTable();
 
@@ -302,5 +370,27 @@ describe("ValueSchemaTable", () => {
 
     expect(screen.getByText("engines.schema.empty")).toBeTruthy();
     expect(screen.getByText("engines.schema.allowsAdditional")).toBeTruthy();
+  });
+
+  it("measures the toolbar so the sticky header can clear it", () => {
+    const observed: Element[] = [];
+    const disconnect = vi.fn();
+    class FakeResizeObserver {
+      observe(element: Element) {
+        observed.push(element);
+      }
+      disconnect = disconnect;
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+
+    const { unmount } = renderTable();
+
+    // The header's sticky offset is built from the toolbar's height, so the
+    // toolbar has to be the element being observed.
+    expect(observed).toHaveLength(1);
+    expect(observed[0].querySelector("input")).toBeTruthy();
+    unmount();
+    expect(disconnect).toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

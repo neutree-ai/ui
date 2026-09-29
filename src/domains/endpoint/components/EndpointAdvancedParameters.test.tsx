@@ -170,6 +170,24 @@ describe("EndpointAdvancedParameters", () => {
     );
   });
 
+  it("leaves a string that only looks like JSON as written", () => {
+    render(
+      <EndpointAdvancedParameters
+        engineParameters={{ broken: '{"open": ', arrayish: "[1," }}
+        environmentVariables={undefined}
+      />,
+    );
+
+    const texts = screen
+      .getAllByTestId("parameter-value-details")
+      .map((node) => node.querySelector("pre")?.textContent);
+
+    // It starts like JSON but parses like nothing, so the panel must not
+    // pretend it understood the structure.
+    expect(texts).toContain('{"open": ');
+    expect(texts).toContain("[1,");
+  });
+
   it("leaves a plain string and a primitive untouched in the panel", () => {
     render(
       <EndpointAdvancedParameters

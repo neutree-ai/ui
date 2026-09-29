@@ -183,6 +183,12 @@ describe("formatDefaultValue", () => {
   it("renders nothing for an absent default", () => {
     expect(formatDefaultValue(undefined)).toBe("");
   });
+
+  it("falls back to printing the value when JSON cannot serialize it", () => {
+    // A BigInt is a legitimate default an imported package could declare, and
+    // `JSON.stringify` throws on it rather than returning a string.
+    expect(formatDefaultValue(BigInt(10))).toBe("10");
+  });
 });
 
 describe("splitDescriptionJson", () => {

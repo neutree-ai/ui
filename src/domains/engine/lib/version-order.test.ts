@@ -46,6 +46,13 @@ describe("compareEngineVersions", () => {
     expect(compareEngineVersions("b5878", "b5879")).toBeLessThan(0);
     expect(compareEngineVersions("b5879", "b6000")).toBeLessThan(0);
   });
+
+  it("treats labels that differ only in case as equal", () => {
+    // Natural order lowercases each chunk, so these compare equal rather than
+    // flipping the order depending on how the package capitalised the tag.
+    expect(compareEngineVersions("Qwen38", "qwen38")).toBe(0);
+    expect(compareEngineVersions("b5878", "B5878")).toBe(0);
+  });
 });
 
 describe("newestEngineVersion", () => {
