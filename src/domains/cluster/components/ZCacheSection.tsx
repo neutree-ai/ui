@@ -1,10 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { Cluster } from "../types";
 
 export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   const { t } = useTranslation();
+  const { systemInfo } = useSystemApi();
+  if (systemInfo?.capabilities?.zcache !== true) return null;
   const status = cluster.status?.zcache;
   const nodes = status?.nodes ?? [];
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
