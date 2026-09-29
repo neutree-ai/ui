@@ -17,6 +17,7 @@ import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   isValidWorkspace,
   useWorkspace,
@@ -24,6 +25,8 @@ import {
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
+  const { systemInfo } = useSystemApi();
+  const cacheSupported = systemInfo?.capabilities?.zcache === true;
   const { current: currentWorkspace } = useWorkspace();
 
   const form = useForm<Cluster>({
@@ -34,7 +37,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     // initial fetch only.
     refineCoreProps: {
       successNotification: (data) =>
-        data?.data?.spec?.zcache
+        cacheSupported && data?.data?.spec?.zcache
           ? { message: t("clusters.zcache.saved"), type: "success" }
           : undefined,
       queryOptions: {
@@ -375,9 +378,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         </FormFieldGroup>
       </FormCardGrid>
     ) : null,
-    zcacheFields: isKubernetes ? (
-      <ZCacheFields form={form} isEdit={isEdit} />
-    ) : null,
+    zcacheFields:
+      isKubernetes && cacheSupported ? (
+        <ZCacheFields form={form} isEdit={isEdit} />
+      ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
       <FormCardGrid
         title={t("clusters.sections.acceleratorVirtualization")}
