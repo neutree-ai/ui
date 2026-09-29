@@ -8,12 +8,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { ModelRoute } from "@/domains/external-endpoint/types";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { ModelSource } from "@/foundation/lib/model-source";
 import { cn } from "@/foundation/lib/utils";
 import CurlExample from "./CurlExample";
 
 type Props = {
   route: ModelRoute;
+  source?: ModelSource;
   editUrl: string;
   serviceUrl?: string;
   onViewMonitoring?: () => void;
@@ -21,6 +24,7 @@ type Props = {
 
 export default function ModelRouteDetails({
   route,
+  source,
   editUrl,
   serviceUrl,
   onViewMonitoring,
@@ -57,8 +61,11 @@ export default function ModelRouteDetails({
   return (
     <div className="rounded-md border border-border/60 bg-muted/20 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-base font-semibold text-foreground">
-          {route.model}
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h3 className="rounded-md bg-primary/10 px-3 py-1 text-lg font-semibold text-primary break-all">
+            {route.model}
+          </h3>
+          <ModelSourceBadge source={source} />
         </div>
         <div className="flex items-center gap-2">
           <span
