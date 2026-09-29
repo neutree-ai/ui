@@ -1283,7 +1283,7 @@
 			"virtualModel": "Model name exposed to clients",
 			"selectProvider": "Select a model service",
 			"provider": "e.g. local-vllm",
-			"weight": "1-100%",
+			"weight": "1-100",
 			"maxInflightRequests": "Maximum concurrent requests",
 			"primaryCapacity": "Enter concurrency limit"
 		},
@@ -1350,6 +1350,8 @@
 			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
 			"weightRequired": "Enter an integer weight from 1 to 100 for every target.",
 			"primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
+			"primaryTargetsHint": "Requests prefer primary targets and are randomly distributed with equal probability among available targets. If none are available (including when all are at their concurrency limit), standby targets are used.",
+			"fallbackTargetsHint": "Used when no primary target is available. Requests are randomly distributed with equal probability among available standby targets; targets at their concurrency limit are skipped.",
 			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full.",
 			"upstreamConnectionFailed": "Upstream connection failed",
 			"checkUpstreamConnection": "Check the upstream URL, API key and network connectivity."
@@ -1374,7 +1376,7 @@
 			"title": "Monitoring",
 			"view": "View monitoring",
 			"legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
-			"openGrafana": "Open in Grafana",
+			"openGrafana": "View detailed monitoring in Grafana",
 			"scope": "Completed routing requests; latency covers final HTTP 2xx only. Concurrency includes all request modes.",
 			"chartArea": "Chart area (scroll inside to view details)",
 			"loading": "Loading monitoring configuration…",

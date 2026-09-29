@@ -31,7 +31,10 @@ vi.mock("@tanstack/react-query", () => ({
   useInfiniteQuery: (options: unknown) => {
     context.query(options);
     return {
-      data: { pages: [{ items: listState.items, next_before: "" }], pageParams: [] },
+      data: {
+        pages: [{ items: listState.items, next_before: "" }],
+        pageParams: [],
+      },
       isLoading: false,
       isFetching: false,
       isFetchingNextPage: false,

@@ -15,7 +15,7 @@ export default function UpstreamNameLabel() {
       <FormLabel className="text-sm font-normal leading-[22px] text-muted-foreground">
         {t("external_endpoints.fields.upstreamName")}
       </FormLabel>
-      <TooltipProvider>
+      <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
             <button

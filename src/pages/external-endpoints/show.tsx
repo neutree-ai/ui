@@ -17,7 +17,6 @@ import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-ups
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -78,33 +77,7 @@ export const ExternalEndpointsShow = () => {
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <ShowPage.Meta label={t("external_endpoints.fields.models")}>
-              {allModels.length ? (
-                // Per model, because one endpoint's models can have different
-                // sources — an endpoint-level badge could only ever be wrong
-                // for some of them.
-                <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-                  {allModels.map((model) => (
-                    <span
-                      key={model}
-                      className="inline-flex items-center gap-1"
-                    >
-                      <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                        {model}
-                      </code>
-                      <ModelSourceBadge
-                        source={resolveModelSource(
-                          "external",
-                          record.spec?.model_sources,
-                          model,
-                          { viaInternalEndpoint: modelsViaRef.has(model) },
-                        )}
-                      />
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                "-"
-              )}
+              {allModels.length}
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
@@ -156,6 +129,12 @@ export const ExternalEndpointsShow = () => {
                       key={route.model}
                       onViewMonitoring={() => selectTab("monitor", route.model)}
                       route={route}
+                      source={resolveModelSource(
+                        "external",
+                        record.spec?.model_sources,
+                        route.model,
+                        { viaInternalEndpoint: modelsViaRef.has(route.model) },
+                      )}
                       editUrl={navigation.editUrl(
                         "external_endpoints",
                         record.metadata.name,

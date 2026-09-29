@@ -1,8 +1,14 @@
-import { Plus, Trash2 } from "lucide-react";
+import { CircleHelp, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -531,8 +537,29 @@ export default function ModelRouteEditor({
             {mode === "priority" ? (
               <div className="space-y-3">
                 <section className="rounded-md bg-[#F7F9FC] p-3 dark:bg-muted/40">
-                  <h4 className="mb-2 text-sm font-semibold">
+                  <h4 className="mb-2 flex items-center gap-1 text-sm font-semibold">
                     {t("external_endpoints.sections.primaryTargets")}
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-foreground"
+                            aria-label={t(
+                              "external_endpoints.messages.primaryTargetsHint",
+                            )}
+                          >
+                            <CircleHelp
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs leading-relaxed">
+                          {t("external_endpoints.messages.primaryTargetsHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </h4>
                   {targetTable(
                     primaryTargetIndices,
@@ -560,8 +587,29 @@ export default function ModelRouteEditor({
                   </Button>
                 </section>
                 <section className="rounded-md bg-[#F7F9FC] p-3 dark:bg-muted/40">
-                  <h4 className="mb-2 text-sm font-semibold">
+                  <h4 className="mb-2 flex items-center gap-1 text-sm font-semibold">
                     {t("external_endpoints.sections.fallbackTargets")}
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-foreground"
+                            aria-label={t(
+                              "external_endpoints.messages.fallbackTargetsHint",
+                            )}
+                          >
+                            <CircleHelp
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs leading-relaxed">
+                          {t("external_endpoints.messages.fallbackTargetsHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </h4>
                   {targetTable(
                     fallbackTargetIndices,
