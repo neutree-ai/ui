@@ -13,8 +13,13 @@ vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+const context = vi.hoisted(() => ({
+  params: { workspace: "design-lab" } as Record<string, string>,
+  query: vi.fn(),
+}));
+
 vi.mock("@refinedev/core", () => ({
-  useParsed: () => ({ params: { workspace: "design-lab" } }),
+  useParsed: () => ({ params: context.params }),
   useList: () => ({ data: { data: apiKeys } }),
 }));
 
@@ -23,19 +28,19 @@ vi.mock("@refinedev/core", () => ({
 const listState = vi.hoisted(() => ({ items: [] as unknown[] }));
 
 vi.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: () => ({
-    data: {
-      pages: [{ items: listState.items, next_before: "" }],
-      pageParams: [],
-    },
-    isLoading: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    fetchNextPage: vi.fn(),
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useInfiniteQuery: (options: unknown) => {
+    context.query(options);
+    return {
+      data: { pages: [{ items: listState.items, next_before: "" }], pageParams: [] },
+      isLoading: false,
+      isFetching: false,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+      error: null,
+      refetch: vi.fn(),
+    };
+  },
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
@@ -57,7 +62,7 @@ vi.mock("@/pages/ai-traces/components/StatusCodeFilter", () => ({
   StatusCodeFilter: () => null,
 }));
 vi.mock("@/pages/ai-traces/components/TraceStatsChart", () => ({
-  TraceStatsChart: () => null,
+  TraceStatsChart: () => <div>workspace-chart</div>,
 }));
 vi.mock("@/pages/ai-traces/components/TraceDetailDrawer", () => ({
   TraceDetailDrawer: () => null,
@@ -90,6 +95,7 @@ function selectKey(name: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   listState.items = [];
+  context.params = { workspace: "design-lab" };
 });
 
 const trace = (overrides: Partial<AITrace> = {}): AITrace => ({
@@ -171,5 +177,37 @@ describe("AITracesList readings column", () => {
         "whitespace-nowrap",
       );
     }
+  });
+});
+
+describe("request ID search", () => {
+  it("trims the exact ID, preserves the scope and time window, and can be cleared", () => {
+    render(<AITracesList />);
+    const original = context.query.mock.lastCall?.[0].queryKey[1];
+    const input = screen.getByLabelText("ai_traces.filters.requestId");
+    fireEvent.change(input, { target: { value: " req/with & spaces " } });
+    expect(context.query.mock.lastCall?.[0].queryKey[1]).toMatchObject({
+      workspace: "design-lab",
+      request_id: "req/with & spaces",
+      start: original.start,
+      end: original.end,
+    });
+    expect(screen.queryByText("workspace-chart")).toBeNull();
+    fireEvent.change(input, { target: { value: "" } });
+    expect(
+      context.query.mock.lastCall?.[0].queryKey[1].request_id,
+    ).toBeUndefined();
+    expect(screen.getByText("workspace-chart")).toBeTruthy();
+  });
+  it("initializes the ID from a link", () => {
+    context.params.request_id = "request-from-link";
+    render(<AITracesList />);
+    expect(screen.getByLabelText("ai_traces.filters.requestId")).toHaveProperty(
+      "value",
+      "request-from-link",
+    );
+    expect(context.query.mock.lastCall?.[0].queryKey[1].request_id).toBe(
+      "request-from-link",
+    );
   });
 });

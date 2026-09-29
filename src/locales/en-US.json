@@ -1374,7 +1374,7 @@
 			"title": "Monitoring",
 			"view": "View monitoring",
 			"legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
-			"viewConfig": "View configuration",
+			"openGrafana": "Open in Grafana",
 			"scope": "Completed routing requests; latency covers final HTTP 2xx only. Concurrency includes all request modes.",
 			"chartArea": "Chart area (scroll inside to view details)",
 			"loading": "Loading monitoring configuration…",
@@ -2011,6 +2011,7 @@
 			"totalRequests": "{{total}} total"
 		},
 		"filters": {
+			"requestId": "Request ID (exact match)",
 			"endpoint": "Endpoint name",
 			"endpointType": "Endpoint type",
 			"allTypes": "All types",
@@ -2025,6 +2026,7 @@
 			"allFinishReasons": "All finish reasons"
 		},
 		"columns": {
+			"requestId": "Request ID",
 			"time": "Time",
 			"workspace": "Workspace",
 			"endpoint": "Endpoint",
@@ -2129,6 +2131,11 @@
 				"thinking": "Thinking",
 				"unknown": "Content block"
 			}
+		},
+		"routing": {
+			"target": "Routing target",
+			"upstream": "Upstream",
+			"upstreamModel": "Upstream model"
 		}
 	},
 	"permissions": {
