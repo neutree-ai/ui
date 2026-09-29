@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Engine, EngineVersion } from "@/domains/engine/types";
 import { EngineCard } from "./EngineCard";
@@ -28,6 +28,22 @@ vi.mock("@/components/ui/hover-card", () => ({
   HoverCardTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
   HoverCardContent: ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
+  ),
+}));
+
+// jsdom has no layout, so the truncation answer is driven from the test; the
+// tooltip primitives are flattened so the content is assertable.
+const truncatedMock = vi.fn(() => false);
+vi.mock("@/foundation/hooks/use-is-truncated", () => ({
+  useIsTruncated: () => truncatedMock(),
+}));
+
+vi.mock("@/components/ui/tooltip", () => ({
+  TooltipProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
+  TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+  TooltipContent: ({ children }: { children: ReactNode }) => (
+    <div data-testid="version-tooltip">{children}</div>
   ),
 }));
 
@@ -73,6 +89,10 @@ const renderCard = (value: Engine) =>
   );
 
 describe("EngineCard", () => {
+  beforeEach(() => {
+    truncatedMock.mockReturnValue(false);
+  });
+
   it("shows the newest version rather than the first one the engine returned", () => {
     renderCard(engine({ versions: ["v0.17.1", "v0.24.0"], phase: "Created" }));
 
@@ -107,5 +127,44 @@ describe("EngineCard", () => {
     renderCard(engine({ versions: ["v0.17.1", "v0.24.0"], phase: "Created" }));
 
     expect(screen.getByRole("button", { name: "2 versions" })).toBeTruthy();
+  });
+
+  it("renders an engine that declares no versions, tasks or status", () => {
+    // A package that has just been imported can be this bare, so the card must
+    // not depend on any of those fields being present.
+    const bare = engine({ versions: [] });
+    renderCard({
+      ...bare,
+      metadata: {
+        ...bare.metadata,
+        workspace: undefined as unknown as string,
+      },
+      spec: {} as Engine["spec"],
+      status: null,
+    });
+
+    expect(screen.getByTestId("engine-latest-version").textContent).toBe("-");
+    // The fallback only exists to keep the template from printing
+    // "undefined" into the URL.
+    expect(screen.getAllByRole("link")[0].getAttribute("href")).not.toContain(
+      "undefined",
+    );
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText("text-generation")).toBeNull();
+  });
+
+  it("repeats the version in a tooltip once the chip is cut off", () => {
+    truncatedMock.mockReturnValue(true);
+
+    renderCard(engine({ versions: ["v0.24.0"] }));
+
+    expect(screen.getByTestId("version-tooltip").textContent).toBe("v0.24.0");
+  });
+
+  it("leaves the tooltip out while the version fits", () => {
+    renderCard(engine({ versions: ["v0.24.0"] }));
+
+    // The tooltip is the fallback for a clipped chip, not a permanent fixture.
+    expect(screen.queryByTestId("version-tooltip")).toBeNull();
   });
 });

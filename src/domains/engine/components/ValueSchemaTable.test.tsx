@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ValueSchemaTable } from "./ValueSchemaTable";
 
@@ -47,10 +47,16 @@ vi.mock("@/foundation/lib/i18n", () => ({
   }),
 }));
 
-// jsdom has no layout, so truncation never measures true; the dialog path is
-// asserted by faking the measurement.
+// jsdom has no layout, so truncation never measures true; the panel path is
+// asserted by faking the measurement. A per-render queue lets a test decide
+// what the description and the enum row each answer.
+const truncated = vi.hoisted(() => ({
+  queue: [] as boolean[],
+  fallback: true,
+}));
 vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => true,
+  useIsTruncated: () =>
+    truncated.queue.length > 0 ? truncated.queue.shift()! : truncated.fallback,
 }));
 
 vi.mock("@/components/ui/popover", () => ({
@@ -137,6 +143,11 @@ const row = (path: string) =>
   );
 
 describe("ValueSchemaTable", () => {
+  beforeEach(() => {
+    truncated.queue = [];
+    truncated.fallback = true;
+  });
+
   it("renders a row per parameter with type, default and required", () => {
     renderTable();
 
@@ -172,6 +183,44 @@ describe("ValueSchemaTable", () => {
         .getByRole("button", { name: "Expand or collapse rope_scaling" })
         .getAttribute("aria-expanded"),
     ).toBe("false");
+
+    // Expanding again brings the children back.
+    fireEvent.click(toggle);
+    expect(row("rope_scaling.factor")).toBeTruthy();
+  });
+
+  it("labels a parameter that declares no type as unknown", () => {
+    renderTable({
+      type: "object",
+      properties: { mystery: { description: "Declares no type." } },
+    });
+
+    expect(screen.getByTestId("value-schema-row").textContent).toContain(
+      "unknown",
+    );
+  });
+
+  it("offers the panel when only the enum row is cut off", () => {
+    // The description fits, so the enum row is what has to ask for the panel.
+    truncated.queue = [false, true];
+
+    renderTable();
+
+    expect(
+      screen.getByRole("button", { name: "expand rope_scaling.type" }),
+    ).toBeTruthy();
+  });
+
+  it("leaves the enum row unfaded while it fits", () => {
+    truncated.fallback = false;
+
+    renderTable();
+
+    const enumRow = document.querySelector('[data-testid="value-schema-enum"]');
+    expect(enumRow?.getAttribute("style")).toBeNull();
+    expect(screen.queryAllByRole("button", { name: /^expand / })).toHaveLength(
+      0,
+    );
   });
 
   it("filters by parameter name and keeps the matching ancestors", () => {
@@ -369,6 +418,24 @@ describe("ValueSchemaTable", () => {
     renderTable({ type: "object", additionalProperties: true });
 
     expect(screen.getByText("engines.schema.empty")).toBeTruthy();
+    expect(screen.getByText("engines.schema.allowsAdditional")).toBeTruthy();
+  });
+
+  it("adds no extras note to a schema that declares nothing and accepts nothing", () => {
+    renderTable({ type: "object" });
+
+    expect(screen.getByText("engines.schema.empty")).toBeTruthy();
+    expect(screen.queryByText("engines.schema.allowsAdditional")).toBeNull();
+  });
+
+  it("notes the parameters a schema accepts but does not list", () => {
+    renderTable({
+      type: "object",
+      additionalProperties: true,
+      properties: { dtype: { type: "string" } },
+    });
+
+    expect(screen.getByTestId("value-schema-row")).toBeTruthy();
     expect(screen.getByText("engines.schema.allowsAdditional")).toBeTruthy();
   });
 
