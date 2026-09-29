@@ -433,7 +433,7 @@
   "src/domains/api-key/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
   "src/domains/external-endpoint/components/UpstreamModelInput.tsx": "6fb9c2a8fb83e106e83c090f42341569",
   "src/domains/external-endpoint/lib/get-upstream-model-request.ts": "b9f94969a068efb6459f0e2ec78d42b3",
-  "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "52984c44dc95a342eb567fa6ff5a24fb",
+  "src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": "96935aff2929ec6ac093da27b4268263",
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e",
   "src/foundation/hooks/use-is-truncated.ts": "0cf7cb247f3944b09562b5c27e5b68c8"
 }

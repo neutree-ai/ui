@@ -65,7 +65,13 @@ export default function ExternalEndpointMonitor({
           className="h-[calc(100dvh-14rem)] min-h-[480px]"
           aria-label={t("external_endpoints.monitor.chartArea")}
         >
-          <GrafanaDashboard {...props} />
+          <GrafanaDashboard
+            {...props}
+            dashboardConfig={{
+              ...props.dashboardConfig,
+              dashboardId: "neutree-model-routing-embed",
+            }}
+          />
         </div>
       ) : (
         <div className="rounded-md border p-8 text-center text-muted-foreground">
