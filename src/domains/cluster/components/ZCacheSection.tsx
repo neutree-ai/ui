@@ -173,7 +173,7 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
                     <tr key={name} className="border-b last:border-0">
                       <td className="py-3 pr-6">
                         <span className="break-all">{name}</span>
-                        {node?.reason && (
+                        {node?.reason && node.runtime !== "Ready" && (
                           <details className="mt-1 text-xs text-muted-foreground">
                             <summary className="cursor-pointer">
                               {t("clusters.zcache.viewReason")}
