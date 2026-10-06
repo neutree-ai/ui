@@ -3,6 +3,7 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { Cluster } from "../types";
+import { ZCacheControlPlane } from "./ZCacheControlPlane";
 
 export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   const { t } = useTranslation();
@@ -33,6 +34,7 @@ export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   return (
     <ShowPage.Section title={t("clusters.zcache.title")}>
       <div className="space-y-4">
+        <ZCacheControlPlane cluster={cluster} />
         <div className="grid gap-4 md:grid-cols-4">
           <ShowPage.Row title={t("clusters.zcache.configurationResult")}>
             {result}

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ZCacheSection } from "./ZCacheSection";
 
+vi.mock("./ZCacheControlPlane", () => ({ ZCacheControlPlane: () => null }));
 const capability = vi.hoisted(() => ({ value: true as boolean | undefined }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
