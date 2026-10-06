@@ -570,7 +570,29 @@
 			"retryHint": "Save again to retry this failed configuration.",
 			"reportedCapacity": "ZCache configured L1 (GiB)",
 			"configuredVersion": "Configured Runtime version",
-			"capacityHint": "Start with 1 GiB per node and adjust for workload needs. ZCache checks node capacity before applying. Changing L1 affects all target nodes and may recreate cache processes and clear cached data."
+			"capacityHint": "Start with 1 GiB per node and adjust for workload needs. ZCache checks node capacity before applying. Changing L1 affects all target nodes and may recreate cache processes and clear cached data.",
+			"controlPlane": {
+				"title": "Control plane",
+				"manage": "Upgrade / reapply control plane",
+				"installed": "Installed version",
+				"target": "Target version",
+				"result": "Last action",
+				"health": "Current health",
+				"succeeded": "Succeeded",
+				"failed": "Failed",
+				"installing": "Installing",
+				"upgrading": "Applying",
+				"pending": "Awaiting execution",
+				"submitted": "Control-plane request submitted. Follow its result on this page.",
+				"submitFailed": "Unable to submit control-plane request",
+				"completed": "Completed at:",
+				"policy": "Manual resource changes are not automatically repaired. Updating Neutree does not upgrade this installation.",
+				"impact": "This operation applies the selected control-plane bundle and may update node agents or overwrite manual changes. Runtime image versions remain unchanged. Review compatibility before confirming.",
+				"compatibility": "Compatible Runtime versions",
+				"reapplyHint": "This is the installed version. Reapply explicitly to repair resources or retry a failed action. No newer supported version is required.",
+				"reapply": "Confirm reapply / retry",
+				"confirm": "Confirm installation / upgrade"
+			}
 		}
 	},
 	"model_registries": {

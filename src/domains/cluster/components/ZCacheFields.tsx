@@ -44,6 +44,7 @@ export function ZCacheFields({
                 form.setValue(
                   "spec.zcache",
                   {
+                    ...form.getValues("spec.zcache"),
                     enabled: value === true,
                     l1_size_gib:
                       Number.isInteger(
