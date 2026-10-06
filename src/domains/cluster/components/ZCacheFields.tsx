@@ -1,29 +1,36 @@
-import type { UseFormReturnType } from "@refinedev/react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import type { Cluster } from "../types";
+import type { ZCacheStatus } from "../types";
 
 export function ZCacheFields({
   form,
   isEdit,
+  status,
+  compact = false,
 }: {
-  form: UseFormReturnType<Cluster>;
+  form: UseFormReturn;
+  status?: ZCacheStatus;
+  compact?: boolean;
   isEdit: boolean;
 }) {
   const { t } = useTranslation();
   const enabled = form.watch("spec.zcache.enabled") === true;
   const selected: string[] = form.watch("spec.zcache.target_nodes") ?? [];
-  const status = form.refineCore.query?.data?.data.status?.zcache;
   const candidates = status?.candidates ?? [];
   const names = [...new Set([...candidates.map((n) => n.name), ...selected])];
-  return (
-    <FormCardGrid title={t("clusters.zcache.title")} variant="section">
-      <p className="col-span-full text-sm text-muted-foreground">
-        {t(isEdit ? "clusters.zcache.saveHint" : "clusters.zcache.createHint")}
-      </p>
+  const fields = (
+    <>
+      {!compact && (
+        <p className="col-span-full text-sm text-muted-foreground">
+          {t(
+            isEdit ? "clusters.zcache.saveHint" : "clusters.zcache.createHint",
+          )}
+        </p>
+      )}
       {status?.phase === "Failed" && (
         <p className="col-span-full text-sm">
           {t("clusters.zcache.retryHint")}
@@ -107,7 +114,7 @@ export function ZCacheFields({
                     <label
                       key={name}
                       htmlFor={`zcache-node-${name}`}
-                      className="flex items-center gap-2 text-sm"
+                      className="flex items-start gap-3 rounded-md border p-3 text-sm has-[:checked]:border-primary/40"
                     >
                       <Checkbox
                         id={`zcache-node-${name}`}
@@ -128,15 +135,23 @@ export function ZCacheFields({
                           )
                         }
                       />
-                      <span>{name}</span>
-                      <span className="text-muted-foreground">
+                      <span className="min-w-0 flex-1 break-all">{name}</span>
+                      <span
+                        className="text-muted-foreground"
+                        title={candidate?.reason}
+                      >
                         {node
                           ? t(
                               node.runtime === "Ready"
                                 ? "clusters.zcache.ready"
                                 : "clusters.zcache.notReady",
                             )
-                          : candidate?.reason}
+                          : candidate?.reason ===
+                              "control-plane nodes are not used for the ZCache runtime by default"
+                            ? t("clusters.zcache.kubernetesControlPlane")
+                            : candidate?.selectable
+                              ? t("clusters.zcache.eligibleNode")
+                              : t("clusters.zcache.unavailableNode")}
                       </span>
                     </label>
                   );
@@ -161,6 +176,13 @@ export function ZCacheFields({
           )}
         </>
       )}
+    </>
+  );
+  return compact ? (
+    <div className="space-y-5">{fields}</div>
+  ) : (
+    <FormCardGrid title={t("clusters.zcache.title")} variant="section">
+      {fields}
     </FormCardGrid>
   );
 }

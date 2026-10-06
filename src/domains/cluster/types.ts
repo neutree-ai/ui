@@ -180,7 +180,15 @@ export type ZCacheStatus = {
     reason?: string;
   }[];
   candidates?: { name: string; selectable: boolean; reason?: string }[];
-  change?: { operation_id?: string; phase: string; message?: string };
+  change?: {
+    operation_id?: string;
+    phase: string;
+    message?: string;
+    request?: {
+      lmcache?: { l1SizeGb?: number; targetNodes?: string[] };
+      operation?: { kind?: string };
+    };
+  };
   operations?: {
     id: string;
     phase: string;
