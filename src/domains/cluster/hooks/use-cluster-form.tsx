@@ -380,7 +380,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     ) : null,
     zcacheFields:
       isKubernetes && cacheSupported ? (
-        <ZCacheFields form={form} isEdit={isEdit} />
+        <ZCacheFields
+          form={form}
+          isEdit={isEdit}
+          status={form.refineCore.query?.data?.data.status?.zcache}
+        />
       ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
       <FormCardGrid
