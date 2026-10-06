@@ -1,9 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ZCacheSection } from "./ZCacheSection";
 
+vi.mock("@refinedev/core", () => ({ useCan: () => ({ data: { can: true } }) }));
+vi.mock("./ZCacheEditor", () => ({ ZCacheEditor: () => null }));
 vi.mock("./ZCacheControlPlane", () => ({ ZCacheControlPlane: () => null }));
 const capability = vi.hoisted(() => ({ value: true as boolean | undefined }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
@@ -19,8 +21,20 @@ vi.mock("react-i18next", () => ({
 }));
 vi.mock("@/foundation/components/ShowPage", () => ({
   ShowPage: {
-    Section: ({ children }: { children: ReactNode }) => (
-      <section>{children}</section>
+    Section: ({
+      children,
+      title,
+      actions,
+    }: {
+      children: ReactNode;
+      title: ReactNode;
+      actions: ReactNode;
+    }) => (
+      <section>
+        {title}
+        {actions}
+        {children}
+      </section>
     ),
     Row: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   },
@@ -36,6 +50,7 @@ describe("ZCacheSection", () => {
       status: {
         zcache: {
           phase: "Applied",
+          observed_at: "now",
           current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
         },
       },
@@ -69,7 +84,12 @@ describe("ZCacheSection", () => {
     expect(screen.getByText("clusters.zcache.failed")).toBeTruthy();
     expect(screen.getByText("a")).toBeTruthy();
     expect(screen.getByText("8 GiB")).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toContain("API 422");
+    expect(screen.queryByText("API 422")).toBeNull();
+    expect(screen.queryByText(/old-operation/)).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.zcache.operations" }),
+    );
+    expect(screen.getByText("API 422")).toBeTruthy();
     expect(screen.getByText(/clusters.zcache.notAccepted/)).toBeTruthy();
     expect(screen.getByText(/old-operation/)).toBeTruthy();
   });

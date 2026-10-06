@@ -1,147 +1,286 @@
+import { useCan } from "@refinedev/core";
+import { CircleAlert, CircleCheck, History, Settings2 } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import {
+  activeCacheChange,
+  operationLabel,
+  sameCacheConfig,
+} from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
+import { ZCacheActivity } from "./ZCacheActivity";
 import { ZCacheControlPlane } from "./ZCacheControlPlane";
+import { ZCacheEditor } from "./ZCacheEditor";
 
 export function ZCacheSection({ cluster }: { cluster: Cluster }) {
-  const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
-  if (systemInfo?.capabilities?.zcache !== true) return null;
+  return systemInfo?.capabilities?.zcache === true ? (
+    <ZCacheDetails cluster={cluster} />
+  ) : null;
+}
+
+function ZCacheDetails({ cluster }: { cluster: Cluster }) {
+  const { t } = useTranslation();
+  const { data: access } = useCan({ resource: "clusters", action: "edit" });
+  const [editing, setEditing] = useState(false);
+  const [history, setHistory] = useState(false);
   const status = cluster.status?.zcache;
-  const nodes = status?.nodes ?? [];
-  const ready = nodes.filter((n) => n.runtime === "Ready").length;
   const desired = cluster.spec.zcache;
-  const current = status?.current;
-  const matches = !desired?.enabled
-    ? !current?.enabled
-    : current?.enabled &&
-      current.l1_size_gib === desired.l1_size_gib &&
-      [...(current.target_nodes ?? [])].sort().join("\n") ===
-        [...desired.target_nodes].sort().join("\n");
+  const nodes = status?.nodes ?? [];
+  const targetNodes = desired?.enabled ? desired.target_nodes : [];
+  const names = [...new Set([...nodes.map((n) => n.name), ...targetNodes])];
+  const ready = nodes.filter((n) => n.runtime === "Ready").length;
+  const matches = sameCacheConfig(desired, status?.current);
   const phase =
-    status?.phase === "Applied" && !matches
-      ? "Reconciling"
-      : (status?.phase ?? "Reconciling");
-  const result = t(
-    phase === "Applied"
-      ? "clusters.zcache.applied"
-      : phase === "Failed"
-        ? "clusters.zcache.failed"
-        : "clusters.zcache.reconciling",
-  );
+    status?.phase === "Applied" && !matches ? "Reconciling" : status?.phase;
+  const stale = !!status?.observation_error || !status?.observed_at;
+  const busy = activeCacheChange(status);
+  const request = busy?.request;
+  const cp = status?.control_plane;
+  const ControlPlaneIcon = cp?.ready ? CircleCheck : CircleAlert;
+  const cpPending =
+    !!desired?.control_plane &&
+    desired.control_plane.request_id !== cp?.request_id;
+  const cpBusy =
+    cpPending || cp?.phase === "Installing" || cp?.phase === "Upgrading";
+  const resultKey = stale
+    ? "clusters.zcache.unknown"
+    : phase === "Failed"
+      ? "clusters.zcache.failed"
+      : phase !== "Applied"
+        ? "clusters.zcache.reconciling"
+        : desired?.enabled
+          ? "clusters.zcache.applied"
+          : "clusters.zcache.disabled";
   return (
-    <ShowPage.Section title={t("clusters.zcache.title")}>
-      <div className="space-y-4">
-        <ZCacheControlPlane cluster={cluster} />
-        <div className="grid gap-4 md:grid-cols-4">
-          <ShowPage.Row title={t("clusters.zcache.configurationResult")}>
-            {result}
-          </ShowPage.Row>
-          <ShowPage.Row title={t("clusters.zcache.desired")}>
-            {cluster.spec.zcache?.enabled
-              ? `${cluster.spec.zcache.l1_size_gib} GiB · ${cluster.spec.zcache.target_nodes.length} ${t("clusters.zcache.nodes")}`
-              : t("clusters.zcache.disabled")}
-          </ShowPage.Row>
-          <ShowPage.Row title={t("clusters.zcache.readyNodes")}>
-            {status?.observed_at
-              ? `${ready} / ${nodes.length}`
-              : t("clusters.zcache.unknown")}
-          </ShowPage.Row>
-          <ShowPage.Row title={t("clusters.zcache.configuredVersion")}>
-            {status?.configured_runtime_version || t("clusters.zcache.unknown")}
-          </ShowPage.Row>
+    <ShowPage.Section
+      title={
+        <span className="flex items-center gap-3">
+          {t("clusters.zcache.title")}
+          <Badge variant={phase === "Failed" ? "destructive" : "secondary"}>
+            {t(resultKey)}
+          </Badge>
+        </span>
+      }
+      actions={
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setHistory(true)}>
+            <History className="mr-2 h-4 w-4" />
+            {t("clusters.zcache.operations")}
+          </Button>
+          <Button
+            size="sm"
+            disabled={access?.can !== true}
+            onClick={() => setEditing(true)}
+          >
+            <Settings2 className="mr-2 h-4 w-4" />
+            {t("clusters.zcache.edit")}
+          </Button>
         </div>
-        {status?.message && (
-          <p role="status" className="text-sm">
-            {status.message}
-          </p>
-        )}
+      }
+    >
+      <div className="space-y-4">
         {status?.observation_error && (
-          <p role="alert" className="text-sm text-destructive">
-            {t("clusters.zcache.stale")} {status.observation_error}
+          <p
+            role="alert"
+            className="rounded-md bg-destructive/5 p-3 text-sm text-destructive"
+          >
+            {t("clusters.zcache.stale")}
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
-          {t("clusters.zcache.observedAt")}{" "}
-          {status?.observed_at ? (
-            <Timestamp timestamp={status.observed_at} />
-          ) : (
-            t("clusters.zcache.unknown")
+        {phase === "Failed" && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-destructive/5 p-3 text-sm text-destructive"
+          >
+            <span>{t("clusters.zcache.failureHint")}</span>
+            <Button variant="ghost" size="sm" onClick={() => setHistory(true)}>
+              {t("clusters.zcache.viewReason")}
+            </Button>
+          </div>
+        )}
+        {phase !== "Applied" && phase !== "Failed" && (
+          <div
+            role="status"
+            className="space-y-1 rounded-md bg-primary/5 p-3 text-sm leading-6"
+          >
+            <p className="font-medium text-primary">
+              {busy
+                ? t("clusters.zcache.executing", {
+                    action: t(operationLabel(request?.operation?.kind)),
+                  })
+                : t("clusters.zcache.waiting")}
+              {request?.operation?.kind === "update_cache" &&
+              request.lmcache?.l1SizeGb
+                ? ` · L1 ${request.lmcache.l1SizeGb} GiB`
+                : ""}
+            </p>
+            <p className="text-muted-foreground">
+              {desired?.enabled
+                ? t("clusters.zcache.latestTarget", {
+                    size: desired.l1_size_gib,
+                    count: targetNodes.length,
+                  })
+                : t("clusters.zcache.stopping")}
+            </p>
+            {busy && (
+              <p className="text-muted-foreground">
+                {t("clusters.zcache.editWhileBusy")}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>
+            {stale
+              ? t("clusters.zcache.lastObservation")
+              : t("clusters.zcache.readyCount", { ready, total: names.length })}
+          </span>
+          {status?.observed_at && (
+            <span>
+              {t("clusters.zcache.observedAt")}{" "}
+              <Timestamp timestamp={status.observed_at} />
+            </span>
           )}
-        </p>
-        {nodes.length > 0 ? (
+        </div>
+        {names.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left">
-                  <th className="p-2">{t("clusters.zcache.node")}</th>
-                  <th className="p-2">{t("clusters.zcache.runtime")}</th>
-                  <th className="p-2">
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="pb-3 pr-6 font-medium">
+                    {t("clusters.zcache.node")}
+                  </th>
+                  <th className="pb-3 pr-6 font-medium">
+                    {t("clusters.zcache.runtime")}
+                  </th>
+                  <th className="pb-3 font-medium">
                     {t("clusters.zcache.reportedCapacity")}
                   </th>
-                  <th className="p-2">{t("clusters.zcache.reason")}</th>
                 </tr>
               </thead>
               <tbody>
-                {nodes.map((n) => (
-                  <tr key={n.name} className="border-b">
-                    <td className="p-2">{n.name}</td>
-                    <td className="p-2">
-                      {t(
-                        n.runtime === "Ready"
-                          ? "clusters.zcache.ready"
-                          : "clusters.zcache.notReady",
-                      )}
-                    </td>
-                    <td className="p-2">
-                      {n.capacity_bytes > 0
-                        ? `${n.capacity_bytes / 2 ** 30} GiB`
-                        : "—"}
-                    </td>
-                    <td className="p-2">{n.reason || "—"}</td>
-                  </tr>
-                ))}
+                {names.map((name) => {
+                  const node = nodes.find((n) => n.name === name);
+                  const target = targetNodes.includes(name);
+                  return (
+                    <tr key={name} className="border-b last:border-0">
+                      <td className="py-3 pr-6">
+                        <span className="break-all">{name}</span>
+                        {node?.reason && (
+                          <details className="mt-1 text-xs text-muted-foreground">
+                            <summary className="cursor-pointer">
+                              {t("clusters.zcache.viewReason")}
+                            </summary>
+                            <p className="mt-1 max-w-xl break-words">
+                              {node.reason}
+                            </p>
+                          </details>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-6">
+                        {t(
+                          stale
+                            ? "clusters.zcache.unknown"
+                            : !node
+                              ? "clusters.zcache.pendingNode"
+                              : node.runtime === "Ready"
+                                ? "clusters.zcache.ready"
+                                : "clusters.zcache.notReady",
+                        )}
+                        {!target && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t("clusters.zcache.removingNode")}
+                          </p>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap py-3">
+                        {node && node.capacity_bytes > 0
+                          ? `${node.capacity_bytes / 2 ** 30} GiB`
+                          : "—"}
+                        {target &&
+                          desired &&
+                          (!node ||
+                            node.capacity_bytes / 2 ** 30 !==
+                              desired.l1_size_gib) && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {t("clusters.zcache.nodeTarget", {
+                                size: desired.l1_size_gib,
+                              })}
+                            </p>
+                          )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            {t("clusters.zcache.noRuntimeNodes")}
+          <p className="py-3 text-sm text-muted-foreground">
+            {t(
+              desired?.enabled
+                ? "clusters.zcache.noRuntimeNodes"
+                : "clusters.zcache.disabledHint",
+            )}
           </p>
         )}
-        <h3 className="font-medium">{t("clusters.zcache.operations")}</h3>
-        {status?.change && (
-          <p className="text-sm">
-            {t("clusters.zcache.submission")}{" "}
-            {status.change.operation_id || t("clusters.zcache.notAccepted")}
-            {status.change.message && ` · ${status.change.message}`}
-          </p>
-        )}
-        {(status?.operations ?? []).map((op) => (
-          <details key={op.id} className="rounded-md border p-3">
-            <summary className="cursor-pointer text-sm">
-              {op.id} · {op.phase} · {op.kind}
-            </summary>
-            <div className="mt-2 space-y-2 text-sm">
-              {op.created_at && <Timestamp timestamp={op.created_at} />}
-              <p>{op.message}</p>
-              {op.nodes?.map((node) => (
-                <p key={node.name}>
-                  {node.name} · {node.phase}
-                  {node.reason && ` · ${node.reason}`}
-                </p>
-              ))}
-            </div>
-          </details>
-        ))}
-        {!status?.operations?.length && (
-          <p className="text-sm text-muted-foreground">
-            {t("clusters.zcache.noOperations")}
-          </p>
-        )}
+        <details className="border-t pt-3">
+          <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="flex items-center gap-2">
+              <ControlPlaneIcon className="h-4 w-4 text-muted-foreground" />
+              {t("clusters.zcache.controlPlane.title")}
+              <span
+                className={
+                  !cp?.ready || cpBusy
+                    ? "text-amber-600"
+                    : "text-muted-foreground"
+                }
+              >
+                {t(
+                  cpBusy
+                    ? "clusters.zcache.reconciling"
+                    : !cp
+                      ? "clusters.zcache.unknown"
+                      : cp.ready
+                        ? "clusters.zcache.ready"
+                        : "clusters.zcache.notReady",
+                )}
+              </span>
+              {cp?.phase === "Failed" && (
+                <Badge variant="destructive">
+                  {t("clusters.zcache.controlPlane.failed")}
+                </Badge>
+              )}
+            </span>
+            <span className="text-primary">
+              {t("clusters.zcache.maintenance")}
+            </span>
+          </summary>
+          <div className="mt-4">
+            <ZCacheControlPlane cluster={cluster} />
+            <p className="mt-3 text-xs text-muted-foreground">
+              {t("clusters.zcache.configuredVersion")}:{" "}
+              {status?.configured_runtime_version ||
+                t("clusters.zcache.unknown")}
+            </p>
+          </div>
+        </details>
       </div>
+      {editing && (
+        <ZCacheEditor cluster={cluster} onClose={() => setEditing(false)} />
+      )}
+      <ZCacheActivity
+        status={status}
+        open={history}
+        onOpenChange={setHistory}
+      />
     </ShowPage.Section>
   );
 }

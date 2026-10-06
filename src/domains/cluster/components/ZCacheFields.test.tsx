@@ -43,7 +43,7 @@ function Form({
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <ZCacheFields form={adapted} isEdit={isEdit} />
+        <ZCacheFields form={adapted} isEdit={isEdit} status={status} />
         <button type="submit">Save</button>
       </form>
     </FormProvider>
