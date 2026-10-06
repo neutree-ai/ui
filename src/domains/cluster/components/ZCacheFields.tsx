@@ -135,23 +135,25 @@ export function ZCacheFields({
                           )
                         }
                       />
-                      <span className="min-w-0 flex-1 break-all">{name}</span>
-                      <span
-                        className="text-muted-foreground"
-                        title={candidate?.reason}
-                      >
-                        {node
-                          ? t(
-                              node.runtime === "Ready"
-                                ? "clusters.zcache.ready"
-                                : "clusters.zcache.notReady",
-                            )
-                          : candidate?.reason ===
-                              "control-plane nodes are not used for the ZCache runtime by default"
-                            ? t("clusters.zcache.kubernetesControlPlane")
-                            : candidate?.selectable
-                              ? t("clusters.zcache.eligibleNode")
-                              : t("clusters.zcache.unavailableNode")}
+                      <span className="min-w-0 flex-1">
+                        <span className="block break-all">{name}</span>
+                        <span
+                          className="mt-1 block text-xs text-muted-foreground"
+                          title={candidate?.reason}
+                        >
+                          {node
+                            ? t(
+                                node.runtime === "Ready"
+                                  ? "clusters.zcache.ready"
+                                  : "clusters.zcache.notReady",
+                              )
+                            : candidate?.reason ===
+                                "control-plane nodes are not used for the ZCache runtime by default"
+                              ? t("clusters.zcache.kubernetesControlPlane")
+                              : candidate?.selectable
+                                ? t("clusters.zcache.eligibleNode")
+                                : t("clusters.zcache.unavailableNode")}
+                        </span>
                       </span>
                     </label>
                   );

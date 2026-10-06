@@ -105,3 +105,54 @@ it.each([false, undefined])(
     expect(container.textContent).toBe("");
   },
 );
+
+it("renders heterogeneous node capacities instead of a uniform capacity summary", () => {
+  const cluster = {
+    spec: {
+      zcache: { enabled: true, l1_size_gib: 10, target_nodes: ["a", "b"] },
+    },
+    status: {
+      zcache: {
+        phase: "Reconciling",
+        observed_at: "now",
+        nodes: [
+          { name: "a", runtime: "Ready", capacity_bytes: 2 * 2 ** 30 },
+          { name: "b", runtime: "Ready", capacity_bytes: 8 * 2 ** 30 },
+        ],
+        change: {
+          phase: "Running",
+          request: {
+            operation: { kind: "update_cache" },
+            lmcache: { l1SizeGb: 5, targetNodes: ["a", "b"] },
+          },
+        },
+      },
+    },
+  } as unknown as Cluster;
+  render(<ZCacheSection cluster={cluster} />);
+  expect(screen.getByText("2 GiB")).toBeTruthy();
+  expect(screen.getByText("8 GiB")).toBeTruthy();
+  expect(screen.getByRole("status").textContent).toContain("5 GiB");
+  expect(screen.getByRole("status").textContent).toContain(
+    "clusters.zcache.latestTarget",
+  );
+});
+it("does not label stale node observations ready", () => {
+  const cluster = {
+    spec: { zcache: { enabled: true, l1_size_gib: 2, target_nodes: ["a"] } },
+    status: {
+      zcache: {
+        phase: "Applied",
+        observed_at: "old",
+        observation_error: "unreachable",
+        nodes: [{ name: "a", runtime: "Ready", capacity_bytes: 2 * 2 ** 30 }],
+      },
+    },
+  } as unknown as Cluster;
+  render(<ZCacheSection cluster={cluster} />);
+  expect(screen.queryByText("clusters.zcache.ready")).toBeNull();
+  expect(screen.getByRole("alert").textContent).toContain(
+    "clusters.zcache.stale",
+  );
+  expect(screen.getByText("2 GiB")).toBeTruthy();
+});
