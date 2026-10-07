@@ -138,4 +138,25 @@ describe("buildTrend", () => {
       { date: "2026-09-02", a: 5, b: 0 },
     ]);
   });
+
+  it("fills the folded 'other' series with each day's remaining tokens", () => {
+    const rows = [
+      record({ date: "2026-09-01", api_key_id: "big", usage: 100 }),
+      record({ date: "2026-09-01", api_key_id: "small-a", usage: 30 }),
+      record({ date: "2026-09-01", api_key_id: "small-b", usage: 20 }),
+      // A day where only the folded keys had usage: "other" carries it while
+      // the charted key stays at zero.
+      record({ date: "2026-09-02", api_key_id: "small-b", usage: 12 }),
+    ];
+    const folded = foldRemainder(
+      aggregateSeries(rows, byKey, metaOfKey),
+      1,
+      (n) => `Other ${n} keys`,
+    );
+
+    expect(buildTrend(rows, folded, byKey)).toEqual([
+      { date: "2026-09-01", big: 100, [OTHER_SERIES_KEY]: 50 },
+      { date: "2026-09-02", big: 0, [OTHER_SERIES_KEY]: 12 },
+    ]);
+  });
 });

@@ -417,7 +417,7 @@
   "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
   "src/pages/model-usage/components/UsageChart.tsx": "5c02d570f41fff730fae30708fe32a18",
-  "src/pages/model-usage/lib/usage-series.ts": "084013afd860b377e183cfd27b7f88f8",
+  "src/pages/model-usage/lib/usage-series.ts": "1e91a8c738600220a8aac4af25e86bfe",
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "f8d5d73eea90c7728d1717fb813ab86b",
