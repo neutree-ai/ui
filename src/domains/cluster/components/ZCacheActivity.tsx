@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -23,14 +22,12 @@ export function ZCacheActivity({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
+        aria-describedby={undefined}
         overlayClassName="bg-black/20"
         className="flex w-full flex-col sm:max-w-xl"
       >
         <SheetHeader className="text-left">
           <SheetTitle>{t("clusters.zcache.operations")}</SheetTitle>
-          <SheetDescription>
-            {t("clusters.zcache.historyHint")}
-          </SheetDescription>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {(status?.message || status?.observation_error || status?.change) && (

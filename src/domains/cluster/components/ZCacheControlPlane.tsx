@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -149,18 +148,12 @@ export function ZCacheControlPlane({ cluster }: { cluster: Cluster }) {
           <Timestamp timestamp={state.completed_at} />
         </p>
       )}
-      <p className="text-sm text-muted-foreground">
-        {t("clusters.zcache.controlPlane.policy")}
-      </p>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>
               {t("clusters.zcache.controlPlane.manage")}
             </DialogTitle>
-            <DialogDescription>
-              {t("clusters.zcache.controlPlane.impact")}
-            </DialogDescription>
           </DialogHeader>
           <p className="text-sm">
             {t("clusters.zcache.controlPlane.installed")}:{" "}
@@ -181,21 +174,6 @@ export function ZCacheControlPlane({ cluster }: { cluster: Cluster }) {
               ))}
             </SelectContent>
           </Select>
-          {selected && (
-            <div className="space-y-1 text-sm">
-              <p>Chart: {selected.chart_version}</p>
-              <p>Node agent: {selected.node_agent_version}</p>
-              <p>
-                {t("clusters.zcache.controlPlane.compatibility")}:{" "}
-                {selected.runtime_versions.join(", ")}
-              </p>
-            </div>
-          )}
-          {reapply && (
-            <p className="text-sm">
-              {t("clusters.zcache.controlPlane.reapplyHint")}
-            </p>
-          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               {t("buttons.cancel")}
