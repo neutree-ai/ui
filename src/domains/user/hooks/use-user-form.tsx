@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/domains/user/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { profileIdentitySource } from "@/foundation/lib/user-identity";
 
 export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
   const isEdit = action === "edit";
@@ -31,6 +32,11 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
     refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
+
+  // The email of a user from an identity source belongs to that source; the
+  // database refuses to change it.
+  const metadata = form.watch("metadata");
+  const isExternal = isEdit && profileIdentitySource(metadata) !== "";
 
   const passwordField = isEdit
     ? null
@@ -114,8 +120,13 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="spec.email"
           label={translate("common.fields.email")}
+          description={
+            isExternal
+              ? translate("user_profiles.hints.externalEmail")
+              : undefined
+          }
         >
-          <Input type="email" />
+          <Input type="email" disabled={isExternal} />
         </FormFieldGroup>
       </FormCardGrid>
     ),

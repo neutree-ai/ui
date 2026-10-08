@@ -86,7 +86,7 @@ test.describe("ui layout", () => {
           await expect(
             incognitoPage.getByText("Forgot password?"),
           ).toBeVisible();
-          await expect(incognitoPage.getByText("Sign up")).toBeVisible();
+          await expect(incognitoPage.getByText("Sign up")).toHaveCount(0);
           await expect(incognitoPage.getByAltText("logo")).toBeVisible();
 
           // Login flow
