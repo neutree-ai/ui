@@ -4,7 +4,13 @@ import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/domains/user/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { translateApiError } from "@/foundation/lib/api-error-code";
 import { profileIdentitySource } from "@/foundation/lib/user-identity";
+
+/** User profile write errors → i18n keys (10260: migration 106). */
+const USER_PROFILE_ERROR_KEYS: Readonly<Record<string, string>> = {
+  "10260": "user_profiles.errors.externalEmailReadOnly",
+};
 
 export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
   const isEdit = action === "edit";
@@ -29,7 +35,24 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           password: "",
           confirmPassword: "",
         },
-    refineCoreProps: {},
+    refineCoreProps: {
+      // A known error code gets its own message; anything else keeps
+      // refine's default notification.
+      errorNotification: (error) => {
+        const description = translateApiError(
+          translate,
+          error,
+          USER_PROFILE_ERROR_KEYS,
+        );
+        return description
+          ? {
+              type: "error",
+              message: translate("user_profiles.errors.saveFailed"),
+              description,
+            }
+          : undefined;
+      },
+    },
     warnWhenUnsavedChanges: true,
   });
 

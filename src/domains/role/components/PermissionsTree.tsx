@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Server,
+  ShieldCheck,
   Trash,
   UserCheck,
 } from "lucide-react";
@@ -41,6 +42,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   engine: <Cpu className="h-5 w-5" />,
   cluster: <HardDrive className="h-5 w-5" />,
   model_catalog: <BookOpen className="h-5 w-5" />,
+  identity_source: <ShieldCheck className="h-5 w-5" />,
 };
 
 const hiddenResources = new Set(["static_node_cluster", "static_node"]);
