@@ -8,12 +8,19 @@ const t = (key: string, options?: Record<string, unknown>) =>
   options?.hint ? `${key}|${options.hint}` : key;
 
 describe("identitySourceErrorMessage", () => {
-  it("maps every identity source code 10250-10260", () => {
-    for (let code = 10250; code <= 10260; code++) {
+  it("maps every identity source code 10250-10259 and 10261", () => {
+    for (const code of [
+      ...Array.from({ length: 10 }, (_, i) => 10250 + i),
+      10261,
+    ]) {
       expect(IDENTITY_SOURCE_ERROR_KEYS[String(code)]).toMatch(
         /^identity_sources\.errors\./,
       );
     }
+  });
+
+  it("leaves the user profile code 10260 unmapped", () => {
+    expect(IDENTITY_SOURCE_ERROR_KEYS["10260"]).toBeUndefined();
   });
 
   it("translates a database error and passes the hint on", () => {
@@ -26,10 +33,10 @@ describe("identitySourceErrorMessage", () => {
     ).toBe("identity_sources.errors.fieldRequired|Provide spec.ldap.url");
   });
 
-  it("translates neutree-api's own validation error (10260)", () => {
+  it("translates neutree-api's own validation error (10261)", () => {
     expect(
       identitySourceErrorMessage(t, {
-        code: "10260",
+        code: "10261",
         message: "invalid identity source",
         hint: "spec.oidc.ca_cert holds no PEM certificate",
       }),
