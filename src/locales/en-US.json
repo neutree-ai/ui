@@ -114,16 +114,27 @@
 		},
 		"login": {
 			"title": "Sign in to your account",
-			"signup": "Sign up",
 			"fields": {
 				"identifier": "Username or Email",
-				"identifierPlaceholder": "username or email"
+				"identifierPlaceholder": "username or email",
+				"directoryUsername": "Username",
+				"directoryUsernamePlaceholder": "directory username"
 			},
 			"buttons": {
 				"submit": "Login",
 				"forgotPassword": "Forgot password?",
-				"noAccount": "Don't have an account?",
-				"rememberMe": "Remember me"
+				"rememberMe": "Remember me",
+				"continueWith": "Continue with {{name}}"
+			},
+			"tabs": {
+				"local": "Local account"
+			},
+			"errors": {
+				"title": "Sign-in failed",
+				"invalidCredentials": "Invalid username or password.",
+				"sourceNotFound": "This sign-in method is no longer available. Reload the page and try again.",
+				"directoryUnavailable": "The directory service is unavailable. Try again later.",
+				"ldapFailed": "Could not sign in. Try again later."
 			}
 		},
 		"forgotPassword": {
@@ -131,13 +142,6 @@
 			"buttons": {
 				"submit": "Send reset instructions",
 				"backLogin": "Back to login"
-			}
-		},
-		"register": {
-			"title": "Sign up for your account",
-			"buttons": {
-				"submit": "Sign up",
-				"haveAccount": "Have an account?"
 			}
 		},
 		"updatePassword": {
@@ -148,7 +152,8 @@
 			},
 			"buttons": {
 				"submit": "Update"
-			}
+			},
+			"externalManaged": "Your password is managed by your organization's identity provider and cannot be changed here."
 		},
 		"error": {
 			"info": "You may have forgotten to add the {{action}} component to {{resource}} resource.",
@@ -209,6 +214,22 @@
 				"activations": "Activations",
 				"multiDeviceOverhead": "Multi-device Overhead",
 				"frameworkOverhead": "Framework Overhead"
+			}
+		},
+		"ssoCallback": {
+			"signingIn": "Signing you in…",
+			"failedTitle": "Sign-in failed",
+			"backToLogin": "Back to sign in",
+			"errors": {
+				"missing": "This sign-in link is incomplete or has already been used. Start the sign-in again.",
+				"verifyFailed": "The sign-in could not be completed. The link may have expired or already been used.",
+				"unknown": "The sign-in could not be completed.",
+				"invalid_state": "The sign-in session expired or did not match. Start the sign-in again.",
+				"idp_error": "The identity provider refused the sign-in.",
+				"idp_unavailable": "The identity provider is unavailable. Try again later.",
+				"login_failed": "Your account could not be signed in. Contact your administrator if this persists.",
+				"server_error": "Something went wrong on the server. Try again later.",
+				"source_unavailable": "This sign-in method is no longer available."
 			}
 		}
 	},
@@ -1390,7 +1411,11 @@
 		"create": "Create User",
 		"edit": "Edit User",
 		"fields": {
-			"confirmPassword": "Confirm Password"
+			"confirmPassword": "Confirm Password",
+			"displayName": "Display Name"
+		},
+		"hints": {
+			"externalEmail": "This user comes from an identity source, which manages the email. Change it there."
 		},
 		"placeholders": {
 			"userName": "User Name",

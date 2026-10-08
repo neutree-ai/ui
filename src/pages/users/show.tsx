@@ -7,6 +7,7 @@ import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { profileDisplayName } from "@/foundation/lib/user-identity";
 
 export const UsersShow = () => {
   const { t } = useTranslation();
@@ -28,9 +29,12 @@ export const UsersShow = () => {
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
       <ShowPage.ObjectHeader
-        title={record.metadata.name}
+        title={profileDisplayName(record.metadata)}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("common.fields.name")}>
+              {record.metadata.name}
+            </ShowPage.Meta>
             <ShowPage.Meta label={t("common.fields.email")}>
               {record.spec.email}
             </ShowPage.Meta>

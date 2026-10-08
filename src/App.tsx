@@ -46,10 +46,16 @@ import { YamlExportButton } from "@/foundation/components/YamlExportButton";
 import { YamlImportButton } from "@/foundation/components/YamlImportButton";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { SSO_CALLBACK_ROUTE } from "@/foundation/lib/sso-callback";
 import { authProvider } from "@/foundation/providers/auth-provider";
 
 const AuthPage = lazy(() =>
   import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),
+);
+const SsoCallbackPage = lazy(() =>
+  import("./pages/auth/SsoCallbackPage").then((m) => ({
+    default: m.SsoCallbackPage,
+  })),
 );
 const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
 
@@ -670,19 +676,29 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
               >
                 <Route
                   path="/login"
-                  element={
-                    <AuthPage type="login" providers={[]} formProps={{}} />
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={<AuthPage type="register" />}
+                  element={<AuthPage type="login" formProps={{}} />}
                 />
                 <Route
                   path="/forgot-password"
                   element={<AuthPage type="forgotPassword" />}
                 />
               </Route>
+
+              {/* SSO return: open to everyone, it is what signs the user in */}
+              <Route
+                path={SSO_CALLBACK_ROUTE}
+                element={
+                  <Suspense
+                    fallback={
+                      <div className="flex h-screen items-center justify-center">
+                        <Loader className="w-16 text-muted-foreground" />
+                      </div>
+                    }
+                  >
+                    <SsoCallbackPage />
+                  </Suspense>
+                }
+              />
 
               {/* fallback */}
               <Route

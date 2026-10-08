@@ -1,5 +1,9 @@
 import type { UpdatePasswordFormTypes } from "@refinedev/core";
-import { useActiveAuthProvider, useUpdatePassword } from "@refinedev/core";
+import {
+  useActiveAuthProvider,
+  useGetIdentity,
+  useUpdatePassword,
+} from "@refinedev/core";
 import type React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,6 +42,10 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
       v3LegacyAuthProviderCompatible: Boolean(authProvider?.isLegacy),
     });
 
+  // The directory owns an external user's password; the server refuses it.
+  const { data: identity } = useGetIdentity<{ external?: boolean }>();
+  const external = Boolean(identity?.external);
+
   const PageTitle =
     title === false ? null : (
       <div className="flex justify-center mb-8 text-xl">
@@ -56,67 +64,76 @@ export const UpdatePasswordPage: React.FC<UpdatePasswordPageProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="px-8 pt-6 pb-6">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const data = new FormData(e.currentTarget);
-            const password = data.get("password") as string;
-            const confirmPassword = data.get("confirmPassword") as string;
+        {external ? (
+          <p
+            className="text-sm text-muted-foreground text-center"
+            data-testid="external-password-hint"
+          >
+            {translate("pages.updatePassword.externalManaged")}
+          </p>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const data = new FormData(e.currentTarget);
+              const password = data.get("password") as string;
+              const confirmPassword = data.get("confirmPassword") as string;
 
-            if (!validatePasswordMatch(password, confirmPassword)) {
-              toast.error(
-                translate("pages.auth.errors.confirmPasswordNotMatch"),
-              );
-              return;
-            }
+              if (!validatePasswordMatch(password, confirmPassword)) {
+                toast.error(
+                  translate("pages.auth.errors.confirmPasswordNotMatch"),
+                );
+                return;
+              }
 
-            updatePassword({
-              password,
-              confirmPassword,
-              ...mutationVariables,
-            });
-          }}
-          {...formProps}
-        >
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">
-                {translate("pages.updatePassword.fields.password")}
-              </Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder={translate("pages.auth.passwordPlaceholder")}
-                required
-                minLength={6}
-                className="h-10"
-              />
+              updatePassword({
+                password,
+                confirmPassword,
+                ...mutationVariables,
+              });
+            }}
+            {...formProps}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  {translate("pages.updatePassword.fields.password")}
+                </Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder={translate("pages.auth.passwordPlaceholder")}
+                  required
+                  minLength={6}
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">
+                  {translate("pages.updatePassword.fields.confirmPassword")}
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder={translate("pages.auth.passwordPlaceholder")}
+                  required
+                  className="h-10"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full h-10 mt-4"
+                disabled={isLoading}
+              >
+                {isLoading
+                  ? translate("pages.auth.loading")
+                  : translate("pages.updatePassword.buttons.submit")}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">
-                {translate("pages.updatePassword.fields.confirmPassword")}
-              </Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder={translate("pages.auth.passwordPlaceholder")}
-                required
-                className="h-10"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full h-10 mt-4"
-              disabled={isLoading}
-            >
-              {isLoading
-                ? translate("pages.auth.loading")
-                : translate("pages.updatePassword.buttons.submit")}
-            </Button>
-          </div>
-        </form>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
