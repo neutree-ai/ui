@@ -142,6 +142,33 @@ export const useExternalEndpointForm = ({
         // Disable stale cache on mount so useFieldArray always initializes
         // with fresh data after an edit-save-edit cycle.
         cacheTime: 0,
+        select: (response) => {
+          const record = response.data as ExternalEndpoint;
+          return {
+            ...response,
+            data: {
+              ...record,
+              spec: {
+                ...record.spec,
+                model_routes: record.spec.model_routes?.map((route) => {
+                  if (route.strategy !== "priority") return route;
+                  // The form exposes two tiers: the lowest priority is primary;
+                  // all remaining targets share the standby tier on save.
+                  const primary = Math.min(
+                    ...route.targets.map((target) => target.priority ?? 0),
+                  );
+                  return {
+                    ...route,
+                    targets: route.targets.map((target) => ({
+                      ...target,
+                      priority: (target.priority ?? 0) === primary ? 0 : 1,
+                    })),
+                  };
+                }),
+              },
+            },
+          };
+        },
       },
     },
     warnWhenUnsavedChanges: true,
