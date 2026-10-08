@@ -1,5 +1,6 @@
 import { useList } from "@refinedev/core";
 import { ShowButton } from "@/foundation/components/ShowButton";
+import { profileDisplayName } from "@/foundation/lib/user-identity";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 const UserCell = ({ id }: { id: string }) => {
@@ -18,7 +19,8 @@ const UserCell = ({ id }: { id: string }) => {
     return null;
   }
 
-  const { name, workspace } = data.data[0].metadata;
+  const { metadata } = data.data[0];
+  const { name, workspace } = metadata;
 
   return (
     <ShowButton
@@ -29,7 +31,7 @@ const UserCell = ({ id }: { id: string }) => {
       resource="user_profiles"
       variant="link"
     >
-      {name}
+      {profileDisplayName(metadata)}
     </ShowButton>
   );
 };

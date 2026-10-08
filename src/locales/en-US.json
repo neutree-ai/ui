@@ -44,7 +44,8 @@
 		},
 		"messages": {
 			"grafanaNotConfigured": "Grafana monitoring is not configured.",
-			"leaveEmptyToKeepValue": "Leave empty to keep existing value"
+			"leaveEmptyToKeepValue": "Leave empty to keep existing value",
+			"noPermission": "You do not have permission to view this page."
 		},
 		"errors": {
 			"unknown": "Unknown error"
@@ -114,16 +115,27 @@
 		},
 		"login": {
 			"title": "Sign in to your account",
-			"signup": "Sign up",
 			"fields": {
 				"identifier": "Username or Email",
-				"identifierPlaceholder": "username or email"
+				"identifierPlaceholder": "username or email",
+				"directoryUsername": "Username",
+				"directoryUsernamePlaceholder": "directory username"
 			},
 			"buttons": {
 				"submit": "Login",
 				"forgotPassword": "Forgot password?",
-				"noAccount": "Don't have an account?",
-				"rememberMe": "Remember me"
+				"rememberMe": "Remember me",
+				"continueWith": "Continue with {{name}}"
+			},
+			"tabs": {
+				"local": "Local account"
+			},
+			"errors": {
+				"title": "Sign-in failed",
+				"invalidCredentials": "Invalid username or password.",
+				"sourceNotFound": "This sign-in method is no longer available. Reload the page and try again.",
+				"directoryUnavailable": "The directory service is unavailable. Try again later.",
+				"ldapFailed": "Could not sign in. Try again later."
 			}
 		},
 		"forgotPassword": {
@@ -131,13 +143,6 @@
 			"buttons": {
 				"submit": "Send reset instructions",
 				"backLogin": "Back to login"
-			}
-		},
-		"register": {
-			"title": "Sign up for your account",
-			"buttons": {
-				"submit": "Sign up",
-				"haveAccount": "Have an account?"
 			}
 		},
 		"updatePassword": {
@@ -148,7 +153,8 @@
 			},
 			"buttons": {
 				"submit": "Update"
-			}
+			},
+			"externalManaged": "Your password is managed by your organization's identity provider and cannot be changed here."
 		},
 		"error": {
 			"info": "You may have forgotten to add the {{action}} component to {{resource}} resource.",
@@ -209,6 +215,22 @@
 				"activations": "Activations",
 				"multiDeviceOverhead": "Multi-device Overhead",
 				"frameworkOverhead": "Framework Overhead"
+			}
+		},
+		"ssoCallback": {
+			"signingIn": "Signing you in…",
+			"failedTitle": "Sign-in failed",
+			"backToLogin": "Back to sign in",
+			"errors": {
+				"missing": "This sign-in link is incomplete or has already been used. Start the sign-in again.",
+				"verifyFailed": "The sign-in could not be completed. The link may have expired or already been used.",
+				"unknown": "The sign-in could not be completed.",
+				"invalid_state": "The sign-in session expired or did not match. Start the sign-in again.",
+				"idp_error": "The identity provider refused the sign-in.",
+				"idp_unavailable": "The identity provider is unavailable. Try again later.",
+				"login_failed": "Your account could not be signed in. Contact your administrator if this persists.",
+				"server_error": "Something went wrong on the server. Try again later.",
+				"source_unavailable": "This sign-in method is no longer available."
 			}
 		}
 	},
@@ -1390,7 +1412,15 @@
 		"create": "Create User",
 		"edit": "Edit User",
 		"fields": {
-			"confirmPassword": "Confirm Password"
+			"confirmPassword": "Confirm Password",
+			"displayName": "Display Name"
+		},
+		"hints": {
+			"externalEmail": "This user comes from an identity source, which manages the email. Change it there."
+		},
+		"errors": {
+			"saveFailed": "Could not save the user",
+			"externalEmailReadOnly": "This user's email comes from an identity source and cannot be changed here. Change it in the identity source."
 		},
 		"placeholders": {
 			"userName": "User Name",
@@ -1972,6 +2002,126 @@
 	},
 	"vram_calculator": {
 		"title": "VRAM Calculator"
+	},
+	"identity_sources": {
+		"identity_sources": "identity source",
+		"title": "Identity Sources",
+		"create": {
+			"title": "Create Identity Source"
+		},
+		"types": {
+			"ldap": "LDAP",
+			"oidc": "OpenID Connect"
+		},
+		"phases": {
+			"Pending": "Pending",
+			"Connected": "Connected",
+			"Failed": "Failed",
+			"Deleted": "Deleted"
+		},
+		"status": {
+			"lastTestOk": "Last connection test succeeded:",
+			"lastTestFailed": "Last connection test failed:",
+			"notTested": "Not tested yet"
+		},
+		"values": {
+			"yes": "Yes",
+			"no": "No",
+			"testOk": "Succeeded",
+			"testFailed": "Failed",
+			"caConfigured": "Custom CA",
+			"systemTrust": "System trust store"
+		},
+		"sections": {
+			"state": "State",
+			"ldapConnection": "Directory Connection",
+			"ldapBind": "Service Account",
+			"ldapUsers": "User Lookup",
+			"oidcProvider": "Provider",
+			"oidcRedirects": "Redirects",
+			"oidcClaims": "Claims"
+		},
+		"fields": {
+			"displayName": "Display Name",
+			"enabled": "Enabled",
+			"lastTest": "Last Connection Test",
+			"ldapUrl": "Server URL",
+			"startTls": "Use StartTLS",
+			"insecureSkipVerify": "Skip certificate verification",
+			"caCert": "CA Certificate (PEM)",
+			"timeout": "Timeout (seconds)",
+			"bindDn": "Bind DN",
+			"bindPassword": "Bind Password",
+			"userBaseDn": "User Base DN",
+			"userFilter": "User Filter",
+			"attrId": "ID Attribute",
+			"attrUsername": "Username Attribute",
+			"attrEmail": "Email Attribute",
+			"attrDisplayName": "Display Name Attribute",
+			"attrMemberOf": "Group Attribute",
+			"issuer": "Issuer URL",
+			"clientId": "Client ID",
+			"clientSecret": "Client Secret",
+			"scopes": "Scopes",
+			"redirectUrl": "Redirect URL",
+			"allowedRedirects": "Allowed UI Redirects",
+			"claimUsername": "Username Claim",
+			"claimDisplayName": "Display Name Claim",
+			"claimEmail": "Email Claim"
+		},
+		"hints": {
+			"name": "1-32 lowercase letters, digits or '-'. It identifies this source's users and cannot be changed later.",
+			"displayName": "Shown on the login page. Defaults to the name.",
+			"typeImmutable": "The type cannot be changed; create a new identity source instead.",
+			"enabled": "Only enabled sources are offered on the login page.",
+			"keepSecret": "Leave blank to keep the current value.",
+			"bindPassword": "Password of the service account above. It is stored encrypted and never shown again.",
+			"clientSecret": "Stored encrypted and never shown again.",
+			"insecureSkipVerify": "Accepts any server certificate. Use only for testing.",
+			"caCert": "CA that signed the directory's certificate. Leave empty to use the system trust store.",
+			"oidcCaCert": "Trusted in addition to the system trust store, for a provider with a private CA.",
+			"userFilter": "Must contain {username}, e.g. (uid={username}).",
+			"scopes": "Separated by spaces. Must include openid; empty means openid profile email.",
+			"redirectUrl": "The public URL of neutree's OIDC callback. Register exactly this URL with the provider.",
+			"allowedRedirects": "One URL per line. Where a login may return to; must include this UI's address.",
+			"adminEquivalent": "Whoever can create or change an identity source decides who its users are. Treat these permissions as administrator access."
+		},
+		"validation": {
+			"required": "This field is required",
+			"name": "Use 1-32 lowercase letters, digits or inner '-'",
+			"ldapUrl": "Use ldap://host[:port] or ldaps://host[:port]",
+			"startTlsWithLdaps": "StartTLS cannot be used with an ldaps:// URL",
+			"timeout": "Enter a whole number of seconds, 0 or more",
+			"pem": "Paste the certificate in PEM form (-----BEGIN CERTIFICATE-----)",
+			"userFilter": "The filter must contain {username}",
+			"httpUrl": "Enter an absolute http:// or https:// URL",
+			"scopes": "Scopes must include openid",
+			"allowedRedirectsRequired": "Add at least one URL",
+			"allowedRedirect": "Each URL must be an absolute http(s) URL without user, query or fragment"
+		},
+		"actions": {
+			"toggleEnabled": "Enable {{name}}"
+		},
+		"messages": {
+			"enabled": "{{name}} enabled",
+			"disabled": "{{name}} disabled",
+			"toggleFailed": "Could not change {{name}}",
+			"createFailed": "Could not create the identity source",
+			"saveFailed": "Could not save the identity source"
+		},
+		"errors": {
+			"invalidName": "The name must be 1-32 lowercase letters, digits or inner '-'.",
+			"nameImmutable": "The name of an identity source cannot be changed. Create a new identity source instead.",
+			"noWorkspace": "An identity source is global and cannot belong to a workspace.",
+			"invalidType": "The type must be LDAP or OpenID Connect.",
+			"typeMismatch": "The settings do not match the selected type.",
+			"fieldRequired": "A required field is missing. {{hint}}",
+			"invalidUrl": "A URL is not valid. {{hint}}",
+			"missingPlaceholder": "The LDAP user filter must contain {username}, and OIDC scopes must include openid. {{hint}}",
+			"invalidTls": "The TLS or timeout settings are not valid. {{hint}}",
+			"secretsUnavailable": "The server cannot store secrets right now. Contact your administrator.",
+			"invalid": "The identity source is not valid: {{hint}}"
+		}
 	},
 	"oem_configs": {
 		"title": "Customize Appearance",

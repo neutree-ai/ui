@@ -34,22 +34,30 @@ import {
   LayoutTemplate,
   Server,
   Settings,
+  ShieldCheck,
   User,
   UserCheck,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Loader } from "@/foundation/components/Loader";
 import { Logo } from "@/foundation/components/Logo";
+import { PermissionGate } from "@/foundation/components/PermissionGate";
 import { UserDropdown } from "@/foundation/components/UserDropdown";
 import WorkspaceSelect from "@/foundation/components/WorkspaceSelect";
 import { YamlExportButton } from "@/foundation/components/YamlExportButton";
 import { YamlImportButton } from "@/foundation/components/YamlImportButton";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { SSO_CALLBACK_ROUTE } from "@/foundation/lib/sso-callback";
 import { authProvider } from "@/foundation/providers/auth-provider";
 
 const AuthPage = lazy(() =>
   import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),
+);
+const SsoCallbackPage = lazy(() =>
+  import("./pages/auth/SsoCallbackPage").then((m) => ({
+    default: m.SsoCallbackPage,
+  })),
 );
 const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
 
@@ -145,6 +153,27 @@ const ImageRegistriesEdit = lazy(() =>
 const ImageRegistriesCreate = lazy(() =>
   import("./pages/image-registries/create").then((m) => ({
     default: m.ImageRegistriesCreate,
+  })),
+);
+
+const IdentitySourcesList = lazy(() =>
+  import("./pages/identity-sources/list").then((m) => ({
+    default: m.IdentitySourcesList,
+  })),
+);
+const IdentitySourcesShow = lazy(() =>
+  import("./pages/identity-sources/show").then((m) => ({
+    default: m.IdentitySourcesShow,
+  })),
+);
+const IdentitySourcesEdit = lazy(() =>
+  import("./pages/identity-sources/edit").then((m) => ({
+    default: m.IdentitySourcesEdit,
+  })),
+);
+const IdentitySourcesCreate = lazy(() =>
+  import("./pages/identity-sources/create").then((m) => ({
+    default: m.IdentitySourcesCreate,
   })),
 );
 
@@ -453,6 +482,20 @@ const resources: ResourceProps[] = [
   //   },
   // },
   {
+    name: "identity_sources",
+    list: "/identity-sources",
+    create: "/identity-sources/create",
+    edit: "/identity-sources/edit/:id",
+    show: "/identity-sources/show/:id",
+    meta: {
+      icon: <ShieldCheck />,
+      parent: "settings",
+      idColumnName: "metadata->name",
+      // Global and admin-only: hidden from users without it.
+      requiredPermission: "identity_source:read",
+    },
+  },
+  {
     name: "oem_configs",
     list: "/oem-configs",
     meta: {
@@ -642,6 +685,19 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route path="/:workspace/model-usage">
                   <Route index element={<ModelUsageList />} />
                 </Route>
+                <Route
+                  path="/identity-sources"
+                  element={
+                    <PermissionGate permission="identity_source:read">
+                      <Outlet />
+                    </PermissionGate>
+                  }
+                >
+                  <Route index element={<IdentitySourcesList />} />
+                  <Route path="show/:id" element={<IdentitySourcesShow />} />
+                  <Route path="edit/:id" element={<IdentitySourcesEdit />} />
+                  <Route path="create" element={<IdentitySourcesCreate />} />
+                </Route>
                 <Route path="/oem-configs">
                   <Route index element={<OemConfigShow />} />
                 </Route>
@@ -670,19 +726,29 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
               >
                 <Route
                   path="/login"
-                  element={
-                    <AuthPage type="login" providers={[]} formProps={{}} />
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={<AuthPage type="register" />}
+                  element={<AuthPage type="login" formProps={{}} />}
                 />
                 <Route
                   path="/forgot-password"
                   element={<AuthPage type="forgotPassword" />}
                 />
               </Route>
+
+              {/* SSO return: open to everyone, it is what signs the user in */}
+              <Route
+                path={SSO_CALLBACK_ROUTE}
+                element={
+                  <Suspense
+                    fallback={
+                      <div className="flex h-screen items-center justify-center">
+                        <Loader className="w-16 text-muted-foreground" />
+                      </div>
+                    }
+                  >
+                    <SsoCallbackPage />
+                  </Suspense>
+                }
+              />
 
               {/* fallback */}
               <Route

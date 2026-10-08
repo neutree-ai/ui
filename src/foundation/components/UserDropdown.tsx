@@ -23,11 +23,11 @@ import LogoutButton from "./LogoutButton";
 
 export const UserDropdown = () => {
   const { t } = useTranslation();
+  // getIdentity resolves the name and the email to show (see auth provider).
   const { data: identity } = useGetIdentity<{
-    user_metadata: {
-      username: string;
-    };
-    email?: string;
+    name?: string;
+    displayEmail?: string;
+    external?: boolean;
   }>();
   const { systemInfo } = useSystemApi();
 
@@ -46,18 +46,16 @@ export const UserDropdown = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="px-3">
-          {identity?.user_metadata.username || ""}
+          {identity?.name || ""}
           <ChevronDown size={16} className="ml-1.5 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuItem className="cursor-default focus:bg-transparent">
           <div className="flex flex-col py-1">
-            <div className="font-medium text-foreground">
-              {identity?.user_metadata.username}
-            </div>
+            <div className="font-medium text-foreground">{identity?.name}</div>
             <div className="text-xs text-muted-foreground mt-1">
-              {identity?.email}
+              {identity?.displayEmail}
             </div>
           </div>
         </DropdownMenuItem>
@@ -101,13 +99,21 @@ export const UserDropdown = () => {
           </DropdownMenuPortal>
         </DropdownMenuSub>
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Link href="/update-password" className="flex flex-row gap-2 w-full">
-            <KeyRound size={16} className="mr-2" />
-            {t("buttons.updatePassword")}
-          </Link>
-        </DropdownMenuItem>
+        {/* The directory owns an external user's password. */}
+        {!identity?.external && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Link
+                href="/update-password"
+                className="flex flex-row gap-2 w-full"
+              >
+                <KeyRound size={16} className="mr-2" />
+                {t("buttons.updatePassword")}
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
 
         <DropdownMenuSeparator />
         <DropdownMenuItem>

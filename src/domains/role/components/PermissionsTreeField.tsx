@@ -20,6 +20,7 @@ import {
   Plus,
   Server,
   Settings,
+  ShieldCheck,
   Square,
   Trash,
   Upload,
@@ -64,6 +65,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   model_catalog: <BookOpen className="h-5 w-5" />,
   system: <Settings className="h-5 w-5" />,
   user_profile: <Users className="h-5 w-5" />,
+  identity_source: <ShieldCheck className="h-5 w-5" />,
 };
 
 type PermissionsTreeFieldProps = {

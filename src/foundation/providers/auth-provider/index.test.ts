@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Mocks -----------------------------------------------------------
 
-const mockSignInWithOAuth = vi.fn();
 const mockSignInWithPassword = vi.fn();
-const mockSignUp = vi.fn();
+const mockSetSession = vi.fn();
+const mockVerifyOtp = vi.fn();
 const mockResetPasswordForEmail = vi.fn();
 const mockUpdateUser = vi.fn();
 const mockSignOut = vi.fn();
@@ -14,9 +14,9 @@ const mockOnAuthStateChange = vi.fn();
 
 vi.mock("@supabase/auth-js", () => ({
   AuthClient: class {
-    signInWithOAuth = mockSignInWithOAuth;
     signInWithPassword = mockSignInWithPassword;
-    signUp = mockSignUp;
+    setSession = mockSetSession;
+    verifyOtp = mockVerifyOtp;
     resetPasswordForEmail = mockResetPasswordForEmail;
     updateUser = mockUpdateUser;
     signOut = mockSignOut;
@@ -26,14 +26,26 @@ vi.mock("@supabase/auth-js", () => ({
   },
 }));
 
+const mockMaybeSingle = vi.fn();
+const mockFrom = vi.fn(() => ({
+  select: () => ({ eq: () => ({ maybeSingle: mockMaybeSingle }) }),
+}));
+
 vi.mock("@/foundation/lib/api", () => ({
   REST_URL: "http://localhost/api/v1",
-  clientPostgrest: { headers: {} },
+  clientPostgrest: { headers: {}, from: mockFrom },
 }));
+
+vi.mock("@/foundation/lib/i18n", () => ({
+  i18n: { t: (key: string) => key },
+}));
+
+const mockFetch = vi.fn();
+vi.stubGlobal("fetch", mockFetch);
 
 // --- Import after mocks ----------------------------------------------
 
-const { authProvider } = await import("./index");
+const { authProvider, verifySsoToken } = await import("./index");
 
 // --- Helpers ---------------------------------------------------------
 
@@ -46,26 +58,6 @@ beforeEach(() => {
 // --- login -----------------------------------------------------------
 
 describe("login", () => {
-  it("calls signInWithOAuth when providerName is given", async () => {
-    mockSignInWithOAuth.mockResolvedValue({
-      data: { url: "https://oauth.example.com" },
-      error: null,
-    });
-
-    const result = await authProvider.login({ providerName: "github" });
-
-    expect(mockSignInWithOAuth).toHaveBeenCalledWith({ provider: "github" });
-    expect(result).toEqual({ success: true });
-  });
-
-  it("returns error when signInWithOAuth fails", async () => {
-    mockSignInWithOAuth.mockResolvedValue({ data: null, error: authError });
-
-    const result = await authProvider.login({ providerName: "github" });
-
-    expect(result).toEqual({ success: false, error: authError });
-  });
-
   it("calls signInWithPassword for email/password login", async () => {
     mockSignInWithPassword.mockResolvedValue({
       data: { user: { id: "u1" } },
@@ -128,60 +120,132 @@ describe("login", () => {
   });
 });
 
-// --- register --------------------------------------------------------
+// --- LDAP login --------------------------------------------------------
 
-describe("register", () => {
-  it("calls signUp and returns success", async () => {
-    mockSignUp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+describe("login with LDAP", () => {
+  const ldapParams = {
+    method: "ldap",
+    source: "corp-ldap",
+    username: "alice",
+    password: "secret",
+  };
 
-    const result = await authProvider.register?.({
-      email: "a@b.com",
-      password: "pass",
+  const jsonResponse = (status: number, body: unknown) => ({
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  });
+
+  it("posts the credentials and stores the returned session", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse(200, {
+        access_token: "at",
+        refresh_token: "rt",
+        expires_in: 3600,
+        user: { id: "u1" },
+      }),
+    );
+    mockSetSession.mockResolvedValue({ data: {}, error: null });
+
+    const result = await authProvider.login(ldapParams);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost/api/v1/auth/ldap/token",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          source: "corp-ldap",
+          username: "alice",
+          password: "secret",
+        }),
+      }),
+    );
+    expect(mockSetSession).toHaveBeenCalledWith({
+      access_token: "at",
+      refresh_token: "rt",
     });
-
-    expect(mockSignUp).toHaveBeenCalledWith({
-      email: "a@b.com",
-      password: "pass",
-      options: { data: {} },
-    });
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
     expect(result).toEqual({ success: true });
   });
 
-  it("returns error when signUp fails", async () => {
-    mockSignUp.mockResolvedValue({ data: null, error: authError });
+  it.each([
+    [401, "pages.login.errors.invalidCredentials"],
+    [404, "pages.login.errors.sourceNotFound"],
+    [503, "pages.login.errors.directoryUnavailable"],
+    [500, "pages.login.errors.ldapFailed"],
+    [400, "pages.login.errors.ldapFailed"],
+  ])("maps HTTP %i to %s without storing a session", async (status, key) => {
+    mockFetch.mockResolvedValue(jsonResponse(status, { error: "x" }));
 
-    const result = await authProvider.register?.({
-      email: "a@b.com",
-      password: "pass",
+    const result = await authProvider.login(ldapParams);
+
+    expect(result).toEqual({
+      success: false,
+      error: { name: "pages.login.errors.title", message: key },
     });
+    expect(mockSetSession).not.toHaveBeenCalled();
+  });
+
+  it("fails when the response carries no session", async () => {
+    mockFetch.mockResolvedValue(jsonResponse(200, {}));
+
+    const result = await authProvider.login(ldapParams);
+
+    expect(result.success).toBe(false);
+    expect(mockSetSession).not.toHaveBeenCalled();
+  });
+
+  it("returns the auth client error when the session cannot be stored", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse(200, { access_token: "at", refresh_token: "rt" }),
+    );
+    mockSetSession.mockResolvedValue({ data: {}, error: authError });
+
+    const result = await authProvider.login(ldapParams);
 
     expect(result).toEqual({ success: false, error: authError });
   });
 
-  it("returns fallback error when no data", async () => {
-    mockSignUp.mockResolvedValue({ data: null, error: null });
-
-    const result = await authProvider.register?.({
-      email: "a@b.com",
-      password: "pass",
-    });
-
-    expect(result).toEqual({
-      success: false,
-      error: { message: "Register failed", name: "Invalid email or password" },
-    });
-  });
-
-  it("catches thrown exceptions", async () => {
+  it("reports a network failure as a failed login", async () => {
     const thrown = new Error("network");
-    mockSignUp.mockRejectedValue(thrown);
+    mockFetch.mockRejectedValue(thrown);
 
-    const result = await authProvider.register?.({
-      email: "a@b.com",
-      password: "pass",
-    });
+    const result = await authProvider.login(ldapParams);
 
     expect(result).toEqual({ success: false, error: thrown });
+  });
+});
+
+// --- SSO token -----------------------------------------------------------
+
+describe("verifySsoToken", () => {
+  it("redeems the token as a magic link", async () => {
+    mockVerifyOtp.mockResolvedValue({
+      data: { session: { access_token: "at" } },
+      error: null,
+    });
+
+    const result = await verifySsoToken("hash-1");
+
+    expect(mockVerifyOtp).toHaveBeenCalledWith({
+      token_hash: "hash-1",
+      type: "magiclink",
+    });
+    expect(result).toEqual({ success: true });
+  });
+
+  it("fails on an error or a missing session", async () => {
+    mockVerifyOtp.mockResolvedValueOnce({
+      data: { session: null },
+      error: authError,
+    });
+    expect(await verifySsoToken("used")).toEqual({ success: false });
+
+    mockVerifyOtp.mockResolvedValueOnce({
+      data: { session: null },
+      error: null,
+    });
+    expect(await verifySsoToken("odd")).toEqual({ success: false });
   });
 });
 
@@ -402,14 +466,63 @@ describe("getPermissions", () => {
 // --- getIdentity -----------------------------------------------------
 
 describe("getIdentity", () => {
-  it("returns user with name set to email", async () => {
+  it("names a local user by the profile display name", async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { id: "u1", email: "a@b.com" } },
+      data: {
+        user: {
+          id: "u1",
+          email: "admin@neutree.local",
+          user_metadata: { username: "admin" },
+        },
+      },
+    });
+    mockMaybeSingle.mockResolvedValue({
+      data: { metadata: { name: "admin", display_name: "Administrator" } },
     });
 
     const result = await authProvider.getIdentity?.({});
 
-    expect(result).toEqual({ id: "u1", email: "a@b.com", name: "a@b.com" });
+    expect(result).toMatchObject({
+      id: "u1",
+      name: "Administrator",
+      displayEmail: "admin@neutree.local",
+      external: false,
+    });
+  });
+
+  it("shows an external user's real email, never the placeholder", async () => {
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: {
+          id: "u2",
+          email: "abc@corp-ldap.ldap.neutree.local",
+          app_metadata: { identity_source: "ldap" },
+          user_metadata: { name: "Alice Liddell", email: "alice@corp.test" },
+        },
+      },
+    });
+    mockMaybeSingle.mockResolvedValue({ data: null });
+
+    const result = await authProvider.getIdentity?.({});
+
+    expect(result).toMatchObject({
+      name: "Alice Liddell",
+      displayEmail: "alice@corp.test",
+      external: true,
+    });
+  });
+
+  it("falls back to GoTrue metadata when the profile read fails", async () => {
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: { id: "u3", email: "x@y.z", user_metadata: { username: "x" } },
+      },
+    });
+    mockMaybeSingle.mockRejectedValue(new Error("network"));
+
+    const result = await authProvider.getIdentity?.({});
+
+    expect(result).toMatchObject({ name: "x", displayEmail: "x@y.z" });
   });
 
   it("returns null when no user", async () => {
