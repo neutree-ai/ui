@@ -10,7 +10,7 @@ import * as React from "react";
 import { cn } from "@/foundation/lib/utils";
 
 const alertVariants = cva(
-  "relative w-full rounded-[var(--nt-radius-input)] border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg~*]:pl-7",
+  "relative w-full rounded-[var(--nt-radius-input)] border px-4 py-3 text-sm [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[14px] [&>svg~*]:pl-7",
   {
     variants: {
       variant: {
@@ -70,7 +70,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn("mb-1 font-medium leading-5 tracking-tight", className)}
     {...props}
   />
 ));

@@ -501,11 +501,12 @@ export const useIdentitySourceForm = ({
           name="spec.enabled"
           label={t("identity_sources.fields.enabled")}
           description={t("identity_sources.hints.enabled")}
-          isCheckbox
         >
+          {/* Centred in the 32px row the inputs occupy, so its description
+          lines up with theirs. */}
           <Switch
             checked={enabled}
-            aria-label={t("identity_sources.fields.enabled")}
+            className="flex !my-3.5"
             onCheckedChange={(value) =>
               form.setValue("spec.enabled", value, { shouldDirty: true })
             }
