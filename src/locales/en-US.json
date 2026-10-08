@@ -559,7 +559,7 @@
 			"unknown": "Unknown",
 			"observedAt": "Last observed:",
 			"node": "Node",
-			"runtime": "Node status",
+			"runtime": "Cache runtime status",
 			"reason": "Reason",
 			"noRuntimeNodes": "Waiting for cache node observations.",
 			"operations": "Activity",
