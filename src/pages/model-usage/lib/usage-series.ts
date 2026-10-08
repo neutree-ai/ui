@@ -91,11 +91,31 @@ export function buildTrend(
     day[key] = (day[key] ?? 0) + (r.usage ?? 0);
     byDate.set(r.date, day);
   }
+  // The folded "other" series has no key of its own in the rows: foldRemainder
+  // aggregates the tail over the whole window, so keyOf never returns
+  // OTHER_SERIES_KEY. Without the branch below it would stay 0 on every day —
+  // the charted lines look right, but the tooltip loses the hidden keys and
+  // their tokens from the day total. A day's other is whatever is left of that
+  // day's total once the charted series are removed.
+  const hasOther = series.some((s) => s.key === OTHER_SERIES_KEY);
   return [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, perSeries]) => {
       const point: Record<string, number | string> = { date };
-      for (const s of series) point[s.key] = perSeries[s.key] ?? 0;
+      let chartedTotal = 0;
+      for (const s of series) {
+        if (s.key === OTHER_SERIES_KEY) continue;
+        const value = perSeries[s.key] ?? 0;
+        point[s.key] = value;
+        chartedTotal += value;
+      }
+      if (hasOther) {
+        const dayTotal = Object.values(perSeries).reduce(
+          (sum, value) => sum + value,
+          0,
+        );
+        point[OTHER_SERIES_KEY] = Math.max(0, dayTotal - chartedTotal);
+      }
       return point;
     });
 }
