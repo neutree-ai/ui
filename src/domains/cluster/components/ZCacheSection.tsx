@@ -259,9 +259,6 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
                 </Badge>
               )}
             </span>
-            <span className="text-primary">
-              {t("clusters.zcache.maintenance")}
-            </span>
           </summary>
           <div className="mt-4">
             <ZCacheControlPlane cluster={cluster} />
