@@ -134,6 +134,29 @@ describe("useIdentitySourceForm", () => {
     );
   });
 
+  it("lays the enabled switch out like the other fields: label, control, hint", () => {
+    render(<TestForm action="create" />);
+    const field = screen.getByTestId("field-spec.enabled");
+    const label = field.querySelector("label");
+    if (!label) throw new Error("no label for spec.enabled");
+    const control = screen.getByRole("switch", {
+      name: "identity_sources.fields.enabled",
+    });
+    const hint = screen.getByText("identity_sources.hints.enabled");
+
+    expect(label.textContent).toBe("identity_sources.fields.enabled");
+    expect(field.contains(control)).toBe(true);
+    expect(field.contains(hint)).toBe(true);
+    // Stacked in reading order, not label-beside-switch.
+    expect(field.className).not.toContain("flex-row");
+    expect(
+      label.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      control.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("requires the bind password on create and validates LDAP fields", async () => {
     render(<TestForm action="create" />);
     type("metadata.name", "Bad.Name");
