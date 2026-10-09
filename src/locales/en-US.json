@@ -634,7 +634,10 @@
 				"removeNodes": "Remove cache nodes",
 				"capacity": "Change cache capacity",
 				"configure": "Update cache configuration"
-			}
+			},
+			"dependencyProtected": "Cache nodes are protected",
+			"dependencyHint": "Inference instances still use ZCache. Turn off their cache and wait for redeployment before disabling cache or removing nodes. Paused instances also retain this dependency.",
+			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
 		}
 	},
 	"model_registries": {
@@ -1323,6 +1326,19 @@
 			"declared": "Declared by the catalog",
 			"breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
 			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
+		},
+		"zcache": {
+			"enable": "Use cluster cache",
+			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
+			"requirements": "Requires vLLM v0.24.0 and a Kubernetes cluster with ZCache enabled.",
+			"advanced": "Cache settings",
+			"timeout": "Cache timeout (seconds)",
+			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
+			"timeoutHint": "Maximum wait for a cache message. This is not the inference request timeout.",
+			"redeploy": "Saving this change redeploys the inference instance. A single replica will be temporarily unavailable.",
+			"configured": "Cluster cache enabled",
+			"off": "Cluster cache disabled",
+			"releasing": "Stopping cache use"
 		}
 	},
 	"external_endpoints": {

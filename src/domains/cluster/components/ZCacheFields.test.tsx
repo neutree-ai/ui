@@ -1,10 +1,27 @@
 import type { UseFormReturnType } from "@refinedev/react-hook-form";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { transformClusterValues } from "../lib/transform-cluster-values";
 import type { Cluster, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
+
+const cacheDependencies = vi.hoisted(() => ({
+  rows: [] as Array<{
+    spec: { zcache?: { enabled: boolean } };
+    status?: { zcache?: { in_use: boolean } };
+  }>,
+}));
+vi.mock("@refinedev/core", () => ({
+  useList: () => ({
+    data: { data: cacheDependencies.rows },
+    isLoading: false,
+    isError: false,
+  }),
+}));
+beforeEach(() => {
+  cacheDependencies.rows = [];
+});
 
 globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
@@ -73,6 +90,26 @@ const observed: ZCacheStatus = {
 };
 
 describe("ZCacheFields", () => {
+  it("blocks removal while old inference pods still use cache, but allows expansion", () => {
+    cacheDependencies.rows = [
+      {
+        spec: { zcache: { enabled: false } },
+        status: { zcache: { in_use: true } },
+      },
+    ];
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    expect(
+      screen.getByRole("checkbox", { name: "a" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("checkbox", { name: "c" }).hasAttribute("disabled"),
+    ).toBe(false);
+    expect(
+      screen
+        .getByRole("checkbox", { name: "clusters.zcache.enable" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+  });
   it("keeps ZCache absent when an existing cluster is saved without enabling it", async () => {
     const submit = vi.fn();
     render(<Form onSubmit={submit} legacy />);

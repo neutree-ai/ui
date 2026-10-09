@@ -1,9 +1,11 @@
+import { useList } from "@refinedev/core";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import type { ZCacheStatus } from "../types";
 
 export function ZCacheFields({
@@ -18,6 +20,29 @@ export function ZCacheFields({
   isEdit: boolean;
 }) {
   const { t } = useTranslation();
+  const name = form.watch("metadata.name");
+  const workspace = form.watch("metadata.workspace");
+  const dependencies = useList<{
+    id: number;
+    spec: { zcache?: { enabled?: boolean } };
+    status?: { zcache?: { in_use?: boolean } };
+  }>({
+    resource: "endpoints",
+    pagination: { mode: "off" },
+    filters: [{ field: "spec->>cluster", operator: "eq", value: name }],
+    meta: { workspace, workspaced: true },
+    queryOptions: {
+      enabled: isEdit && !!name && !!workspace,
+      refetchInterval: 5000,
+    },
+  });
+  const inUse =
+    dependencies.data?.data.some(
+      (e) => e.spec.zcache?.enabled || e.status?.zcache?.in_use,
+    ) === true;
+  const guardRemoval = inUse || dependencies.isLoading || dependencies.isError;
+  const persistedNodes: string[] =
+    form.formState.defaultValues?.spec?.zcache?.target_nodes ?? [];
   const enabled = form.watch("spec.zcache.enabled") === true;
   const selected: string[] = form.watch("spec.zcache.target_nodes") ?? [];
   const candidates = status?.candidates ?? [];
@@ -47,6 +72,7 @@ export function ZCacheFields({
           >
             <Checkbox
               checked={enabled}
+              disabled={enabled && guardRemoval}
               onCheckedChange={(value) =>
                 form.setValue(
                   "spec.zcache",
@@ -66,6 +92,18 @@ export function ZCacheFields({
               }
             />
           </FormFieldGroup>
+          {guardRemoval && enabled && (
+            <div className="col-span-full flex items-center gap-2 text-sm text-muted-foreground">
+              {t("clusters.zcache.dependencyProtected")}
+              <InfoHint
+                label={t(
+                  inUse
+                    ? "clusters.zcache.dependencyHint"
+                    : "clusters.zcache.dependencyChecking",
+                )}
+              />
+            </div>
+          )}
           {enabled && (
             <>
               <p className="col-span-full text-sm text-muted-foreground">
@@ -121,9 +159,10 @@ export function ZCacheFields({
                         aria-label={name}
                         checked={selected.includes(name)}
                         disabled={
-                          !selected.includes(name) &&
-                          (!candidate?.selectable ||
-                            !!status?.observation_error)
+                          (guardRemoval && persistedNodes.includes(name)) ||
+                          (!selected.includes(name) &&
+                            (!candidate?.selectable ||
+                              !!status?.observation_error))
                         }
                         onCheckedChange={(checked) =>
                           form.setValue(
