@@ -17,7 +17,7 @@ function cachePoolResources(
   field: "allocatable" | "available",
 ): ResourceInfo {
   const groups: NonNullable<ResourceInfo["accelerator_groups"]> = {};
-  const total: ResourceInfo = { cpu: 0, memory: 0, accelerator_groups: {} };
+  const total: ResourceInfo = { cpu: 0, memory: 0, accelerator_groups: groups };
   for (const node of Object.values(nodes)) {
     const resource = node[field];
     total.cpu += resource?.cpu ?? 0;
@@ -33,7 +33,7 @@ function cachePoolResources(
       groups[type] = sum;
       sum.product_groups ??= {};
       sum.products ??= {};
-      sum.quantity += group.quantity;
+      sum.quantity += group.quantity ?? 0;
       for (const [product, count] of Object.entries(
         group.product_groups ?? {},
       )) {
@@ -43,7 +43,7 @@ function cachePoolResources(
       for (const [product, value] of Object.entries(group.products ?? {})) {
         const accumulated = sum.products[product] ?? { quantity: 0 };
         sum.products[product] = accumulated;
-        accumulated.quantity += value.quantity;
+        accumulated.quantity += value.quantity ?? 0;
         if (value.virtualization) {
           accumulated.virtualization ??= { memory_mib: 0, core_units: 0 };
           accumulated.virtualization.memory_mib =
