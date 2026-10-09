@@ -273,6 +273,35 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const gpuUsage = normalizedResources?.gpu || 0;
   const replicaCount = Math.max(1, Number(watchedReplicaCount || 1));
 
+  const meta = useMemo(
+    () => ({
+      workspace,
+      workspaced: true,
+    }),
+    [workspace],
+  );
+
+  const clusters = useSelect<EndpointClusterRef>({
+    resource: "clusters",
+    meta,
+  });
+
+  const cacheEnabled = form.watch("spec.zcache.enabled") === true;
+  const cacheNodeNames = new Set(
+    clusters.query.data?.data.find(
+      (cluster) => cluster.metadata.name === currentCluster,
+    )?.spec.zcache?.target_nodes ?? [],
+  );
+  const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
+  // Releasing an allocation outside the cache pool does not free capacity
+  // inside that pool. Only credit allocations whose nodes are still eligible.
+  const currentAllocationInCachePool = Boolean(
+    currentEndpointRuntimeResources?.replicas?.length &&
+      currentEndpointRuntimeResources.replicas.every(
+        (replica) => replica.node_id && cacheNodeNames.has(replica.node_id),
+      ),
+  );
+
   const currentEndpointAccelerator = normalizedQueryResources?.accelerator;
   const currentEndpointReplicaCount =
     action === "edit"
@@ -281,7 +310,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const canReuseCurrentEndpointResources = Boolean(
     action === "edit" &&
       queryEndpoint?.spec?.cluster &&
-      queryEndpoint.spec.cluster === currentCluster,
+      queryEndpoint.spec.cluster === currentCluster &&
+      (!cacheEnabled || currentAllocationInCachePool),
   );
   const canReuseCurrentEndpointAccelerator = Boolean(
     canReuseCurrentEndpointResources &&
@@ -290,7 +320,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       currentEndpointAccelerator?.type === selectedAccelerator.type &&
       currentEndpointAccelerator?.product === selectedAccelerator.product,
   );
-  const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
   const canReuseCurrentEndpointDeviceAllocations = Boolean(
     canReuseCurrentEndpointAccelerator &&
       currentEndpointRuntimeResources?.replicas?.some(
@@ -313,21 +342,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         : 0,
   };
 
-  const meta = useMemo(
-    () => ({
-      workspace,
-      workspaced: true,
-    }),
-    [workspace],
-  );
-
   const engines = useSelect<EndpointEngineRef>({
     resource: "engines",
-    meta,
-  });
-
-  const clusters = useSelect<EndpointClusterRef>({
-    resource: "clusters",
     meta,
   });
 
@@ -405,7 +421,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedAccelerator,
     currentUsage,
     t,
-    cacheEnabled: form.watch("spec.zcache.enabled") === true,
+    cacheEnabled,
   });
 
   const clusterType: "ssh" | "kubernetes" | undefined =
