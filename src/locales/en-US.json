@@ -2218,12 +2218,11 @@
 		"label": "Model source",
 		"unspecified": "Unspecified",
 		"placeholder": "Select a model source",
-		"externalHint": "Where this endpoint's models come from. Self-hosted is reserved for endpoints the platform runs and is not offered here.",
 		"values": {
-			"self-hosted": "Self-hosted",
-			"internal-shared": "Internally shared",
-			"third-party-public": "Third-party public",
-			"partner": "Partner"
+			"self-hosted": "Private self-deployed",
+			"private-access": "Private access",
+			"third-party-public": "Public cloud",
+			"hybrid": "Hybrid"
 		}
 	},
 	"model_usage": {

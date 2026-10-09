@@ -21,10 +21,7 @@ import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestamp
 import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  modelsViaInternalEndpoint,
-  resolveModelSource,
-} from "@/foundation/lib/model-source";
+import { resolveExternalModelSource } from "@/foundation/lib/model-source";
 
 export const ExternalEndpointsShow = () => {
   const { t } = useTranslation();
@@ -58,7 +55,6 @@ export const ExternalEndpointsShow = () => {
     mixed: t("external_endpoints.options.upstreamTypeMixed"),
   };
   const allModels = getExposedModels(record.spec);
-  const modelsViaRef = modelsViaInternalEndpoint(record.spec?.upstreams);
   const upstreamStatuses = matchUpstreamStatuses(
     record.spec,
     record.status?.upstream_status,
@@ -139,11 +135,9 @@ export const ExternalEndpointsShow = () => {
                       key={route.model}
                       onViewMonitoring={() => selectTab("monitor", route.model)}
                       route={route}
-                      source={resolveModelSource(
-                        "external",
-                        record.spec?.model_sources,
+                      source={resolveExternalModelSource(
+                        record.spec,
                         route.model,
-                        { viaInternalEndpoint: modelsViaRef.has(route.model) },
                       )}
                       editUrl={navigation.editUrl(
                         "external_endpoints",

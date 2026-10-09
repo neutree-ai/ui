@@ -7,13 +7,11 @@ import {
 import { cn } from "@/foundation/lib/utils";
 
 /**
- * A model's source label, rendered as a badge. Replaces the Internal/External
- * badge on the model list, the detail page and the model picker.
+ * A model's source, rendered as a badge.
  *
- * An unlabelled external endpoint renders the "unspecified" badge rather than
- * nothing, so the row still carries a source and still groups apart from the
- * self-hosted ones. An unrecognised slug renders as itself — see
- * `modelSourceTranslationKey`.
+ * A model with no source renders the "unspecified" badge rather than nothing,
+ * so the row still carries a source. A value outside the presets renders as
+ * itself — see `modelSourceTranslationKey`.
  */
 export function useModelSourceLabel() {
   const { t } = useTranslation();
