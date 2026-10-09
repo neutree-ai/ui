@@ -422,7 +422,7 @@
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "f8d5d73eea90c7728d1717fb813ab86b",
   "src/foundation/components/ModelSourceBadge.tsx": "e6934fd8683358d313d0b4d53ed4683b",
-  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "d1790a28488b7e04c1a72c3fd67e707f",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "21efa9f2eabf17604811c41afc24aab6",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
   "src/domains/external-endpoint/lib/validate-route-strategy.ts": "a6fa0e3cb9dab1c4211dd74f0e8bca66",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
