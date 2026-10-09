@@ -62,6 +62,7 @@ vi.mock("@refinedev/react-hook-form", async () => {
 
 vi.mock("@refinedev/core", () => ({
   useSelect: vi.fn(),
+  useCustom: () => ({ data: { data: { capabilities: { zcache: false } } } }),
 }));
 
 // The registry-models listing is shared L1 infrastructure now, so the model
