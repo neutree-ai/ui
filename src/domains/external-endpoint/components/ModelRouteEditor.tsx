@@ -97,15 +97,13 @@ export default function ModelRouteEditor({
 
   const setMode = (index: number, mode: Mode) => {
     const route = value[index];
-    if (!route) return;
+    if (!route || (route.strategy ?? "fixed") !== "fixed" || mode === "fixed")
+      return;
 
     let targets = route.targets.length
       ? route.targets
       : [{ upstream: providers[0]?.value || "", upstream_model: "" }];
-    if (mode === "fixed") {
-      targets = targets.slice(0, 1);
-    }
-    if (mode !== "fixed" && targets.length === 1) {
+    if (targets.length === 1) {
       targets = [
         targets[0],
         mode === "weighted"
@@ -116,7 +114,7 @@ export default function ModelRouteEditor({
 
     const normalized = targets.map((target, targetIndex) => ({
       ...target,
-      priority: mode === "priority" ? targetIndex : 0,
+      priority: mode === "priority" && targetIndex > 0 ? 1 : 0,
       weight: mode === "weighted" ? target.weight : undefined,
       max_inflight_requests:
         mode === "weighted" ? undefined : target.max_inflight_requests,
@@ -172,12 +170,7 @@ export default function ModelRouteEditor({
         const addTarget = (primary = false) => {
           const target: ModelRouteTarget = { upstream: "", upstream_model: "" };
           if (mode === "priority") {
-            target.priority = primary
-              ? 0
-              : Math.max(
-                  0,
-                  ...route.targets.map((item) => item.priority ?? 0),
-                ) + 1;
+            target.priority = primary ? 0 : 1;
           }
           commit(
             value.map((item, itemIndex) =>
@@ -506,6 +499,7 @@ export default function ModelRouteEditor({
                 </FormLabel>
                 <FormSelect
                   value={mode}
+                  disabled={mode !== "fixed"}
                   onChange={(next) => setMode(index, next as Mode)}
                   options={[
                     {

@@ -2,11 +2,13 @@ import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { v4 as uuidv4 } from "uuid";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelCacheFields } from "@/domains/cluster/components/ModelCacheFields";
 import NodeIPsField from "@/domains/cluster/components/NodeIPsField";
+import { ZCacheFields } from "@/domains/cluster/components/ZCacheFields";
 import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/accelerator-virtualization";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import type { Cluster } from "@/domains/cluster/types";
@@ -15,6 +17,7 @@ import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   isValidWorkspace,
   useWorkspace,
@@ -22,6 +25,8 @@ import {
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
+  const { systemInfo } = useSystemApi();
+  const cacheSupported = systemInfo?.capabilities?.zcache === true;
   const { current: currentWorkspace } = useWorkspace();
 
   const form = useForm<Cluster>({
@@ -31,6 +36,10 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     // unsaved changes to the server state (NEU-500). Populate from the
     // initial fetch only.
     refineCoreProps: {
+      successNotification: (data) =>
+        cacheSupported && data?.data?.spec?.zcache
+          ? { message: t("clusters.zcache.saved"), type: "success" }
+          : undefined,
       queryOptions: {
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
@@ -73,6 +82,19 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       form.formState.touchedFields,
     );
 
+    if (
+      isEdit &&
+      transformedValues.spec.zcache &&
+      form.refineCore.query?.data?.data.status?.zcache?.phase === "Failed"
+    ) {
+      transformedValues.metadata = {
+        ...transformedValues.metadata,
+        annotations: {
+          ...transformedValues.metadata.annotations,
+          "neutree.ai/zcache-retry": uuidv4(),
+        },
+      };
+    }
     return originalOnFinish(transformedValues);
   };
 
@@ -224,6 +246,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   model_caches: [],
                 });
                 form.setValue("spec.accelerator_virtualization", undefined);
+                form.setValue("spec.zcache", undefined);
               } else if (value === "kubernetes") {
                 form.setValue("spec.config", {
                   kubernetes_config: {
@@ -355,6 +378,14 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         </FormFieldGroup>
       </FormCardGrid>
     ) : null,
+    zcacheFields:
+      isKubernetes && cacheSupported ? (
+        <ZCacheFields
+          form={form}
+          isEdit={isEdit}
+          status={form.refineCore.query?.data?.data.status?.zcache}
+        />
+      ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
       <FormCardGrid
         title={t("clusters.sections.acceleratorVirtualization")}
