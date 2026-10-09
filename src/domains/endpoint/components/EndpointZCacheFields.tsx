@@ -54,11 +54,11 @@ export function EndpointZCacheFields({
           onCheckedChange={(value) =>
             form.setValue(
               "spec.zcache",
-              {
-                enabled: value,
+              value ? {
+                enabled: true,
                 timeout_seconds:
                   form.getValues("spec.zcache.timeout_seconds") ?? 5,
-              },
+              } : { enabled: false },
               { shouldDirty: true, shouldValidate: true },
             )
           }
@@ -81,6 +81,7 @@ export function EndpointZCacheFields({
               label={t("endpoints.zcache.timeout")}
               rules={{
                 validate: (value) =>
+                  value === undefined ||
                   (Number.isFinite(value) &&
                     Number(value) >= 0.1 &&
                     Number(value) <= 60) ||
@@ -92,6 +93,7 @@ export function EndpointZCacheFields({
                 min={0.1}
                 max={60}
                 step={0.1}
+                value={form.watch("spec.zcache.timeout_seconds") ?? 5}
                 onChange={(event) =>
                   form.setValue(
                     "spec.zcache.timeout_seconds",
