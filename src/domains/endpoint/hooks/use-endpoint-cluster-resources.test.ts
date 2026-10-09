@@ -46,6 +46,32 @@ function makeCluster(
 }
 
 describe("useEndpointClusterResources", () => {
+  it("keeps GPU selection and counts only cache nodes when cache is enabled", () => {
+    const node = (product: string, quantity: number): ResourceStatus => ({
+      allocatable: { cpu: 16, memory: 32, accelerator_groups: {
+        nvidia_gpu: { quantity, product_groups: { [product]: quantity },
+          products: { [product]: { quantity } } },
+      } },
+      available: { cpu: 8, memory: 16, accelerator_groups: {
+        nvidia_gpu: { quantity: 0, product_groups: { [product]: 0 },
+          products: { [product]: { quantity: 0 } } },
+      } },
+    });
+    const cluster = makeCluster("cache-cluster", "kubernetes", {
+      nodeResources: { "cache-node": node("Tesla-T4", 1), "other-node": node("A100", 8) },
+    });
+    cluster.spec.zcache = { enabled: true, target_nodes: ["cache-node"] };
+    const { result } = renderHook(() => useEndpointClusterResources({
+      currentCluster: "cache-cluster", cacheEnabled: true, clustersData: [cluster],
+      selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+      currentUsage: { cpu: 2, memory: 4, gpu: 1 }, t: mockT,
+    }));
+    expect(result.current.acceleratorOptions).toHaveLength(1);
+    expect(result.current.selectedAcceleratorOption).toMatchObject({ product: "Tesla-T4", total: 1, available: 0 });
+    expect(result.current.maxAvailable.gpu).toEqual({ total: 1, available: 1 });
+    expect(result.current.clusterResources?.cpu.total).toBe(16);
+  });
+
   it("returns zero maxAvailable when no cluster selected", () => {
     const { result } = renderHook(() =>
       useEndpointClusterResources({
