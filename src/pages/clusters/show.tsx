@@ -18,6 +18,10 @@ import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import type { Endpoint } from "@/domains/endpoint/types";
+import {
+  detailTabsListClassName,
+  detailTabTriggerClassName,
+} from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
@@ -31,9 +35,6 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
-
-const detailTabTriggerClassName =
-  "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
 
 export const ClustersShow = () => {
   const {
@@ -118,9 +119,15 @@ export const ClustersShow = () => {
                 </ShowPage.Meta>
               </span>
             }
-            status={<ClusterStatus {...record.status} />}
+            // No phase, no badge: the identity line reads as "name, dash"
+            // otherwise, and the dash carries no information there.
+            status={
+              record.status?.phase ? (
+                <ClusterStatus {...record.status} />
+              ) : undefined
+            }
           />
-          <TabsList className="relative mt-0 h-11 w-full items-end justify-start gap-8 rounded-none border-0 bg-transparent p-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-border">
+          <TabsList className={detailTabsListClassName}>
             <TabsTrigger value="basic" className={detailTabTriggerClassName}>
               {t("common.tabs.basic")}
             </TabsTrigger>

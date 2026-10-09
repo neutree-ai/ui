@@ -33,25 +33,31 @@ describe("ModelRouteDetails", () => {
       />,
       { wrapper: MemoryRouter },
     );
+    // Weighted targets carry no concurrency limit, so the table has no such
+    // column — printing "Unlimited" read as if one had been configured.
+    expect(
+      screen.queryByRole("columnheader", {
+        name: "external_endpoints.fields.maxInflightRequests",
+      }),
+    ).toBeNull();
     expect(
       screen.getAllByRole("columnheader").map((cell) => cell.textContent),
     ).toEqual([
       "external_endpoints.fields.provider",
       "external_endpoints.fields.upstreamModelName",
       "external_endpoints.fields.trafficWeight",
-      "external_endpoints.fields.maxInflightRequests",
     ]);
     const rows = screen.getAllByRole("row").slice(1);
     expect(
       within(rows[0])
         .getAllByRole("cell")
         .map((cell) => cell.textContent),
-    ).toEqual(["a", "gpt-6-astra", "50%", "2"]);
+    ).toEqual(["a", "gpt-6-astra", "50%"]);
     expect(
       within(rows[1])
         .getAllByRole("cell")
         .map((cell) => cell.textContent),
-    ).toEqual(["b", "gpt-5.6", "50%", "external_endpoints.fields.unlimited"]);
+    ).toEqual(["b", "gpt-5.6", "50%"]);
   });
 
   it("identifies the primary tier by priority instead of array order", () => {

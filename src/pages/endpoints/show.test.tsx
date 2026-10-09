@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Endpoint } from "@/domains/endpoint/types";
@@ -49,7 +49,18 @@ vi.mock("@/domains/endpoint/components/EndpointSaveAsCatalogAction", () => ({
 
 vi.mock("@/foundation/components/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => <>{children}</>;
-  ShowPage.ObjectHeader = () => null;
+  ShowPage.ObjectHeader = ({
+    title,
+    status,
+  }: {
+    title?: ReactNode;
+    status?: ReactNode;
+  }) => (
+    <header>
+      <h1>{title}</h1>
+      {status}
+    </header>
+  );
   ShowPage.Meta = ({ children }: { children: ReactNode }) => <>{children}</>;
   ShowPage.Section = ({ children }: { children: ReactNode }) => <>{children}</>;
   return { ShowPage };
@@ -92,7 +103,7 @@ vi.mock("@/domains/engine/lib/resolve-capabilities", () => ({
   resolvePlayground: () => ({ enabled: false }),
 }));
 vi.mock("@/foundation/components/EndpointStatus", () => ({
-  default: () => null,
+  default: () => <span data-testid="endpoint-status" />,
 }));
 vi.mock("@/foundation/components/GrafanaDashboard", () => ({
   default: () => null,
@@ -197,5 +208,22 @@ describe("EndpointsShow", () => {
     });
 
     expect(() => render(<EndpointsShow />)).not.toThrow();
+  });
+
+  // The identity line drops the badge rather than printing "name, -" before
+  // the controller has reported a phase.
+  it("only renders the status badge once a phase is reported", () => {
+    const { unmount } = render(<EndpointsShow />);
+    expect(screen.queryByTestId("endpoint-status")).toBeNull();
+    unmount();
+
+    useShowMock.mockReturnValue({
+      query: {
+        data: { data: { ...endpoint, status: { phase: "Running" } } },
+        isLoading: false,
+      },
+    });
+    render(<EndpointsShow />);
+    expect(screen.getByTestId("endpoint-status")).toBeTruthy();
   });
 });

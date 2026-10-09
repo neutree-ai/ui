@@ -223,7 +223,11 @@ export default function ModelRouteEditor({
                   </th>
                   {hasActions && (
                     <th scope="col" className="text-center">
-                      {t("table.actions")}
+                      {/* Kept out of the visual row: the shared list tables do
+                          not label their row-action column either, and the word
+                          needs more than the 48px this column gets, which put a
+                          horizontal scrollbar under every route table. */}
+                      <span className="sr-only">{t("table.actions")}</span>
                     </th>
                   )}
                 </tr>
@@ -522,7 +526,7 @@ export default function ModelRouteEditor({
             </div>
             {mode === "priority" ? (
               <div className="space-y-3">
-                <section className="rounded-md bg-[#F7F9FC] p-3 dark:bg-muted/40">
+                <section className="rounded-md bg-[var(--nt-fill-neutral-opaque-1)] p-3 dark:bg-[var(--nt-fill-neutral-opaque-2)]">
                   <h4 className="mb-2 flex items-center gap-1 text-sm font-semibold">
                     {t("external_endpoints.sections.primaryTargets")}
                     <TooltipProvider delayDuration={150}>
@@ -572,7 +576,7 @@ export default function ModelRouteEditor({
                     {t("external_endpoints.actions.addPrimaryTarget")}
                   </Button>
                 </section>
-                <section className="rounded-md bg-[#F7F9FC] p-3 dark:bg-muted/40">
+                <section className="rounded-md bg-[var(--nt-fill-neutral-opaque-1)] p-3 dark:bg-[var(--nt-fill-neutral-opaque-2)]">
                   <h4 className="mb-2 flex items-center gap-1 text-sm font-semibold">
                     {t("external_endpoints.sections.fallbackTargets")}
                     <TooltipProvider delayDuration={150}>
@@ -619,7 +623,7 @@ export default function ModelRouteEditor({
                 </section>
               </div>
             ) : (
-              <div className="rounded-md bg-[#F7F9FC] p-3 dark:bg-muted/40">
+              <div className="rounded-md bg-[var(--nt-fill-neutral-opaque-1)] p-3 dark:bg-[var(--nt-fill-neutral-opaque-2)]">
                 {targetTable(
                   mode === "fixed"
                     ? [0]
