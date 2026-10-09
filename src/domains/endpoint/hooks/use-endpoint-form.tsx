@@ -15,6 +15,7 @@ import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointWeightsEstimate";
+import { EndpointZCacheFields } from "@/domains/endpoint/components/EndpointZCacheFields";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
@@ -403,6 +404,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedAccelerator,
     currentUsage,
     t,
+    cacheEnabled: form.watch("spec.zcache.enabled") === true,
   });
 
   const clusterType: "ssh" | "kubernetes" | undefined =
@@ -2316,6 +2318,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </div>
             </div>
           </section>
+
+          <EndpointZCacheFields
+            form={form}
+            cluster={selectedCluster}
+            isEdit={isEdit}
+          />
 
           <div
             data-testid="endpoint-resource-layout-grid"

@@ -262,6 +262,17 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     {record.spec.cluster}
                   </ShowButton>
                 </ShowPage.Meta>
+                {record.spec.zcache && (
+                  <ShowPage.Meta label="ZCache">
+                    {t(
+                      record.spec.zcache.enabled
+                        ? "endpoints.zcache.configured"
+                        : record.status?.zcache?.in_use
+                          ? "endpoints.zcache.releasing"
+                          : "endpoints.zcache.off",
+                    )}
+                  </ShowPage.Meta>
+                )}
                 {url && (
                   <EndpointAccessSummary
                     serviceUrl={url}

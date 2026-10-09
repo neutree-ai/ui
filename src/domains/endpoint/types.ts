@@ -33,6 +33,7 @@ enum EndpointPhase {
 }
 
 export type EndpointSpec = {
+  zcache?: { enabled: boolean; timeout_seconds?: number } | null;
   cluster: string;
   /**
    * Nullable: an engine that brings its own workload (Flex) deploys with no
@@ -49,6 +50,7 @@ export type EndpointSpec = {
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
+  zcache?: { generation: number; in_use: boolean } | null;
   service_url: string | null;
   resources?: EndpointResourceStatus | null;
   model_download_completed_hash?: string | null;
@@ -75,6 +77,7 @@ export type EndpointClusterRef = {
     type: string;
     /** The image registry this cluster pulls workload images from. */
     image_registry?: string;
+    zcache?: { enabled: boolean; target_nodes: string[] } | null;
     accelerator_virtualization?: { enabled?: boolean } | null;
   };
   status: {
