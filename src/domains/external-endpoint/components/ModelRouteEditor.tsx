@@ -116,7 +116,7 @@ export default function ModelRouteEditor({
 
     const normalized = targets.map((target, targetIndex) => ({
       ...target,
-      priority: mode === "priority" ? targetIndex : 0,
+      priority: mode === "priority" && targetIndex > 0 ? 1 : 0,
       weight: mode === "weighted" ? target.weight : undefined,
       max_inflight_requests:
         mode === "weighted" ? undefined : target.max_inflight_requests,
@@ -172,12 +172,7 @@ export default function ModelRouteEditor({
         const addTarget = (primary = false) => {
           const target: ModelRouteTarget = { upstream: "", upstream_model: "" };
           if (mode === "priority") {
-            target.priority = primary
-              ? 0
-              : Math.max(
-                  0,
-                  ...route.targets.map((item) => item.priority ?? 0),
-                ) + 1;
+            target.priority = primary ? 0 : 1;
           }
           commit(
             value.map((item, itemIndex) =>

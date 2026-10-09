@@ -20,6 +20,9 @@ import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
 const submitEndpoint = vi.hoisted(() => vi.fn());
+let selectEndpointForForm: (response: { data: ExternalEndpoint }) => {
+  data: ExternalEndpoint;
+};
 const modelListQuery = vi.hoisted(() =>
   vi.fn(() => ({
     data: { data: { success: true, models: ["selected-model"] } },
@@ -47,6 +50,11 @@ vi.mock("@refinedev/react-hook-form", async () => {
   return {
     useForm: (opts: Record<string, unknown>) => {
       const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
+      selectEndpointForForm = (
+        refineCoreProps as {
+          queryOptions: { select: typeof selectEndpointForForm };
+        }
+      ).queryOptions.select;
       return {
         ...rhf.useForm(rhfOpts),
         refineCore: { onFinish: submitEndpoint },
@@ -1162,12 +1170,15 @@ const routeFixture = (model: string, upstream: string) => ({
 function RoutingEditForm({ spec }: { spec: ExternalEndpointSpec }) {
   const result = useExternalEndpointForm({ action: "edit" });
   React.useEffect(() => {
-    result.form.reset({
-      api_version: "v1",
-      kind: "ExternalEndpoint",
-      metadata: { name: "review-only", workspace: "default" },
-      spec,
+    const response = selectEndpointForForm({
+      data: {
+        api_version: "v1",
+        kind: "ExternalEndpoint",
+        metadata: { name: "review-only", workspace: "default" },
+        spec,
+      } as ExternalEndpoint,
     });
+    result.form.reset(response.data);
   }, [result.form.reset, spec]);
   return (
     <ResourceForm
@@ -1618,6 +1629,116 @@ describe("routing state regression", () => {
 });
 
 describe("strategy constraints regression", () => {
+  it.each([
+    [1, 2, 3],
+    [20, 10, 10],
+    [0, 1, 1],
+  ])(
+    "loads priorities %j as two tiers and saves without changing target order",
+    async (...priorities) => {
+      cleanup();
+      submitEndpoint.mockClear();
+      const targets = priorities.map((priority, index) => ({
+        upstream: "a",
+        upstream_model: `model-${index}`,
+        priority,
+        max_inflight_requests: 5,
+      }));
+      render(
+        <RoutingEditForm
+          spec={{
+            timeout: 60000,
+            upstreams: [upstreamFixture("a")],
+            model_routes: [{ model: "chat", strategy: "priority", targets }],
+          }}
+        />,
+      );
+      const primary = Math.min(...priorities);
+      for (const [role, expected] of [
+        ["primaryTargets", priorities.filter((p) => p === primary).length],
+        ["fallbackTargets", priorities.filter((p) => p !== primary).length],
+      ] as const) {
+        expect(
+          within(
+            screen.getByRole("table", {
+              name: `external_endpoints.sections.${role}`,
+            }),
+          ).getAllByRole("spinbutton"),
+        ).toHaveLength(expected);
+      }
+      await submitRoutingForm();
+      expect(submitEndpoint).toHaveBeenCalledOnce();
+      expect(
+        submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].targets,
+      ).toEqual(
+        targets.map((target) => ({
+          ...target,
+          priority: target.priority === primary ? 0 : 1,
+          weight: 1,
+        })),
+      );
+      expect(targets.map((target) => target.priority)).toEqual(priorities);
+    },
+  );
+
+  it("keeps all standbys in tier one when switching strategy and adding targets", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(
+      <RoutingEditForm
+        spec={{
+          timeout: 60000,
+          upstreams: [upstreamFixture("a")],
+          model_routes: [
+            {
+              model: "chat",
+              strategy: "weighted",
+              targets: [50, 25, 25].map((weight, i) => ({
+                upstream: "a",
+                upstream_model: `model-${i}`,
+                weight,
+              })),
+            },
+          ],
+        }}
+      />,
+    );
+    fireEvent.change(
+      screen.getByLabelText("external_endpoints.fields.routingMode"),
+      {
+        target: { value: "priority" },
+      },
+    );
+    fireEvent.change(
+      screen.getAllByRole("spinbutton", {
+        name: "external_endpoints.fields.maxInflightRequests",
+      })[0],
+      { target: { value: "5" } },
+    );
+    for (let i = 0; i < 2; i++) {
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "external_endpoints.actions.addFallbackTarget",
+        }),
+      );
+      const models = screen.getAllByLabelText(
+        "external_endpoints.fields.upstreamModelName",
+      );
+      fireEvent.change(models.at(-1)!, { target: { value: `extra-${i}` } });
+      const channels = screen.getAllByLabelText(
+        "external_endpoints.fields.provider",
+      );
+      fireEvent.change(channels.at(-1)!, { target: { value: "a" } });
+    }
+    await submitRoutingForm();
+    expect(submitEndpoint).toHaveBeenCalledOnce();
+    expect(
+      submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].targets.map(
+        (target: { priority: number }) => target.priority,
+      ),
+    ).toEqual([0, 1, 1, 1, 1]);
+  });
+
   const priorityRoute: ModelRoute = {
     model: "chat",
     strategy: "priority",
