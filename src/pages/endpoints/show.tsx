@@ -27,6 +27,10 @@ import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
+import {
+  detailTabsListClassName,
+  detailTabTriggerClassName,
+} from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
@@ -116,9 +120,6 @@ const RayDashboardTab = ({
     />
   );
 };
-
-const detailTabTriggerClassName =
-  "relative z-10 h-full rounded-none border-0 bg-transparent px-0 py-2 text-sm font-semibold text-muted-foreground shadow-none transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-transparent hover:bg-transparent hover:text-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-transparent";
 
 const getSchedulerText = (
   schedulerType: string | null | undefined,
@@ -284,9 +285,15 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Meta>
               </span>
             }
-            status={<EndpointStatus {...record.status} />}
+            // No phase, no badge: the identity line reads as "name, dash"
+            // otherwise, and the dash carries no information there.
+            status={
+              record.status?.phase ? (
+                <EndpointStatus {...record.status} />
+              ) : undefined
+            }
           />
-          <TabsList className="relative h-11 w-full items-end justify-start gap-8 rounded-none border-0 bg-transparent p-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-border">
+          <TabsList className={detailTabsListClassName}>
             <TabsTrigger value="basic" className={detailTabTriggerClassName}>
               {t("common.tabs.basic")}
             </TabsTrigger>

@@ -81,6 +81,7 @@ export const ExternalEndpointsList = () => {
                       {m}
                     </code>
                     <ModelSourceBadge
+                      hideUnspecified
                       source={resolveExternalModelSource(spec, m)}
                     />
                   </div>
