@@ -97,15 +97,13 @@ export default function ModelRouteEditor({
 
   const setMode = (index: number, mode: Mode) => {
     const route = value[index];
-    if (!route) return;
+    if (!route || (route.strategy ?? "fixed") !== "fixed" || mode === "fixed")
+      return;
 
     let targets = route.targets.length
       ? route.targets
       : [{ upstream: providers[0]?.value || "", upstream_model: "" }];
-    if (mode === "fixed") {
-      targets = targets.slice(0, 1);
-    }
-    if (mode !== "fixed" && targets.length === 1) {
+    if (targets.length === 1) {
       targets = [
         targets[0],
         mode === "weighted"
@@ -501,6 +499,7 @@ export default function ModelRouteEditor({
                 </FormLabel>
                 <FormSelect
                   value={mode}
+                  disabled={mode !== "fixed"}
                   onChange={(next) => setMode(index, next as Mode)}
                   options={[
                     {
@@ -526,6 +525,14 @@ export default function ModelRouteEditor({
                     : mode === "priority"
                       ? t("external_endpoints.messages.priorityRoutingHint")
                       : t("external_endpoints.messages.weightedRoutingHint")}
+                  {mode !== "fixed" && (
+                    <>
+                      {" "}
+                      {t(
+                        "external_endpoints.messages.routingStrategyLockedHint",
+                      )}
+                    </>
+                  )}
                 </p>
               </FormItem>
             </div>

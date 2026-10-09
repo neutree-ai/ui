@@ -1333,6 +1333,7 @@
 			"fixedRoutingHint": "Send all requests to the single upstream model configured below.",
 			"priorityRoutingHint": "Use active targets first. Use standby targets when no active target can accept a request, including when all are at capacity.",
 			"weightedRoutingHint": "Distribute requests across the upstream models according to their configured weights.",
+			"routingStrategyLockedHint": "This strategy cannot be changed. To use a different strategy, recreate the exposed model.",
 			"maxInflightRequestsHint": "Leave empty or set to 0 for no limit.",
 			"curlHint": "Set your API key first: {{exportCmd}}. You can create one at {{apiKeyPage}}.",
 			"curlExampleOpenai": "OpenAI",

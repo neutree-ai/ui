@@ -155,6 +155,7 @@ vi.mock("@/foundation/components/FormSelect", async () => {
           id?: string;
           "aria-label"?: string;
           value?: string;
+          disabled?: boolean;
           onChange?: (v: string) => void;
           options?: { label: string; value: string }[];
         },
@@ -167,6 +168,7 @@ vi.mock("@/foundation/components/FormSelect", async () => {
             ref={ref}
             data-testid="form-select-mock"
             value={props.value}
+            disabled={props.disabled}
             onChange={(e) => props.onChange?.(e.target.value)}
           >
             {!props.value && <option value="">placeholder</option>}
@@ -1692,12 +1694,8 @@ describe("strategy constraints regression", () => {
           model_routes: [
             {
               model: "chat",
-              strategy: "weighted",
-              targets: [50, 25, 25].map((weight, i) => ({
-                upstream: "a",
-                upstream_model: `model-${i}`,
-                weight,
-              })),
+              strategy: "fixed",
+              targets: [{ upstream: "a", upstream_model: "model-0" }],
             },
           ],
         }}
@@ -1714,6 +1712,20 @@ describe("strategy constraints regression", () => {
         name: "external_endpoints.fields.maxInflightRequests",
       })[0],
       { target: { value: "5" } },
+    );
+    fireEvent.change(
+      screen
+        .getAllByLabelText("external_endpoints.fields.upstreamModelName")
+        .at(-1)!,
+      {
+        target: { value: "model-1" },
+      },
+    );
+    fireEvent.change(
+      screen.getAllByLabelText("external_endpoints.fields.provider").at(-1)!,
+      {
+        target: { value: "a" },
+      },
     );
     for (let i = 0; i < 2; i++) {
       fireEvent.click(
@@ -1736,8 +1748,45 @@ describe("strategy constraints regression", () => {
       submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].targets.map(
         (target: { priority: number }) => target.priority,
       ),
-    ).toEqual([0, 1, 1, 1, 1]);
+    ).toEqual([0, 1, 1, 1]);
   });
+
+  it.each(["priority", "weighted"] as const)(
+    "locks %s routing and preserves targets even if a change callback fires",
+    async (strategy) => {
+      cleanup();
+      submitEndpoint.mockClear();
+      const targets = [0, 0, 1].map((priority, i) => ({
+        upstream: "a",
+        upstream_model: `model-${i}`,
+        priority,
+        weight: strategy === "weighted" ? [30, 30, 40][i] : 1,
+        max_inflight_requests: 5,
+      }));
+      render(<RoutingForm routes={[{ model: "chat", strategy, targets }]} />);
+      const selector = screen.getByLabelText(
+        "external_endpoints.fields.routingMode",
+      );
+      expect(selector).toHaveProperty("disabled", true);
+      expect(
+        screen.getByText(
+          "external_endpoints.messages.routingStrategyLockedHint",
+          { exact: false },
+        ),
+      ).toBeTruthy();
+      for (const next of ["fixed", "priority", "weighted"]) {
+        fireEvent.change(selector, { target: { value: next } });
+        await act(async () =>
+          fireEvent.click(screen.getByText("submit-capacity")),
+        );
+        expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes[0]).toEqual({
+          model: "chat",
+          strategy,
+          targets,
+        });
+      }
+    },
+  );
 
   const priorityRoute: ModelRoute = {
     model: "chat",
@@ -1782,10 +1831,23 @@ describe("strategy constraints regression", () => {
     );
   });
 
-  it("clears previous limits only when actively switching to weighted", async () => {
+  it("allows fixed routing to become weighted and clears its previous limit", async () => {
     cleanup();
     submitEndpoint.mockClear();
-    render(<RoutingForm routes={[priorityRoute]} />);
+    render(
+      <RoutingForm
+        routes={[
+          {
+            ...priorityRoute,
+            strategy: "fixed",
+            targets: [priorityRoute.targets[0]],
+          },
+        ]}
+      />,
+    );
+    expect(
+      screen.getByLabelText("external_endpoints.fields.routingMode"),
+    ).toHaveProperty("disabled", false);
     fireEvent.change(
       screen.getByLabelText("external_endpoints.fields.routingMode"),
       { target: { value: "weighted" } },
@@ -1793,8 +1855,22 @@ describe("strategy constraints regression", () => {
     const weights = screen.getAllByLabelText(
       "external_endpoints.fields.weightRatio",
     );
-    for (const [i, input] of weights.entries())
-      fireEvent.change(input, { target: { value: String([50, 25, 25][i]) } });
+    for (const input of weights)
+      fireEvent.change(input, { target: { value: "50" } });
+    fireEvent.change(
+      screen
+        .getAllByLabelText("external_endpoints.fields.upstreamModelName")
+        .at(-1)!,
+      {
+        target: { value: "model-1" },
+      },
+    );
+    fireEvent.change(
+      screen.getAllByLabelText("external_endpoints.fields.provider").at(-1)!,
+      {
+        target: { value: "a" },
+      },
+    );
     await act(async () => fireEvent.click(screen.getByText("submit-capacity")));
     expect(submitEndpoint).toHaveBeenCalledOnce();
     expect(
