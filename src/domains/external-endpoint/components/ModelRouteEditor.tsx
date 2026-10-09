@@ -525,14 +525,6 @@ export default function ModelRouteEditor({
                     : mode === "priority"
                       ? t("external_endpoints.messages.priorityRoutingHint")
                       : t("external_endpoints.messages.weightedRoutingHint")}
-                  {mode !== "fixed" && (
-                    <>
-                      {" "}
-                      {t(
-                        "external_endpoints.messages.routingStrategyLockedHint",
-                      )}
-                    </>
-                  )}
                 </p>
               </FormItem>
             </div>

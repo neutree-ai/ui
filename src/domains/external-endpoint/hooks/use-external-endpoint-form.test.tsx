@@ -1768,12 +1768,6 @@ describe("strategy constraints regression", () => {
         "external_endpoints.fields.routingMode",
       );
       expect(selector).toHaveProperty("disabled", true);
-      expect(
-        screen.getByText(
-          "external_endpoints.messages.routingStrategyLockedHint",
-          { exact: false },
-        ),
-      ).toBeTruthy();
       for (const next of ["fixed", "priority", "weighted"]) {
         fireEvent.change(selector, { target: { value: next } });
         await act(async () =>
