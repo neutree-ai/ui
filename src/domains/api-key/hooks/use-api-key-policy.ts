@@ -7,10 +7,11 @@ import type {
 } from "@/domains/api-key/types";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 import {
+  type ExternalModelSourceSpec,
   type ModelSource,
   modelSourceRank,
-  modelsViaInternalEndpoint,
-  resolveModelSource,
+  resolveExternalModelSource,
+  SELF_HOSTED_MODEL_SOURCE,
 } from "@/foundation/lib/model-source";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
@@ -387,9 +388,9 @@ export type WorkspaceModelOption = {
   // to the API, and still what `value` is keyed on, even though it is no longer
   // shown as a badge — `source` displays instead.
   type: "internal" | "external";
-  // The displayed source label. Derived as `self-hosted` for every internal
-  // endpoint; read from the external endpoint's `neutree.ai/model-source`
-  // label otherwise, and `undefined` when it carries none.
+  // The displayed source. Self-deployed for every internal endpoint; resolved
+  // per model from the external endpoint's spec otherwise, and `undefined` when
+  // that yields none.
   source: ModelSource | undefined;
   phase: string | null;
 };
@@ -405,15 +406,7 @@ type WorkspaceExternalEndpointRef = {
     name?: string | null;
     labels?: Record<string, string> | null;
   } | null;
-  spec?: {
-    model_routes?: { model?: string | null }[] | null;
-    upstreams?: {
-      model_mapping?: Record<string, string> | null;
-      endpoint_ref?: string | null;
-    }[];
-    // Keyed by the client-facing model name; one endpoint's models can differ.
-    model_sources?: Record<string, string> | null;
-  } | null;
+  spec?: ExternalModelSourceSpec;
   status?: { phase?: string | null } | null;
 };
 
@@ -444,9 +437,8 @@ function exposedExternalModels(
 // alphabetical order (model, endpoint). A Degraded external endpoint is still
 // serving, so its models rank with the Running ones.
 //
-// Source-first still puts internal models first overall, because `self-hosted`
-// is the first preset and only internal endpoints ever carry it — the property
-// the IE/EE distinction in the picker rests on.
+// An internal endpoint and an external one fronting a self-hosted model share
+// a section; the endpoint name on each row is what tells them apart.
 export function compareWorkspaceModelOptions(
   a: WorkspaceModelOption,
   b: WorkspaceModelOption,
@@ -498,7 +490,7 @@ export function useWorkspaceModels(
         model,
         endpointName,
         type: "internal",
-        source: resolveModelSource("internal"),
+        source: SELF_HOSTED_MODEL_SOURCE,
         phase: endpoint.status?.phase ?? null,
       });
     }
@@ -506,7 +498,6 @@ export function useWorkspaceModels(
     for (const endpoint of externalEndpointsData?.data ?? []) {
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
-      const viaInternal = modelsViaInternalEndpoint(endpoint.spec?.upstreams);
       for (const model of exposedExternalModels(endpoint.spec)) {
         const trimmed = String(model ?? "").trim();
         if (!trimmed) continue;
@@ -518,12 +509,7 @@ export function useWorkspaceModels(
           type: "external",
           // Resolved per model, not once per endpoint: two models of one
           // endpoint can genuinely have different sources.
-          source: resolveModelSource(
-            "external",
-            endpoint.spec?.model_sources,
-            trimmed,
-            { viaInternalEndpoint: viaInternal.has(trimmed) },
-          ),
+          source: resolveExternalModelSource(endpoint.spec, trimmed),
           phase: endpoint.status?.phase ?? null,
         });
       }

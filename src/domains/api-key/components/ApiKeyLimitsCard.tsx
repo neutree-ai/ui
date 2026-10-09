@@ -38,7 +38,7 @@ import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
-import { resolveModelSource } from "@/foundation/lib/model-source";
+import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
@@ -375,7 +375,7 @@ export const ApiKeyLimitsCard = ({
                                           entry.endpoint_name ?? "",
                                           entry.model,
                                         ),
-                                      ) ?? resolveModelSource(entry.type)
+                                      ) ?? modelSourceOfEndpointKind(entry.type)
                                     }
                                   />
                                 ) : (

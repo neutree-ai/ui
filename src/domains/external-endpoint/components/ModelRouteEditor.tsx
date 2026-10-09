@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/tooltip";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormSelect } from "@/foundation/components/FormSelect";
+import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
-  INTERNAL_SHARED_MODEL_SOURCE,
+  type ModelSource,
   type ModelSourceMap,
-  modelSourceTranslationKey,
+  parseStoredModelSource,
 } from "@/foundation/lib/model-source";
 import type { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 import { getRouteStrategyError } from "../lib/validate-route-strategy";
@@ -45,12 +46,10 @@ type Props = {
   onModelSourceChange?: (model: string, source: string) => void;
   modelSourceOptions?: { label: string; value: string }[];
   /**
-   * Provider names whose upstream points at an internal endpoint. A route whose
-   * targets all resolve there is internal by construction, so its source is
-   * derived and the admin does not have to choose one. "All", not "any": a model
-   * that also falls back to a third party is not purely internal.
+   * The source a route's targets imply while none is chosen for its model.
+   * Shown as the placeholder, so the admin sees what applies without choosing.
    */
-  internalProviders?: Set<string>;
+  impliedModelSource?: (route: ModelRoute) => ModelSource | undefined;
 };
 
 export default function ModelRouteEditor({
@@ -62,9 +61,10 @@ export default function ModelRouteEditor({
   modelSources,
   onModelSourceChange,
   modelSourceOptions,
-  internalProviders,
+  impliedModelSource,
 }: Props) {
   const { t } = useTranslation();
+  const modelSourceLabel = useModelSourceLabel();
   const editorId = useId();
   const routeIds = useRef<string[]>([]);
   const nextRouteId = useRef(0);
@@ -153,12 +153,7 @@ export default function ModelRouteEditor({
         const strategyError = getRouteStrategyError(route);
         const weightTotalId = `${editorId}-${key}-weight-total`;
         const modelInputId = `${editorId}-${key}-model`;
-        const targets = route.targets ?? [];
-        const routeIsInternal =
-          targets.length > 0 &&
-          targets.every((target) =>
-            internalProviders?.has(String(target.upstream ?? "")),
-          );
+        const impliedSource = impliedModelSource?.(route);
         const primaryTargetIndices = route.targets.flatMap(
           (target, targetIndex) =>
             (target.priority ?? 0) === 0 ? [targetIndex] : [],
@@ -473,18 +468,15 @@ export default function ModelRouteEditor({
                   {t("modelSource.label")}
                 </FormLabel>
                 <FormCombobox
-                  value={route.model ? (modelSources?.[route.model] ?? "") : ""}
+                  value={
+                    parseStoredModelSource(modelSources?.[route.model]) ?? ""
+                  }
                   onChange={(next) =>
                     onModelSourceChange?.(route.model, String(next))
                   }
                   placeholder={
-                    routeIsInternal
-                      ? t(
-                          modelSourceTranslationKey(
-                            INTERNAL_SHARED_MODEL_SOURCE,
-                          ),
-                          { defaultValue: INTERNAL_SHARED_MODEL_SOURCE },
-                        )
+                    impliedSource
+                      ? modelSourceLabel(impliedSource)
                       : t("modelSource.placeholder")
                   }
                   options={modelSourceOptions ?? []}

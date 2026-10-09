@@ -11,10 +11,7 @@ import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  modelsViaInternalEndpoint,
-  resolveModelSource,
-} from "@/foundation/lib/model-source";
+import { resolveExternalModelSource } from "@/foundation/lib/model-source";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ExternalEndpointsList = () => {
@@ -64,9 +61,6 @@ export const ExternalEndpointsList = () => {
             return <Badge variant="outline">{labelMap[endpointType]}</Badge>;
           }}
         />
-        {/* Source label, stored on the endpoint as a metadata label. Note that
-            an external endpoint may legitimately be "internal-shared" — that
-            describes who runs the model, not the kind of endpoint. */}
         <Table.Column
           header={t("external_endpoints.fields.models")}
           accessorKey="spec"
@@ -76,7 +70,6 @@ export const ExternalEndpointsList = () => {
             const spec = getValue() as unknown as ExternalEndpoint["spec"];
             const models = getExposedModels(spec);
             if (models.length === 0) return "-";
-            const viaInternal = modelsViaInternalEndpoint(spec?.upstreams);
             return (
               // The source rides with each model rather than sitting in its own
               // column: one endpoint's models can have different sources, so a
@@ -88,12 +81,7 @@ export const ExternalEndpointsList = () => {
                       {m}
                     </code>
                     <ModelSourceBadge
-                      source={resolveModelSource(
-                        "external",
-                        spec?.model_sources,
-                        m,
-                        { viaInternalEndpoint: viaInternal.has(m) },
-                      )}
+                      source={resolveExternalModelSource(spec, m)}
                     />
                   </div>
                 ))}

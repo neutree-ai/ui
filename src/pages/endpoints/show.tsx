@@ -37,7 +37,7 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
-import { resolveModelSource } from "@/foundation/lib/model-source";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
 const EndpointLogTabs = lazy(() =>
   import("@/domains/endpoint/components/EndpointLogTabs").then((m) => ({
@@ -233,7 +233,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 <ShowPage.Meta label={t("modelSource.label")}>
                   {/* Derived, not stored: an endpoint the platform runs is
                       always self-hosted, so there is nothing to edit here. */}
-                  <ModelSourceBadge source={resolveModelSource("internal")} />
+                  <ModelSourceBadge source={SELF_HOSTED_MODEL_SOURCE} />
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.task")}>
                   <ModelTask task={record.spec.model?.task} />

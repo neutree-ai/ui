@@ -5,7 +5,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { ThousandsInput } from "@/domains/api-key/components/ThousandsInput";
 import type { PolicyModelRow } from "@/domains/api-key/hooks/use-api-key-policy";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { resolveModelSource } from "@/foundation/lib/model-source";
+import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   isValidTokenQuota,
@@ -74,7 +74,9 @@ export const ModelQuotaRows = ({
                       sourceByValue?.get(row.value) ??
                       // A row whose option is gone (a removed endpoint) keeps
                       // whatever its side implies, which is exact for internal.
-                      (row.type ? resolveModelSource(row.type) : undefined)
+                      (row.type
+                        ? modelSourceOfEndpointKind(row.type)
+                        : undefined)
                     }
                   />
                 ) : (

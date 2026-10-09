@@ -17,7 +17,6 @@ import type {
   ModelRoute,
 } from "@/domains/external-endpoint/types";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
 const submitEndpoint = vi.hoisted(() => vi.fn());
 let selectEndpointForForm: (response: { data: ExternalEndpoint }) => {
@@ -1084,24 +1083,29 @@ describe("useExternalEndpointForm", () => {
       );
     };
 
-    it("suggests the presets plus the values already in use, never self-hosted", () => {
+    it("suggests the presets plus the values already in use", () => {
       // The enum is open on the server, so the list is suggestions rather than
       // an enumeration: presets first, then whatever sibling endpoints already
       // use, so the second person to need a custom source picks it instead of
       // retyping it slightly differently.
-      //
-      // self-hosted stays out regardless: it is the derived source of internal
-      // endpoints and the backend rejects it here; offering it would make the
-      // internal and external rows for one model name indistinguishable in the
-      // API-key model picker.
       render(<SourceForm />);
       expect(offeredSources()).toEqual([
-        "internal-shared",
+        "self-hosted",
+        "private-access",
         "third-party-public",
-        "partner",
+        "hybrid",
         "acme-research-lab",
+        "partner",
       ]);
-      expect(offeredSources()).not.toContain(SELF_HOSTED_MODEL_SOURCE);
+    });
+
+    it("lets an external endpoint's model be marked self-hosted", () => {
+      render(<SourceForm />);
+      nameModel("qwen");
+      fireEvent.change(sourceInput(), { target: { value: "self-hosted" } });
+      expect(captured?.getValues("spec.model_sources")).toEqual({
+        qwen: "self-hosted",
+      });
     });
 
     it("writes the chosen source under the model name", () => {
