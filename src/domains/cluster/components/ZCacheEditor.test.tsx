@@ -10,6 +10,7 @@ globalThis.ResizeObserver = class ResizeObserver {
 };
 const mocks = vi.hoisted(() => ({ update: vi.fn(), access: true }));
 vi.mock("@refinedev/core", () => ({
+  useList: () => ({ data: { data: [] }, isLoading: false }),
   useCan: () => ({ data: { can: mocks.access } }),
   useUpdate: () => ({ mutateAsync: mocks.update, isLoading: false }),
   useInvalidate: () => vi.fn().mockResolvedValue(undefined),
