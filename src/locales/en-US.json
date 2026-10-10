@@ -1338,8 +1338,8 @@
 			"advanced": "Cache settings",
 			"timeout": "Cache timeout (seconds)",
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
-			"timeoutHint": "Maximum wait for a cache message. This is not the inference request timeout.",
-			"redeploy": "Saving this change redeploys the inference instance. A single replica will be temporarily unavailable.",
+			"timeoutHint": "Maximum wait time for a single cache message",
+			"redeploy": "Saving this change will redeploy the inference instance",
 			"configured": "Cluster cache enabled",
 			"off": "Cluster cache disabled",
 			"releasing": "Stopping cache use"
