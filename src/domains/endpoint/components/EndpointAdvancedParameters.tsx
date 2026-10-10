@@ -1,4 +1,5 @@
 import { Check, Copy } from "lucide-react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -8,14 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
+import {
+  ExpandableCell,
+  ExpandPanel,
+} from "@/foundation/components/ExpandableCell";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type ParameterEntries = Record<string, unknown> | null | undefined;
@@ -36,10 +37,66 @@ const formatParameterValue = (value: unknown) => {
   }
 };
 
+/** The value as the reader needs it once the cell has cut it off.
+ *
+ * One line is all a table cell can hold, so the cell shows the compact form and
+ * this is what the hover card shows: JSON indented, everything else as written.
+ * A string carrying JSON counts as JSON — that is how these values are pasted
+ * in, and indenting them is the whole point of the card. */
+const formatParameterValueExpanded = (value: unknown) => {
+  const structured = toStructuredValue(value);
+  if (structured === undefined) return formatParameterValue(value);
+
+  try {
+    return JSON.stringify(structured, null, 2);
+  } catch {
+    return formatParameterValue(value);
+  }
+};
+
+/** Objects and arrays, or a string holding one. Primitives are left alone:
+ * "8192" and "true" gain nothing from being reparsed and reprinted. */
+const toStructuredValue = (value: unknown): unknown => {
+  if (typeof value !== "string") return value;
+
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) return undefined;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return undefined;
+  }
+};
+
+/** Floating panel for one parameter: the value in full, JSON indented.
+ *
+ * Same shape as the engine schema table's row panel — name line, then the
+ * content in a bordered well — so a reader who has opened one recognises the
+ * other. The two are separate implementations on purpose; they are meant to be
+ * extracted into one component once both tables have landed. */
+function ParameterValueDetails({
+  name,
+  value,
+}: {
+  name: string;
+  value: unknown;
+}) {
+  return (
+    <ExpandPanel label={name}>
+      <pre className="max-h-[40vh] overflow-auto rounded-md border bg-[var(--nt-fill-neutral-opaque-1)] p-3 font-mono text-xs leading-5 text-foreground">
+        {formatParameterValueExpanded(value) || <EmptyValue />}
+      </pre>
+    </ExpandPanel>
+  );
+}
+
 function ParameterValue({ name, value }: { name: string; value: unknown }) {
   const { t } = useTranslation();
   const { copy, copied } = useCopyToClipboard();
   const displayValue = formatParameterValue(value);
+  const valueRef = useRef<HTMLElement>(null);
+  const valueTruncated = useIsTruncated(valueRef);
 
   return (
     <TableRow>
@@ -49,23 +106,28 @@ function ParameterValue({ name, value }: { name: string; value: unknown }) {
         </span>
       </TableCell>
       <TableCell className="max-w-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <code className="block truncate font-mono text-xs">
-              {displayValue || <EmptyValue />}
-            </code>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-lg break-all">
+        {/* Only a value that is actually cut off gets the control: the button
+            is the affordance, so it has to mean "there is more". */}
+        <ExpandableCell
+          truncated={valueTruncated}
+          label={t("endpoints.messages.expandParameterValue", { name })}
+          panel={<ParameterValueDetails name={name} value={value} />}
+        >
+          <code ref={valueRef} className="block truncate font-mono text-xs">
             {displayValue || <EmptyValue />}
-          </TooltipContent>
-        </Tooltip>
+          </code>
+        </ExpandableCell>
       </TableCell>
-      <TableCell className="w-12 text-right">
+      {/* The copy control sits beside the expand control in every row, so it
+          carries the same weight and the same box: one muted token, one icon
+          size. `pl-0` pulls it up against the value cell instead of leaving a
+          gutter between two controls that read as a pair. */}
+      <TableCell className="w-7 p-2 pl-0 text-right">
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-5 w-5 shrink-0 text-[var(--nt-text-neutral-quaternary)] hover:text-[var(--nt-text-neutral-secondary)]"
           title={t("api_keys.buttons.copy")}
           aria-label={`${name} ${t("api_keys.buttons.copy")}`}
           onClick={() =>
@@ -75,11 +137,7 @@ function ParameterValue({ name, value }: { name: string; value: unknown }) {
             })
           }
         >
-          {copied ? (
-            <Check className="size-3.5" />
-          ) : (
-            <Copy className="size-3.5" />
-          )}
+          {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
         </Button>
       </TableCell>
     </TableRow>
@@ -112,7 +170,7 @@ function ParameterGroup({
                 {t("common.fields.name")}
               </TableHead>
               <TableHead>{t("endpoints.fields.parameterValue")}</TableHead>
-              <TableHead className="w-12" />
+              <TableHead className="w-7" />
             </TableRow>
           </TableHeader>
           <TableBody>
