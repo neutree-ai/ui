@@ -443,5 +443,5 @@
   "src/domains/cluster/components/ZCacheActivity.tsx": "a1ae9f7c7a4464aeabc4e5569113fbc8",
   "src/domains/cluster/lib/zcache-presentation.ts": "a939fc2e56c2a3c8a96eea188b67c144",
   "src/domains/endpoint/components/EndpointZCacheFields.tsx": "f3588e7ba32c4e27eb08282dcb48ae76",
-  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "7de0945094a99b309d9f44600559783e"
+  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "e266e907801bf8274e821bfe0af58726"
 }
