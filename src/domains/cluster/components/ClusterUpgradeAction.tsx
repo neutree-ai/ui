@@ -25,6 +25,7 @@ import {
   isUpgradeVersion,
 } from "@/domains/cluster/lib/upgrade-versions";
 import type { Cluster } from "@/domains/cluster/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -136,7 +137,7 @@ function UpgradeDialog({
       ),
     [cluster.spec.version, data?.data?.available_versions],
   );
-  const currentVersion = cluster.status?.version ?? "-";
+  const currentVersion = cluster.status?.version ?? <EmptyValue />;
 
   useEffect(() => {
     if (!open) {

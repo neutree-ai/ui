@@ -21,6 +21,7 @@ import {
   type CatalogImportCandidate,
   runCatalogImport,
 } from "@/domains/model-catalog/lib/catalog-import";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import {
   getErrorMessage,
@@ -478,7 +479,7 @@ spec:
                 {results.map((r) => (
                   <tr key={r.index} className="border-t">
                     <td className="px-2 py-1 font-mono">{r.index + 1}</td>
-                    <td className="px-2 py-1">{r.name || "-"}</td>
+                    <td className="px-2 py-1">{r.name || <EmptyValue />}</td>
                     <td className="px-2 py-1">
                       <span
                         className={
@@ -492,11 +493,15 @@ spec:
                     </td>
                     <td className="px-2 py-1 text-muted-foreground">
                       {r.error ||
-                        (r.ok
-                          ? r.action === "create"
-                            ? t("model_catalogs.import.created", "Created")
-                            : t("model_catalogs.import.updated", "Updated")
-                          : "-")}
+                        (r.ok ? (
+                          r.action === "create" ? (
+                            t("model_catalogs.import.created", "Created")
+                          ) : (
+                            t("model_catalogs.import.updated", "Updated")
+                          )
+                        ) : (
+                          <EmptyValue />
+                        ))}
                     </td>
                   </tr>
                 ))}
