@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "cb35c8f7f98c0e100f1868c32490dadc",
   "src/pages/endpoints/edit.tsx": "ef661bb90e2dfbc2be9ac65b92fbc3f1",
   "src/pages/endpoints/list.tsx": "dc1c7524bf5e2567beffc0775492a194",
-  "src/pages/endpoints/show.tsx": "979f129adcb49ba8c61cc66c2982b8a1",
+  "src/pages/endpoints/show.tsx": "0acb44a982466c848598fd1ffe461390",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "cac7810aba097eba70ac9465761a967e",
   "src/pages/clusters/edit.tsx": "bd45e8c559af0cea6ebb2f9287f1ca7e",
@@ -437,10 +437,11 @@
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e",
   "src/foundation/hooks/use-is-truncated.ts": "0cf7cb247f3944b09562b5c27e5b68c8",
   "src/domains/cluster/components/ZCacheFields.tsx": "0920ade90c031e05ffe4f0ebe4220754",
-  "src/domains/cluster/components/ZCacheSection.tsx": "4bdff0584914b0db94ddc7686763c8cf",
+  "src/domains/cluster/components/ZCacheSection.tsx": "121fcff49c232b6b8d30524e5726654a",
   "src/domains/cluster/components/ZCacheControlPlane.tsx": "ad4278d55dc2af78cb09b93d0fa04584",
   "src/domains/cluster/components/ZCacheEditor.tsx": "84bb10ae875bfb1381a19555a0930d7e",
   "src/domains/cluster/components/ZCacheActivity.tsx": "a1ae9f7c7a4464aeabc4e5569113fbc8",
   "src/domains/cluster/lib/zcache-presentation.ts": "a939fc2e56c2a3c8a96eea188b67c144",
-  "src/domains/endpoint/components/EndpointZCacheFields.tsx": "f3588e7ba32c4e27eb08282dcb48ae76"
+  "src/domains/endpoint/components/EndpointZCacheFields.tsx": "f3588e7ba32c4e27eb08282dcb48ae76",
+  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "7de0945094a99b309d9f44600559783e"
 }

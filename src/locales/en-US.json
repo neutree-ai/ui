@@ -1328,6 +1328,10 @@
 			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
 		},
 		"zcache": {
+      "timeoutLabel": "Cache timeout",
+      "timeoutValue": "{{seconds}} s",
+      "clusterUnconfigured": "ZCache is not configured on this cluster",
+      "viewCluster": "View cluster cache",
 			"enable": "Use cluster cache",
 			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
 			"requirements": "Requires vLLM and a Kubernetes cluster with ZCache enabled.",
