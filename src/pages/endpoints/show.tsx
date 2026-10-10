@@ -233,8 +233,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("modelSource.label")}>
                   {/* Derived, not stored: an endpoint the platform runs is
-                      always self-hosted, so there is nothing to edit here. */}
-                  <ModelSourceBadge source={SELF_HOSTED_MODEL_SOURCE} />
+                      always self-hosted, so there is nothing to edit here —
+                      and a Flex instance, whose model block carries only the
+                      task, names no model, so it has no source to label. The
+                      list column drops the badge in that case; keep the two
+                      pages on the same footing. */}
+                  {record.spec.model?.name ? (
+                    <ModelSourceBadge source={SELF_HOSTED_MODEL_SOURCE} />
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.task")}>
                   <ModelTask task={record.spec.model?.task} />

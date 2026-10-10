@@ -21,7 +21,10 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) =>
+      options?.defaultValue ?? key,
+  }),
 }));
 
 vi.mock("@/components/ui/tabs", () => ({
@@ -52,12 +55,15 @@ vi.mock("@/foundation/components/ShowPage", () => {
   ShowPage.ObjectHeader = ({
     title,
     status,
+    description,
   }: {
     title?: ReactNode;
     status?: ReactNode;
+    description?: ReactNode;
   }) => (
     <header>
       <h1>{title}</h1>
+      {description}
       {status}
     </header>
   );
@@ -225,5 +231,44 @@ describe("EndpointsShow", () => {
     });
     render(<EndpointsShow />);
     expect(screen.getByTestId("endpoint-status")).toBeTruthy();
+  });
+
+  // The header's "Model source" field follows the list column: a source is
+  // something a model has, and a Flex instance's block keeps only the task, so
+  // there is nothing to label. It used to render the derived "self-hosted"
+  // regardless of whether any model was named.
+  describe("Model source field", () => {
+    it("labels the source of a model the endpoint names", () => {
+      useShowMock.mockReturnValue({
+        query: {
+          data: {
+            data: {
+              ...endpoint,
+              spec: {
+                ...endpoint.spec,
+                model: {
+                  registry: "huggingface",
+                  name: "Qwen/Qwen3-8B",
+                  version: "3.0",
+                  task: "chat",
+                },
+              },
+            },
+          },
+          isLoading: false,
+        },
+      });
+
+      render(<EndpointsShow />);
+
+      expect(screen.getByText("self-hosted")).toBeTruthy();
+    });
+
+    it("shows the placeholder, and no source label, when the block names nothing", () => {
+      render(<EndpointsShow />);
+
+      expect(screen.queryByText("self-hosted")).toBeNull();
+      expect(screen.getByText("-")).toBeTruthy();
+    });
   });
 });
