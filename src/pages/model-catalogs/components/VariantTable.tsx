@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -6,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { DEFAULT_VARIANT } from "@/foundation/recipe/normalize";
@@ -19,13 +21,13 @@ type Props = {
 
 const resourceSummary = (
   r: RecipeVariant["resources"] | null | undefined,
-): string => {
-  if (!r) return "-";
+): ReactNode => {
+  if (!r) return <EmptyValue />;
   const parts: string[] = [];
   if (r.gpu != null) parts.push(`${r.gpu} GPU`);
   if (r.cpu != null) parts.push(`${r.cpu} CPU`);
   if (r.memory != null) parts.push(`${r.memory} GiB`);
-  return parts.length ? parts.join(" · ") : "-";
+  return parts.length ? parts.join(" · ") : <EmptyValue />;
 };
 
 export const VariantTable = ({
@@ -94,7 +96,7 @@ export const VariantTable = ({
                   </span>
                 </TableCell>
                 <TableCell className="max-w-[360px] text-muted-foreground">
-                  {variant.description || "-"}
+                  {variant.description || <EmptyValue />}
                 </TableCell>
                 <TableCell>{resourceSummary(variant.resources)}</TableCell>
                 <TableCell
@@ -103,9 +105,11 @@ export const VariantTable = ({
                     variant.vram_minimum_gb != null && "font-medium",
                   )}
                 >
-                  {variant.vram_minimum_gb != null
-                    ? `≥${variant.vram_minimum_gb} GB`
-                    : "-"}
+                  {variant.vram_minimum_gb != null ? (
+                    `≥${variant.vram_minimum_gb} GB`
+                  ) : (
+                    <EmptyValue />
+                  )}
                 </TableCell>
               </TableRow>
             );

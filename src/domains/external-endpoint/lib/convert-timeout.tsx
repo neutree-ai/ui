@@ -1,3 +1,6 @@
+import type { ReactElement } from "react";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
+
 export type TimeoutUnit = "s" | "min";
 
 export function msToDisplayValue(ms: number, unit: TimeoutUnit): number {
@@ -10,8 +13,10 @@ export function displayValueToMs(value: number, unit: TimeoutUnit): number {
   return value * 1000;
 }
 
-export function formatTimeout(ms: number | null | undefined): string {
-  if (ms == null || ms <= 0) return "-";
+export function formatTimeout(
+  ms: number | null | undefined,
+): ReactElement | string {
+  if (ms == null || ms <= 0) return <EmptyValue />;
   if (ms % 60000 === 0) return `${ms / 60000}min`;
   return `${ms / 1000}s`;
 }

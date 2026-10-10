@@ -1,4 +1,5 @@
 import { Copy, Layers, Server } from "lucide-react";
+import type { ReactNode } from "react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
@@ -46,17 +48,19 @@ type EndpointRuntimeResourcesCardProps = {
   className?: string;
 };
 
-const formatInteger = (value: number) => formatToDecimal(value, 0) ?? "-";
+const formatInteger = (value: number): ReactNode =>
+  formatToDecimal(value, 0) ?? <EmptyValue />;
 
-const formatCoreLimit = (value: number) =>
-  value > 0 ? formatInteger(value) : "-";
+const formatCoreLimit = (value: number): ReactNode =>
+  value > 0 ? formatInteger(value) : <EmptyValue />;
 
-const formatMemoryGiB = (value: number) => formatMiBAsGiB(value) ?? "-";
+const formatMemoryGiB = (value: number): ReactNode =>
+  formatMiBAsGiB(value) ?? <EmptyValue />;
 
-const formatVramValue = (value: number | null) => {
-  if (value == null) return "—";
+const formatVramValue = (value: number | null): ReactNode => {
+  if (value == null) return <EmptyValue />;
   const formatted = formatMiBAsGiBValue(value);
-  return formatted == null ? "—" : formatted.replace(/\.0$/, "");
+  return formatted == null ? <EmptyValue /> : formatted.replace(/\.0$/, "");
 };
 
 const formatCount = (
@@ -183,8 +187,12 @@ export default function EndpointRuntimeResourcesCard({
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
 
-  const requestedCpu = formatToDecimal(requestedResources?.cpu) ?? "—";
-  const requestedMemory = formatToDecimal(requestedResources?.memory) ?? "—";
+  const requestedCpu = formatToDecimal(requestedResources?.cpu) ?? (
+    <EmptyValue />
+  );
+  const requestedMemory = formatToDecimal(requestedResources?.memory) ?? (
+    <EmptyValue />
+  );
   const requestedCorePerCard =
     getVgpuVirtualization(requestedResources?.accelerator)?.core_percent ??
     undefined;
@@ -241,7 +249,7 @@ export default function EndpointRuntimeResourcesCard({
                     className="block truncate text-sm font-semibold leading-5"
                     title={row.product}
                   >
-                    {row.product || "-"}
+                    {row.product || <EmptyValue />}
                   </span>
                 </div>
                 <div className="grid gap-1">
@@ -281,14 +289,14 @@ function Replica({
 }: {
   group: EndpointReplicaResourceGroup;
   groupIndex: number;
-  requestedCpu: string;
-  requestedMemory: string;
+  requestedCpu: ReactNode;
+  requestedMemory: ReactNode;
   requestedCorePerCard: number | undefined;
   acceleratorType: string | null;
   onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
-  const replicaName = group.replicaId || group.instanceId || "-";
+  const replicaName = group.replicaId || group.instanceId || EMPTY_VALUE;
   const requestedCoreUnits =
     requestedCorePerCard != null
       ? requestedCorePerCard * group.deviceCount
@@ -383,8 +391,8 @@ function Host({
   t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
-  requestedCpu: string;
-  requestedMemory: string;
+  requestedCpu: ReactNode;
+  requestedMemory: ReactNode;
   acceleratorType: string | null;
   onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
   t: (key: string, options?: Record<string, unknown>) => string;
@@ -400,7 +408,7 @@ function Host({
             className="min-w-0 truncate text-sm font-semibold leading-5"
             title={node.nodeId}
           >
-            {node.nodeId || "-"}
+            {node.nodeId || <EmptyValue />}
           </span>
           <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
             {t("common.fields.cpu")} {requestedCpu} ·{" "}
@@ -461,7 +469,7 @@ function GpuCell({
       )}
     >
       {acceleratorType && <>{acceleratorType} · </>}
-      {device.product || "-"}
+      {device.product || <EmptyValue />}
     </span>
   );
 
@@ -502,8 +510,9 @@ function GpuCell({
         <Tooltip>
           <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
           <TooltipContent>
-            {[acceleratorType, device.product].filter(Boolean).join(" · ") ||
-              "-"}
+            {[acceleratorType, device.product].filter(Boolean).join(" · ") || (
+              <EmptyValue />
+            )}
           </TooltipContent>
         </Tooltip>
       ) : (
