@@ -4,6 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 // Status codes with a maintained, gateway-accurate description (includes the
@@ -76,7 +77,7 @@ export const StatusBadge = ({ status }: { status: number }) => {
     <Tooltip>
       <TooltipTrigger asChild>
         <Badge variant={statusBadgeVariant(status)} className="cursor-help">
-          {status || "-"}
+          {status || <EmptyValue />}
         </Badge>
       </TooltipTrigger>
       <TooltipContent className="max-w-[260px]">

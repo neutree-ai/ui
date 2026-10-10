@@ -1,4 +1,5 @@
 import { CircleAlert, CircleCheck, Copy, Cpu } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
@@ -62,10 +64,10 @@ type EndpointResourceRequestContext = {
 const VRAM_VALUE_SCALE = 1 / 1024;
 const ACCELERATOR_USAGE_WARNING_PERCENT = 75;
 
-const formatCount = (value: number | null | undefined) => {
-  if (value == null) return "-";
+const formatCount = (value: number | null | undefined): string => {
+  if (value == null) return EMPTY_VALUE;
   const numericValue = Number(value);
-  return Number.isFinite(numericValue) ? numericValue.toFixed(1) : "-";
+  return Number.isFinite(numericValue) ? numericValue.toFixed(1) : EMPTY_VALUE;
 };
 
 const scaleMetricValue = (
@@ -82,9 +84,9 @@ const formatUsage = (
   total: number | null | undefined,
   unit = "",
   valueScale = 1,
-) => {
+): ReactNode => {
   if (used == null || total == null) {
-    return "-";
+    return <EmptyValue />;
   }
 
   return `${formatCount(scaleMetricValue(used, valueScale))} / ${formatCount(scaleMetricValue(total, valueScale))}${unit}`;
@@ -94,10 +96,19 @@ const formatPoolValue = (
   value: number | null | undefined,
   unit = "",
   valueScale = 1,
-) =>
-  value == null
-    ? "-"
-    : `${formatCount(scaleMetricValue(value, valueScale))}${unit}`;
+): ReactNode =>
+  value == null ? (
+    <EmptyValue />
+  ) : (
+    `${formatCount(scaleMetricValue(value, valueScale))}${unit}`
+  );
+
+/**
+ * Tooltip text for a reading built by the formatters above: the value itself,
+ * or nothing when it is a placeholder (a tooltip repeating "-" says nothing).
+ */
+const readingTitle = (value: ReactNode) =>
+  typeof value === "string" ? value : undefined;
 
 const formatUnitLabel = (unit: string | undefined) => unit?.trim() ?? "";
 
@@ -301,13 +312,17 @@ function ResourceSummaryCard({
         className={cn("h-1.5", usageClasses.progress)}
       />
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 text-xs text-muted-foreground">
-        <span className="min-w-0 truncate" title={usageText}>
+        <span className="min-w-0 truncate" title={readingTitle(usageText)}>
           {t("clusters.options.used")} {usageText}
         </span>
         <strong
           data-testid="endpoint-resource-summary-free-value"
           className="shrink-0 font-semibold tabular-nums text-card-foreground"
-          title={`${t("clusters.options.free")} ${freeText}`}
+          title={
+            typeof freeText === "string"
+              ? `${t("clusters.options.free")} ${freeText}`
+              : undefined
+          }
         >
           {t("clusters.options.free")} {freeText}
         </strong>
@@ -375,21 +390,21 @@ function NodeResourcePill({
         <strong
           data-testid="endpoint-node-resource-pill-value"
           className="truncate font-semibold tabular-nums text-card-foreground"
-          title={totalText}
+          title={readingTitle(totalText)}
         >
           {totalText}
         </strong>
         <strong
           data-testid="endpoint-node-resource-pill-value"
           className="truncate font-semibold tabular-nums text-card-foreground"
-          title={usedText}
+          title={readingTitle(usedText)}
         >
           {usedText}
         </strong>
         <strong
           data-testid="endpoint-node-resource-pill-value"
           className="truncate font-semibold tabular-nums text-card-foreground"
-          title={freeText}
+          title={readingTitle(freeText)}
         >
           {freeText}
         </strong>
@@ -441,11 +456,16 @@ function GpuMeterRow({
   const percent = toPercentValue(used, total);
   const acceleratorUsageClasses = getAcceleratorUsageClasses(percent);
   const usageText = formatUsage(used, total, unit, valueScale);
-  const freeText = `${t("clusters.options.free")} ${formatPoolValue(
-    available,
-    unit,
-    valueScale,
-  )}`;
+  const freeValue = formatPoolValue(available, unit, valueScale);
+  const freeText = (
+    <>
+      {t("clusters.options.free")} {freeValue}
+    </>
+  );
+  const freeTitle =
+    typeof freeValue === "string"
+      ? `${t("clusters.options.free")} ${freeValue}`
+      : undefined;
 
   return (
     <div className="grid gap-1.5 rounded-md bg-muted/20 px-2 py-1.5">
@@ -469,7 +489,7 @@ function GpuMeterRow({
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-xs">
         <span
           className="min-w-0 break-words tabular-nums text-muted-foreground"
-          title={usageText}
+          title={readingTitle(usageText)}
         >
           {usageText}
         </span>
@@ -478,7 +498,7 @@ function GpuMeterRow({
             "shrink-0 font-semibold tabular-nums",
             acceleratorUsageClasses.text,
           )}
-          title={freeText}
+          title={freeTitle}
         >
           {freeText}
         </strong>
@@ -507,7 +527,7 @@ function GpuDeviceCard({
       className="w-fit max-w-full min-w-0 text-xs"
     >
       <span ref={productRef} className="min-w-0 truncate">
-        {row.product || "-"}
+        {row.product || <EmptyValue />}
       </span>
     </Badge>
   );
@@ -598,7 +618,7 @@ function GpuDeviceCard({
         <Tooltip>
           <TooltipTrigger asChild>{productBadge}</TooltipTrigger>
           <TooltipContent className="max-w-md break-all">
-            {row.product || "-"}
+            {row.product || <EmptyValue />}
           </TooltipContent>
         </Tooltip>
       ) : (

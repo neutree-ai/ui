@@ -1,4 +1,5 @@
 import type { EndpointSpec } from "@/domains/endpoint/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { registryModelQuery } from "@/foundation/lib/registry-model-link";
 
@@ -18,7 +19,7 @@ export default function EndpointModel({
   // task the gateway routes on and nothing else — so a truthy block with an
   // empty name is the *usual* shape here, and it rendered as an empty string.
   if (!model?.name) {
-    return <span className="text-muted-foreground">-</span>;
+    return <EmptyValue />;
   }
 
   const nameWithVersion = model.version

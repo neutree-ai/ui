@@ -27,6 +27,7 @@ import {
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -360,37 +361,33 @@ export const AITracesList = () => {
                 </TableCell>
                 {isAllWorkspaces && (
                   <TableCell className="text-sm truncate max-w-[140px]">
-                    {row.workspace || (
-                      <span className="text-muted-foreground">-</span>
-                    )}
+                    {row.workspace || <EmptyValue />}
                   </TableCell>
                 )}
                 <TableCell>
-                  <div className="text-sm">{row.endpoint_name || "-"}</div>
+                  <div className="text-sm">
+                    {row.endpoint_name || <EmptyValue />}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {row.endpoint_type || ""}
                   </div>
                 </TableCell>
                 <TableCell className="text-sm">
-                  {userAgentToApp(row.user_agent) || (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  {userAgentToApp(row.user_agent) || <EmptyValue />}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {row.request_model || row.response_model || (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  {row.request_model || row.response_model || <EmptyValue />}
                 </TableCell>
                 <TableCell className="text-sm">
                   {row.upstream || row.upstream_model ? (
                     <>
-                      <div>{row.upstream || "—"}</div>
+                      <div>{row.upstream || <EmptyValue />}</div>
                       <div className="text-xs text-muted-foreground">
-                        {row.upstream_model || "—"}
+                        {row.upstream_model || <EmptyValue />}
                       </div>
                     </>
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <EmptyValue />
                   )}
                 </TableCell>
                 <TableCell>
@@ -413,7 +410,7 @@ export const AITracesList = () => {
                     out of the cells, so a longer reading widens the column
                     instead of breaking inside it. */}
                 <TableCell className="text-right font-mono text-xs whitespace-nowrap">
-                  {formatTokens(row.total_tokens) ?? "-"}
+                  {formatTokens(row.total_tokens) ?? <EmptyValue />}
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs whitespace-nowrap">
                   {formatThroughput(row.completion_tokens, row.duration_ms)}
@@ -422,9 +419,7 @@ export const AITracesList = () => {
                   {formatDuration(row.duration_ms)}
                 </TableCell>
                 <TableCell className="text-xs font-mono">
-                  {row.finish_reason || (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  {row.finish_reason || <EmptyValue />}
                 </TableCell>
               </TableRow>
             ))}
@@ -472,7 +467,7 @@ function formatThroughput(
   durationMs?: number,
 ): React.ReactNode {
   if (completionTokens == null || !durationMs) {
-    return <span className="text-muted-foreground">-</span>;
+    return <EmptyValue />;
   }
   const tps = completionTokens / (durationMs / 1000);
   return tps.toFixed(1);
@@ -481,7 +476,7 @@ function formatThroughput(
 // formatDuration renders the request duration in seconds with 2 decimals.
 function formatDuration(durationMs?: number): React.ReactNode {
   if (durationMs == null) {
-    return <span className="text-muted-foreground">-</span>;
+    return <EmptyValue />;
   }
   return `${(durationMs / 1000).toFixed(2)} s`;
 }

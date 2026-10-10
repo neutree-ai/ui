@@ -22,6 +22,7 @@ import {
   detailTabsListClassName,
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
@@ -81,7 +82,7 @@ export const ClustersShow = () => {
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.version")}>
                   <span className="inline-flex min-w-0 items-center">
-                    {record.status?.version ?? "-"}
+                    {record.status?.version ?? <EmptyValue />}
                     {record.status?.phase === "Upgrading" &&
                       record.spec.version && (
                         <span className="text-muted-foreground">
@@ -172,17 +173,22 @@ export const ClustersShow = () => {
                       t,
                     )}
                   </ShowPage.Row>
+                  {/* The API requires these three for a Kubernetes cluster
+                      (codes 10024/10025/10026), so a blank is not a state a
+                      real cluster can be in. A placeholder keeps a value-less
+                      record from rendering as an empty cell regardless. */}
                   <ShowPage.Row title={t("clusters.fields.replicas")}>
-                    {record.spec.config.kubernetes_config.router?.replicas ??
-                      ""}
+                    {record.spec.config.kubernetes_config.router?.replicas ?? (
+                      <EmptyValue />
+                    )}
                   </ShowPage.Row>
                   <ShowPage.Row title={t("common.fields.cpu")}>
                     {record.spec.config.kubernetes_config.router?.resources
-                      ?.cpu ?? ""}
+                      ?.cpu ?? <EmptyValue />}
                   </ShowPage.Row>
                   <ShowPage.Row title={t("common.fields.memory")}>
                     {record.spec.config.kubernetes_config.router?.resources
-                      ?.memory ?? ""}
+                      ?.memory ?? <EmptyValue />}
                   </ShowPage.Row>
                 </div>
               </ShowPage.Section>

@@ -28,6 +28,7 @@ import {
   formatRangeLabel,
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -175,13 +176,13 @@ export const ModelUsageList = () => {
   const groupByModel = Boolean(apiKeyId);
   const seriesKey = useCallback(
     (r: ApiUsageRecord) =>
-      groupByModel ? (r.model_name ?? "-") : r.api_key_id,
+      groupByModel ? (r.model_name ?? EMPTY_VALUE) : r.api_key_id,
     [groupByModel],
   );
   const seriesMeta = useCallback(
     (r: ApiUsageRecord) =>
       groupByModel
-        ? { name: r.model_name ?? "-", description: null }
+        ? { name: r.model_name ?? EMPTY_VALUE, description: null }
         : {
             name: r.api_key_display_name || r.api_key_name,
             description: r.api_key_description || null,
@@ -234,8 +235,8 @@ export const ModelUsageList = () => {
     () =>
       aggregateSeries(
         filtered,
-        (r) => r.model_name ?? "-",
-        (r) => ({ name: r.model_name ?? "-", description: null }),
+        (r) => r.model_name ?? EMPTY_VALUE,
+        (r) => ({ name: r.model_name ?? EMPTY_VALUE, description: null }),
       ),
     [filtered],
   );
@@ -610,14 +611,10 @@ const DetailTable = ({
                   <EndpointTypeBadge type={r.endpoint_type} />
                 </TableCell>
                 <TableCell className="text-sm truncate max-w-[200px]">
-                  {r.endpoint_name || (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  {r.endpoint_name || <EmptyValue />}
                 </TableCell>
                 <TableCell className="text-sm truncate max-w-[200px]">
-                  {r.model_name || (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  {r.model_name || <EmptyValue />}
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(r.prompt_tokens ?? 0)}
@@ -656,5 +653,5 @@ const EndpointTypeBadge = ({ type }: { type: string | null }) => {
       <Badge variant="secondary">{t("model_usage.detail.internal")}</Badge>
     );
   }
-  return <span className="text-muted-foreground">-</span>;
+  return <EmptyValue />;
 };

@@ -3,6 +3,7 @@ import {
   getAcceleratorProductResourceRows,
 } from "@/domains/cluster/lib/accelerator-virtualization";
 import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import {
   METRIC_BAR_SERIES_FILL_CLASSES,
   MetricBar,
@@ -14,7 +15,7 @@ import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 /** Stands in for a number the cluster never reported. */
-const UNKNOWN_VALUE = "-";
+const UNKNOWN_VALUE = EMPTY_VALUE;
 
 type UsageMetricProps = {
   label: string;
@@ -33,7 +34,7 @@ type UsageMetricProps = {
 };
 
 const formatValue = (value: number, valueScale: number, precision: number) =>
-  formatToDecimal(value * valueScale, precision) ?? "-";
+  formatToDecimal(value * valueScale, precision) ?? EMPTY_VALUE;
 
 type ResourcePool = { total: number | null; available: number | null };
 
@@ -115,7 +116,7 @@ const UsageMetric = ({
           )}
         </div>
         <span className="shrink-0 text-sm text-muted-foreground">
-          {usageIsKnown ? `${percent}%` : UNKNOWN_VALUE} {usageLabel}
+          {usageIsKnown ? `${percent}%` : <EmptyValue />} {usageLabel}
         </span>
       </div>
       {discrete ? (
@@ -154,14 +155,14 @@ const UsageMetric = ({
         <span className="min-w-0 truncate">
           {usedLabel}{" "}
           <strong className="font-medium tabular-nums text-foreground">
-            {usedText}
+            {usedText === EMPTY_VALUE ? <EmptyValue /> : usedText}
             {unit && usageIsKnown && ` ${unit}`}
           </strong>
         </span>
         <span className="min-w-0 truncate text-right">
           {freeLabel}{" "}
           <strong className="font-medium tabular-nums text-foreground">
-            {freeText}
+            {freeText === EMPTY_VALUE ? <EmptyValue /> : freeText}
             {unit && usageIsKnown && ` ${unit}`}
           </strong>
         </span>

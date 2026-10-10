@@ -17,6 +17,7 @@ import {
   parseCatalogSpecYaml,
 } from "@/domains/model-catalog/lib/parse-catalog-spec-yaml";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { getErrorMessage } from "@/foundation/lib/error-message";
@@ -193,7 +194,7 @@ export const ModelCatalogsEdit = () => {
                   {t("common.fields.workspace", "Workspace")}
                 </div>
                 <div className="font-medium">
-                  {record.metadata.workspace || "-"}
+                  {record.metadata.workspace || <EmptyValue />}
                 </div>
               </div>
             </div>

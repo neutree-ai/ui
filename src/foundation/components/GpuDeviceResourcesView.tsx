@@ -1,4 +1,5 @@
 import { CircleAlert, CircleCheck, Copy, Cpu, Search } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
   MetricBar,
   type MetricBarSeries,
@@ -120,8 +122,15 @@ const scaleMetricValue = (
   return Number.isFinite(numericValue) ? numericValue * valueScale : null;
 };
 
-const formatNumber = (value: number | null | undefined, precision = 0) =>
-  value == null ? "-" : (formatToDecimal(value, precision) ?? "-");
+const formatNumber = (
+  value: number | null | undefined,
+  precision = 0,
+): ReactNode =>
+  value == null ? (
+    <EmptyValue />
+  ) : (
+    (formatToDecimal(value, precision) ?? <EmptyValue />)
+  );
 
 const formatUsage = (
   pool: Pick<GpuDeviceResourceRow["memory"], "used" | "total">,
@@ -130,14 +139,16 @@ const formatUsage = (
   precision = 0,
 ) => {
   if (pool.used == null || pool.total == null) {
-    return "-";
+    return <EmptyValue />;
   }
 
-  const value = `${formatNumber(
-    scaleMetricValue(pool.used, valueScale),
-    precision,
-  )} / ${formatNumber(scaleMetricValue(pool.total, valueScale), precision)}`;
-  return unit ? `${value} ${unit}` : value;
+  return (
+    <>
+      {formatNumber(scaleMetricValue(pool.used, valueScale), precision)} /{" "}
+      {formatNumber(scaleMetricValue(pool.total, valueScale), precision)}
+      {unit ? ` ${unit}` : ""}
+    </>
+  );
 };
 
 const formatAvailable = (
@@ -147,14 +158,20 @@ const formatAvailable = (
   precision = 0,
 ) => {
   if (pool.available == null) {
-    return "-";
+    return <EmptyValue />;
   }
 
   const value = formatNumber(
     scaleMetricValue(pool.available, valueScale),
     precision,
   );
-  return unit ? `${value} ${unit}` : value;
+  return unit ? (
+    <>
+      {value} {unit}
+    </>
+  ) : (
+    value
+  );
 };
 
 const sumOptionalNumbers = (values: Array<number | null | undefined>) => {
@@ -305,7 +322,11 @@ const GridResourceUsage = ({
       >
         {/* An unhealthy card reports zeroed pools. Printing "0 / 0" says the
             card is idle and available; the reading simply does not exist. */}
-        {unavailable ? "—" : formatUsage(pool, unit, valueScale, precision)}
+        {unavailable ? (
+          <EmptyValue />
+        ) : (
+          formatUsage(pool, unit, valueScale, precision)
+        )}
       </span>
       <span
         className={cn(
@@ -313,7 +334,7 @@ const GridResourceUsage = ({
           unavailable ? undefined : "text-foreground",
         )}
       >
-        {unavailable ? "—" : `${pool.percent}%`}
+        {unavailable ? <EmptyValue /> : `${pool.percent}%`}
       </span>
     </div>
     <MetricBar
@@ -324,7 +345,11 @@ const GridResourceUsage = ({
     <div className="flex min-w-0 items-center gap-2 tabular-nums">
       <span className="shrink-0">{remainingLabel}</span>
       <span className="min-w-0 truncate">
-        {unavailable ? "—" : formatAvailable(pool, unit, valueScale, precision)}
+        {unavailable ? (
+          <EmptyValue />
+        ) : (
+          formatAvailable(pool, unit, valueScale, precision)
+        )}
       </span>
     </div>
   </div>
@@ -401,7 +426,7 @@ const GpuGridCell = ({
           "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
       )}
     >
-      {row.product || "-"}
+      {row.product || <EmptyValue />}
     </span>
   );
 
@@ -463,7 +488,7 @@ const GpuGridCell = ({
         <Tooltip>
           <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
           <TooltipContent className="max-w-md break-all">
-            {row.product || "-"}
+            {row.product || <EmptyValue />}
           </TooltipContent>
         </Tooltip>
       ) : (
@@ -827,7 +852,7 @@ export function GpuDeviceResourcesView({
                 <div className="min-w-0">
                   <div className="text-muted-foreground">{labels.product}</div>
                   <div className="break-words font-medium" title={row.product}>
-                    {row.product || "-"}
+                    {row.product || <EmptyValue />}
                   </div>
                 </div>
               </div>
@@ -927,7 +952,7 @@ export function GpuDeviceResourcesView({
                   )}
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span>{row.product || "-"}</span>
+                      <span>{row.product || <EmptyValue />}</span>
                       {hasSelectedAccelerator &&
                         row.matchesSelectedAccelerator && (
                           <Badge variant="secondary" className="font-normal">

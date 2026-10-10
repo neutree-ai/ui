@@ -6,6 +6,7 @@ import {
   getVgpuVirtualization,
   hasVgpuResources,
 } from "@/domains/endpoint/lib/vgpu";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
@@ -44,23 +45,25 @@ export default function ResourcesCard({
   const isVgpu = hasVgpuResources(displayResources);
   const vgpuMemory = getVgpuMemoryDisplay(vgpuVirtualization, undefined);
   const vgpuCorePercent =
-    vgpuVirtualization?.core_percent !== undefined
-      ? formatToDecimal(vgpuVirtualization.core_percent, 0)
-      : "-";
+    vgpuVirtualization?.core_percent !== undefined ? (
+      formatToDecimal(vgpuVirtualization.core_percent, 0)
+    ) : (
+      <EmptyValue />
+    );
 
   const content = (
     <>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {shouldShowGpu && (
           <ShowPage.Row title={t("common.fields.gpu")}>
-            {formatToDecimal(displayResources?.gpu) ?? "-"}
+            {formatToDecimal(displayResources?.gpu) ?? <EmptyValue />}
           </ShowPage.Row>
         )}
         <ShowPage.Row title={t("common.fields.cpu")}>
-          {formatToDecimal(displayResources?.cpu) ?? "-"}
+          {formatToDecimal(displayResources?.cpu) ?? <EmptyValue />}
         </ShowPage.Row>
         <ShowPage.Row title={t("common.fields.memory")}>
-          {formatToDecimal(displayResources?.memory) ?? "-"}
+          {formatToDecimal(displayResources?.memory) ?? <EmptyValue />}
         </ShowPage.Row>
       </div>
 
@@ -80,7 +83,7 @@ export default function ResourcesCard({
           {isVgpu && (
             <>
               <ShowPage.Row title={t("endpoints.fields.requestedVgpuMemory")}>
-                {vgpuMemory ?? "-"}
+                {vgpuMemory ?? <EmptyValue />}
               </ShowPage.Row>
               <ShowPage.Row title={t("endpoints.fields.vgpuCorePercent")}>
                 {vgpuCorePercent}

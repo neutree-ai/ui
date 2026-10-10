@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAllApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Link } from "@/foundation/components/Link";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -21,7 +22,7 @@ export const ApiKeyPerformanceCard = ({
   const { t } = useTranslation();
   const traffic = useAllApiKeyTraffic(workspace);
   const stat = traffic.get(apiKeyId);
-  const dash = <span className="text-muted-foreground">—</span>;
+  const dash = <EmptyValue />;
 
   const requests = stat?.requests ?? 0;
   const hasTraffic = requests > 0;
