@@ -2,9 +2,8 @@ import { useList, useParsed } from "@refinedev/core";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { RefreshCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
+import { useWorkspaceModels } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
   type DateRange,
   DateRangePicker,
@@ -41,6 +41,7 @@ import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import { StatusCodeFilter } from "./components/StatusCodeFilter";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
+import { TraceNameFilter } from "./components/TraceNameFilter";
 import { TraceStatsChart } from "./components/TraceStatsChart";
 import { StatusBadge } from "./status";
 
@@ -49,6 +50,11 @@ const LIMIT = 50;
 // Traces are retained for at most 30 days, so a longer quick pick would only
 // ever return a partial window.
 const TRACE_RANGE_PRESETS = [7, 30];
+
+type NamedResource = { metadata?: { name?: string | null } | null };
+
+const uniqueSorted = (names: string[]) =>
+  [...new Set(names.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
 export const AITracesList = () => {
   const { t } = useTranslation();
@@ -94,12 +100,46 @@ export const AITracesList = () => {
   // stays in the list, where there is room for it.
   const selectedKey = keys.find((key) => key.id === apiKeyId);
 
+  // What the endpoint filter suggests: the workspace's endpoints of the kind
+  // the type filter allows, so it never offers a name that filter excludes.
+  const namedList = {
+    pagination: { mode: "off" },
+    meta: { workspace, workspaced: true },
+    queryOptions: { enabled: Boolean(workspace) },
+  } as const;
+  const { data: endpointsData } = useList<NamedResource>({
+    resource: "endpoints",
+    ...namedList,
+  });
+  const { data: externalEndpointsData } = useList<NamedResource>({
+    resource: "external_endpoints",
+    ...namedList,
+  });
+  const endpoints = endpointsData?.data;
+  const externalEndpoints = externalEndpointsData?.data;
+  const endpointNames = useMemo(
+    () =>
+      uniqueSorted(
+        [
+          ...(endpointType !== "external-endpoint" ? (endpoints ?? []) : []),
+          ...(endpointType !== "endpoint" ? (externalEndpoints ?? []) : []),
+        ].map((resource) => resource.metadata?.name ?? ""),
+      ),
+    [endpoints, externalEndpoints, endpointType],
+  );
+  // What the model filter suggests: the models those endpoints expose.
+  const servedModels = useWorkspaceModels(workspace);
+  const modelNames = useMemo(
+    () => uniqueSorted(servedModels.map((served) => served.model)),
+    [servedModels],
+  );
+
   const queryArgs = {
     workspace,
-    endpoint_name: endpointName.trim() || undefined,
+    endpoint_name: endpointName || undefined,
     endpoint_type: endpointType || undefined,
     status: status || undefined,
-    model: model.trim() || undefined,
+    model: model || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
     start: dayjs(range.start).startOf("day").toISOString(),
@@ -198,11 +238,15 @@ export const AITracesList = () => {
           onChange={setRange}
           presets={TRACE_RANGE_PRESETS}
         />
-        <Input
+        <TraceNameFilter
           className="w-[200px]"
-          placeholder={t("ai_traces.filters.endpoint")}
+          data-testid="endpoint-filter"
+          label={t("ai_traces.filters.endpoint")}
+          allLabel={t("ai_traces.filters.allEndpoints")}
+          searchPlaceholder={t("ai_traces.filters.endpointSearch")}
+          options={endpointNames}
           value={endpointName}
-          onChange={(e) => setEndpointName(e.target.value)}
+          onChange={setEndpointName}
         />
         <Select
           value={endpointType || "all"}
@@ -220,11 +264,15 @@ export const AITracesList = () => {
           </SelectContent>
         </Select>
         <StatusCodeFilter value={status} onChange={setStatus} />
-        <Input
+        <TraceNameFilter
           className="w-[200px]"
-          placeholder={t("ai_traces.filters.model")}
+          data-testid="model-filter"
+          label={t("ai_traces.filters.model")}
+          allLabel={t("ai_traces.filters.allModels")}
+          searchPlaceholder={t("ai_traces.filters.modelSearch")}
+          options={modelNames}
           value={model}
-          onChange={(e) => setModel(e.target.value)}
+          onChange={setModel}
         />
         <Select
           value={apiKeyId || "all"}
