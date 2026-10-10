@@ -22,6 +22,7 @@ import {
   detailTabsListClassName,
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
@@ -81,7 +82,7 @@ export const ClustersShow = () => {
                 </ShowPage.Meta>
                 <ShowPage.Meta label={t("common.fields.version")}>
                   <span className="inline-flex min-w-0 items-center">
-                    {record.status?.version ?? "-"}
+                    {record.status?.version ?? <EmptyValue />}
                     {record.status?.phase === "Upgrading" &&
                       record.spec.version && (
                         <span className="text-muted-foreground">

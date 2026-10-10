@@ -10,6 +10,7 @@ import {
   TableRow,
   Table as UITable,
 } from "@/components/ui/table";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -206,7 +207,7 @@ export const NodeResourcesTable = ({
                     return (
                       <TableCell key={accType} className="align-middle">
                         {accAllocatable === 0 ? (
-                          <span className="text-muted-foreground">-</span>
+                          <EmptyValue />
                         ) : (
                           <div>
                             <ProductGroupsBreakdown

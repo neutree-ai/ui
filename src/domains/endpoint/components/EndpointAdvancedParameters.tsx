@@ -13,6 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -51,11 +52,11 @@ function ParameterValue({ name, value }: { name: string; value: unknown }) {
         <Tooltip>
           <TooltipTrigger asChild>
             <code className="block truncate font-mono text-xs">
-              {displayValue || "-"}
+              {displayValue || <EmptyValue />}
             </code>
           </TooltipTrigger>
           <TooltipContent className="max-w-lg break-all">
-            {displayValue || "-"}
+            {displayValue || <EmptyValue />}
           </TooltipContent>
         </Tooltip>
       </TableCell>

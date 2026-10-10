@@ -18,6 +18,8 @@ describe("RegistryVisibility", () => {
   it("renders an unknown visibility without inventing a value", () => {
     render(<RegistryVisibility visibility={undefined} />);
 
-    expect(screen.getByText("-").className).toContain("text-muted-foreground");
+    expect(screen.getByText("-").className).toContain(
+      "--nt-text-neutral-quaternary",
+    );
   });
 });

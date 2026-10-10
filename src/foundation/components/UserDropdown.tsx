@@ -19,6 +19,7 @@ import {
   LOCALE_LABELS,
   useTranslation,
 } from "@/foundation/lib/i18n";
+import { EmptyValue } from "./EmptyValue";
 import LogoutButton from "./LogoutButton";
 
 export const UserDropdown = () => {
@@ -70,7 +71,7 @@ export const UserDropdown = () => {
               {t("ui.version")}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {systemInfo?.version || "-"}
+              {systemInfo?.version || <EmptyValue />}
             </div>
           </div>
         </DropdownMenuItem>

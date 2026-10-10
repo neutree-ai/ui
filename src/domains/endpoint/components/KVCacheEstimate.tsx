@@ -26,6 +26,7 @@ import {
   NO_ENGINE_CACHE_ARG_CONTROLS,
   NO_ENGINE_CACHE_ARGS,
 } from "@/domains/endpoint/lib/engine-cache-args";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { InfoHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -583,7 +584,7 @@ const CountField = ({
           data-testid={id}
           data-owned-by={ownedBy}
         >
-          {value ? formatGroupedInput(value) : "—"}
+          {value ? formatGroupedInput(value) : <EmptyValue />}
         </div>
       </div>
     );

@@ -1,3 +1,4 @@
+import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import {
   compareDevicesByOrderThenUuid,
   getDeviceOrder,
@@ -150,7 +151,7 @@ function groupDevicesByNode(
   const groups = new Map<string, EndpointReplicaNodeResourceGroup>();
 
   for (const device of devices) {
-    const nodeId = device.nodeId || "-";
+    const nodeId = device.nodeId || EMPTY_VALUE;
     const existing = groups.get(nodeId);
 
     const group = existing ?? {
