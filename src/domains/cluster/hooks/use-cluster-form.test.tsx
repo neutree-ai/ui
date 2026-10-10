@@ -40,6 +40,7 @@ vi.mock("@refinedev/react-hook-form", async () => {
 });
 
 vi.mock("@refinedev/core", () => ({
+  useList: () => ({ data: { data: [] }, isLoading: false }),
   useSelect: () => ({
     query: { data: { data: [] }, isLoading: false },
   }),
