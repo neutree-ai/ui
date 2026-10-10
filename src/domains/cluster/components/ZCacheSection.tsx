@@ -1,6 +1,7 @@
 import { useCan } from "@refinedev/core";
 import { CircleAlert, CircleCheck, History, Settings2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,8 +21,16 @@ import { ZCacheEditor } from "./ZCacheEditor";
 
 export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   const { systemInfo } = useSystemApi();
+  const [searchParams] = useSearchParams();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const focusCache = searchParams.get("section") === "zcache";
+  useEffect(() => {
+    if (focusCache) sectionRef.current?.scrollIntoView({ block: "start" });
+  }, [focusCache, systemInfo?.capabilities?.zcache]);
   return systemInfo?.capabilities?.zcache === true ? (
-    <ZCacheDetails cluster={cluster} />
+    <div ref={sectionRef} id="zcache" className="scroll-mt-4">
+      <ZCacheDetails cluster={cluster} />
+    </div>
   ) : null;
 }
 
