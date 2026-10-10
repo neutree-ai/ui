@@ -284,7 +284,7 @@
   "src/foundation/hooks/use-refine-field-array.ts": "7dbaa5d3a0ea2c6db1c09da0863f1b74",
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "8e580fedb30e8e802c5060d25a886a99",
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "3518ba31f791c430b2afe655cc2d2c08",
-  "src/pages/ai-traces/list.tsx": "0ccf0901cdc77048aa3e2b36809d5658",
+  "src/pages/ai-traces/list.tsx": "f81772f25b3253f70d0fba7fbd8f4fef",
   "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "762c21b6c9677bdc15cf30359570910a",
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "b3ad2234ffd9b0f92b41dfe951bc60d6",
   "src/foundation/lib/api/ai-traces.ts": "45500ebb50e9bd26405756f7056df48e",
@@ -436,5 +436,6 @@
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e",
   "src/foundation/hooks/use-is-truncated.ts": "0cf7cb247f3944b09562b5c27e5b68c8",
   "src/foundation/components/Section.tsx": "c545240df77551f8779b1c50f5021927",
-  "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d"
+  "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d",
+  "src/pages/ai-traces/components/TraceNameFilter.tsx": "14b78e3c59404630b238bcff4090c28f"
 }

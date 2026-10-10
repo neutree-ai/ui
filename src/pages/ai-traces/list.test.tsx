@@ -23,8 +23,18 @@ const context = vi.hoisted(() => ({
 
 vi.mock("@refinedev/core", () => ({
   useParsed: () => ({ params: context.params }),
-  useList: () => ({ data: { data: apiKeys } }),
+  useList: ({ resource }: { resource: string }) => ({
+    data: { data: resources[resource] ?? [] },
+  }),
 }));
+
+// cmdk observes and scrolls its list; jsdom implements neither.
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+Element.prototype.scrollIntoView = vi.fn();
 
 // The query never runs; the pages come from `listState.items`, which is empty
 // unless a test needs a row, and `listState.error` stands in for a failed request.
@@ -85,6 +95,43 @@ const apiKeys = [
   },
   { id: "key-plain", metadata: { name: "plain-key" } },
 ];
+
+const resources: Record<string, unknown[]> = {
+  api_keys: apiKeys,
+  endpoints: [
+    {
+      metadata: { name: "qwen3-chat" },
+      spec: { model: { name: "qwen3" } },
+      status: { phase: "Running" },
+    },
+    {
+      metadata: { name: "deepseek-ocr" },
+      spec: { model: { name: "deepseek-ocr" } },
+      status: { phase: "Paused" },
+    },
+  ],
+  external_endpoints: [
+    {
+      metadata: { name: "cloud-gateway" },
+      spec: {
+        upstreams: [
+          { model_mapping: { qwen3: "qwen3-max", "gpt-5": "gpt-5" } },
+        ],
+      },
+      status: { phase: "Running" },
+    },
+  ],
+};
+
+const optionsOf = (testId: string) => {
+  fireEvent.click(screen.getByTestId(testId));
+  return screen.getAllByRole("option").map((el) => el.textContent);
+};
+
+const lastQueryArgs = () => {
+  const [, args] = context.query.mock.lastCall?.[0].queryKey ?? [];
+  return args as Record<string, unknown>;
+};
 
 const apiKeyTrigger = () => {
   const trigger = screen
@@ -159,6 +206,61 @@ describe("AITracesList API key filter", () => {
     selectKey("plain-key");
 
     expect(apiKeyTrigger().textContent).toContain("plain-key");
+  });
+});
+
+describe("AITracesList endpoint and model filters", () => {
+  it("suggests the workspace's endpoints of both kinds", () => {
+    renderList();
+
+    expect(optionsOf("endpoint-filter")).toEqual([
+      "ai_traces.filters.allEndpoints",
+      "cloud-gateway",
+      "deepseek-ocr",
+      "qwen3-chat",
+    ]);
+  });
+
+  it("suggests each served model once", () => {
+    renderList();
+
+    expect(optionsOf("model-filter")).toEqual([
+      "ai_traces.filters.allModels",
+      "deepseek-ocr",
+      "gpt-5",
+      "qwen3",
+    ]);
+  });
+
+  it("queries by the full name of the picked endpoint and model", () => {
+    renderList();
+
+    fireEvent.click(screen.getByTestId("endpoint-filter"));
+    fireEvent.click(screen.getByRole("option", { name: "qwen3-chat" }));
+    fireEvent.click(screen.getByTestId("model-filter"));
+    fireEvent.click(screen.getByRole("option", { name: "gpt-5" }));
+
+    expect(lastQueryArgs()).toMatchObject({
+      endpoint_name: "qwen3-chat",
+      model: "gpt-5",
+    });
+  });
+
+  it("leaves both filters out of the query until one is picked", () => {
+    renderList();
+
+    expect(lastQueryArgs().endpoint_name).toBeUndefined();
+    expect(lastQueryArgs().model).toBeUndefined();
+  });
+});
+
+describe("AITracesList endpoint filter under a type filter", () => {
+  it("lists an endpoint that exposes no model", () => {
+    resources.external_endpoints.push({ metadata: { name: "bare-gateway" } });
+    renderList();
+
+    expect(optionsOf("endpoint-filter")).toContain("bare-gateway");
+    resources.external_endpoints.pop();
   });
 });
 

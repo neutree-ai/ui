@@ -2020,6 +2020,8 @@
 		"filters": {
 			"requestId": "Request ID (exact match)",
 			"endpoint": "Endpoint name",
+			"allEndpoints": "All endpoints",
+			"endpointSearch": "Search or enter an endpoint name",
 			"endpointType": "Endpoint type",
 			"allTypes": "All types",
 			"status": "Status",
@@ -2027,6 +2029,8 @@
 			"statusSearch": "Type or pick a status code",
 			"statusHint": "Enter a 3-digit status code (100–599).",
 			"model": "Request model",
+			"allModels": "All models",
+			"modelSearch": "Search or enter a model name",
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",
 			"finishReason": "Finish",
