@@ -173,17 +173,22 @@ export const ClustersShow = () => {
                       t,
                     )}
                   </ShowPage.Row>
+                  {/* The API requires these three for a Kubernetes cluster
+                      (codes 10024/10025/10026), so a blank is not a state a
+                      real cluster can be in. A placeholder keeps a value-less
+                      record from rendering as an empty cell regardless. */}
                   <ShowPage.Row title={t("clusters.fields.replicas")}>
-                    {record.spec.config.kubernetes_config.router?.replicas ??
-                      ""}
+                    {record.spec.config.kubernetes_config.router?.replicas ?? (
+                      <EmptyValue />
+                    )}
                   </ShowPage.Row>
                   <ShowPage.Row title={t("common.fields.cpu")}>
                     {record.spec.config.kubernetes_config.router?.resources
-                      ?.cpu ?? ""}
+                      ?.cpu ?? <EmptyValue />}
                   </ShowPage.Row>
                   <ShowPage.Row title={t("common.fields.memory")}>
                     {record.spec.config.kubernetes_config.router?.resources
-                      ?.memory ?? ""}
+                      ?.memory ?? <EmptyValue />}
                   </ShowPage.Row>
                 </div>
               </ShowPage.Section>
