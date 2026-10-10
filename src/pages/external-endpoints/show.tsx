@@ -2,29 +2,32 @@ import { useNavigation, useShow } from "@refinedev/core";
 import { ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import CurlExample from "@/domains/external-endpoint/components/CurlExample";
-import ExternalEndpointMonitor from "@/domains/external-endpoint/components/ExternalEndpointMonitor";
+import ExternalEndpointMonitor, {
+  ExternalEndpointMonitorLink,
+} from "@/domains/external-endpoint/components/ExternalEndpointMonitor";
 import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
 import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUpstreamAlert";
 import ModelRouteDetails from "@/domains/external-endpoint/components/ModelRouteDetails";
 import UpstreamStatusBadge from "@/domains/external-endpoint/components/UpstreamStatusBadge";
 import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
+import { getEndpointType } from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavailable-models";
 import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
 import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
+import {
+  detailTabsListClassName,
+  detailTabTriggerClassName,
+} from "@/foundation/components/detail-tabs";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import ServiceUrls from "@/foundation/components/ServiceUrls";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  modelsViaInternalEndpoint,
-  resolveModelSource,
-} from "@/foundation/lib/model-source";
+import { resolveExternalModelSource } from "@/foundation/lib/model-source";
 
 export const ExternalEndpointsShow = () => {
   const { t } = useTranslation();
@@ -51,8 +54,13 @@ export const ExternalEndpointsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
+  const endpointType = getEndpointType(record.spec);
+  const endpointTypeLabels = {
+    external: t("external_endpoints.options.upstreamTypeExternal"),
+    endpoint_ref: t("external_endpoints.options.upstreamTypeInternal"),
+    mixed: t("external_endpoints.options.upstreamTypeMixed"),
+  };
   const allModels = getExposedModels(record.spec);
-  const modelsViaRef = modelsViaInternalEndpoint(record.spec?.upstreams);
   const upstreamStatuses = matchUpstreamStatuses(
     record.spec,
     record.status?.upstream_status,
@@ -72,83 +80,77 @@ export const ExternalEndpointsShow = () => {
 
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
-      <ShowPage.ObjectHeader
-        title={record.metadata.name}
-        status={<ExternalEndpointStatus {...record.status} />}
-        description={
-          <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("external_endpoints.fields.models")}>
-              {allModels.length ? (
-                // Per model, because one endpoint's models can have different
-                // sources — an endpoint-level badge could only ever be wrong
-                // for some of them.
-                <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-                  {allModels.map((model) => (
-                    <span
-                      key={model}
-                      className="inline-flex items-center gap-1"
-                    >
-                      <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                        {model}
-                      </code>
-                      <ModelSourceBadge
-                        source={resolveModelSource(
-                          "external",
-                          record.spec?.model_sources,
-                          model,
-                          { viaInternalEndpoint: modelsViaRef.has(model) },
-                        )}
-                      />
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                "-"
+      <Tabs
+        value={tab}
+        onValueChange={selectTab}
+        className="flex h-full flex-col"
+      >
+        <ShowPage.ObjectHeader
+          title={record.metadata.name}
+          // No phase, no badge: the identity line reads as "name, dash"
+          // otherwise, and the dash carries no information there.
+          status={
+            record.status?.phase ? (
+              <ExternalEndpointStatus {...record.status} />
+            ) : undefined
+          }
+          description={
+            <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+              <ShowPage.Meta label={t("external_endpoints.fields.type")}>
+                {endpointType ? endpointTypeLabels[endpointType] : "—"}
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("external_endpoints.fields.models")}>
+                {allModels.length}
+              </ShowPage.Meta>
+              <ShowPage.Meta label={t("external_endpoints.fields.timeout")}>
+                {formatTimeout(record.spec?.timeout)}
+              </ShowPage.Meta>
+              {/* The URLs are long and only worth their space when asked for —
+                  the same affordance the endpoint detail page uses. */}
+              {record.status?.service_url && (
+                <EndpointAccessSummary
+                  serviceUrl={record.status.service_url}
+                  className="shrink-0"
+                />
               )}
-            </ShowPage.Meta>
-            <MetadataTimestampMeta metadata={record.metadata} />
-          </span>
-        }
-      />
+              <MetadataTimestampMeta metadata={record.metadata} />
+            </span>
+          }
+        />
 
-      <Tabs value={tab} onValueChange={selectTab} className="mt-4">
-        <TabsList>
-          <TabsTrigger value="overview">
-            {t("external_endpoints.monitor.overview")}
-          </TabsTrigger>
-          <TabsTrigger value="monitor">
-            {t("external_endpoints.monitor.title")}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="monitor" className="mt-4">
+        <div className="relative">
+          <TabsList className={detailTabsListClassName}>
+            <TabsTrigger value="overview" className={detailTabTriggerClassName}>
+              {t("common.tabs.basic")}
+            </TabsTrigger>
+            <TabsTrigger value="monitor" className={detailTabTriggerClassName}>
+              {t("common.tabs.monitor")}
+            </TabsTrigger>
+          </TabsList>
+          {/* Rides in the tab row so the deep link costs no vertical space. */}
+          {tab === "monitor" && (
+            <div className="absolute right-0 top-0 flex h-11 items-center">
+              <ExternalEndpointMonitorLink record={record} />
+            </div>
+          )}
+        </div>
+        <TabsContent
+          value="monitor"
+          className="mt-0 flex-1 overflow-hidden pt-4"
+        >
           <ExternalEndpointMonitor record={record} />
         </TabsContent>
-        <TabsContent value="overview">
-          <div className="mt-4 space-y-4">
-            <ShowPage.Section
-              title={t("external_endpoints.sections.configuration")}
-              className="rounded-md"
-              contentClassName="pt-1"
-            >
-              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(140px,0.35fr)_minmax(0,1fr)]">
-                <div className="max-w-[180px]">
-                  <ShowPage.Row title={t("external_endpoints.fields.timeout")}>
-                    {formatTimeout(record.spec?.timeout)}
-                  </ShowPage.Row>
-                </div>
-                {record.status?.service_url && (
-                  <div className="min-w-0">
-                    <ServiceUrls serviceUrl={record.status.service_url} />
-                  </div>
-                )}
-              </div>
-            </ShowPage.Section>
-
+        <TabsContent
+          value="overview"
+          className="mt-0 flex-1 overflow-auto pt-4"
+        >
+          {/* Same rhythm as the endpoint detail page: sections 12px apart,
+              each one keeping ShowPage.Section's own 20px content padding and
+              card radius instead of restating them tighter here. */}
+          <div className="space-y-3">
             {record.spec?.model_routes?.length ? (
               <ShowPage.Section
                 title={t("external_endpoints.sections.virtualModels")}
-                className="rounded-md"
-                contentClassName="pt-1"
               >
                 <div className="space-y-3">
                   {record.spec.model_routes.map((route) => (
@@ -156,6 +158,10 @@ export const ExternalEndpointsShow = () => {
                       key={route.model}
                       onViewMonitoring={() => selectTab("monitor", route.model)}
                       route={route}
+                      source={resolveExternalModelSource(
+                        record.spec,
+                        route.model,
+                      )}
                       editUrl={navigation.editUrl(
                         "external_endpoints",
                         record.metadata.name,
@@ -171,8 +177,6 @@ export const ExternalEndpointsShow = () => {
             {upstreams.length > 0 && (
               <ShowPage.Section
                 title={t("external_endpoints.sections.modelServices")}
-                className="rounded-md"
-                contentClassName="pt-1"
               >
                 <div className="divide-y divide-border/50">
                   {upstreams.map((upstream, index) => {
@@ -222,7 +226,13 @@ export const ExternalEndpointsShow = () => {
                           </code>
                         </p>
                         <details className="group mt-3">
-                          <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                          {/* Muted rather than primary: the primary-coloured
+                              text in this section is a real link (the internal
+                              endpoint name navigates), so a disclosure in the
+                              same colour reads as another way off the page.
+                              `-ml-2` cancels the px-2 so the chevron lines up
+                              with the channel name and description above. */}
+                          <summary className="-ml-2 flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                             <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open:rotate-90" />
                             <span className="group-open:hidden">
                               {t(
@@ -235,21 +245,29 @@ export const ExternalEndpointsShow = () => {
                               )}
                             </span>
                             {t("external_endpoints.messages.mappingSummary", {
-                              upstreamCount: mappings.length,
-                              exposedCount,
+                              upstream: t(
+                                "external_endpoints.messages.mappingUpstreamCount",
+                                { count: mappings.length },
+                              ),
+                              exposed: t(
+                                "external_endpoints.messages.mappingExposedCount",
+                                { count: exposedCount },
+                              ),
                             })}
                           </summary>
                           {mappings.length ? (
                             <div className="mt-3 overflow-hidden rounded-md border">
                               <table className="w-full table-fixed text-left text-sm">
-                                <thead className="bg-muted/40 text-xs text-muted-foreground">
+                                {/* Same header treatment as the shared table
+                                    and the route tables above. */}
+                                <thead className="bg-muted/80 text-xs text-muted-foreground">
                                   <tr>
-                                    <th className="w-1/3 px-3 py-2 font-medium">
+                                    <th className="w-1/3 px-3 py-2 font-semibold">
                                       {t(
                                         "external_endpoints.fields.upstreamModelName",
                                       )}
                                     </th>
-                                    <th className="px-3 py-2 font-medium">
+                                    <th className="px-3 py-2 font-semibold">
                                       {t(
                                         "external_endpoints.fields.virtualModel",
                                       )}

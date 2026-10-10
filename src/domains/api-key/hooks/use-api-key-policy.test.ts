@@ -353,10 +353,10 @@ describe("compareWorkspaceModelOptions", () => {
     ]);
   });
 
-  it("groups internal before external within the same status", () => {
-    // Internal endpoints are always self-hosted, the first preset source, so a
-    // Running external model that sorts alphabetically before an internal one
-    // must still land after every Running internal model.
+  it("groups by source before sorting by name", () => {
+    // Self-hosted is the first preset source, so a Running model without a
+    // source that sorts alphabetically before a self-hosted one must still land
+    // after every Running self-hosted model.
     const extA = opt({
       model: "aaa",
       endpointName: "e1",
@@ -438,16 +438,16 @@ describe("compareWorkspaceModelOptions", () => {
   });
 
   it("orders sources by the preset list, unknown slugs then unlabelled last", () => {
-    const selfHosted = opt({
+    const selfDeployed = opt({
       model: "m",
       endpointName: "ie",
       type: "internal",
     });
-    const shared = opt({
+    const publicCloud = opt({
       model: "m",
-      endpointName: "ee-shared",
+      endpointName: "ee-public",
       type: "external",
-      source: "internal-shared",
+      source: "third-party-public",
     });
     const custom = opt({
       model: "m",
@@ -461,10 +461,10 @@ describe("compareWorkspaceModelOptions", () => {
       type: "external",
     });
     expect(
-      [unlabelled, custom, shared, selfHosted].sort(
+      [unlabelled, custom, publicCloud, selfDeployed].sort(
         compareWorkspaceModelOptions,
       ),
-    ).toEqual([selfHosted, shared, custom, unlabelled]);
+    ).toEqual([selfDeployed, publicCloud, custom, unlabelled]);
   });
 
   it("keeps the internal and external rows for one model name apart", () => {

@@ -35,6 +35,7 @@ import type {
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
+import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import {
@@ -43,8 +44,9 @@ import {
 } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
-  externalModelSourceSuggestions,
-  modelSourceTranslationKey,
+  deriveRouteModelSource,
+  modelSourceSuggestions,
+  parseStoredModelSource,
 } from "@/foundation/lib/model-source";
 import UpstreamNameLabel from "../components/UpstreamNameLabel";
 import { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
@@ -142,6 +144,33 @@ export const useExternalEndpointForm = ({
         // Disable stale cache on mount so useFieldArray always initializes
         // with fresh data after an edit-save-edit cycle.
         cacheTime: 0,
+        select: (response) => {
+          const record = response.data as ExternalEndpoint;
+          return {
+            ...response,
+            data: {
+              ...record,
+              spec: {
+                ...record.spec,
+                model_routes: record.spec.model_routes?.map((route) => {
+                  if (route.strategy !== "priority") return route;
+                  // The form exposes two tiers: the lowest priority is primary;
+                  // all remaining targets share the standby tier on save.
+                  const primary = Math.min(
+                    ...route.targets.map((target) => target.priority ?? 0),
+                  );
+                  return {
+                    ...route,
+                    targets: route.targets.map((target) => ({
+                      ...target,
+                      priority: (target.priority ?? 0) === primary ? 0 : 1,
+                    })),
+                  };
+                }),
+              },
+            },
+          };
+        },
       },
     },
     warnWhenUnsavedChanges: true,
@@ -185,18 +214,14 @@ export const useExternalEndpointForm = ({
   // model name: one endpoint fronts models of different origin, and a model can
   // have targets across several upstreams, so neither the endpoint nor an
   // upstream resolves to a single source.
-  //
-  // `self-hosted` is deliberately absent from the options: it is the derived
-  // source of internal endpoints, the backend rejects it here, and offering it
-  // would make two rows for the same model name indistinguishable in the
-  // API-key model picker.
   const modelSources = form.watch("spec.model_sources");
   const handleModelSourceChange = useCallback(
     (model: string, value: string) => {
       if (!model) return;
 
       const next = { ...(form.getValues("spec.model_sources") ?? {}) };
-      if (value) next[model] = value;
+      const source = parseStoredModelSource(value);
+      if (source) next[model] = source;
       else delete next[model];
       form.setValue("spec.model_sources", next, { shouldDirty: true });
     },
@@ -212,7 +237,8 @@ export const useExternalEndpointForm = ({
     queryOptions: { enabled: isValidWorkspace(currentWorkspace) },
   });
 
-  const modelSourceOptions = externalModelSourceSuggestions([
+  const modelSourceLabel = useModelSourceLabel();
+  const modelSourceOptions = modelSourceSuggestions([
     // What this form has already assigned, for the models it currently has.
     // Without it a value typed for the first model is not offered for the
     // second, which is exactly where retyping it slightly differently would
@@ -221,9 +247,9 @@ export const useExternalEndpointForm = ({
       modelSources,
       models: effectiveModelRoutes.map((route) => route.model),
     },
-    // Sibling endpoints, counted only for the models they still serve: nothing
-    // prunes spec.model_sources when a model is removed, and suggesting a value
-    // whose last user is gone is the opposite of what this list is for.
+    // Sibling endpoints, counted only for the models they still serve:
+    // suggesting a value whose last user is gone is the opposite of what this
+    // list is for.
     ...(siblingEndpoints?.data ?? []).map((item) => {
       const spec =
         (item as { spec?: ExternalEndpointSpec | null }).spec ?? null;
@@ -233,17 +259,9 @@ export const useExternalEndpointForm = ({
       };
     }),
   ]).map((source) => ({
-    label: t(modelSourceTranslationKey(source), { defaultValue: source }),
+    label: modelSourceLabel(source),
     value: source,
   }));
-
-  // Providers backed by an internal endpoint: a route whose targets all land
-  // there is internal by construction.
-  const internalProviders = new Set(
-    (upstreams ?? [])
-      .filter((upstream) => String(upstream?.endpoint_ref ?? "").trim())
-      .map((upstream) => String(upstream?.name ?? "")),
-  );
   const [quickCreateTarget, setQuickCreateTarget] = useState<{
     routeIndex: number;
     targetIndex: number;
@@ -502,7 +520,9 @@ export const useExternalEndpointForm = ({
               modelSources={modelSources}
               onModelSourceChange={handleModelSourceChange}
               modelSourceOptions={modelSourceOptions}
-              internalProviders={internalProviders}
+              impliedModelSource={(route) =>
+                deriveRouteModelSource(upstreams, route)
+              }
               value={effectiveModelRoutes as ModelRoute[]}
               // Stable reference values, current editable display names.
               providers={fields.map((field, index) => ({

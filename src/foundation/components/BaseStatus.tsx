@@ -35,7 +35,11 @@ export default function BaseStatus({
   };
 
   if (!phase) {
-    return "-";
+    // A resource with no phase — for external endpoints, one the controller has
+    // never reconciled. The dash is the product's empty-value placeholder, so
+    // it takes the placeholder token rather than borrowing the typography and
+    // colour of whatever it is dropped next to.
+    return <span className="text-[var(--nt-text-neutral-quaternary)]">-</span>;
   }
 
   return (

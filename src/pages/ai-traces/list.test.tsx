@@ -2,7 +2,10 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { AITrace } from "@/foundation/lib/api/ai-traces";
+import {
+  type AITrace,
+  AITraceRequestError,
+} from "@/foundation/lib/api/ai-traces";
 import { AITracesList } from "@/pages/ai-traces/list";
 
 vi.mock("react-i18next", () => ({
@@ -24,8 +27,11 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 // The query never runs; the pages come from `listState.items`, which is empty
-// unless a test needs a row.
-const listState = vi.hoisted(() => ({ items: [] as unknown[] }));
+// unless a test needs a row, and `listState.error` stands in for a failed request.
+const listState = vi.hoisted(() => ({
+  items: [] as unknown[],
+  error: null as Error | null,
+}));
 
 vi.mock("@tanstack/react-query", () => ({
   useInfiniteQuery: (options: unknown) => {
@@ -40,7 +46,7 @@ vi.mock("@tanstack/react-query", () => ({
       isFetchingNextPage: false,
       hasNextPage: false,
       fetchNextPage: vi.fn(),
-      error: null,
+      error: listState.error,
       refetch: vi.fn(),
     };
   },
@@ -98,6 +104,7 @@ function selectKey(name: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   listState.items = [];
+  listState.error = null;
   context.params = { workspace: "design-lab" };
 });
 
@@ -183,34 +190,27 @@ describe("AITracesList readings column", () => {
   });
 });
 
-describe("request ID search", () => {
-  it("trims the exact ID, preserves the scope and time window, and can be cleared", () => {
-    render(<AITracesList />);
-    const original = context.query.mock.lastCall?.[0].queryKey[1];
-    const input = screen.getByLabelText("ai_traces.filters.requestId");
-    fireEvent.change(input, { target: { value: " req/with & spaces " } });
-    expect(context.query.mock.lastCall?.[0].queryKey[1]).toMatchObject({
-      workspace: "design-lab",
-      request_id: "req/with & spaces",
-      start: original.start,
-      end: original.end,
-    });
-    expect(screen.queryByText("workspace-chart")).toBeNull();
-    fireEvent.change(input, { target: { value: "" } });
-    expect(
-      context.query.mock.lastCall?.[0].queryKey[1].request_id,
-    ).toBeUndefined();
-    expect(screen.getByText("workspace-chart")).toBeTruthy();
+describe("AITracesList without trace permission", () => {
+  it("explains the missing permission instead of an empty, erroring page", () => {
+    listState.error = new AITraceRequestError(403, "insufficient permissions");
+
+    renderList();
+
+    expect(screen.getByText("ai_traces.forbidden")).toBeTruthy();
+    expect(screen.queryByText(/insufficient permissions/)).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryAllByRole("combobox")).toHaveLength(0);
   });
-  it("initializes the ID from a link", () => {
-    context.params.request_id = "request-from-link";
-    render(<AITracesList />);
-    expect(screen.getByLabelText("ai_traces.filters.requestId")).toHaveProperty(
-      "value",
-      "request-from-link",
+
+  it("still shows other failures above the list", () => {
+    listState.error = new AITraceRequestError(
+      500,
+      "ai-traces request failed: 500",
     );
-    expect(context.query.mock.lastCall?.[0].queryKey[1].request_id).toBe(
-      "request-from-link",
-    );
+
+    renderList();
+
+    expect(screen.getByText("ai-traces request failed: 500")).toBeTruthy();
+    expect(screen.getByRole("table")).toBeTruthy();
   });
 });

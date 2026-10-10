@@ -72,7 +72,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { resolveModelSource } from "@/foundation/lib/model-source";
+import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
@@ -155,7 +155,7 @@ function ModelsCell({
                     endpoint
                       ? endpoint.source
                       : model.type
-                        ? resolveModelSource(model.type)
+                        ? modelSourceOfEndpointKind(model.type)
                         : undefined
                   }
                 />

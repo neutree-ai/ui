@@ -3,13 +3,11 @@ import { useRefineContext, useResource } from "@refinedev/core";
 import { Edit, Trash2 } from "lucide-react";
 import {
   type FC,
-  type HTMLAttributes,
   isValidElement,
   type PropsWithChildren,
   type ReactNode,
 } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { PageHeader } from "@/foundation/components/PageHeader";
+import { Section } from "@/foundation/components/Section";
 import { DeleteAction, EditAction } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -41,66 +40,6 @@ const Row = ({
         </dd>
       </div>
     </dl>
-  );
-};
-
-const Section = ({
-  title,
-  description,
-  actions,
-  children,
-  className,
-  contentClassName,
-  framed = true,
-  ...props
-}: PropsWithChildren<{
-  title?: ReactNode;
-  description?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
-  contentClassName?: string;
-  framed?: boolean;
-}> &
-  // `title` is a ReactNode here, not the DOM string attribute
-  Omit<HTMLAttributes<HTMLDivElement>, "title">) => {
-  // A framed section *is* a card, so it renders the Card primitive instead of
-  // restating that surface. Spelling out radius/border/shadow here is exactly
-  // what let sections drift 4px away from every Card sitting beside them.
-  const Frame = framed ? Card : "div";
-
-  return (
-    <Frame
-      {...props}
-      className={cn(framed ? undefined : "bg-transparent", className)}
-    >
-      {(title || description || actions) && (
-        <div
-          className={cn(
-            "flex flex-wrap items-start justify-between gap-4",
-            framed ? "px-5 pt-4" : "pb-3",
-          )}
-        >
-          <div className="min-w-0">
-            {title && (
-              <h2 className="text-base font-semibold leading-6 text-foreground">
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                {description}
-              </p>
-            )}
-          </div>
-          {actions && (
-            <div className="flex shrink-0 items-center">{actions}</div>
-          )}
-        </div>
-      )}
-      <div className={cn(framed ? "p-5" : "", contentClassName)}>
-        {children}
-      </div>
-    </Frame>
   );
 };
 

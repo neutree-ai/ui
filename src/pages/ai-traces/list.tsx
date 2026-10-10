@@ -26,11 +26,16 @@ import {
   DateRangePicker,
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
-import { type AITrace, fetchAITraces } from "@/foundation/lib/api/ai-traces";
+import {
+  type AITrace,
+  fetchAITraces,
+  isAITraceForbidden,
+} from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -52,7 +57,7 @@ export const AITracesList = () => {
   // "All workspaces" aggregates traces across workspaces, so show a workspace
   // column to disambiguate rows (it is redundant on a single-workspace view).
   const isAllWorkspaces = workspace === ALL_WORKSPACES;
-  const colSpan = isAllWorkspaces ? 13 : 12;
+  const colSpan = isAllWorkspaces ? 12 : 11;
 
   const [endpointName, setEndpointName] = useState("");
   const [endpointType, setEndpointType] = useState<string>("");
@@ -64,18 +69,9 @@ export const AITracesList = () => {
     () => (params?.api_key_id as string) ?? "",
   );
   const [finishReason, setFinishReason] = useState<string>("");
-  const [requestId, setRequestId] = useState(() =>
-    String(params?.request_id ?? ""),
-  );
   const [range, setRange] = useState<DateRange>(() => trailingRange(7));
   const scoped = Boolean(
-    requestId.trim() ||
-      endpointName ||
-      endpointType ||
-      status ||
-      model ||
-      apiKeyId ||
-      finishReason,
+    endpointName || endpointType || status || model || apiKeyId || finishReason,
   );
   const [selected, setSelected] = useState<AITrace | null>(null);
 
@@ -106,7 +102,6 @@ export const AITracesList = () => {
     model: model.trim() || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
-    request_id: requestId.trim() || undefined,
     start: dayjs(range.start).startOf("day").toISOString(),
     end: dayjs(range.end).endOf("day").toISOString(),
     limit: LIMIT,
@@ -133,6 +128,9 @@ export const AITracesList = () => {
     // cursor for the next, strictly-older page; empty means no more records.
     getNextPageParam: (lastPage) => lastPage.next_before || undefined,
     enabled: Boolean(workspace),
+    // A 403 will not change on retry; show the permission message at once.
+    retry: (failureCount, error) =>
+      !isAITraceForbidden(error) && failureCount < 3,
   });
 
   const handleRefresh = () => {
@@ -160,6 +158,20 @@ export const AITracesList = () => {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Without trace-read permission every part of the page would be empty, so
+  // say why once instead of rendering the chart, filters and table.
+  if (isAITraceForbidden(error)) {
+    return (
+      <ListPage
+        title={t("ai_traces.title")}
+        canCreate={false}
+        breadcrumb={false}
+      >
+        <EmptyState variant="page">{t("ai_traces.forbidden")}</EmptyState>
+      </ListPage>
+    );
+  }
+
   return (
     <ListPage
       title={t("ai_traces.title")}
@@ -185,13 +197,6 @@ export const AITracesList = () => {
           value={range}
           onChange={setRange}
           presets={TRACE_RANGE_PRESETS}
-        />
-        <Input
-          className="w-[280px]"
-          aria-label={t("ai_traces.filters.requestId")}
-          placeholder={t("ai_traces.filters.requestId")}
-          value={requestId}
-          onChange={(e) => setRequestId(e.target.value)}
         />
         <Input
           className="w-[200px]"
@@ -290,9 +295,6 @@ export const AITracesList = () => {
               <TableHead className="w-[180px]">
                 {t("ai_traces.columns.time")}
               </TableHead>
-              <TableHead className="min-w-[250px]">
-                {t("ai_traces.columns.requestId")}
-              </TableHead>
               {isAllWorkspaces && (
                 <TableHead className="w-[140px]">
                   {t("ai_traces.columns.workspace")}
@@ -356,9 +358,6 @@ export const AITracesList = () => {
                     format="YYYY-MM-DD HH:mm:ss"
                   />
                 </TableCell>
-                <TableCell className="font-mono text-xs whitespace-nowrap">
-                  {row.request_id}
-                </TableCell>
                 {isAllWorkspaces && (
                   <TableCell className="text-sm truncate max-w-[140px]">
                     {row.workspace || (
@@ -378,7 +377,9 @@ export const AITracesList = () => {
                   )}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {row.request_model || row.response_model || "-"}
+                  {row.request_model || row.response_model || (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm">
                   {row.upstream || row.upstream_model ? (

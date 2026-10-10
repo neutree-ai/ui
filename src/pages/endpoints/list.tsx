@@ -15,7 +15,7 @@ import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { resolveModelSource } from "@/foundation/lib/model-source";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const EndpointsList = () => {
@@ -85,7 +85,7 @@ export const EndpointsList = () => {
                 <div className="flex items-center gap-1">
                   <EndpointModel model={model} />
                   {model?.name && (
-                    <ModelSourceBadge source={resolveModelSource("internal")} />
+                    <ModelSourceBadge source={SELF_HOSTED_MODEL_SOURCE} />
                   )}
                 </div>
               );

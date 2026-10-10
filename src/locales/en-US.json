@@ -1326,7 +1326,7 @@
 			"virtualModel": "Model name exposed to clients",
 			"selectProvider": "Select a model service",
 			"provider": "e.g. local-vllm",
-			"weight": "1-100%",
+			"weight": "1-100",
 			"maxInflightRequests": "Maximum concurrent requests",
 			"primaryCapacity": "Enter concurrency limit"
 		},
@@ -1371,7 +1371,13 @@
 			"upstreamNameHint": "Give this upstream a recognizable name. When configuring routes for an exposed model, select this name in the Upstream Channel field to choose where requests are forwarded.",
 			"curlExample": "Curl Example",
 			"unnamedModel": "Unnamed model",
-			"mappingSummary": "({{upstreamCount}} upstream models / {{exposedCount}} exposed models)",
+			"mappingSummary": "({{upstream}} / {{exposed}})",
+			"mappingUpstreamCount": "{{count}} upstream models",
+			"mappingUpstreamCount_one": "{{count}} upstream model",
+			"mappingUpstreamCount_other": "{{count}} upstream models",
+			"mappingExposedCount": "{{count}} exposed models",
+			"mappingExposedCount_one": "{{count}} exposed model",
+			"mappingExposedCount_other": "{{count}} exposed models",
 			"noModelMappings": "No model mappings configured.",
 			"fixedRoutingHint": "Send all requests to the single upstream model configured below.",
 			"priorityRoutingHint": "Use active targets first. Use standby targets when no active target can accept a request, including when all are at capacity.",
@@ -1383,6 +1389,7 @@
 			"curlExampleEmbedding": "Embedding",
 			"credentialHidden": "Credential is hidden for security",
 			"upstreamUnavailable": "This upstream is excluded from the gateway configuration. Requests to the models below will fail until it is resolved.",
+			"testRequiresServing": "Available once the endpoint is serving.",
 			"testConnectivity": "Test Connection",
 			"testConnectivityTesting": "Testing...",
 			"testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
@@ -1393,6 +1400,8 @@
 			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
 			"weightRequired": "Enter an integer weight from 1 to 100 for every target.",
 			"primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
+			"primaryTargetsHint": "Requests prefer primary targets and are randomly distributed with equal probability among available targets. If none are available (including when all are at their concurrency limit), standby targets are used.",
+			"fallbackTargetsHint": "Used when no primary target is available. Requests are randomly distributed with equal probability among available standby targets; targets at their concurrency limit are skipped.",
 			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full.",
 			"upstreamConnectionFailed": "Upstream connection failed",
 			"checkUpstreamConnection": "Check the upstream URL, API key and network connectivity."
@@ -1413,12 +1422,9 @@
 			"duplicateProvider": "Model service names must be unique"
 		},
 		"monitor": {
-			"overview": "Overview",
-			"title": "Monitoring",
 			"view": "View monitoring",
 			"legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
-			"openGrafana": "Open in Grafana",
-			"scope": "Completed routing requests; latency covers final HTTP 2xx only. Concurrency includes all request modes.",
+			"openGrafana": "View detailed monitoring",
 			"chartArea": "Chart area (scroll inside to view details)",
 			"loading": "Loading monitoring configuration…",
 			"configError": "Could not load monitoring configuration.",
@@ -2047,6 +2053,7 @@
 	"ai_traces": {
 		"title": "Access Log",
 		"empty": "No access logs in the selected window.",
+		"forbidden": "You do not have permission to view access logs.",
 		"refresh": "Refresh",
 		"stats": {
 			"title": "Requests",
@@ -2062,7 +2069,7 @@
 			"allStatuses": "All statuses",
 			"statusSearch": "Type or pick a status code",
 			"statusHint": "Enter a 3-digit status code (100–599).",
-			"model": "Model",
+			"model": "Request model",
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",
 			"finishReason": "Finish",
@@ -2074,7 +2081,7 @@
 			"workspace": "Workspace",
 			"endpoint": "Endpoint",
 			"app": "App",
-			"model": "Model",
+			"model": "Request model",
 			"status": "Status",
 			"apiKey": "API key",
 			"tokens": "Tokens",
@@ -2176,7 +2183,7 @@
 			}
 		},
 		"routing": {
-			"target": "Routing target",
+			"target": "Upstream target",
 			"upstream": "Upstream",
 			"upstreamModel": "Upstream model"
 		}
@@ -2258,12 +2265,11 @@
 		"label": "Model source",
 		"unspecified": "Unspecified",
 		"placeholder": "Select a model source",
-		"externalHint": "Where this endpoint's models come from. Self-hosted is reserved for endpoints the platform runs and is not offered here.",
 		"values": {
-			"self-hosted": "Self-hosted",
-			"internal-shared": "Internally shared",
-			"third-party-public": "Third-party public",
-			"partner": "Partner"
+			"self-hosted": "Private self-deployed",
+			"private-access": "Private access",
+			"third-party-public": "Public cloud",
+			"hybrid": "Hybrid"
 		}
 	},
 	"model_usage": {
