@@ -23,8 +23,7 @@ export function EndpointZCacheFields({
   const supported =
     cluster?.spec.type === "kubernetes" &&
     cluster.spec.zcache?.enabled &&
-    engine?.engine === "vllm" &&
-    engine.version === "v0.24.0";
+    engine?.engine === "vllm";
   if (!systemInfo?.capabilities?.zcache && !enabled) return null;
   return (
     <section
