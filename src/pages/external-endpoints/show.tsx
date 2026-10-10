@@ -23,6 +23,7 @@ import {
   detailTabsListClassName,
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -97,7 +98,11 @@ export const ExternalEndpointsShow = () => {
           description={
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
               <ShowPage.Meta label={t("external_endpoints.fields.type")}>
-                {endpointType ? endpointTypeLabels[endpointType] : "—"}
+                {endpointType ? (
+                  endpointTypeLabels[endpointType]
+                ) : (
+                  <EmptyValue />
+                )}
               </ShowPage.Meta>
               <ShowPage.Meta label={t("external_endpoints.fields.models")}>
                 {allModels.length}
@@ -221,8 +226,7 @@ export const ExternalEndpointsShow = () => {
                           </span>
                           <code>
                             {upstream.endpoint_ref ||
-                              upstream.upstream?.url ||
-                              "-"}
+                              upstream.upstream?.url || <EmptyValue />}
                           </code>
                         </p>
                         <details className="group mt-3">

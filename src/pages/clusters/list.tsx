@@ -8,6 +8,7 @@ import {
 import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
 import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import type { Cluster } from "@/domains/cluster/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -54,7 +55,7 @@ export const ClustersList = () => {
             cell={({ row }) => {
               const cluster = row.original as Cluster;
               const version = cluster.status?.version;
-              if (!version) return "-";
+              if (!version) return <EmptyValue />;
               if (
                 cluster.status?.phase === "Upgrading" &&
                 cluster.spec.version

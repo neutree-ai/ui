@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
   ExpandableCell,
   ExpandPanel,
@@ -84,7 +85,7 @@ function ParameterValueDetails({
   return (
     <ExpandPanel label={name}>
       <pre className="max-h-[40vh] overflow-auto rounded-md border bg-[var(--nt-fill-neutral-opaque-1)] p-3 font-mono text-xs leading-5 text-foreground">
-        {formatParameterValueExpanded(value) || "-"}
+        {formatParameterValueExpanded(value) || <EmptyValue />}
       </pre>
     </ExpandPanel>
   );
@@ -113,7 +114,7 @@ function ParameterValue({ name, value }: { name: string; value: unknown }) {
           panel={<ParameterValueDetails name={name} value={value} />}
         >
           <code ref={valueRef} className="block truncate font-mono text-xs">
-            {displayValue || "-"}
+            {displayValue || <EmptyValue />}
           </code>
         </ExpandableCell>
       </TableCell>

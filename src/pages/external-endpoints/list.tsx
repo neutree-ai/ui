@@ -6,6 +6,7 @@ import {
 } from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -50,7 +51,7 @@ export const ExternalEndpointsList = () => {
           cell={({ getValue }) => {
             const spec = getValue() as unknown as ExternalEndpoint["spec"];
             const endpointType = getEndpointType(spec);
-            if (!endpointType) return "-";
+            if (!endpointType) return <EmptyValue />;
             const labelMap: Record<ExternalEndpointType, string> = {
               external: t("external_endpoints.options.upstreamTypeExternal"),
               endpoint_ref: t(
@@ -69,7 +70,7 @@ export const ExternalEndpointsList = () => {
           cell={({ getValue }) => {
             const spec = getValue() as unknown as ExternalEndpoint["spec"];
             const models = getExposedModels(spec);
-            if (models.length === 0) return "-";
+            if (models.length === 0) return <EmptyValue />;
             return (
               // The source rides with each model rather than sitting in its own
               // column: one endpoint's models can have different sources, so a

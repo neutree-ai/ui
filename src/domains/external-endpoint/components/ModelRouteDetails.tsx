@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { ModelRoute } from "@/domains/external-endpoint/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { ModelSource } from "@/foundation/lib/model-source";
@@ -213,7 +214,7 @@ export default function ModelRouteDetails({
                 </td>
                 <td>
                   <code className="break-all text-xs">
-                    {target.upstream_model || "-"}
+                    {target.upstream_model || <EmptyValue />}
                   </code>
                 </td>
                 {showWeight && (

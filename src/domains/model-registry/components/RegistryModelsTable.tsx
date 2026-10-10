@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp, { formatTimestamp } from "@/foundation/components/Timestamp";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
@@ -300,11 +301,7 @@ export const RegistryModelsTable = ({
         <TableCell className="font-medium text-foreground">
           {row.model}
         </TableCell>
-        <TableCell>
-          {row.version.alias || (
-            <span className="text-muted-foreground">-</span>
-          )}
-        </TableCell>
+        <TableCell>{row.version.alias || <EmptyValue />}</TableCell>
         <TableCell>
           <span className="font-mono text-xs font-normal text-[var(--nt-text-neutral-tertiary)]">
             {row.version.name}

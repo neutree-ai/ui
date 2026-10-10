@@ -17,6 +17,7 @@ import JSONSchemaValueVisualizer from "@/domains/engine/components/JsonSchemaVal
 import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -126,11 +127,7 @@ export const ModelCatalogsShow = () => {
               <EndpointEngine spec={record.spec} metadata={record.metadata} />
             </ShowPage.Meta>
             <ShowPage.Meta label={t("common.fields.model")}>
-              {heroModel ? (
-                <EndpointModel model={heroModel} />
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
+              {heroModel ? <EndpointModel model={heroModel} /> : <EmptyValue />}
             </ShowPage.Meta>
             <ShowPage.Meta label={t("common.fields.task")}>
               <ModelTask task={heroModel?.task ?? ""} />
@@ -184,7 +181,7 @@ export const ModelCatalogsShow = () => {
                   {heroModel ? (
                     <EndpointModel model={heroModel} />
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <EmptyValue />
                   )}
                 </ShowPage.Row>
               </div>

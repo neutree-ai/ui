@@ -1,3 +1,4 @@
+import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { formatToDecimal } from "@/foundation/lib/unit";
 
 /**
@@ -19,7 +20,7 @@ export function formatResourceUsageRatio(
   unit = "",
 ): string {
   if (allocatable == null) {
-    return "-";
+    return EMPTY_VALUE;
   }
 
   const { used } = calcResourceUsage(allocatable, available ?? undefined);

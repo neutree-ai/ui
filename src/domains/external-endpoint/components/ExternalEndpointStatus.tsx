@@ -19,7 +19,7 @@ export default function ExternalEndpointStatus(status: BaseStatusType) {
     Pending: noticeClass,
     Deleted:
       "border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
-  }[status.phase ?? "-"];
+  }[status.phase ?? ""];
 
   const translatedPhase = t(`status.phases.externalEndpoint.${status.phase}`);
 

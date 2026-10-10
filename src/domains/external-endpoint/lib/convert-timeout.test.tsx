@@ -1,3 +1,4 @@
+import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
   displayValueToMs,
@@ -45,10 +46,8 @@ describe("formatTimeout", () => {
     expect(formatTimeout(90000)).toBe("90s");
   });
 
-  it("returns dash for null/undefined/zero", () => {
-    expect(formatTimeout(null)).toBe("-");
-    expect(formatTimeout(undefined)).toBe("-");
-    expect(formatTimeout(0)).toBe("-");
-    expect(formatTimeout(-1)).toBe("-");
+  it.each([null, undefined, 0, -1])("renders the placeholder for %s", (ms) => {
+    const { container } = render(<>{formatTimeout(ms)}</>);
+    expect(container.textContent).toBe("-");
   });
 });

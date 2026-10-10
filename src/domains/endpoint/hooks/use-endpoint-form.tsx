@@ -55,6 +55,7 @@ import type {
   EndpointModelRegistryRef,
   ResourceSpec,
 } from "@/domains/endpoint/types";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -473,7 +474,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedCluster?.status?.resource_info?.node_resources,
   ]);
   const selectedClusterNodeCountText =
-    selectedClusterNodeCount === null ? "-" : String(selectedClusterNodeCount);
+    selectedClusterNodeCount === null ? (
+      <EmptyValue />
+    ) : (
+      String(selectedClusterNodeCount)
+    );
   const selectedMemoryTotalMiB = selectedAcceleratorOption?.memoryTotalMiB;
   const effectiveVgpuMemoryMiB = getEffectiveVgpuMemoryMiB(
     selectedVirtualization,
@@ -2702,13 +2707,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               )}
                             </div>
                             <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
-                              {isVgpuAllocationMode
-                                ? `${formatOneDecimal(
-                                    requestedVgpuMemoryMiB / 1024,
-                                  )} / ${formatOneDecimal(
-                                    availableVgpuMemoryMiB / 1024,
-                                  )}`
-                                : "-"}
+                              {isVgpuAllocationMode ? (
+                                `${formatOneDecimal(
+                                  requestedVgpuMemoryMiB / 1024,
+                                )} / ${formatOneDecimal(
+                                  availableVgpuMemoryMiB / 1024,
+                                )}`
+                              ) : (
+                                <EmptyValue />
+                              )}
                             </div>
                           </div>
                           <div className="rounded-lg border bg-background px-3 py-2">
@@ -2716,13 +2723,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               {t("endpoints.fields.vgpuCoreCapacity")}
                             </div>
                             <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
-                              {currentRequestCoreUnitsPerCard > 0
-                                ? `${formatOneDecimal(
-                                    currentRequestCoreUnits,
-                                  )} / ${formatOneDecimal(
-                                    currentRequestAvailableCoreUnits,
-                                  )}`
-                                : "-"}
+                              {currentRequestCoreUnitsPerCard > 0 ? (
+                                `${formatOneDecimal(
+                                  currentRequestCoreUnits,
+                                )} / ${formatOneDecimal(
+                                  currentRequestAvailableCoreUnits,
+                                )}`
+                              ) : (
+                                <EmptyValue />
+                              )}
                             </div>
                           </div>
                           <div className="rounded-lg border bg-background px-3 py-2">
@@ -2743,7 +2752,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                         "endpoints.messages.noMatchingAccelerator",
                                         {
                                           product:
-                                            selectedAccelerator?.product ?? "-",
+                                            selectedAccelerator?.product ??
+                                            EMPTY_VALUE,
                                         },
                                       )
                                     : t(
@@ -2794,7 +2804,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                         "endpoints.messages.noMatchingAccelerator",
                                         {
                                           product:
-                                            selectedAccelerator?.product ?? "-",
+                                            selectedAccelerator?.product ??
+                                            EMPTY_VALUE,
                                         },
                                       )
                                     : hasNoNodeForFullGpuReplica

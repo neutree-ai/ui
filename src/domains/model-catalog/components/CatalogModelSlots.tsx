@@ -9,6 +9,7 @@ import {
   writeCatalogEngineVersion,
   writeCatalogModelSlot,
 } from "@/domains/model-catalog/lib/catalog-model-slots";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -269,9 +270,14 @@ export function CatalogModelSlots({
                   : slot.key}
               </div>
               <div className="truncate text-xs text-muted-foreground">
-                {slot.model
-                  ? `${slot.model.registry || "-"} / ${slot.model.name || "-"}`
-                  : t("model_catalogs.models.unset")}
+                {slot.model ? (
+                  <>
+                    {slot.model.registry || <EmptyValue />} /{" "}
+                    {slot.model.name || <EmptyValue />}
+                  </>
+                ) : (
+                  t("model_catalogs.models.unset")
+                )}
               </div>
             </div>
             <Combobox

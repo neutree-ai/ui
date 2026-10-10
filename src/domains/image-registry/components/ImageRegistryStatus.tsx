@@ -13,7 +13,7 @@ export default function ImageRegistryStatus(status: BaseStatusType) {
       "border border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
     Deleted:
       "border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
-  }[status.phase ?? "-"];
+  }[status.phase ?? ""];
 
   const translatedPhase = t(`status.phases.registry.${status.phase}`);
 

@@ -4,6 +4,7 @@ import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard"
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey } from "@/domains/api-key/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 
@@ -42,7 +43,7 @@ export const ApiKeysShow = () => {
           description={
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
               <ShowPage.Meta label={t("common.fields.workspace")}>
-                {record.metadata.workspace ?? "-"}
+                {record.metadata.workspace ?? <EmptyValue />}
               </ShowPage.Meta>
               {record.spec.description && (
                 <ShowPage.Meta label={t("api_keys.fields.description")}>
@@ -50,7 +51,7 @@ export const ApiKeysShow = () => {
                 </ShowPage.Meta>
               )}
               <ShowPage.Meta label={t("api_keys.fields.usage")}>
-                {record.status?.usage ?? "-"}
+                {record.status?.usage ?? <EmptyValue />}
               </ShowPage.Meta>
               <ShowPage.Meta label={t("api_keys.fields.project")}>
                 {!record.spec.project_id
@@ -59,7 +60,7 @@ export const ApiKeysShow = () => {
                     ? t("api_keys.messages.loading")
                     : projectError
                       ? t("api_keys.projects.loadFailed")
-                      : (project?.metadata.name ?? "-")}
+                      : (project?.metadata.name ?? <EmptyValue />)}
               </ShowPage.Meta>
               <MetadataTimestampMeta metadata={record.metadata} />
             </span>

@@ -412,7 +412,7 @@ describe("GpuDeviceResourcesView", () => {
     // reading at all, so both metrics show a dash.
     expect(screen.queryByText("0.0 / 0.0 GiB")).toBeNull();
     expect(screen.queryByText("0 / 0")).toBeNull();
-    expect(screen.getAllByText("\u2014")).toHaveLength(6);
+    expect(screen.getAllByText("-")).toHaveLength(6);
 
     // Bars carry no fill and use the dashed no-reading track.
     const bars = screen.getAllByTestId("progress");

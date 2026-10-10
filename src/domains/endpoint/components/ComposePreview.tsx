@@ -7,6 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import type { ComposedSpec } from "@/foundation/recipe/types";
@@ -98,7 +99,7 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
         {engineLabel ? (
           <span className="font-mono text-sm">{engineLabel}</span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <EmptyValue />
         )}
       </Row>
 
@@ -113,7 +114,7 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
             ) : null}
           </span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <EmptyValue />
         )}
       </Row>
 
@@ -123,13 +124,13 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
             {`${composed.resources.cpu ?? 0} CPU · ${composed.resources.memory ?? 0} GiB · ${composed.resources.gpu ?? 0} GPU`}
           </span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <EmptyValue />
         )}
       </Row>
 
       <Row label={t("endpoints.recipe.engineArgs", "Engine args")}>
         {engineArgs.length === 0 ? (
-          <span className="text-muted-foreground">—</span>
+          <EmptyValue />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
             {engineArgs.map(([k, v]) => (
@@ -145,7 +146,7 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
 
       <Row label={t("endpoints.recipe.env", "Environment")}>
         {env.length === 0 ? (
-          <span className="text-muted-foreground">—</span>
+          <EmptyValue />
         ) : (
           <div className="space-y-1">
             {env.map(([k, v]) => (
