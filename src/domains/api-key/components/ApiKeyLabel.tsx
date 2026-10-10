@@ -1,3 +1,4 @@
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { cn } from "@/foundation/lib/utils";
 
 export function ApiKeyLabel({
@@ -24,14 +25,14 @@ export function ApiKeyLabel({
   if (variant === "inline") {
     return (
       <span className={cn("block min-w-0 truncate text-sm", className)}>
-        {label || "-"}
+        {label || <EmptyValue />}
       </span>
     );
   }
 
   return (
     <div className={cn("min-w-0 text-left", className)}>
-      <div className="truncate text-sm">{label || "-"}</div>
+      <div className="truncate text-sm">{label || <EmptyValue />}</div>
       {description ? (
         // The leading is explicit: at 10px the line otherwise inherits the
         // name's 20px line box, which reads as a gap between the two lines and

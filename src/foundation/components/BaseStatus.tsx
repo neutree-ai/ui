@@ -8,6 +8,7 @@ import {
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { cn } from "@/foundation/lib/utils";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
+import { EmptyValue } from "./EmptyValue";
 import Timestamp from "./Timestamp";
 
 type BaseStatusProps = BaseStatusType & {
@@ -39,7 +40,7 @@ export default function BaseStatus({
     // never reconciled. The dash is the product's empty-value placeholder, so
     // it takes the placeholder token rather than borrowing the typography and
     // colour of whatever it is dropped next to.
-    return <span className="text-[var(--nt-text-neutral-quaternary)]">-</span>;
+    return <EmptyValue />;
   }
 
   return (

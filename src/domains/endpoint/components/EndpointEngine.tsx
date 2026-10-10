@@ -1,3 +1,4 @@
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import type { Metadata } from "@/foundation/types/basic-types";
 import type { EndpointEngineSpec } from "@/foundation/types/serving-types";
@@ -17,7 +18,7 @@ export default function EndpointEngine({
   // throwing: this sits inside list cards, where one bad record would otherwise
   // take down the whole page.
   if (!engine?.engine) {
-    return <span className="text-muted-foreground">-</span>;
+    return <EmptyValue />;
   }
   return (
     <ShowButton

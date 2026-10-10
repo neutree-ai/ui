@@ -18,6 +18,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
@@ -179,7 +180,7 @@ export const ModelDetailDrawer = ({
                   <SummaryItem
                     label={t("model_registries.models.fields.alias")}
                   >
-                    {model.alias || "-"}
+                    {model.alias || <EmptyValue />}
                   </SummaryItem>
                 ) : null}
                 <SummaryItem label={t("model_registries.fields.visibility")}>
