@@ -449,5 +449,5 @@
   "src/domains/cluster/components/ClusterCacheSection.tsx": "d50aced69a57d16d0e968ac66f68b236",
   "src/domains/cluster/hooks/use-cache-capacity-confirmation.tsx": "9bb11a54a86e21ac4c13a3fb30944d3c",
   "src/domains/endpoint/components/EndpointZCacheFields.tsx": "f3588e7ba32c4e27eb08282dcb48ae76",
-  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "7de0945094a99b309d9f44600559783e"
+  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "e266e907801bf8274e821bfe0af58726"
 }
