@@ -27,6 +27,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -130,16 +131,16 @@ const MetaGrid = ({ trace }: { trace: AITrace }) => {
         <WorkspaceLink name={trace.workspace} />
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.requestModel")}>
-        {trace.request_model || "-"}
+        {trace.request_model || <EmptyValue />}
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.responseModel")}>
-        {trace.response_model || "-"}
+        {trace.response_model || <EmptyValue />}
       </MetaRow>
       <MetaRow label={t("ai_traces.routing.upstream")}>
-        {trace.upstream || "—"}
+        {trace.upstream || <EmptyValue />}
       </MetaRow>
       <MetaRow label={t("ai_traces.routing.upstreamModel")}>
-        {trace.upstream_model || "—"}
+        {trace.upstream_model || <EmptyValue />}
       </MetaRow>
       <MetaRow label={t("ai_traces.detail.stream")}>
         {trace.stream ? (
@@ -464,7 +465,7 @@ const RawView = ({
     {text ? (
       <Highlighted text={text} query={query} activeMatch={activeMatch} />
     ) : (
-      <span className="text-muted-foreground">-</span>
+      <EmptyValue />
     )}
   </pre>
 );
@@ -803,7 +804,7 @@ const Highlighted = ({
 
 const TokenSummary = ({ trace }: { trace: AITrace }) => {
   const { t } = useTranslation();
-  const fmt = (v?: number) => (v == null ? "-" : v.toLocaleString());
+  const fmt = (v?: number) => (v == null ? <EmptyValue /> : v.toLocaleString());
   return (
     <span className="text-xs">
       <span className="font-mono">{fmt(trace.prompt_tokens)}</span>{" "}
@@ -827,7 +828,7 @@ const EndpointLink = ({
   type?: string;
   workspace?: string;
 }) => {
-  if (!name) return <span className="text-muted-foreground">-</span>;
+  if (!name) return <EmptyValue />;
   if (!workspace) return <span>{name}</span>;
   const resource =
     type === "external-endpoint" ? "external_endpoints" : "endpoints";
@@ -850,7 +851,7 @@ const EndpointLink = ({
 };
 
 const WorkspaceLink = ({ name }: { name?: string }) => {
-  if (!name) return <span className="text-muted-foreground">-</span>;
+  if (!name) return <EmptyValue />;
   return (
     <ShowButton
       resource="workspaces"
@@ -878,7 +879,7 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
     queryOptions: { enabled: Boolean(workspace) },
   });
 
-  if (!id) return <span className="text-muted-foreground">-</span>;
+  if (!id) return <EmptyValue />;
   if (!workspace) {
     return <span className="font-mono text-xs">{id}</span>;
   }

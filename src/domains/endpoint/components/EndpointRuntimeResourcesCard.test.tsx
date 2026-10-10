@@ -293,14 +293,13 @@ describe("EndpointRuntimeResourcesCard", () => {
 
     const gpuCell = screen.getByTestId("runtime-gpu-cell");
     const vram = within(gpuCell).getByTestId("runtime-vram-values");
-    expect(vram.textContent?.replace(/\s/g, "")).toBe("8/—GiB");
-    expect(
-      within(screen.getByTestId("runtime-host")).getByText(/CPU —/),
-    ).toBeTruthy();
-    expect(
-      within(screen.getByTestId("runtime-host")).getByText(/Memory —/),
-    ).toBeTruthy();
-    expect(screen.getAllByText("Core -")).toHaveLength(2);
+    expect(vram.textContent?.replace(/\s/g, "")).toBe("8/-GiB");
+    // The placeholder is its own element, so read the line as a whole rather
+    // than as one text node.
+    const bodyText = document.body.textContent ?? "";
+    expect(bodyText).toContain("CPU -");
+    expect(bodyText).toContain("Memory -");
+    expect(bodyText.match(/Core -/g) ?? []).toHaveLength(2);
   });
 
   it("uses matching cluster metadata when device physical VRAM is unavailable", () => {

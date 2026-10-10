@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyValue } from "./EmptyValue";
 
 import "dayjs/locale/zh-cn";
 
@@ -116,7 +117,7 @@ const Timestamp: React.FC<TimestampProps> = ({
   }, [resolvedLanguage, relative, timestamp]);
 
   if (!formattedTime) {
-    return <span className={className}>-</span>;
+    return <EmptyValue className={className} />;
   }
 
   if (!relative) {
