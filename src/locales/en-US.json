@@ -1330,7 +1330,7 @@
 		"zcache": {
 			"enable": "Use cluster cache",
 			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
-			"requirements": "Requires vLLM v0.24.0 and a Kubernetes cluster with ZCache enabled.",
+			"requirements": "Requires vLLM and a Kubernetes cluster with ZCache enabled.",
 			"advanced": "Cache settings",
 			"timeout": "Cache timeout (seconds)",
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
