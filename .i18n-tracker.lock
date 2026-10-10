@@ -284,7 +284,7 @@
   "src/foundation/hooks/use-refine-field-array.ts": "7dbaa5d3a0ea2c6db1c09da0863f1b74",
   "src/domains/external-endpoint/components/TestConnectivityButton.tsx": "8e580fedb30e8e802c5060d25a886a99",
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "3518ba31f791c430b2afe655cc2d2c08",
-  "src/pages/ai-traces/list.tsx": "c9e439ae809c78dde7bb3d785ee37605",
+  "src/pages/ai-traces/list.tsx": "c0f7dc1358d118257de8813928d68d44",
   "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "589952e145823c249cbf7c0b20f6c661",
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "b3ad2234ffd9b0f92b41dfe951bc60d6",
   "src/foundation/lib/api/ai-traces.ts": "45500ebb50e9bd26405756f7056df48e",
@@ -441,5 +441,6 @@
   "src/domains/external-endpoint/lib/route-strategy.ts": "0fd034a72725d42b1f9a64726d594237",
   "src/domains/cluster/lib/get-access-mode-label.tsx": "3e4c1e3b116dc1a8229f5c8da53af569",
   "src/domains/external-endpoint/lib/convert-timeout.tsx": "58a7ced63eb42b6ef150cebb41e795c2",
-  "src/foundation/components/EmptyValue.tsx": "3f27a00c39815a06bffb462c62204db3"
+  "src/foundation/components/EmptyValue.tsx": "3f27a00c39815a06bffb462c62204db3",
+  "src/pages/ai-traces/components/TraceNameFilter.tsx": "14b78e3c59404630b238bcff4090c28f"
 }
