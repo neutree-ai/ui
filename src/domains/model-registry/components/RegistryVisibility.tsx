@@ -1,4 +1,5 @@
 import { Globe, Lock } from "lucide-react";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
 
@@ -24,7 +25,7 @@ export const RegistryVisibility = ({
   const { t } = useTranslation();
 
   if (!visibility) {
-    return <span className="text-muted-foreground">-</span>;
+    return <EmptyValue />;
   }
 
   const Icon = icons[visibility];

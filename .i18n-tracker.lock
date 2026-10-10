@@ -425,7 +425,7 @@
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
   "src/domains/external-endpoint/lib/validate-route-strategy.ts": "a6fa0e3cb9dab1c4211dd74f0e8bca66",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
-  "src/domains/external-endpoint/components/ModelRouteDetails.tsx": "1c89512a3e009e4c6815100769e66eaf",
+  "src/domains/external-endpoint/components/ModelRouteDetails.tsx": "fbd5f6c55c8a60cc9569396f17b3dae4",
   "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "8981e7575ae07c139af1cdfd8988ccdc",
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "c77e91a288fedb5b75df5549d87b9797",
   "src/domains/api-key/components/ModelQuotaRows.tsx": "c5eb9046e33f16526bb024342fc41747",

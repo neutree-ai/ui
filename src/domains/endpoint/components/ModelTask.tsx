@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 interface ModelTaskProps {
@@ -17,7 +18,7 @@ export const formatTaskName = (taskName: string) => {
 const ModelTask = ({ task, variant = "outline" }: ModelTaskProps) => {
   const { t } = useTranslation();
   if (!task) {
-    return <span className="text-muted-foreground">-</span>;
+    return <EmptyValue />;
   }
 
   // Define color variants for different task types

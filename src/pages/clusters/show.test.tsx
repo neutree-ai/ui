@@ -225,6 +225,43 @@ describe("ClustersShow", () => {
     );
   });
 
+  // The API requires router.replicas / resources.cpu / resources.memory for a
+  // Kubernetes cluster (validation codes 10024-10026), so a record without
+  // them can only come from a gap in the data. Each row still shows the
+  // placeholder rather than rendering an empty cell.
+  it("shows the placeholder for a router that reports no capacity", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        isLoading: false,
+        data: {
+          data: {
+            metadata: {
+              name: "gpu-cluster",
+              workspace: "design-lab",
+              creation_timestamp: "2026-08-25T00:00:00Z",
+            },
+            spec: {
+              type: "kubernetes",
+              version: "v1.2.0",
+              image_registry: "default",
+              accelerator_virtualization: { enabled: true },
+              config: {
+                kubernetes_config: {
+                  router: { access_mode: "LoadBalancer" },
+                },
+              },
+            },
+            status: { phase: "Running", version: "v1.2.0" },
+          },
+        },
+      },
+    });
+
+    render(<ClustersShow />);
+
+    expect(screen.getAllByTestId("empty-value")).toHaveLength(3);
+  });
+
   // The identity line drops the badge rather than printing "name, -" before
   // the controller has reported a phase.
   it("still renders the page for a cluster with no phase yet", () => {

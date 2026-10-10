@@ -1,6 +1,7 @@
 import { useShow } from "@refinedev/core";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -38,7 +39,7 @@ export const RoleAssignmentsShow = () => {
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <ShowPage.Meta label={t("common.fields.workspace")}>
-              {workspaceValue || "-"}
+              {workspaceValue || <EmptyValue />}
             </ShowPage.Meta>
             <ShowPage.Meta label={t("common.fields.role")}>
               {record.spec.role}
