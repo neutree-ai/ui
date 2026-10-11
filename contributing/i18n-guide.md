@@ -9,8 +9,8 @@ This project uses `react-i18next` for internationalization. All user-facing text
 ## The CI gate (read this first)
 
 Two steps in [`.github/workflows/test.yml`](../.github/workflows/test.yml) enforce i18n on every
-pull request to `main`. The `pre-commit` hook runs the same two scripts, so they block the commit
-before they block the PR.
+pull request to `main` or a `dev-*` branch. The `pre-commit` hook runs the same two scripts, so
+they block the commit before they block the PR.
 
 | CI step | Script | Fails when |
 | --- | --- | --- |
