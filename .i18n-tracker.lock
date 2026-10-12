@@ -242,7 +242,7 @@
   "src/pages/external-endpoints/create.tsx": "78286cb967917dee72c9c2b2ea415b43",
   "src/pages/external-endpoints/edit.tsx": "e731cde0ba1ff3d6e52bd7803a34e297",
   "src/pages/external-endpoints/list.tsx": "2e00bdf309d202be3a0b003239297251",
-  "src/pages/external-endpoints/show.tsx": "269ad5caebafc58349f6cf39b6765a7d",
+  "src/pages/external-endpoints/show.tsx": "c561be5317c9be4440b9107dae5defef",
   "src/domains/external-endpoint/types.ts": "3a358d624da131e808244858b135596a",
   "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "95e14f675e563eb10180dfae1fd63526",
   "src/domains/external-endpoint/components/CurlExample.tsx": "5f8ddd7eabf6097561a62eea7d3eab65",

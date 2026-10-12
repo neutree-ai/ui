@@ -25,6 +25,7 @@ import {
 } from "@/foundation/components/detail-tabs";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveExternalModelSource } from "@/foundation/lib/model-source";
@@ -284,12 +285,23 @@ export const ExternalEndpointsShow = () => {
                                         <div className="flex flex-wrap gap-1.5">
                                           {mapping.exposedModels.map(
                                             (model) => (
-                                              <code
+                                              <span
                                                 key={model}
-                                                className="max-w-full break-all rounded bg-muted px-2 py-1 text-xs"
+                                                className="inline-flex max-w-full flex-wrap items-center gap-1.5"
                                               >
-                                                {model}
-                                              </code>
+                                                <code className="max-w-full break-all rounded bg-muted px-2 py-1 text-xs">
+                                                  {model}
+                                                </code>
+                                                {!record.spec?.model_routes
+                                                  ?.length && (
+                                                  <ModelSourceBadge
+                                                    source={resolveExternalModelSource(
+                                                      record.spec,
+                                                      model,
+                                                    )}
+                                                  />
+                                                )}
+                                              </span>
                                             ),
                                           )}
                                         </div>

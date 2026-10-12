@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +18,14 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) =>
+      options?.defaultValue ??
+      (key === "modelSource.unspecified" ? "Unspecified" : key),
+  }),
 }));
 
 vi.mock("@/components/ui/tabs", () => ({
@@ -150,7 +158,10 @@ const spec = {
   ],
 };
 
-function record(status: Record<string, unknown>) {
+function record(
+  status: Record<string, unknown>,
+  endpointSpec = spec as Record<string, unknown>,
+) {
   return {
     data: {
       metadata: {
@@ -158,15 +169,19 @@ function record(status: Record<string, unknown>) {
         workspace: "default",
         creation_timestamp: "2026-01-01T00:00:00Z",
       },
-      spec,
+      spec: endpointSpec,
       status,
     },
   };
 }
 
-function renderPage(status: Record<string, unknown>, entry = "/") {
+function renderPage(
+  status: Record<string, unknown>,
+  entry = "/",
+  endpointSpec = spec as Record<string, unknown>,
+) {
   useShowMock.mockReturnValue({
-    query: { data: record(status), isLoading: false },
+    query: { data: record(status, endpointSpec), isLoading: false },
   });
   return render(<ExternalEndpointsShow />, {
     wrapper: ({ children }) => (
@@ -240,6 +255,57 @@ describe("ExternalEndpointsShow", () => {
     const table = screen.getByRole("table");
     expect(table.textContent).toContain("gpt-6");
     expect(table.textContent).toContain("gpt-6-astra");
+    expect(within(table).queryByText("Unspecified")).toBeNull();
+  });
+
+  it.each([undefined, null, []])(
+    "shows an unspecified source for legacy mappings with model_routes=%s",
+    (model_routes) => {
+      renderPage({}, "/", {
+        ...spec,
+        model_routes,
+        upstreams: [
+          {
+            name: "legacy",
+            upstream: { url: "https://api.example.com" },
+            model_mapping: { "model-008": "upstream-model-009" },
+          },
+        ],
+      });
+      const row = screen.getByText("model-008").closest("tr");
+      expect(row).toBeTruthy();
+      expect(within(row!).getByText("Unspecified")).toBeTruthy();
+      expect(screen.queryByTestId("route-details")).toBeNull();
+      expect(
+        screen.getByText("external_endpoints.fields.models: 1"),
+      ).toBeTruthy();
+    },
+  );
+
+  it("keeps each legacy model's stored source beside its own model name", () => {
+    renderPage({}, "/", {
+      ...spec,
+      model_routes: null,
+      model_sources: { "model-008": "partner", "model-010": "acme-lab" },
+      upstreams: [
+        {
+          name: "legacy",
+          upstream: { url: "https://api.example.com" },
+          model_mapping: {
+            "model-008": "upstream-model-009",
+            "model-010": "upstream-model-009",
+          },
+        },
+      ],
+    });
+    for (const [model, source] of [
+      ["model-008", "partner"],
+      ["model-010", "acme-lab"],
+    ]) {
+      const modelGroup = screen.getByText(model).parentElement!;
+      expect(within(modelGroup).getByText(source)).toBeTruthy();
+    }
+    expect(screen.queryByText("Unspecified")).toBeNull();
   });
 
   it("offers the deep link in the tab row on the monitor tab", () => {
