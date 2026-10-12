@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +18,13 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) =>
+      options?.defaultValue ?? key,
+  }),
 }));
 
 vi.mock("@/components/ui/tabs", () => ({
@@ -95,19 +102,36 @@ vi.mock("@/domains/external-endpoint/components/UpstreamStatusBadge", () => ({
   default: () => <div data-testid="upstream-status" />,
 }));
 
-vi.mock("@/domains/external-endpoint/components/ModelRouteDetails", () => ({
-  default: ({
-    route,
-    serviceUrl,
-  }: {
-    route: { model: string };
-    serviceUrl?: string;
-  }) => (
-    <div data-testid="route-details" data-service-url={serviceUrl}>
-      {route.model}
-    </div>
-  ),
-}));
+vi.mock(
+  "@/domains/external-endpoint/components/ModelRouteDetails",
+  async () => {
+    const { ModelSourceBadge } = await import(
+      "@/foundation/components/ModelSourceBadge"
+    );
+    return {
+      default: ({
+        route,
+        serviceUrl,
+        source,
+        onViewMonitoring,
+      }: {
+        route: { model: string };
+        serviceUrl?: string;
+        source?: string;
+        onViewMonitoring?: () => void;
+      }) => (
+        <div
+          data-testid="route-details"
+          data-service-url={serviceUrl}
+          data-monitoring={!!onViewMonitoring}
+        >
+          {route.model}
+          <ModelSourceBadge source={source} />
+        </div>
+      ),
+    };
+  },
+);
 
 vi.mock(
   "@/domains/external-endpoint/components/ExternalEndpointMonitor",
@@ -150,7 +174,10 @@ const spec = {
   ],
 };
 
-function record(status: Record<string, unknown>) {
+function record(
+  status: Record<string, unknown>,
+  endpointSpec: Record<string, unknown> = spec,
+) {
   return {
     data: {
       metadata: {
@@ -158,15 +185,19 @@ function record(status: Record<string, unknown>) {
         workspace: "default",
         creation_timestamp: "2026-01-01T00:00:00Z",
       },
-      spec,
+      spec: endpointSpec,
       status,
     },
   };
 }
 
-function renderPage(status: Record<string, unknown>, entry = "/") {
+function renderPage(
+  status: Record<string, unknown>,
+  entry = "/",
+  endpointSpec: Record<string, unknown> = spec,
+) {
   useShowMock.mockReturnValue({
-    query: { data: record(status), isLoading: false },
+    query: { data: record(status, endpointSpec), isLoading: false },
   });
   return render(<ExternalEndpointsShow />, {
     wrapper: ({ children }) => (
@@ -249,5 +280,50 @@ describe("ExternalEndpointsShow", () => {
     );
     expect(screen.getByTestId("monitor")).toBeTruthy();
     expect(screen.getByTestId("monitor-link")).toBeTruthy();
+  });
+
+  it.each([undefined, null])(
+    "renders legacy models in route cards when routes are %s",
+    (model_routes) => {
+      renderPage({}, "/", {
+        ...spec,
+        model_routes,
+        model_sources: { "model-010": "third-party-public" },
+        upstreams: [
+          {
+            upstream: { url: "https://api.example.com" },
+            model_mapping: {
+              "model-008": "upstream-model-009",
+              "model-010": "upstream-model-010",
+            },
+          },
+        ],
+      });
+      const cards = screen.getAllByTestId("route-details");
+      expect(cards).toHaveLength(2);
+      expect(cards[0].textContent).toContain("model-008");
+      expect(
+        within(cards[0]).getByText("modelSource.unspecified"),
+      ).toBeTruthy();
+      expect(cards[1].textContent).toContain("model-010");
+      expect(within(cards[1]).getByText("third-party-public")).toBeTruthy();
+      expect(cards[0].getAttribute("data-monitoring")).toBe("false");
+    },
+  );
+
+  it("keeps the inferred source of a legacy internal target", () => {
+    renderPage({}, "/", {
+      ...spec,
+      model_routes: null,
+      upstreams: [{ endpoint_ref: "qwen", model_mapping: { chat: "qwen" } }],
+    });
+    expect(
+      within(screen.getByTestId("route-details")).getByText("self-hosted"),
+    ).toBeTruthy();
+  });
+
+  it("does not restore explicitly empty routes from legacy mappings", () => {
+    renderPage({}, "/", { ...spec, model_routes: [] });
+    expect(screen.queryByTestId("route-details")).toBeNull();
   });
 });
