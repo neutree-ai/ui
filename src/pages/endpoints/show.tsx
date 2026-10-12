@@ -327,7 +327,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
-            {(systemInfo?.capabilities?.zcache || record.spec.zcache) && (
+            {(systemInfo?.capabilities?.zcache || record.spec.kv_cache) && (
               <EndpointZCacheSummary endpoint={record} cluster={clusterData?.data?.[0]} />
             )}
             <div className="space-y-3">

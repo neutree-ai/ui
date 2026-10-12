@@ -286,7 +286,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
-  const cacheEnabled = form.watch("spec.zcache.enabled") === true;
+  const cacheEnabled = form.watch("spec.kv_cache.provider") === "zcache";
   const cacheNodeNames = new Set(
     clusters.query.data?.data.find(
       (cluster) => cluster.metadata.name === currentCluster,

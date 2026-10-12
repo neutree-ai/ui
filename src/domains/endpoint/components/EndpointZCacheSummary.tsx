@@ -7,8 +7,9 @@ import type { Endpoint } from "../types";
 
 export function EndpointZCacheSummary({ endpoint, cluster }: { endpoint: Endpoint; cluster?: Cluster }) {
   const { t } = useTranslation();
-  const enabled = endpoint.spec.zcache?.enabled === true;
+  const enabled = endpoint.spec.kv_cache?.provider === "zcache";
   const configured = cluster?.spec.zcache?.enabled === true;
+  if (endpoint.spec.kv_cache && !enabled) return null;
   return (
     <section aria-label="ZCache" className="flex flex-wrap items-center gap-x-10 gap-y-4 rounded-lg border bg-card px-6 py-4 shadow-sm">
       <div className="flex items-center gap-4">
@@ -19,7 +20,7 @@ export function EndpointZCacheSummary({ endpoint, cluster }: { endpoint: Endpoin
       {enabled && (
         <div className="border-l pl-10">
           <div className="text-xs font-medium text-muted-foreground">{t("endpoints.zcache.timeoutLabel")}</div>
-          <div className="mt-1 text-sm font-semibold">{t("endpoints.zcache.timeoutValue", { seconds: endpoint.spec.zcache?.timeout_seconds ?? 5 })}</div>
+          <div className="mt-1 text-sm font-semibold">{t("endpoints.zcache.timeoutValue", { seconds: endpoint.spec.kv_cache?.options?.timeout_seconds ?? 5 })}</div>
         </div>
       )}
       {cluster && !configured && <span className="text-sm text-muted-foreground">{t("endpoints.zcache.clusterUnconfigured")}</span>}
