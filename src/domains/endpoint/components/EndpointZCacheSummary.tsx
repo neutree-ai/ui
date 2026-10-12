@@ -11,17 +11,23 @@ export function EndpointZCacheSummary({ endpoint, cluster }: { endpoint: Endpoin
   const configured = cluster?.spec.zcache?.enabled === true;
   if (endpoint.spec.kv_cache && !enabled) return null;
   return (
-    <section aria-label="ZCache" className="flex flex-wrap items-center gap-x-10 gap-y-4 rounded-lg border bg-card px-6 py-4 shadow-sm">
+    <section aria-label={t("endpoints.zcache.enable")} className="flex flex-wrap items-center gap-x-10 gap-y-4 rounded-lg border bg-card px-6 py-4 shadow-sm">
       <div className="flex items-center gap-4">
         <div className="rounded-md bg-muted p-3 text-primary"><Database className="h-5 w-5" /></div>
-        <span className="font-semibold">ZCache</span>
-        <Switch aria-label="ZCache" checked={enabled} disabled className="disabled:opacity-100 disabled:cursor-default" />
+        <span className="font-semibold">{t("endpoints.zcache.enable")}</span>
+        <Switch aria-label={t("endpoints.zcache.enable")} checked={enabled} disabled className="disabled:opacity-100 disabled:cursor-default" />
       </div>
       {enabled && (
-        <div className="border-l pl-10">
+        <>
+        <div className="border-l pl-8">
+          <div className="text-xs font-medium text-muted-foreground">{t("endpoints.zcache.providerLabel")}</div>
+          <div className="mt-1 text-sm font-semibold">ZCache</div>
+        </div>
+        <div className="border-l pl-8">
           <div className="text-xs font-medium text-muted-foreground">{t("endpoints.zcache.timeoutLabel")}</div>
           <div className="mt-1 text-sm font-semibold">{t("endpoints.zcache.timeoutValue", { seconds: endpoint.spec.kv_cache?.options?.timeout_seconds ?? 5 })}</div>
         </div>
+        </>
       )}
       {cluster && !configured && <span className="text-sm text-muted-foreground">{t("endpoints.zcache.clusterUnconfigured")}</span>}
       {configured && (

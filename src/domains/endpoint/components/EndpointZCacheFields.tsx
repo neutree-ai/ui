@@ -1,3 +1,4 @@
+import { AlertCircle } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -29,10 +30,10 @@ export function EndpointZCacheFields({
   if (!systemInfo?.capabilities?.zcache && !enabled) return null;
   return (
     <section
-      className="rounded-md border bg-background p-3 space-y-3"
+      className="overflow-hidden rounded-md border bg-card"
       data-testid="endpoint-zcache"
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 bg-muted/50 px-4 py-3">
         <div className="flex items-center gap-2">
           <label
             htmlFor="endpoint-zcache-enabled"
@@ -66,16 +67,17 @@ export function EndpointZCacheFields({
         />
       </div>
       {enabled && !supported && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="px-4 pt-3 text-sm text-destructive">
           {t("endpoints.zcache.requirements")}
         </p>
       )}
       {enabled && (
-        <details>
-          <summary className="cursor-pointer text-sm text-muted-foreground">
-            {t("endpoints.zcache.advanced")}
-          </summary>
-          <div className="mt-3 max-w-sm">
+        <div className="grid gap-6 p-4 sm:grid-cols-[minmax(140px,1fr)_2fr]">
+          <div>
+            <div className="text-sm text-muted-foreground">{t("endpoints.zcache.providerLabel")}</div>
+            <div className="mt-2 text-sm font-medium">ZCache</div>
+          </div>
+          <div className="max-w-sm">
             <FormFieldGroup
               {...form}
               name="spec.kv_cache.options.timeout_seconds"
@@ -109,10 +111,11 @@ export function EndpointZCacheFields({
               {t("endpoints.zcache.timeoutHint")}
             </p>
           </div>
-        </details>
+        </div>
       )}
       {isEdit && form.formState.dirtyFields.spec?.kv_cache && (
-        <p role="status" className="text-sm text-amber-700 dark:text-amber-400">
+        <p role="status" className="flex items-center gap-2 border-t border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {t("endpoints.zcache.redeploy")}
         </p>
       )}
