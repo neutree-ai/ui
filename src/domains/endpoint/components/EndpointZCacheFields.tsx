@@ -82,6 +82,7 @@ export function EndpointZCacheFields({
               label={t("endpoints.zcache.timeout")}
               rules={{
                 validate: (value) =>
+                  form.getValues("spec.kv_cache.provider") !== "zcache" ||
                   value === undefined ||
                   (Number.isFinite(value) &&
                     Number(value) >= 0.1 &&
