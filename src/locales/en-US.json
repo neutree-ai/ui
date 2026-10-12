@@ -1334,6 +1334,7 @@
       "viewCluster": "View cluster cache",
 			"enable": "KV cache",
 			"providerLabel": "Cache provider",
+			"selectProvider": "Select a cache provider",
 			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
 			"requirements": "Requires vLLM and a Kubernetes cluster with ZCache enabled.",
 			"advanced": "Cache settings",

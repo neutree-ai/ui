@@ -34,3 +34,13 @@ it("disables ZCache by clearing the provider configuration", async () => {
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].spec.kv_cache).toBeNull();
 });
+
+it("requires a provider before displaying provider-specific options", async () => {
+  const save = vi.fn();
+  render(<Editor cache={{ provider: "", options: {} }} save={save} />);
+  expect(screen.getByRole("combobox")).toBeTruthy();
+  expect(screen.queryByRole("spinbutton")).toBeNull();
+  fireEvent.click(screen.getByText("save"));
+  await vi.waitFor(() => expect(screen.getAllByText("endpoints.zcache.selectProvider").length).toBeGreaterThan(1));
+  expect(save).not.toHaveBeenCalled();
+});

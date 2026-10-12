@@ -2,6 +2,7 @@ import { AlertCircle } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
@@ -20,13 +21,13 @@ export function EndpointZCacheFields({
   const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
   const cache = form.watch("spec.kv_cache");
-  const enabled = cache?.provider === "zcache";
+  const enabled = cache != null;
   const engine = form.watch("spec.engine");
   const supported =
     cluster?.spec.type === "kubernetes" &&
     cluster.spec.zcache?.enabled &&
     engine?.engine === "vllm";
-  if (cache && cache.provider !== "zcache") return null;
+  if (cache?.provider && cache.provider !== "zcache") return null;
   if (!systemInfo?.capabilities?.zcache && !enabled) return null;
   return (
     <section
@@ -72,11 +73,24 @@ export function EndpointZCacheFields({
         </p>
       )}
       {enabled && (
-        <div className="grid gap-6 p-4 sm:grid-cols-[minmax(140px,1fr)_2fr]">
-          <div>
-            <div className="text-sm text-muted-foreground">{t("endpoints.zcache.providerLabel")}</div>
-            <div className="mt-2 text-sm font-medium">ZCache</div>
+        <div className="space-y-5 p-4">
+          <div className="max-w-sm">
+            <FormFieldGroup
+              {...form}
+              name="spec.kv_cache.provider"
+              label={t("endpoints.zcache.providerLabel")}
+              rules={{ validate: (value) => !form.getValues("spec.kv_cache") || Boolean(value) || t("endpoints.zcache.selectProvider") }}
+            >
+              <Select value={cache?.provider ?? ""} onValueChange={(provider) => form.setValue("spec.kv_cache", {
+                provider,
+                options: { timeout_seconds: cache?.options?.timeout_seconds ?? 5 },
+              }, { shouldDirty: true, shouldValidate: true })}>
+                <SelectTrigger><SelectValue placeholder={t("endpoints.zcache.selectProvider")} /></SelectTrigger>
+                <SelectContent><SelectItem value="zcache">ZCache</SelectItem></SelectContent>
+              </Select>
+            </FormFieldGroup>
           </div>
+          {cache?.provider === "zcache" && <div className="border-t pt-5">
           <div className="max-w-sm">
             <FormFieldGroup
               {...form}
@@ -111,6 +125,7 @@ export function EndpointZCacheFields({
               {t("endpoints.zcache.timeoutHint")}
             </p>
           </div>
+          </div>}
         </div>
       )}
       {isEdit && form.formState.dirtyFields.spec?.kv_cache && (
