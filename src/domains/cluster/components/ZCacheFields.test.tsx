@@ -8,7 +8,7 @@ import { ZCacheFields } from "./ZCacheFields";
 
 const cacheDependencies = vi.hoisted(() => ({
   rows: [] as Array<{
-    spec: { zcache?: { enabled: boolean } };
+    spec: { kv_cache?: { provider: string } | null };
     status?: { zcache?: { in_use: boolean } };
   }>,
 }));
@@ -105,7 +105,7 @@ describe("ZCacheFields", () => {
   it("blocks removal while old inference pods still use cache, but allows expansion", () => {
     cacheDependencies.rows = [
       {
-        spec: { zcache: { enabled: false } },
+        spec: { kv_cache: null },
         status: { zcache: { in_use: true } },
       },
     ];

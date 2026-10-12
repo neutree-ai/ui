@@ -9,7 +9,7 @@ vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string, valu
 afterEach(cleanup);
 describe("EndpointZCacheSummary", () => {
   it.each([[true, true], [false, true], [false, false]])("renders enabled=%s configured=%s", (enabled, configured) => {
-    const endpoint = { metadata: { workspace: "default" }, spec: { zcache: { enabled, timeout_seconds: 2 } } } as Endpoint;
+    const endpoint = { metadata: { workspace: "default" }, spec: { kv_cache: enabled ? { provider: "zcache", options: { timeout_seconds: 2 } } : null } } as Endpoint;
     const cluster = { metadata: { name: "gpu-cluster" }, spec: { zcache: { enabled: configured } } } as Cluster;
     render(<MemoryRouter><EndpointZCacheSummary endpoint={endpoint} cluster={cluster} /></MemoryRouter>);
     const toggle = screen.getByRole("switch") as HTMLButtonElement;

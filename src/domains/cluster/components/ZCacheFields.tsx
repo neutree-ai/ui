@@ -26,7 +26,7 @@ export function ZCacheFields({
   const workspace = form.watch("metadata.workspace");
   const dependencies = useList<{
     id: number;
-    spec: { zcache?: { enabled?: boolean } };
+    spec: { kv_cache?: { provider: string } | null };
     status?: { zcache?: { in_use?: boolean } };
   }>({
     resource: "endpoints",
@@ -40,7 +40,7 @@ export function ZCacheFields({
   });
   const inUse =
     dependencies.data?.data.some(
-      (e) => e.spec.zcache?.enabled || e.status?.zcache?.in_use,
+      (e) => e.spec.kv_cache?.provider === "zcache" || e.status?.zcache?.in_use,
     ) === true;
   const guardRemoval = inUse || dependencies.isLoading || dependencies.isError;
   const persistedNodes: string[] =

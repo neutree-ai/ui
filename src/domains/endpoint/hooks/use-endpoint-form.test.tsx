@@ -5366,7 +5366,7 @@ describe("useEndpointForm", () => {
       await waitFor(() => expect(formInstance).not.toBeNull());
       act(() => {
         formInstance?.setValue("spec.cluster", "plain-k8s-node-resources");
-        formInstance?.setValue("spec.zcache", { enabled: true, timeout_seconds: 2 });
+        formInstance?.setValue("spec.kv_cache", { provider: "zcache", options: { timeout_seconds: 2 } });
         formInstance?.setValue("spec.replicas.num", 1);
         formInstance?.setValue("spec.resources", { cpu: 12, memory: 8, gpu: 1, accelerator: { type: "nvidia_gpu", product: "Tesla-T4" } });
       });

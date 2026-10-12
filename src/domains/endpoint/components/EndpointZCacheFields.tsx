@@ -18,12 +18,14 @@ export function EndpointZCacheFields({
 }) {
   const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
-  const enabled = form.watch("spec.zcache.enabled") === true;
+  const cache = form.watch("spec.kv_cache");
+  const enabled = cache?.provider === "zcache";
   const engine = form.watch("spec.engine");
   const supported =
     cluster?.spec.type === "kubernetes" &&
     cluster.spec.zcache?.enabled &&
     engine?.engine === "vllm";
+  if (cache && cache.provider !== "zcache") return null;
   if (!systemInfo?.capabilities?.zcache && !enabled) return null;
   return (
     <section
@@ -52,12 +54,12 @@ export function EndpointZCacheFields({
           disabled={!enabled && !supported}
           onCheckedChange={(value) =>
             form.setValue(
-              "spec.zcache",
+              "spec.kv_cache",
               value ? {
-                enabled: true,
-                timeout_seconds:
-                  form.getValues("spec.zcache.timeout_seconds") ?? 5,
-              } : { enabled: false },
+                provider: "zcache",
+                options: { timeout_seconds:
+                  form.getValues("spec.kv_cache.options.timeout_seconds") ?? 5 },
+              } : null,
               { shouldDirty: true, shouldValidate: true },
             )
           }
@@ -76,7 +78,7 @@ export function EndpointZCacheFields({
           <div className="mt-3 max-w-sm">
             <FormFieldGroup
               {...form}
-              name="spec.zcache.timeout_seconds"
+              name="spec.kv_cache.options.timeout_seconds"
               label={t("endpoints.zcache.timeout")}
               rules={{
                 validate: (value) =>
@@ -92,10 +94,10 @@ export function EndpointZCacheFields({
                 min={0.1}
                 max={60}
                 step={0.1}
-                value={form.watch("spec.zcache.timeout_seconds") ?? 5}
+                value={form.watch("spec.kv_cache.options.timeout_seconds") ?? 5}
                 onChange={(event) =>
                   form.setValue(
-                    "spec.zcache.timeout_seconds",
+                    "spec.kv_cache.options.timeout_seconds",
                     Number(event.target.value),
                     { shouldDirty: true, shouldValidate: true },
                   )
@@ -108,7 +110,7 @@ export function EndpointZCacheFields({
           </div>
         </details>
       )}
-      {isEdit && form.formState.dirtyFields.spec?.zcache && (
+      {isEdit && form.formState.dirtyFields.spec?.kv_cache && (
         <p role="status" className="text-sm text-amber-700 dark:text-amber-400">
           {t("endpoints.zcache.redeploy")}
         </p>
