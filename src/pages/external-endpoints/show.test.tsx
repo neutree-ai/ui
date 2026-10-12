@@ -23,8 +23,7 @@ vi.mock("@/foundation/lib/i18n", () => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, options?: { defaultValue?: string }) =>
-      options?.defaultValue ??
-      (key === "modelSource.unspecified" ? "Unspecified" : key),
+      options?.defaultValue ?? key,
   }),
 }));
 
@@ -103,19 +102,36 @@ vi.mock("@/domains/external-endpoint/components/UpstreamStatusBadge", () => ({
   default: () => <div data-testid="upstream-status" />,
 }));
 
-vi.mock("@/domains/external-endpoint/components/ModelRouteDetails", () => ({
-  default: ({
-    route,
-    serviceUrl,
-  }: {
-    route: { model: string };
-    serviceUrl?: string;
-  }) => (
-    <div data-testid="route-details" data-service-url={serviceUrl}>
-      {route.model}
-    </div>
-  ),
-}));
+vi.mock(
+  "@/domains/external-endpoint/components/ModelRouteDetails",
+  async () => {
+    const { ModelSourceBadge } = await import(
+      "@/foundation/components/ModelSourceBadge"
+    );
+    return {
+      default: ({
+        route,
+        serviceUrl,
+        source,
+        onViewMonitoring,
+      }: {
+        route: { model: string };
+        serviceUrl?: string;
+        source?: string;
+        onViewMonitoring?: () => void;
+      }) => (
+        <div
+          data-testid="route-details"
+          data-service-url={serviceUrl}
+          data-monitoring={!!onViewMonitoring}
+        >
+          {route.model}
+          <ModelSourceBadge source={source} />
+        </div>
+      ),
+    };
+  },
+);
 
 vi.mock(
   "@/domains/external-endpoint/components/ExternalEndpointMonitor",
@@ -160,7 +176,7 @@ const spec = {
 
 function record(
   status: Record<string, unknown>,
-  endpointSpec = spec as Record<string, unknown>,
+  endpointSpec: Record<string, unknown> = spec,
 ) {
   return {
     data: {
@@ -178,7 +194,7 @@ function record(
 function renderPage(
   status: Record<string, unknown>,
   entry = "/",
-  endpointSpec = spec as Record<string, unknown>,
+  endpointSpec: Record<string, unknown> = spec,
 ) {
   useShowMock.mockReturnValue({
     query: { data: record(status, endpointSpec), isLoading: false },
@@ -255,57 +271,6 @@ describe("ExternalEndpointsShow", () => {
     const table = screen.getByRole("table");
     expect(table.textContent).toContain("gpt-6");
     expect(table.textContent).toContain("gpt-6-astra");
-    expect(within(table).queryByText("Unspecified")).toBeNull();
-  });
-
-  it.each([undefined, null, []])(
-    "shows an unspecified source for legacy mappings with model_routes=%s",
-    (model_routes) => {
-      renderPage({}, "/", {
-        ...spec,
-        model_routes,
-        upstreams: [
-          {
-            name: "legacy",
-            upstream: { url: "https://api.example.com" },
-            model_mapping: { "model-008": "upstream-model-009" },
-          },
-        ],
-      });
-      const row = screen.getByText("model-008").closest("tr");
-      expect(row).toBeTruthy();
-      expect(within(row!).getByText("Unspecified")).toBeTruthy();
-      expect(screen.queryByTestId("route-details")).toBeNull();
-      expect(
-        screen.getByText("external_endpoints.fields.models: 1"),
-      ).toBeTruthy();
-    },
-  );
-
-  it("keeps each legacy model's stored source beside its own model name", () => {
-    renderPage({}, "/", {
-      ...spec,
-      model_routes: null,
-      model_sources: { "model-008": "partner", "model-010": "acme-lab" },
-      upstreams: [
-        {
-          name: "legacy",
-          upstream: { url: "https://api.example.com" },
-          model_mapping: {
-            "model-008": "upstream-model-009",
-            "model-010": "upstream-model-009",
-          },
-        },
-      ],
-    });
-    for (const [model, source] of [
-      ["model-008", "partner"],
-      ["model-010", "acme-lab"],
-    ]) {
-      const modelGroup = screen.getByText(model).parentElement!;
-      expect(within(modelGroup).getByText(source)).toBeTruthy();
-    }
-    expect(screen.queryByText("Unspecified")).toBeNull();
   });
 
   it("offers the deep link in the tab row on the monitor tab", () => {
@@ -315,5 +280,50 @@ describe("ExternalEndpointsShow", () => {
     );
     expect(screen.getByTestId("monitor")).toBeTruthy();
     expect(screen.getByTestId("monitor-link")).toBeTruthy();
+  });
+
+  it.each([undefined, null])(
+    "renders legacy models in route cards when routes are %s",
+    (model_routes) => {
+      renderPage({}, "/", {
+        ...spec,
+        model_routes,
+        model_sources: { "model-010": "third-party-public" },
+        upstreams: [
+          {
+            upstream: { url: "https://api.example.com" },
+            model_mapping: {
+              "model-008": "upstream-model-009",
+              "model-010": "upstream-model-010",
+            },
+          },
+        ],
+      });
+      const cards = screen.getAllByTestId("route-details");
+      expect(cards).toHaveLength(2);
+      expect(cards[0].textContent).toContain("model-008");
+      expect(
+        within(cards[0]).getByText("modelSource.unspecified"),
+      ).toBeTruthy();
+      expect(cards[1].textContent).toContain("model-010");
+      expect(within(cards[1]).getByText("third-party-public")).toBeTruthy();
+      expect(cards[0].getAttribute("data-monitoring")).toBe("false");
+    },
+  );
+
+  it("keeps the inferred source of a legacy internal target", () => {
+    renderPage({}, "/", {
+      ...spec,
+      model_routes: null,
+      upstreams: [{ endpoint_ref: "qwen", model_mapping: { chat: "qwen" } }],
+    });
+    expect(
+      within(screen.getByTestId("route-details")).getByText("self-hosted"),
+    ).toBeTruthy();
+  });
+
+  it("does not restore explicitly empty routes from legacy mappings", () => {
+    renderPage({}, "/", { ...spec, model_routes: [] });
+    expect(screen.queryByTestId("route-details")).toBeNull();
   });
 });

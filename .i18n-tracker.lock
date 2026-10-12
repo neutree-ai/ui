@@ -242,9 +242,9 @@
   "src/pages/external-endpoints/create.tsx": "78286cb967917dee72c9c2b2ea415b43",
   "src/pages/external-endpoints/edit.tsx": "e731cde0ba1ff3d6e52bd7803a34e297",
   "src/pages/external-endpoints/list.tsx": "2e00bdf309d202be3a0b003239297251",
-  "src/pages/external-endpoints/show.tsx": "c561be5317c9be4440b9107dae5defef",
+  "src/pages/external-endpoints/show.tsx": "90a19e38eb0abbd928a2bf0e25ab07c2",
   "src/domains/external-endpoint/types.ts": "3a358d624da131e808244858b135596a",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "95e14f675e563eb10180dfae1fd63526",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "ba2d35665bbdb164263189fbecf0a9f3",
   "src/domains/external-endpoint/components/CurlExample.tsx": "5f8ddd7eabf6097561a62eea7d3eab65",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "ddcc260a2c5be44d29b82e5ec4435da7",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "aef504b00a7ee2db2ff13d55784c114d",
@@ -436,5 +436,6 @@
   "src/domains/external-endpoint/lib/monitoring-state.ts": "b7b4a060e10c69a27270f057f302e41e",
   "src/foundation/hooks/use-is-truncated.ts": "0cf7cb247f3944b09562b5c27e5b68c8",
   "src/foundation/components/Section.tsx": "c545240df77551f8779b1c50f5021927",
-  "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d"
+  "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d",
+  "src/domains/external-endpoint/lib/routes-from-legacy.ts": "acde878c10669469c6e88b3dff2d1f59"
 }

@@ -18,6 +18,7 @@ import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavai
 import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
 import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
+import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import {
   detailTabsListClassName,
@@ -25,7 +26,6 @@ import {
 } from "@/foundation/components/detail-tabs";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveExternalModelSource } from "@/foundation/lib/model-source";
@@ -75,6 +75,7 @@ export const ExternalEndpointsShow = () => {
   );
 
   const upstreams = record.spec?.upstreams ?? [];
+  const routes = record.spec?.model_routes ?? routesFromLegacy(upstreams);
   const upstreamName = (index: number) =>
     upstreams[index]?.name ||
     t("external_endpoints.sections.modelService", { index: index + 1 });
@@ -149,15 +150,19 @@ export const ExternalEndpointsShow = () => {
               each one keeping ShowPage.Section's own 20px content padding and
               card radius instead of restating them tighter here. */}
           <div className="space-y-3">
-            {record.spec?.model_routes?.length ? (
+            {routes.length ? (
               <ShowPage.Section
                 title={t("external_endpoints.sections.virtualModels")}
               >
                 <div className="space-y-3">
-                  {record.spec.model_routes.map((route) => (
+                  {routes.map((route) => (
                     <ModelRouteDetails
                       key={route.model}
-                      onViewMonitoring={() => selectTab("monitor", route.model)}
+                      onViewMonitoring={
+                        record.spec?.model_routes?.length
+                          ? () => selectTab("monitor", route.model)
+                          : undefined
+                      }
                       route={route}
                       source={resolveExternalModelSource(
                         record.spec,
@@ -285,23 +290,12 @@ export const ExternalEndpointsShow = () => {
                                         <div className="flex flex-wrap gap-1.5">
                                           {mapping.exposedModels.map(
                                             (model) => (
-                                              <span
+                                              <code
                                                 key={model}
-                                                className="inline-flex max-w-full flex-wrap items-center gap-1.5"
+                                                className="max-w-full break-all rounded bg-muted px-2 py-1 text-xs"
                                               >
-                                                <code className="max-w-full break-all rounded bg-muted px-2 py-1 text-xs">
-                                                  {model}
-                                                </code>
-                                                {!record.spec?.model_routes
-                                                  ?.length && (
-                                                  <ModelSourceBadge
-                                                    source={resolveExternalModelSource(
-                                                      record.spec,
-                                                      model,
-                                                    )}
-                                                  />
-                                                )}
-                                              </span>
+                                                {model}
+                                              </code>
                                             ),
                                           )}
                                         </div>

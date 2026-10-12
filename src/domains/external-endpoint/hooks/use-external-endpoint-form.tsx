@@ -25,6 +25,7 @@ import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-u
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
+import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import { getRouteStrategyError } from "@/domains/external-endpoint/lib/validate-route-strategy";
 import type {
   ExternalEndpoint,
@@ -62,32 +63,6 @@ function nextProviderName(usedNames: Set<string | undefined>) {
   let index = 1;
   while (usedNames.has(`provider-${index}`)) index++;
   return `provider-${index}`;
-}
-
-function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
-  const routes: ModelRoute[] = [];
-  const seen = new Set<string>();
-  for (const [index, upstream] of upstreams.entries()) {
-    for (const [model, upstreamModel] of Object.entries(
-      upstream.model_mapping ?? {},
-    )) {
-      if (seen.has(model)) continue;
-      seen.add(model);
-      routes.push({
-        model,
-        strategy: "fixed",
-        targets: [
-          {
-            upstream: upstream.name || `provider-${index + 1}`,
-            upstream_model: upstreamModel,
-            priority: 0,
-            weight: 1,
-          },
-        ],
-      });
-    }
-  }
-  return routes;
 }
 
 function removeRouteProvider(
