@@ -5,6 +5,7 @@ import {
   formatTick,
   shortLabel,
   TrendTooltip,
+  trendCursor,
 } from "@/pages/model-usage/components/UsageChart";
 import type { UsageSeries } from "@/pages/model-usage/lib/usage-series";
 
@@ -46,6 +47,26 @@ describe("shortLabel", () => {
   it("shortens a long axis label but leaves a short one alone", () => {
     expect(shortLabel("3402")).toBe("3402");
     expect(shortLabel("svc-reporting-pipeline-prod")).toBe("svc-repo…");
+  });
+});
+
+describe("trendCursor", () => {
+  it("tints the bar highlight with the theme's muted fill", () => {
+    expect(trendCursor("bar")).toEqual({ fill: "hsl(var(--muted))" });
+  });
+
+  it("draws the line view's guide with a neutral theme stroke", () => {
+    expect(trendCursor("line")).toEqual({
+      stroke: "var(--nt-stroke-neutral-trans-3)",
+    });
+  });
+
+  it("only names theme variables, never a literal color", () => {
+    for (const cursor of [trendCursor("bar"), trendCursor("line")]) {
+      for (const value of Object.values(cursor)) {
+        expect(value).toMatch(/var\(--/);
+      }
+    }
   });
 });
 
