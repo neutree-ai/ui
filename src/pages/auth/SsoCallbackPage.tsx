@@ -22,6 +22,7 @@ const KNOWN_ERRORS = new Set([
   "login_failed",
   "server_error",
   "source_unavailable",
+  "user_disabled",
 ]);
 
 // The token is single use and React may run effects twice, so each token is

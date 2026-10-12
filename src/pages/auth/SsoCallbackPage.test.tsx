@@ -102,6 +102,17 @@ describe("SsoCallbackPage", () => {
     expect(verifySsoToken).not.toHaveBeenCalled();
   });
 
+  it("tells a disabled user that the account is disabled", () => {
+    arrive("#error=user_disabled");
+
+    render(<SsoCallbackPage />);
+
+    expect(screen.getByTestId("sso-callback-error").textContent).toBe(
+      "pages.ssoCallback.errors.user_disabled",
+    );
+    expect(verifySsoToken).not.toHaveBeenCalled();
+  });
+
   it("uses a generic message for an unknown error code", () => {
     arrive("#error=something_new");
 

@@ -436,7 +436,7 @@
   "src/foundation/lib/api/identity-sources.ts": "4100b4d07ce7a31c1629acb5facde47d",
   "src/foundation/lib/sso-callback.ts": "d49593617282f7519710600b0b8426dc",
   "src/foundation/lib/user-identity.ts": "d2349ebc47b192518fdaf0679fb1055e",
-  "src/pages/auth/SsoCallbackPage.tsx": "f326d963148f0ebea37054d5637d0bb3",
+  "src/pages/auth/SsoCallbackPage.tsx": "936c5937d9c257e1a0c2e56259d907a3",
   "src/domains/identity-source/types.ts": "ff0687108af3e5b0e8adc83fb9d7182e",
   "src/domains/identity-source/components/IdentitySourceStatus.tsx": "f87a3246bc529af20abe8dfb1bd77085",
   "src/domains/identity-source/components/StringListInput.tsx": "ae6a9831124e3179ca6370d043259b9a",

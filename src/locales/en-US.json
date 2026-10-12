@@ -230,7 +230,8 @@
 				"idp_unavailable": "The identity provider is unavailable. Try again later.",
 				"login_failed": "Your account could not be signed in. Contact your administrator if this persists.",
 				"server_error": "Something went wrong on the server. Try again later.",
-				"source_unavailable": "This sign-in method is no longer available."
+				"source_unavailable": "This sign-in method is no longer available.",
+				"user_disabled": "Your account is disabled. Contact your administrator."
 			}
 		}
 	},
