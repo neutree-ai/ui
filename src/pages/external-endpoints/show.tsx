@@ -77,8 +77,7 @@ export const ExternalEndpointsShow = () => {
   const upstreams = record.spec?.upstreams ?? [];
   const routes = record.spec?.model_routes ?? routesFromLegacy(upstreams);
   const upstreamName = (index: number) =>
-    upstreams[index]?.name ||
-    t("external_endpoints.sections.modelService", { index: index + 1 });
+    upstreams[index]?.name || `provider-${index + 1}`;
 
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
