@@ -1,5 +1,5 @@
 import { CircleHelp, Plus, Trash2 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
@@ -72,10 +71,6 @@ export default function ModelRouteEditor({
   const { t } = useTranslation();
   const modelSourceLabel = useModelSourceLabel();
   const editorId = useId();
-  const [pendingStrategy, setPendingStrategy] = useState<{
-    index: number;
-    route: EditableModelRoute;
-  } | null>(null);
   const routeIds = useRef<string[]>([]);
   const nextRouteId = useRef(0);
   const editor = useRef<HTMLDivElement>(null);
@@ -110,10 +105,6 @@ export default function ModelRouteEditor({
     if (!current) return;
     const next = changeRouteStrategy(current, mode, providers[0]?.value || "");
     if (next.route === current) return;
-    if (next.losesConfiguration) {
-      setPendingStrategy({ index, route: next.route });
-      return;
-    }
     updateRoute(index, next.route);
   };
 
@@ -131,21 +122,6 @@ export default function ModelRouteEditor({
 
   return (
     <div ref={editor} className="space-y-4">
-      <ConfirmDialog
-        open={pendingStrategy !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingStrategy(null);
-        }}
-        title={t("external_endpoints.messages.changeStrategyTitle")}
-        description={t("external_endpoints.messages.changeStrategyDescription")}
-        okText={t("external_endpoints.actions.changeStrategy")}
-        cancelText={t("buttons.cancel")}
-        onConfirm={() => {
-          if (pendingStrategy)
-            updateRoute(pendingStrategy.index, pendingStrategy.route);
-          setPendingStrategy(null);
-        }}
-      />
       {value.map((route, index) => {
         const key = routeIds.current[index];
         const mode = route.strategy ?? "fixed";

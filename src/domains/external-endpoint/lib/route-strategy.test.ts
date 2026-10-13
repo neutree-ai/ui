@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { changeRouteStrategy, type EditableModelRoute } from "./route-strategy";
 
 describe("route strategy conversion", () => {
-  it("warns before dropping configured targets or primary/standby roles", () => {
+  it("normalizes configured targets and primary/standby roles immediately", () => {
     const route: EditableModelRoute = {
       model: "chat",
       strategy: "priority",
@@ -17,7 +17,6 @@ describe("route strategy conversion", () => {
       ],
     };
     const weighted = changeRouteStrategy(route, "weighted", "a");
-    expect(weighted.losesConfiguration).toBe(true);
     expect(weighted.route.targets).toEqual(
       route.targets.map((target) => ({
         ...target,
@@ -27,7 +26,6 @@ describe("route strategy conversion", () => {
       })),
     );
     const fixed = changeRouteStrategy(route, "fixed", "a");
-    expect(fixed.losesConfiguration).toBe(true);
     expect(fixed.route.targets).toEqual([
       { ...route.targets[0], weight: undefined },
     ]);
@@ -35,7 +33,7 @@ describe("route strategy conversion", () => {
     expect(route.targets[0].max_inflight_requests).toBe(7);
   });
 
-  it("clears weights and assigns primary/standby tiers on confirmed conversion", () => {
+  it("clears weights and assigns primary/standby tiers on conversion", () => {
     const route: EditableModelRoute = {
       model: "chat",
       strategy: "weighted",
@@ -46,7 +44,6 @@ describe("route strategy conversion", () => {
       ],
     };
     const next = changeRouteStrategy(route, "priority", "a");
-    expect(next.losesConfiguration).toBe(true);
     expect(
       next.route.targets.map(({ priority, weight }) => ({ priority, weight })),
     ).toEqual([
