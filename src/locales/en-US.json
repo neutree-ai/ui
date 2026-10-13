@@ -1338,7 +1338,7 @@
 			"mappingExposedCount_other": "{{count}} exposed models",
 			"noModelMappings": "No model mappings configured.",
 			"changeStrategyTitle": "Change routing strategy?",
-			"changeStrategyDescription": "Unsaved routing configuration will be lost when switching strategies. Continue?",
+			"changeStrategyDescription": "Switching strategies will reset some unsaved settings. Continue?",
 			"fixedRoutingHint": "Send all requests to the single upstream model configured below.",
 			"priorityRoutingHint": "Use active targets first. Use standby targets when no active target can accept a request, including when all are at capacity.",
 			"weightedRoutingHint": "Distribute requests across the upstream models according to their configured weights.",
