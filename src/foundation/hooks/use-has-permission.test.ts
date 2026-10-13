@@ -29,7 +29,7 @@ describe("useHasPermission", () => {
     vi.mocked(useGetIdentity).mockReset();
   });
 
-  it("asks has_permission for the signed-in user", () => {
+  it("asks has_permission_in_any_scope for the signed-in user", () => {
     identity("u-1");
     rpc({ data: true });
     const { result } = renderHook(() =>
@@ -37,7 +37,7 @@ describe("useHasPermission", () => {
     );
     expect(result.current).toEqual({ allowed: true, isLoading: false });
     expect(vi.mocked(useCustom).mock.calls[0][0]).toMatchObject({
-      url: "/rpc/has_permission",
+      url: "/rpc/has_permission_in_any_scope",
       method: "post",
       config: {
         payload: {

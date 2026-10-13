@@ -7,11 +7,14 @@ type PermissionState = {
 };
 
 /**
- * Whether the signed-in user holds a global permission (e.g.
- * "identity_source:read"), as the database's has_permission decides it.
- * Without a permission to check, everything is allowed.
+ * Whether the signed-in user holds a permission (e.g. "org_unit:read") on any
+ * scope: globally or through an OrgUnit-scoped role assignment, as the
+ * database's has_permission_in_any_scope decides it. Without a permission to
+ * check, everything is allowed.
  *
- * This only decides what the UI offers; the server enforces it regardless.
+ * Only for what the UI offers (menus, gates, buttons): a department admin
+ * must see the entry even though they hold the permission on a subtree only.
+ * The server checks every row regardless.
  */
 export const useHasPermission = (permission?: string): PermissionState => {
   const { data: identity, isLoading: identityLoading } = useGetIdentity<{
@@ -19,9 +22,9 @@ export const useHasPermission = (permission?: string): PermissionState => {
   }>();
   const userId = identity?.id;
 
-  // has_permission answers with a bare boolean, read back through `unknown`.
+  // The RPC answers with a bare boolean, read back through `unknown`.
   const { data, isLoading, isError } = useCustom({
-    url: "/rpc/has_permission",
+    url: "/rpc/has_permission_in_any_scope",
     method: "post",
     config: {
       payload: { user_uuid: userId, required_permission: permission },
