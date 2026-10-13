@@ -1,4 +1,3 @@
-import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { useCan, useInvalidate, useUpdate } from "@refinedev/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { getErrorMessage } from "@/foundation/lib/error-message";
@@ -65,14 +65,17 @@ export function ZCacheControlPlane({ cluster }: { cluster: Cluster }) {
         values: {
           spec: {
             ...cluster.spec,
-            cache: { provider: "zcache", options: {
-              ...(zcacheSpec(cluster) ?? {
-                enabled: false,
-                l1_size_gib: 1,
-                target_nodes: [],
-              }),
-              control_plane: { version: target, request_id: uuidv4() },
-            } },
+            cache: {
+              provider: "zcache",
+              options: {
+                ...(zcacheSpec(cluster) ?? {
+                  enabled: false,
+                  l1_size_gib: 1,
+                  target_nodes: [],
+                }),
+                control_plane: { version: target, request_id: uuidv4() },
+              },
+            },
           },
         },
         meta: {

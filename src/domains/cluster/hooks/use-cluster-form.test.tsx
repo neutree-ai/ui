@@ -75,7 +75,11 @@ vi.mock("@/domains/cluster/components/ModelCacheFields", () => ({
 const cacheCapability = vi.hoisted(() => ({ value: false }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
-    systemInfo: { capabilities: { cluster_cache_providers: cacheCapability.value ? ["zcache"] : [] } },
+    systemInfo: {
+      capabilities: {
+        cluster_cache_providers: cacheCapability.value ? ["zcache"] : [],
+      },
+    },
   }),
 }));
 
