@@ -263,7 +263,14 @@ function RoutingForm({ routes }: { routes: ModelRoute[] }) {
         models: null,
       })),
     );
-    setValue("spec.model_routes", routes);
+    setValue(
+      "spec.model_routes",
+      routes.map((route) => ({
+        ...route,
+        strategyLocked:
+          route.strategy === "priority" || route.strategy === "weighted",
+      })),
+    );
   }, [setValue, routes]);
   return (
     <FormProvider {...form}>
@@ -1173,8 +1180,14 @@ const routeFixture = (model: string, upstream: string) => ({
   strategy: "fixed" as const,
   targets: [{ upstream, upstream_model: "old-model", priority: 0, weight: 1 }],
 });
-function RoutingEditForm({ spec }: { spec: ExternalEndpointSpec }) {
-  const result = useExternalEndpointForm({ action: "edit" });
+function RoutingEditForm({
+  spec,
+  action = "edit",
+}: {
+  spec: ExternalEndpointSpec;
+  action?: "create" | "edit";
+}) {
+  const result = useExternalEndpointForm({ action });
   React.useEffect(() => {
     const response = selectEndpointForForm({
       data: {
@@ -1184,8 +1197,10 @@ function RoutingEditForm({ spec }: { spec: ExternalEndpointSpec }) {
         spec,
       } as ExternalEndpoint,
     });
-    result.form.reset(response.data);
-  }, [result.form.reset, spec]);
+    result.form.reset(
+      action === "edit" ? response.data : { ...response.data, spec },
+    );
+  }, [result.form.reset, spec, action]);
   return (
     <ResourceForm
       {...result.form}
@@ -1634,6 +1649,216 @@ describe("routing state regression", () => {
   });
 });
 
+describe("draft route strategy changes", () => {
+  const modeLabel = "external_endpoints.fields.routingMode";
+  const modelLabel = "external_endpoints.fields.virtualModelName";
+  const switchMode = (value: string, index = 0) => {
+    const selector = screen.getAllByLabelText(modeLabel)[index];
+    expect(selector).toHaveProperty("disabled", false);
+    fireEvent.change(selector, { target: { value } });
+  };
+  const confirmSwitch = () =>
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.changeStrategy",
+      }),
+    );
+  const spec = {
+    timeout: 60000,
+    upstreams: [upstreamFixture("a")],
+    model_routes: [routeFixture("chat", "a")],
+  };
+
+  it("allows repeated switches in a create form and submits one fixed target without form metadata", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(<RoutingEditForm action="create" spec={spec} />);
+    for (const mode of [
+      "priority",
+      "weighted",
+      "fixed",
+      "weighted",
+      "priority",
+      "fixed",
+    ]) {
+      switchMode(mode);
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+      expect(screen.getByLabelText(modeLabel)).toHaveProperty("value", mode);
+      expect(
+        screen.getAllByLabelText("external_endpoints.fields.upstreamModelName"),
+      ).toHaveLength(mode === "fixed" ? 1 : 2);
+    }
+    await submitRoutingForm();
+    expect(submitEndpoint).toHaveBeenCalledOnce();
+    expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes).toEqual([
+      spec.model_routes[0],
+    ]);
+  });
+
+  it("allows an added route to switch in edit mode while keeping renamed saved routes locked after deletion", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    const saved = {
+      ...routeFixture("saved", "a"),
+      strategy: "weighted" as const,
+      targets: [
+        {
+          upstream: "a",
+          upstream_model: "old-model",
+          weight: 100,
+          priority: 0,
+        },
+      ],
+    };
+    render(
+      <RoutingEditForm
+        spec={{
+          ...spec,
+          model_routes: [routeFixture("remove-me", "a"), saved],
+        }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.addVirtualModel",
+      }),
+    );
+    fireEvent.change(screen.getAllByLabelText(modelLabel)[2], {
+      target: { value: "new-model" },
+    });
+    for (const mode of ["priority", "weighted", "fixed", "priority", "fixed"])
+      switchMode(mode, 2);
+    fireEvent.change(screen.getAllByLabelText(modelLabel)[1], {
+      target: { value: "renamed" },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: "external_endpoints.actions.removeVirtualModel",
+      })[0],
+    );
+    expect(screen.getAllByLabelText(modeLabel)[0]).toHaveProperty(
+      "disabled",
+      true,
+    );
+    switchMode("weighted", 1);
+    switchMode("fixed", 1);
+    fireEvent.change(
+      screen.getAllByLabelText(
+        "external_endpoints.fields.upstreamModelName",
+      )[1],
+      { target: { value: "new-upstream-model" } },
+    );
+    await submitRoutingForm();
+    expect(submitEndpoint).toHaveBeenCalledOnce();
+    expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes).toEqual([
+      { ...saved, model: "renamed" },
+      {
+        model: "new-model",
+        strategy: "fixed",
+        targets: [
+          {
+            upstream: "a",
+            upstream_model: "new-upstream-model",
+            priority: 0,
+            weight: 1,
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("cancels lossy switches without changing targets, then confirms a valid single-target submission", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    render(<RoutingEditForm action="create" spec={spec} />);
+    switchMode("priority");
+    fireEvent.change(
+      screen.getAllByLabelText("external_endpoints.fields.provider")[1],
+      { target: { value: "a" } },
+    );
+    fireEvent.change(
+      screen.getAllByLabelText(
+        "external_endpoints.fields.upstreamModelName",
+      )[1],
+      { target: { value: "standby" } },
+    );
+    fireEvent.change(
+      screen.getAllByLabelText(
+        "external_endpoints.fields.maxInflightRequests",
+      )[0],
+      { target: { value: "7" } },
+    );
+    switchMode("weighted");
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
+    expect(screen.getByLabelText(modeLabel)).toHaveProperty(
+      "value",
+      "priority",
+    );
+    expect(
+      screen.getAllByLabelText(
+        "external_endpoints.fields.maxInflightRequests",
+      )[0],
+    ).toHaveProperty("value", "7");
+    switchMode("weighted");
+    confirmSwitch();
+    for (const weight of screen.getAllByLabelText(
+      "external_endpoints.fields.weightRatio",
+    ))
+      fireEvent.change(weight, { target: { value: "50" } });
+    switchMode("fixed");
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
+    expect(
+      screen
+        .getAllByLabelText("external_endpoints.fields.weightRatio")
+        .map((input) => (input as HTMLInputElement).value),
+    ).toEqual(["50", "50"]);
+    switchMode("fixed");
+    confirmSwitch();
+    await submitRoutingForm();
+    expect(submitEndpoint).toHaveBeenCalledOnce();
+    expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes).toEqual([
+      spec.model_routes[0],
+    ]);
+  });
+
+  it("allows a saved fixed route to be revised before saving and locks it after reopening as weighted", async () => {
+    cleanup();
+    submitEndpoint.mockClear();
+    const { unmount } = render(<RoutingEditForm spec={spec} />);
+    for (const mode of ["priority", "weighted", "fixed", "weighted"])
+      switchMode(mode);
+    for (const weight of screen.getAllByLabelText(
+      "external_endpoints.fields.weightRatio",
+    ))
+      fireEvent.change(weight, { target: { value: "50" } });
+    fireEvent.change(
+      screen.getAllByLabelText("external_endpoints.fields.provider")[1],
+      { target: { value: "a" } },
+    );
+    fireEvent.change(
+      screen.getAllByLabelText(
+        "external_endpoints.fields.upstreamModelName",
+      )[1],
+      { target: { value: "backup" } },
+    );
+    await submitRoutingForm();
+    expect(submitEndpoint).toHaveBeenCalledOnce();
+    const savedSpec = submitEndpoint.mock.lastCall?.[0].spec;
+    expect(savedSpec.model_routes[0]).not.toHaveProperty("strategyLocked");
+    unmount();
+    render(<RoutingEditForm spec={savedSpec} />);
+    expect(screen.getByLabelText(modeLabel)).toHaveProperty("disabled", true);
+    fireEvent.change(screen.getByLabelText(modeLabel), {
+      target: { value: "fixed" },
+    });
+    expect(screen.getByLabelText(modeLabel)).toHaveProperty(
+      "value",
+      "weighted",
+    );
+  });
+});
+
 describe("strategy constraints regression", () => {
   it.each([
     [1, 2, 3],
@@ -1849,6 +2074,11 @@ describe("strategy constraints regression", () => {
     fireEvent.change(
       screen.getByLabelText("external_endpoints.fields.routingMode"),
       { target: { value: "weighted" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.changeStrategy",
+      }),
     );
     const weights = screen.getAllByLabelText(
       "external_endpoints.fields.weightRatio",

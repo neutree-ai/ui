@@ -25,6 +25,7 @@ import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-u
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
+import type { EditableModelRoute } from "@/domains/external-endpoint/lib/route-strategy";
 import { getRouteStrategyError } from "@/domains/external-endpoint/lib/validate-route-strategy";
 import type {
   ExternalEndpoint,
@@ -153,14 +154,20 @@ export const useExternalEndpointForm = ({
               spec: {
                 ...record.spec,
                 model_routes: record.spec.model_routes?.map((route) => {
-                  if (route.strategy !== "priority") return route;
+                  const editable: EditableModelRoute = {
+                    ...route,
+                    strategyLocked:
+                      route.strategy === "priority" ||
+                      route.strategy === "weighted",
+                  };
+                  if (route.strategy !== "priority") return editable;
                   // The form exposes two tiers: the lowest priority is primary;
                   // all remaining targets share the standby tier on save.
                   const primary = Math.min(
                     ...route.targets.map((target) => target.priority ?? 0),
                   );
                   return {
-                    ...route,
+                    ...editable,
                     targets: route.targets.map((target) => ({
                       ...target,
                       priority: (target.priority ?? 0) === primary ? 0 : 1,
@@ -433,20 +440,24 @@ export const useExternalEndpointForm = ({
         ...upstream,
         model_mapping: {},
       }));
-      v.spec.model_routes = routes.map((route) => ({
-        ...route,
-        strategy: route.strategy ?? "fixed",
-        targets: route.targets.map((target) => ({
-          ...target,
-          upstream:
-            providerNames[
-              fields.findIndex((field) => field.name === target.upstream)
-            ] ?? target.upstream,
-          priority: target.priority ?? 0,
-          weight:
-            route.strategy === "weighted" ? target.weight : target.weight || 1,
-        })),
-      }));
+      v.spec.model_routes = (routes as EditableModelRoute[]).map(
+        ({ strategyLocked: _strategyLocked, ...route }) => ({
+          ...route,
+          strategy: route.strategy ?? "fixed",
+          targets: route.targets.map((target) => ({
+            ...target,
+            upstream:
+              providerNames[
+                fields.findIndex((field) => field.name === target.upstream)
+              ] ?? target.upstream,
+            priority: target.priority ?? 0,
+            weight:
+              route.strategy === "weighted"
+                ? target.weight
+                : target.weight || 1,
+          })),
+        }),
+      );
     }
     return originalOnFinish(v);
   };
