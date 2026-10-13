@@ -8,6 +8,7 @@ import {
   groupByIdentitySource,
   indexNodes,
   type OrgTreeNode,
+  orgUnitPathLabel,
 } from "./org-tree";
 
 const unit = (
@@ -177,5 +178,26 @@ describe("filterTeams", () => {
     expect(filterTeams(teams, { query: "team-3" }).map((t) => t.id)).toEqual([
       3,
     ]);
+  });
+});
+
+describe("orgUnitPathLabel", () => {
+  const byId = new Map(corp.map((u) => [u.id, u]));
+
+  it("joins the display names along the path", () => {
+    expect(orgUnitPathLabel(corp[2], byId)).toBe(
+      "Corp / Engineering / Platform",
+    );
+  });
+
+  it("skips ancestors the user cannot read", () => {
+    const visible = new Map([[3, corp[2]]]);
+    expect(orgUnitPathLabel(corp[2], visible)).toBe("Platform");
+  });
+
+  it("falls back to the unit's own name without a path", () => {
+    expect(orgUnitPathLabel({ ...corp[2], path: "" }, new Map())).toBe(
+      "Platform",
+    );
   });
 });

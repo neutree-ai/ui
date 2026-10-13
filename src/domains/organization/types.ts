@@ -53,4 +53,5 @@ export type TeamMember = {
   user_id: string;
   created_at: string;
   user_profiles?: MemberProfile | null;
+  teams?: Team | null;
 };

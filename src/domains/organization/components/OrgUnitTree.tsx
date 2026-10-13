@@ -14,6 +14,8 @@ type OrgUnitTreeProps = {
   onExpandedChange: (id: number, open: boolean) => void;
   selectedId?: number;
   onSelect: (id: number) => void;
+  /** Nodes shown for context only, e.g. Inactive ones in a picker. */
+  isDisabled?: (node: OrgTreeNode) => boolean;
 };
 
 /** A read-only department tree: expand with the chevron, select with the row. */
@@ -32,11 +34,13 @@ function OrgUnitTreeItem({
   depth,
   ...props
 }: OrgUnitTreeProps & { node: OrgTreeNode; depth: number }) {
-  const { expanded, onExpandedChange, selectedId, onSelect } = props;
+  const { expanded, onExpandedChange, selectedId, onSelect, isDisabled } =
+    props;
   const id = node.unit.id;
   const hasChildren = node.children.length > 0;
   const open = hasChildren && expanded.has(id);
   const selected = selectedId === id;
+  const disabled = isDisabled?.(node) ?? false;
 
   return (
     <li>
@@ -47,7 +51,9 @@ function OrgUnitTreeItem({
         <div
           className={cn(
             "flex items-center gap-1 rounded-md pr-2 text-sm",
-            selected ? "bg-accent text-accent-foreground" : "hover:bg-muted",
+            selected
+              ? "bg-accent text-accent-foreground"
+              : !disabled && "hover:bg-muted",
           )}
           style={{ paddingLeft: `${depth * 16 + 4}px` }}
         >
@@ -70,9 +76,11 @@ function OrgUnitTreeItem({
             className={cn(
               "flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left",
               node.inactive && "text-muted-foreground",
+              disabled && "cursor-not-allowed",
             )}
             title={node.pathLabel}
             aria-pressed={selected}
+            disabled={disabled}
             onClick={() => onSelect(id)}
             data-testid={`org-unit-${id}`}
           >

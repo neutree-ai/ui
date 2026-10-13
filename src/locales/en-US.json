@@ -2014,7 +2014,8 @@
 		"edit": "Edit User",
 		"fields": {
 			"confirmPassword": "Confirm Password",
-			"displayName": "Display Name"
+			"displayName": "Display Name",
+			"identitySource": "Identity Source"
 		},
 		"hints": {
 			"externalEmail": "This user comes from an identity source, which manages the email. Change it there."
@@ -2025,10 +2026,29 @@
 		},
 		"sections": {
 			"globalRoles": "Global Roles",
-			"joinedWorkspaces": "Joined Workspaces"
+			"joinedWorkspaces": "Joined Workspaces",
+			"department": "Department",
+			"teams": "Teams"
 		},
 		"validation": {
 			"passwordMinLength": "Password must be at least 6 characters"
+		},
+		"values": {
+			"local": "Local"
+		},
+		"department": {
+			"assign": "Assign",
+			"change": "Change",
+			"remove": "Remove",
+			"assignTitle": "Assign Department",
+			"assignHint": "Pick an active department. It replaces the user's current department.",
+			"selected": "Selected",
+			"removeTitle": "Remove the department?",
+			"removeHint": "The user will not belong to any department.",
+			"none": "Not in a department."
+		},
+		"teams": {
+			"none": "Not in a team."
 		}
 	},
 	"roles": {

@@ -33,6 +33,21 @@ const byLabel = (a: { label: string }, b: { label: string }) =>
   a.label.localeCompare(b.label);
 
 /**
+ * "A / B / C": the display names along the OrgUnit's path, skipping the
+ * ancestors the user cannot read (absent from unitsById).
+ */
+export function orgUnitPathLabel(
+  unit: OrgUnit,
+  unitsById: ReadonlyMap<number, OrgUnit>,
+): string {
+  const labels = pathIds(unit.path)
+    .map((id) => (id === unit.id ? unit : unitsById.get(id)))
+    .filter((ancestor): ancestor is OrgUnit => !!ancestor)
+    .map((ancestor) => displayName(ancestor.metadata));
+  return labels.length ? labels.join(" / ") : displayName(unit.metadata);
+}
+
+/**
  * Builds the department forest from the OrgUnits the user can read. A user
  * bound to a subtree cannot read its ancestors, so a node whose parent is not
  * in the list hangs under its nearest readable ancestor, or becomes a root.
@@ -42,15 +57,10 @@ export function buildOrgTree(units: OrgUnit[]): OrgTreeNode[] {
   const nodes = new Map<number, OrgTreeNode>();
 
   for (const unit of units) {
-    const pathLabel = pathIds(unit.path)
-      .map((id) => unitsById.get(id))
-      .filter((ancestor): ancestor is OrgUnit => !!ancestor)
-      .map((ancestor) => displayName(ancestor.metadata))
-      .join(" / ");
     nodes.set(unit.id, {
       unit,
       label: displayName(unit.metadata),
-      pathLabel,
+      pathLabel: orgUnitPathLabel(unit, unitsById),
       inactive: isInactive(unit),
       children: [],
     });

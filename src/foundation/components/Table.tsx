@@ -33,6 +33,7 @@ import {
 import type React from "react";
 import {
   type FC,
+  isValidElement,
   type PropsWithChildren,
   type ReactElement,
   type ReactNode,
@@ -157,7 +158,7 @@ type TableProps<
   TData extends BaseRecord = BaseRecord,
   TError extends HttpError = HttpError,
 > = Partial<UseTableProps<TData, TError, TData>> & {
-  children?: ReactElement<ColumnProps<TData, TError>>[];
+  children?: (ReactElement<ColumnProps<TData, TError>> | false | null)[];
   showHeader?: boolean;
   showColumnVisibility?: boolean;
   enableBatchDelete?: boolean;
@@ -544,8 +545,10 @@ export function Table<
 
     if (Array.isArray(children)) {
       cols.push(
-        ...(children as ReactElement[])
-          .map((value: ReactElement) => value.props)
+        ...(children as ReactNode[])
+          // A column can be left out with `{condition && <Table.Column />}`.
+          .filter((value): value is ReactElement => isValidElement(value))
+          .map((value) => value.props)
           .map((props) => mapTableColumn<TData, TError>(props)),
       );
     }

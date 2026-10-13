@@ -1,4 +1,8 @@
 import { useShow } from "@refinedev/core";
+import {
+  UserDepartmentSection,
+  UserTeamsSection,
+} from "@/domains/organization/components/UserOrganization";
 import type { UserProfile } from "@/domains/user/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
@@ -11,6 +15,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import {
   profileDisplayName,
   profileEmail,
+  profileIdentitySource,
 } from "@/foundation/lib/user-identity";
 
 export const UsersShow = () => {
@@ -42,11 +47,19 @@ export const UsersShow = () => {
             <ShowPage.Meta label={t("common.fields.email")}>
               {profileEmail(record) || <EmptyValue />}
             </ShowPage.Meta>
+            <ShowPage.Meta label={t("user_profiles.fields.identitySource")}>
+              <span data-testid="user-identity-source">
+                {profileIdentitySource(record.metadata) ||
+                  t("user_profiles.values.local")}
+              </span>
+            </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
       />
       <div className="mt-4 space-y-3">
+        <UserDepartmentSection profile={record} />
+        <UserTeamsSection userId={record.id} />
         <ShowPage.Section
           title={t("user_profiles.sections.globalRoles")}
           data-testid="global-roles-card"
