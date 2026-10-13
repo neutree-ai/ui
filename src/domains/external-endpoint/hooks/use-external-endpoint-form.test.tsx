@@ -1657,6 +1657,12 @@ describe("draft route strategy changes", () => {
     expect(selector).toHaveProperty("disabled", false);
     fireEvent.change(selector, { target: { value } });
   };
+  const confirmSwitch = () =>
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.changeStrategy",
+      }),
+    );
   const spec = {
     timeout: 60000,
     upstreams: [upstreamFixture("a")],
@@ -1761,7 +1767,7 @@ describe("draft route strategy changes", () => {
     ]);
   });
 
-  it("switches populated drafts immediately without confirmation and submits one fixed target", async () => {
+  it("cancels lossy switches without changing targets, then confirms a valid single-target submission", async () => {
     cleanup();
     submitEndpoint.mockClear();
     render(<RoutingEditForm action="create" spec={spec} />);
@@ -1783,21 +1789,32 @@ describe("draft route strategy changes", () => {
       { target: { value: "7" } },
     );
     switchMode("weighted");
-    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
     expect(screen.getByLabelText(modeLabel)).toHaveProperty(
       "value",
-      "weighted",
+      "priority",
     );
     expect(
-      screen.queryByLabelText("external_endpoints.fields.maxInflightRequests"),
-    ).toBeNull();
+      screen.getAllByLabelText(
+        "external_endpoints.fields.maxInflightRequests",
+      )[0],
+    ).toHaveProperty("value", "7");
+    switchMode("weighted");
+    confirmSwitch();
     for (const weight of screen.getAllByLabelText(
       "external_endpoints.fields.weightRatio",
     ))
       fireEvent.change(weight, { target: { value: "50" } });
     switchMode("fixed");
-    expect(screen.queryByRole("alertdialog")).toBeNull();
-    expect(screen.getByLabelText(modeLabel)).toHaveProperty("value", "fixed");
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
+    expect(
+      screen
+        .getAllByLabelText("external_endpoints.fields.weightRatio")
+        .map((input) => (input as HTMLInputElement).value),
+    ).toEqual(["50", "50"]);
+    switchMode("fixed");
+    confirmSwitch();
     await submitRoutingForm();
     expect(submitEndpoint).toHaveBeenCalledOnce();
     expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes).toEqual([
@@ -2057,6 +2074,11 @@ describe("strategy constraints regression", () => {
     fireEvent.change(
       screen.getByLabelText("external_endpoints.fields.routingMode"),
       { target: { value: "weighted" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.actions.changeStrategy",
+      }),
     );
     const weights = screen.getAllByLabelText(
       "external_endpoints.fields.weightRatio",

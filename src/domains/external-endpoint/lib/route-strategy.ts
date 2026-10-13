@@ -1,4 +1,4 @@
-import type { ModelRoute } from "../types";
+import type { ModelRoute, ModelRouteTarget } from "../types";
 
 export type RouteStrategy = NonNullable<ModelRoute["strategy"]>;
 
@@ -14,7 +14,26 @@ export function changeRouteStrategy(
   defaultUpstream: string,
 ) {
   if (route.strategyLocked || (route.strategy ?? "fixed") === strategy)
-    return { route };
+    return { route, losesConfiguration: false };
+
+  const currentStrategy = route.strategy ?? "fixed";
+  const hasConfiguration = (target: ModelRouteTarget) =>
+    !!target.upstream ||
+    !!target.upstream_model ||
+    target.weight != null ||
+    target.max_inflight_requests != null;
+  const losesConfiguration =
+    (strategy === "fixed" && route.targets.slice(1).some(hasConfiguration)) ||
+    (currentStrategy === "weighted" &&
+      route.targets.some((target) => target.weight != null)) ||
+    (strategy === "weighted" &&
+      route.targets.some(
+        (target) =>
+          target.max_inflight_requests != null ||
+          (currentStrategy === "priority" &&
+            (target.priority ?? 0) > 0 &&
+            hasConfiguration(target)),
+      ));
 
   let targets = route.targets.length
     ? route.targets
@@ -35,5 +54,6 @@ export function changeRouteStrategy(
           strategy === "weighted" ? undefined : target.max_inflight_requests,
       })),
     },
+    losesConfiguration,
   };
 }
