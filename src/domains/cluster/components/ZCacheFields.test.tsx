@@ -9,7 +9,7 @@ import { ZCacheFields } from "./ZCacheFields";
 const cacheDependencies = vi.hoisted(() => ({
   rows: [] as Array<{
     spec: { kv_cache?: { provider: string } | null };
-    status?: { zcache?: { in_use: boolean } };
+    status?: { kv_cache?: { provider:string; details:{ in_use:boolean } } };
   }>,
 }));
 vi.mock("@refinedev/core", () => ({

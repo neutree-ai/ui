@@ -11,7 +11,7 @@ afterEach(cleanup);
 function Editor({ cache, save }: { cache: unknown; save: (value: unknown) => void }) {
   const form = useForm<FieldValues>({ defaultValues: { spec: { kv_cache: cache, engine: { engine: "vllm" } } } });
   return <FormProvider {...form}><form onSubmit={form.handleSubmit(save)}>
-    <EndpointZCacheFields form={form} isEdit cluster={{ metadata: { name: "test" }, spec: { type: "kubernetes", cache: { provider: "zcache", options: { enabled: true, target_nodes: ["a"] } } } } as EndpointClusterRef} />
+    <EndpointZCacheFields form={form} isEdit cluster={{ metadata: { name: "test" }, spec: { type: "kubernetes", cache: { provider: "zcache", options: { enabled: true, target_nodes: ["a"] } } } } as unknown as EndpointClusterRef} />
     <button type="submit">save</button>
   </form></FormProvider>;
 }

@@ -10,7 +10,7 @@ afterEach(cleanup);
 describe("EndpointZCacheSummary", () => {
   it.each([[true, true], [false, true], [false, false]])("renders enabled=%s configured=%s", (enabled, configured) => {
     const endpoint = { metadata: { workspace: "default" }, spec: { kv_cache: enabled ? { provider: "zcache", options: { timeout_seconds: 2 } } : null } } as Endpoint;
-    const cluster = { metadata: { name: "gpu-cluster" }, spec: { cache: { provider: "zcache", options: { enabled: configured } } } } as Cluster;
+    const cluster = { metadata: { name: "gpu-cluster" }, spec: { cache: { provider: "zcache", options: { enabled: configured } } } } as unknown as Cluster;
     render(<MemoryRouter><EndpointZCacheSummary endpoint={endpoint} cluster={cluster} /></MemoryRouter>);
     const toggle = screen.getByRole("switch") as HTMLButtonElement;
     expect(toggle.disabled).toBe(true);

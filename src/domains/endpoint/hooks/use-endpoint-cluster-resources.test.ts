@@ -60,7 +60,7 @@ describe("useEndpointClusterResources", () => {
     const cluster = makeCluster("cache-cluster", "kubernetes", {
       nodeResources: { "cache-node": node("Tesla-T4", 1), "other-node": node("A100", 8) },
     });
-    cluster.spec.cache?.options = { enabled: true, target_nodes: ["cache-node"] };
+    cluster.spec.cache = { enabled: true, target_nodes: ["cache-node"] };
     const { result } = renderHook(() => useEndpointClusterResources({
       currentCluster: "cache-cluster", cacheEnabled: true, clustersData: [cluster],
       selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },

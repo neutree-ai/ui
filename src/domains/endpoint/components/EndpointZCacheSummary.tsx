@@ -31,7 +31,7 @@ export function EndpointZCacheSummary({ endpoint, cluster }: { endpoint: Endpoin
         </>
       )}
       {cluster && !configured && <span className="text-sm text-muted-foreground">{t("endpoints.zcache.clusterUnconfigured")}</span>}
-      {configured && (
+      {cluster && configured && (
         <div className="ml-auto text-right">
           <Link className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline" to={`/${encodeURIComponent(endpoint.metadata.workspace ?? "default")}/clusters/show/${encodeURIComponent(cluster.metadata.name)}?section=zcache`}>
             {t("endpoints.zcache.viewCluster")}<ArrowRight className="h-4 w-4" />
