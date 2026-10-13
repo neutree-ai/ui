@@ -274,13 +274,14 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
               {t("clusters.zcache.monitorHint")}
             </p>
             {grafanaUrl ? (
-              <GrafanaDashboard
-                {...getZCacheDashboardProps(grafanaUrl, {
-                  workspace: cluster.metadata.workspace ?? "default",
-                  clusterName: cluster.metadata.name,
-                })}
-                className="h-[780px]"
-              />
+              <div className="h-[780px]">
+                <GrafanaDashboard
+                  {...getZCacheDashboardProps(grafanaUrl, {
+                    workspace: cluster.metadata.workspace ?? "default",
+                    clusterName: cluster.metadata.name,
+                  })}
+                />
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground">
                 {t("common.messages.grafanaNotConfigured")}
