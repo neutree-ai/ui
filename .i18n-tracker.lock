@@ -244,7 +244,7 @@
   "src/pages/external-endpoints/list.tsx": "2e00bdf309d202be3a0b003239297251",
   "src/pages/external-endpoints/show.tsx": "5bd0dbbcb66fd2d69cde1a8b6bc9f5f2",
   "src/domains/external-endpoint/types.ts": "3a358d624da131e808244858b135596a",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "ba2d35665bbdb164263189fbecf0a9f3",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "5253b812de9eb274b0ab284035707c80",
   "src/domains/external-endpoint/components/CurlExample.tsx": "5f8ddd7eabf6097561a62eea7d3eab65",
   "src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": "ddcc260a2c5be44d29b82e5ec4435da7",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "aef504b00a7ee2db2ff13d55784c114d",
@@ -421,7 +421,7 @@
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "685be5ca01d449960d0e8515faedc026",
   "src/foundation/components/ModelSourceBadge.tsx": "e69752d08c4690e5aa608aa8d85d512f",
-  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "1856f894b7087ed5fea39379187331b2",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "7e10a2ed113c86fb574eba7965b22860",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
   "src/domains/external-endpoint/lib/validate-route-strategy.ts": "a6fa0e3cb9dab1c4211dd74f0e8bca66",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
@@ -437,5 +437,6 @@
   "src/foundation/hooks/use-is-truncated.ts": "0cf7cb247f3944b09562b5c27e5b68c8",
   "src/foundation/components/Section.tsx": "c545240df77551f8779b1c50f5021927",
   "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d",
-  "src/domains/external-endpoint/lib/routes-from-legacy.ts": "acde878c10669469c6e88b3dff2d1f59"
+  "src/domains/external-endpoint/lib/routes-from-legacy.ts": "acde878c10669469c6e88b3dff2d1f59",
+  "src/domains/external-endpoint/lib/route-strategy.ts": "0fd034a72725d42b1f9a64726d594237"
 }

@@ -1,5 +1,5 @@
 import { CircleHelp, Plus, Trash2 } from "lucide-react";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
@@ -19,17 +20,22 @@ import {
   parseStoredModelSource,
 } from "@/foundation/lib/model-source";
 import type { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
+import {
+  changeRouteStrategy,
+  type EditableModelRoute,
+  type RouteStrategy,
+} from "../lib/route-strategy";
 import { getRouteStrategyError } from "../lib/validate-route-strategy";
 import type { ModelRoute, ModelRouteTarget } from "../types";
 import UpstreamModelInput, {
   UpstreamConnectionWarning,
 } from "./UpstreamModelInput";
 
-type Mode = "fixed" | "priority" | "weighted";
+type Mode = RouteStrategy;
 
 type Props = {
-  value?: ModelRoute[];
-  onChange?: (value: ModelRoute[]) => void;
+  value?: EditableModelRoute[];
+  onChange?: (value: EditableModelRoute[]) => void;
   providers: {
     label: string;
     value: string;
@@ -66,6 +72,10 @@ export default function ModelRouteEditor({
   const { t } = useTranslation();
   const modelSourceLabel = useModelSourceLabel();
   const editorId = useId();
+  const [pendingStrategy, setPendingStrategy] = useState<{
+    index: number;
+    route: EditableModelRoute;
+  } | null>(null);
   const routeIds = useRef<string[]>([]);
   const nextRouteId = useRef(0);
   const editor = useRef<HTMLDivElement>(null);
@@ -96,36 +106,15 @@ export default function ModelRouteEditor({
     commit(value.map((item, i) => (i === index ? route : item)));
 
   const setMode = (index: number, mode: Mode) => {
-    const route = value[index];
-    if (!route || (route.strategy ?? "fixed") !== "fixed" || mode === "fixed")
+    const current = value[index];
+    if (!current) return;
+    const next = changeRouteStrategy(current, mode, providers[0]?.value || "");
+    if (next.route === current) return;
+    if (next.losesConfiguration) {
+      setPendingStrategy({ index, route: next.route });
       return;
-
-    let targets = route.targets.length
-      ? route.targets
-      : [{ upstream: providers[0]?.value || "", upstream_model: "" }];
-    if (targets.length === 1) {
-      targets = [
-        targets[0],
-        mode === "weighted"
-          ? { upstream: "", upstream_model: "" }
-          : { upstream: "", upstream_model: "", priority: 1 },
-      ];
     }
-
-    const normalized = targets.map((target, targetIndex) => ({
-      ...target,
-      priority: mode === "priority" && targetIndex > 0 ? 1 : 0,
-      weight: mode === "weighted" ? target.weight : undefined,
-      max_inflight_requests:
-        mode === "weighted" ? undefined : target.max_inflight_requests,
-    }));
-    commit(
-      value.map((item, itemIndex) =>
-        itemIndex === index
-          ? { ...route, strategy: mode, targets: normalized }
-          : item,
-      ),
-    );
+    updateRoute(index, next.route);
   };
 
   const updateTarget = (
@@ -142,6 +131,21 @@ export default function ModelRouteEditor({
 
   return (
     <div ref={editor} className="space-y-4">
+      <ConfirmDialog
+        open={pendingStrategy !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStrategy(null);
+        }}
+        title={t("external_endpoints.messages.changeStrategyTitle")}
+        description={t("external_endpoints.messages.changeStrategyDescription")}
+        okText={t("external_endpoints.actions.changeStrategy")}
+        cancelText={t("buttons.cancel")}
+        onConfirm={() => {
+          if (pendingStrategy)
+            updateRoute(pendingStrategy.index, pendingStrategy.route);
+          setPendingStrategy(null);
+        }}
+      />
       {value.map((route, index) => {
         const key = routeIds.current[index];
         const mode = route.strategy ?? "fixed";
@@ -495,7 +499,7 @@ export default function ModelRouteEditor({
                 </FormLabel>
                 <FormSelect
                   value={mode}
-                  disabled={mode !== "fixed"}
+                  disabled={route.strategyLocked}
                   onChange={(next) => setMode(index, next as Mode)}
                   options={[
                     {
