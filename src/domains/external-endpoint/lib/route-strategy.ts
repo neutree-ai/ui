@@ -14,7 +14,7 @@ export function changeRouteStrategy(
   defaultUpstream: string,
 ) {
   if (route.strategyLocked || (route.strategy ?? "fixed") === strategy)
-    return { route };
+    return route;
 
   let targets = route.targets.length
     ? route.targets
@@ -24,16 +24,14 @@ export function changeRouteStrategy(
     targets = [...targets, { upstream: "", upstream_model: "" }];
 
   return {
-    route: {
-      ...route,
-      strategy,
-      targets: targets.map((target, index) => ({
-        ...target,
-        priority: strategy === "priority" && index > 0 ? 1 : 0,
-        weight: undefined,
-        max_inflight_requests:
-          strategy === "weighted" ? undefined : target.max_inflight_requests,
-      })),
-    },
+    ...route,
+    strategy,
+    targets: targets.map((target, index) => ({
+      ...target,
+      priority: strategy === "priority" && index > 0 ? 1 : 0,
+      weight: undefined,
+      max_inflight_requests:
+        strategy === "weighted" ? undefined : target.max_inflight_requests,
+    })),
   };
 }

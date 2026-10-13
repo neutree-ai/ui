@@ -104,8 +104,8 @@ export default function ModelRouteEditor({
     const current = value[index];
     if (!current) return;
     const next = changeRouteStrategy(current, mode, providers[0]?.value || "");
-    if (next.route === current) return;
-    updateRoute(index, next.route);
+    if (next === current) return;
+    updateRoute(index, next);
   };
 
   const updateTarget = (

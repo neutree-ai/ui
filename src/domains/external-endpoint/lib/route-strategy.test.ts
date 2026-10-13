@@ -17,7 +17,7 @@ describe("route strategy conversion", () => {
       ],
     };
     const weighted = changeRouteStrategy(route, "weighted", "a");
-    expect(weighted.route.targets).toEqual(
+    expect(weighted.targets).toEqual(
       route.targets.map((target) => ({
         ...target,
         priority: 0,
@@ -26,9 +26,7 @@ describe("route strategy conversion", () => {
       })),
     );
     const fixed = changeRouteStrategy(route, "fixed", "a");
-    expect(fixed.route.targets).toEqual([
-      { ...route.targets[0], weight: undefined },
-    ]);
+    expect(fixed.targets).toEqual([{ ...route.targets[0], weight: undefined }]);
     expect(route.targets).toHaveLength(2);
     expect(route.targets[0].max_inflight_requests).toBe(7);
   });
@@ -45,7 +43,7 @@ describe("route strategy conversion", () => {
     };
     const next = changeRouteStrategy(route, "priority", "a");
     expect(
-      next.route.targets.map(({ priority, weight }) => ({ priority, weight })),
+      next.targets.map(({ priority, weight }) => ({ priority, weight })),
     ).toEqual([
       { priority: 0, weight: undefined },
       { priority: 1, weight: undefined },
@@ -67,11 +65,11 @@ describe("route strategy conversion", () => {
           },
         ],
       };
-      expect(changeRouteStrategy(route, strategy, "a").route).toBe(route);
+      expect(changeRouteStrategy(route, strategy, "a")).toBe(route);
       if (strategy === "fixed") continue;
       route.strategyLocked = true;
       for (const next of ["fixed", "priority", "weighted"] as const)
-        expect(changeRouteStrategy(route, next, "a").route).toBe(route);
+        expect(changeRouteStrategy(route, next, "a")).toBe(route);
     }
   });
 });
