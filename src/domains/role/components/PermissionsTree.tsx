@@ -10,6 +10,7 @@ import {
   HardDrive,
   Layers,
   LayoutTemplate,
+  Network,
   Pencil,
   Plus,
   ScrollText,
@@ -17,6 +18,7 @@ import {
   ShieldCheck,
   Trash,
   UserCheck,
+  UsersRound,
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
@@ -46,6 +48,8 @@ const resourceIcons: Record<string, React.ReactNode> = {
   cluster: <HardDrive className="h-5 w-5" />,
   model_catalog: <BookOpen className="h-5 w-5" />,
   identity_source: <ShieldCheck className="h-5 w-5" />,
+  org_unit: <Network className="h-5 w-5" />,
+  team: <UsersRound className="h-5 w-5" />,
 };
 
 const hiddenResources = new Set(["static_node_cluster", "static_node"]);

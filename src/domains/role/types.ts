@@ -76,4 +76,7 @@ export const ALL_PERMISSIONS = [
   "identity_source:create",
   "identity_source:update",
   "identity_source:delete",
+  "org_unit:read",
+  "org_unit:assign-member",
+  "team:read",
 ];

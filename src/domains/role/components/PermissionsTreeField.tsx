@@ -15,6 +15,7 @@ import {
   HardDrive,
   Layers,
   Lock,
+  Network,
   Package,
   Pencil,
   Plus,
@@ -25,7 +26,9 @@ import {
   Square,
   Trash,
   Upload,
+  UserPlus,
   Users,
+  UsersRound,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -50,6 +53,7 @@ const actionIcons: Record<string, React.ReactNode> = {
   pull: <Download className="h-4 w-4" />,
   "trace-read": <Activity className="h-4 w-4" />,
   "usage-read": <Gauge className="h-4 w-4" />,
+  "assign-member": <UserPlus className="h-4 w-4" />,
 };
 
 const resourceIcons: Record<string, React.ReactNode> = {
@@ -68,6 +72,8 @@ const resourceIcons: Record<string, React.ReactNode> = {
   system: <Settings className="h-5 w-5" />,
   user_profile: <Users className="h-5 w-5" />,
   identity_source: <ShieldCheck className="h-5 w-5" />,
+  org_unit: <Network className="h-5 w-5" />,
+  team: <UsersRound className="h-5 w-5" />,
 };
 
 type PermissionsTreeFieldProps = {

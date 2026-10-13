@@ -2726,6 +2726,12 @@
 			"invalid": "The identity source is not valid: {{hint}}"
 		}
 	},
+	"org_units": {
+		"title": "Departments"
+	},
+	"teams": {
+		"title": "Teams"
+	},
 	"oem_configs": {
 		"title": "Customize Appearance",
 		"description": "Customize your application's appearance",
@@ -2928,7 +2934,8 @@
 		"trace-read": "Access Log Read",
 		"usage-read": "Usage Read",
 		"requiredBy": "Required by: {{actions}}",
-		"dependenciesAdded": "Added required permissions: {{actions}}"
+		"dependenciesAdded": "Added required permissions: {{actions}}",
+		"assign-member": "Assign Member"
 	},
 	"systems": {
 		"title": "Systems"
