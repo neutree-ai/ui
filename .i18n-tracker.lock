@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "2f4ea227a08df0d1587921fe627a10e3",
-  "src/App.tsx": "1dd9ae1e72610256c73c46c41242a574",
+  "src/App.tsx": "4e0670d7717284fb01cb8a2f50f4f41a",
   "src/Root.tsx": "dd7ccc8e83bb3cb7f8c8fb879e4aa203",
   "src/index.tsx": "eea917dfd0f718cd42c34525bfc8cf21",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",
@@ -533,5 +533,16 @@
   "src/domains/endpoint/lib/replica-usage.ts": "39f633a996c89455e1c0087e8b20a5ce",
   "src/foundation/components/GpuAllocationBar.tsx": "08549eaf6a1cdae32cf541cc942a1db4",
   "src/foundation/components/GpuDetailsSheet.tsx": "3ed749c55445396077c897afead49fc3",
-  "src/foundation/components/GpuObservationParts.tsx": "5959e9fb45c7c8b35e3850bc4dcd2d4c"
+  "src/foundation/components/GpuObservationParts.tsx": "5959e9fb45c7c8b35e3850bc4dcd2d4c",
+  "src/domains/organization/components/DepartmentsPanel.tsx": "a5150aaf45ae306bc4f5a77b04a08221",
+  "src/domains/organization/components/InactiveBadge.tsx": "380f4edb22483cfd692f24ad7cfd0c6e",
+  "src/domains/organization/components/MemberTable.tsx": "d23a7299cbf476dbc5762ee8fba9c649",
+  "src/domains/organization/components/OrgUnitTree.tsx": "766820129bdb5adb54af6fec586de892",
+  "src/domains/organization/components/OrganizationToolbar.tsx": "b581b4e741ba7acd163697584190bb9d",
+  "src/domains/organization/components/TeamsPanel.tsx": "f9164f4f90de16d9fc92fe5d99dca8c3",
+  "src/domains/organization/hooks/use-organization.ts": "c5ac08ed40c6dc10c62897bea124a06f",
+  "src/domains/organization/lib/org-tree.ts": "081ff361d6077c2aebb92fb4b903c25e",
+  "src/domains/organization/lib/organization-errors.ts": "d54f9b2c5df50b3da0c0a2431776b97d",
+  "src/domains/organization/types.ts": "0417e16cef5975827fd96a4ecd4598b1",
+  "src/pages/organization/list.tsx": "b44b688f242d9e5d299ed49a8f2da6f0"
 }

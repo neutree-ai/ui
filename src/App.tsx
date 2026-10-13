@@ -32,6 +32,7 @@ import {
   Layers,
   LayoutDashboard,
   LayoutTemplate,
+  Network,
   ScrollText,
   Server,
   Settings,
@@ -157,6 +158,11 @@ const ImageRegistriesCreate = lazy(() =>
   })),
 );
 
+const OrganizationList = lazy(() =>
+  import("./pages/organization/list").then((m) => ({
+    default: m.OrganizationList,
+  })),
+);
 const IdentitySourcesList = lazy(() =>
   import("./pages/identity-sources/list").then((m) => ({
     default: m.IdentitySourcesList,
@@ -454,6 +460,16 @@ export const resources: ResourceProps[] = [
     },
   },
   {
+    name: "organization",
+    list: "/organization",
+    meta: {
+      icon: <Network />,
+      parent: "access_control",
+      // Also granted on an OrgUnit subtree (department admins).
+      requiredPermission: "org_unit:read",
+    },
+  },
+  {
     name: "roles",
     list: "/roles",
     create: "/roles/create",
@@ -721,6 +737,16 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 </Route>
                 <Route path="/:workspace/model-usage">
                   <Route index element={<ModelUsageList />} />
+                </Route>
+                <Route
+                  path="/organization"
+                  element={
+                    <PermissionGate permission="org_unit:read">
+                      <Outlet />
+                    </PermissionGate>
+                  }
+                >
+                  <Route index element={<OrganizationList />} />
                 </Route>
                 <Route
                   path="/identity-sources"

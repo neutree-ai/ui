@@ -2726,6 +2726,59 @@
 			"invalid": "The identity source is not valid: {{hint}}"
 		}
 	},
+	"organization": {
+		"title": "Organization",
+		"readOnlyHint": "Synced from identity sources. Change departments and teams in the directory.",
+		"phases": {
+			"Inactive": "Inactive"
+		},
+		"filters": {
+			"searchDepartments": "Search by path, e.g. Engineering / Platform",
+			"searchTeams": "Search teams",
+			"allSources": "All identity sources",
+			"showInactive": "Show inactive"
+		},
+		"departments": {
+			"title": "Departments",
+			"fromSource": "From {{source}}",
+			"empty": "No departments have been synced yet.",
+			"noMatch": "No departments match the filter."
+		},
+		"teams": {
+			"title": "Teams",
+			"empty": "No teams have been synced yet.",
+			"noMatch": "No teams match the filter."
+		},
+		"members": {
+			"title": "Members",
+			"selectDepartment": "Select a department to see its members.",
+			"selectTeam": "Select a team to see its members.",
+			"includeSubtree": "Include sub-departments",
+			"empty": "No members."
+		},
+		"fields": {
+			"user": "User",
+			"email": "Email",
+			"department": "Department",
+			"source": "Source",
+			"assignedAt": "Assigned",
+			"joinedAt": "Joined"
+		},
+		"values": {
+			"manual": "Assigned by hand"
+		},
+		"errors": {
+			"noWorkspace": "A department or team is global and cannot belong to a workspace.",
+			"identityRequired": "A department or team needs its identity source and directory ID. {{hint}}",
+			"unknownIdentitySource": "The identity source does not exist. {{hint}}",
+			"identityImmutable": "The name, identity source and directory ID cannot be changed. {{hint}}",
+			"invalidPhase": "The status must be Active or Inactive.",
+			"invalidParent": "The change to the department tree is not allowed. {{hint}}",
+			"cycle": "A department cannot be placed under itself or one of its sub-departments.",
+			"inactiveOrgUnit": "Users cannot be added to an inactive department.",
+			"externalUserOrgUnit": "The department of a user from an identity source comes from that source. Only local accounts can be assigned by hand."
+		}
+	},
 	"org_units": {
 		"title": "Departments"
 	},
