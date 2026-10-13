@@ -120,6 +120,7 @@ describe("UserDepartmentSection", () => {
     });
     assign.create.mockResolvedValue(undefined);
     withMembership(null);
+    grantGlobal();
   });
 
   it("is hidden without org_unit:read", () => {
@@ -130,6 +131,7 @@ describe("UserDepartmentSection", () => {
 
   it("assigns an Active department to a local user", async () => {
     grant("org_unit:read", "org_unit:assign-member");
+    grantGlobal("org_unit:assign-member");
     render(<UserDepartmentSection profile={profile()} />);
     expect(screen.getByTestId("user-department-empty")).toBeTruthy();
     expect(screen.queryByTestId("user-department-remove")).toBeNull();
@@ -145,6 +147,7 @@ describe("UserDepartmentSection", () => {
 
   it("shows the reason when the assignment is refused", async () => {
     grant("org_unit:read", "org_unit:assign-member");
+    grantGlobal("org_unit:assign-member");
     assign.create.mockRejectedValue({ code: "10277", message: "inactive" });
     render(<UserDepartmentSection profile={profile()} />);
     fireEvent.click(screen.getByTestId("user-department-assign"));
@@ -155,7 +158,7 @@ describe("UserDepartmentSection", () => {
     ).toBe("organization.errors.inactiveOrgUnit");
   });
 
-  it("changes or removes a hand assignment", () => {
+  it("changes or removes a hand assignment on a subtree grant", () => {
     grant("org_unit:read", "org_unit:assign-member");
     withMembership(membership(units[1], null));
     render(<UserDepartmentSection profile={profile()} />);
@@ -169,6 +172,13 @@ describe("UserDepartmentSection", () => {
       "user_profiles.department.change",
     );
     expect(screen.getByTestId("user-department-remove")).toBeTruthy();
+  });
+
+  it("offers no assignment to a user without a department on a subtree grant", () => {
+    grant("org_unit:read", "org_unit:assign-member");
+    render(<UserDepartmentSection profile={profile()} />);
+    expect(screen.getByTestId("user-department-empty")).toBeTruthy();
+    expect(screen.queryByTestId("user-department-assign")).toBeNull();
   });
 
   it("leaves an external user's synced department read-only", () => {

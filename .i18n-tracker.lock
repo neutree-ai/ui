@@ -546,6 +546,6 @@
   "src/domains/organization/types.ts": "e7c3fa918909e1e31022814aa38d00d5",
   "src/pages/organization/list.tsx": "32873317181ef7dddcb9d5e31d59af6a",
   "src/domains/organization/components/AssignOrgUnitDialog.tsx": "4723a791449761aa43e1828d7268fdab",
-  "src/domains/organization/components/UserOrganization.tsx": "215f5468fb0cf9c9e2ccfaf86e60c3ea",
+  "src/domains/organization/components/UserOrganization.tsx": "3ec87ded291a596fa616c7153f4ff11b",
   "src/domains/organization/lib/user-org-unit.ts": "d4362eb737fd935b490e4defef419ee8"
 }

@@ -49,18 +49,26 @@ const Loading = () => (
 /**
  * The user's primary department. Hidden without org_unit:read, which also
  * hides the membership rows. Local users can be assigned one by hand.
+ * Assigning a user with no department needs a global org_unit:assign-member
+ * (D76): the user is in no subtree yet, so a subtree grant cannot cover it.
  */
 export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const { allowed: canRead } = useHasPermission("org_unit:read");
-  const { allowed: canAssign } = useHasPermission("org_unit:assign-member");
+  const { allowed: canEdit } = useHasPermission("org_unit:assign-member");
+  const { allowed: canAssignNew } = useHasGlobalPermission(
+    "org_unit:assign-member",
+  );
   const { membership, isLoading, error } = useUserOrgUnit(
     profile.id,
     canRead === true,
   );
   const mode = orgUnitAssignmentMode(profile, membership);
-  const editable = canAssign === true && mode !== null;
+  const editable =
+    mode === "update"
+      ? canEdit === true
+      : mode === "create" && canAssignNew === true;
   // The tree is needed for the path and, when editable, for the picker.
   const units = useOrgUnits(canRead === true);
   const tree = useMemo(
