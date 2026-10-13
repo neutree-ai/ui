@@ -65,6 +65,7 @@ describe("getEndpointSplitDashboardProps", () => {
         datasource: "neutree-cluster",
         Cluster: "cluster-a",
         Endpoint: "endpoint-a",
+        ...(dashboardType === "cache" ? { Workspace: "default" } : {}),
       });
     },
   );

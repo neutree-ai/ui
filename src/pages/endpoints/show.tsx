@@ -413,6 +413,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   </div>
                 )}
 
+                {selectedPanel === "cache" && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("endpoints.monitor.cacheScopeHint")}
+                  </p>
+                )}
+
                 {selectedPanel ? (
                   <GrafanaDashboard
                     {...getEndpointSplitDashboardProps(
@@ -421,10 +427,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                       {
                         clusterName: record.spec.cluster,
                         endpointName: record.metadata.name,
+                        workspace: record.metadata.workspace ?? "default",
                       },
                     )}
                     className="flex-1"
-                    hideVariables
+                    hideVariables={selectedPanel !== "cache"}
                   />
                 ) : null}
               </div>

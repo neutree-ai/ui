@@ -72,6 +72,7 @@ export const getEndpointSplitDashboardProps = (
   context: {
     clusterName: string;
     endpointName: string;
+    workspace?: string;
   },
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
@@ -81,6 +82,9 @@ export const getEndpointSplitDashboardProps = (
       ...getCommonVariables(),
       Cluster: context.clusterName,
       Endpoint: context.endpointName,
+      ...(dashboardType === "cache"
+        ? { Workspace: context.workspace ?? "default" }
+        : {}),
     },
   },
 });
@@ -114,4 +118,19 @@ export const getModelRoutingDashboardProps = (
   initialFrom: context.from,
   initialTo: context.to,
   initialRefresh: context.refresh,
+});
+
+export const getZCacheDashboardProps = (
+  grafanaUrl: string,
+  context: { workspace: string; clusterName: string },
+): GrafanaDashboardProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "neutree-zcache-embed",
+    variables: {
+      ...getCommonVariables(),
+      Workspace: context.workspace,
+      Cluster: context.clusterName,
+    },
+  },
 });
