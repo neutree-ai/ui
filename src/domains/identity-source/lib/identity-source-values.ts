@@ -1,8 +1,10 @@
 import type {
   IdentitySource,
   IdentitySourceLDAPSpec,
+  IdentitySourceLDAPSyncSpec,
   IdentitySourceOIDCSpec,
   IdentitySourceSpec,
+  IdentitySourceSyncSpec,
 } from "@/domains/identity-source/types";
 import type { Metadata } from "@/foundation/types/basic-types";
 
@@ -16,6 +18,8 @@ const OIDC_SCOPE_OPENID = "openid";
 const DEFAULT_OIDC_SCOPES = ["openid", "profile", "email"];
 const DEFAULT_LDAP_TIMEOUT_SECONDS = 10;
 const OIDC_CALLBACK_PATH = "/auth/oidc/callback";
+export const DEFAULT_SYNC_INTERVAL_SECONDS = 3600;
+const MIN_SYNC_INTERVAL_SECONDS = 60;
 
 const PEM_CERTIFICATE_MARKER = "-----BEGIN CERTIFICATE-----";
 
@@ -61,6 +65,19 @@ export const scopesIncludeOpenid = (scopes: string[]): boolean => {
 export const isPemBundleOrEmpty = (value: string | null | undefined): boolean =>
   !value?.trim() || value.includes(PEM_CERTIFICATE_MARKER);
 
+const isBlank = (value: unknown): boolean =>
+  value === "" || value === null || value === undefined;
+
+/** Empty (the default, one hour) or a whole number of seconds, at least 60. */
+export const isValidSyncInterval = (value: unknown): boolean =>
+  isBlank(value) ||
+  (Number.isInteger(Number(value)) &&
+    Number(value) >= MIN_SYNC_INTERVAL_SECONDS);
+
+/** Empty or 0 (the default) or a positive whole number. */
+export const isValidPageSize = (value: unknown): boolean =>
+  isBlank(value) || (Number.isInteger(Number(value)) && Number(value) >= 0);
+
 const cleanList = (values: string[] | null | undefined): string[] =>
   (values ?? []).map((v) => v.trim()).filter(Boolean);
 
@@ -87,6 +104,48 @@ const defaultLdapSpec = (): IdentitySourceLDAPSpec => ({
   },
 });
 
+const LDAP_SYNC_TEXT_FIELDS = [
+  "org_unit_base_dn",
+  "org_unit_filter",
+  "org_unit_name_attribute",
+  "group_base_dn",
+  "group_filter",
+  "group_name_attribute",
+  "group_member_attribute",
+  "user_list_filter",
+  "disabled_user_filter",
+] as const;
+
+type LdapSyncFormValues = Record<
+  (typeof LDAP_SYNC_TEXT_FIELDS)[number],
+  string
+> & { page_size: number | string };
+
+// Blank fields take the server defaults, shown as placeholders in the form.
+const defaultLdapSyncValues = (): LdapSyncFormValues => ({
+  org_unit_base_dn: "",
+  org_unit_filter: "",
+  org_unit_name_attribute: "",
+  group_base_dn: "",
+  group_filter: "",
+  group_name_attribute: "",
+  group_member_attribute: "",
+  user_list_filter: "",
+  disabled_user_filter: "",
+  page_size: "",
+});
+
+type SyncFormValues = {
+  enabled: boolean;
+  interval: number | string;
+  requested_at?: string | null;
+};
+
+const defaultSyncValues = (): SyncFormValues => ({
+  enabled: false,
+  interval: DEFAULT_SYNC_INTERVAL_SECONDS,
+});
+
 const defaultOidcSpec = (
   restUrl: string,
   uiRootUrl: string,
@@ -110,8 +169,9 @@ export type IdentitySourceFormValues = {
   spec: {
     type: IdentitySourceSpec["type"];
     enabled: boolean;
-    ldap: IdentitySourceLDAPSpec;
+    ldap: Omit<IdentitySourceLDAPSpec, "sync"> & { sync: LdapSyncFormValues };
     oidc: IdentitySourceOIDCSpec;
+    sync: SyncFormValues;
   };
 };
 
@@ -123,8 +183,9 @@ export const createFormDefaults = (
   spec: {
     type: "ldap",
     enabled: true,
-    ldap: defaultLdapSpec(),
+    ldap: { ...defaultLdapSpec(), sync: defaultLdapSyncValues() },
     oidc: defaultOidcSpec(restUrl, uiRootUrl),
+    sync: defaultSyncValues(),
   },
 });
 
@@ -170,6 +231,7 @@ export const toFormValues = (
           ldapDefaults.attributes ?? {},
           record.spec?.ldap?.attributes,
         ),
+        sync: withoutNulls(defaultLdapSyncValues(), record.spec?.ldap?.sync),
       },
       oidc: {
         ...oidc,
@@ -179,8 +241,30 @@ export const toFormValues = (
           record.spec?.oidc?.claims,
         ),
       },
+      sync: withoutNulls(defaultSyncValues(), record.spec?.sync),
     },
   };
+};
+
+const toSyncSpec = (sync: SyncFormValues): IdentitySourceSyncSpec => ({
+  enabled: sync.enabled === true,
+  interval: isBlank(sync.interval)
+    ? DEFAULT_SYNC_INTERVAL_SECONDS
+    : Number(sync.interval),
+  // Carried over so a save does not drop a sync request still waiting to run.
+  requested_at: sync.requested_at ?? null,
+});
+
+const toLdapSyncSpec = (
+  sync: LdapSyncFormValues,
+): IdentitySourceLDAPSyncSpec => {
+  const out: IdentitySourceLDAPSyncSpec = {
+    page_size: isBlank(sync.page_size) ? null : Number(sync.page_size),
+  };
+  for (const field of LDAP_SYNC_TEXT_FIELDS) {
+    out[field] = sync[field]?.trim() ?? "";
+  }
+  return out;
 };
 
 type IdentitySourcePayload = {
@@ -193,7 +277,8 @@ type IdentitySourcePayload = {
 /**
  * What the form sends. Only the sub-object of the chosen type goes out, list
  * inputs are trimmed of blanks, and a secret left blank is not sent at all —
- * on edit that keeps the stored one (create requires it in the form).
+ * on edit that keeps the stored one (create requires it in the form). An OIDC
+ * source sends no sync, which keeps the stored one.
  */
 export const toIdentitySourcePayload = (
   values: IdentitySourceFormValues,
@@ -203,10 +288,13 @@ export const toIdentitySourcePayload = (
   const spec: IdentitySourceSpec = { type, enabled, ldap: null, oidc: null };
 
   if (type === "ldap") {
-    const { bind_password, ...ldap } = values.spec.ldap;
+    const { bind_password, sync: ldapSync, ...ldap } = values.spec.ldap;
     const timeout = Number(ldap.timeout);
+    // Sent whole, even when sync is off, so turning it off keeps the settings.
+    spec.sync = toSyncSpec(values.spec.sync);
     spec.ldap = {
       ...ldap,
+      sync: toLdapSyncSpec(ldapSync),
       url: ldap.url.trim(),
       timeout: Number.isFinite(timeout)
         ? timeout

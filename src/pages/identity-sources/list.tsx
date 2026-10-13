@@ -1,5 +1,6 @@
 import { IdentitySourceEnabledSwitch } from "@/domains/identity-source/components/IdentitySourceEnabledSwitch";
 import { IdentitySourceStatus } from "@/domains/identity-source/components/IdentitySourceStatus";
+import { IdentitySourceLastSync } from "@/domains/identity-source/components/IdentitySourceSyncResult";
 import type { IdentitySource } from "@/domains/identity-source/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -64,6 +65,15 @@ export const IdentitySourcesList = () => {
             <IdentitySourceStatus
               status={(row.original as IdentitySource).status}
             />
+          )}
+        />
+        <Table.Column
+          header={t("identity_sources.fields.lastSync")}
+          accessorKey="status.last_sync"
+          id="last_sync"
+          enableHiding
+          cell={({ row }) => (
+            <IdentitySourceLastSync record={row.original as IdentitySource} />
           )}
         />
         {metadataColumns.creation_timestamp}

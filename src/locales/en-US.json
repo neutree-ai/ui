@@ -2670,7 +2670,10 @@
 		"status": {
 			"lastTestOk": "Last connection test succeeded:",
 			"lastTestFailed": "Last connection test failed:",
-			"notTested": "Not tested yet"
+			"notTested": "Not tested yet",
+			"notSynced": "Not synced yet.",
+			"syncOff": "Organization sync is off. Turn it on in the settings to read departments, teams and users from the directory.",
+			"syncWaiting": "Sync requested. Waiting for the result."
 		},
 		"values": {
 			"yes": "Yes",
@@ -2678,7 +2681,15 @@
 			"testOk": "Succeeded",
 			"testFailed": "Failed",
 			"caConfigured": "Custom CA",
-			"systemTrust": "System trust store"
+			"systemTrust": "System trust store",
+			"on": "On",
+			"off": "Off",
+			"everyHours_one": "Every hour",
+			"everyHours_other": "Every {{count}} hours",
+			"everyMinutes_one": "Every minute",
+			"everyMinutes_other": "Every {{count}} minutes",
+			"everySeconds_one": "Every second",
+			"everySeconds_other": "Every {{count}} seconds"
 		},
 		"sections": {
 			"state": "State",
@@ -2687,7 +2698,9 @@
 			"ldapUsers": "User Lookup",
 			"oidcProvider": "Provider",
 			"oidcRedirects": "Redirects",
-			"oidcClaims": "Claims"
+			"oidcClaims": "Claims",
+			"orgSync": "Organization Sync",
+			"orgSyncAdvanced": "Advanced sync settings"
 		},
 		"fields": {
 			"displayName": "Display Name",
@@ -2715,7 +2728,26 @@
 			"allowedRedirects": "Allowed UI Redirects",
 			"claimUsername": "Username Claim",
 			"claimDisplayName": "Display Name Claim",
-			"claimEmail": "Email Claim"
+			"claimEmail": "Email Claim",
+			"syncEnabled": "Sync Organization",
+			"syncInterval": "Sync Interval (seconds)",
+			"orgUnitBaseDn": "Department Base DN",
+			"orgUnitFilter": "Department Filter",
+			"orgUnitNameAttribute": "Department Name Attribute",
+			"groupBaseDn": "Group Base DN",
+			"groupFilter": "Group Filter",
+			"groupNameAttribute": "Group Name Attribute",
+			"groupMemberAttribute": "Group Member Attribute",
+			"userListFilter": "User List Filter",
+			"disabledUserFilter": "Disabled User Filter",
+			"pageSize": "Page Size",
+			"lastSync": "Last Sync",
+			"lastSyncResult": "Last Result",
+			"lastSuccess": "Last Successful Sync",
+			"syncRequestedAt": "Last Requested",
+			"syncStartedAt": "Started",
+			"syncFinishedAt": "Finished",
+			"syncSchedule": "Schedule"
 		},
 		"hints": {
 			"name": "1-32 lowercase letters, digits or '-'. It identifies this source's users and cannot be changed later.",
@@ -2732,7 +2764,16 @@
 			"scopes": "Separated by spaces. Must include openid; empty means openid profile email.",
 			"redirectUrl": "The public URL of neutree's OIDC callback. Register exactly this URL with the provider.",
 			"allowedRedirects": "One URL per line. Where a login may return to; must include this UI's address.",
-			"adminEquivalent": "Whoever can create or change an identity source decides who its users are. Treat these permissions as administrator access."
+			"adminEquivalent": "Whoever can create or change an identity source decides who its users are. Treat these permissions as administrator access.",
+			"syncEnabled": "Reads the whole directory on a schedule and creates departments, teams and users from it. Users disabled or removed in the directory are deactivated.",
+			"syncInterval": "At least 60. Empty means 3600 (one hour).",
+			"orgUnitBaseDn": "Organizational units under this DN become departments. Empty syncs no departments.",
+			"groupBaseDn": "Groups under this DN become teams. Empty syncs no teams.",
+			"disabledUserFilter": "Selects the users disabled in the directory. For Active Directory use (userAccountControl:1.2.840.113556.1.4.803:=2). Empty treats no user as disabled.",
+			"groupMemberAttribute": "Use uniqueMember for groupOfUniqueNames.",
+			"userListFilter": "Selects every user to sync. Empty uses the user filter with {username} replaced by *.",
+			"pageSize": "Entries per page when reading the directory. Empty means 500.",
+			"syncNowDisabled": "Turn on organization sync in the settings first."
 		},
 		"validation": {
 			"required": "This field is required",
@@ -2745,17 +2786,24 @@
 			"httpUrl": "Enter an absolute http:// or https:// URL",
 			"scopes": "Scopes must include openid",
 			"allowedRedirectsRequired": "Add at least one URL",
-			"allowedRedirect": "Each URL must be an absolute http(s) URL without user, query or fragment"
+			"allowedRedirect": "Each URL must be an absolute http(s) URL without user, query or fragment",
+			"syncInterval": "Enter a whole number of seconds, 60 or more",
+			"pageSize": "Enter a whole number, 0 or more",
+			"userListFilter": "The user list filter must not contain {username}"
 		},
 		"actions": {
-			"toggleEnabled": "Enable {{name}}"
+			"toggleEnabled": "Enable {{name}}",
+			"syncNow": "Sync now",
+			"syncing": "Syncing"
 		},
 		"messages": {
 			"enabled": "{{name}} enabled",
 			"disabled": "{{name}} disabled",
 			"toggleFailed": "Could not change {{name}}",
 			"createFailed": "Could not create the identity source",
-			"saveFailed": "Could not save the identity source"
+			"saveFailed": "Could not save the identity source",
+			"syncRequested": "Sync of {{name}} requested",
+			"syncRequestFailed": "Could not request a sync of {{name}}"
 		},
 		"errors": {
 			"invalidName": "The name must be 1-32 lowercase letters, digits or inner '-'.",
@@ -2768,7 +2816,23 @@
 			"missingPlaceholder": "The LDAP user filter must contain {username}, and OIDC scopes must include openid. {{hint}}",
 			"invalidTls": "The TLS or timeout settings are not valid. {{hint}}",
 			"secretsUnavailable": "The server cannot store secrets right now. Contact your administrator.",
-			"invalid": "The identity source is not valid: {{hint}}"
+			"invalid": "The identity source is not valid: {{hint}}",
+			"invalidSync": "The organization sync settings are not valid. {{hint}}",
+			"notFound": "The identity source no longer exists.",
+			"syncNotEnabled": "Organization sync is not enabled for this identity source. Turn it on in the settings first."
+		},
+		"syncResults": {
+			"ok": "Succeeded",
+			"failed": "Failed",
+			"pending": "Requested"
+		},
+		"syncCounts": {
+			"created": "Created",
+			"updated": "Updated",
+			"reactivated": "Reactivated",
+			"deactivated": "Deactivated",
+			"memberships": "Membership changes",
+			"pending": "Not applied"
 		}
 	},
 	"organization": {

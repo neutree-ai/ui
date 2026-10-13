@@ -10,6 +10,8 @@ import {
   isLdapUrl,
   isPemBundleOrEmpty,
   isValidIdentitySourceName,
+  isValidPageSize,
+  isValidSyncInterval,
   scopesIncludeOpenid,
   toFormValues,
   toIdentitySourcePayload,
@@ -207,5 +209,129 @@ describe("toFormValues", () => {
     });
     expect(values.spec.oidc.client_secret).toBe("");
     expect(values.spec.oidc.redirect_url).toBe(`${REST}/auth/oidc/callback`);
+  });
+});
+
+describe("organization sync", () => {
+  it("validates the interval and page size like the server", () => {
+    expect(isValidSyncInterval("")).toBe(true);
+    expect(isValidSyncInterval(60)).toBe(true);
+    expect(isValidSyncInterval("3600")).toBe(true);
+    expect(isValidSyncInterval(59)).toBe(false);
+    expect(isValidSyncInterval(0)).toBe(false);
+    expect(isValidSyncInterval("90.5")).toBe(false);
+    expect(isValidPageSize("")).toBe(true);
+    expect(isValidPageSize(0)).toBe(true);
+    expect(isValidPageSize(-1)).toBe(false);
+  });
+
+  it("fills sync defaults into the form when the source has none", () => {
+    const values = toFormValues(
+      {
+        id: 1,
+        api_version: "v1",
+        kind: "IdentitySource",
+        metadata: { name: "corp-ldap" },
+        spec: {
+          type: "ldap",
+          enabled: true,
+          ldap: {
+            url: "ldap://x",
+            bind_dn: "cn=a",
+            user_base_dn: "ou=p",
+            user_filter: "(uid={username})",
+          },
+        },
+      } as IdentitySource,
+      REST,
+      UI,
+    );
+    expect(values.spec.sync).toEqual({ enabled: false, interval: 3600 });
+    expect(values.spec.ldap.sync.group_base_dn).toBe("");
+    expect(values.spec.ldap.sync.page_size).toBe("");
+  });
+
+  it("sends the whole stored sync back, with nulls read as blanks", () => {
+    const record = {
+      id: 1,
+      api_version: "v1",
+      kind: "IdentitySource",
+      metadata: { name: "corp-ldap" },
+      spec: {
+        type: "ldap",
+        enabled: true,
+        ldap: {
+          url: "ldap://x",
+          bind_dn: "cn=a",
+          bind_password: null,
+          user_base_dn: "ou=p",
+          user_filter: "(uid={username})",
+          sync: {
+            org_unit_base_dn: "ou=org,dc=x",
+            org_unit_filter: null,
+            org_unit_name_attribute: null,
+            group_base_dn: "ou=groups,dc=x",
+            group_filter: null,
+            group_name_attribute: null,
+            group_member_attribute: "uniqueMember",
+            user_list_filter: null,
+            disabled_user_filter: "(pwdAccountLockedTime=*)",
+            page_size: 200,
+          },
+        },
+        oidc: null,
+        sync: {
+          enabled: true,
+          interval: 600,
+          requested_at: "2026-10-13T08:00:00.123456+00:00",
+        },
+      },
+    } as IdentitySource;
+
+    const payload = toIdentitySourcePayload(
+      toFormValues(record, REST, UI),
+      "edit",
+    );
+    expect(payload.spec.sync).toEqual({
+      enabled: true,
+      interval: 600,
+      requested_at: "2026-10-13T08:00:00.123456+00:00",
+    });
+    expect(payload.spec.ldap?.sync).toEqual({
+      org_unit_base_dn: "ou=org,dc=x",
+      org_unit_filter: "",
+      org_unit_name_attribute: "",
+      group_base_dn: "ou=groups,dc=x",
+      group_filter: "",
+      group_name_attribute: "",
+      group_member_attribute: "uniqueMember",
+      user_list_filter: "",
+      disabled_user_filter: "(pwdAccountLockedTime=*)",
+      page_size: 200,
+    });
+  });
+
+  it("keeps the sync settings when sync is turned off", () => {
+    const values = ldapValues();
+    values.spec.sync = { enabled: false, interval: "" };
+    values.spec.ldap.sync.group_base_dn = " ou=groups,dc=x ";
+    const payload = toIdentitySourcePayload(values, "create");
+    expect(payload.spec.sync).toEqual({
+      enabled: false,
+      interval: 3600,
+      requested_at: null,
+    });
+    expect(payload.spec.ldap?.sync?.group_base_dn).toBe("ou=groups,dc=x");
+    expect(payload.spec.ldap?.sync?.page_size).toBeNull();
+  });
+
+  it("sends no sync for an OIDC source, which keeps the stored one", () => {
+    const values = createFormDefaults(REST, UI);
+    values.metadata = { name: "kc" };
+    values.spec.type = "oidc";
+    values.spec.sync = { enabled: true, interval: 600 };
+    const payload = toIdentitySourcePayload(values, "edit");
+    expect(payload.spec).not.toHaveProperty("sync");
+    expect(payload.spec.ldap).toBeNull();
   });
 });

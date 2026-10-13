@@ -3,8 +3,9 @@ import { translateApiError } from "@/foundation/lib/api-error-code";
 /**
  * Identity source write errors → i18n keys. 10250-10259 come from the
  * identity_sources write trigger; 10261 is neutree-api's own validation of an
- * identity source write. 10260 belongs to user profiles (external email is
- * read-only) and is not mapped here.
+ * identity source write; 10262 the sync settings check of the write trigger;
+ * 10263-10264 come from request_identity_source_sync. 10260 belongs to user
+ * profiles (external email is read-only) and is not mapped here.
  */
 const IDENTITY_SOURCE_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10250": "identity_sources.errors.invalidName",
@@ -18,6 +19,9 @@ const IDENTITY_SOURCE_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10258": "identity_sources.errors.invalidTls",
   "10259": "identity_sources.errors.secretsUnavailable",
   "10261": "identity_sources.errors.invalid",
+  "10262": "identity_sources.errors.invalidSync",
+  "10263": "identity_sources.errors.notFound",
+  "10264": "identity_sources.errors.syncNotEnabled",
 };
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
