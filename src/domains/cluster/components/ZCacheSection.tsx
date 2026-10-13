@@ -35,7 +35,7 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
   const [history, setHistory] = useState(false);
   const status = zcacheStatus(cluster);
   const summary = cluster.status?.cache;
-  const availability = summary?.conditions.find((c) => c.type === "Ready");
+  const availability = summary?.conditions?.find((c) => c.type === "Ready");
   const desired = zcacheSpec(cluster);
   const nodes = status?.nodes ?? [];
   const targetNodes = desired?.enabled ? desired.target_nodes : [];
