@@ -63,6 +63,22 @@ export function profileEmail(profile: {
   return email;
 }
 
+export const IDENTITY_SOURCE_NAME_LABEL = "neutree.ai/identity-source-name";
+
+/**
+ * The identity source name of a user profile, falling back to its type for
+ * profiles labelled before the name label existed; "" for local users.
+ */
+export function profileIdentitySourceName(
+  metadata: { labels?: Record<string, string> | null } | null | undefined,
+): string {
+  const value = metadata?.labels?.[IDENTITY_SOURCE_NAME_LABEL];
+  return (
+    (typeof value === "string" ? value.trim() : "") ||
+    profileIdentitySource(metadata)
+  );
+}
+
 type AuthUserLike = {
   email?: string | null;
   app_metadata?: Record<string, unknown> | null;

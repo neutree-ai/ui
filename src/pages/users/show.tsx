@@ -15,7 +15,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import {
   profileDisplayName,
   profileEmail,
-  profileIdentitySource,
+  profileIdentitySourceName,
 } from "@/foundation/lib/user-identity";
 
 export const UsersShow = () => {
@@ -49,7 +49,7 @@ export const UsersShow = () => {
             </ShowPage.Meta>
             <ShowPage.Meta label={t("user_profiles.fields.identitySource")}>
               <span data-testid="user-identity-source">
-                {profileIdentitySource(record.metadata) ||
+                {profileIdentitySourceName(record.metadata) ||
                   t("user_profiles.values.local")}
               </span>
             </ShowPage.Meta>
