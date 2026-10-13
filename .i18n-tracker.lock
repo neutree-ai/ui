@@ -421,7 +421,7 @@
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "685be5ca01d449960d0e8515faedc026",
   "src/foundation/components/ModelSourceBadge.tsx": "e69752d08c4690e5aa608aa8d85d512f",
-  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "bfb83656cef725a0561431d4f5863734",
+  "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "1b77e3fbdddc83d497ab4d176abb9e21",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
   "src/domains/external-endpoint/lib/validate-route-strategy.ts": "a6fa0e3cb9dab1c4211dd74f0e8bca66",
   "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "e6f3fe8cc28372b681d57c43d095344c",
@@ -438,5 +438,5 @@
   "src/foundation/components/Section.tsx": "c545240df77551f8779b1c50f5021927",
   "src/foundation/components/detail-tabs.ts": "b774b823306031c05fc88b095a5a1d9d",
   "src/domains/external-endpoint/lib/routes-from-legacy.ts": "acde878c10669469c6e88b3dff2d1f59",
-  "src/domains/external-endpoint/lib/route-strategy.ts": "ac476dd5b44bcbbae4848bd865ec5877"
+  "src/domains/external-endpoint/lib/route-strategy.ts": "c2ae9ab33880641296b58b402ff33753"
 }
