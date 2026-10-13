@@ -1,3 +1,4 @@
+import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { useCan } from "@refinedev/core";
 import { CircleAlert, CircleCheck, History, Settings2 } from "lucide-react";
 import { useState } from "react";
@@ -20,7 +21,7 @@ import { ZCacheEditor } from "./ZCacheEditor";
 
 export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   const { systemInfo } = useSystemApi();
-  return systemInfo?.capabilities?.zcache === true ? (
+  return systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") === true ? (
     <ZCacheDetails cluster={cluster} />
   ) : null;
 }
@@ -30,8 +31,8 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
   const { data: access } = useCan({ resource: "clusters", action: "edit" });
   const [editing, setEditing] = useState(false);
   const [history, setHistory] = useState(false);
-  const status = cluster.status?.zcache;
-  const desired = cluster.spec.zcache;
+  const status = zcacheStatus(cluster);
+  const desired = zcacheSpec(cluster);
   const nodes = status?.nodes ?? [];
   const targetNodes = desired?.enabled ? desired.target_nodes : [];
   const names = [...new Set([...nodes.map((n) => n.name), ...targetNodes])];

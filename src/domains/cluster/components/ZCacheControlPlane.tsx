@@ -1,3 +1,4 @@
+import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { useCan, useInvalidate, useUpdate } from "@refinedev/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,8 +32,8 @@ export function ZCacheControlPlane({ cluster }: { cluster: Cluster }) {
   const { data: access } = useCan({ resource: "clusters", action: "edit" });
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState("");
-  const state = cluster.status?.zcache?.control_plane;
-  const intent = cluster.spec.zcache?.control_plane;
+  const state = zcacheStatus(cluster)?.control_plane;
+  const intent = zcacheSpec(cluster)?.control_plane;
   const pending = !!intent && intent.request_id !== state?.request_id;
   const busy =
     pending || state?.phase === "Installing" || state?.phase === "Upgrading";
@@ -64,14 +65,14 @@ export function ZCacheControlPlane({ cluster }: { cluster: Cluster }) {
         values: {
           spec: {
             ...cluster.spec,
-            zcache: {
-              ...(cluster.spec.zcache ?? {
+            cache: { provider: "zcache", options: {
+              ...(zcacheSpec(cluster) ?? {
                 enabled: false,
                 l1_size_gib: 1,
                 target_nodes: [],
               }),
               control_plane: { version: target, request_id: uuidv4() },
-            },
+            } },
           },
         },
         meta: {

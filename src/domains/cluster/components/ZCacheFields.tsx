@@ -18,8 +18,8 @@ export function ZCacheFields({
   isEdit: boolean;
 }) {
   const { t } = useTranslation();
-  const enabled = form.watch("spec.zcache.enabled") === true;
-  const selected: string[] = form.watch("spec.zcache.target_nodes") ?? [];
+  const enabled = form.watch("spec.cache.options.enabled") === true;
+  const selected: string[] = form.watch("spec.cache.options.target_nodes") ?? [];
   const candidates = status?.candidates ?? [];
   const names = [...new Set([...candidates.map((n) => n.name), ...selected])];
   const fields = (
@@ -40,7 +40,7 @@ export function ZCacheFields({
         <>
           <FormFieldGroup
             {...form}
-            name="spec.zcache.enabled"
+            name="spec.cache.options.enabled"
             label={t("clusters.zcache.enable")}
             isCheckbox
             className="col-span-full"
@@ -49,18 +49,18 @@ export function ZCacheFields({
               checked={enabled}
               onCheckedChange={(value) =>
                 form.setValue(
-                  "spec.zcache",
-                  {
-                    ...form.getValues("spec.zcache"),
+                  "spec.cache",
+                  { provider: "zcache", options: {
+                    ...form.getValues("spec.cache.options"),
                     enabled: value === true,
                     l1_size_gib:
                       Number.isInteger(
-                        form.getValues("spec.zcache.l1_size_gib"),
-                      ) && form.getValues("spec.zcache.l1_size_gib") > 0
-                        ? form.getValues("spec.zcache.l1_size_gib")
+                        form.getValues("spec.cache.options.l1_size_gib"),
+                      ) && form.getValues("spec.cache.options.l1_size_gib") > 0
+                        ? form.getValues("spec.cache.options.l1_size_gib")
                         : 1,
                     target_nodes: selected,
-                  },
+                  } },
                   { shouldDirty: true, shouldValidate: true },
                 )
               }
@@ -73,11 +73,11 @@ export function ZCacheFields({
               </p>
               <FormFieldGroup
                 {...form}
-                name="spec.zcache.l1_size_gib"
+                name="spec.cache.options.l1_size_gib"
                 label={t("clusters.zcache.capacity")}
                 rules={{
                   validate: (value) =>
-                    form.getValues("spec.zcache.enabled") !== true ||
+                    form.getValues("spec.cache.options.enabled") !== true ||
                     (Number.isInteger(Number(value)) &&
                       Number(value) >= 1 &&
                       Number(value) <= 2147483647) ||
@@ -90,7 +90,7 @@ export function ZCacheFields({
                   step={1}
                   onChange={(event) =>
                     form.setValue(
-                      "spec.zcache.l1_size_gib",
+                      "spec.cache.options.l1_size_gib",
                       Number(event.target.value),
                       { shouldDirty: true, shouldValidate: true },
                     )
@@ -127,7 +127,7 @@ export function ZCacheFields({
                         }
                         onCheckedChange={(checked) =>
                           form.setValue(
-                            "spec.zcache.target_nodes",
+                            "spec.cache.options.target_nodes",
                             checked === true
                               ? [...selected, name]
                               : selected.filter((n) => n !== name),
@@ -160,14 +160,14 @@ export function ZCacheFields({
                 })}
                 <input
                   type="hidden"
-                  {...form.register("spec.zcache.target_nodes", {
+                  {...form.register("spec.cache.options.target_nodes", {
                     validate: (value) =>
-                      form.getValues("spec.zcache.enabled") !== true ||
+                      form.getValues("spec.cache.options.enabled") !== true ||
                       (value?.length ?? 0) > 0 ||
                       t("clusters.zcache.selectNodes"),
                   })}
                 />
-                {form.getFieldState("spec.zcache.target_nodes", form.formState)
+                {form.getFieldState("spec.cache.options.target_nodes", form.formState)
                   .error && (
                   <p role="alert" className="text-sm text-destructive">
                     {t("clusters.zcache.selectNodes")}

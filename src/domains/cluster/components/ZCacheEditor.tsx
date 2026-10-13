@@ -1,3 +1,4 @@
+import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { useCan, useInvalidate, useUpdate } from "@refinedev/core";
 import { useState } from "react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
@@ -41,9 +42,9 @@ export function ZCacheEditor({
   const invalidate = useInvalidate();
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState<"disable" | "discard" | null>(null);
-  const status = cluster.status?.zcache;
-  const draft = form.watch("spec.zcache");
-  const unchanged = sameCacheConfig(draft, cluster.spec.zcache);
+  const status = zcacheStatus(cluster);
+  const draft = form.watch("spec.cache.options");
+  const unchanged = sameCacheConfig(draft, zcacheSpec(cluster));
   const busy = activeCacheChange(status);
   const close = () => {
     if (isLoading) return;
@@ -54,12 +55,12 @@ export function ZCacheEditor({
     if (!draft || isLoading || access?.can !== true) return;
     setError("");
     const spec = structuredClone(cluster.spec);
-    spec.zcache = {
-      ...spec.zcache,
+    spec.cache = {provider: "zcache", options: {
+      ...spec.cache?.options,
       enabled: draft.enabled,
       l1_size_gib: Number(draft.l1_size_gib),
       target_nodes: [...draft.target_nodes],
-    };
+    } };
     // Masked credentials must not overwrite the stored kubeconfig.
     if (
       spec.config.kubernetes_config &&
@@ -127,7 +128,7 @@ export function ZCacheEditor({
           <form
             className="flex min-h-0 flex-1 flex-col"
             onSubmit={form.handleSubmit(() => {
-              if (cluster.spec.zcache?.enabled && !draft?.enabled)
+              if (zcacheSpec(cluster)?.enabled && !draft?.enabled)
                 setConfirm("disable");
               else void save();
             })}

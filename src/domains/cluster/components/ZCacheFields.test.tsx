@@ -31,14 +31,12 @@ function Form({
       spec: {
         type: "kubernetes",
         config: {},
-        zcache: legacy
-          ? undefined
-          : { enabled: true, l1_size_gib: 8, target_nodes: ["a", "b"] },
+        cache: legacy ? undefined : { provider:"zcache", options:{enabled:true, l1_size_gib:8,target_nodes:["a","b"]} },
       },
     },
   });
   const adapted = Object.assign(form, {
-    refineCore: { query: { data: { data: { status: { zcache: status } } } } },
+    refineCore: { query: { data: { data: { status: { cache: {provider:"zcache", details:status} } } } } },
   }) as unknown as UseFormReturnType<Cluster>;
   return (
     <FormProvider {...form}>
@@ -90,7 +88,7 @@ describe("ZCacheFields", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "b" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(submit).toHaveBeenCalled());
-    expect(submit.mock.calls[0][0].spec.zcache).toEqual({
+    expect(submit.mock.calls[0][0].spec.cache?.options).toEqual({
       enabled: true,
       l1_size_gib: 1,
       target_nodes: ["a"],
@@ -146,7 +144,7 @@ describe("ZCacheFields", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(submit).toHaveBeenCalled());
-    expect(submit.mock.calls[0][0].spec.zcache.enabled).toBe(false);
+    expect(submit.mock.calls[0][0].spec.cache?.options.enabled).toBe(false);
   });
   it("explains bootstrap before enabling runtime on a new cluster", () => {
     render(<Form onSubmit={vi.fn()} isEdit={false} />);

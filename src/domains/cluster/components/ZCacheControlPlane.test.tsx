@@ -28,10 +28,10 @@ const cluster = {
     version: "cluster-v1",
     image_registry: "registry",
     config: {},
-    zcache: { enabled: true, l1_size_gib: 8, target_nodes: ["node-a"] },
+    cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 8, target_nodes: ["node-a"] } },
   },
   status: {
-    zcache: {
+    cache: { provider: "zcache", details: {
       phase: "Applied",
       control_plane: {
         version: "cp-v1",
@@ -49,7 +49,7 @@ const cluster = {
           },
         ],
       },
-    },
+    } },
   },
 } as unknown as Cluster;
 
@@ -76,20 +76,20 @@ describe("explicit control-plane actions", () => {
     const values = update.mock.calls[0][0].values;
     expect(values).not.toHaveProperty("status");
     expect(values.spec.version).toBe("cluster-v1");
-    expect(values.spec.zcache).toMatchObject({
+    expect(values.spec.cache?.options).toMatchObject({
       enabled: true,
       l1_size_gib: 8,
       target_nodes: ["node-a"],
       control_plane: { version: "cp-v1" },
     });
-    expect(values.spec.zcache.control_plane.request_id).toMatch(
+    expect(values.spec.cache?.options.control_plane.request_id).toMatch(
       /^[0-9a-f-]{36}$/,
     );
   });
   it("shows pending rather than the previous success after submission", () => {
     const pending = structuredClone(cluster);
-    if (pending.spec.zcache)
-      pending.spec.zcache.control_plane = {
+    if (pending.spec.cache?.options)
+      pending.spec.cache!.options.control_plane = {
         version: "cp-v1",
         request_id: "new",
       };

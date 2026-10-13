@@ -87,7 +87,7 @@ export type Cluster = {
 };
 
 export type ClusterSpec = {
-  zcache?: ZCacheSpec;
+  cache?: ClusterCacheSpec;
   /**
    * The type of the cluster.
    * supported: 'ssh' | 'kubernetes'
@@ -110,7 +110,7 @@ type NodeProvisionStatus =
   (typeof NodeProvisionStatus)[keyof typeof NodeProvisionStatus];
 
 export type ClusterStatus = BaseStatus<ClusterPhase> & {
-  zcache?: ZCacheStatus;
+  cache?: ClusterCacheStatus;
   image: string | null;
   dashboard_url: string | null;
   /**
@@ -219,3 +219,14 @@ export type ZCacheControlPlaneStatus = {
     upgrade_from: string[];
   }[];
 };
+
+export type ClusterCacheSpec = { provider: string; options: Record<string, unknown> };
+export type ClusterCacheStatus = { provider: string; details?: Record<string, unknown>; error?: string };
+
+export function zcacheSpec(cluster?: Pick<Cluster, "spec">): ZCacheSpec | undefined {
+ return cluster?.spec.cache?.provider === "zcache" ? cluster.spec.cache.options as ZCacheSpec : undefined;
+}
+
+export function zcacheStatus(cluster?: Pick<Cluster, "status">): ZCacheStatus | undefined {
+ return cluster?.status?.cache?.provider === "zcache" ? cluster.status.cache.details as ZCacheStatus | undefined : undefined;
+}

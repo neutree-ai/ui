@@ -1,5 +1,5 @@
 export interface SystemInfo {
-  capabilities?: { zcache?: boolean };
+  capabilities?: { cluster_cache_providers?: string[] };
   grafana_url?: string;
   version: string;
 }

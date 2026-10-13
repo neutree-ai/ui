@@ -10,7 +10,7 @@ vi.mock("./ZCacheControlPlane", () => ({ ZCacheControlPlane: () => null }));
 const capability = vi.hoisted(() => ({ value: true as boolean | undefined }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
-    systemInfo: { capabilities: { zcache: capability.value } },
+    systemInfo: { capabilities: { cluster_cache_providers: capability.value ? ["zcache"] : [] } },
   }),
 }));
 beforeEach(() => {
@@ -46,13 +46,13 @@ vi.mock("@/foundation/components/Timestamp", () => ({
 describe("ZCacheSection", () => {
   it("does not label newly saved intent as applied using an old observation", () => {
     const cluster = {
-      spec: { zcache: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } },
+      spec: { cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } } },
       status: {
-        zcache: {
+        cache: { provider: "zcache", details: {
           phase: "Applied",
           observed_at: "now",
           current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
-        },
+        } },
       },
     } as unknown as Cluster;
     render(<ZCacheSection cluster={cluster} />);
@@ -61,9 +61,9 @@ describe("ZCacheSection", () => {
 
   it("shows rejected submission separately from current nodes and historical operations", () => {
     const cluster = {
-      spec: { zcache: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } },
+      spec: { cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } } },
       status: {
-        zcache: {
+        cache: { provider: "zcache", details: {
           phase: "Failed",
           message: "API 422",
           observed_at: "now",
@@ -77,7 +77,7 @@ describe("ZCacheSection", () => {
               nodes: [],
             },
           ],
-        },
+        } },
       },
     } as unknown as Cluster;
     render(<ZCacheSection cluster={cluster} />);
@@ -109,10 +109,10 @@ it.each([false, undefined])(
 it("renders heterogeneous node capacities instead of a uniform capacity summary", () => {
   const cluster = {
     spec: {
-      zcache: { enabled: true, l1_size_gib: 10, target_nodes: ["a", "b"] },
+      cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 10, target_nodes: ["a", "b"] } },
     },
     status: {
-      zcache: {
+      cache: { provider: "zcache", details: {
         phase: "Reconciling",
         observed_at: "now",
         nodes: [
@@ -126,7 +126,7 @@ it("renders heterogeneous node capacities instead of a uniform capacity summary"
             lmcache: { l1SizeGb: 5, targetNodes: ["a", "b"] },
           },
         },
-      },
+      } },
     },
   } as unknown as Cluster;
   render(<ZCacheSection cluster={cluster} />);
@@ -139,14 +139,14 @@ it("renders heterogeneous node capacities instead of a uniform capacity summary"
 });
 it("does not label stale node observations ready", () => {
   const cluster = {
-    spec: { zcache: { enabled: true, l1_size_gib: 2, target_nodes: ["a"] } },
+    spec: { cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 2, target_nodes: ["a"] } } },
     status: {
-      zcache: {
+      cache: { provider: "zcache", details: {
         phase: "Applied",
         observed_at: "old",
         observation_error: "unreachable",
         nodes: [{ name: "a", runtime: "Ready", capacity_bytes: 2 * 2 ** 30 }],
-      },
+      } },
     },
   } as unknown as Cluster;
   render(<ZCacheSection cluster={cluster} />);

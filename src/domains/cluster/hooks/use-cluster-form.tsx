@@ -1,3 +1,4 @@
+import { zcacheStatus } from "@/domains/cluster/types";
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
@@ -26,7 +27,7 @@ import {
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
-  const cacheSupported = systemInfo?.capabilities?.zcache === true;
+  const cacheSupported = systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") === true;
   const { current: currentWorkspace } = useWorkspace();
 
   const form = useForm<Cluster>({
@@ -37,7 +38,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     // initial fetch only.
     refineCoreProps: {
       successNotification: (data) =>
-        cacheSupported && data?.data?.spec?.zcache
+        cacheSupported && data?.data?.spec?.cache
           ? { message: t("clusters.zcache.saved"), type: "success" }
           : undefined,
       queryOptions: {
@@ -84,8 +85,8 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
     if (
       isEdit &&
-      transformedValues.spec.zcache &&
-      form.refineCore.query?.data?.data.status?.zcache?.phase === "Failed"
+      transformedValues.spec.cache &&
+      zcacheStatus(form.refineCore.query?.data?.data)?.phase === "Failed"
     ) {
       transformedValues.metadata = {
         ...transformedValues.metadata,
@@ -246,7 +247,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
                   model_caches: [],
                 });
                 form.setValue("spec.accelerator_virtualization", undefined);
-                form.setValue("spec.zcache", undefined);
+                form.setValue("spec.cache", undefined);
               } else if (value === "kubernetes") {
                 form.setValue("spec.config", {
                   kubernetes_config: {
@@ -383,7 +384,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
         <ZCacheFields
           form={form}
           isEdit={isEdit}
-          status={form.refineCore.query?.data?.data.status?.zcache}
+          status={zcacheStatus(form.refineCore.query?.data?.data)}
         />
       ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
