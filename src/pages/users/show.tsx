@@ -1,4 +1,5 @@
 import { useShow } from "@refinedev/core";
+import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import {
   UserDepartmentSection,
   UserTeamsSection,
@@ -11,6 +12,7 @@ import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
+import { useLicense } from "@/foundation/hooks/use-license";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   profileDisplayName,
@@ -26,6 +28,7 @@ export const UsersShow = () => {
   const record = data?.data;
 
   const metadataColumns = useMetadataColumns();
+  const { isEnterprise } = useLicense();
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
@@ -131,6 +134,11 @@ export const UsersShow = () => {
                       },
                     ],
                   },
+                  {
+                    field: "spec->>org_unit",
+                    operator: "null",
+                    value: true,
+                  },
                 ],
               },
             }}
@@ -177,6 +185,62 @@ export const UsersShow = () => {
             {metadataColumns.creation_timestamp}
           </Table>
         </ShowPage.Section>
+        {isEnterprise && (
+          <ShowPage.Section
+            title={t("user_profiles.sections.departmentRoles")}
+            data-testid="department-roles-card"
+          >
+            <Table
+              refineCoreProps={{
+                resource: "role_assignments",
+                filters: {
+                  permanent: [
+                    {
+                      field: "spec->user_id",
+                      operator: "eq",
+                      value: JSON.stringify(record.id),
+                    },
+                    {
+                      field: "spec->>org_unit",
+                      operator: "nnull",
+                      value: null,
+                    },
+                  ],
+                },
+              }}
+            >
+              <Table.Column
+                header={t("organization.fields.department")}
+                accessorKey="spec.org_unit"
+                id="org_unit"
+                enableHiding
+                cell={({ row }) => (
+                  <OrgUnitLabel name={row.original.spec.org_unit} />
+                )}
+              />
+              <Table.Column
+                header={t("common.fields.role")}
+                accessorKey="spec.role"
+                id="role"
+                enableHiding
+                cell={({ row }) => {
+                  const { role } = row.original.spec;
+                  return (
+                    <ShowButton
+                      recordItemId={role}
+                      meta={{}}
+                      variant="link"
+                      resource="roles"
+                    >
+                      {role}
+                    </ShowButton>
+                  );
+                }}
+              />
+              {metadataColumns.creation_timestamp}
+            </Table>
+          </ShowPage.Section>
+        )}
       </div>
     </ShowPage>
   );

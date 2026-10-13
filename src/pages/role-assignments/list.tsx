@@ -1,4 +1,6 @@
 import { Edit, Trash2 } from "lucide-react";
+import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
+import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -9,28 +11,18 @@ import { useTranslation } from "@/foundation/lib/i18n";
 const useRoleAssignmentColumns = () => {
   const { t } = useTranslation();
   return {
-    workspace: (
+    scope: (
       <Table.Column
-        header={t("common.fields.workspace")}
+        header={t("role_assignments.fields.scope")}
         accessorKey="spec.workspace"
-        id="workspace"
+        id="scope"
         enableHiding
-        cell={({ row }) => {
-          const { global, workspace } = row.original.spec;
-          if (global) {
-            return "*";
-          }
-          return (
-            <ShowButton
-              recordItemId={workspace}
-              meta={{}}
-              variant="link"
-              resource="workspaces"
-            >
-              {workspace}
-            </ShowButton>
-          );
-        }}
+        cell={({ row }) => (
+          <RoleAssignmentScopeLabel
+            spec={row.original.spec}
+            renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+          />
+        )}
       />
     ),
     role: (
@@ -114,7 +106,7 @@ export const RoleAssignmentsList = () => {
         }}
       >
         {metadataColumns.name}
-        {roleAssignmentColumns.workspace}
+        {roleAssignmentColumns.scope}
         {roleAssignmentColumns.role}
         {roleAssignmentColumns.user}
         {metadataColumns.creation_timestamp}

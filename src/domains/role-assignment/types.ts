@@ -5,6 +5,11 @@ export interface RoleAssignmentSpec {
   workspace: string | null;
   global: boolean;
   role: string;
+  /**
+   * metadata.name of an OrgUnit: the assignment covers that subtree, with
+   * global false and no workspace. Absent on servers older than the field.
+   */
+  org_unit?: string | null;
 }
 
 export interface RoleAssignment {

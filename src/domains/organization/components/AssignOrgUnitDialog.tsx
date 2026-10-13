@@ -29,6 +29,8 @@ type AssignOrgUnitDialogProps = {
   saving?: boolean;
   error?: string;
   onSave: (orgUnitId: number) => void;
+  title?: string;
+  description?: string;
 };
 
 /**
@@ -44,6 +46,8 @@ export function AssignOrgUnitDialog({
   saving,
   error,
   onSave,
+  title,
+  description,
 }: AssignOrgUnitDialogProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -69,9 +73,11 @@ export function AssignOrgUnitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("user_profiles.department.assignTitle")}</DialogTitle>
+          <DialogTitle>
+            {title ?? t("user_profiles.department.assignTitle")}
+          </DialogTitle>
           <DialogDescription>
-            {t("user_profiles.department.assignHint")}
+            {description ?? t("user_profiles.department.assignHint")}
           </DialogDescription>
         </DialogHeader>
         <Input

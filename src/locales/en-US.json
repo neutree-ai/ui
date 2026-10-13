@@ -2028,7 +2028,8 @@
 			"globalRoles": "Global Roles",
 			"joinedWorkspaces": "Joined Workspaces",
 			"department": "Department",
-			"teams": "Teams"
+			"teams": "Teams",
+			"departmentRoles": "Department Roles"
 		},
 		"validation": {
 			"passwordMinLength": "Password must be at least 6 characters"
@@ -2071,7 +2072,8 @@
 		"title": "Workspace Policies",
 		"fields": {
 			"policy": "Policy",
-			"policyScope": "Policy Scope"
+			"policyScope": "Policy Scope",
+			"scope": "Scope"
 		},
 		"placeholders": {
 			"policyName": "Workspace Policy Name",
@@ -2079,11 +2081,30 @@
 			"selectRole": "Select A Role"
 		},
 		"descriptions": {
-			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace."
+			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace. Organization subtree policies apply to the users of the selected department and its sub-departments."
 		},
 		"options": {
 			"global": "Global",
-			"workspace": "Workspace"
+			"workspace": "Workspace",
+			"orgUnit": "Organization subtree"
+		},
+		"scope": {
+			"workspace": "Workspace:",
+			"orgUnit": "Subtree:"
+		},
+		"validation": {
+			"orgUnitRequired": "Select a department"
+		},
+		"errors": {
+			"saveFailed": "Failed to save the policy",
+			"workspaceUnsupported": "Workspace policies are not supported. Use a global policy.",
+			"orgUnitUnsupported": "Organization subtree policies need the enterprise edition. Use a global policy.",
+			"orgUnitScopeConflict": "An organization subtree policy cannot also be global or bound to a workspace.",
+			"orgUnitNotFound": "The selected department does not exist.",
+			"delegatedOrgUnitOnly": "You can only grant or revoke organization subtree policies.",
+			"outsideScope": "The user or the department is outside the departments you manage.",
+			"roleNotFound": "The role does not exist.",
+			"roleExceedsGrant": "The role grants permissions you do not hold on this department. Pick a role whose permissions you hold yourself."
 		}
 	},
 	"api_keys": {
@@ -2802,6 +2823,11 @@
 			"inactiveOrgUnit": "Users cannot be added to an inactive department.",
 			"externalUserOrgUnit": "The department of a user from an identity source comes from that source. Only local accounts can be assigned by hand.",
 			"globalAssignerOnly": "Only a global administrator can move a department assignment to another user."
+		},
+		"picker": {
+			"title": "Select Department",
+			"hint": "Pick an active department.",
+			"placeholder": "Select a department"
 		}
 	},
 	"org_units": {
