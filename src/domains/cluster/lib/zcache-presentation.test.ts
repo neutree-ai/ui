@@ -13,7 +13,6 @@ describe("cache presentation", () => {
   });
   it("still considers an ambiguous submission active after an observation error", () => {
     const status: ZCacheStatus = {
-      phase: "Failed",
       change: { phase: "Submitting" },
     };
     expect(activeCacheChange(status)).toBe(status.change);

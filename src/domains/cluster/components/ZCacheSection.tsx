@@ -1,10 +1,10 @@
-import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { useCan } from "@refinedev/core";
 import { CircleAlert, CircleCheck, History, Settings2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -21,7 +21,9 @@ import { ZCacheEditor } from "./ZCacheEditor";
 
 export function ZCacheSection({ cluster }: { cluster: Cluster }) {
   const { systemInfo } = useSystemApi();
-  return systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") === true ? (
+  return systemInfo?.capabilities?.cluster_cache_providers?.includes(
+    "zcache",
+  ) === true ? (
     <ZCacheDetails cluster={cluster} />
   ) : null;
 }
@@ -32,6 +34,8 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
   const [editing, setEditing] = useState(false);
   const [history, setHistory] = useState(false);
   const status = zcacheStatus(cluster);
+  const summary = cluster.status?.cache;
+  const availability = summary?.conditions.find((c) => c.type === "Ready");
   const desired = zcacheSpec(cluster);
   const nodes = status?.nodes ?? [];
   const targetNodes = desired?.enabled ? desired.target_nodes : [];
@@ -39,8 +43,8 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
   const matches = sameCacheConfig(desired, status?.current);
   const phase =
-    status?.phase === "Applied" && !matches ? "Reconciling" : status?.phase;
-  const stale = !!status?.observation_error || !status?.observed_at;
+    summary?.phase === "Ready" && !matches ? "Reconciling" : summary?.phase;
+  const stale = availability?.status === "Unknown" || !status?.observed_at;
   const busy = activeCacheChange(status);
   const request = busy?.request;
   const cp = status?.control_plane;
@@ -50,15 +54,18 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
     desired.control_plane.request_id !== cp?.request_id;
   const cpBusy =
     cpPending || cp?.phase === "Installing" || cp?.phase === "Upgrading";
-  const resultKey = stale
-    ? "clusters.zcache.unknown"
-    : phase === "Failed"
+  const resultKey =
+    phase === "Failed"
       ? "clusters.zcache.failed"
-      : phase !== "Applied"
-        ? "clusters.zcache.reconciling"
-        : desired?.enabled
+      : phase === "Disabled"
+        ? "clusters.zcache.disabled"
+        : phase === "Ready"
           ? "clusters.zcache.applied"
-          : "clusters.zcache.disabled";
+          : phase === "Unavailable"
+            ? availability?.status === "False"
+              ? "clusters.zcache.unavailable"
+              : "clusters.zcache.unknown"
+            : "clusters.zcache.reconciling";
   return (
     <ShowPage.Section
       title={
@@ -87,12 +94,12 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
       }
     >
       <div className="space-y-4">
-        {status?.observation_error && (
+        {phase === "Unavailable" && (
           <p
             role="alert"
             className="rounded-md bg-destructive/5 p-3 text-sm text-destructive"
           >
-            {t("clusters.zcache.stale")}
+            {summary?.error_message || t("clusters.zcache.stale")}
           </p>
         )}
         {phase === "Failed" && (
@@ -100,13 +107,17 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
             role="alert"
             className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-destructive/5 p-3 text-sm text-destructive"
           >
-            <span>{t("clusters.zcache.failureHint")}</span>
+            <span>
+              {t("clusters.zcache.failureHint")}
+              {availability?.status === "True" &&
+                ` · ${t("clusters.zcache.stillAvailable")}`}
+            </span>
             <Button variant="ghost" size="sm" onClick={() => setHistory(true)}>
               {t("clusters.zcache.viewReason")}
             </Button>
           </div>
         )}
-        {phase !== "Applied" && phase !== "Failed" && (
+        {phase === "Reconciling" && (
           <div
             role="status"
             className="space-y-1 rounded-md bg-primary/5 p-3 text-sm leading-6"
@@ -275,6 +286,7 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
         <ZCacheEditor cluster={cluster} onClose={() => setEditing(false)} />
       )}
       <ZCacheActivity
+        summary={summary}
         status={status}
         open={history}
         onOpenChange={setHistory}

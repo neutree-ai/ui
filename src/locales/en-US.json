@@ -557,6 +557,8 @@
 			"nodes": "nodes",
 			"readyNodes": "Ready runtime nodes",
 			"unknown": "Unknown",
+			"unavailable": "Cache service unavailable",
+			"stillAvailable": "Existing cache service remains available",
 			"observedAt": "Last observed:",
 			"node": "Node",
 			"runtime": "Cache runtime status",

@@ -31,12 +31,27 @@ function Form({
       spec: {
         type: "kubernetes",
         config: {},
-        cache: legacy ? undefined : { provider:"zcache", options:{enabled:true, l1_size_gib:8,target_nodes:["a","b"]} },
+        cache: legacy
+          ? undefined
+          : {
+              provider: "zcache",
+              options: {
+                enabled: true,
+                l1_size_gib: 8,
+                target_nodes: ["a", "b"],
+              },
+            },
       },
     },
   });
   const adapted = Object.assign(form, {
-    refineCore: { query: { data: { data: { status: { cache: {provider:"zcache", details:status} } } } } },
+    refineCore: {
+      query: {
+        data: {
+          data: { status: { cache: { provider: "zcache", details: status } } },
+        },
+      },
+    },
   }) as unknown as UseFormReturnType<Cluster>;
   return (
     <FormProvider {...form}>
@@ -48,7 +63,6 @@ function Form({
   );
 }
 const observed: ZCacheStatus = {
-  phase: "Applied",
   candidates: [
     { name: "a", selectable: true },
     { name: "b", selectable: false },

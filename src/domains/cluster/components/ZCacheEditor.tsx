@@ -1,4 +1,3 @@
-import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { useCan, useInvalidate, useUpdate } from "@refinedev/core";
 import { useState } from "react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
@@ -21,6 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { activeCacheChange, sameCacheConfig } from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
@@ -55,12 +55,15 @@ export function ZCacheEditor({
     if (!draft || isLoading || access?.can !== true) return;
     setError("");
     const spec = structuredClone(cluster.spec);
-    spec.cache = {provider: "zcache", options: {
-      ...spec.cache?.options,
-      enabled: draft.enabled,
-      l1_size_gib: Number(draft.l1_size_gib),
-      target_nodes: [...draft.target_nodes],
-    } };
+    spec.cache = {
+      provider: "zcache",
+      options: {
+        ...spec.cache?.options,
+        enabled: draft.enabled,
+        l1_size_gib: Number(draft.l1_size_gib),
+        target_nodes: [...draft.target_nodes],
+      },
+    };
     // Masked credentials must not overwrite the stored kubeconfig.
     if (
       spec.config.kubernetes_config &&
@@ -73,7 +76,7 @@ export function ZCacheEditor({
         id: cluster.metadata.name,
         values: {
           spec,
-          ...(status?.phase === "Failed"
+          ...(cluster.status?.cache?.phase === "Failed"
             ? {
                 metadata: {
                   ...cluster.metadata,
@@ -145,7 +148,13 @@ export function ZCacheEditor({
                   {t("clusters.zcache.editWhileBusy")}
                 </p>
               )}
-              <ZCacheFields form={form} isEdit status={status} compact />
+              <ZCacheFields
+                form={form}
+                isEdit
+                status={status}
+                summary={cluster.status?.cache}
+                compact
+              />
               {error && (
                 <p
                   role="alert"
@@ -169,13 +178,13 @@ export function ZCacheEditor({
                 disabled={
                   isLoading ||
                   access?.can !== true ||
-                  (unchanged && status?.phase !== "Failed")
+                  (unchanged && cluster.status?.cache?.phase !== "Failed")
                 }
               >
                 {t(
                   isLoading
                     ? "clusters.zcache.saving"
-                    : status?.phase === "Failed" && unchanged
+                    : cluster.status?.cache?.phase === "Failed" && unchanged
                       ? "clusters.zcache.retry"
                       : "clusters.zcache.save",
                 )}

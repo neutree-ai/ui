@@ -10,7 +10,11 @@ vi.mock("./ZCacheControlPlane", () => ({ ZCacheControlPlane: () => null }));
 const capability = vi.hoisted(() => ({ value: true as boolean | undefined }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
-    systemInfo: { capabilities: { cluster_cache_providers: capability.value ? ["zcache"] : [] } },
+    systemInfo: {
+      capabilities: {
+        cluster_cache_providers: capability.value ? ["zcache"] : [],
+      },
+    },
   }),
 }));
 beforeEach(() => {
@@ -46,13 +50,22 @@ vi.mock("@/foundation/components/Timestamp", () => ({
 describe("ZCacheSection", () => {
   it("does not label newly saved intent as applied using an old observation", () => {
     const cluster = {
-      spec: { cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } } },
+      spec: {
+        cache: {
+          provider: "zcache",
+          options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] },
+        },
+      },
       status: {
-        cache: { provider: "zcache", details: {
-          phase: "Applied",
-          observed_at: "now",
-          current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
-        } },
+        cache: {
+          provider: "zcache",
+          phase: "Ready",
+          conditions: [],
+          details: {
+            observed_at: "now",
+            current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+          },
+        },
       },
     } as unknown as Cluster;
     render(<ZCacheSection cluster={cluster} />);
@@ -61,23 +74,34 @@ describe("ZCacheSection", () => {
 
   it("shows rejected submission separately from current nodes and historical operations", () => {
     const cluster = {
-      spec: { cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] } } },
+      spec: {
+        cache: {
+          provider: "zcache",
+          options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] },
+        },
+      },
       status: {
-        cache: { provider: "zcache", details: {
+        cache: {
+          provider: "zcache",
           phase: "Failed",
-          message: "API 422",
-          observed_at: "now",
-          nodes: [{ name: "a", runtime: "Ready", capacity_bytes: 8 * 2 ** 30 }],
-          change: { phase: "Rejected", message: "invalid capacity" },
-          operations: [
-            {
-              id: "old-operation",
-              phase: "Succeeded",
-              kind: "install",
-              nodes: [],
-            },
-          ],
-        } },
+          error_message: "API 422",
+          conditions: [],
+          details: {
+            observed_at: "now",
+            nodes: [
+              { name: "a", runtime: "Ready", capacity_bytes: 8 * 2 ** 30 },
+            ],
+            change: { phase: "Rejected", message: "invalid capacity" },
+            operations: [
+              {
+                id: "old-operation",
+                phase: "Succeeded",
+                kind: "install",
+                nodes: [],
+              },
+            ],
+          },
+        },
       },
     } as unknown as Cluster;
     render(<ZCacheSection cluster={cluster} />);
@@ -109,24 +133,31 @@ it.each([false, undefined])(
 it("renders heterogeneous node capacities instead of a uniform capacity summary", () => {
   const cluster = {
     spec: {
-      cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 10, target_nodes: ["a", "b"] } },
+      cache: {
+        provider: "zcache",
+        options: { enabled: true, l1_size_gib: 10, target_nodes: ["a", "b"] },
+      },
     },
     status: {
-      cache: { provider: "zcache", details: {
+      cache: {
+        provider: "zcache",
         phase: "Reconciling",
-        observed_at: "now",
-        nodes: [
-          { name: "a", runtime: "Ready", capacity_bytes: 2 * 2 ** 30 },
-          { name: "b", runtime: "Ready", capacity_bytes: 8 * 2 ** 30 },
-        ],
-        change: {
-          phase: "Running",
-          request: {
-            operation: { kind: "update_cache" },
-            lmcache: { l1SizeGb: 5, targetNodes: ["a", "b"] },
+        conditions: [],
+        details: {
+          observed_at: "now",
+          nodes: [
+            { name: "a", runtime: "Ready", capacity_bytes: 2 * 2 ** 30 },
+            { name: "b", runtime: "Ready", capacity_bytes: 8 * 2 ** 30 },
+          ],
+          change: {
+            phase: "Running",
+            request: {
+              operation: { kind: "update_cache" },
+              lmcache: { l1SizeGb: 5, targetNodes: ["a", "b"] },
+            },
           },
         },
-      } },
+      },
     },
   } as unknown as Cluster;
   render(<ZCacheSection cluster={cluster} />);
@@ -139,14 +170,25 @@ it("renders heterogeneous node capacities instead of a uniform capacity summary"
 });
 it("does not label stale node observations ready", () => {
   const cluster = {
-    spec: { cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 2, target_nodes: ["a"] } } },
+    spec: {
+      cache: {
+        provider: "zcache",
+        options: { enabled: true, l1_size_gib: 2, target_nodes: ["a"] },
+      },
+    },
     status: {
-      cache: { provider: "zcache", details: {
-        phase: "Applied",
-        observed_at: "old",
-        observation_error: "unreachable",
-        nodes: [{ name: "a", runtime: "Ready", capacity_bytes: 2 * 2 ** 30 }],
-      } },
+      cache: {
+        provider: "zcache",
+        phase: "Unavailable",
+        conditions: [
+          { type: "Ready", status: "Unknown", reason: "ObservationFailed" },
+        ],
+        details: {
+          observed_at: "old",
+          observation_error: "unreachable",
+          nodes: [{ name: "a", runtime: "Ready", capacity_bytes: 2 * 2 ** 30 }],
+        },
+      },
     },
   } as unknown as Cluster;
   render(<ZCacheSection cluster={cluster} />);
@@ -155,4 +197,68 @@ it("does not label stale node observations ready", () => {
     "clusters.zcache.stale",
   );
   expect(screen.getByText("2 GiB")).toBeTruthy();
+});
+
+it("shows failed configuration without hiding current availability", () => {
+  const cluster = {
+    spec: {
+      cache: {
+        provider: "zcache",
+        options: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+      },
+    },
+    status: {
+      cache: {
+        provider: "zcache",
+        phase: "Failed",
+        error_message: "capacity rejected",
+        conditions: [
+          {
+            type: "ConfigurationApplied",
+            status: "False",
+            reason: "OperationFailed",
+          },
+          { type: "Ready", status: "True", reason: "RuntimeReady" },
+        ],
+        details: {
+          observed_at: "now",
+          current: { enabled: true, l1_size_gib: 2, target_nodes: ["a"] },
+        },
+      },
+    },
+  } as unknown as Cluster;
+  render(<ZCacheSection cluster={cluster} />);
+  expect(screen.getByText("clusters.zcache.failed")).toBeTruthy();
+  expect(screen.getByRole("alert").textContent).toContain(
+    "clusters.zcache.stillAvailable",
+  );
+});
+
+it("distinguishes unknown availability from confirmed unavailability", () => {
+  const cluster = {
+    spec: {
+      cache: {
+        provider: "zcache",
+        options: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+      },
+    },
+    status: {
+      cache: {
+        provider: "zcache",
+        phase: "Unavailable",
+        error_message: "query timed out",
+        conditions: [
+          { type: "Ready", status: "Unknown", reason: "ObservationFailed" },
+        ],
+        details: { observed_at: "earlier" },
+      },
+    },
+  } as unknown as Cluster;
+  const { rerender } = render(<ZCacheSection cluster={cluster} />);
+  expect(screen.getAllByText("clusters.zcache.unknown").length).toBeGreaterThan(
+    0,
+  );
+  cluster.status!.cache!.conditions[0].status = "False";
+  rerender(<ZCacheSection cluster={cluster} />);
+  expect(screen.getByText("clusters.zcache.unavailable")).toBeTruthy();
 });

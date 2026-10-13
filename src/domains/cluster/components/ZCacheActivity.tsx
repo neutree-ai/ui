@@ -7,18 +7,20 @@ import {
 } from "@/components/ui/sheet";
 import Timestamp from "@/foundation/components/Timestamp";
 import { operationLabel, operationPhase } from "../lib/zcache-presentation";
-import type { ZCacheStatus } from "../types";
+import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 export function ZCacheActivity({
   status,
+  summary,
   open,
   onOpenChange,
 }: {
   status?: ZCacheStatus;
+  summary?: ClusterCacheStatus;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const phase = status?.phase;
+  const phase = summary?.phase;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -30,18 +32,20 @@ export function ZCacheActivity({
           <SheetTitle>{t("clusters.zcache.operations")}</SheetTitle>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {(status?.message || status?.observation_error || status?.change) && (
+          {(summary?.error_message ||
+            status?.observation_error ||
+            status?.change) && (
             <details
-              open={phase === "Failed" || !!status.observation_error}
+              open={phase === "Failed" || !!status?.observation_error}
               className="mb-4 rounded-md bg-muted/50 p-3 text-sm"
             >
               <summary className="cursor-pointer font-medium">
                 {t("clusters.zcache.currentDetails")}
               </summary>
               <div className="mt-3 space-y-2 break-words">
-                <p>{status.message}</p>
-                <p>{status.observation_error}</p>
-                {status.change && (
+                <p>{summary?.error_message}</p>
+                <p>{status?.observation_error}</p>
+                {status?.change && (
                   <>
                     <p>{t(operationPhase(status.change.phase))}</p>
                     <p>{status.change.message}</p>

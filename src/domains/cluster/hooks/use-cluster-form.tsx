@@ -1,4 +1,3 @@
-import { zcacheStatus } from "@/domains/cluster/types";
 import { useCustom, useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
@@ -13,6 +12,7 @@ import { ZCacheFields } from "@/domains/cluster/components/ZCacheFields";
 import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/accelerator-virtualization";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import type { Cluster } from "@/domains/cluster/types";
+import { zcacheStatus } from "@/domains/cluster/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -27,7 +27,9 @@ import {
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
-  const cacheSupported = systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") === true;
+  const cacheSupported =
+    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
+    true;
   const { current: currentWorkspace } = useWorkspace();
 
   const form = useForm<Cluster>({
@@ -86,7 +88,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     if (
       isEdit &&
       transformedValues.spec.cache &&
-      zcacheStatus(form.refineCore.query?.data?.data)?.phase === "Failed"
+      form.refineCore.query?.data?.data?.status?.cache?.phase === "Failed"
     ) {
       transformedValues.metadata = {
         ...transformedValues.metadata,
@@ -385,6 +387,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           form={form}
           isEdit={isEdit}
           status={zcacheStatus(form.refineCore.query?.data?.data)}
+          summary={form.refineCore.query?.data?.data?.status?.cache}
         />
       ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (

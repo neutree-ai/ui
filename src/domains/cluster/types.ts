@@ -165,8 +165,6 @@ export type ZCacheSpec = {
 };
 export type ZCacheStatus = {
   control_plane?: ZCacheControlPlaneStatus;
-  phase: "Applied" | "Reconciling" | "Failed";
-  message?: string;
   observed_at?: string;
   observation_error?: string;
   current?: ZCacheSpec;
@@ -220,13 +218,36 @@ export type ZCacheControlPlaneStatus = {
   }[];
 };
 
-export type ClusterCacheSpec = { provider: string; options: Record<string, unknown> };
-export type ClusterCacheStatus = { provider: string; details?: Record<string, unknown>; error?: string };
+export type ClusterCacheSpec = {
+  provider: string;
+  options: Record<string, unknown>;
+};
+export type CacheCondition = {
+  type: "ConfigurationApplied" | "Ready";
+  status: "True" | "False" | "Unknown";
+  reason: string;
+  message?: string;
+};
+export type ClusterCacheStatus = {
+  provider: string;
+  phase: "Disabled" | "Reconciling" | "Ready" | "Unavailable" | "Failed";
+  error_message?: string;
+  conditions: CacheCondition[];
+  details?: Record<string, unknown>;
+};
 
-export function zcacheSpec(cluster?: Pick<Cluster, "spec">): ZCacheSpec | undefined {
- return cluster?.spec.cache?.provider === "zcache" ? cluster.spec.cache.options as ZCacheSpec : undefined;
+export function zcacheSpec(
+  cluster?: Pick<Cluster, "spec">,
+): ZCacheSpec | undefined {
+  return cluster?.spec.cache?.provider === "zcache"
+    ? (cluster.spec.cache.options as ZCacheSpec)
+    : undefined;
 }
 
-export function zcacheStatus(cluster?: Pick<Cluster, "status">): ZCacheStatus | undefined {
- return cluster?.status?.cache?.provider === "zcache" ? cluster.status.cache.details as ZCacheStatus | undefined : undefined;
+export function zcacheStatus(
+  cluster?: Pick<Cluster, "status">,
+): ZCacheStatus | undefined {
+  return cluster?.status?.cache?.provider === "zcache"
+    ? (cluster.status.cache.details as ZCacheStatus | undefined)
+    : undefined;
 }

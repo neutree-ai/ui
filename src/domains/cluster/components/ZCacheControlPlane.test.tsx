@@ -28,28 +28,35 @@ const cluster = {
     version: "cluster-v1",
     image_registry: "registry",
     config: {},
-    cache: { provider: "zcache", options: { enabled: true, l1_size_gib: 8, target_nodes: ["node-a"] } },
+    cache: {
+      provider: "zcache",
+      options: { enabled: true, l1_size_gib: 8, target_nodes: ["node-a"] },
+    },
   },
   status: {
-    cache: { provider: "zcache", details: {
-      phase: "Applied",
-      control_plane: {
-        version: "cp-v1",
-        target_version: "cp-v1",
-        request_id: "old",
-        phase: "Succeeded",
-        ready: false,
-        available_versions: [
-          {
-            version: "cp-v1",
-            chart_version: "1.0.0",
-            node_agent_version: "agent-v1",
-            runtime_versions: ["runtime-v1"],
-            upgrade_from: [],
-          },
-        ],
+    cache: {
+      provider: "zcache",
+      phase: "Ready",
+      conditions: [],
+      details: {
+        control_plane: {
+          version: "cp-v1",
+          target_version: "cp-v1",
+          request_id: "old",
+          phase: "Succeeded",
+          ready: false,
+          available_versions: [
+            {
+              version: "cp-v1",
+              chart_version: "1.0.0",
+              node_agent_version: "agent-v1",
+              runtime_versions: ["runtime-v1"],
+              upgrade_from: [],
+            },
+          ],
+        },
       },
-    } },
+    },
   },
 } as unknown as Cluster;
 
