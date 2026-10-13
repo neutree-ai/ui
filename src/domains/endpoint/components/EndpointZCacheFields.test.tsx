@@ -5,13 +5,13 @@ import type { EndpointClusterRef } from "../types";
 import { EndpointZCacheFields } from "./EndpointZCacheFields";
 
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock("@/foundation/hooks/use-system-api", () => ({ useSystemApi: () => ({ systemInfo: { capabilities: { zcache: true } } }) }));
+vi.mock("@/foundation/hooks/use-system-api", () => ({ useSystemApi: () => ({ systemInfo: { capabilities: { cluster_cache_providers: ["zcache"] } } }) }));
 afterEach(cleanup);
 
 function Editor({ cache, save }: { cache: unknown; save: (value: unknown) => void }) {
   const form = useForm<FieldValues>({ defaultValues: { spec: { kv_cache: cache, engine: { engine: "vllm" } } } });
   return <FormProvider {...form}><form onSubmit={form.handleSubmit(save)}>
-    <EndpointZCacheFields form={form} isEdit cluster={{ metadata: { name: "test" }, spec: { type: "kubernetes", zcache: { enabled: true, target_nodes: ["a"] } } } as EndpointClusterRef} />
+    <EndpointZCacheFields form={form} isEdit cluster={{ metadata: { name: "test" }, spec: { type: "kubernetes", cache: { provider: "zcache", options: { enabled: true, target_nodes: ["a"] } } } } as EndpointClusterRef} />
     <button type="submit">save</button>
   </form></FormProvider>;
 }

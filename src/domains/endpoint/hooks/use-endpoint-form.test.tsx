@@ -62,7 +62,7 @@ vi.mock("@refinedev/react-hook-form", async () => {
 
 vi.mock("@refinedev/core", () => ({
   useSelect: vi.fn(),
-  useCustom: () => ({ data: { data: { capabilities: { zcache: false } } } }),
+  useCustom: () => ({ data: { data: { capabilities: { cluster_cache_providers: [] } } } }),
 }));
 
 // The registry-models listing is shared L1 infrastructure now, so the model
@@ -5360,7 +5360,7 @@ describe("useEndpointForm", () => {
       };
       setupMocks([catalogA, catalogB], [{
         ...plainKubernetesClusterWithNodeResources,
-        spec: { type: "kubernetes", zcache: { enabled: true, target_nodes: ["node-a"] } },
+        spec: { type: "kubernetes", cache: { provider: "zcache", options: { enabled: true, target_nodes: ["node-a"] } } },
       }]);
       render(<EditForm />);
       await waitFor(() => expect(formInstance).not.toBeNull());

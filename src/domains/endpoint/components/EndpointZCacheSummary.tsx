@@ -1,3 +1,4 @@
+import { zcacheSpec } from "@/domains/cluster/types";
 import { ArrowRight, Database } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -8,7 +9,7 @@ import type { Endpoint } from "../types";
 export function EndpointZCacheSummary({ endpoint, cluster }: { endpoint: Endpoint; cluster?: Cluster }) {
   const { t } = useTranslation();
   const enabled = endpoint.spec.kv_cache?.provider === "zcache";
-  const configured = cluster?.spec.zcache?.enabled === true;
+  const configured = zcacheSpec(cluster)?.enabled === true;
   if (endpoint.spec.kv_cache && !enabled) return null;
   return (
     <section aria-label={t("endpoints.zcache.enable")} className="flex flex-wrap items-center gap-x-10 gap-y-4 rounded-lg border bg-card px-6 py-4 shadow-sm">

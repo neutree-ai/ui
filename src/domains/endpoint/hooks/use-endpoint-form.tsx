@@ -1,3 +1,4 @@
+import { zcacheSpec } from "@/domains/cluster/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, Sparkles } from "lucide-react";
@@ -288,9 +289,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const cacheEnabled = form.watch("spec.kv_cache.provider") === "zcache";
   const cacheNodeNames = new Set(
-    clusters.query.data?.data.find(
+    zcacheSpec(clusters.query.data?.data.find(
       (cluster) => cluster.metadata.name === currentCluster,
-    )?.spec.zcache?.target_nodes ?? [],
+    ))?.target_nodes ?? [],
   );
   const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
   // Releasing an allocation outside the cache pool does not free capacity

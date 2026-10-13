@@ -27,7 +27,7 @@ export function ZCacheFields({
   const dependencies = useList<{
     id: number;
     spec: { kv_cache?: { provider: string } | null };
-    status?: { zcache?: { in_use?: boolean } };
+    status?: { kv_cache?: { provider: string; details?: { in_use?: boolean } } };
   }>({
     resource: "endpoints",
     pagination: { mode: "off" },
@@ -40,7 +40,7 @@ export function ZCacheFields({
   });
   const inUse =
     dependencies.data?.data.some(
-      (e) => e.spec.kv_cache?.provider === "zcache" || e.status?.zcache?.in_use,
+      (e) => e.spec.kv_cache?.provider === "zcache" || (e.status?.kv_cache?.provider === "zcache" && e.status.kv_cache.details?.in_use),
     ) === true;
   const guardRemoval = inUse || dependencies.isLoading || dependencies.isError;
   const persistedNodes: string[] =

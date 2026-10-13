@@ -1,3 +1,4 @@
+import { zcacheSpec } from "@/domains/cluster/types";
 import { useMemo } from "react";
 import {
   findBestNodeForAccelerator,
@@ -85,7 +86,7 @@ export function useEndpointClusterResources({
     );
     if (!cluster || !cacheEnabled || !cluster.status?.resource_info)
       return cluster;
-    const names = new Set(cluster.spec.zcache?.target_nodes ?? []);
+    const names = new Set(zcacheSpec(cluster)?.target_nodes ?? []);
     const nodes = Object.fromEntries(
       Object.entries(cluster.status.resource_info.node_resources ?? {}).filter(
         ([name]) => names.has(name),

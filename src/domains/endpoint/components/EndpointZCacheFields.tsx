@@ -1,3 +1,4 @@
+import { zcacheSpec } from "@/domains/cluster/types";
 import { AlertCircle } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -25,10 +26,10 @@ export function EndpointZCacheFields({
   const engine = form.watch("spec.engine");
   const supported =
     cluster?.spec.type === "kubernetes" &&
-    cluster.spec.zcache?.enabled &&
+    zcacheSpec(cluster)?.enabled &&
     engine?.engine === "vllm";
   if (cache?.provider && cache.provider !== "zcache") return null;
-  if (!systemInfo?.capabilities?.zcache && !enabled) return null;
+  if (!systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") && !enabled) return null;
   return (
     <section
       className="overflow-hidden rounded-md border bg-card"

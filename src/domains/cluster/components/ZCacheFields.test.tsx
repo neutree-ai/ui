@@ -106,7 +106,7 @@ describe("ZCacheFields", () => {
     cacheDependencies.rows = [
       {
         spec: { kv_cache: null },
-        status: { zcache: { in_use: true } },
+        status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
       },
     ];
     render(<Form onSubmit={vi.fn()} status={observed} />);

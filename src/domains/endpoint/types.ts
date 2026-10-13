@@ -50,7 +50,7 @@ export type EndpointSpec = {
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
-  zcache?: { generation: number; in_use: boolean } | null;
+  kv_cache?: { provider: string; details: Record<string, unknown> } | null;
   service_url: string | null;
   resources?: EndpointResourceStatus | null;
   model_download_completed_hash?: string | null;
@@ -77,7 +77,7 @@ export type EndpointClusterRef = {
     type: string;
     /** The image registry this cluster pulls workload images from. */
     image_registry?: string;
-    zcache?: { enabled: boolean; target_nodes: string[] } | null;
+    cache?: { provider: string; options: Record<string, unknown> };
     accelerator_virtualization?: { enabled?: boolean } | null;
   };
   status: {
