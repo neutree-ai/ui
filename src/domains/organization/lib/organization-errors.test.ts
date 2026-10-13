@@ -16,6 +16,12 @@ describe("organizationErrorMessage", () => {
     }
   });
 
+  it("maps 10287, a non-global assigner changing the user", () => {
+    expect(organizationErrorMessage(t, { code: "10287" })).toBe(
+      "organization.errors.globalAssignerOnly",
+    );
+  });
+
   it("translates a database error and passes the hint on", () => {
     expect(
       organizationErrorMessage(t, {

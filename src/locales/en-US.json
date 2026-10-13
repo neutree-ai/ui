@@ -2045,7 +2045,11 @@
 			"selected": "Selected",
 			"removeTitle": "Remove the department?",
 			"removeHint": "The user will not belong to any department.",
-			"none": "Not in a department."
+			"none": "Not in a department.",
+			"errors": {
+				"targetOutsideScope": "The target department is outside the departments you manage.",
+				"currentOutsideScope": "This user's department is outside the departments you manage."
+			}
 		},
 		"teams": {
 			"none": "Not in a team."
@@ -2796,7 +2800,8 @@
 			"invalidParent": "The change to the department tree is not allowed. {{hint}}",
 			"cycle": "A department cannot be placed under itself or one of its sub-departments.",
 			"inactiveOrgUnit": "Users cannot be added to an inactive department.",
-			"externalUserOrgUnit": "The department of a user from an identity source comes from that source. Only local accounts can be assigned by hand."
+			"externalUserOrgUnit": "The department of a user from an identity source comes from that source. Only local accounts can be assigned by hand.",
+			"globalAssignerOnly": "Only a global administrator can move a department assignment to another user."
 		}
 	},
 	"org_units": {

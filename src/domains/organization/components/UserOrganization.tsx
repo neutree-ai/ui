@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { AssignOrgUnitDialog } from "@/domains/organization/components/AssignOrgUnitDialog";
 import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import {
+  MembershipOutOfScopeError,
   useAssignOrgUnit,
   useOrgUnits,
   useUserOrgUnit,
@@ -27,17 +28,29 @@ import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
+/**
+ * `deniedKey` translates an RLS refusal (42501). The department writes here
+ * are the only ones scoped by subtree, so it means a department outside the
+ * caller's.
+ */
 const useErrorText = () => {
   const { t } = useTranslation();
-  return (error: unknown) =>
-    error
-      ? (organizationErrorMessage(t, error) ??
-        getErrorMessage(error, t("common.errors.unknown")))
-      : undefined;
+  return (error: unknown, deniedKey?: string) => {
+    if (!error) return undefined;
+    if (error instanceof MembershipOutOfScopeError) {
+      return t("user_profiles.department.errors.currentOutsideScope");
+    }
+    if (deniedKey && getApiErrorCode(error) === "42501") return t(deniedKey);
+    return (
+      organizationErrorMessage(t, error) ??
+      getErrorMessage(error, t("common.errors.unknown"))
+    );
+  };
 };
 
 const Loading = () => (
@@ -96,7 +109,14 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
       else await assign.create(orgUnitId);
       setDialogOpen(false);
     } catch (cause) {
-      setSaveError(errorText(cause));
+      setSaveError(
+        errorText(
+          cause,
+          mode === "update"
+            ? "user_profiles.department.errors.targetOutsideScope"
+            : undefined,
+        ),
+      );
     }
   };
   const onRemove = async () => {
@@ -104,7 +124,9 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
     try {
       await assign.remove();
     } catch (cause) {
-      setRemoveError(errorText(cause));
+      setRemoveError(
+        errorText(cause, "user_profiles.department.errors.currentOutsideScope"),
+      );
     }
     setConfirmRemove(false);
   };
@@ -197,7 +219,12 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
         </EmptyState>
       )}
       {removeError && (
-        <p className="mt-2 text-sm text-destructive">{removeError}</p>
+        <p
+          className="mt-2 text-sm text-destructive"
+          data-testid="user-department-remove-error"
+        >
+          {removeError}
+        </p>
       )}
       {dialogOpen && (
         <AssignOrgUnitDialog

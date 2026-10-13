@@ -540,12 +540,12 @@
   "src/domains/organization/components/OrgUnitTree.tsx": "e1e4eb2b84ebadc801b669912f24e4e8",
   "src/domains/organization/components/OrganizationToolbar.tsx": "b581b4e741ba7acd163697584190bb9d",
   "src/domains/organization/components/TeamsPanel.tsx": "f9164f4f90de16d9fc92fe5d99dca8c3",
-  "src/domains/organization/hooks/use-organization.ts": "c712931162c5c689cbc9acd010c4b3b6",
+  "src/domains/organization/hooks/use-organization.ts": "5e88a200e33fea12b6796c54c275cc5c",
   "src/domains/organization/lib/org-tree.ts": "1a07f15c6c4d2c39cd5a2247a9c0481a",
-  "src/domains/organization/lib/organization-errors.ts": "d54f9b2c5df50b3da0c0a2431776b97d",
+  "src/domains/organization/lib/organization-errors.ts": "b44144aa9cf983acbad6c213a53364b8",
   "src/domains/organization/types.ts": "e7c3fa918909e1e31022814aa38d00d5",
   "src/pages/organization/list.tsx": "32873317181ef7dddcb9d5e31d59af6a",
   "src/domains/organization/components/AssignOrgUnitDialog.tsx": "4723a791449761aa43e1828d7268fdab",
-  "src/domains/organization/components/UserOrganization.tsx": "3ec87ded291a596fa616c7153f4ff11b",
+  "src/domains/organization/components/UserOrganization.tsx": "410f5528fa1b1a7289bc2b38eac5ee22",
   "src/domains/organization/lib/user-org-unit.ts": "d4362eb737fd935b490e4defef419ee8"
 }

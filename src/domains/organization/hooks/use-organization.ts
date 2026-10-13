@@ -105,6 +105,17 @@ export const useUserTeams = (userId: string, enabled: boolean) => {
  * Hand assignment of a local user's department. identity_source is left out:
  * a row with one belongs to sync, and the write policies refuse it.
  */
+/**
+ * RLS hides a membership outside the caller's subtree, so PATCH and DELETE
+ * change no row instead of failing.
+ */
+export class MembershipOutOfScopeError extends Error {
+  constructor() {
+    super("The membership is outside the caller's departments");
+    this.name = "MembershipOutOfScopeError";
+  }
+}
+
 export const useAssignOrgUnit = (userId: string) => {
   const { mutateAsync, isLoading } = useCustomMutation();
   const invalidate = useInvalidate();
@@ -114,13 +125,20 @@ export const useAssignOrgUnit = (userId: string) => {
     method: "post" | "patch" | "delete",
     values: Record<string, unknown>,
   ) => {
-    await mutateAsync({
+    const { data } = await mutateAsync({
       url: method === "post" ? "/org_unit_members" : url,
       method,
       values,
+      meta:
+        method === "post"
+          ? undefined
+          : { headers: { Prefer: "return=representation" } },
       successNotification: false,
       errorNotification: false,
     });
+    if (method !== "post" && Array.isArray(data) && data.length === 0) {
+      throw new MembershipOutOfScopeError();
+    }
     await Promise.all(
       ["org_unit_members", "user_profiles"].map((resource) =>
         invalidate({ resource, invalidates: ["list"] }),

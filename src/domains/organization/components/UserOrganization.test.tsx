@@ -32,6 +32,7 @@ vi.mock("@/foundation/hooks/use-has-permission", () => ({
 }));
 
 vi.mock("@/domains/organization/hooks/use-organization", () => ({
+  MembershipOutOfScopeError: class extends Error {},
   useOrgUnits: vi.fn(),
   useUserOrgUnit: vi.fn(),
   useUserTeams: vi.fn(),
@@ -39,6 +40,7 @@ vi.mock("@/domains/organization/hooks/use-organization", () => ({
 }));
 
 import {
+  MembershipOutOfScopeError,
   useAssignOrgUnit,
   useOrgUnits,
   useUserOrgUnit,
@@ -172,6 +174,60 @@ describe("UserDepartmentSection", () => {
       "user_profiles.department.change",
     );
     expect(screen.getByTestId("user-department-remove")).toBeTruthy();
+  });
+
+  it("explains a change to a department outside the caller's", async () => {
+    grant("org_unit:read", "org_unit:assign-member");
+    withMembership(membership(units[1], null));
+    assign.update.mockRejectedValue({ code: "42501", message: "rls" });
+    render(<UserDepartmentSection profile={profile()} />);
+    fireEvent.click(screen.getByTestId("user-department-assign"));
+    fireEvent.click(screen.getByTestId("org-unit-1"));
+    fireEvent.click(screen.getByTestId("assign-org-unit-save"));
+    expect(
+      (await screen.findByTestId("assign-org-unit-error")).textContent,
+    ).toBe("user_profiles.department.errors.targetOutsideScope");
+  });
+
+  it("explains a change from a department outside the caller's", async () => {
+    grant("org_unit:read", "org_unit:assign-member");
+    withMembership(membership(units[1], null));
+    assign.update.mockRejectedValue(new MembershipOutOfScopeError());
+    render(<UserDepartmentSection profile={profile()} />);
+    fireEvent.click(screen.getByTestId("user-department-assign"));
+    fireEvent.click(screen.getByTestId("org-unit-1"));
+    fireEvent.click(screen.getByTestId("assign-org-unit-save"));
+    expect(
+      (await screen.findByTestId("assign-org-unit-error")).textContent,
+    ).toBe("user_profiles.department.errors.currentOutsideScope");
+  });
+
+  it.each([
+    ["an RLS refusal", { code: "42501", message: "rls" }],
+    ["no row removed", new MembershipOutOfScopeError()],
+  ])("explains a remove refused by %s", async (_, cause) => {
+    grant("org_unit:read", "org_unit:assign-member");
+    withMembership(membership(units[1], null));
+    assign.remove.mockRejectedValue(cause);
+    render(<UserDepartmentSection profile={profile()} />);
+    fireEvent.click(screen.getByTestId("user-department-remove"));
+    fireEvent.click(await screen.findByText("buttons.delete"));
+    expect(
+      (await screen.findByTestId("user-department-remove-error")).textContent,
+    ).toBe("user_profiles.department.errors.currentOutsideScope");
+  });
+
+  it("maps 10287 on a change", async () => {
+    grant("org_unit:read", "org_unit:assign-member");
+    withMembership(membership(units[1], null));
+    assign.update.mockRejectedValue({ code: "10287", message: "user" });
+    render(<UserDepartmentSection profile={profile()} />);
+    fireEvent.click(screen.getByTestId("user-department-assign"));
+    fireEvent.click(screen.getByTestId("org-unit-1"));
+    fireEvent.click(screen.getByTestId("assign-org-unit-save"));
+    expect(
+      (await screen.findByTestId("assign-org-unit-error")).textContent,
+    ).toBe("organization.errors.globalAssignerOnly");
   });
 
   it("offers no assignment to a user without a department on a subtree grant", () => {
