@@ -1,6 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { render as renderUI, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const render = (ui: ReactNode) => renderUI(ui, {wrapper: MemoryRouter});
 
 const { useShowMock } = vi.hoisted(() => ({
   useShowMock: vi.fn(),

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ClusterCacheSection } from "./ClusterCacheSection";
 
-const render = (ui: ReactNode) => renderUI(<MemoryRouter>{ui}</MemoryRouter>);
+const render = (ui: ReactNode) => renderUI(ui, {wrapper: MemoryRouter});
 
 vi.mock("@refinedev/core", () => ({ useCan: () => ({ data: { can: true } }) }));
 vi.mock("./ZCacheEditor", () => ({ ZCacheEditor: () => null }));
