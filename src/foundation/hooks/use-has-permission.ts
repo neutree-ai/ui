@@ -6,17 +6,11 @@ type PermissionState = {
   isLoading: boolean;
 };
 
-/**
- * Whether the signed-in user holds a permission (e.g. "org_unit:read") on any
- * scope: globally or through an OrgUnit-scoped role assignment, as the
- * database's has_permission_in_any_scope decides it. Without a permission to
- * check, everything is allowed.
- *
- * Only for what the UI offers (menus, gates, buttons): a department admin
- * must see the entry even though they hold the permission on a subtree only.
- * The server checks every row regardless.
- */
-export const useHasPermission = (permission?: string): PermissionState => {
+const usePermissionRpc = (
+  url: string,
+  permission: string | undefined,
+  extraPayload: Record<string, unknown> = {},
+): PermissionState => {
   const { data: identity, isLoading: identityLoading } = useGetIdentity<{
     id?: string;
   }>();
@@ -24,10 +18,14 @@ export const useHasPermission = (permission?: string): PermissionState => {
 
   // The RPC answers with a bare boolean, read back through `unknown`.
   const { data, isLoading, isError } = useCustom({
-    url: "/rpc/has_permission_in_any_scope",
+    url,
     method: "post",
     config: {
-      payload: { user_uuid: userId, required_permission: permission },
+      payload: {
+        user_uuid: userId,
+        required_permission: permission,
+        ...extraPayload,
+      },
     },
     queryOptions: {
       enabled: !!permission && !!userId,
@@ -49,3 +47,24 @@ export const useHasPermission = (permission?: string): PermissionState => {
   }
   return { allowed: (data?.data as unknown) === true, isLoading: false };
 };
+
+/**
+ * Whether the signed-in user holds a permission (e.g. "org_unit:read") on any
+ * scope: globally or through an OrgUnit-scoped role assignment, as the
+ * database's has_permission_in_any_scope decides it. Without a permission to
+ * check, everything is allowed.
+ *
+ * Only for what the UI offers (menus, gates, buttons): a department admin
+ * must see the entry even though they hold the permission on a subtree only.
+ * The server checks every row regardless.
+ */
+export const useHasPermission = (permission?: string): PermissionState =>
+  usePermissionRpc("/rpc/has_permission_in_any_scope", permission);
+
+/**
+ * Like useHasPermission, but only a global grant counts (has_permission with
+ * no workspace). For data whose RLS checks exactly that, such as teams: a
+ * subtree grant would show the entry with nothing readable behind it.
+ */
+export const useHasGlobalPermission = (permission?: string): PermissionState =>
+  usePermissionRpc("/rpc/has_permission", permission, { workspace: null });

@@ -14,25 +14,25 @@ vi.mock("@/domains/organization/components/TeamsPanel", () => ({
   TeamsPanel: () => <div data-testid="teams-panel" />,
 }));
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
-  useHasPermission: vi.fn(),
+  useHasGlobalPermission: vi.fn(),
 }));
 
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { OrganizationList } from "./list";
 
 describe("OrganizationList", () => {
-  it("offers the Teams tab only with team:read", () => {
-    vi.mocked(useHasPermission).mockReturnValue({
+  it("offers the Teams tab only with a global team:read", () => {
+    vi.mocked(useHasGlobalPermission).mockReturnValue({
       allowed: false,
       isLoading: false,
     });
     const { unmount } = render(<OrganizationList />);
-    expect(vi.mocked(useHasPermission)).toHaveBeenCalledWith("team:read");
+    expect(vi.mocked(useHasGlobalPermission)).toHaveBeenCalledWith("team:read");
     expect(screen.getByTestId("departments-panel")).toBeTruthy();
     expect(screen.queryByTestId("organization-teams-tab")).toBeNull();
     unmount();
 
-    vi.mocked(useHasPermission).mockReturnValue({
+    vi.mocked(useHasGlobalPermission).mockReturnValue({
       allowed: true,
       isLoading: false,
     });

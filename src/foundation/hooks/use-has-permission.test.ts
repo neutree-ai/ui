@@ -7,7 +7,7 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 import { useCustom, useGetIdentity } from "@refinedev/core";
-import { useHasPermission } from "./use-has-permission";
+import { useHasGlobalPermission, useHasPermission } from "./use-has-permission";
 
 const identity = (id?: string, isLoading = false) =>
   vi
@@ -80,5 +80,29 @@ describe("useHasPermission", () => {
     expect(vi.mocked(useCustom).mock.calls[0][0].queryOptions?.enabled).toBe(
       false,
     );
+  });
+});
+
+describe("useHasGlobalPermission", () => {
+  beforeEach(() => {
+    vi.mocked(useCustom).mockReset();
+    vi.mocked(useGetIdentity).mockReset();
+  });
+
+  it("asks has_permission with no workspace, so only a global grant counts", () => {
+    identity("u-1");
+    rpc({ data: false });
+    const { result } = renderHook(() => useHasGlobalPermission("team:read"));
+    expect(result.current).toEqual({ allowed: false, isLoading: false });
+    expect(vi.mocked(useCustom).mock.calls[0][0]).toMatchObject({
+      url: "/rpc/has_permission",
+      config: {
+        payload: {
+          user_uuid: "u-1",
+          required_permission: "team:read",
+          workspace: null,
+        },
+      },
+    });
   });
 });

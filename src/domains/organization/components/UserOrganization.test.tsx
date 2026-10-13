@@ -28,6 +28,7 @@ vi.mock("@/foundation/components/ShowPage", () => ({
 
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasPermission: vi.fn(),
+  useHasGlobalPermission: vi.fn(),
 }));
 
 vi.mock("@/domains/organization/hooks/use-organization", () => ({
@@ -49,7 +50,10 @@ import type {
   OrgUnitMember,
   Team,
 } from "@/domains/organization/types";
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import {
+  useHasGlobalPermission,
+  useHasPermission,
+} from "@/foundation/hooks/use-has-permission";
 import { UserDepartmentSection, UserTeamsSection } from "./UserOrganization";
 
 const unit = (id: number, path: string, name: string, inactive = false) =>
@@ -85,11 +89,17 @@ const membership = (orgUnit: OrgUnit, source: string | null) =>
 
 const assign = { create: vi.fn(), update: vi.fn(), remove: vi.fn() };
 
+const decide = (permissions: string[]) => (p?: string) => ({
+  allowed: !!p && permissions.includes(p),
+  isLoading: false,
+});
+
+/** Grants on any scope; global grants are set apart with grantGlobal. */
 const grant = (...permissions: string[]) =>
-  vi.mocked(useHasPermission).mockImplementation((p) => ({
-    allowed: !!p && permissions.includes(p),
-    isLoading: false,
-  }));
+  vi.mocked(useHasPermission).mockImplementation(decide(permissions));
+
+const grantGlobal = (...permissions: string[]) =>
+  vi.mocked(useHasGlobalPermission).mockImplementation(decide(permissions));
 
 const withMembership = (m: OrgUnitMember | null) =>
   vi.mocked(useUserOrgUnit).mockReturnValue({
@@ -210,15 +220,18 @@ describe("UserTeamsSection", () => {
     });
   });
 
-  it("is hidden without team:read", () => {
-    grant("org_unit:read");
+  it("is hidden without a global team:read", () => {
+    // A subtree grant passes the any-scope check, but the teams RLS needs a
+    // global one.
+    grant("org_unit:read", "team:read");
+    grantGlobal("org_unit:read");
     const { container } = render(<UserTeamsSection userId="u-1" />);
     expect(container.innerHTML).toBe("");
     expect(vi.mocked(useUserTeams)).toHaveBeenLastCalledWith("u-1", false);
   });
 
   it("lists the user's teams by name", () => {
-    grant("team:read");
+    grantGlobal("team:read");
     render(<UserTeamsSection userId="u-1" />);
     const items = screen.getByTestId("user-teams").querySelectorAll("li");
     expect([...items].map((li) => li.textContent)).toEqual([

@@ -23,7 +23,10 @@ import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import {
+  useHasGlobalPermission,
+  useHasPermission,
+} from "@/foundation/hooks/use-has-permission";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -203,11 +206,14 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
   );
 }
 
-/** The teams a user is in. Hidden without team:read (D69). */
+/**
+ * The teams a user is in. Hidden without a global team:read, the only grant
+ * the teams RLS accepts (D69).
+ */
 export function UserTeamsSection({ userId }: { userId: string }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
-  const { allowed: canRead } = useHasPermission("team:read");
+  const { allowed: canRead } = useHasGlobalPermission("team:read");
   const { members, isLoading, error } = useUserTeams(userId, canRead === true);
 
   if (canRead !== true) return null;

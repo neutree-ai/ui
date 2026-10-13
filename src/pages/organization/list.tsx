@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DepartmentsPanel } from "@/domains/organization/components/DepartmentsPanel";
 import { TeamsPanel } from "@/domains/organization/components/TeamsPanel";
 import { ListPage } from "@/foundation/components/ListPage";
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**
@@ -11,8 +11,9 @@ import { useTranslation } from "@/foundation/lib/i18n";
  */
 export const OrganizationList = () => {
   const { t } = useTranslation();
-  // Without team:read the teams table reads empty; hide it instead (D69).
-  const { allowed: canReadTeams } = useHasPermission("team:read");
+  // The teams RLS accepts a global team:read only; without it the tab would
+  // read empty, so it is hidden (D69).
+  const { allowed: canReadTeams } = useHasGlobalPermission("team:read");
 
   return (
     <ListPage
