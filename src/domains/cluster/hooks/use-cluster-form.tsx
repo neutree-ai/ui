@@ -12,7 +12,7 @@ import { ZCacheFields } from "@/domains/cluster/components/ZCacheFields";
 import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/accelerator-virtualization";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import type { Cluster } from "@/domains/cluster/types";
-import { zcacheStatus } from "@/domains/cluster/types";
+import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -23,9 +23,12 @@ import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
+import { useCacheCapacityConfirmation } from "./use-cache-capacity-confirmation";
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
+  const { confirmCapacity, capacityConfirmation } =
+    useCacheCapacityConfirmation();
   const { systemInfo } = useSystemApi();
   const cacheSupported =
     systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
@@ -97,6 +100,16 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
           "neutree.ai/zcache-retry": uuidv4(),
         },
       };
+    }
+    if (isEdit) {
+      confirmCapacity(
+        zcacheSpec(form.refineCore.query?.data?.data),
+        zcacheSpec(transformedValues),
+        () => {
+          void originalOnFinish(transformedValues);
+        },
+      );
+      return;
     }
     return originalOnFinish(transformedValues);
   };
@@ -383,12 +396,15 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     ) : null,
     cacheFields:
       isKubernetes && cacheSupported ? (
-        <ZCacheFields
-          form={form}
-          isEdit={isEdit}
-          status={zcacheStatus(form.refineCore.query?.data?.data)}
-          summary={form.refineCore.query?.data?.data?.status?.cache}
-        />
+        <>
+          {capacityConfirmation}
+          <ZCacheFields
+            form={form}
+            isEdit={isEdit}
+            status={zcacheStatus(form.refineCore.query?.data?.data)}
+            summary={form.refineCore.query?.data?.data?.status?.cache}
+          />
+        </>
       ) : null,
     acceleratorVirtualizationFields: isKubernetes ? (
       <FormCardGrid

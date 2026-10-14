@@ -68,6 +68,11 @@ describe("cache editing", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "clusters.zcache.save" }),
     );
+    await screen.findByText("clusters.zcache.capacityChangeDescription");
+    expect(mocks.update).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.zcache.confirmSave" }),
+    );
     await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
     const { values } = mocks.update.mock.calls[0][0];
     expect(values.spec.cache?.options).toMatchObject({
@@ -122,6 +127,10 @@ describe("cache editing", () => {
     });
     fireEvent.click(
       screen.getByRole("button", { name: "clusters.zcache.save" }),
+    );
+    await screen.findByText("clusters.zcache.capacityChangeDescription");
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.zcache.confirmSave" }),
     );
     await screen.findByRole("alert");
     expect(close).not.toHaveBeenCalled();

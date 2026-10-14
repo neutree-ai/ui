@@ -229,7 +229,7 @@
   "src/domains/model-registry/hooks/use-model-registry-form.tsx": "d00a2ae48de2746f80a7beffca929e04",
   "src/domains/image-registry/lib/transform-image-registry-values.ts": "8c26cafe14bf2883c1146e93f64ff9b4",
   "src/domains/image-registry/hooks/use-image-registry-form.tsx": "44b3a3e22a3c727089c98c29753272f2",
-  "src/domains/cluster/hooks/use-cluster-form.tsx": "001ebbe5315c8281b0faaaeae9de87ff",
+  "src/domains/cluster/hooks/use-cluster-form.tsx": "491fbb7ab056146998b421750c977947",
   "src/foundation/types/resource-types.ts": "6fecb3bc5fdd96313e1745a5defcfd87",
   "src/foundation/hooks/use-variables-input.ts": "4e7645dd01994e5fd252bc3e2ad7676f",
   "src/foundation/components/VariablesInput.tsx": "3b5e4cf926481133c4ee746787283e65",
@@ -441,11 +441,12 @@
   "src/domains/external-endpoint/lib/convert-timeout.tsx": "58a7ced63eb42b6ef150cebb41e795c2",
   "src/foundation/components/EmptyValue.tsx": "3f27a00c39815a06bffb462c62204db3",
   "src/pages/ai-traces/components/TraceNameFilter.tsx": "ac4d9a7b7886d7fc6be94027b598e27b",
-  "src/domains/cluster/components/ZCacheFields.tsx": "9d5fe576d14356881bd03270ae73b031",
+  "src/domains/cluster/components/ZCacheFields.tsx": "bfb0d93f99b3f365cf4f0c47451debfc",
   "src/domains/cluster/components/ZCacheSection.tsx": "0fa30382c2ecb43ea77dfade9f4bb2c4",
   "src/domains/cluster/components/ZCacheControlPlane.tsx": "3ffc2e2fec3fbf17c4972550e495f6e7",
   "src/domains/cluster/lib/zcache-presentation.ts": "a939fc2e56c2a3c8a96eea188b67c144",
   "src/domains/cluster/components/ZCacheActivity.tsx": "e6add2efab39c8aeefd0e8a7974a59b5",
-  "src/domains/cluster/components/ZCacheEditor.tsx": "9122c134ebdd503e2b13db9af464e339",
-  "src/domains/cluster/components/ClusterCacheSection.tsx": "96b074c38fea2493c7dbab8ebd5a3f75"
+  "src/domains/cluster/components/ZCacheEditor.tsx": "ddcd43e540a3757215ac230f4d65ada4",
+  "src/domains/cluster/components/ClusterCacheSection.tsx": "96b074c38fea2493c7dbab8ebd5a3f75",
+  "src/domains/cluster/hooks/use-cache-capacity-confirmation.tsx": "9bb11a54a86e21ac4c13a3fb30944d3c"
 }

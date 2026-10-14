@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { getErrorMessage } from "@/foundation/lib/error-message";
+import { useCacheCapacityConfirmation } from "../hooks/use-cache-capacity-confirmation";
 import { activeCacheChange, sameCacheConfig } from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
@@ -34,6 +35,8 @@ export function ZCacheEditor({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const { confirmCapacity, capacityConfirmation } =
+    useCacheCapacityConfirmation();
   const form = useForm<FieldValues>({
     defaultValues: structuredClone(cluster),
   });
@@ -133,7 +136,8 @@ export function ZCacheEditor({
             onSubmit={form.handleSubmit(() => {
               if (zcacheSpec(cluster)?.enabled && !draft?.enabled)
                 setConfirm("disable");
-              else void save();
+              else
+                confirmCapacity(zcacheSpec(cluster), draft, () => void save());
             })}
           >
             <fieldset
@@ -192,6 +196,7 @@ export function ZCacheEditor({
             </div>
           </form>
         </FormProvider>
+        {capacityConfirmation}
         <Dialog
           open={confirm !== null}
           onOpenChange={(open) => {
