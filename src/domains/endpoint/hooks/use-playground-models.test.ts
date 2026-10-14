@@ -131,18 +131,49 @@ describe("usePlaygroundModels", () => {
       expect(result.current.form.getValues("max_length")).toBe(65536);
     });
 
-    it("leaves a value the user set alone", () => {
+    it("falls back to the fixed default for a model reporting no length", () => {
+      mockModelsResponse([
+        { id: "small", max_model_len: 8192 },
+        { id: "remote" },
+      ]);
+      const { result, rerender } = renderWithMaxLength();
+
+      act(() => result.current.form.setValue("model", "remote"));
+      rerender();
+
+      expect(result.current.form.getValues("max_length")).toBe(8192);
+    });
+
+    it("keeps whatever the user set, across later model switches", () => {
+      mockModelsResponse([
+        { id: "small", max_model_len: 8192 },
+        { id: "large", max_model_len: 131072 },
+        { id: "remote" },
+      ]);
+      const { result, rerender } = renderWithMaxLength();
+
+      act(() => result.current.setMaxLength(2048));
+      for (const model of ["large", "remote", "small"]) {
+        act(() => result.current.form.setValue("model", model));
+        rerender();
+        expect(result.current.form.getValues("max_length")).toBe(2048);
+      }
+    });
+
+    it("keeps a user choice that happens to equal the default", () => {
+      // Comparing against the default cannot tell these apart; the choice is
+      // the user's all the same.
       mockModelsResponse([
         { id: "small", max_model_len: 8192 },
         { id: "large", max_model_len: 131072 },
       ]);
       const { result, rerender } = renderWithMaxLength();
 
-      act(() => result.current.form.setValue("max_length", 2048));
+      act(() => result.current.setMaxLength(4096));
       act(() => result.current.form.setValue("model", "large"));
       rerender();
 
-      expect(result.current.form.getValues("max_length")).toBe(2048);
+      expect(result.current.form.getValues("max_length")).toBe(4096);
     });
   });
 });

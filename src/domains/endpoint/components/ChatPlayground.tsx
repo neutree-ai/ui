@@ -151,7 +151,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     },
   });
 
-  const { models } = usePlaygroundModels(endpoint, form);
+  const { models, setMaxLength } = usePlaygroundModels(endpoint, form);
 
   const { scrollRef, contentRef, isAtBottom, scrollToBottom } =
     useStickToBottom();
@@ -358,7 +358,9 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
             <Controller
               name="max_length"
               control={form.control}
-              render={({ field }) => <MaxLengthSelector {...field} />}
+              render={({ field }) => (
+                <MaxLengthSelector {...field} onChange={setMaxLength} />
+              )}
             />
             <Controller
               name="top_p"

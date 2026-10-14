@@ -37,29 +37,36 @@ export function usePlaygroundModels(
     }
   }, [served, form.setValue, selectedModel]);
 
-  // The fixed default asks for as many output tokens as many models have
+  // A fixed default can ask for as many output tokens as the model has
   // context, which vLLM refuses outright: the prompt then has no room at all.
-  // Where the server says how long the context is, start from half of it. A
-  // value the user has set is theirs and stays: it is only replaced while it
-  // still holds the last default put there.
+  // So the default comes from the selected model where the server says how
+  // long its context is, and is the form's own default where it does not.
+  // Once the user has set a value it is theirs: no later default replaces it.
   const maxModelLen = modelList.find(
     (v) => v.id === selectedModel,
   )?.max_model_len;
-  const lastDefault = useRef<number | undefined>(undefined);
+  const userSetMaxLength = useRef(false);
 
   useEffect(() => {
-    const maxLength = playgroundMaxLength(maxModelLen);
-    if (maxLength === null) return;
+    if (!selectedModel || userSetMaxLength.current) return;
 
-    lastDefault.current ??= form.formState.defaultValues?.max_length;
-    if (form.getValues("max_length") !== lastDefault.current) return;
+    const maxLength =
+      playgroundMaxLength(maxModelLen) ??
+      form.formState.defaultValues?.max_length;
+    if (maxLength !== undefined) {
+      form.setValue("max_length", maxLength);
+    }
+  }, [selectedModel, maxModelLen, form]);
 
-    lastDefault.current = maxLength;
-    form.setValue("max_length", maxLength);
-  }, [maxModelLen, form]);
+  /** Records that the user chose the value, so it is never defaulted again. */
+  const setMaxLength = (value: number) => {
+    userSetMaxLength.current = true;
+    form.setValue("max_length", value, { shouldDirty: true });
+  };
 
   return {
     models,
     isLoading: modelsData.isFetching,
+    setMaxLength,
   };
 }

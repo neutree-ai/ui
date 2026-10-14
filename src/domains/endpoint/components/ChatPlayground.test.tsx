@@ -87,13 +87,14 @@ vi.mock("@/domains/endpoint/hooks/use-playground-models", () => ({
     _endpoint: Endpoint,
     form: {
       getValues: (name: string) => unknown;
-      setValue: (name: string, value: string) => void;
+      setValue: (name: string, value: unknown) => void;
     },
   ) => {
     if (!form.getValues("model")) form.setValue("model", "mock-model");
     return {
       models: [{ label: "mock-model", value: "mock-model" }],
       isLoading: false,
+      setMaxLength: (value: number) => form.setValue("max_length", value),
     };
   },
 }));
