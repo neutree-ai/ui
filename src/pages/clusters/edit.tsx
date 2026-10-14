@@ -11,7 +11,7 @@ export const ClustersEdit = () => {
     clusterConfigurationFields,
     providerFields,
     routerFields,
-    zcacheFields,
+    cacheFields,
     acceleratorVirtualizationFields,
     modelCacheFields,
     authFields,
@@ -24,7 +24,7 @@ export const ClustersEdit = () => {
         {providerFields}
         {authFields}
         {routerFields}
-        {zcacheFields}
+        {cacheFields}
         {acceleratorVirtualizationFields}
         {modelCacheFields}
       </FormSectionStack>

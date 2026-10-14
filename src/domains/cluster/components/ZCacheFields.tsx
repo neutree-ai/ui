@@ -192,7 +192,7 @@ export function ZCacheFields({
   return compact ? (
     <div className="space-y-5">{fields}</div>
   ) : (
-    <FormCardGrid title={t("clusters.zcache.title")} variant="section">
+    <FormCardGrid title={t("clusters.cache.title")} variant="section">
       {fields}
     </FormCardGrid>
   );

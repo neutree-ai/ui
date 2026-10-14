@@ -1,5 +1,6 @@
 import { useShow, useTranslation } from "@refinedev/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
@@ -9,7 +10,6 @@ import {
 } from "@/domains/cluster/components/ClusterUpgradeAction";
 import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
 import { NodeResourcesTable } from "@/domains/cluster/components/NodeResourcesTable";
-import { ZCacheSection } from "@/domains/cluster/components/ZCacheSection";
 import { useClusterMonitorPanels } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
 import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
@@ -195,7 +195,7 @@ export const ClustersShow = () => {
               </ShowPage.Section>
             )}
             {record.spec.type === "kubernetes" && (
-              <ZCacheSection cluster={record} />
+              <ClusterCacheSection cluster={record} />
             )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>

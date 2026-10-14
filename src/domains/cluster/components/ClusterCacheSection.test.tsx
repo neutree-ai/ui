@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
-import { ZCacheSection } from "./ZCacheSection";
+import { ClusterCacheSection } from "./ClusterCacheSection";
 
 vi.mock("@refinedev/core", () => ({ useCan: () => ({ data: { can: true } }) }));
 vi.mock("./ZCacheEditor", () => ({ ZCacheEditor: () => null }));
@@ -47,7 +47,7 @@ vi.mock("@/foundation/components/Timestamp", () => ({
   default: ({ timestamp }: { timestamp: string }) => <span>{timestamp}</span>,
 }));
 
-describe("ZCacheSection", () => {
+describe("ClusterCacheSection", () => {
   it("does not label newly saved intent as applied using an old observation", () => {
     const cluster = {
       spec: {
@@ -68,7 +68,7 @@ describe("ZCacheSection", () => {
         },
       },
     } as unknown as Cluster;
-    render(<ZCacheSection cluster={cluster} />);
+    render(<ClusterCacheSection cluster={cluster} />);
     expect(screen.getByText("clusters.zcache.reconciling")).toBeTruthy();
   });
 
@@ -104,7 +104,7 @@ describe("ZCacheSection", () => {
         },
       },
     } as unknown as Cluster;
-    render(<ZCacheSection cluster={cluster} />);
+    render(<ClusterCacheSection cluster={cluster} />);
     expect(screen.getByText("clusters.zcache.failed")).toBeTruthy();
     expect(screen.getByText("a")).toBeTruthy();
     expect(screen.getByText("8 GiB")).toBeTruthy();
@@ -124,7 +124,7 @@ it.each([false, undefined])(
   (value) => {
     capability.value = value;
     const { container } = render(
-      <ZCacheSection cluster={{ spec: {} } as Cluster} />,
+      <ClusterCacheSection cluster={{ spec: {} } as Cluster} />,
     );
     expect(container.textContent).toBe("");
   },
@@ -160,7 +160,7 @@ it("renders heterogeneous node capacities instead of a uniform capacity summary"
       },
     },
   } as unknown as Cluster;
-  render(<ZCacheSection cluster={cluster} />);
+  render(<ClusterCacheSection cluster={cluster} />);
   expect(screen.getByText("2 GiB")).toBeTruthy();
   expect(screen.getByText("8 GiB")).toBeTruthy();
   expect(screen.getByRole("status").textContent).toContain("5 GiB");
@@ -191,7 +191,7 @@ it("does not label stale node observations ready", () => {
       },
     },
   } as unknown as Cluster;
-  render(<ZCacheSection cluster={cluster} />);
+  render(<ClusterCacheSection cluster={cluster} />);
   expect(screen.queryByText("clusters.zcache.ready")).toBeNull();
   expect(screen.getByRole("alert").textContent).toContain(
     "clusters.zcache.stale",
@@ -227,7 +227,7 @@ it("shows failed configuration without hiding current availability", () => {
       },
     },
   } as unknown as Cluster;
-  render(<ZCacheSection cluster={cluster} />);
+  render(<ClusterCacheSection cluster={cluster} />);
   expect(screen.getByText("clusters.zcache.failed")).toBeTruthy();
   expect(screen.getByRole("alert").textContent).toContain(
     "clusters.zcache.stillAvailable",
@@ -254,11 +254,11 @@ it("distinguishes unknown availability from confirmed unavailability", () => {
       },
     },
   } as unknown as Cluster;
-  const { rerender } = render(<ZCacheSection cluster={cluster} />);
+  const { rerender } = render(<ClusterCacheSection cluster={cluster} />);
   expect(screen.getAllByText("clusters.zcache.unknown").length).toBeGreaterThan(
     0,
   );
   cluster.status!.cache!.conditions[0].status = "False";
-  rerender(<ZCacheSection cluster={cluster} />);
+  rerender(<ClusterCacheSection cluster={cluster} />);
   expect(screen.getByText("clusters.zcache.unavailable")).toBeTruthy();
 });

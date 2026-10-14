@@ -392,11 +392,11 @@ describe("useClusterForm", () => {
 });
 
 function CacheCapabilityForm() {
-  const { form, zcacheFields } = useClusterForm({ action: "create" });
+  const { form, cacheFields } = useClusterForm({ action: "create" });
   React.useEffect(() => {
     form.setValue("spec.type", "kubernetes");
   }, [form.setValue]);
-  return <FormProvider {...form}>{zcacheFields}</FormProvider>;
+  return <FormProvider {...form}>{cacheFields}</FormProvider>;
 }
 it.each([false, true])(
   "offers cache configuration only when server supports it (%s)",
@@ -404,7 +404,7 @@ it.each([false, true])(
     cacheCapability.value = supported;
     render(<CacheCapabilityForm />);
     await waitFor(() => {
-      expect(screen.queryByText("clusters.zcache.title") !== null).toBe(
+      expect(screen.queryByText("clusters.cache.title") !== null).toBe(
         supported,
       );
     });

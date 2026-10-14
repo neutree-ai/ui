@@ -19,7 +19,7 @@ import { ZCacheActivity } from "./ZCacheActivity";
 import { ZCacheControlPlane } from "./ZCacheControlPlane";
 import { ZCacheEditor } from "./ZCacheEditor";
 
-export function ZCacheSection({ cluster }: { cluster: Cluster }) {
+export function ClusterCacheSection({ cluster }: { cluster: Cluster }) {
   const { systemInfo } = useSystemApi();
   return systemInfo?.capabilities?.cluster_cache_providers?.includes(
     "zcache",
@@ -70,7 +70,7 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
     <ShowPage.Section
       title={
         <span className="flex items-center gap-3">
-          {t("clusters.zcache.title")}
+          {t("clusters.cache.title")}
           <Badge variant={phase === "Failed" ? "destructive" : "secondary"}>
             {t(resultKey)}
           </Badge>
@@ -94,6 +94,14 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
       }
     >
       <div className="space-y-4">
+        <div className="text-sm">
+          <span className="text-muted-foreground">
+            {t("clusters.cache.providerLabel")}:{" "}
+          </span>
+          {cluster.spec.cache?.provider === "zcache"
+            ? t("clusters.zcache.title")
+            : (cluster.spec.cache?.provider ?? cluster.status?.cache?.provider)}
+        </div>
         {phase === "Unavailable" && (
           <p
             role="alert"
