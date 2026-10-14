@@ -8,7 +8,7 @@ import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import type { Cluster } from "@/domains/cluster/types";
+import { type Cluster, zcacheStatus } from "@/domains/cluster/types";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
@@ -167,9 +167,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     ],
     queryOptions: {
       enabled: Boolean(record?.spec.cluster),
+      refetchInterval: 30_000,
     },
   });
 
+  const cacheStatus = zcacheStatus(clusterData?.data?.[0]);
   const clusterType = clusterData?.data?.[0]?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
@@ -413,12 +415,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   </div>
                 )}
 
-                {selectedPanel === "cache" && (
-                  <p className="text-xs text-muted-foreground">
-                    {t("endpoints.monitor.cacheScopeHint")}
-                  </p>
-                )}
-
                 {selectedPanel ? (
                   <GrafanaDashboard
                     {...getEndpointSplitDashboardProps(
@@ -428,6 +424,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                         clusterName: record.spec.cluster,
                         endpointName: record.metadata.name,
                         workspace: record.metadata.workspace ?? "default",
+                        cacheNodes:
+                          record.spec.kv_cache?.provider === "zcache" &&
+                          cacheStatus?.current?.enabled &&
+                          !cacheStatus.observation_error
+                            ? cacheStatus.nodes?.filter(
+                                (node) => node.runtime === "Ready",
+                              )
+                            : undefined,
                       },
                     )}
                     className="flex-1"

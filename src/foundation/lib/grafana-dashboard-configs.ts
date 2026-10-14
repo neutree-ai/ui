@@ -73,21 +73,41 @@ export const getEndpointSplitDashboardProps = (
     clusterName: string;
     endpointName: string;
     workspace?: string;
+    cacheNodes?: { name: string; capacity_bytes: number }[];
   },
-): GrafanaDashboardProps => ({
-  dashboardConfig: {
-    ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
-    variables: {
-      ...getCommonVariables(),
-      Cluster: context.clusterName,
-      Endpoint: context.endpointName,
-      ...(dashboardType === "cache"
-        ? { Workspace: context.workspace ?? "default" }
-        : {}),
+): GrafanaDashboardProps => {
+  const nodes = context.cacheNodes ?? [];
+  const capacity = nodes[0]?.capacity_bytes ?? 0;
+  // A single per-node capacity is safe only for a uniform observed pool.
+  // Leave mixed/unknown inventories empty rather than average their sizes.
+  const uniform =
+    Number.isSafeInteger(capacity) &&
+    capacity > 0 &&
+    nodes.every((node) => node.name && node.capacity_bytes === capacity);
+  const nodePattern = uniform
+    ? nodes
+        .map((node) => node.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("|")
+    : "a^";
+  return {
+    dashboardConfig: {
+      ...getBaseDashboardConfig(grafanaUrl),
+      dashboardId: ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
+      variables: {
+        ...getCommonVariables(),
+        Cluster: context.clusterName,
+        Endpoint: context.endpointName,
+        ...(dashboardType === "cache"
+          ? {
+              Workspace: context.workspace ?? "default",
+              L1CapacityBytes: String(uniform ? capacity : 0),
+              L1Nodes: JSON.stringify(nodePattern).slice(1, -1),
+            }
+          : {}),
+      },
     },
-  },
-});
+  };
+};
 
 export const getModelRoutingDashboardProps = (
   grafanaUrl: string,

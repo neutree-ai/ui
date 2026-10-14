@@ -1270,8 +1270,7 @@
 			"latencyDescription": "E2E, TTFT, TPOT, and ITL latency metrics",
 			"throughputDescription": "Prompt, generation, and total token throughput plus request length distributions",
 			"queueDescription": "Running, swapped, waiting, preemptions, and queue time metrics",
-			"cacheDescription": "KV token capacity, KV usage, and cache hit metrics",
-			"cacheScopeHint": "Aggregates all replica Pods by default; select a Pod to filter. Overview covers the selected time range. Green: L0 local cache; blue: external cache; red: computed input. External matches do not prove successful reads or speedup."
+			"cacheDescription": "KV token capacity, KV usage, and cache hit metrics"
 		},
 		"logs": {
 			"application": "Application",
