@@ -1,17 +1,21 @@
 import { useSelect } from "@refinedev/core";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Combobox } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
 import {
   type CatalogModelSlot,
   readCatalogEngine,
+  readCatalogImageSlots,
   readCatalogModelSlots,
   slotKey,
   writeCatalogEngineVersion,
+  writeCatalogImageSlot,
   writeCatalogModelSlot,
 } from "@/domains/model-catalog/lib/catalog-model-slots";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
+import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { registryUnavailability } from "@/foundation/lib/model-registry-availability";
 import { registryModelLabel } from "@/foundation/lib/registry-model-display";
@@ -51,16 +55,24 @@ type EngineRef = {
  * Takes a parsed document and hands one back, leaving the caller to own the
  * text: the edit page round-trips its editor, and an import dialog holding a
  * multi-document stream can drive one document at a time.
+ *
+ * A catalog whose engine runs its own workload (Flex) names no model, so for
+ * one of those the panel offers its workload images instead.
  */
 export function CatalogModelSlots({
   doc,
   onChange,
   workspace,
+  imageExplorer,
 }: {
   /** The parsed catalog, or null when the text it came from does not parse. */
   doc: unknown;
   onChange: (nextDoc: unknown) => void;
   workspace: string;
+  /** Rendered beside each workload image input, handed a way to replace the
+   * image. The caller supplies it because finding an image is the endpoint
+   * domain's, which this one may not import. */
+  imageExplorer?: (onApply: (image: string) => void) => ReactNode;
 }) {
   const { t } = useTranslation();
   const [chosenRegistry, setChosenRegistry] = useState<string | null>(null);
@@ -80,6 +92,8 @@ export function CatalogModelSlots({
 
   const slots = useMemo(() => readCatalogModelSlots(doc), [doc]);
   const engine = useMemo(() => readCatalogEngine(doc), [doc]);
+  const imageSlots = useMemo(() => readCatalogImageSlots(doc), [doc]);
+  const managesModels = engineNeedsModelSpec(engine?.engine);
 
   // The availability rules read only `status.phase` and the deletion stamp, so
   // this deliberately does not ask for `visibility` (MODEL_REGISTRY_SELECT).
@@ -207,7 +221,7 @@ export function CatalogModelSlots({
     );
   }
 
-  if (slots.length === 0) {
+  if (managesModels && slots.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
         {t("model_catalogs.models.none")}
@@ -217,19 +231,21 @@ export function CatalogModelSlots({
 
   return (
     <div className="space-y-3" data-testid="catalog-model-slots">
-      <div className={SLOT_ROW}>
-        <div className="text-sm">
-          {t("model_catalogs.models.registryLabel")}
+      {managesModels && (
+        <div className={SLOT_ROW}>
+          <div className="text-sm">
+            {t("model_catalogs.models.registryLabel")}
+          </div>
+          <Combobox
+            asField={false}
+            value={registry}
+            onChange={setChosenRegistry}
+            placeholder={t("model_catalogs.models.selectRegistry")}
+            disabled={registries.query.isLoading}
+            options={registryOptions}
+          />
         </div>
-        <Combobox
-          asField={false}
-          value={registry}
-          onChange={setChosenRegistry}
-          placeholder={t("model_catalogs.models.selectRegistry")}
-          disabled={registries.query.isLoading}
-          options={registryOptions}
-        />
-      </div>
+      )}
 
       {engine && (
         <div data-testid="catalog-engine-version" className={SLOT_ROW}>
@@ -256,45 +272,82 @@ export function CatalogModelSlots({
         </div>
       )}
 
-      <div className="space-y-2">
-        {slots.map((slot) => (
-          <div
-            key={slotKey(slot)}
-            data-testid={`catalog-model-slot-${slotKey(slot)}`}
-            className={SLOT_ROW}
-          >
-            <div className="min-w-0">
-              <div className="truncate text-sm">
-                {slot.kind === "catalog"
-                  ? t("model_catalogs.models.catalogModel")
-                  : slot.key}
-              </div>
-              <div className="truncate text-xs text-muted-foreground">
-                {slot.model ? (
-                  <>
-                    {slot.model.registry || <EmptyValue />} /{" "}
-                    {slot.model.name || <EmptyValue />}
-                  </>
-                ) : (
-                  t("model_catalogs.models.unset")
-                )}
-              </div>
-            </div>
-            <Combobox
-              asField={false}
-              value={slot.model?.name ?? ""}
-              placeholder={t("model_catalogs.models.selectModel")}
-              disabled={!registry}
-              shouldFilter={false}
-              onSearchChange={setSearch}
-              onChange={(value) => handlePick(slot, value)}
-              options={modelOptions}
-            />
-          </div>
-        ))}
-      </div>
+      {!managesModels && imageSlots.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          {t("model_catalogs.images.none")}
+        </p>
+      )}
 
-      {models.error && (
+      {!managesModels && imageSlots.length > 0 && (
+        <div className="space-y-2">
+          {imageSlots.map((slot) => {
+            const apply = (image: string) =>
+              onChange(writeCatalogImageSlot(doc, slot.index, image));
+
+            return (
+              <div
+                key={slot.index}
+                data-testid={`catalog-image-slot-${slot.index}`}
+                className={SLOT_ROW}
+              >
+                <div className="truncate text-sm">{slot.label}</div>
+                <div className="flex min-w-0 gap-2">
+                  <Input
+                    aria-label={slot.label}
+                    value={slot.image}
+                    placeholder={t("model_catalogs.images.placeholder")}
+                    onChange={(e) => apply(e.target.value)}
+                    className="min-w-0"
+                  />
+                  {imageExplorer?.(apply)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {managesModels && (
+        <div className="space-y-2">
+          {slots.map((slot) => (
+            <div
+              key={slotKey(slot)}
+              data-testid={`catalog-model-slot-${slotKey(slot)}`}
+              className={SLOT_ROW}
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm">
+                  {slot.kind === "catalog"
+                    ? t("model_catalogs.models.catalogModel")
+                    : slot.key}
+                </div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {slot.model ? (
+                    <>
+                      {slot.model.registry || <EmptyValue />} /{" "}
+                      {slot.model.name || <EmptyValue />}
+                    </>
+                  ) : (
+                    t("model_catalogs.models.unset")
+                  )}
+                </div>
+              </div>
+              <Combobox
+                asField={false}
+                value={slot.model?.name ?? ""}
+                placeholder={t("model_catalogs.models.selectModel")}
+                disabled={!registry}
+                shouldFilter={false}
+                onSearchChange={setSearch}
+                onChange={(value) => handlePick(slot, value)}
+                options={modelOptions}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {managesModels && models.error && (
         <p className="text-xs text-destructive">
           {t("model_catalogs.models.listFailed")}
         </p>

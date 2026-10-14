@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { writesWorkloadImage } from "@/domains/endpoint/lib/recipe-image-feature";
+import { writesWorkloadImage } from "@/foundation/recipe/image-feature";
 import type { RecipeFeature } from "@/foundation/recipe/types";
 
 const feature = (overrides: Partial<RecipeFeature> = {}): RecipeFeature => ({

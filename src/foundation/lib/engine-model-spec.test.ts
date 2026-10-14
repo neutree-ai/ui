@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { engineNeedsModelSpec } from "./model-spec";
+import { engineNeedsModelSpec } from "./engine-model-spec";
 
 describe("engineNeedsModelSpec", () => {
   it("is false for the Flex engine", () => {

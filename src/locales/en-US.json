@@ -788,6 +788,12 @@
 			"unset": "No model chosen",
 			"engine": "Engine",
 			"selectEngineVersion": "Select a version"
+		},
+		"images": {
+			"title": "Workload image",
+			"hint": "Point this catalog's workload image at one in a registry you can reach, and choose the engine version it deploys with. Edits land in the YAML below.",
+			"none": "This catalog asks for no workload image.",
+			"placeholder": "registry/project/name:tag"
 		}
 	},
 	"image_registries": {

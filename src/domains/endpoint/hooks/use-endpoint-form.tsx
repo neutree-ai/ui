@@ -37,7 +37,6 @@ import {
   findEngineCacheArgControls,
   readEngineCacheArgs,
 } from "@/domains/endpoint/lib/engine-cache-args";
-import { engineNeedsModelSpec } from "@/domains/endpoint/lib/model-spec";
 import {
   formatVgpuMemoryGiBInputValue,
   getEffectiveVgpuMemoryMiB,
@@ -71,6 +70,7 @@ import {
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
+import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
   calculateGpuPlacementCapacity,
