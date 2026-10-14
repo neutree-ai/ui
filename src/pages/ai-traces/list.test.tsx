@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   type AITrace,
+  type AITraceFilterOptions,
   AITraceRequestError,
+  fetchAITraceFilterOptions,
 } from "@/foundation/lib/api/ai-traces";
 import { AITracesList } from "@/pages/ai-traces/list";
 
@@ -19,6 +21,14 @@ vi.mock("@/foundation/lib/i18n", () => ({
 const context = vi.hoisted(() => ({
   params: { workspace: "design-lab" } as Record<string, string>,
   query: vi.fn(),
+  optionsQuery: vi.fn(),
+}));
+
+vi.mock("@/foundation/lib/api/ai-traces", async () => ({
+  ...(await vi.importActual<typeof import("@/foundation/lib/api/ai-traces")>(
+    "@/foundation/lib/api/ai-traces",
+  )),
+  fetchAITraceFilterOptions: vi.fn(),
 }));
 
 vi.mock("@refinedev/core", () => ({
@@ -38,9 +48,12 @@ Element.prototype.scrollIntoView = vi.fn();
 
 // The query never runs; the pages come from `listState.items`, which is empty
 // unless a test needs a row, and `listState.error` stands in for a failed request.
+// The filter-options query likewise returns `listState.options`.
 const listState = vi.hoisted(() => ({
   items: [] as unknown[],
   error: null as Error | null,
+  options: undefined as AITraceFilterOptions | undefined,
+  optionsError: null as Error | null,
 }));
 
 vi.mock("@tanstack/react-query", () => ({
@@ -59,6 +72,10 @@ vi.mock("@tanstack/react-query", () => ({
       error: listState.error,
       refetch: vi.fn(),
     };
+  },
+  useQuery: (options: unknown) => {
+    context.optionsQuery(options);
+    return { data: listState.options, error: listState.optionsError };
   },
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
@@ -98,35 +115,30 @@ const apiKeys = [
 
 const resources: Record<string, unknown[]> = {
   api_keys: apiKeys,
-  endpoints: [
-    {
-      metadata: { name: "qwen3-chat" },
-      spec: { model: { name: "qwen3" } },
-      status: { phase: "Running" },
-    },
-    {
-      metadata: { name: "deepseek-ocr" },
-      spec: { model: { name: "deepseek-ocr" } },
-      status: { phase: "Paused" },
-    },
-  ],
-  external_endpoints: [
-    {
-      metadata: { name: "cloud-gateway" },
-      spec: {
-        upstreams: [
-          { model_mapping: { qwen3: "qwen3-max", "gpt-5": "gpt-5" } },
-        ],
-      },
-      status: { phase: "Running" },
-    },
-  ],
 };
+
+const filterOptions = (): AITraceFilterOptions => ({
+  endpoints: [
+    { name: "cloud-gateway", type: "external-endpoint" },
+    { name: "qwen3-chat", type: "endpoint" },
+    { name: "qwen3-chat", type: "external-endpoint" },
+  ],
+  endpoints_truncated: false,
+  models: ["gpt-5", "qwen3"],
+  models_truncated: false,
+});
 
 const optionsOf = (testId: string) => {
   fireEvent.click(screen.getByTestId(testId));
   return screen.getAllByRole("option").map((el) => el.textContent);
 };
+
+type OptionsQuery = {
+  queryKey: [string, Record<string, unknown>];
+  queryFn: (ctx: { signal?: AbortSignal }) => unknown;
+};
+const lastOptionsQuery = () =>
+  context.optionsQuery.mock.lastCall?.[0] as OptionsQuery;
 
 const lastQueryArgs = () => {
   const [, args] = context.query.mock.lastCall?.[0].queryKey ?? [];
@@ -152,6 +164,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   listState.items = [];
   listState.error = null;
+  listState.options = filterOptions();
+  listState.optionsError = null;
   context.params = { workspace: "design-lab" };
 });
 
@@ -210,38 +224,81 @@ describe("AITracesList API key filter", () => {
 });
 
 describe("AITracesList endpoint and model filters", () => {
-  it("suggests the workspace's endpoints of both kinds", () => {
+  it("suggests the endpoints the filter-options API returns, with their type", () => {
     renderList();
 
     expect(optionsOf("endpoint-filter")).toEqual([
       "ai_traces.filters.allEndpoints",
-      "cloud-gateway",
-      "deepseek-ocr",
-      "qwen3-chat",
+      "cloud-gatewayexternal-endpoint",
+      "qwen3-chatendpoint",
+      "qwen3-chatexternal-endpoint",
     ]);
   });
 
-  it("suggests each served model once", () => {
+  it("suggests the models the filter-options API returns", () => {
     renderList();
 
     expect(optionsOf("model-filter")).toEqual([
       "ai_traces.filters.allModels",
-      "deepseek-ocr",
       "gpt-5",
       "qwen3",
     ]);
+  });
+
+  it("asks for the options of the list's workspace, window and type", () => {
+    renderList();
+
+    const [, initial] = lastOptionsQuery().queryKey;
+    const list = lastQueryArgs();
+    expect(initial).toEqual({
+      workspace: "design-lab",
+      start: list.start,
+      end: list.end,
+      endpoint_type: undefined,
+    });
+
+    const typeTrigger = screen
+      .getAllByRole("combobox")
+      .find((node) => node.textContent === "ai_traces.filters.allTypes");
+    if (!typeTrigger) throw new Error("endpoint type filter not found");
+    fireEvent.click(typeTrigger);
+    fireEvent.click(screen.getByRole("option", { name: "external-endpoint" }));
+
+    const query = lastOptionsQuery();
+    expect(query.queryKey[1]).toMatchObject({
+      endpoint_type: "external-endpoint",
+    });
+    query.queryFn({});
+    expect(fetchAITraceFilterOptions).toHaveBeenLastCalledWith(
+      query.queryKey[1],
+      undefined,
+    );
+  });
+
+  it("filters by name only when an endpoint of a shared name is picked", () => {
+    renderList();
+
+    fireEvent.click(screen.getByTestId("endpoint-filter"));
+    fireEvent.click(
+      screen.getByRole("option", { name: "qwen3-chatexternal-endpoint" }),
+    );
+
+    expect(lastQueryArgs()).toMatchObject({ endpoint_name: "qwen3-chat" });
+    expect(lastQueryArgs().endpoint_type).toBeUndefined();
   });
 
   it("queries by the full name of the picked endpoint and model", () => {
     renderList();
 
     fireEvent.click(screen.getByTestId("endpoint-filter"));
-    fireEvent.click(screen.getByRole("option", { name: "qwen3-chat" }));
+    fireEvent.click(
+      screen.getByRole("option", { name: "cloud-gatewayexternal-endpoint" }),
+    );
     fireEvent.click(screen.getByTestId("model-filter"));
     fireEvent.click(screen.getByRole("option", { name: "gpt-5" }));
 
     expect(lastQueryArgs()).toMatchObject({
-      endpoint_name: "qwen3-chat",
+      endpoint_name: "cloud-gateway",
       model: "gpt-5",
     });
   });
@@ -252,15 +309,37 @@ describe("AITracesList endpoint and model filters", () => {
     expect(lastQueryArgs().endpoint_name).toBeUndefined();
     expect(lastQueryArgs().model).toBeUndefined();
   });
-});
 
-describe("AITracesList endpoint filter under a type filter", () => {
-  it("lists an endpoint that exposes no model", () => {
-    resources.external_endpoints.push({ metadata: { name: "bare-gateway" } });
+  it("says when a list of names is incomplete", () => {
+    listState.options = { ...filterOptions(), models_truncated: true };
     renderList();
 
-    expect(optionsOf("endpoint-filter")).toContain("bare-gateway");
-    resources.external_endpoints.pop();
+    fireEvent.click(screen.getByTestId("endpoint-filter"));
+    expect(screen.queryByText("ai_traces.filters.optionsTruncated")).toBeNull();
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
+
+    fireEvent.click(screen.getByTestId("model-filter"));
+    expect(screen.getByText("ai_traces.filters.optionsTruncated")).toBeTruthy();
+  });
+
+  it("still filters by a typed name when the options request fails", () => {
+    listState.options = undefined;
+    listState.optionsError = new AITraceRequestError(500, "boom");
+    renderList();
+
+    expect(screen.queryByText(/boom/)).toBeNull();
+    fireEvent.click(screen.getByTestId("endpoint-filter"));
+    fireEvent.change(
+      screen.getByPlaceholderText("ai_traces.filters.endpointSearch"),
+      { target: { value: "removed-endpoint" } },
+    );
+    fireEvent.click(screen.getByRole("option", { name: "removed-endpoint" }));
+
+    expect(lastQueryArgs()).toMatchObject({
+      endpoint_name: "removed-endpoint",
+    });
   });
 });
 

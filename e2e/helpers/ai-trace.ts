@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import type { ApiHelper } from "./api-helper";
 
 /**
@@ -138,4 +139,20 @@ export async function waitForTrace(
   throw new Error(
     `waitForTrace: no matching trace in ${workspace} after ${timeoutMs}ms (last item count: ${lastCount})`,
   );
+}
+
+/**
+ * Sets the Access Log endpoint filter to `name`. The filter is a searchable
+ * list: a listed endpoint shows its type beside the name, and a name that is
+ * not listed is offered as typed, so the option is matched on its name text.
+ */
+export async function filterByEndpoint(page: Page, name: string) {
+  await page.getByTestId("endpoint-filter").click();
+  const list = page.locator('[data-state="open"][role="dialog"]');
+  await list.getByPlaceholder("Search or enter an endpoint name").fill(name);
+  await list
+    .getByRole("option")
+    .getByText(name, { exact: true })
+    .first()
+    .click();
 }

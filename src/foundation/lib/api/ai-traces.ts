@@ -103,15 +103,50 @@ export async function fetchAITraces(
   signal?: AbortSignal,
 ): Promise<AITraceListResponse> {
   const { workspace, ...rest } = params;
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}?${toSearch(rest)}`;
+  return apiGet<AITraceListResponse>(url, signal);
+}
+
+// toSearch encodes the set parameters, leaving out unset and empty ones.
+function toSearch(params: Record<string, string | number | undefined>) {
   const search = new URLSearchParams();
-  for (const [k, v] of Object.entries(rest)) {
+  for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== "") {
       search.set(k, String(v));
     }
   }
+  return search.toString();
+}
 
-  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}?${search.toString()}`;
-  return apiGet<AITraceListResponse>(url, signal);
+export type AITraceEndpointOption = {
+  name: string;
+  type: string;
+};
+
+export type AITraceFilterOptions = {
+  endpoints: AITraceEndpointOption[];
+  endpoints_truncated: boolean;
+  models: string[];
+  models_truncated: boolean;
+};
+
+type AITraceFilterOptionsParams = {
+  workspace: string;
+  start?: string;
+  end?: string;
+  endpoint_type?: string;
+};
+
+// fetchAITraceFilterOptions lists the endpoint and model names found in the
+// traces of a window, for the list's name filters. Each list is capped, and
+// `*_truncated` says the cap was hit.
+export async function fetchAITraceFilterOptions(
+  params: AITraceFilterOptionsParams,
+  signal?: AbortSignal,
+): Promise<AITraceFilterOptions> {
+  const { workspace, ...rest } = params;
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/filter-options?${toSearch(rest)}`;
+  return apiGet<AITraceFilterOptions>(url, signal);
 }
 
 // fetchAITrace loads a single trace including the full request/response

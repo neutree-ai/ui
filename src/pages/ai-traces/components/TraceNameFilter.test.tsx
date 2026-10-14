@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { TraceNameFilter } from "./TraceNameFilter";
+import { type NameOption, TraceNameFilter } from "./TraceNameFilter";
 
 // cmdk observes and scrolls its list; jsdom implements neither.
 globalThis.ResizeObserver = class ResizeObserver {
@@ -10,9 +10,14 @@ globalThis.ResizeObserver = class ResizeObserver {
 };
 Element.prototype.scrollIntoView = vi.fn();
 
-const OPTIONS = ["qwen3-chat", "qwen3-embed", "deepseek-ocr"];
+const NAMES = ["qwen3-chat", "qwen3-embed", "deepseek-ocr"];
+const OPTIONS = NAMES.map((name) => ({ name }));
 
-function renderFilter(value = "", options = OPTIONS) {
+function renderFilter(
+  value = "",
+  options: NameOption[] = OPTIONS,
+  notice?: string,
+) {
   const onChange = vi.fn();
   render(
     <TraceNameFilter
@@ -21,6 +26,7 @@ function renderFilter(value = "", options = OPTIONS) {
       allLabel="All endpoints"
       searchPlaceholder="Search"
       options={options}
+      notice={notice}
       value={value}
       onChange={onChange}
     />,
@@ -28,8 +34,12 @@ function renderFilter(value = "", options = OPTIONS) {
   return onChange;
 }
 
-function openFilter(value = "") {
-  const onChange = renderFilter(value);
+function openFilter(
+  value = "",
+  options: NameOption[] = OPTIONS,
+  notice?: string,
+) {
+  const onChange = renderFilter(value, options, notice);
   fireEvent.click(screen.getByTestId("name-filter"));
   return { onChange, search: screen.getByPlaceholderText("Search") };
 }
@@ -53,7 +63,7 @@ describe("TraceNameFilter", () => {
   it("lists the known names under the no-filter entry", () => {
     openFilter();
 
-    expect(namesInList()).toEqual(["All endpoints", ...OPTIONS]);
+    expect(namesInList()).toEqual(["All endpoints", ...NAMES]);
   });
 
   it("selects a listed name", () => {
@@ -99,7 +109,7 @@ describe("TraceNameFilter", () => {
     expect(namesInList()).toEqual([
       "All endpoints",
       "removed-endpoint",
-      ...OPTIONS,
+      ...NAMES,
     ]);
   });
 
@@ -117,5 +127,35 @@ describe("TraceNameFilter", () => {
     clickOption("qwen3-chat");
 
     expect(onChange).toHaveBeenCalledWith("");
+  });
+
+  it("tells apart options that share a name by their tag", () => {
+    const { onChange } = openFilter("", [
+      { name: "chat", tag: "endpoint" },
+      { name: "chat", tag: "external-endpoint" },
+    ]);
+
+    expect(namesInList()).toEqual([
+      "All endpoints",
+      "chatendpoint",
+      "chatexternal-endpoint",
+    ]);
+    fireEvent.click(screen.getByRole("option", { name: /external-endpoint/ }));
+    expect(onChange).toHaveBeenCalledWith("chat");
+  });
+
+  it("shows the notice under the list", () => {
+    openFilter("", OPTIONS, "Only some values are listed.");
+
+    expect(screen.getByText("Only some values are listed.")).toBeTruthy();
+  });
+
+  it("offers a typed name when there are no suggestions", () => {
+    const { onChange, search } = openFilter("", []);
+
+    fireEvent.change(search, { target: { value: "chat" } });
+    clickOption("chat");
+
+    expect(onChange).toHaveBeenCalledWith("chat");
   });
 });

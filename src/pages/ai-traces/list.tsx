@@ -1,8 +1,12 @@
 import { useList, useParsed } from "@refinedev/core";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -20,7 +24,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
-import { useWorkspaceModels } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
   type DateRange,
   DateRangePicker,
@@ -34,6 +37,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import {
   type AITrace,
+  fetchAITraceFilterOptions,
   fetchAITraces,
   isAITraceForbidden,
 } from "@/foundation/lib/api/ai-traces";
@@ -51,11 +55,6 @@ const LIMIT = 50;
 // Traces are retained for at most 30 days, so a longer quick pick would only
 // ever return a partial window.
 const TRACE_RANGE_PRESETS = [7, 30];
-
-type NamedResource = { metadata?: { name?: string | null } | null };
-
-const uniqueSorted = (names: string[]) =>
-  [...new Set(names.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
 export const AITracesList = () => {
   const { t } = useTranslation();
@@ -101,39 +100,31 @@ export const AITracesList = () => {
   // stays in the list, where there is room for it.
   const selectedKey = keys.find((key) => key.id === apiKeyId);
 
-  // What the endpoint filter suggests: the workspace's endpoints of the kind
-  // the type filter allows, so it never offers a name that filter excludes.
-  const namedList = {
-    pagination: { mode: "off" },
-    meta: { workspace, workspaced: true },
-    queryOptions: { enabled: Boolean(workspace) },
-  } as const;
-  const { data: endpointsData } = useList<NamedResource>({
-    resource: "endpoints",
-    ...namedList,
+  const start = dayjs(range.start).startOf("day").toISOString();
+  const end = dayjs(range.end).endOf("day").toISOString();
+
+  // What the endpoint and model filters suggest: the names found in the
+  // window's traces. Suggestions only — a failed request leaves the filters
+  // usable by typing, so its error is not shown.
+  const optionArgs = {
+    workspace,
+    start,
+    end,
+    endpoint_type: endpointType || undefined,
+  };
+  const { data: filterOptions } = useQuery({
+    queryKey: ["ai-trace-filter-options", optionArgs],
+    queryFn: ({ signal }) => fetchAITraceFilterOptions(optionArgs, signal),
+    enabled: Boolean(workspace),
+    retry: false,
   });
-  const { data: externalEndpointsData } = useList<NamedResource>({
-    resource: "external_endpoints",
-    ...namedList,
-  });
-  const endpoints = endpointsData?.data;
-  const externalEndpoints = externalEndpointsData?.data;
-  const endpointNames = useMemo(
-    () =>
-      uniqueSorted(
-        [
-          ...(endpointType !== "external-endpoint" ? (endpoints ?? []) : []),
-          ...(endpointType !== "endpoint" ? (externalEndpoints ?? []) : []),
-        ].map((resource) => resource.metadata?.name ?? ""),
-      ),
-    [endpoints, externalEndpoints, endpointType],
-  );
-  // What the model filter suggests: the models those endpoints expose.
-  const servedModels = useWorkspaceModels(workspace);
-  const modelNames = useMemo(
-    () => uniqueSorted(servedModels.map((served) => served.model)),
-    [servedModels],
-  );
+  // Endpoint names are unique only within a type, so each option shows its type.
+  const endpointOptions = (filterOptions?.endpoints ?? []).map((endpoint) => ({
+    name: endpoint.name,
+    tag: endpoint.type,
+  }));
+  const modelOptions = (filterOptions?.models ?? []).map((name) => ({ name }));
+  const truncatedNotice = t("ai_traces.filters.optionsTruncated");
 
   const queryArgs = {
     workspace,
@@ -143,8 +134,8 @@ export const AITracesList = () => {
     model: model || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
-    start: dayjs(range.start).startOf("day").toISOString(),
-    end: dayjs(range.end).endOf("day").toISOString(),
+    start,
+    end,
     limit: LIMIT,
   };
 
@@ -177,6 +168,7 @@ export const AITracesList = () => {
   const handleRefresh = () => {
     refetch();
     queryClient.invalidateQueries({ queryKey: ["ai-trace-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["ai-trace-filter-options"] });
   };
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
@@ -245,7 +237,10 @@ export const AITracesList = () => {
           label={t("ai_traces.filters.endpoint")}
           allLabel={t("ai_traces.filters.allEndpoints")}
           searchPlaceholder={t("ai_traces.filters.endpointSearch")}
-          options={endpointNames}
+          options={endpointOptions}
+          notice={
+            filterOptions?.endpoints_truncated ? truncatedNotice : undefined
+          }
           value={endpointName}
           onChange={setEndpointName}
         />
@@ -271,7 +266,8 @@ export const AITracesList = () => {
           label={t("ai_traces.filters.model")}
           allLabel={t("ai_traces.filters.allModels")}
           searchPlaceholder={t("ai_traces.filters.modelSearch")}
-          options={modelNames}
+          options={modelOptions}
+          notice={filterOptions?.models_truncated ? truncatedNotice : undefined}
           value={model}
           onChange={setModel}
         />

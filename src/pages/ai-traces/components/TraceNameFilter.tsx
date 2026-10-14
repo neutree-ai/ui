@@ -15,20 +15,30 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/foundation/lib/utils";
 
-// cmdk item value of the no-filter entry; not a legal resource or model name.
+// cmdk item values of the no-filter and as-typed entries; the NUL prefix keeps
+// them apart from listed names.
 const ALL_VALUE = "\u0000all";
+const TYPED_PREFIX = "\u0000typed:";
+
+export type NameOption = {
+  name: string;
+  /** Shown beside the name, to tell apart options that share it. */
+  tag?: string;
+};
 
 type Props = {
   /** Selected name; "" means no filter. */
   value: string;
   onChange: (value: string) => void;
   /** Names to suggest, in display order. */
-  options: string[];
+  options: NameOption[];
   /** What the filter is, for assistive tech. */
   label: string;
   /** Text of the no-filter entry, also shown on the closed control. */
   allLabel: string;
   searchPlaceholder: string;
+  /** Shown under the list, e.g. to say the list is incomplete. */
+  notice?: string;
   className?: string;
   "data-testid"?: string;
 };
@@ -48,6 +58,7 @@ export const TraceNameFilter = ({
   label,
   allLabel,
   searchPlaceholder,
+  notice,
   className,
   "data-testid": testId,
 }: Props) => {
@@ -56,8 +67,8 @@ export const TraceNameFilter = ({
 
   // Keep a selected-but-unlisted name in the list so it renders as checked
   // rather than silently missing.
-  const names =
-    value && !options.includes(value) ? [value, ...options] : options;
+  const listed = options.some((option) => option.name === value);
+  const names = value && !listed ? [{ name: value }, ...options] : options;
 
   // cmdk's own filter ranks by match score, which would put the as-typed entry
   // ahead of the listed names it is a fallback for. Filter here instead, so the
@@ -65,9 +76,10 @@ export const TraceNameFilter = ({
   const typed = search.trim();
   const query = typed.toLowerCase();
   const visible = query
-    ? names.filter((name) => name.toLowerCase().includes(query))
+    ? names.filter((option) => option.name.toLowerCase().includes(query))
     : names;
-  const showTyped = typed !== "" && !names.includes(typed);
+  const showTyped =
+    typed !== "" && !names.some((option) => option.name === typed);
 
   const select = (next: string) => {
     onChange(next === value ? "" : next);
@@ -124,19 +136,30 @@ export const TraceNameFilter = ({
                   />
                 </CommandItem>
               )}
-              {visible.map((name) => (
+              {visible.map((option) => (
                 <NameItem
-                  key={name}
-                  name={name}
-                  checked={name === value}
+                  key={`${option.tag ?? ""}/${option.name}`}
+                  value={`${option.tag ?? ""}/${option.name}`}
+                  option={option}
+                  checked={option.name === value}
                   onSelect={select}
                 />
               ))}
               {showTyped && (
-                <NameItem name={typed} checked={false} onSelect={select} />
+                <NameItem
+                  value={TYPED_PREFIX + typed}
+                  option={{ name: typed }}
+                  checked={false}
+                  onSelect={select}
+                />
               )}
             </CommandGroup>
           </CommandList>
+          {notice && (
+            <p className="border-t px-3 py-2 text-xs text-muted-foreground">
+              {notice}
+            </p>
+          )}
         </Command>
       </PopoverContent>
     </Popover>
@@ -144,16 +167,23 @@ export const TraceNameFilter = ({
 };
 
 const NameItem = ({
-  name,
+  value,
+  option,
   checked,
   onSelect,
 }: {
-  name: string;
+  value: string;
+  option: NameOption;
   checked: boolean;
   onSelect: (name: string) => void;
 }) => (
-  <CommandItem value={name} onSelect={() => onSelect(name)}>
-    <span className="min-w-0 flex-1 truncate">{name}</span>
+  <CommandItem value={value} onSelect={() => onSelect(option.name)}>
+    <span className="min-w-0 flex-1 truncate">{option.name}</span>
+    {option.tag && (
+      <span className="shrink-0 text-xs text-muted-foreground">
+        {option.tag}
+      </span>
+    )}
     <Check
       className={cn("ml-auto shrink-0", checked ? "opacity-100" : "opacity-0")}
     />

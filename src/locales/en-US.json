@@ -2035,6 +2035,7 @@
 			"model": "Request model",
 			"allModels": "All models",
 			"modelSearch": "Search or enter a model name",
+			"optionsTruncated": "Only some values are listed. Enter the full name to filter by it.",
 			"apiKey": "API key",
 			"allApiKeys": "All API keys",
 			"finishReason": "Finish",
