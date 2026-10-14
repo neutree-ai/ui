@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import { zcacheSpec } from "@/domains/cluster/types";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
@@ -49,6 +48,7 @@ import {
   VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
   VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "@/domains/endpoint/lib/vgpu";
+import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import type {
   Endpoint,
   EndpointClusterRef,
@@ -289,7 +289,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const cacheEnabled = form.watch("spec.kv_cache.provider") === "zcache";
   const cacheNodeNames = new Set(
-    zcacheSpec(
+    endpointZCacheOptions(
       clusters.query.data?.data.find(
         (cluster) => cluster.metadata.name === currentCluster,
       ),

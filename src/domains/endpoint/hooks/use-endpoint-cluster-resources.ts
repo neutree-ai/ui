@@ -1,10 +1,10 @@
-import { zcacheSpec } from "@/domains/cluster/types";
 import { useMemo } from "react";
 import {
   findBestNodeForAccelerator,
   parseClusterResources,
 } from "@/domains/endpoint/lib/cluster-resources";
 import { computeMaxAvailable } from "@/domains/endpoint/lib/endpoint-form-helpers";
+import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
 import type {
   NodeResourceStatus,
@@ -86,7 +86,7 @@ export function useEndpointClusterResources({
     );
     if (!cluster || !cacheEnabled || !cluster.status?.resource_info)
       return cluster;
-    const names = new Set(zcacheSpec(cluster)?.target_nodes ?? []);
+    const names = new Set(endpointZCacheOptions(cluster)?.target_nodes ?? []);
     const nodes = Object.fromEntries(
       Object.entries(cluster.status.resource_info.node_resources ?? {}).filter(
         ([name]) => names.has(name),

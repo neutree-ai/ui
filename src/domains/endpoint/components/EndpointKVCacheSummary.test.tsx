@@ -1,8 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Cluster } from "@/domains/cluster/types";
-import type { Endpoint } from "../types";
+import type { Endpoint, EndpointClusterRef } from "../types";
 import { EndpointKVCacheSummary } from "./EndpointKVCacheSummary";
 
 vi.mock("react-i18next", () => ({
@@ -29,7 +28,7 @@ describe("EndpointKVCacheSummary", () => {
     const cluster = {
       metadata: { name: "gpu-cluster" },
       spec: { cache: { provider: "zcache", options: { enabled: configured } } },
-    } as unknown as Cluster;
+    } as unknown as EndpointClusterRef;
     render(
       <MemoryRouter>
         <EndpointKVCacheSummary endpoint={endpoint} cluster={cluster} />

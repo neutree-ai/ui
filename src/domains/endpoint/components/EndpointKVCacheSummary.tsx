@@ -2,20 +2,19 @@ import { ArrowRight, Database } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
-import type { Cluster } from "@/domains/cluster/types";
-import { zcacheSpec } from "@/domains/cluster/types";
-import type { Endpoint } from "../types";
+import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
+import type { Endpoint, EndpointClusterRef } from "../types";
 
 export function EndpointKVCacheSummary({
   endpoint,
   cluster,
 }: {
   endpoint: Endpoint;
-  cluster?: Cluster;
+  cluster?: EndpointClusterRef;
 }) {
   const { t } = useTranslation();
   const enabled = endpoint.spec.kv_cache?.provider === "zcache";
-  const configured = zcacheSpec(cluster)?.enabled === true;
+  const configured = endpointZCacheOptions(cluster)?.enabled === true;
   if (endpoint.spec.kv_cache && !enabled) return null;
   return (
     <section

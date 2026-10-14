@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { zcacheSpec } from "@/domains/cluster/types";
+import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
@@ -32,7 +32,7 @@ export function EndpointKVCacheFields({
   const engine = form.watch("spec.engine");
   const supported =
     cluster?.spec.type === "kubernetes" &&
-    zcacheSpec(cluster)?.enabled &&
+    endpointZCacheOptions(cluster)?.enabled &&
     engine?.engine === "vllm";
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (

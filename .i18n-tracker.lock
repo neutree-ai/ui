@@ -235,8 +235,8 @@
   "src/foundation/components/VariablesInput.tsx": "3b5e4cf926481133c4ee746787283e65",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "eaab63ebe07545a130dfab66dddf846a",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "5b090420186cb093fad647206c5c768e",
-  "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "5552c78bc864ffda64f312e4f456b259",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "6d45e170be8703916ca643b08f441ce9",
+  "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "e7228007a3166e3a030194d812bb8f35",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "faa9a8e7dfade8a200eb601d021b1814",
   "src/pages/external-endpoints/create.tsx": "78286cb967917dee72c9c2b2ea415b43",
   "src/pages/external-endpoints/edit.tsx": "e731cde0ba1ff3d6e52bd7803a34e297",
@@ -450,6 +450,7 @@
   "src/domains/cluster/hooks/use-cache-capacity-confirmation.tsx": "9bb11a54a86e21ac4c13a3fb30944d3c",
   "src/domains/endpoint/components/EndpointZCacheFields.tsx": "3eb0712138a2a3baa740ec024fcf8263",
   "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "ff5fb54cbda334b67f8b66887eeb4789",
-  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "0abb344c05c4f2612217baa9f9f37603",
-  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "bb0d49886bcc0ae860ccec1704aff62f"
+  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "49e72860e42f564602454d42f45200c0",
+  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "b90cff873c9c6d3a81f5c3b5fde3098d",
+  "src/domains/endpoint/lib/zcache.ts": "a7b5ba66e96c0002ada91e339b052732"
 }
