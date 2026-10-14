@@ -380,7 +380,6 @@
 		}
 	},
 	"clusters": {
-		"monitor": { "overview": "Overview", "cache": "Cache" },
 		"clusters": "cluster",
 		"title": "Clusters",
 		"create": "Create Cluster",
@@ -514,7 +513,9 @@
 			"acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
 		},
 		"monitor": {
-			"overviewMetrics": "Cluster Overview"
+			"overviewMetrics": "Cluster Overview",
+			"overview": "Overview",
+			"cache": "Cache"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
