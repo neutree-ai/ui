@@ -545,7 +545,6 @@
 			"capacityChangeTitle": "Adjust cache capacity?",
 			"capacityChangeDescription": "Changing capacity will restart cache processes and clear the existing cache.",
 			"confirmSave": "Confirm and save",
-			"invalidCapacity": "Enter a positive integer up to 2147483647.",
 			"targetNodes": "Cache nodes",
 			"stale": "Latest status is unavailable. The last observed values are shown below.",
 			"noCandidates": "Node inventory is not available yet. Check ZCache on the cluster details page.",

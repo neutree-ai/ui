@@ -84,14 +84,24 @@ export function ZCacheFields({
                     form.getValues("spec.cache.options.enabled") !== true ||
                     (Number.isInteger(Number(value)) &&
                       Number(value) >= 1 &&
-                      Number(value) <= 2147483647) ||
-                    t("clusters.zcache.invalidCapacity"),
+                      Number(value) <= 2147483647),
                 }}
               >
                 <Input
                   type="number"
                   min={1}
+                  max={2147483647}
                   step={1}
+                  onBlur={(event) => {
+                    const value = Math.min(
+                      2147483647,
+                      Math.max(1, Math.trunc(Number(event.target.value))),
+                    );
+                    form.setValue("spec.cache.options.l1_size_gib", value, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
                   onChange={(event) =>
                     form.setValue(
                       "spec.cache.options.l1_size_gib",

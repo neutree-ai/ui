@@ -143,10 +143,21 @@ describe("ZCacheFields", () => {
     fireEvent.submit(
       screen.getByRole("button", { name: "Save" }).closest("form")!,
     );
-    await waitFor(() =>
-      expect(screen.getByText("clusters.zcache.invalidCapacity")).toBeTruthy(),
-    );
+    await waitFor(() => expect(submit).not.toHaveBeenCalled());
     expect(submit).not.toHaveBeenCalled();
+  });
+  it.each([
+    ["0", 1],
+    ["1.5", 1],
+    ["2147483648", 2147483647],
+    ["", 1],
+  ])("normalizes %s on blur without a range message", (input, expected) => {
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    const capacity = screen.getByRole("spinbutton") as HTMLInputElement;
+    fireEvent.change(capacity, { target: { value: input } });
+    fireEvent.blur(capacity);
+    expect(Number(capacity.value)).toBe(expected);
+    expect(screen.queryByText("clusters.zcache.invalidCapacity")).toBeNull();
   });
   it("can disable runtime even after clearing the target selection", async () => {
     const submit = vi.fn();
