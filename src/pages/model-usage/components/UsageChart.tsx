@@ -66,6 +66,18 @@ export function formatTick(date: string): string {
   return parts.length === 3 ? `${Number(parts[1])}/${Number(parts[2])}` : date;
 }
 
+// Recharts paints the trend hover highlight itself, and its default is a
+// hardcoded opaque `#ccc` that ignores the theme: a heavy grey slab on the card
+// in light mode, a glaring one in dark mode. The single-day distribution below
+// and the AI trace chart both hand it `hsl(var(--muted))`; the line view gets a
+// stroke from the design system's neutral guide ramp instead, because
+// `--border` is nearly invisible on the white card and `--muted-foreground` is
+// as loud as the data itself.
+export const trendCursor = (chartType: "line" | "bar") =>
+  chartType === "bar"
+    ? { fill: "hsl(var(--muted))" }
+    : { stroke: "var(--nt-stroke-neutral-trans-3)" };
+
 type DayCategory = UsageSeries & {
   label: string;
   promptColor: string;
@@ -286,7 +298,11 @@ export const UsageChart = ({
       fontSize={11}
       width={48}
     />,
-    <Tooltip key="tip" content={<TrendTooltip meta={meta} />} />,
+    <Tooltip
+      key="tip"
+      cursor={trendCursor(chartType)}
+      content={<TrendTooltip meta={meta} />}
+    />,
     <Legend
       key="legend"
       wrapperStyle={{ fontSize: 11 }}
