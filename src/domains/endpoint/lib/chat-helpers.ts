@@ -21,6 +21,24 @@ export type ChatContentPart =
   | ReasoningPart;
 
 /**
+ * Image types the serving engines can decode. The playground sends an image's
+ * bytes unchanged, so any other type (SVG, HEIC, …) fails at the engine.
+ */
+export const SUPPORTED_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+];
+
+/** The supported types as people know them, for telling a user what to pick. */
+export const SUPPORTED_IMAGE_FORMATS = "PNG, JPEG, WebP, GIF, BMP";
+
+export const isSupportedImage = (file: File): boolean =>
+  SUPPORTED_IMAGE_TYPES.includes(file.type);
+
+/**
  * Build user message content from text input and image data URIs.
  *
  * Returns a plain string when the message is text-only (no images),
