@@ -1786,6 +1786,7 @@
 				"images": "Images",
 				"uploadImages": "Upload Images",
 				"removeImage": "Remove image",
+				"unsupportedImage": "Not added: {{files}}. Supported image formats: {{formats}}.",
 				"systemMessage": "System Message",
 				"systemMessagePlaceholder": "Enter system message to set behavior and context...",
 				"functions": "Functions",
