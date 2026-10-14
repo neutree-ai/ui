@@ -389,7 +389,7 @@
   "src/domains/endpoint/lib/save-as-catalog.ts": "92faeef51fe64fcc065322c760d9443e",
   "src/domains/endpoint/components/EndpointSaveAsCatalogAction.tsx": "4a5d02cc27df64ef6f134570bdc09f1d",
   "src/domains/model-catalog/lib/catalog-model-slots.ts": "a10b1834d1e7b29a4d63b4f6a6cfed76",
-  "src/domains/model-catalog/components/CatalogModelSlots.tsx": "add503a6a367f2d01b49f5afe9fadb77",
+  "src/domains/model-catalog/components/CatalogModelSlots.tsx": "05eca6c6a66da5bd351548c822fffd93",
   "src/foundation/components/EndpointStatus.tsx": "ec48c1610372339234ef6b849c5040c6",
   "src/domains/endpoint/lib/catalog-origin.ts": "10d2d40c7e5cd6e84454dbdd56ebec53",
   "src/domains/endpoint/components/EndpointCatalogOrigin.tsx": "4274ff735abe2e28e0a2bf05c26faab6",
