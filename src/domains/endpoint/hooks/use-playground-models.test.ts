@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { usePlaygroundModels } from "./use-playground-models";
@@ -13,11 +13,22 @@ const endpoint = {
   metadata: { name: "test-ep", workspace: "default" },
 } as any;
 
-function mockModelsResponse(models: { id: string }[], isFetching = false) {
+function mockModelsResponse(
+  models: { id: string; max_model_len?: unknown }[],
+  isFetching = false,
+) {
   vi.mocked(useCustom).mockReturnValue({
     data: { data: { data: models } },
     isFetching,
   } as any);
+}
+
+function renderWithMaxLength() {
+  return renderHook(() => {
+    const form = useForm({ defaultValues: { model: "", max_length: 8192 } });
+    const result = usePlaygroundModels(endpoint, form);
+    return { ...result, form };
+  });
 }
 
 function renderWithForm(ep = endpoint) {
@@ -88,5 +99,81 @@ describe("usePlaygroundModels", () => {
         method: "get",
       }),
     );
+  });
+
+  describe("max length default", () => {
+    it("starts from half the context the server reports", () => {
+      // A request for as many output tokens as the model has context leaves
+      // the prompt no room, and vLLM refuses it outright.
+      mockModelsResponse([{ id: "ocr", max_model_len: 8192 }]);
+      const { result } = renderWithMaxLength();
+
+      expect(result.current.form.getValues("max_length")).toBe(4096);
+    });
+
+    it("keeps the fixed default when the server reports no length", () => {
+      mockModelsResponse([{ id: "gpt-4" }]);
+      const { result } = renderWithMaxLength();
+
+      expect(result.current.form.getValues("max_length")).toBe(8192);
+    });
+
+    it("follows a switch to another model while the default is untouched", () => {
+      mockModelsResponse([
+        { id: "small", max_model_len: 8192 },
+        { id: "large", max_model_len: 131072 },
+      ]);
+      const { result, rerender } = renderWithMaxLength();
+
+      act(() => result.current.form.setValue("model", "large"));
+      rerender();
+
+      expect(result.current.form.getValues("max_length")).toBe(65536);
+    });
+
+    it("falls back to the fixed default for a model reporting no length", () => {
+      mockModelsResponse([
+        { id: "small", max_model_len: 8192 },
+        { id: "remote" },
+      ]);
+      const { result, rerender } = renderWithMaxLength();
+
+      act(() => result.current.form.setValue("model", "remote"));
+      rerender();
+
+      expect(result.current.form.getValues("max_length")).toBe(8192);
+    });
+
+    it("keeps whatever the user set, across later model switches", () => {
+      mockModelsResponse([
+        { id: "small", max_model_len: 8192 },
+        { id: "large", max_model_len: 131072 },
+        { id: "remote" },
+      ]);
+      const { result, rerender } = renderWithMaxLength();
+
+      act(() => result.current.setMaxLength(2048));
+      for (const model of ["large", "remote", "small"]) {
+        act(() => result.current.form.setValue("model", model));
+        rerender();
+        expect(result.current.form.getValues("max_length")).toBe(2048);
+      }
+    });
+
+    it("keeps a user choice that happens to equal the default", () => {
+      // Comparing against the default cannot tell these apart; the choice is
+      // the user's all the same.
+      mockModelsResponse([
+        { id: "small", max_model_len: 8192 },
+        { id: "large", max_model_len: 131072 },
+      ]);
+      const { result, rerender } = renderWithMaxLength();
+
+      act(() => result.current.setMaxLength(4096));
+      act(() => result.current.form.setValue("model", "large"));
+      rerender();
+
+      expect(result.current.form.getValues("max_length")).toBe(4096);
+    });
   });
 });
