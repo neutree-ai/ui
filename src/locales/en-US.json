@@ -1331,11 +1331,11 @@
 			"breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
 			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
 		},
-		"zcache": {
-      "timeoutLabel": "Cache timeout",
-      "timeoutValue": "{{seconds}} s",
-      "clusterUnconfigured": "ZCache is not configured on this cluster",
-      "viewCluster": "View cluster cache",
+		"kvCacheSettings": {
+			"timeoutLabel": "Cache timeout",
+			"timeoutValue": "{{seconds}} s",
+			"clusterUnconfigured": "ZCache is not configured on this cluster",
+			"viewCluster": "View cluster cache",
 			"enable": "KV cache",
 			"providerLabel": "Cache provider",
 			"selectProvider": "Select a cache provider",

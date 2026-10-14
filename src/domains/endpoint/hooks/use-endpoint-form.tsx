@@ -1,4 +1,3 @@
-import { zcacheSpec } from "@/domains/cluster/types";
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { ChevronDown, Sparkles } from "lucide-react";
@@ -12,11 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import { zcacheSpec } from "@/domains/cluster/types";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
+import { EndpointKVCacheFields } from "@/domains/endpoint/components/EndpointKVCacheFields";
 import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointWeightsEstimate";
-import { EndpointZCacheFields } from "@/domains/endpoint/components/EndpointZCacheFields";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
@@ -289,9 +289,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const cacheEnabled = form.watch("spec.kv_cache.provider") === "zcache";
   const cacheNodeNames = new Set(
-    zcacheSpec(clusters.query.data?.data.find(
-      (cluster) => cluster.metadata.name === currentCluster,
-    ))?.target_nodes ?? [],
+    zcacheSpec(
+      clusters.query.data?.data.find(
+        (cluster) => cluster.metadata.name === currentCluster,
+      ),
+    )?.target_nodes ?? [],
   );
   const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
   // Releasing an allocation outside the cache pool does not free capacity
@@ -2341,7 +2343,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </div>
           </section>
 
-          <EndpointZCacheFields
+          <EndpointKVCacheFields
             form={form}
             cluster={selectedCluster}
             isEdit={isEdit}

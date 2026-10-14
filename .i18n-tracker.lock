@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "cb35c8f7f98c0e100f1868c32490dadc",
   "src/pages/endpoints/edit.tsx": "ef661bb90e2dfbc2be9ac65b92fbc3f1",
   "src/pages/endpoints/list.tsx": "74ae1fda1411a31fa8ddcab05f4d7162",
-  "src/pages/endpoints/show.tsx": "ede4c9a7e8193c900c08a68e398fa26a",
+  "src/pages/endpoints/show.tsx": "16af62a8b6f21a0f1909a0783fc6f914",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "2e019fc4a0e9b0a2fa52bcb5b44906b1",
   "src/pages/clusters/edit.tsx": "bfb67faeac1f09a71a10f782b7cb9d59",
@@ -235,7 +235,7 @@
   "src/foundation/components/VariablesInput.tsx": "3b5e4cf926481133c4ee746787283e65",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "eaab63ebe07545a130dfab66dddf846a",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "168ec8fc5a4416b7c1a14712a0b412de",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "5b090420186cb093fad647206c5c768e",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "5552c78bc864ffda64f312e4f456b259",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "faa9a8e7dfade8a200eb601d021b1814",
   "src/pages/external-endpoints/create.tsx": "78286cb967917dee72c9c2b2ea415b43",
@@ -446,8 +446,10 @@
   "src/domains/cluster/lib/zcache-presentation.ts": "a939fc2e56c2a3c8a96eea188b67c144",
   "src/domains/cluster/components/ZCacheActivity.tsx": "e6add2efab39c8aeefd0e8a7974a59b5",
   "src/domains/cluster/components/ZCacheEditor.tsx": "ddcd43e540a3757215ac230f4d65ada4",
-  "src/domains/cluster/components/ClusterCacheSection.tsx": "d50aced69a57d16d0e968ac66f68b236",
+  "src/domains/cluster/components/ClusterCacheSection.tsx": "4477a22a241d76f723e1cafce7b29abf",
   "src/domains/cluster/hooks/use-cache-capacity-confirmation.tsx": "9bb11a54a86e21ac4c13a3fb30944d3c",
   "src/domains/endpoint/components/EndpointZCacheFields.tsx": "3eb0712138a2a3baa740ec024fcf8263",
-  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "ff5fb54cbda334b67f8b66887eeb4789"
+  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "ff5fb54cbda334b67f8b66887eeb4789",
+  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "0abb344c05c4f2612217baa9f9f37603",
+  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "bb0d49886bcc0ae860ccec1704aff62f"
 }

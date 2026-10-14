@@ -1,8 +1,8 @@
 import { useCan } from "@refinedev/core";
 import { CircleAlert, CircleCheck, History, Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
@@ -24,15 +24,18 @@ export function ClusterCacheSection({ cluster }: { cluster: Cluster }) {
   const { systemInfo } = useSystemApi();
   const [searchParams] = useSearchParams();
   const sectionRef = useRef<HTMLDivElement>(null);
-  const focusCache = searchParams.get("section") === "zcache";
+  const focusCache = searchParams.get("section") === "cache";
+  const available =
+    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
+    true;
   useEffect(() => {
-    if (focusCache) sectionRef.current?.scrollIntoView({ block: "start" });
-  }, [focusCache, systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache")]);
-  return systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") === true ? (
-    <div ref={sectionRef} id="zcache" className="scroll-mt-4">
+    if (focusCache && available)
+      sectionRef.current?.scrollIntoView({ block: "start" });
+  }, [focusCache, available]);
+  return available ? (
+    <div ref={sectionRef} id="cache" className="scroll-mt-4">
       <ZCacheDetails cluster={cluster} />
     </div>
-
   ) : null;
 }
 
