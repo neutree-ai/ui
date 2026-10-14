@@ -1,10 +1,13 @@
 import { useList, useParsed } from "@refinedev/core";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -34,6 +37,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import {
   type AITrace,
+  fetchAITraceFilterOptions,
   fetchAITraces,
   isAITraceForbidden,
 } from "@/foundation/lib/api/ai-traces";
@@ -42,6 +46,7 @@ import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import { StatusCodeFilter } from "./components/StatusCodeFilter";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
+import { TraceNameFilter } from "./components/TraceNameFilter";
 import { TraceStatsChart } from "./components/TraceStatsChart";
 import { StatusBadge } from "./status";
 
@@ -95,16 +100,42 @@ export const AITracesList = () => {
   // stays in the list, where there is room for it.
   const selectedKey = keys.find((key) => key.id === apiKeyId);
 
+  const start = dayjs(range.start).startOf("day").toISOString();
+  const end = dayjs(range.end).endOf("day").toISOString();
+
+  // What the endpoint and model filters suggest: the names found in the
+  // window's traces. Suggestions only — a failed request leaves the filters
+  // usable by typing, so its error is not shown.
+  const optionArgs = {
+    workspace,
+    start,
+    end,
+    endpoint_type: endpointType || undefined,
+  };
+  const { data: filterOptions } = useQuery({
+    queryKey: ["ai-trace-filter-options", optionArgs],
+    queryFn: ({ signal }) => fetchAITraceFilterOptions(optionArgs, signal),
+    enabled: Boolean(workspace),
+    retry: false,
+  });
+  // Endpoint names are unique only within a type, so each option shows its type.
+  const endpointOptions = (filterOptions?.endpoints ?? []).map((endpoint) => ({
+    name: endpoint.name,
+    tag: endpoint.type,
+  }));
+  const modelOptions = (filterOptions?.models ?? []).map((name) => ({ name }));
+  const truncatedNotice = t("ai_traces.filters.optionsTruncated");
+
   const queryArgs = {
     workspace,
-    endpoint_name: endpointName.trim() || undefined,
+    endpoint_name: endpointName || undefined,
     endpoint_type: endpointType || undefined,
     status: status || undefined,
-    model: model.trim() || undefined,
+    model: model || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
-    start: dayjs(range.start).startOf("day").toISOString(),
-    end: dayjs(range.end).endOf("day").toISOString(),
+    start,
+    end,
     limit: LIMIT,
   };
 
@@ -137,6 +168,7 @@ export const AITracesList = () => {
   const handleRefresh = () => {
     refetch();
     queryClient.invalidateQueries({ queryKey: ["ai-trace-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["ai-trace-filter-options"] });
   };
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
@@ -199,11 +231,18 @@ export const AITracesList = () => {
           onChange={setRange}
           presets={TRACE_RANGE_PRESETS}
         />
-        <Input
+        <TraceNameFilter
           className="w-[200px]"
-          placeholder={t("ai_traces.filters.endpoint")}
+          data-testid="endpoint-filter"
+          label={t("ai_traces.filters.endpoint")}
+          allLabel={t("ai_traces.filters.allEndpoints")}
+          searchPlaceholder={t("ai_traces.filters.endpointSearch")}
+          options={endpointOptions}
+          notice={
+            filterOptions?.endpoints_truncated ? truncatedNotice : undefined
+          }
           value={endpointName}
-          onChange={(e) => setEndpointName(e.target.value)}
+          onChange={setEndpointName}
         />
         <Select
           value={endpointType || "all"}
@@ -221,11 +260,16 @@ export const AITracesList = () => {
           </SelectContent>
         </Select>
         <StatusCodeFilter value={status} onChange={setStatus} />
-        <Input
+        <TraceNameFilter
           className="w-[200px]"
-          placeholder={t("ai_traces.filters.model")}
+          data-testid="model-filter"
+          label={t("ai_traces.filters.model")}
+          allLabel={t("ai_traces.filters.allModels")}
+          searchPlaceholder={t("ai_traces.filters.modelSearch")}
+          options={modelOptions}
+          notice={filterOptions?.models_truncated ? truncatedNotice : undefined}
           value={model}
-          onChange={(e) => setModel(e.target.value)}
+          onChange={setModel}
         />
         <Select
           value={apiKeyId || "all"}

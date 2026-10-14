@@ -1,5 +1,9 @@
 import { expect, test } from "../fixtures/base";
-import { aiTraceEnv, chatCompletion } from "../helpers/ai-trace";
+import {
+  aiTraceEnv,
+  chatCompletion,
+  filterByEndpoint,
+} from "../helpers/ai-trace";
 
 // TestRail suite 2420, Access Log section — frontend UI cases
 // (list / activity chart / detail drawer). The ai-traces UI is almost free of
@@ -52,7 +56,7 @@ test.describe("access log — UI", () => {
     await expect(
       page.getByRole("heading", { name: /access log/i }).first(),
     ).toBeVisible();
-    await page.getByPlaceholder("Endpoint name").fill(e.endpoint);
+    await filterByEndpoint(page, e.endpoint);
     await page.waitForLoadState("networkidle").catch(() => {});
   }
 
@@ -100,9 +104,7 @@ test.describe("access log — UI", () => {
     tag: "@C2710800",
   }, async ({ page }) => {
     await page.goto(`/#/${e.workspace}/ai-traces`);
-    await page
-      .getByPlaceholder("Endpoint name")
-      .fill(`no-such-endpoint-${Date.now()}`);
+    await filterByEndpoint(page, `no-such-endpoint-${Date.now()}`);
     await expect(
       page.getByText("No access logs in the selected window."),
     ).toBeVisible({ timeout: 15_000 });
