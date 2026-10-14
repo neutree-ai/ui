@@ -448,8 +448,6 @@
   "src/domains/cluster/components/ZCacheEditor.tsx": "ddcd43e540a3757215ac230f4d65ada4",
   "src/domains/cluster/components/ClusterCacheSection.tsx": "4477a22a241d76f723e1cafce7b29abf",
   "src/domains/cluster/hooks/use-cache-capacity-confirmation.tsx": "9bb11a54a86e21ac4c13a3fb30944d3c",
-  "src/domains/endpoint/components/EndpointZCacheFields.tsx": "3eb0712138a2a3baa740ec024fcf8263",
-  "src/domains/endpoint/components/EndpointZCacheSummary.tsx": "ff5fb54cbda334b67f8b66887eeb4789",
   "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "49e72860e42f564602454d42f45200c0",
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "b90cff873c9c6d3a81f5c3b5fde3098d",
   "src/domains/endpoint/lib/zcache.ts": "a7b5ba66e96c0002ada91e339b052732"

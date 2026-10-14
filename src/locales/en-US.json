@@ -639,7 +639,7 @@
 				"capacity": "Change cache capacity",
 				"configure": "Update cache configuration"
 			},
-			"dependencyHint": "Inference instances still use ZCache. Turn off their cache and wait for redeployment before disabling cache or removing nodes. Paused instances also retain this dependency.",
+			"dependencyHint": "Inference instances still use ZCache. Turn off their cache before disabling the cluster cache.",
 			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
 		}
 	},
