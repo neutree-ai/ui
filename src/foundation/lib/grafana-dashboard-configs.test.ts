@@ -6,6 +6,7 @@ import {
   getClusterSplitDashboardProps,
   getEndpointSplitDashboardProps,
   getOverviewDashboardProps,
+  getZCacheDashboardProps,
 } from "./grafana-dashboard-configs";
 
 describe("getOverviewDashboardProps", () => {
@@ -69,4 +70,29 @@ describe("getEndpointSplitDashboardProps", () => {
       });
     },
   );
+});
+
+describe("cache dashboard scope", () => {
+  it("keeps identical names in different workspaces distinct", () => {
+    const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
+      workspace: "team-b",
+      clusterName: "shared-name",
+      endpointName: "model",
+    });
+    expect(cache.dashboardConfig.variables).toMatchObject({
+      Workspace: "team-b",
+      Cluster: "shared-name",
+      Endpoint: "model",
+    });
+    const pool = getZCacheDashboardProps("http://grafana", {
+      workspace: "team-b",
+      clusterName: "shared-name",
+    });
+    expect(pool.dashboardConfig.dashboardId).toBe("neutree-zcache-embed");
+    expect(pool.dashboardConfig.variables).toEqual({
+      datasource: "neutree-cluster",
+      Workspace: "team-b",
+      Cluster: "shared-name",
+    });
+  });
 });
