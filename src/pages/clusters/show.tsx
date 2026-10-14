@@ -15,6 +15,8 @@ import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accele
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
+import { zcacheStatus } from "@/domains/cluster/types";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import type { Cluster } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -34,7 +36,10 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
+import {
+  getClusterSplitDashboardProps,
+  getZCacheDashboardProps,
+} from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
@@ -50,7 +55,17 @@ export const ClustersShow = () => {
 
   const metadataColumns = useMetadataColumns({ resource: "endpoints" });
 
-  const { selectedPanel, showMonitorTab } = useClusterMonitorPanels();
+  const cacheStatus = zcacheStatus(record);
+  const {
+    selectedPanel,
+    setSelectedPanel,
+    panels,
+    showSelector,
+    showMonitorTab,
+  } = useClusterMonitorPanels(
+    record?.spec.cache?.provider === "zcache" ||
+      record?.status?.cache?.provider === "zcache",
+  );
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
@@ -408,15 +423,42 @@ export const ClustersShow = () => {
             >
               {grafanaUrl ? (
                 <div className="flex flex-col gap-4 h-full">
+                  {showSelector && (
+                    <div className="flex justify-start">
+                      <SegmentedControl
+                        ariaLabel={t("common.tabs.monitor")}
+                        items={panels.map((panel) => ({
+                          value: panel,
+                          label: t(
+                            panel === "cache"
+                              ? "clusters.monitor.cache"
+                              : "clusters.monitor.overview",
+                          ),
+                        }))}
+                        value={selectedPanel}
+                        onValueChange={setSelectedPanel}
+                      />
+                    </div>
+                  )}
                   {selectedPanel && (
                     <GrafanaDashboard
-                      {...getClusterSplitDashboardProps(
-                        grafanaUrl,
-                        selectedPanel,
-                        record.metadata.name,
-                      )}
+                      {...(selectedPanel === "cache"
+                        ? getZCacheDashboardProps(grafanaUrl, {
+                            workspace: record.metadata.workspace ?? "default",
+                            clusterName: record.metadata.name,
+                            nodes:
+                              cacheStatus?.observed_at &&
+                              !cacheStatus.observation_error
+                                ? cacheStatus.nodes
+                                : undefined,
+                          })
+                        : getClusterSplitDashboardProps(
+                            grafanaUrl,
+                            "overview",
+                            record.metadata.name,
+                          ))}
                       className="flex-1"
-                      hideVariables
+                      hideVariables={selectedPanel !== "cache"}
                     />
                   )}
                 </div>

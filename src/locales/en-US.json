@@ -380,6 +380,7 @@
 		}
 	},
 	"clusters": {
+		"monitor": { "overview": "Overview", "cache": "Cache" },
 		"clusters": "cluster",
 		"title": "Clusters",
 		"create": "Create Cluster",

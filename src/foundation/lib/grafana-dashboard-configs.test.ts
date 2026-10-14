@@ -131,6 +131,23 @@ describe("cache dashboard scope", () => {
       datasource: "neutree-cluster",
       Workspace: "team-b",
       Cluster: "shared-name",
+      CacheCapacity: "(vector(0) > 0)",
+      CacheReady: "(vector(0) > 0)",
     });
+  });
+
+  it("preserves different observed node capacities and readiness", () => {
+    const vars = getZCacheDashboardProps("http://grafana", {
+      workspace: "team-a",
+      clusterName: "pool",
+      nodes: [
+        { name: "node-a", capacity_bytes: 1024, runtime: "Ready" },
+        { name: "node-b", capacity_bytes: 2048, runtime: "NotReady" },
+      ],
+    }).dashboardConfig.variables;
+    expect(vars?.CacheCapacity).toContain("vector(1024)");
+    expect(vars?.CacheCapacity).toContain("vector(2048)");
+    expect(vars?.CacheReady).toContain("vector(1)");
+    expect(vars?.CacheReady).toContain("vector(0)");
   });
 });

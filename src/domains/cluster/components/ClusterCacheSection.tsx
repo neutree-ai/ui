@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 
-import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
-import { getZCacheDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
@@ -43,7 +41,6 @@ export function ClusterCacheSection({ cluster }: { cluster: Cluster }) {
 
 function ZCacheDetails({ cluster }: { cluster: Cluster }) {
   const { t } = useTranslation();
-  const { grafanaUrl } = useSystemApi();
   const { data: access } = useCan({ resource: "clusters", action: "edit" });
   const [editing, setEditing] = useState(false);
   const [history, setHistory] = useState(false);
@@ -264,30 +261,6 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
                 : "clusters.zcache.disabledHint",
             )}
           </p>
-        )}
-        {(status?.current?.enabled || nodes.length > 0) && (
-          <div className="space-y-3 border-t pt-4">
-            <h3 className="text-sm font-medium">
-              {t("clusters.zcache.monitorTitle")}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {t("clusters.zcache.monitorHint")}
-            </p>
-            {grafanaUrl ? (
-              <div className="h-[780px]">
-                <GrafanaDashboard
-                  {...getZCacheDashboardProps(grafanaUrl, {
-                    workspace: cluster.metadata.workspace ?? "default",
-                    clusterName: cluster.metadata.name,
-                  })}
-                />
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {t("common.messages.grafanaNotConfigured")}
-              </p>
-            )}
-          </div>
         )}
         <details className="border-t pt-3">
           <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-sm">

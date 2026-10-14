@@ -142,7 +142,11 @@ export const getModelRoutingDashboardProps = (
 
 export const getZCacheDashboardProps = (
   grafanaUrl: string,
-  context: { workspace: string; clusterName: string },
+  context: {
+    workspace: string;
+    clusterName: string;
+    nodes?: { name: string; capacity_bytes: number; runtime: string }[];
+  },
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
@@ -151,6 +155,27 @@ export const getZCacheDashboardProps = (
       ...getCommonVariables(),
       Workspace: context.workspace,
       Cluster: context.clusterName,
+      CacheCapacity:
+        (context.nodes ?? [])
+          .filter(
+            (n) =>
+              n.name &&
+              Number.isSafeInteger(n.capacity_bytes) &&
+              n.capacity_bytes > 0,
+          )
+          .map(
+            (n) =>
+              `label_replace(vector(${n.capacity_bytes}), "node", ${JSON.stringify(n.name)}, "", "")`,
+          )
+          .join(" or ") || "(vector(0) > 0)",
+      CacheReady:
+        (context.nodes ?? [])
+          .filter((n) => n.name)
+          .map(
+            (n) =>
+              `label_replace(vector(${n.runtime === "Ready" ? 1 : 0}), "node", ${JSON.stringify(n.name)}, "", "")`,
+          )
+          .join(" or ") || "(vector(0) > 0)",
     },
   },
 });
