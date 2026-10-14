@@ -27,7 +27,9 @@ export function ZCacheFields({
   const dependencies = useList<{
     id: number;
     spec: { kv_cache?: { provider: string } | null };
-    status?: { kv_cache?: { provider: string; details?: { in_use?: boolean } } };
+    status?: {
+      kv_cache?: { provider: string; details?: { in_use?: boolean } };
+    };
   }>({
     resource: "endpoints",
     pagination: { mode: "off" },
@@ -40,7 +42,10 @@ export function ZCacheFields({
   });
   const inUse =
     dependencies.data?.data.some(
-      (e) => e.spec.kv_cache?.provider === "zcache" || (e.status?.kv_cache?.provider === "zcache" && e.status.kv_cache.details?.in_use),
+      (e) =>
+        e.spec.kv_cache?.provider === "zcache" ||
+        (e.status?.kv_cache?.provider === "zcache" &&
+          e.status.kv_cache.details?.in_use),
     ) === true;
   const guardRemoval = inUse || dependencies.isLoading || dependencies.isError;
   const persistedNodes: string[] =
@@ -66,42 +71,41 @@ export function ZCacheFields({
       )}
       {isEdit && (
         <>
-          <FormFieldGroup
-            {...form}
-            name="spec.cache.options.enabled"
-            label={t("clusters.zcache.enable")}
-            isCheckbox
-            className="col-span-full"
-          >
-            <Checkbox
-              checked={enabled}
-              disabled={enabled && guardRemoval}
-              onCheckedChange={(value) =>
-                form.setValue(
-                  "spec.cache",
-                  {
-                    provider: "zcache",
-                    options: {
-                      ...form.getValues("spec.cache.options"),
-                      enabled: value === true,
-                      l1_size_gib:
-                        Number.isInteger(
-                          form.getValues("spec.cache.options.l1_size_gib"),
-                        ) &&
-                        form.getValues("spec.cache.options.l1_size_gib") > 0
-                          ? form.getValues("spec.cache.options.l1_size_gib")
-                          : 1,
-                      target_nodes: selected,
+          <div className="col-span-full flex items-center gap-2">
+            <FormFieldGroup
+              {...form}
+              name="spec.cache.options.enabled"
+              label={t("clusters.zcache.enable")}
+              isCheckbox
+              className="col-span-full"
+            >
+              <Checkbox
+                checked={enabled}
+                disabled={enabled && guardRemoval}
+                onCheckedChange={(value) =>
+                  form.setValue(
+                    "spec.cache",
+                    {
+                      provider: "zcache",
+                      options: {
+                        ...form.getValues("spec.cache.options"),
+                        enabled: value === true,
+                        l1_size_gib:
+                          Number.isInteger(
+                            form.getValues("spec.cache.options.l1_size_gib"),
+                          ) &&
+                          form.getValues("spec.cache.options.l1_size_gib") > 0
+                            ? form.getValues("spec.cache.options.l1_size_gib")
+                            : 1,
+                        target_nodes: selected,
+                      },
                     },
-                  },
-                  { shouldDirty: true, shouldValidate: true },
-                )
-              }
-            />
-          </FormFieldGroup>
-          {guardRemoval && enabled && (
-            <div className="col-span-full flex items-center gap-2 text-sm text-muted-foreground">
-              {t("clusters.zcache.dependencyProtected")}
+                    { shouldDirty: true, shouldValidate: true },
+                  )
+                }
+              />
+            </FormFieldGroup>
+            {guardRemoval && enabled && (
               <InfoHint
                 label={t(
                   inUse
@@ -109,8 +113,8 @@ export function ZCacheFields({
                     : "clusters.zcache.dependencyChecking",
                 )}
               />
-            </div>
-          )}
+            )}
+          </div>
           {enabled && (
             <>
               <FormFieldGroup
