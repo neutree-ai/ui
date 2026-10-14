@@ -1,6 +1,11 @@
 import type { ModelMessage } from "ai";
 import { describe, expect, it } from "vitest";
-import { buildUserMessageContent, filterMessagesForApi } from "./chat-helpers";
+import {
+  buildUserMessageContent,
+  filterMessagesForApi,
+  isSupportedImage,
+  SUPPORTED_IMAGE_TYPES,
+} from "./chat-helpers";
 
 describe("buildUserMessageContent", () => {
   it("returns a string for text-only input", () => {
@@ -95,5 +100,21 @@ describe("filterMessagesForApi", () => {
         content: [{ type: "text", text: "answer" }],
       },
     ]);
+  });
+});
+
+describe("isSupportedImage", () => {
+  const file = (type: string) => new File(["x"], "image", { type });
+
+  it("accepts the types the engines decode", () => {
+    for (const type of SUPPORTED_IMAGE_TYPES) {
+      expect(isSupportedImage(file(type))).toBe(true);
+    }
+  });
+
+  it("rejects types the engines cannot decode, and an unknown type", () => {
+    for (const type of ["image/svg+xml", "image/heic", "application/pdf", ""]) {
+      expect(isSupportedImage(file(type))).toBe(false);
+    }
   });
 });
