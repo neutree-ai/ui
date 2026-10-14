@@ -1,5 +1,10 @@
 import { expect, test } from "../fixtures/base";
-import { aiTraceEnv, chatCompletion, waitForTrace } from "../helpers/ai-trace";
+import {
+  aiTraceEnv,
+  chatCompletion,
+  filterByEndpoint,
+  waitForTrace,
+} from "../helpers/ai-trace";
 import { ApiHelper } from "../helpers/api-helper";
 import { MULTI_USER_TIMEOUT } from "../helpers/constants";
 
@@ -92,8 +97,7 @@ test.describe("access log — traces", () => {
         await expect(
           page.getByRole("heading", { name: /access log/i }).first(),
         ).toBeVisible();
-        const endpointFilter = page.getByPlaceholder(/endpoint/i).first();
-        await endpointFilter.fill(e.endpoint);
+        await filterByEndpoint(page, e.endpoint);
         await page.waitForLoadState("networkidle").catch(() => {});
         const row = page
           .locator("tbody tr")
