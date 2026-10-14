@@ -1271,7 +1271,7 @@
 			"throughputDescription": "Prompt, generation, and total token throughput plus request length distributions",
 			"queueDescription": "Running, swapped, waiting, preemptions, and queue time metrics",
 			"cacheDescription": "KV token capacity, KV usage, and cache hit metrics",
-			"cacheScopeHint": "Aggregates all replica Pods by default. External cache matches do not prove successful reads or speedup; prompt sources are engine-reported. No requests or unsupported metrics show no samples."
+			"cacheScopeHint": "Aggregates all replica Pods by default; select a Pod to filter. Overview covers the selected time range. Green: L0 local cache; blue: external cache; red: computed input. External matches do not prove successful reads or speedup."
 		},
 		"logs": {
 			"application": "Application",
