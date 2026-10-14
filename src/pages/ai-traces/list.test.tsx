@@ -81,7 +81,18 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("@/foundation/components/ListPage", () => ({
-  ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
+  ListPage: ({
+    children,
+    extra,
+  }: {
+    children: ReactNode;
+    extra?: ReactNode;
+  }) => (
+    <main>
+      {extra}
+      {children}
+    </main>
+  ),
 }));
 
 vi.mock("@/foundation/components/DateRangePicker", async () => {
@@ -102,6 +113,14 @@ vi.mock("@/pages/ai-traces/components/TraceStatsChart", () => ({
 }));
 vi.mock("@/pages/ai-traces/components/TraceDetailDrawer", () => ({
   TraceDetailDrawer: () => null,
+}));
+
+const exportButton = vi.hoisted(() => ({ props: vi.fn() }));
+vi.mock("@/pages/ai-traces/components/TraceExportButton", () => ({
+  TraceExportButton: (props: unknown) => {
+    exportButton.props(props);
+    return <button type="button">export</button>;
+  },
 }));
 
 const apiKeys = [
@@ -393,5 +412,53 @@ describe("AITracesList without trace permission", () => {
 
     expect(screen.getByText("ai-traces request failed: 500")).toBeTruthy();
     expect(screen.getByRole("table")).toBeTruthy();
+  });
+});
+
+// The params the export button was last rendered with.
+const exportParams = () => {
+  const call = exportButton.props.mock.lastCall;
+  if (!call) throw new Error("export button not rendered");
+  return (call[0] as { params: Record<string, unknown> }).params;
+};
+
+describe("AITracesList export", () => {
+  const lastQueryArgs = () => {
+    const options = context.query.mock.lastCall?.[0] as {
+      queryKey: [string, Record<string, unknown>];
+    };
+    return options.queryKey[1];
+  };
+
+  it("exports with the list query's scope, window and filters", () => {
+    context.params = { workspace: "_all_", api_key_id: "key-analytics" };
+
+    renderList();
+
+    const params = exportParams();
+    const { limit, ...listFilters } = lastQueryArgs();
+    expect(limit).toBe(50);
+    expect(params).toEqual(listFilters);
+    expect(params.workspace).toBe("_all_");
+    expect(params.api_key_id).toBe("key-analytics");
+    expect(params.start).toBeTruthy();
+    expect(params.end).toBeTruthy();
+  });
+
+  it("follows a filter change", () => {
+    renderList();
+
+    selectKey("plain-key");
+
+    const params = exportParams();
+    expect(params.api_key_id).toBe("key-plain");
+  });
+
+  it("is not offered without trace permission", () => {
+    listState.error = new AITraceRequestError(403, "insufficient permissions");
+
+    renderList();
+
+    expect(screen.queryByText("export")).toBeNull();
   });
 });
