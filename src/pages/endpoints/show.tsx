@@ -4,7 +4,7 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
@@ -189,8 +189,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const url = record?.status?.service_url ?? "";
 
-  const [activeTab, setActiveTab] = useState("basic");
-
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
   }
@@ -240,11 +238,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </>
         )}
       >
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex h-full flex-col"
-        >
+        <Tabs defaultValue="basic" className="flex h-full flex-col">
           <ShowPage.ObjectHeader
             title={record.metadata.name}
             descriptionClassName="max-w-none"
@@ -318,42 +312,35 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               ) : undefined
             }
           />
-          <div className="relative">
-            <TabsList className={detailTabsListClassName}>
-              <TabsTrigger value="basic" className={detailTabTriggerClassName}>
-                {t("common.tabs.basic")}
+          <TabsList className={detailTabsListClassName}>
+            <TabsTrigger value="basic" className={detailTabTriggerClassName}>
+              {t("common.tabs.basic")}
+            </TabsTrigger>
+            {shouldShowRayDashboard && (
+              <TabsTrigger value="ray" className={detailTabTriggerClassName}>
+                {t("common.tabs.rayDashboard")}
               </TabsTrigger>
-              {shouldShowRayDashboard && (
-                <TabsTrigger value="ray" className={detailTabTriggerClassName}>
-                  {t("common.tabs.rayDashboard")}
-                </TabsTrigger>
-              )}
-              {showMonitorTab && (
-                <TabsTrigger
-                  value="monitor"
-                  className={detailTabTriggerClassName}
-                >
-                  {t("common.tabs.monitor")}
-                </TabsTrigger>
-              )}
-              <TabsTrigger value="logs" className={detailTabTriggerClassName}>
-                {t("common.tabs.logs")}
-              </TabsTrigger>
-              {playground.enabled && (
-                <TabsTrigger
-                  value="playground"
-                  className={detailTabTriggerClassName}
-                >
-                  {t("endpoints.tabs.playground")}
-                </TabsTrigger>
-              )}
-            </TabsList>
-            {activeTab === "monitor" && monitorDashboardProps && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                <GrafanaDashboardLink {...monitorDashboardProps} />
-              </div>
             )}
-          </div>
+            {showMonitorTab && (
+              <TabsTrigger
+                value="monitor"
+                className={detailTabTriggerClassName}
+              >
+                {t("common.tabs.monitor")}
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="logs" className={detailTabTriggerClassName}>
+              {t("common.tabs.logs")}
+            </TabsTrigger>
+            {playground.enabled && (
+              <TabsTrigger
+                value="playground"
+                className={detailTabTriggerClassName}
+              >
+                {t("endpoints.tabs.playground")}
+              </TabsTrigger>
+            )}
+          </TabsList>
           <TabsContent
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
@@ -410,8 +397,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           >
             {grafanaUrl ? (
               <div className="flex flex-col gap-4 h-full">
-                {showSelector && (
-                  <div className="flex justify-start pb-2">
+                <div className="flex items-center justify-between gap-4 pb-2">
+                  {showSelector && (
                     <SegmentedControl
                       ariaLabel={t("common.tabs.monitor")}
                       className="shrink-0"
@@ -441,8 +428,13 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                       onValueChange={setSelectedPanel}
                       value={selectedPanel || undefined}
                     />
-                  </div>
-                )}
+                  )}
+                  {monitorDashboardProps && (
+                    <div className="ml-auto shrink-0">
+                      <GrafanaDashboardLink {...monitorDashboardProps} />
+                    </div>
+                  )}
+                </div>
 
                 {monitorDashboardProps ? (
                   <GrafanaDashboard
