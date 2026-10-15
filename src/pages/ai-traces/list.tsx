@@ -37,6 +37,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import {
   type AITrace,
+  type AITraceFilterParams,
   fetchAITraceFilterOptions,
   fetchAITraces,
   isAITraceForbidden,
@@ -46,6 +47,7 @@ import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import { StatusCodeFilter } from "./components/StatusCodeFilter";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
+import { TraceExportButton } from "./components/TraceExportButton";
 import { TraceNameFilter } from "./components/TraceNameFilter";
 import { TraceStatsChart } from "./components/TraceStatsChart";
 import { StatusBadge } from "./status";
@@ -126,7 +128,9 @@ export const AITracesList = () => {
   const modelOptions = (filterOptions?.models ?? []).map((name) => ({ name }));
   const truncatedNotice = t("ai_traces.filters.optionsTruncated");
 
-  const queryArgs = {
+  // Scope, window and filters of the current view — the list pages through
+  // them and the export downloads them.
+  const filterArgs: AITraceFilterParams = {
     workspace,
     endpoint_name: endpointName || undefined,
     endpoint_type: endpointType || undefined,
@@ -136,8 +140,8 @@ export const AITracesList = () => {
     finish_reason: finishReason || undefined,
     start,
     end,
-    limit: LIMIT,
   };
+  const queryArgs = { ...filterArgs, limit: LIMIT };
 
   const queryClient = useQueryClient();
   const {
@@ -211,15 +215,18 @@ export const AITracesList = () => {
       canCreate={false}
       breadcrumb={false}
       extra={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isFetching}
-        >
-          <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
-          {t("ai_traces.refresh")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <TraceExportButton params={filterArgs} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isFetching}
+          >
+            <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
+            {t("ai_traces.refresh")}
+          </Button>
+        </div>
       }
     >
       {!scoped && <TraceStatsChart workspace={workspace} range={range} />}
