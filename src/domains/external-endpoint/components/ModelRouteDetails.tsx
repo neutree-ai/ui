@@ -38,13 +38,9 @@ export default function ModelRouteDetails({
     (sum, target) => sum + (target.weight || 1),
     0,
   );
-  const rowClassName = cn(
-    "grid items-center text-left [&>*]:min-w-0 [&>*]:px-3",
-    // Weighted targets have no concurrency limit — the editor replaces the
-    // limit field with the weight — so this table has no such column for them
-    // rather than printing "Unlimited" as if it were configured.
-    showWeight ? "grid-cols-[4fr_5fr_1.5fr]" : "grid-cols-[4fr_5fr_3fr]",
-  );
+  // Keep column positions consistent across routing strategies.
+  const rowClassName =
+    "grid grid-cols-[4fr_5fr_3fr] items-center text-left [&>*]:min-w-0 [&>*]:px-3";
   const primaryPriority = Math.min(
     ...route.targets.map((target) => target.priority ?? 0),
   );
@@ -190,6 +186,7 @@ export default function ModelRouteDetails({
               >
                 <td>
                   <div className="flex items-center justify-start gap-2">
+                    <span className="min-w-0 break-all">{target.upstream}</span>
                     {showRole && (
                       <span
                         className={cn(
@@ -208,7 +205,6 @@ export default function ModelRouteDetails({
                           : t("external_endpoints.options.fallbackRole")}
                       </span>
                     )}
-                    <span className="min-w-0 break-all">{target.upstream}</span>
                   </div>
                 </td>
                 <td>
