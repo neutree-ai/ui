@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AITraceRequestError,
+  exportAITraces,
   fetchAITraceFilterOptions,
   fetchAITraces,
+  filenameFromDisposition,
   isAITraceForbidden,
 } from "./ai-traces";
 
@@ -64,5 +66,78 @@ describe("fetchAITraceFilterOptions", () => {
     expect(url).toBe(
       "/api/v1/ai-traces/_all_/filter-options?start=2026-10-01T00%3A00%3A00.000Z&end=2026-10-07T23%3A59%3A59.999Z",
     );
+  });
+});
+
+describe("trace export", () => {
+  const params = {
+    workspace: "_all_",
+    api_key_id: "key-1",
+    model: undefined,
+    status: "",
+    start: "2026-10-01T00:00:00.000Z",
+    end: "2026-10-07T23:59:59.999Z",
+  };
+
+  it("sends the list's params plus the format and names the file from the server", async () => {
+    const fetchMock = vi.fn(
+      async (_url: string) =>
+        new Response("a,b\n", {
+          status: 200,
+          headers: {
+            "Content-Disposition": 'attachment; filename="traces.csv"',
+          },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { blob, filename } = await exportAITraces(params, "csv");
+
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]), "http://x");
+    expect(url.pathname).toBe("/api/v1/ai-traces/_all_/export");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      api_key_id: "key-1",
+      start: params.start,
+      end: params.end,
+      format: "csv",
+    });
+    expect(filename).toBe("traces.csv");
+    expect(blob.size).toBe(4);
+  });
+
+  it("falls back to a name of its own when the server gives none", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}\n", { status: 200 })),
+    );
+
+    const { filename } = await exportAITraces(params, "jsonl");
+
+    expect(filename).toMatch(/^access-log-_all_-\d{4}-\d{2}-\d{2}\.jsonl$/);
+  });
+
+  it("throws the server's reason on failure", async () => {
+    respond(403, { error: "insufficient permissions" });
+
+    const error = await exportAITraces(params, "csv").catch((e) => e);
+
+    expect(isAITraceForbidden(error)).toBe(true);
+    expect(error.message).toContain("insufficient permissions");
+  });
+
+  it("reads plain and RFC 5987 file names", () => {
+    expect(filenameFromDisposition('attachment; filename="a b.csv"')).toBe(
+      "a b.csv",
+    );
+    expect(filenameFromDisposition("attachment; filename=a.jsonl")).toBe(
+      "a.jsonl",
+    );
+    expect(
+      filenameFromDisposition(
+        "attachment; filename=\"x.csv\"; filename*=UTF-8''%E6%97%A5%E5%BF%97.csv",
+      ),
+    ).toBe("日志.csv");
+    expect(filenameFromDisposition(null)).toBeNull();
+    expect(filenameFromDisposition("attachment")).toBeNull();
   });
 });
