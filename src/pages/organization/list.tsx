@@ -6,8 +6,8 @@ import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**
- * Departments and teams synced from identity sources. Read-only: sync owns
- * them, so there is nothing to create or edit here.
+ * Departments and teams synced from identity sources, which sync owns, and
+ * teams created in Neutree, managed in the Teams tab.
  */
 export const OrganizationList = () => {
   const { t } = useTranslation();

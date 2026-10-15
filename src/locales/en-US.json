@@ -2837,7 +2837,7 @@
 	},
 	"organization": {
 		"title": "Organization",
-		"readOnlyHint": "Synced from identity sources. Change departments and teams in the directory.",
+		"readOnlyHint": "Departments and synced teams come from identity sources; change them in the directory. Teams created in Neutree are managed here.",
 		"phases": {
 			"Inactive": "Inactive"
 		},
@@ -2855,8 +2855,42 @@
 		},
 		"teams": {
 			"title": "Teams",
-			"empty": "No teams have been synced yet.",
-			"noMatch": "No teams match the filter."
+			"empty": "No teams yet.",
+			"noMatch": "No teams match the filter.",
+			"create": "Create Team",
+			"createTitle": "Create Team",
+			"createHint": "A team created in Neutree. Add any user, local or from an identity source.",
+			"editTitle": "Edit Team",
+			"editHint": "Change the display name of the team.",
+			"namePlaceholder": "e.g. ml-platform",
+			"nameHint": "Lowercase letters, digits, '-' and '.'. It cannot be changed later.",
+			"nameFixed": "The name cannot be changed.",
+			"displayNamePlaceholder": "e.g. ML Platform",
+			"manualSource": "Created in Neutree · {{name}}",
+			"syncedSource": "Synced from {{source}} · read-only",
+			"addMembers": "Add Members",
+			"addMembersTitle": "Add Members",
+			"addMembersHint": "Select the users to add to {{team}}.",
+			"searchUsers": "Search by name or email",
+			"noUsers": "No users match.",
+			"alreadyMember": "Member",
+			"addSelected": "Add ({{count}})",
+			"removeMember": "Remove from team",
+			"removeMemberTitle": "Remove the member?",
+			"removeMemberHint": "{{user}} will no longer be a member of {{team}}.",
+			"deleteTitle": "Delete team {{team}}?",
+			"deleteHint": "The team is deleted together with its member list ({{count}} members). This cannot be undone.",
+			"validation": {
+				"nameRequired": "Enter a name.",
+				"nameFormat": "Use lowercase letters, digits, '-' and '.', starting and ending with a letter or digit.",
+				"nameTooLong": "The name can have at most 63 characters."
+			},
+			"errors": {
+				"nameTaken": "A team with this name already exists. Choose another name.",
+				"teamGone": "The team no longer exists, or you are not allowed to change it. Refresh the page.",
+				"memberGone": "The user is no longer a member of the team, or you are not allowed to change it. Refresh the page.",
+				"denied": "You are not allowed to change teams."
+			}
 		},
 		"members": {
 			"title": "Members",
@@ -2871,10 +2905,13 @@
 			"department": "Department",
 			"source": "Source",
 			"assignedAt": "Assigned",
-			"joinedAt": "Joined"
+			"joinedAt": "Joined",
+			"displayName": "Display Name"
 		},
 		"values": {
-			"manual": "Assigned by hand"
+			"manual": "Assigned by hand",
+			"manualTeam": "Manual",
+			"local": "Local"
 		},
 		"errors": {
 			"noWorkspace": "A department or team is global and cannot belong to a workspace.",
@@ -2886,7 +2923,11 @@
 			"cycle": "A department cannot be placed under itself or one of its sub-departments.",
 			"inactiveOrgUnit": "Users cannot be added to an inactive department.",
 			"externalUserOrgUnit": "The department of a user from an identity source comes from that source. Only local accounts can be assigned by hand.",
-			"globalAssignerOnly": "Only a global administrator can move a department assignment to another user."
+			"globalAssignerOnly": "Only a global administrator can move a department assignment to another user.",
+			"reservedTeamName": "Names ending in '-' and 12 hexadecimal digits are reserved for synced teams. Choose another name.",
+			"syncedTeamReadOnly": "A team synced from an identity source is read-only. Change it in the directory.",
+			"syncedTeamMembersReadOnly": "The members of a team synced from an identity source are read-only. Change the group in the directory, or use a team created in Neutree.",
+			"manualTeamAlwaysActive": "A team created in Neutree is always Active. Delete the team instead."
 		},
 		"picker": {
 			"title": "Select Department",

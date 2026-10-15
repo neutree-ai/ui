@@ -19,16 +19,20 @@ export type OrgUnit = {
   path: string;
 };
 
-/** A flat group, synced from an identity source. */
+/**
+ * A flat group. Synced from an identity source when spec.identity_source is
+ * set; created in Neutree (manual) when spec.identity_source and
+ * spec.external_id are both empty.
+ */
 export type Team = {
   id: number;
   api_version: "v1";
   kind: "Team";
   metadata: Metadata;
-  spec: {
-    identity_source: string;
-    external_id: string;
-  };
+  spec?: {
+    identity_source?: string | null;
+    external_id?: string | null;
+  } | null;
   status?: OrgObjectStatus | null;
 };
 

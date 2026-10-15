@@ -262,11 +262,13 @@ describe("UserDepartmentSection", () => {
 });
 
 describe("UserTeamsSection", () => {
-  const team = (id: number, name: string, inactive = false) =>
+  const team = (id: number, name: string, inactive = false, manual = false) =>
     ({
       id,
       metadata: { name: `team-${id}`, display_name: name },
-      spec: { identity_source: "corp", external_id: `t${id}` },
+      spec: manual
+        ? { identity_source: null, external_id: null }
+        : { identity_source: "corp", external_id: `t${id}` },
       status: { phase: inactive ? "Inactive" : "Active" },
     }) as Team;
 
@@ -280,6 +282,12 @@ describe("UserTeamsSection", () => {
           teams: team(2, "SRE", true),
         },
         { team_id: 1, user_id: "u-1", created_at: "", teams: team(1, "Infra") },
+        {
+          team_id: 3,
+          user_id: "u-1",
+          created_at: "",
+          teams: team(3, "Guild", false, true),
+        },
       ],
       isLoading: false,
       error: null,
@@ -296,13 +304,14 @@ describe("UserTeamsSection", () => {
     expect(vi.mocked(useUserTeams)).toHaveBeenLastCalledWith("u-1", false);
   });
 
-  it("lists the user's teams by name", () => {
+  it("lists the user's teams by name with their source", () => {
     grantGlobal("team:read");
     render(<UserTeamsSection userId="u-1" />);
     const items = screen.getByTestId("user-teams").querySelectorAll("li");
     expect([...items].map((li) => li.textContent)).toEqual([
-      "Infra",
-      "SREorganization.phases.Inactive",
+      "Guildorganization.values.manualTeam",
+      "Infracorp",
+      "SREcorporganization.phases.Inactive",
     ]);
   });
 });

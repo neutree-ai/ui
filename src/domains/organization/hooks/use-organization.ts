@@ -5,6 +5,7 @@ import {
   useList,
 } from "@refinedev/core";
 import type {
+  MemberProfile,
   OrgUnit,
   OrgUnitMember,
   Team,
@@ -154,3 +155,111 @@ export const useAssignOrgUnit = (userId: string) => {
     isPending: isLoading,
   };
 };
+
+/**
+ * A PATCH or DELETE that changed no row: the Team or membership is gone, or
+ * RLS hides it from the caller.
+ */
+export class TeamWriteNoRowError extends Error {
+  constructor(readonly target: "team" | "member") {
+    super(`The ${target} no longer exists or cannot be changed`);
+    this.name = "TeamWriteNoRowError";
+  }
+}
+
+const RETURN_ROWS = { headers: { Prefer: "return=representation" } };
+
+const useTeamWrite = () => {
+  const { mutateAsync, isLoading } = useCustomMutation();
+  const invalidate = useInvalidate();
+
+  const run = async (
+    url: string,
+    method: "post" | "patch" | "delete",
+    values: unknown,
+    target: "team" | "member",
+  ) => {
+    const { data } = await mutateAsync({
+      url,
+      method,
+      values: values as Record<string, unknown>,
+      meta: RETURN_ROWS,
+      successNotification: false,
+      errorNotification: false,
+    });
+    if (method !== "post" && Array.isArray(data) && data.length === 0) {
+      throw new TeamWriteNoRowError(target);
+    }
+    await Promise.all(
+      ["teams", "team_members"].map((resource) =>
+        invalidate({ resource, invalidates: ["list"] }),
+      ),
+    );
+    return data as unknown[] | null;
+  };
+  return { run, isPending: isLoading };
+};
+
+/** Create, rename and delete manual Teams. Synced Teams are read-only. */
+export const useTeamWrites = () => {
+  const { run, isPending } = useTeamWrite();
+  const byId = (id: number) => `/teams?id=eq.${id}`;
+
+  return {
+    create: async (name: string, displayName: string) => {
+      const rows = await run(
+        "/teams",
+        "post",
+        {
+          api_version: "v1",
+          kind: "Team",
+          metadata: { name, display_name: displayName },
+          spec: { identity_source: null, external_id: null },
+        },
+        "team",
+      );
+      return (rows?.[0] as Team | undefined) ?? undefined;
+    },
+    // The whole metadata goes back: PATCH of a composite column nulls the
+    // fields it leaves out.
+    rename: (team: Team, displayName: string) =>
+      run(
+        byId(team.id),
+        "patch",
+        { metadata: { ...team.metadata, display_name: displayName } },
+        "team",
+      ),
+    remove: (team: Team) => run(byId(team.id), "delete", undefined, "team"),
+    isPending,
+  };
+};
+
+/** Add or remove members of a manual Team. */
+export const useTeamMemberWrites = (teamId: number | undefined) => {
+  const { run, isPending } = useTeamWrite();
+
+  return {
+    add: (userIds: string[]) =>
+      run(
+        "/team_members",
+        "post",
+        userIds.map((userId) => ({ team_id: teamId, user_id: userId })),
+        "member",
+      ),
+    remove: (userId: string) =>
+      run(
+        `/team_members?team_id=eq.${teamId}&user_id=eq.${encodeURIComponent(userId)}`,
+        "delete",
+        undefined,
+        "member",
+      ),
+    isPending,
+  };
+};
+
+export const useAllUsers = (enabled: boolean) =>
+  useList<MemberProfile>({
+    resource: "user_profiles",
+    pagination: ALL,
+    queryOptions: { enabled },
+  });

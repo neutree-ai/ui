@@ -17,6 +17,7 @@ import {
   orgUnitPathLabel,
 } from "@/domains/organization/lib/org-tree";
 import { organizationErrorMessage } from "@/domains/organization/lib/organization-errors";
+import { teamSource } from "@/domains/organization/lib/team";
 import { orgUnitAssignmentMode } from "@/domains/organization/lib/user-org-unit";
 import type { MemberProfile } from "@/domains/organization/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
@@ -281,9 +282,14 @@ export function UserTeamsSection({ userId }: { userId: string }) {
                   "gap-1.5 font-normal",
                   isInactive(team) && "text-muted-foreground",
                 )}
-                title={team.spec.identity_source}
               >
                 {displayName(team.metadata)}
+                <span
+                  className="text-xs text-muted-foreground"
+                  data-testid={`user-team-source-${team.id}`}
+                >
+                  {teamSource(team) || t("organization.values.manualTeam")}
+                </span>
                 {isInactive(team) && <InactiveBadge />}
               </Badge>
             </li>

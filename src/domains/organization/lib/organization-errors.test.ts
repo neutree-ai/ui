@@ -22,6 +22,14 @@ describe("organizationErrorMessage", () => {
     );
   });
 
+  it("maps the manual Team codes 10288-10291", () => {
+    for (let code = 10288; code <= 10291; code++) {
+      expect(ORGANIZATION_ERROR_KEYS[String(code)]).toMatch(
+        /^organization\.errors\./,
+      );
+    }
+  });
+
   it("translates a database error and passes the hint on", () => {
     expect(
       organizationErrorMessage(t, {

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -30,6 +31,8 @@ type MemberTableProps = {
   showDepartment?: boolean;
   showSource?: boolean;
   sinceLabel: string;
+  /** A trailing cell per row, e.g. a remove button. */
+  renderActions?: (row: MemberRow) => ReactNode;
 };
 
 const sortRows = (rows: MemberRow[]) =>
@@ -46,6 +49,7 @@ export function MemberTable({
   showDepartment,
   showSource,
   sinceLabel,
+  renderActions,
 }: MemberTableProps) {
   const { t } = useTranslation();
 
@@ -84,6 +88,7 @@ export function MemberTable({
             <TableHead>{t("organization.fields.source")}</TableHead>
           )}
           <TableHead>{sinceLabel}</TableHead>
+          {renderActions && <TableHead className="w-0" />}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -109,6 +114,9 @@ export function MemberTable({
             <TableCell>
               <Timestamp timestamp={row.since} relative />
             </TableCell>
+            {renderActions && (
+              <TableCell className="text-right">{renderActions(row)}</TableCell>
+            )}
           </TableRow>
         ))}
       </TableBody>
