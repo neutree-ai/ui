@@ -442,7 +442,6 @@
   "src/foundation/components/EmptyValue.tsx": "3f27a00c39815a06bffb462c62204db3",
   "src/pages/ai-traces/components/TraceNameFilter.tsx": "ac4d9a7b7886d7fc6be94027b598e27b",
   "src/domains/cluster/components/ZCacheFields.tsx": "48f830ce8d46b6192a97511af444561a",
-  "src/domains/cluster/components/ZCacheSection.tsx": "0fa30382c2ecb43ea77dfade9f4bb2c4",
   "src/domains/cluster/components/ZCacheControlPlane.tsx": "3ffc2e2fec3fbf17c4972550e495f6e7",
   "src/domains/cluster/lib/zcache-presentation.ts": "a939fc2e56c2a3c8a96eea188b67c144",
   "src/domains/cluster/components/ZCacheActivity.tsx": "e6add2efab39c8aeefd0e8a7974a59b5",
