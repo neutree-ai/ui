@@ -1,4 +1,5 @@
 import { useShow, useTranslation } from "@refinedev/core";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
@@ -15,9 +16,8 @@ import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accele
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import { zcacheStatus } from "@/domains/cluster/types";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import type { Cluster } from "@/domains/cluster/types";
+import { zcacheStatus } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import type { Endpoint } from "@/domains/endpoint/types";
@@ -28,9 +28,11 @@ import {
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
@@ -67,6 +69,8 @@ export const ClustersShow = () => {
       record?.status?.cache?.provider === "zcache",
   );
 
+  const [activeTab, setActiveTab] = useState("basic");
+
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
   }
@@ -74,6 +78,24 @@ export const ClustersShow = () => {
   if (!record) {
     return <div>{t("clusters.messages.notFound")}</div>;
   }
+
+  const monitorDashboardProps =
+    grafanaUrl && selectedPanel
+      ? selectedPanel === "cache"
+        ? getZCacheDashboardProps(grafanaUrl, {
+            workspace: record.metadata.workspace ?? "default",
+            clusterName: record.metadata.name,
+            nodes:
+              cacheStatus?.observed_at && !cacheStatus.observation_error
+                ? cacheStatus.nodes
+                : undefined,
+          })
+        : getClusterSplitDashboardProps(
+            grafanaUrl,
+            "overview",
+            record.metadata.name,
+          )
+      : null;
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
   const acceleratorVirtualizationEnabled =
@@ -87,7 +109,11 @@ export const ClustersShow = () => {
           <ClusterUpgradeAction cluster={record as Cluster} />
         )}
       >
-        <Tabs defaultValue="basic" className="flex h-full flex-col">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex h-full flex-col"
+        >
           <ShowPage.ObjectHeader
             title={record.metadata.name}
             descriptionClassName="max-w-none"
@@ -144,24 +170,31 @@ export const ClustersShow = () => {
               ) : undefined
             }
           />
-          <TabsList className={detailTabsListClassName}>
-            <TabsTrigger value="basic" className={detailTabTriggerClassName}>
-              {t("common.tabs.basic")}
-            </TabsTrigger>
-            {showMonitorTab && (
-              <TabsTrigger
-                value="monitor"
-                className={detailTabTriggerClassName}
-              >
-                {t("common.tabs.monitor")}
+          <div className="relative">
+            <TabsList className={detailTabsListClassName}>
+              <TabsTrigger value="basic" className={detailTabTriggerClassName}>
+                {t("common.tabs.basic")}
               </TabsTrigger>
+              {showMonitorTab && (
+                <TabsTrigger
+                  value="monitor"
+                  className={detailTabTriggerClassName}
+                >
+                  {t("common.tabs.monitor")}
+                </TabsTrigger>
+              )}
+              {record.spec.type === "ssh" && (
+                <TabsTrigger value="ray" className={detailTabTriggerClassName}>
+                  {t("common.tabs.rayDashboard")}
+                </TabsTrigger>
+              )}
+            </TabsList>
+            {activeTab === "monitor" && monitorDashboardProps && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                <GrafanaDashboardLink {...monitorDashboardProps} />
+              </div>
             )}
-            {record.spec.type === "ssh" && (
-              <TabsTrigger value="ray" className={detailTabTriggerClassName}>
-                {t("common.tabs.rayDashboard")}
-              </TabsTrigger>
-            )}
-          </TabsList>
+          </div>
           <TabsContent
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
@@ -440,23 +473,9 @@ export const ClustersShow = () => {
                       />
                     </div>
                   )}
-                  {selectedPanel && (
+                  {monitorDashboardProps && (
                     <GrafanaDashboard
-                      {...(selectedPanel === "cache"
-                        ? getZCacheDashboardProps(grafanaUrl, {
-                            workspace: record.metadata.workspace ?? "default",
-                            clusterName: record.metadata.name,
-                            nodes:
-                              cacheStatus?.observed_at &&
-                              !cacheStatus.observation_error
-                                ? cacheStatus.nodes
-                                : undefined,
-                          })
-                        : getClusterSplitDashboardProps(
-                            grafanaUrl,
-                            "overview",
-                            record.metadata.name,
-                          ))}
+                      {...monitorDashboardProps}
                       className="flex-1"
                       hideVariables={selectedPanel !== "cache"}
                     />

@@ -4,7 +4,7 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useRef } from "react";
+import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
@@ -34,6 +34,7 @@ import {
 } from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
@@ -188,6 +189,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const url = record?.status?.service_url ?? "";
 
+  const [activeTab, setActiveTab] = useState("basic");
+
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
   }
@@ -195,6 +198,21 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   if (!record) {
     return <div>{t("pages.error.notFound")}</div>;
   }
+
+  const monitorDashboardProps =
+    grafanaUrl && selectedPanel
+      ? getEndpointSplitDashboardProps(grafanaUrl, selectedPanel, {
+          clusterName: record.spec.cluster,
+          endpointName: record.metadata.name,
+          workspace: record.metadata.workspace ?? "default",
+          cacheNodes:
+            record.spec.kv_cache?.provider === "zcache" &&
+            cacheStatus?.current?.enabled &&
+            !cacheStatus.observation_error
+              ? cacheStatus.nodes?.filter((node) => node.runtime === "Ready")
+              : undefined,
+        })
+      : null;
 
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
@@ -222,7 +240,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </>
         )}
       >
-        <Tabs defaultValue="basic" className="flex h-full flex-col">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex h-full flex-col"
+        >
           <ShowPage.ObjectHeader
             title={record.metadata.name}
             descriptionClassName="max-w-none"
@@ -296,35 +318,42 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               ) : undefined
             }
           />
-          <TabsList className={detailTabsListClassName}>
-            <TabsTrigger value="basic" className={detailTabTriggerClassName}>
-              {t("common.tabs.basic")}
-            </TabsTrigger>
-            {shouldShowRayDashboard && (
-              <TabsTrigger value="ray" className={detailTabTriggerClassName}>
-                {t("common.tabs.rayDashboard")}
+          <div className="relative">
+            <TabsList className={detailTabsListClassName}>
+              <TabsTrigger value="basic" className={detailTabTriggerClassName}>
+                {t("common.tabs.basic")}
               </TabsTrigger>
-            )}
-            {showMonitorTab && (
-              <TabsTrigger
-                value="monitor"
-                className={detailTabTriggerClassName}
-              >
-                {t("common.tabs.monitor")}
+              {shouldShowRayDashboard && (
+                <TabsTrigger value="ray" className={detailTabTriggerClassName}>
+                  {t("common.tabs.rayDashboard")}
+                </TabsTrigger>
+              )}
+              {showMonitorTab && (
+                <TabsTrigger
+                  value="monitor"
+                  className={detailTabTriggerClassName}
+                >
+                  {t("common.tabs.monitor")}
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="logs" className={detailTabTriggerClassName}>
+                {t("common.tabs.logs")}
               </TabsTrigger>
+              {playground.enabled && (
+                <TabsTrigger
+                  value="playground"
+                  className={detailTabTriggerClassName}
+                >
+                  {t("endpoints.tabs.playground")}
+                </TabsTrigger>
+              )}
+            </TabsList>
+            {activeTab === "monitor" && monitorDashboardProps && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                <GrafanaDashboardLink {...monitorDashboardProps} />
+              </div>
             )}
-            <TabsTrigger value="logs" className={detailTabTriggerClassName}>
-              {t("common.tabs.logs")}
-            </TabsTrigger>
-            {playground.enabled && (
-              <TabsTrigger
-                value="playground"
-                className={detailTabTriggerClassName}
-              >
-                {t("endpoints.tabs.playground")}
-              </TabsTrigger>
-            )}
-          </TabsList>
+          </div>
           <TabsContent
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
@@ -415,25 +444,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   </div>
                 )}
 
-                {selectedPanel ? (
+                {monitorDashboardProps ? (
                   <GrafanaDashboard
-                    {...getEndpointSplitDashboardProps(
-                      grafanaUrl,
-                      selectedPanel,
-                      {
-                        clusterName: record.spec.cluster,
-                        endpointName: record.metadata.name,
-                        workspace: record.metadata.workspace ?? "default",
-                        cacheNodes:
-                          record.spec.kv_cache?.provider === "zcache" &&
-                          cacheStatus?.current?.enabled &&
-                          !cacheStatus.observation_error
-                            ? cacheStatus.nodes?.filter(
-                                (node) => node.runtime === "Ready",
-                              )
-                            : undefined,
-                      },
-                    )}
+                    {...monitorDashboardProps}
                     className="flex-1"
                     hideVariables={selectedPanel !== "cache"}
                   />
