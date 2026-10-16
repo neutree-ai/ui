@@ -33,25 +33,38 @@ class FakeResizeObserver {
 type Scroller = {
   element: HTMLDivElement;
   setScrollHeight: (value: number) => void;
+  resizeBox: (width: number, height: number) => void;
   scrollTop: () => number;
   userScrollsTo: (value: number) => void;
+  browserScrollsTo: (value: number) => void;
   scrollToCalls: Array<{ top: number; behavior?: ScrollBehavior }>;
 };
 
+/** The container's own box, which only a resize can change. */
+type Box = { width: number; height: number };
+
+function installBox(element: HTMLDivElement, box: Box) {
+  Object.defineProperty(element, "clientWidth", {
+    configurable: true,
+    get: () => box.width,
+  });
+  Object.defineProperty(element, "clientHeight", {
+    configurable: true,
+    get: () => box.height,
+  });
+}
+
 function makeScrollable(
   element: HTMLDivElement,
-  clientHeight: number,
+  box: Box,
   scrollHeight: number,
 ): Scroller {
   let top = 0;
   let height = scrollHeight;
-  const maxTop = () => Math.max(0, height - clientHeight);
+  const maxTop = () => Math.max(0, height - box.height);
   const scrollToCalls: Array<{ top: number; behavior?: ScrollBehavior }> = [];
 
-  Object.defineProperty(element, "clientHeight", {
-    configurable: true,
-    get: () => clientHeight,
-  });
+  installBox(element, box);
   Object.defineProperty(element, "scrollHeight", {
     configurable: true,
     get: () => height,
@@ -60,7 +73,12 @@ function makeScrollable(
     configurable: true,
     get: () => top,
     set: (value: number) => {
-      top = Math.min(Math.max(0, value), maxTop());
+      const next = Math.min(Math.max(0, value), maxTop());
+      if (next === top) return;
+      top = next;
+      // A real scroll container reports a programmatic scroll position too —
+      // with the same event a wheel produces.
+      element.dispatchEvent(new Event("scroll"));
     },
   });
   element.scrollTo = ((options: ScrollToOptions) => {
@@ -70,30 +88,48 @@ function makeScrollable(
     // scrollTop directly and never call this.
   }) as typeof element.scrollTo;
 
+  const moveTo = (value: number) => {
+    top = Math.min(Math.max(0, value), maxTop());
+    element.dispatchEvent(new Event("scroll"));
+  };
+
   return {
     element,
     setScrollHeight: (value: number) => {
       height = value;
     },
-    scrollTop: () => top,
-    userScrollsTo: (value: number) => {
-      top = Math.min(Math.max(0, value), maxTop());
-      element.dispatchEvent(new Event("scroll"));
+    resizeBox: (width: number, nextHeight: number) => {
+      box.width = width;
+      box.height = nextHeight;
     },
+    scrollTop: () => top,
+    userScrollsTo: moveTo,
+    // A reflow moves the view too — scroll anchoring parks it where the reader
+    // was reading — and the browser reports that as the same kind of event. The
+    // hook cannot tell the two apart from the event, which is the point.
+    browserScrollsTo: moveTo,
     scrollToCalls,
   };
 }
 
 function Harness({
   onReady,
+  box,
 }: {
   onReady: (api: ReturnType<typeof useStickToBottom>) => void;
+  box: Box;
 }) {
   const stick = useStickToBottom();
   onReady(stick);
   return (
     <div
-      ref={stick.scrollRef}
+      ref={(node) => {
+        // A real container is already laid out when the hook's effects run, so
+        // the fake box has to be in place at the same moment — a ref, not the
+        // test body, which runs after them.
+        if (node) installBox(node, box);
+        stick.scrollRef.current = node;
+      }}
       data-testid="scroller"
       data-at-bottom={String(stick.isAtBottom)}
     >
@@ -102,18 +138,24 @@ function Harness({
   );
 }
 
-function renderHarness() {
+function renderHarness(
+  box: Box = { width: 800, height: 400 },
+  scrollHeight = 1000,
+) {
   let api: ReturnType<typeof useStickToBottom> | null = null;
-  render(<Harness onReady={(value) => (api = value)} />);
+  render(<Harness box={box} onReady={(value) => (api = value)} />);
   const scrollerElement = document.querySelector<HTMLDivElement>(
     "[data-testid=scroller]",
   );
   if (!scrollerElement || !api) throw new Error("harness did not render");
+  const scroller = makeScrollable(scrollerElement, box, scrollHeight);
   // Read the state off the DOM: `api` is the first render's snapshot, and the
   // hook returns a fresh object each render.
   const scrollerApi = api as ReturnType<typeof useStickToBottom>;
   return {
     api: scrollerApi,
+    scroller,
+    box,
     isAtBottom: () => scrollerElement.dataset.atBottom === "true",
     scrollerElement,
   };
@@ -139,8 +181,7 @@ afterEach(() => {
 
 describe("useStickToBottom", () => {
   it("opens at the latest content", () => {
-    const { scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { scroller } = renderHarness();
 
     contentGrows();
 
@@ -148,8 +189,7 @@ describe("useStickToBottom", () => {
   });
 
   it("follows content that grows while the reader is at the bottom", () => {
-    const { scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { scroller } = renderHarness();
     contentGrows();
 
     scroller.setScrollHeight(1600);
@@ -159,8 +199,7 @@ describe("useStickToBottom", () => {
   });
 
   it("stops following once the reader scrolls up, and does not drag them back", () => {
-    const { isAtBottom, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { isAtBottom, scroller } = renderHarness();
     contentGrows();
 
     act(() => scroller.userScrollsTo(200));
@@ -173,8 +212,7 @@ describe("useStickToBottom", () => {
   });
 
   it("resumes following when the reader returns to the bottom", () => {
-    const { isAtBottom, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { isAtBottom, scroller } = renderHarness();
     contentGrows();
     act(() => scroller.userScrollsTo(200));
 
@@ -187,8 +225,7 @@ describe("useStickToBottom", () => {
   });
 
   it("follows the bottom again when the reader sends a message", () => {
-    const { api, isAtBottom, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { api, isAtBottom, scroller } = renderHarness();
     contentGrows();
     act(() => scroller.userScrollsTo(200));
 
@@ -203,7 +240,6 @@ describe("useStickToBottom", () => {
 
   it("does not mistake its own scroll for the reader scrolling away", () => {
     const { isAtBottom, scrollerElement } = renderHarness();
-    makeScrollable(scrollerElement, 400, 1000);
     contentGrows();
 
     // The browser delivers the scroll our pin caused, after the fact.
@@ -214,9 +250,69 @@ describe("useStickToBottom", () => {
     expect(isAtBottom()).toBe(true);
   });
 
+  it("keeps following when a resize parks the view mid-conversation", () => {
+    const { isAtBottom, scroller } = renderHarness();
+    contentGrows();
+    expect(scroller.scrollTop()).toBe(600);
+
+    // The window narrows. The transcript re-wraps into one four times as tall,
+    // and scroll anchoring answers by holding the paragraph that was on screen
+    // rather than leaving the view at the end — the scroll that reports that
+    // arrives before the observer callback carrying the new size, so judging
+    // it as the reader's own leaves the newest turn off screen for good.
+    scroller.resizeBox(600, 300);
+    scroller.setScrollHeight(2400);
+    act(() => scroller.browserScrollsTo(1500));
+
+    expect(scroller.scrollTop()).toBe(2100);
+    expect(isAtBottom()).toBe(true);
+
+    // And the following survives the resize: the next growth is followed too.
+    scroller.setScrollHeight(3000);
+    contentGrows();
+    expect(scroller.scrollTop()).toBe(2700);
+  });
+
+  it("keeps following when a resize widens the container", () => {
+    const { isAtBottom, scroller } = renderHarness(
+      { width: 600, height: 300 },
+      2400,
+    );
+    contentGrows();
+    expect(scroller.scrollTop()).toBe(2100);
+
+    // The other direction collapses the transcript instead of growing it, so
+    // the position the layout leaves behind is *above* the end. Narrowing and
+    // widening are the same event to the hook, and neither may stop the
+    // following.
+    scroller.resizeBox(900, 400);
+    scroller.setScrollHeight(1400);
+    act(() => scroller.browserScrollsTo(300));
+
+    expect(scroller.scrollTop()).toBe(1000);
+    expect(isAtBottom()).toBe(true);
+  });
+
+  it("stops following when the reader scrolls away after a resize", () => {
+    const { isAtBottom, scroller } = renderHarness();
+    contentGrows();
+
+    scroller.resizeBox(600, 300);
+    scroller.setScrollHeight(2400);
+    act(() => scroller.browserScrollsTo(1500));
+
+    // Put back at the end by the resize, the reader now takes over: the
+    // container is not being resized any more, so this is their intent.
+    act(() => scroller.userScrollsTo(900));
+
+    expect(isAtBottom()).toBe(false);
+    scroller.setScrollHeight(3000);
+    contentGrows();
+    expect(scroller.scrollTop()).toBe(900);
+  });
+
   it("ignores the intermediate positions of a smooth scroll", () => {
-    const { api, isAtBottom, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { api, isAtBottom, scroller } = renderHarness();
     contentGrows();
     act(() => scroller.userScrollsTo(100));
 
@@ -232,8 +328,7 @@ describe("useStickToBottom", () => {
   });
 
   it("gives the reader control if they scroll up during a smooth scroll", () => {
-    const { api, isAtBottom, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { api, isAtBottom, scroller } = renderHarness();
     contentGrows();
     act(() => scroller.userScrollsTo(100));
 
@@ -270,8 +365,7 @@ describe("useStickToBottom", () => {
 
   it("still answers scrollToBottom where ResizeObserver does not exist", () => {
     vi.unstubAllGlobals();
-    const { api, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { api, scroller } = renderHarness();
 
     act(() => api.scrollToBottom());
 
@@ -283,8 +377,7 @@ describe("useStickToBottom", () => {
       matches: query.includes("prefers-reduced-motion"),
       media: query,
     }));
-    const { api, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { api, scroller } = renderHarness();
     contentGrows();
     act(() => scroller.userScrollsTo(100));
 
@@ -299,8 +392,7 @@ describe("useStickToBottom", () => {
       matches: false,
       media: query,
     }));
-    const { api, scrollerElement } = renderHarness();
-    const scroller = makeScrollable(scrollerElement, 400, 1000);
+    const { api, scroller } = renderHarness();
     contentGrows();
     act(() => scroller.userScrollsTo(100));
 
