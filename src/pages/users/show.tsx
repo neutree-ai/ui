@@ -1,4 +1,8 @@
-import { useShow } from "@refinedev/core";
+import { useParsed, useShow } from "@refinedev/core";
+import {
+  USER_MODEL_ACCESS_WORKSPACE_PARAM,
+  UserGroupModelAccess,
+} from "@/domains/group-policy/components/UserGroupModelAccess";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamLabel } from "@/domains/organization/components/TeamField";
 import {
@@ -28,6 +32,7 @@ export const UsersShow = () => {
     query: { data, isLoading },
   } = useShow<UserProfile>();
   const record = data?.data;
+  const { params } = useParsed<Record<string, string | undefined>>();
 
   const metadataColumns = useMetadataColumns();
   const { isEnterprise } = useLicense();
@@ -67,6 +72,12 @@ export const UsersShow = () => {
         <UserTeamsSection userId={record.id} />
         <UserEffectiveRoleAssignments
           userId={record.id}
+          renderTeam={(name) => <TeamLabel name={name} />}
+          renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+        />
+        <UserGroupModelAccess
+          userId={record.id}
+          initialWorkspace={params?.[USER_MODEL_ACCESS_WORKSPACE_PARAM]}
           renderTeam={(name) => <TeamLabel name={name} />}
           renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
         />

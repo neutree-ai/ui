@@ -79,4 +79,8 @@ export const ALL_PERMISSIONS = [
   "org_unit:read",
   "org_unit:assign-member",
   "team:read",
+  "group_policy:read",
+  "group_policy:create",
+  "group_policy:update",
+  "group_policy:delete",
 ];

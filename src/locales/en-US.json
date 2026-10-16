@@ -2114,7 +2114,8 @@
 			"invalidSubjectKind": "The subject type must be user, team or department.",
 			"subjectMismatch": "The subject does not match its type. A user policy names a user; a team or department policy names a team or department and no user.",
 			"subjectNotFound": "The selected team or department does not exist.",
-			"delegatedNoTeam": "You can grant policies only to users and departments. A team policy needs a global policy administrator."
+			"delegatedNoTeam": "You can grant policies only to users and departments. A team policy needs a global policy administrator.",
+			"noScope": "A policy needs a scope. Make it global, or choose a workspace or a department."
 		},
 		"subjectKinds": {
 			"User": "User",
@@ -2971,6 +2972,59 @@
 	},
 	"teams": {
 		"title": "Teams"
+	},
+	"group_policies": {
+		"title": "Model Access",
+		"groupHint": {
+			"Team": "Limits the models every member of this team can call. Teams of a user combine: a model allowed by any team is allowed.",
+			"OrgUnit": "Limits the models every member of this department and its sub-departments can call. A sub-department cannot allow more than its parents."
+		},
+		"userHint": "The models this user can call in a workspace, as the policies of their teams and departments allow.",
+		"mergeRules": "Departments on the user's path intersect. Teams unite, then intersect with the departments. A denied model is always denied. An API key's own allowed models narrow this further. Policies of inactive groups still apply. Changes take effect within about 10 seconds.",
+		"unrestricted": "No limit",
+		"noRule": "None",
+		"allWorkspaces": "All workspaces",
+		"addModel": "Add a model",
+		"searchModel": "Search or type a model name",
+		"noModels": "No models found.",
+		"addTyped": "Add \"{{model}}\"",
+		"editTitle": "Model access of {{group}}",
+		"editHint": "Each entry applies in one workspace, or in all workspaces. An empty list sets no rule.",
+		"deleteTitle": "Delete model access policy?",
+		"deleteHint": "Members of {{group}} are no longer limited by this group. Other groups still apply.",
+		"viewDetails": "View details",
+		"apiKeyHint": "The models this key can call are also limited by the policies of its owner's groups.",
+		"fields": {
+			"allowed": "Allowed models",
+			"denied": "Denied models"
+		},
+		"hints": {
+			"allowed": "Members can call only these models. Leave empty to allow any model.",
+			"denied": "Members can never call these models, whatever other groups allow."
+		},
+		"kinds": {
+			"Team": "Team",
+			"OrgUnit": "Department"
+		},
+		"effective": {
+			"allowed": "Allowed models",
+			"denied": "Denied models",
+			"noneAllowed": "No model is allowed",
+			"noneDenied": "None",
+			"noGroups": "None of this user's groups has a model access policy.",
+			"group": "Group",
+			"inactive": "Inactive",
+			"inactiveHint": "The group is inactive, but its policy still applies."
+		},
+		"errors": {
+			"groupNotFound": "The team or department does not exist.",
+			"workspaceNotAllowed": "A group policy cannot belong to a workspace. Limit an entry to a workspace instead.",
+			"invalidSubjectKind": "The group type must be team or department.",
+			"groupFixed": "The group of a policy cannot change. Delete the policy and create one for the other group.",
+			"invalidModels": "A model list has an invalid entry. Each entry needs a model name.",
+			"alreadyExists": "This group already has a model access policy. Refresh and edit it.",
+			"gone": "The policy no longer exists. Refresh the page."
+		}
 	},
 	"oem_configs": {
 		"title": "Customize Appearance",

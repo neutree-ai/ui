@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GroupModelAccess } from "@/domains/group-policy/components/GroupModelAccess";
 import { DepartmentsPanel } from "@/domains/organization/components/DepartmentsPanel";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamsPanel } from "@/domains/organization/components/TeamsPanel";
@@ -44,11 +45,14 @@ export const OrganizationList = () => {
         <TabsContent value="departments" className="mt-0">
           <DepartmentsPanel
             renderRoleAssignments={(name) => (
-              <GroupRoleAssignments
-                kind="OrgUnit"
-                name={name}
-                renderOrgUnit={renderOrgUnit}
-              />
+              <>
+                <GroupRoleAssignments
+                  kind="OrgUnit"
+                  name={name}
+                  renderOrgUnit={renderOrgUnit}
+                />
+                <GroupModelAccess kind="OrgUnit" name={name} />
+              </>
             )}
           />
         </TabsContent>
@@ -56,11 +60,14 @@ export const OrganizationList = () => {
           <TabsContent value="teams" className="mt-0">
             <TeamsPanel
               renderRoleAssignments={(name) => (
-                <GroupRoleAssignments
-                  kind="Team"
-                  name={name}
-                  renderOrgUnit={renderOrgUnit}
-                />
+                <>
+                  <GroupRoleAssignments
+                    kind="Team"
+                    name={name}
+                    renderOrgUnit={renderOrgUnit}
+                  />
+                  <GroupModelAccess kind="Team" name={name} />
+                </>
               )}
             />
           </TabsContent>

@@ -19,6 +19,9 @@ vi.mock("@/domains/organization/components/OrgUnitField", () => ({
 vi.mock("@/domains/role-assignment/components/GroupRoleAssignments", () => ({
   GroupRoleAssignments: () => null,
 }));
+vi.mock("@/domains/group-policy/components/GroupModelAccess", () => ({
+  GroupModelAccess: () => null,
+}));
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: vi.fn(),
 }));

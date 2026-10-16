@@ -65,6 +65,8 @@ export type ApiKey = {
   metadata: Metadata;
   spec: ApiKeySpec;
   status: ApiKeyStatus | null;
+  /** The owner. */
+  user_id?: string;
 };
 
 export type ApiKeyProject = {

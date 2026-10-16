@@ -4,6 +4,7 @@ import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard"
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey } from "@/domains/api-key/types";
+import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -72,6 +73,12 @@ export const ApiKeysShow = () => {
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}
             />
+            {record.user_id && record.metadata.workspace && (
+              <ApiKeyGroupPolicyHint
+                userId={record.user_id}
+                workspace={record.metadata.workspace}
+              />
+            )}
             <ApiKeyLimitsCard
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace}
