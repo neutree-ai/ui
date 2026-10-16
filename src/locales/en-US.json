@@ -2029,7 +2029,8 @@
 			"joinedWorkspaces": "Joined Workspaces",
 			"department": "Department",
 			"teams": "Teams",
-			"departmentRoles": "Department Roles"
+			"departmentRoles": "Department Roles",
+			"effectiveRoles": "Effective Policies"
 		},
 		"validation": {
 			"passwordMinLength": "Password must be at least 6 characters"
@@ -2073,12 +2074,15 @@
 		"fields": {
 			"policy": "Policy",
 			"policyScope": "Policy Scope",
-			"scope": "Scope"
+			"scope": "Scope",
+			"subject": "Subject",
+			"subjectKind": "Subject Type"
 		},
 		"placeholders": {
 			"policyName": "Workspace Policy Name",
 			"selectUser": "Select A User",
-			"selectRole": "Select A Role"
+			"selectRole": "Select A Role",
+			"selectTeam": "Select A Team"
 		},
 		"descriptions": {
 			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace. Organization subtree policies apply to the users of the selected department and its sub-departments."
@@ -2093,7 +2097,9 @@
 			"orgUnit": "Subtree:"
 		},
 		"validation": {
-			"orgUnitRequired": "Select a department"
+			"orgUnitRequired": "Select a department",
+			"userRequired": "Select a user",
+			"teamRequired": "Select a team"
 		},
 		"errors": {
 			"saveFailed": "Failed to save the policy",
@@ -2104,7 +2110,30 @@
 			"delegatedOrgUnitOnly": "You can only grant or revoke organization subtree policies.",
 			"outsideScope": "The user or the department is outside the departments you manage.",
 			"roleNotFound": "The role does not exist.",
-			"roleExceedsGrant": "The role grants permissions you do not hold on this department. Pick a role whose permissions you hold yourself."
+			"roleExceedsGrant": "The role grants permissions you do not hold on this department. Pick a role whose permissions you hold yourself.",
+			"invalidSubjectKind": "The subject type must be user, team or department.",
+			"subjectMismatch": "The subject does not match its type. A user policy names a user; a team or department policy names a team or department and no user.",
+			"subjectNotFound": "The selected team or department does not exist.",
+			"delegatedNoTeam": "You can grant policies only to users and departments. A team policy needs a global policy administrator."
+		},
+		"subjectKinds": {
+			"User": "User",
+			"Team": "Team",
+			"OrgUnit": "Department"
+		},
+		"group": {
+			"title": "Policies",
+			"hint": {
+				"Team": "Every member of this team holds these roles.",
+				"OrgUnit": "Every member of this department and its sub-departments holds these roles."
+			},
+			"empty": "No policies are granted to this group."
+		},
+		"effective": {
+			"hint": "The policies that apply to this user: granted to the user, or through a team or a department.",
+			"source": "Granted Through",
+			"direct": "This user",
+			"empty": "No policies apply to this user."
 		}
 	},
 	"api_keys": {
@@ -2927,7 +2956,9 @@
 			"reservedTeamName": "Names ending in '-' and 12 hexadecimal digits are reserved for synced teams. Choose another name.",
 			"syncedTeamReadOnly": "A team synced from an identity source is read-only. Change it in the directory.",
 			"syncedTeamMembersReadOnly": "The members of a team synced from an identity source are read-only. Change the group in the directory, or use a team created in Neutree.",
-			"manualTeamAlwaysActive": "A team created in Neutree is always Active. Delete the team instead."
+			"manualTeamAlwaysActive": "A team created in Neutree is always Active. Delete the team instead.",
+			"teamHasRoleAssignments": "Policies are still granted to this team. Delete those policies first, then delete the team.",
+			"memberGrantExceeds": "This change would give the user the policies of the team or department, and you cannot grant all of them. Ask an administrator who can."
 		},
 		"picker": {
 			"title": "Select Department",

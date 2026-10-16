@@ -2,6 +2,7 @@ import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { type ReactElement, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { SUBJECT_KIND_KEYS } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import { roleAssignmentErrorMessage } from "@/domains/role-assignment/lib/role-assignment-errors";
 import {
   availableScopes,
@@ -9,7 +10,15 @@ import {
   scopeFields,
   scopeOf,
 } from "@/domains/role-assignment/lib/scope";
-import type { RoleAssignment } from "@/domains/role-assignment/types";
+import {
+  availableSubjectKinds,
+  subjectFields,
+  subjectKindOf,
+} from "@/domains/role-assignment/lib/subject";
+import type {
+  RoleAssignment,
+  RoleAssignmentSubjectKind,
+} from "@/domains/role-assignment/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -33,10 +42,13 @@ const SCOPE_OPTION_KEYS: Record<RoleAssignmentScope, string> = {
 export const useRoleAssignmentForm = ({
   action,
   orgUnitField,
+  teamField,
 }: {
   action: "create" | "edit";
   /** The department picker, from the organization domain. */
   orgUnitField?: ReactElement;
+  /** The Team picker, from the organization domain. */
+  teamField?: ReactElement;
 }) => {
   const { t } = useTranslation();
   const { supportMultiWorkspace, isEnterprise } = useLicense();
@@ -44,6 +56,7 @@ export const useRoleAssignmentForm = ({
   const { allowed: globalAllowed } = useHasGlobalPermission(permission);
   const { allowed: anyScopeAllowed } = useHasPermission(permission);
   const delegated = globalAllowed === false && anyScopeAllowed === true;
+  const { allowed: canReadTeams } = useHasGlobalPermission("team:read");
 
   const form = useForm<RoleAssignment>({
     mode: "all",
@@ -59,6 +72,8 @@ export const useRoleAssignmentForm = ({
         global: !supportMultiWorkspace,
         role: "",
         org_unit: null,
+        subject_kind: "User",
+        subject_name: null,
       },
     },
     refineCoreProps: {
@@ -87,6 +102,35 @@ export const useRoleAssignmentForm = ({
     supportMultiWorkspace,
     delegated,
   });
+
+  const subjectKind = subjectKindOf(spec);
+  const subjectKinds = availableSubjectKinds({
+    delegated,
+    canReadTeams: canReadTeams === true && !!teamField,
+  }).filter((kind) => kind !== "OrgUnit" || !!orgUnitField);
+  // An existing assignment keeps its kind on the list, e.g. a Team one
+  // opened by someone who cannot list teams.
+  if (!subjectKinds.includes(subjectKind)) subjectKinds.push(subjectKind);
+
+  const groupField =
+    subjectKind === "Team"
+      ? teamField
+      : subjectKind === "OrgUnit"
+        ? orgUnitField
+        : undefined;
+
+  // All three subject fields are written: a composite PATCH nulls the ones
+  // it leaves out.
+  const setSubjectKind = (next: RoleAssignmentSubjectKind) => {
+    const fields = subjectFields(next, form.getValues("spec"));
+    form.setValue("spec.subject_kind", fields.subject_kind, {
+      shouldDirty: true,
+    });
+    form.setValue("spec.subject_name", fields.subject_name, {
+      shouldDirty: true,
+    });
+    form.setValue("spec.user_id", fields.user_id, { shouldDirty: true });
+  };
 
   const setScope = (next: RoleAssignmentScope) => {
     const fields = scopeFields(next, form.getValues("spec"));
@@ -136,8 +180,33 @@ export const useRoleAssignmentForm = ({
       <FormCardGrid title={t("role_assignments.fields.policy")}>
         <FormFieldGroup
           {...form}
+          name="spec.subject_kind"
+          label={t("role_assignments.fields.subjectKind")}
+        >
+          <FormSelect
+            disabled={subjectKinds.length < 2}
+            value={subjectKind}
+            options={subjectKinds.map((value) => ({
+              label: t(SUBJECT_KIND_KEYS[value]),
+              value,
+            }))}
+            onChange={(value) => {
+              const next = subjectKinds.find((item) => item === value);
+              if (next) setSubjectKind(next);
+            }}
+          />
+        </FormFieldGroup>
+        <FormFieldGroup
+          {...form}
           name="spec.user_id"
           label={t("common.fields.user")}
+          className={subjectKind === "User" ? "" : "hidden"}
+          rules={{
+            validate: (value) =>
+              subjectKindOf(form.getValues("spec")) !== "User" ||
+              !!value ||
+              t("role_assignments.validation.userRequired"),
+          }}
         >
           <FormCombobox
             placeholder={t("role_assignments.placeholders.selectUser")}
@@ -148,6 +217,30 @@ export const useRoleAssignmentForm = ({
             }))}
           />
         </FormFieldGroup>
+        {groupField && (
+          <FormFieldGroup
+            {...form}
+            // Remounts the picker when the kind changes: Team and department
+            // share spec.subject_name.
+            key={subjectKind}
+            name="spec.subject_name"
+            label={
+              subjectKind === "Team"
+                ? t("role_assignments.subjectKinds.Team")
+                : t("organization.fields.department")
+            }
+            rules={{
+              validate: (value) => {
+                if ((value ?? "").trim() !== "") return true;
+                return subjectKind === "Team"
+                  ? t("role_assignments.validation.teamRequired")
+                  : t("role_assignments.validation.orgUnitRequired");
+              },
+            }}
+          >
+            {groupField}
+          </FormFieldGroup>
+        )}
         <FormFieldGroup
           {...form}
           name="spec.role"
@@ -162,7 +255,7 @@ export const useRoleAssignmentForm = ({
             }))}
           />
         </FormFieldGroup>
-        <div className="col-span-2" />
+        <div />
         <FormFieldGroup
           {...form}
           name="spec.global"

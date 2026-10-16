@@ -1,9 +1,11 @@
 import { useShow } from "@refinedev/core";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
+import { TeamLabel } from "@/domains/organization/components/TeamField";
 import {
   UserDepartmentSection,
   UserTeamsSection,
 } from "@/domains/organization/components/UserOrganization";
+import { UserEffectiveRoleAssignments } from "@/domains/role-assignment/components/UserEffectiveRoleAssignments";
 import type { UserProfile } from "@/domains/user/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
@@ -63,6 +65,11 @@ export const UsersShow = () => {
       <div className="mt-4 space-y-3">
         <UserDepartmentSection profile={record} />
         <UserTeamsSection userId={record.id} />
+        <UserEffectiveRoleAssignments
+          userId={record.id}
+          renderTeam={(name) => <TeamLabel name={name} />}
+          renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+        />
         <ShowPage.Section
           title={t("user_profiles.sections.globalRoles")}
           data-testid="global-roles-card"

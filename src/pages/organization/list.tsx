@@ -1,9 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DepartmentsPanel } from "@/domains/organization/components/DepartmentsPanel";
+import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamsPanel } from "@/domains/organization/components/TeamsPanel";
+import { GroupRoleAssignments } from "@/domains/role-assignment/components/GroupRoleAssignments";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
+
+const renderOrgUnit = (name: string) => <OrgUnitLabel name={name} />;
 
 /**
  * Departments and teams synced from identity sources, which sync owns, and
@@ -38,11 +42,27 @@ export const OrganizationList = () => {
           </TabsList>
         )}
         <TabsContent value="departments" className="mt-0">
-          <DepartmentsPanel />
+          <DepartmentsPanel
+            renderRoleAssignments={(name) => (
+              <GroupRoleAssignments
+                kind="OrgUnit"
+                name={name}
+                renderOrgUnit={renderOrgUnit}
+              />
+            )}
+          />
         </TabsContent>
         {canReadTeams && (
           <TabsContent value="teams" className="mt-0">
-            <TeamsPanel />
+            <TeamsPanel
+              renderRoleAssignments={(name) => (
+                <GroupRoleAssignments
+                  kind="Team"
+                  name={name}
+                  renderOrgUnit={renderOrgUnit}
+                />
+              )}
+            />
           </TabsContent>
         )}
       </Tabs>

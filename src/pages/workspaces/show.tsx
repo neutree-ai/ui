@@ -1,5 +1,7 @@
 import { useShow } from "@refinedev/core";
-import UserCell from "@/domains/role-assignment/components/UserCell";
+import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
+import { TeamLabel } from "@/domains/organization/components/TeamField";
+import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
@@ -74,11 +76,17 @@ export const WorkspacesShow = () => {
               }}
             />
             <Table.Column
-              header={t("common.fields.user")}
-              accessorKey="spec.user_id"
-              id="user"
+              header={t("role_assignments.fields.subject")}
+              accessorKey="spec.subject_name"
+              id="subject"
               enableHiding
-              cell={({ row }) => <UserCell id={row.original.spec.user_id} />}
+              cell={({ row }) => (
+                <RoleAssignmentSubjectLabel
+                  spec={row.original.spec}
+                  renderTeam={(name) => <TeamLabel name={name} />}
+                  renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+                />
+              )}
             />
             {metadataColumns.creation_timestamp}
           </Table>

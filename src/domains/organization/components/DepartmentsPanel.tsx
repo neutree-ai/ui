@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -35,7 +35,12 @@ import { useTranslation } from "@/foundation/lib/i18n";
 
 const ALL_SOURCES = "__all__";
 
-export function DepartmentsPanel() {
+/** `renderRoleAssignments` lists the selected department's role assignments. */
+export function DepartmentsPanel({
+  renderRoleAssignments,
+}: {
+  renderRoleAssignments?: (orgUnitName: string) => ReactNode;
+} = {}) {
   const { t } = useTranslation();
   const errorText = (error: unknown) =>
     error
@@ -176,56 +181,59 @@ export function DepartmentsPanel() {
           )}
         </ShowPage.Section>
 
-        <ShowPage.Section
-          title={
-            selected ? (
-              <span className="inline-flex items-center gap-2">
-                {selected.label}
-                {selected.inactive && <InactiveBadge />}
-              </span>
+        <div className="min-w-0 space-y-3">
+          <ShowPage.Section
+            title={
+              selected ? (
+                <span className="inline-flex items-center gap-2">
+                  {selected.label}
+                  {selected.inactive && <InactiveBadge />}
+                </span>
+              ) : (
+                t("organization.members.title")
+              )
+            }
+            description={
+              selected && selected.pathLabel !== selected.label
+                ? selected.pathLabel
+                : undefined
+            }
+            actions={
+              selected && (
+                <div className="inline-flex items-center gap-2">
+                  <Switch
+                    id="org-unit-include-subtree"
+                    checked={includeSubtree}
+                    onCheckedChange={setIncludeSubtree}
+                    data-testid="org-unit-include-subtree"
+                  />
+                  <Label
+                    htmlFor="org-unit-include-subtree"
+                    className="cursor-pointer font-normal text-muted-foreground"
+                  >
+                    {t("organization.members.includeSubtree")}
+                  </Label>
+                </div>
+              )
+            }
+          >
+            {selected ? (
+              <MemberTable
+                rows={memberRows}
+                isLoading={members.isLoading}
+                error={errorText(members.error)}
+                showDepartment={includeSubtree}
+                showSource
+                sinceLabel={t("organization.fields.assignedAt")}
+              />
             ) : (
-              t("organization.members.title")
-            )
-          }
-          description={
-            selected && selected.pathLabel !== selected.label
-              ? selected.pathLabel
-              : undefined
-          }
-          actions={
-            selected && (
-              <div className="inline-flex items-center gap-2">
-                <Switch
-                  id="org-unit-include-subtree"
-                  checked={includeSubtree}
-                  onCheckedChange={setIncludeSubtree}
-                  data-testid="org-unit-include-subtree"
-                />
-                <Label
-                  htmlFor="org-unit-include-subtree"
-                  className="cursor-pointer font-normal text-muted-foreground"
-                >
-                  {t("organization.members.includeSubtree")}
-                </Label>
-              </div>
-            )
-          }
-        >
-          {selected ? (
-            <MemberTable
-              rows={memberRows}
-              isLoading={members.isLoading}
-              error={errorText(members.error)}
-              showDepartment={includeSubtree}
-              showSource
-              sinceLabel={t("organization.fields.assignedAt")}
-            />
-          ) : (
-            <EmptyState variant="inline">
-              {t("organization.members.selectDepartment")}
-            </EmptyState>
-          )}
-        </ShowPage.Section>
+              <EmptyState variant="inline">
+                {t("organization.members.selectDepartment")}
+              </EmptyState>
+            )}
+          </ShowPage.Section>
+          {selected && renderRoleAssignments?.(selected.unit.metadata.name)}
+        </div>
       </div>
     </div>
   );

@@ -30,6 +30,15 @@ describe("organizationErrorMessage", () => {
     }
   });
 
+  it("maps the group role assignment guards 10295 and 10296", () => {
+    expect(organizationErrorMessage(t, { code: "10295" })).toBe(
+      "organization.errors.teamHasRoleAssignments",
+    );
+    expect(organizationErrorMessage(t, { code: "10296" })).toBe(
+      "organization.errors.memberGrantExceeds",
+    );
+  });
+
   it("translates a database error and passes the hint on", () => {
     expect(
       organizationErrorMessage(t, {

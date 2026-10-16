@@ -13,6 +13,12 @@ vi.mock("@/domains/organization/components/DepartmentsPanel", () => ({
 vi.mock("@/domains/organization/components/TeamsPanel", () => ({
   TeamsPanel: () => <div data-testid="teams-panel" />,
 }));
+vi.mock("@/domains/organization/components/OrgUnitField", () => ({
+  OrgUnitLabel: () => null,
+}));
+vi.mock("@/domains/role-assignment/components/GroupRoleAssignments", () => ({
+  GroupRoleAssignments: () => null,
+}));
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: vi.fn(),
 }));

@@ -185,6 +185,33 @@ describe("TeamsPanel", () => {
     await waitFor(() => expect(writes.remove).toHaveBeenCalledWith(manual));
   });
 
+  it("explains a delete refused for the team's role assignments", async () => {
+    grant(...ALL);
+    writes.remove.mockRejectedValue({ code: "10295", hint: "1" });
+    render(
+      <TeamsPanel
+        renderRoleAssignments={(name) => (
+          <div data-testid="team-role-assignments">{name}</div>
+        )}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("team-2"));
+    expect(screen.getByTestId("team-role-assignments").textContent).toBe(
+      "guild",
+    );
+    fireEvent.click(screen.getByTestId("team-delete"));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "buttons.delete",
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("team-action-error").textContent).toBe(
+        "organization.errors.teamHasRoleAssignments",
+      ),
+    );
+  });
+
   it("explains a removal that changed no row", async () => {
     grant(...ALL);
     memberWrites.remove.mockRejectedValue(new TeamWriteNoRowError("member"));

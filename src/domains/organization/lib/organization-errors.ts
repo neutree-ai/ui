@@ -2,7 +2,8 @@ import { translateApiError } from "@/foundation/lib/api-error-code";
 
 /**
  * OrgUnit, Team and member write errors → i18n keys. They come from the
- * write triggers of the organization tables.
+ * write triggers of the organization tables; 10295 and 10296 guard the role
+ * assignments that groups hold.
  */
 export const ORGANIZATION_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10270": "organization.errors.noWorkspace",
@@ -19,6 +20,8 @@ export const ORGANIZATION_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10289": "organization.errors.syncedTeamReadOnly",
   "10290": "organization.errors.syncedTeamMembersReadOnly",
   "10291": "organization.errors.manualTeamAlwaysActive",
+  "10295": "organization.errors.teamHasRoleAssignments",
+  "10296": "organization.errors.memberGrantExceeds",
 };
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;

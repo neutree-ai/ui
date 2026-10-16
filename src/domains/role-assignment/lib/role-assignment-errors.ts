@@ -1,9 +1,9 @@
 import { translateApiError } from "@/foundation/lib/api-error-code";
 
 /**
- * Role assignment write errors → i18n keys. 10041 and 10280-10282 come from
- * the community write triggers, 10283-10286 from the enterprise checks on
- * delegated grants.
+ * Role assignment write errors → i18n keys. 10041, 10280-10282 and
+ * 10292-10294 come from the community write triggers, 10283-10286 and 10297
+ * from the enterprise checks on delegated grants.
  */
 const ROLE_ASSIGNMENT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10041": "role_assignments.errors.workspaceUnsupported",
@@ -14,6 +14,10 @@ const ROLE_ASSIGNMENT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10284": "role_assignments.errors.outsideScope",
   "10285": "role_assignments.errors.roleNotFound",
   "10286": "role_assignments.errors.roleExceedsGrant",
+  "10292": "role_assignments.errors.invalidSubjectKind",
+  "10293": "role_assignments.errors.subjectMismatch",
+  "10294": "role_assignments.errors.subjectNotFound",
+  "10297": "role_assignments.errors.delegatedNoTeam",
 };
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;

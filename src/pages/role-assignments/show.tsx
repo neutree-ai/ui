@@ -1,7 +1,8 @@
 import { useShow } from "@refinedev/core";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
+import { TeamLabel } from "@/domains/organization/components/TeamField";
 import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
-import UserCell from "@/domains/role-assignment/components/UserCell";
+import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
@@ -23,6 +24,14 @@ export const RoleAssignmentsShow = () => {
   if (!record) {
     return <div>{t("pages.error.notFound")}</div>;
   }
+
+  const subject = (
+    <RoleAssignmentSubjectLabel
+      spec={record.spec}
+      renderTeam={(name) => <TeamLabel name={name} />}
+      renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+    />
+  );
 
   const isAdminGlobalAssignment =
     record.metadata.name === "admin-global-role-assignment";
@@ -47,8 +56,8 @@ export const RoleAssignmentsShow = () => {
             <ShowPage.Meta label={t("common.fields.role")}>
               {record.spec.role}
             </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.user")}>
-              <UserCell id={record.spec.user_id} />
+            <ShowPage.Meta label={t("role_assignments.fields.subject")}>
+              {subject}
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
@@ -67,8 +76,8 @@ export const RoleAssignmentsShow = () => {
                 {record.spec.role}
               </ShowButton>
             </ShowPage.Row>
-            <ShowPage.Row title={t("common.fields.user")}>
-              <UserCell id={record.spec.user_id} />
+            <ShowPage.Row title={t("role_assignments.fields.subject")}>
+              {subject}
             </ShowPage.Row>
           </div>
         </ShowPage.Section>

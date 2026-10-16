@@ -1,7 +1,8 @@
 import { Edit, Trash2 } from "lucide-react";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
+import { TeamLabel } from "@/domains/organization/components/TeamField";
 import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
-import UserCell from "@/domains/role-assignment/components/UserCell";
+import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -46,16 +47,19 @@ const useRoleAssignmentColumns = () => {
         }}
       />
     ),
-    user: (
+    subject: (
       <Table.Column
-        header={t("common.fields.user")}
-        accessorKey="spec.user_id"
-        id="user"
+        header={t("role_assignments.fields.subject")}
+        accessorKey="spec.subject_name"
+        id="subject"
         enableHiding
-        cell={({ row }) => {
-          const { user_id } = row.original.spec;
-          return <UserCell id={user_id} />;
-        }}
+        cell={({ row }) => (
+          <RoleAssignmentSubjectLabel
+            spec={row.original.spec}
+            renderTeam={(name) => <TeamLabel name={name} />}
+            renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+          />
+        )}
       />
     ),
     action: (
@@ -108,7 +112,7 @@ export const RoleAssignmentsList = () => {
         {metadataColumns.name}
         {roleAssignmentColumns.scope}
         {roleAssignmentColumns.role}
-        {roleAssignmentColumns.user}
+        {roleAssignmentColumns.subject}
         {metadataColumns.creation_timestamp}
         {roleAssignmentColumns.action}
       </Table>
