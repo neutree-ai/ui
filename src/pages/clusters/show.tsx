@@ -1,5 +1,6 @@
 import { useShow, useTranslation } from "@refinedev/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
@@ -40,7 +41,7 @@ import type { BaseStatus } from "@/foundation/types/basic-types";
 export const ClustersShow = () => {
   const {
     query: { data, isLoading },
-  } = useShow<Cluster>();
+  } = useShow<Cluster>({ queryOptions: { refetchInterval: 10000 } });
   const record = data?.data;
 
   const { translate } = useTranslation();
@@ -192,6 +193,9 @@ export const ClustersShow = () => {
                   </ShowPage.Row>
                 </div>
               </ShowPage.Section>
+            )}
+            {record.spec.type === "kubernetes" && (
+              <ClusterCacheSection cluster={record} />
             )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>

@@ -3,6 +3,7 @@ import {
   isTouchedField,
   type TouchedFields,
 } from "@/foundation/lib/touched-fields";
+import { zcacheSpec } from "../types";
 import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualization";
 
 /**
@@ -21,7 +22,26 @@ export function transformClusterValues(
   isEdit = false,
   touchedFields?: TouchedFields,
 ): Cluster {
-  const transformed = { ...values };
+  const transformed = { ...values, spec: { ...values.spec } };
+  const cache = values.spec.cache;
+  if (cache?.provider === "zcache") {
+    const options = zcacheSpec(values);
+    if (
+      values.spec.type !== "kubernetes" ||
+      typeof options?.enabled !== "boolean"
+    ) {
+      delete transformed.spec.cache;
+    } else {
+      transformed.spec.cache = {
+        provider: "zcache",
+        options: {
+          ...options,
+          l1_size_gib: Number(options.l1_size_gib ?? 0),
+          target_nodes: [...(options.target_nodes ?? [])],
+        },
+      };
+    }
+  }
   const config = transformed.spec.config;
   const sshPrivateKeyTouched = isTouchedField(touchedFields, [
     "spec",
