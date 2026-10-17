@@ -26,6 +26,9 @@ vi.mock("@/foundation/lib/i18n", () => ({
   i18n: { language: "en-US", changeLanguage: () => Promise.resolve() },
 }));
 
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock("sonner", () => ({ toast: { error: toastError } }));
+
 vi.mock("@/foundation/lib/api", () => ({
   clientPostgrest: { headers: {} },
 }));
@@ -84,13 +87,14 @@ vi.mock("@/domains/endpoint/hooks/use-playground-models", () => ({
     _endpoint: Endpoint,
     form: {
       getValues: (name: string) => unknown;
-      setValue: (name: string, value: string) => void;
+      setValue: (name: string, value: unknown) => void;
     },
   ) => {
     if (!form.getValues("model")) form.setValue("model", "mock-model");
     return {
       models: [{ label: "mock-model", value: "mock-model" }],
       isLoading: false,
+      setMaxLength: (value: number) => form.setValue("max_length", value),
     };
   },
 }));
@@ -282,6 +286,41 @@ describe("ChatPlayground transcript", () => {
     // The thumbnail in the composer is a blob URL; the message itself carries
     // the data URI, which is the one the transcript has to render.
     expect(document.querySelector('img[src^="data:image/png"]')).not.toBeNull();
+  });
+
+  it("turns away an image the engines cannot decode, and says which", async () => {
+    renderPlayground();
+    const fileInput = document.querySelector(
+      "input[type=file]",
+    ) as HTMLInputElement;
+
+    await act(async () => {
+      fireEvent.change(fileInput, {
+        target: {
+          files: [
+            new File(["<svg/>"], "diagram.svg", { type: "image/svg+xml" }),
+            new File(["heic"], "photo.heic", { type: "image/heic" }),
+            new File(["chart"], "chart.png", { type: "image/png" }),
+          ],
+        },
+      });
+    });
+
+    await waitFor(() =>
+      expect(document.querySelectorAll('img[src="blob:mock"]')).toHaveLength(1),
+    );
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError).toHaveBeenCalledWith(
+      "components.playground.chat.unsupportedImage",
+    );
+  });
+
+  it("offers only the supported image types in the file picker", () => {
+    renderPlayground();
+
+    expect(
+      document.querySelector("input[type=file]")?.getAttribute("accept"),
+    ).toBe("image/png,image/jpeg,image/webp,image/gif,image/bmp");
   });
 
   it("renders nothing for a content part it does not know", async () => {

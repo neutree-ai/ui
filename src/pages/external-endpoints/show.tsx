@@ -18,6 +18,7 @@ import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavai
 import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
 import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
+import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import {
   detailTabsListClassName,
@@ -75,9 +76,9 @@ export const ExternalEndpointsShow = () => {
   );
 
   const upstreams = record.spec?.upstreams ?? [];
+  const routes = record.spec?.model_routes ?? routesFromLegacy(upstreams);
   const upstreamName = (index: number) =>
-    upstreams[index]?.name ||
-    t("external_endpoints.sections.modelService", { index: index + 1 });
+    upstreams[index]?.name || `provider-${index + 1}`;
 
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
@@ -153,15 +154,19 @@ export const ExternalEndpointsShow = () => {
               each one keeping ShowPage.Section's own 20px content padding and
               card radius instead of restating them tighter here. */}
           <div className="space-y-3">
-            {record.spec?.model_routes?.length ? (
+            {routes.length ? (
               <ShowPage.Section
                 title={t("external_endpoints.sections.virtualModels")}
               >
                 <div className="space-y-3">
-                  {record.spec.model_routes.map((route) => (
+                  {routes.map((route) => (
                     <ModelRouteDetails
                       key={route.model}
-                      onViewMonitoring={() => selectTab("monitor", route.model)}
+                      onViewMonitoring={
+                        record.spec?.model_routes?.length
+                          ? () => selectTab("monitor", route.model)
+                          : undefined
+                      }
                       route={route}
                       source={resolveExternalModelSource(
                         record.spec,

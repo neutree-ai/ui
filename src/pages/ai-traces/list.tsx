@@ -1,10 +1,13 @@
 import { useList, useParsed } from "@refinedev/core";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -34,6 +37,8 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import {
   type AITrace,
+  type AITraceFilterParams,
+  fetchAITraceFilterOptions,
   fetchAITraces,
   isAITraceForbidden,
 } from "@/foundation/lib/api/ai-traces";
@@ -42,6 +47,8 @@ import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import { StatusCodeFilter } from "./components/StatusCodeFilter";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
+import { TraceExportButton } from "./components/TraceExportButton";
+import { TraceNameFilter } from "./components/TraceNameFilter";
 import { TraceStatsChart } from "./components/TraceStatsChart";
 import { StatusBadge } from "./status";
 
@@ -95,18 +102,46 @@ export const AITracesList = () => {
   // stays in the list, where there is room for it.
   const selectedKey = keys.find((key) => key.id === apiKeyId);
 
-  const queryArgs = {
+  const start = dayjs(range.start).startOf("day").toISOString();
+  const end = dayjs(range.end).endOf("day").toISOString();
+
+  // What the endpoint and model filters suggest: the names found in the
+  // window's traces. Suggestions only — a failed request leaves the filters
+  // usable by typing, so its error is not shown.
+  const optionArgs = {
     workspace,
-    endpoint_name: endpointName.trim() || undefined,
+    start,
+    end,
+    endpoint_type: endpointType || undefined,
+  };
+  const { data: filterOptions } = useQuery({
+    queryKey: ["ai-trace-filter-options", optionArgs],
+    queryFn: ({ signal }) => fetchAITraceFilterOptions(optionArgs, signal),
+    enabled: Boolean(workspace),
+    retry: false,
+  });
+  // Endpoint names are unique only within a type, so each option shows its type.
+  const endpointOptions = (filterOptions?.endpoints ?? []).map((endpoint) => ({
+    name: endpoint.name,
+    tag: endpoint.type,
+  }));
+  const modelOptions = (filterOptions?.models ?? []).map((name) => ({ name }));
+  const truncatedNotice = t("ai_traces.filters.optionsTruncated");
+
+  // Scope, window and filters of the current view — the list pages through
+  // them and the export downloads them.
+  const filterArgs: AITraceFilterParams = {
+    workspace,
+    endpoint_name: endpointName || undefined,
     endpoint_type: endpointType || undefined,
     status: status || undefined,
-    model: model.trim() || undefined,
+    model: model || undefined,
     api_key_id: apiKeyId || undefined,
     finish_reason: finishReason || undefined,
-    start: dayjs(range.start).startOf("day").toISOString(),
-    end: dayjs(range.end).endOf("day").toISOString(),
-    limit: LIMIT,
+    start,
+    end,
   };
+  const queryArgs = { ...filterArgs, limit: LIMIT };
 
   const queryClient = useQueryClient();
   const {
@@ -137,6 +172,7 @@ export const AITracesList = () => {
   const handleRefresh = () => {
     refetch();
     queryClient.invalidateQueries({ queryKey: ["ai-trace-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["ai-trace-filter-options"] });
   };
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
@@ -179,15 +215,18 @@ export const AITracesList = () => {
       canCreate={false}
       breadcrumb={false}
       extra={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isFetching}
-        >
-          <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
-          {t("ai_traces.refresh")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <TraceExportButton params={filterArgs} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isFetching}
+          >
+            <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
+            {t("ai_traces.refresh")}
+          </Button>
+        </div>
       }
     >
       {!scoped && <TraceStatsChart workspace={workspace} range={range} />}
@@ -199,11 +238,18 @@ export const AITracesList = () => {
           onChange={setRange}
           presets={TRACE_RANGE_PRESETS}
         />
-        <Input
+        <TraceNameFilter
           className="w-[200px]"
-          placeholder={t("ai_traces.filters.endpoint")}
+          data-testid="endpoint-filter"
+          label={t("ai_traces.filters.endpoint")}
+          allLabel={t("ai_traces.filters.allEndpoints")}
+          searchPlaceholder={t("ai_traces.filters.endpointSearch")}
+          options={endpointOptions}
+          notice={
+            filterOptions?.endpoints_truncated ? truncatedNotice : undefined
+          }
           value={endpointName}
-          onChange={(e) => setEndpointName(e.target.value)}
+          onChange={setEndpointName}
         />
         <Select
           value={endpointType || "all"}
@@ -221,11 +267,16 @@ export const AITracesList = () => {
           </SelectContent>
         </Select>
         <StatusCodeFilter value={status} onChange={setStatus} />
-        <Input
+        <TraceNameFilter
           className="w-[200px]"
-          placeholder={t("ai_traces.filters.model")}
+          data-testid="model-filter"
+          label={t("ai_traces.filters.model")}
+          allLabel={t("ai_traces.filters.allModels")}
+          searchPlaceholder={t("ai_traces.filters.modelSearch")}
+          options={modelOptions}
+          notice={filterOptions?.models_truncated ? truncatedNotice : undefined}
           value={model}
-          onChange={(e) => setModel(e.target.value)}
+          onChange={setModel}
         />
         <Select
           value={apiKeyId || "all"}

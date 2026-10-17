@@ -24,11 +24,15 @@ import {
 } from "ai";
 import { ArrowDown, Image, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
 import {
   buildUserMessageContent,
   type ChatContentPart,
   filterMessagesForApi,
+  isSupportedImage,
+  SUPPORTED_IMAGE_FORMATS,
+  SUPPORTED_IMAGE_TYPES,
 } from "@/domains/endpoint/lib/chat-helpers";
 import { useStickToBottom } from "@/foundation/hooks/use-stick-to-bottom";
 import { clientPostgrest } from "@/foundation/lib/api";
@@ -98,7 +102,16 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files || []);
-    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    const imageFiles = files.filter(isSupportedImage);
+    const rejected = files.filter((file) => !isSupportedImage(file));
+    if (rejected.length > 0) {
+      toast.error(
+        t("components.playground.chat.unsupportedImage", {
+          files: rejected.map((file) => file.name).join(", "),
+          formats: SUPPORTED_IMAGE_FORMATS,
+        }),
+      );
+    }
 
     const imagePromises = imageFiles.map(async (file) => {
       const base64 = await fileToBase64(file);
@@ -138,7 +151,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     },
   });
 
-  const { models } = usePlaygroundModels(endpoint, form);
+  const { models, setMaxLength } = usePlaygroundModels(endpoint, form);
 
   const { scrollRef, contentRef, isAtBottom, scrollToBottom } =
     useStickToBottom();
@@ -345,7 +358,9 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
             <Controller
               name="max_length"
               control={form.control}
-              render={({ field }) => <MaxLengthSelector {...field} />}
+              render={({ field }) => (
+                <MaxLengthSelector {...field} onChange={setMaxLength} />
+              )}
             />
             <Controller
               name="top_p"
@@ -536,7 +551,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
                   <div className="flex items-center space-x-2">
                     <Input
                       type="file"
-                      accept="image/*"
+                      accept={SUPPORTED_IMAGE_TYPES.join(",")}
                       multiple
                       onChange={handleImageSelect}
                       className="hidden"

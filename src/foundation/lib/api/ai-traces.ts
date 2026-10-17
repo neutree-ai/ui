@@ -38,7 +38,9 @@ type AITraceStatsResponse = {
   days: AITraceDayCount[];
 };
 
-type AITraceListParams = {
+// The filter, time-window and scope a trace query is made of. The list and the
+// export send exactly these, so an export holds what the list shows.
+export type AITraceFilterParams = {
   request_id?: string;
   request_model?: string;
   upstream?: string;
@@ -50,11 +52,16 @@ type AITraceListParams = {
   model?: string;
   api_key_id?: string;
   finish_reason?: string;
-  limit?: number;
   start?: string;
   end?: string;
+};
+
+type AITraceListParams = AITraceFilterParams & {
+  limit?: number;
   before?: string;
 };
+
+export type AITraceExportFormat = "csv" | "jsonl";
 
 export class AITraceRequestError extends Error {
   constructor(
@@ -71,26 +78,29 @@ export class AITraceRequestError extends Error {
 export const isAITraceForbidden = (error: unknown): boolean =>
   error instanceof AITraceRequestError && error.status === 403;
 
-async function apiGet<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const headers: Record<string, string> = {};
+function authHeaders(): Record<string, string> {
   const auth = clientPostgrest.headers.Authorization;
-  if (typeof auth === "string" && auth) {
-    headers.Authorization = auth;
-  }
+  return typeof auth === "string" && auth ? { Authorization: auth } : {};
+}
 
-  const res = await fetch(url, { headers, signal });
+async function requestError(res: Response): Promise<AITraceRequestError> {
+  let detail = "";
+  try {
+    const body = await res.json();
+    detail = body?.error ?? "";
+  } catch {
+    // ignore JSON parse error
+  }
+  return new AITraceRequestError(
+    res.status,
+    `ai-traces request failed: ${res.status} ${detail || res.statusText}`,
+  );
+}
+
+async function apiGet<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { headers: authHeaders(), signal });
   if (!res.ok) {
-    let detail = "";
-    try {
-      const body = await res.json();
-      detail = body?.error ?? "";
-    } catch {
-      // ignore JSON parse error
-    }
-    throw new AITraceRequestError(
-      res.status,
-      `ai-traces request failed: ${res.status} ${detail || res.statusText}`,
-    );
+    throw await requestError(res);
   }
 
   return (await res.json()) as T;
@@ -103,15 +113,90 @@ export async function fetchAITraces(
   signal?: AbortSignal,
 ): Promise<AITraceListResponse> {
   const { workspace, ...rest } = params;
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}?${toSearch(rest)}`;
+  return apiGet<AITraceListResponse>(url, signal);
+}
+
+// toSearch encodes the set parameters, leaving out unset and empty ones.
+function toSearch(params: Record<string, string | number | undefined>) {
   const search = new URLSearchParams();
-  for (const [k, v] of Object.entries(rest)) {
+  for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== "") {
       search.set(k, String(v));
     }
   }
+  return search.toString();
+}
 
-  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}?${search.toString()}`;
-  return apiGet<AITraceListResponse>(url, signal);
+export type AITraceEndpointOption = {
+  name: string;
+  type: string;
+};
+
+export type AITraceFilterOptions = {
+  endpoints: AITraceEndpointOption[];
+  endpoints_truncated: boolean;
+  models: string[];
+  models_truncated: boolean;
+};
+
+type AITraceFilterOptionsParams = {
+  workspace: string;
+  start?: string;
+  end?: string;
+  endpoint_type?: string;
+};
+
+// fetchAITraceFilterOptions lists the endpoint and model names found in the
+// traces of a window, for the list's name filters. Each list is capped, and
+// `*_truncated` says the cap was hit.
+export async function fetchAITraceFilterOptions(
+  params: AITraceFilterOptionsParams,
+  signal?: AbortSignal,
+): Promise<AITraceFilterOptions> {
+  const { workspace, ...rest } = params;
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/filter-options?${toSearch(rest)}`;
+  return apiGet<AITraceFilterOptions>(url, signal);
+}
+
+// filenameFromDisposition reads the file name from a Content-Disposition
+// header, preferring the RFC 5987 `filename*` form.
+export function filenameFromDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const extended = header.match(/filename\*\s*=\s*(?:[\w-]+)?''([^;]+)/i);
+  if (extended?.[1]) {
+    try {
+      return decodeURIComponent(extended[1].trim().replace(/^"|"$/g, ""));
+    } catch {
+      // fall through to the plain form
+    }
+  }
+  const plain = header.match(
+    /filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i,
+  );
+  const name = (plain?.[1] ?? plain?.[2])?.trim();
+  return name || null;
+}
+
+// exportAITraces downloads the traces matching `params` as one file (metadata
+// only, server-capped at 100,000 rows).
+export async function exportAITraces(
+  params: AITraceFilterParams,
+  format: AITraceExportFormat,
+  signal?: AbortSignal,
+): Promise<{ blob: Blob; filename: string }> {
+  const { workspace, ...rest } = params;
+  const qs = toSearch({ ...rest, format });
+  const url = `${REST_URL}/ai-traces/${encodeURIComponent(workspace)}/export?${qs}`;
+  const res = await fetch(url, { headers: authHeaders(), signal });
+  if (!res.ok) {
+    throw await requestError(res);
+  }
+
+  const filename =
+    filenameFromDisposition(res.headers.get("Content-Disposition")) ??
+    `access-log-${workspace}-${new Date().toISOString().slice(0, 10)}.${format}`;
+  return { blob: await res.blob(), filename };
 }
 
 // fetchAITrace loads a single trace including the full request/response

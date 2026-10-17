@@ -109,9 +109,9 @@ describe("ModelRouteDetails", () => {
         .slice(1)
         .map((row) => within(row).getAllByRole("cell")[0].textContent),
     ).toEqual([
-      "external_endpoints.options.fallbackRolebackup",
-      "external_endpoints.options.primaryRoleprimary-a",
-      "external_endpoints.options.primaryRoleprimary-b",
+      "backupexternal_endpoints.options.fallbackRole",
+      "primary-aexternal_endpoints.options.primaryRole",
+      "primary-bexternal_endpoints.options.primaryRole",
     ]);
   });
 

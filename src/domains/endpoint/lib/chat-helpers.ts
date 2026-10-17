@@ -21,6 +21,24 @@ export type ChatContentPart =
   | ReasoningPart;
 
 /**
+ * Image types the serving engines can decode. The playground sends an image's
+ * bytes unchanged, so any other type (SVG, HEIC, …) fails at the engine.
+ */
+export const SUPPORTED_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+];
+
+/** The supported types as people know them, for telling a user what to pick. */
+export const SUPPORTED_IMAGE_FORMATS = "PNG, JPEG, WebP, GIF, BMP";
+
+export const isSupportedImage = (file: File): boolean =>
+  SUPPORTED_IMAGE_TYPES.includes(file.type);
+
+/**
  * Build user message content from text input and image data URIs.
  *
  * Returns a plain string when the message is text-only (no images),
@@ -77,3 +95,19 @@ export function filterMessagesForApi(messages: ModelMessage[]): ModelMessage[] {
     })
     .filter((msg) => msg !== null) as ModelMessage[];
 }
+
+const MAX_LENGTH_STEP = 1024;
+
+/**
+ * The output budget a playground starts from for a model with this context
+ * length: half of it, leaving the other half for the prompt, rounded down to
+ * the slider's step. Null when the server did not report a usable length.
+ */
+export const playgroundMaxLength = (maxModelLen: unknown): number | null => {
+  if (typeof maxModelLen !== "number" || !(maxModelLen > 1)) return null;
+
+  const half = Math.floor(maxModelLen / 2);
+  return half >= MAX_LENGTH_STEP
+    ? Math.floor(half / MAX_LENGTH_STEP) * MAX_LENGTH_STEP
+    : half;
+};

@@ -1,6 +1,12 @@
 import type { ModelMessage } from "ai";
 import { describe, expect, it } from "vitest";
-import { buildUserMessageContent, filterMessagesForApi } from "./chat-helpers";
+import {
+  buildUserMessageContent,
+  filterMessagesForApi,
+  isSupportedImage,
+  playgroundMaxLength,
+  SUPPORTED_IMAGE_TYPES,
+} from "./chat-helpers";
 
 describe("buildUserMessageContent", () => {
   it("returns a string for text-only input", () => {
@@ -95,5 +101,40 @@ describe("filterMessagesForApi", () => {
         content: [{ type: "text", text: "answer" }],
       },
     ]);
+  });
+});
+
+describe("isSupportedImage", () => {
+  const file = (type: string) => new File(["x"], "image", { type });
+
+  it("accepts the types the engines decode", () => {
+    for (const type of SUPPORTED_IMAGE_TYPES) {
+      expect(isSupportedImage(file(type))).toBe(true);
+    }
+  });
+
+  it("rejects types the engines cannot decode, and an unknown type", () => {
+    for (const type of ["image/svg+xml", "image/heic", "application/pdf", ""]) {
+      expect(isSupportedImage(file(type))).toBe(false);
+    }
+  });
+});
+
+describe("playgroundMaxLength", () => {
+  it("is half the context, rounded down to the slider's step", () => {
+    expect(playgroundMaxLength(8192)).toBe(4096);
+    expect(playgroundMaxLength(40960)).toBe(20480);
+    expect(playgroundMaxLength(10000)).toBe(4096);
+  });
+
+  it("is plain half for a context too short for one step", () => {
+    expect(playgroundMaxLength(1500)).toBe(750);
+  });
+
+  it("is null when the server reported nothing usable", () => {
+    expect(playgroundMaxLength(undefined)).toBeNull();
+    expect(playgroundMaxLength("8192")).toBeNull();
+    expect(playgroundMaxLength(0)).toBeNull();
+    expect(playgroundMaxLength(Number.NaN)).toBeNull();
   });
 });
