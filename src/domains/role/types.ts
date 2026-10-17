@@ -68,4 +68,8 @@ export const ALL_PERMISSIONS = [
   "user_profile:create",
   "user_profile:update",
   "user_profile:delete",
+  "identity_source:read",
+  "identity_source:create",
+  "identity_source:update",
+  "identity_source:delete",
 ];
