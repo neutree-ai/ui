@@ -1,5 +1,5 @@
 import { ImageExplorerButton } from "@/domains/endpoint/components/ImageExplorerButton";
-import { writesWorkloadImage } from "@/domains/endpoint/lib/recipe-image-feature";
+import { writesWorkloadImage } from "@/foundation/recipe/image-feature";
 import type { RecipeFeature } from "@/foundation/recipe/types";
 
 interface WorkloadImageFeatureAddonProps {

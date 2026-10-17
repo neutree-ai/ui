@@ -1,17 +1,21 @@
 import { useSelect } from "@refinedev/core";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Combobox } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
 import {
   type CatalogModelSlot,
   readCatalogEngine,
+  readCatalogImageSlots,
   readCatalogModelSlots,
   slotKey,
   writeCatalogEngineVersion,
+  writeCatalogImageSlot,
   writeCatalogModelSlot,
 } from "@/domains/model-catalog/lib/catalog-model-slots";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
+import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { registryUnavailability } from "@/foundation/lib/model-registry-availability";
 import { registryModelLabel } from "@/foundation/lib/registry-model-display";
@@ -51,17 +55,126 @@ type EngineRef = {
  * Takes a parsed document and hands one back, leaving the caller to own the
  * text: the edit page round-trips its editor, and an import dialog holding a
  * multi-document stream can drive one document at a time.
+ *
+ * A catalog whose engine runs its own workload (Flex) names no model, so for
+ * one of those the panel offers its workload images instead.
  */
 export function CatalogModelSlots({
   doc,
   onChange,
   workspace,
+  imageExplorer,
 }: {
   /** The parsed catalog, or null when the text it came from does not parse. */
   doc: unknown;
   onChange: (nextDoc: unknown) => void;
   workspace: string;
+  /** Rendered beside each workload image input, handed a way to replace the
+   * image. The caller supplies it because finding an image is the endpoint
+   * domain's, which this one may not import. */
+  imageExplorer?: (onApply: (image: string) => void) => ReactNode;
 }) {
+  const { t } = useTranslation();
+  const engine = useMemo(() => readCatalogEngine(doc), [doc]);
+
+  if (doc === null) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        {t("model_catalogs.models.unparsable")}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3" data-testid="catalog-model-slots">
+      {engine && (
+        <EngineVersionRow
+          doc={doc}
+          onChange={onChange}
+          workspace={workspace}
+          engine={engine}
+        />
+      )}
+      {engineNeedsModelSpec(engine?.engine) ? (
+        <ModelSlotRows doc={doc} onChange={onChange} workspace={workspace} />
+      ) : (
+        <ImageSlotRows
+          doc={doc}
+          onChange={onChange}
+          imageExplorer={imageExplorer}
+        />
+      )}
+    </div>
+  );
+}
+
+type SlotRowsProps = {
+  doc: unknown;
+  onChange: (nextDoc: unknown) => void;
+};
+
+/**
+ * The engine version a catalog deploys with. Only the versions of the engine it
+ * already names: switching engine outright would invalidate every engine arg
+ * the catalog carries, so the engine is shown as a fact and only its version
+ * is a choice.
+ */
+function EngineVersionRow({
+  doc,
+  onChange,
+  workspace,
+  engine,
+}: SlotRowsProps & {
+  workspace: string;
+  engine: { engine: string; version: string };
+}) {
+  const { t } = useTranslation();
+  const engines = useSelect<EngineRef>({
+    resource: "engines",
+    meta: { workspace, workspaced: true },
+  });
+
+  const options = useMemo(() => {
+    const declared = (engines.query.data?.data ?? []).find(
+      (row) => row.metadata.name === engine.engine,
+    );
+
+    return (declared?.spec.versions ?? []).map(({ version }) => ({
+      label: version,
+      value: version,
+    }));
+  }, [engines.query.data, engine.engine]);
+
+  return (
+    <div data-testid="catalog-engine-version" className={SLOT_ROW}>
+      <div className="min-w-0">
+        <div className="truncate text-sm">
+          {t("model_catalogs.models.engine")}
+        </div>
+        <div className="truncate text-xs text-muted-foreground">
+          {engine.engine}
+        </div>
+      </div>
+      <Combobox
+        asField={false}
+        value={engine.version}
+        placeholder={t("model_catalogs.models.selectEngineVersion")}
+        disabled={engines.query.isLoading || options.length === 0}
+        options={options}
+        onChange={(version) =>
+          onChange(writeCatalogEngineVersion(doc, version))
+        }
+      />
+    </div>
+  );
+}
+
+/** One registry picker, then a model picker per slot the catalog names. */
+function ModelSlotRows({
+  doc,
+  onChange,
+  workspace,
+}: SlotRowsProps & { workspace: string }) {
   const { t } = useTranslation();
   const [chosenRegistry, setChosenRegistry] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -79,7 +192,6 @@ export function CatalogModelSlots({
   } | null>(null);
 
   const slots = useMemo(() => readCatalogModelSlots(doc), [doc]);
-  const engine = useMemo(() => readCatalogEngine(doc), [doc]);
 
   // The availability rules read only `status.phase` and the deletion stamp, so
   // this deliberately does not ask for `visibility` (MODEL_REGISTRY_SELECT).
@@ -100,25 +212,6 @@ export function CatalogModelSlots({
     (named && registryRows?.some((row) => row.metadata.name === named)
       ? named
       : "");
-
-  const engines = useSelect<EngineRef>({
-    resource: "engines",
-    meta: { workspace, workspaced: true },
-  });
-
-  // Only the versions of the engine this catalog already names. Switching
-  // engine outright would invalidate every engine arg the catalog carries, so
-  // the engine is shown as a fact and only its version is a choice.
-  const engineVersionOptions = useMemo(() => {
-    const declared = (engines.query.data?.data ?? []).find(
-      (row) => row.metadata.name === engine?.engine,
-    );
-
-    return (declared?.spec.versions ?? []).map(({ version }) => ({
-      label: version,
-      value: version,
-    }));
-  }, [engines.query.data, engine?.engine]);
 
   const models = useRegistryModels({
     workspace,
@@ -199,14 +292,6 @@ export function CatalogModelSlots({
     setPending({ slot, registry, model: modelName });
   };
 
-  if (doc === null) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        {t("model_catalogs.models.unparsable")}
-      </p>
-    );
-  }
-
   if (slots.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
@@ -216,7 +301,7 @@ export function CatalogModelSlots({
   }
 
   return (
-    <div className="space-y-3" data-testid="catalog-model-slots">
+    <>
       <div className={SLOT_ROW}>
         <div className="text-sm">
           {t("model_catalogs.models.registryLabel")}
@@ -230,31 +315,6 @@ export function CatalogModelSlots({
           options={registryOptions}
         />
       </div>
-
-      {engine && (
-        <div data-testid="catalog-engine-version" className={SLOT_ROW}>
-          <div className="min-w-0">
-            <div className="truncate text-sm">
-              {t("model_catalogs.models.engine")}
-            </div>
-            <div className="truncate text-xs text-muted-foreground">
-              {engine.engine}
-            </div>
-          </div>
-          <Combobox
-            asField={false}
-            value={engine.version}
-            placeholder={t("model_catalogs.models.selectEngineVersion")}
-            disabled={
-              engines.query.isLoading || engineVersionOptions.length === 0
-            }
-            options={engineVersionOptions}
-            onChange={(version) =>
-              onChange(writeCatalogEngineVersion(doc, version))
-            }
-          />
-        </div>
-      )}
 
       <div className="space-y-2">
         {slots.map((slot) => (
@@ -299,6 +359,56 @@ export function CatalogModelSlots({
           {t("model_catalogs.models.listFailed")}
         </p>
       )}
+    </>
+  );
+}
+
+/** A text input per workload image the catalog asks for, with the explorer
+ * beside it. */
+function ImageSlotRows({
+  doc,
+  onChange,
+  imageExplorer,
+}: SlotRowsProps & {
+  imageExplorer?: (onApply: (image: string) => void) => ReactNode;
+}) {
+  const { t } = useTranslation();
+  const slots = useMemo(() => readCatalogImageSlots(doc), [doc]);
+
+  if (slots.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        {t("model_catalogs.images.none")}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {slots.map((slot) => {
+        const apply = (image: string) =>
+          onChange(writeCatalogImageSlot(doc, slot.index, image));
+
+        return (
+          <div
+            key={slot.index}
+            data-testid={`catalog-image-slot-${slot.index}`}
+            className={SLOT_ROW}
+          >
+            <div className="truncate text-sm">{slot.label}</div>
+            <div className="flex min-w-0 gap-2">
+              <Input
+                aria-label={slot.label}
+                value={slot.image}
+                placeholder={t("model_catalogs.images.placeholder")}
+                onChange={(e) => apply(e.target.value)}
+                className="min-w-0"
+              />
+              {imageExplorer?.(apply)}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

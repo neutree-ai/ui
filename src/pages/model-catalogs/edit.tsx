@@ -11,7 +11,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ImageExplorerButton } from "@/domains/endpoint/components/ImageExplorerButton";
 import { CatalogModelSlots } from "@/domains/model-catalog/components/CatalogModelSlots";
+import { readCatalogEngine } from "@/domains/model-catalog/lib/catalog-model-slots";
 import {
   type ParseCatalogSpecError,
   parseCatalogSpecYaml,
@@ -20,6 +22,7 @@ import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { PageHeader } from "@/foundation/components/PageHeader";
+import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -112,6 +115,11 @@ export const ModelCatalogsEdit = () => {
       return null;
     }
   }, [specYaml]);
+  // A catalog whose engine runs its own workload names no model, so the panel
+  // repoints its workload image instead and the section is titled for that.
+  const panelKeys = engineNeedsModelSpec(readCatalogEngine(parsedDoc)?.engine)
+    ? "model_catalogs.models"
+    : "model_catalogs.images";
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -206,14 +214,14 @@ export const ModelCatalogsEdit = () => {
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <div className="text-sm font-medium">
-                  {t("model_catalogs.models.title")}
+                  {t(`${panelKeys}.title`)}
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
                       className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      aria-label={t("model_catalogs.models.hint")}
+                      aria-label={t(`${panelKeys}.hint`)}
                     >
                       <CircleHelp className="size-3.5" aria-hidden="true" />
                     </button>
@@ -223,7 +231,7 @@ export const ModelCatalogsEdit = () => {
                     align="start"
                     className="max-w-md leading-5"
                   >
-                    {t("model_catalogs.models.hint")}
+                    {t(`${panelKeys}.hint`)}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -235,6 +243,12 @@ export const ModelCatalogsEdit = () => {
                   )
                 }
                 workspace={record.metadata.workspace ?? ""}
+                imageExplorer={(onApply) => (
+                  <ImageExplorerButton
+                    workspace={record.metadata.workspace}
+                    onApply={onApply}
+                  />
+                )}
               />
             </div>
 

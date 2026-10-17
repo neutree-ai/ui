@@ -117,7 +117,16 @@ const recipeDoc = {
 function renderPanel(doc: unknown = recipeDoc) {
   const onChange = vi.fn();
   render(
-    <CatalogModelSlots doc={doc} onChange={onChange} workspace="team-a" />,
+    <CatalogModelSlots
+      doc={doc}
+      onChange={onChange}
+      workspace="team-a"
+      imageExplorer={(onApply) => (
+        <button type="button" onClick={() => onApply("harbor.local/team/x:v1")}>
+          explore
+        </button>
+      )}
+    />,
   );
   return onChange;
 }
@@ -320,5 +329,79 @@ describe("a registry change while a pick is still resolving", () => {
     for (const ref of mocks.versionRefs) {
       expect(ref.registry).toBe("huggingface");
     }
+  });
+});
+
+describe("CatalogModelSlots for an engine that runs its own workload", () => {
+  const flexDoc = {
+    apiVersion: "v1",
+    kind: "ModelCatalog",
+    metadata: { name: "mineru", workspace: "team-a" },
+    spec: {
+      engine: { engine: "flex", version: "v0.1.2" },
+      variants: { airgap: { model: { name: "-" } } },
+      features: [
+        {
+          name: "image",
+          display_name: "工作负载镜像",
+          type: "input",
+          engine_args: { image: "${value}" },
+          input: { default: "<your-registry>/mineru:v0.1.2" },
+        },
+      ],
+    },
+  };
+
+  beforeEach(() => {
+    mocks.engines = [
+      {
+        metadata: { name: "flex" },
+        spec: { versions: [{ version: "v0.1.1" }, { version: "v0.1.2" }] },
+      },
+    ];
+  });
+
+  const imageOf = (doc: SavedDoc) =>
+    (doc.spec.features as { input: { default: string } }[])[0].input.default;
+
+  it("asks for the workload image instead of a registry and models", () => {
+    renderPanel(flexDoc);
+
+    const row = screen.getByTestId("catalog-image-slot-0");
+    expect(
+      (within(row).getByLabelText("工作负载镜像") as HTMLInputElement).value,
+    ).toBe("<your-registry>/mineru:v0.1.2");
+    expect(
+      screen.queryByLabelText("model_catalogs.models.selectRegistry"),
+    ).toBeNull();
+    expect(
+      screen.queryByTestId("catalog-model-slot-variant.airgap"),
+    ).toBeNull();
+    expect(screen.getByTestId("catalog-engine-version")).toBeDefined();
+  });
+
+  it("writes what the explorer found into the feature's default", () => {
+    const onChange = renderPanel(flexDoc);
+
+    fireEvent.click(screen.getByRole("button", { name: "explore" }));
+
+    expect(imageOf(nextDoc(onChange))).toBe("harbor.local/team/x:v1");
+  });
+
+  it("writes a typed image the same way", () => {
+    const onChange = renderPanel(flexDoc);
+
+    fireEvent.change(screen.getByLabelText("工作负载镜像"), {
+      target: { value: "harbor.local/team/y:v2" },
+    });
+
+    expect(imageOf(nextDoc(onChange))).toBe("harbor.local/team/y:v2");
+  });
+
+  it("says so when the catalog asks for no image", () => {
+    renderPanel({ ...flexDoc, spec: { ...flexDoc.spec, features: [] } });
+
+    expect(screen.getByText("model_catalogs.images.none")).toBeDefined();
+    expect(screen.queryByText("model_catalogs.models.none")).toBeNull();
   });
 });
