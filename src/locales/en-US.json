@@ -2121,6 +2121,14 @@
 		"empty": "No access logs in the selected window.",
 		"forbidden": "You do not have permission to view access logs.",
 		"refresh": "Refresh",
+		"export": {
+			"button": "Export",
+			"exporting": "Exporting…",
+			"csv": "CSV (Excel)",
+			"jsonl": "JSONL",
+			"hint": "Exports the current filters and time range, up to 100,000 rows. Request and response bodies are not included.",
+			"failed": "Export failed"
+		},
 		"stats": {
 			"title": "Requests",
 			"requests": "Requests",
