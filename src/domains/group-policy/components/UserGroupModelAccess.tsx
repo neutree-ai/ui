@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TokenPoolSummary } from "@/domains/group-policy/components/GroupModelAccess";
 import { ModelEntryList } from "@/domains/group-policy/components/ModelEntryList";
 import { useUserGroupPolicy } from "@/domains/group-policy/hooks/use-group-policies";
 import type { GroupPolicyModel } from "@/domains/group-policy/types";
@@ -102,6 +103,7 @@ export function UserGroupModelAccess({
   if (!shown) return null;
 
   const groups = policy?.groups ?? [];
+  const pools = policy?.token_pools ?? [];
 
   return (
     <div id={USER_MODEL_ACCESS_ANCHOR} ref={ref}>
@@ -241,6 +243,35 @@ export function UserGroupModelAccess({
                   })}
                 </TableBody>
               </Table>
+            )}
+            {pools.length > 0 && (
+              <div className="space-y-2" data-testid="user-token-pools">
+                <div className="text-xs font-medium text-muted-foreground">
+                  {t("group_policies.pool.userTitle")}
+                </div>
+                <ul className="space-y-2 text-sm">
+                  {pools.map((pool) => (
+                    <li
+                      key={`${pool.kind}/${pool.name}`}
+                      className="flex flex-wrap items-start gap-x-3 gap-y-1"
+                      data-testid={`user-token-pool-${pool.kind}-${pool.name}`}
+                    >
+                      <span className="min-w-32 font-medium">
+                        {pool.kind === "Team"
+                          ? renderTeam(pool.name)
+                          : renderOrgUnit(pool.name)}
+                      </span>
+                      <TokenPoolSummary
+                        quota={{ limit: pool.token_limit, period: pool.period }}
+                        pool={pool}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground">
+                  {t("group_policies.pool.userHint")}
+                </p>
+              </div>
             )}
             <p className="text-xs text-muted-foreground">
               {t("group_policies.mergeRules")}

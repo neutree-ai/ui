@@ -27,6 +27,7 @@ vi.mock("@/foundation/hooks/use-has-permission", () => ({
 vi.mock("@/domains/group-policy/hooks/use-group-policies", () => ({
   GroupPolicyGoneError: class extends Error {},
   useGroupPolicy: vi.fn(),
+  useGroupTokenPool: vi.fn(() => ({ pool: undefined, refetch: vi.fn() })),
   useGroupPolicyWrites: () => ({
     save: vi.fn(),
     remove: vi.fn(),
@@ -34,7 +35,10 @@ vi.mock("@/domains/group-policy/hooks/use-group-policies", () => ({
   }),
 }));
 
-import { useGroupPolicy } from "@/domains/group-policy/hooks/use-group-policies";
+import {
+  useGroupPolicy,
+  useGroupTokenPool,
+} from "@/domains/group-policy/hooks/use-group-policies";
 import type { GroupPolicy } from "@/domains/group-policy/types";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { GroupModelAccess } from "./GroupModelAccess";
@@ -105,5 +109,44 @@ describe("GroupModelAccess", () => {
     render(<GroupModelAccess kind="Team" name="sre" />);
     expect(screen.getByTestId("group-policy-edit")).toBeTruthy();
     expect(screen.getByTestId("group-policy-delete")).toBeTruthy();
+  });
+
+  it("shows the token pool with its usage", () => {
+    grant("read");
+    withPolicy({ token_quota: { limit: 1000, period: "daily" } });
+    vi.mocked(useGroupTokenPool).mockReturnValue({
+      pool: {
+        kind: "Team",
+        name: "sre",
+        token_limit: 1000,
+        period: "daily",
+        used: 1200,
+        remaining: -200,
+        resets_at: "2026-10-19",
+      },
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useGroupTokenPool>);
+    render(<GroupModelAccess kind="Team" name="sre" />);
+    expect(screen.getByTestId("group-policy-pool")).toBeTruthy();
+    expect(screen.getByTestId("group-policy-pool-usage")).toBeTruthy();
+    expect(screen.getByText("group_policies.pool.exhausted")).toBeTruthy();
+    expect(vi.mocked(useGroupTokenPool)).toHaveBeenCalledWith(
+      "Team",
+      "sre",
+      true,
+    );
+  });
+
+  it("does not read a pool the policy does not set", () => {
+    grant("read");
+    withPolicy({ denied_models: [{ model: "gpt" }] });
+    render(<GroupModelAccess kind="Team" name="sre" />);
+    expect(screen.queryByTestId("group-policy-pool")).toBeNull();
+    expect(vi.mocked(useGroupTokenPool)).toHaveBeenCalledWith(
+      "Team",
+      "sre",
+      false,
+    );
   });
 });

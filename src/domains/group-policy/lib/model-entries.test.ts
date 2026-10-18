@@ -26,13 +26,23 @@ describe("removeEntry", () => {
 });
 
 describe("buildGroupPolicySpec", () => {
-  it("always carries both lists, null when empty", () => {
+  it("always carries every field, null when empty", () => {
     expect(buildGroupPolicySpec("Team", "sre", [{ model: "m" }], [])).toEqual({
       subject_kind: "Team",
       subject_name: "sre",
       allowed_models: [{ model: "m" }],
       denied_models: null,
+      token_quota: null,
     });
+  });
+
+  it("carries the token pool", () => {
+    expect(
+      buildGroupPolicySpec("OrgUnit", "rd", [], [], {
+        limit: 1000,
+        period: "daily",
+      }).token_quota,
+    ).toEqual({ limit: 1000, period: "daily" });
   });
 });
 
@@ -42,6 +52,16 @@ describe("hasRules", () => {
     expect(hasRules({ allowed_models: [], denied_models: null })).toBe(false);
     expect(
       hasRules({ allowed_models: null, denied_models: [{ model: "m" }] }),
+    ).toBe(true);
+  });
+
+  it("counts a token pool as a rule", () => {
+    expect(
+      hasRules({
+        allowed_models: null,
+        denied_models: null,
+        token_quota: { limit: 10, period: "monthly" },
+      }),
     ).toBe(true);
   });
 });

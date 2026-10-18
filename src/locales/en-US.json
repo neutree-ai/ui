@@ -3023,7 +3023,19 @@
 			"groupFixed": "The group of a policy cannot change. Delete the policy and create one for the other group.",
 			"invalidModels": "A model list has an invalid entry. Each entry needs a model name.",
 			"alreadyExists": "This group already has a model access policy. Refresh and edit it.",
-			"gone": "The policy no longer exists. Refresh the page."
+			"gone": "The policy no longer exists. Refresh the page.",
+			"invalidTokenPool": "The token pool needs a positive whole number of tokens and a daily, weekly, monthly or yearly period."
+		},
+		"pool": {
+			"title": "Token pool",
+			"hint": "One token budget shared by every member, across all workspaces. When it runs out, members' API keys are rejected until the period resets. Leave empty for no pool.",
+			"placeholder": "No pool",
+			"invalid": "Must resolve to a positive whole number of tokens",
+			"limit": "{{limit}} tokens, {{period}}",
+			"usage": "{{used}} used, {{remaining}} left. Resets on {{resetsAt}}.",
+			"exhausted": "Used up",
+			"userTitle": "Token pools",
+			"userHint": "Usage counts toward the groups the user was in when it happened. Every pool must have tokens left; usage is counted about every 30 seconds, so a pool can go slightly over."
 		}
 	},
 	"oem_configs": {

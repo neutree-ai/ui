@@ -8,12 +8,33 @@ export type GroupPolicyModel = {
   workspace?: string;
 };
 
+export type GroupTokenPoolPeriod = "daily" | "weekly" | "monthly" | "yearly";
+
+/** One token pool shared by every member of the group. */
+export type GroupTokenQuota = {
+  limit: number;
+  period: GroupTokenPoolPeriod;
+};
+
 export type GroupPolicySpec = {
   subject_kind: GroupPolicySubjectKind;
   subject_name: string;
   /** null or empty: no rule. */
   allowed_models: GroupPolicyModel[] | null;
   denied_models: GroupPolicyModel[] | null;
+  /** null: no pool. */
+  token_quota?: GroupTokenQuota | null;
+};
+
+/** A pool with its usage in the current period (get_group_token_pools). */
+export type GroupTokenPool = {
+  kind: GroupPolicySubjectKind;
+  name: string;
+  token_limit: number;
+  period: GroupTokenPoolPeriod;
+  used: number;
+  remaining: number;
+  resets_at: string;
 };
 
 export type GroupPolicy = {
@@ -31,6 +52,7 @@ export type UserGroupPolicyGroup = {
   active: boolean;
   allowed_models: GroupPolicyModel[] | null;
   denied_models: GroupPolicyModel[] | null;
+  token_quota?: GroupTokenQuota | null;
 };
 
 /** A user's merged policy in one workspace. `allowed_models` null: no limit. */
@@ -38,4 +60,6 @@ export type UserGroupPolicy = {
   allowed_models: string[] | null;
   denied_models: string[] | null;
   groups: UserGroupPolicyGroup[];
+  /** Every pool the user draws from; the smallest remaining applies. */
+  token_pools?: GroupTokenPool[];
 };

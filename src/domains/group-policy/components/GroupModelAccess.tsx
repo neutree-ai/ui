@@ -1,6 +1,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GroupPolicyDialog } from "@/domains/group-policy/components/GroupPolicyDialog";
 import { ModelEntryList } from "@/domains/group-policy/components/ModelEntryList";
@@ -8,19 +9,68 @@ import {
   GroupPolicyGoneError,
   useGroupPolicy,
   useGroupPolicyWrites,
+  useGroupTokenPool,
 } from "@/domains/group-policy/hooks/use-group-policies";
 import { groupPolicyErrorMessage } from "@/domains/group-policy/lib/group-policy-errors";
 import {
   buildGroupPolicySpec,
   hasRules,
 } from "@/domains/group-policy/lib/model-entries";
-import type { GroupPolicySubjectKind } from "@/domains/group-policy/types";
+import type {
+  GroupPolicySubjectKind,
+  GroupTokenPool,
+  GroupTokenQuota,
+} from "@/domains/group-policy/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatTokenQuota } from "@/foundation/lib/token-quota";
+
+const tokens = new Intl.NumberFormat("en-US");
+
+/** Limit, period and, when read, the usage of the current period. */
+export function TokenPoolSummary({
+  quota,
+  pool,
+}: {
+  quota: GroupTokenQuota;
+  pool?: Pick<GroupTokenPool, "used" | "remaining" | "resets_at">;
+}) {
+  const { t } = useTranslation();
+  const period = t(`api_keys.limits.periods.${quota.period}`);
+  return (
+    <div className="space-y-1" data-testid="group-policy-pool">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span>
+          {t("group_policies.pool.limit", {
+            limit: formatTokenQuota(quota.limit),
+            period,
+          })}
+        </span>
+        {pool && pool.remaining <= 0 && (
+          <Badge variant="destructive" className="px-1.5 py-0 font-normal">
+            {t("group_policies.pool.exhausted")}
+          </Badge>
+        )}
+      </div>
+      {pool && (
+        <p
+          className="text-xs text-muted-foreground"
+          data-testid="group-policy-pool-usage"
+        >
+          {t("group_policies.pool.usage", {
+            used: tokens.format(pool.used),
+            remaining: tokens.format(Math.max(pool.remaining, 0)),
+            resetsAt: pool.resets_at,
+          })}
+        </p>
+      )}
+    </div>
+  );
+}
 
 /**
  * The model access policy of a Team or a department. Policies are Neutree
@@ -42,6 +92,8 @@ export function GroupModelAccess({
   const canDelete =
     useHasGlobalPermission("group_policy:delete").allowed === true;
   const { policy, isLoading, error } = useGroupPolicy(kind, name, canRead);
+  const tokenQuota = policy?.spec.token_quota ?? null;
+  const pool = useGroupTokenPool(kind, name, canRead && tokenQuota !== null);
   const writes = useGroupPolicyWrites();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -98,6 +150,7 @@ export function GroupModelAccess({
                 setActionError(undefined);
                 try {
                   await writes.remove(policy);
+                  void pool.refetch();
                 } catch (err) {
                   setActionError(errorText(err));
                 }
@@ -156,6 +209,20 @@ export function GroupModelAccess({
               />
             </dd>
           </div>
+          <div>
+            <dt className="mb-1 text-xs font-medium text-muted-foreground">
+              {t("group_policies.pool.title")}
+            </dt>
+            <dd>
+              {tokenQuota ? (
+                <TokenPoolSummary quota={tokenQuota} pool={pool.pool} />
+              ) : (
+                <span className="text-muted-foreground">
+                  {t("group_policies.noRule")}
+                </span>
+              )}
+            </dd>
+          </div>
         </dl>
       )}
       {actionError && (
@@ -170,17 +237,28 @@ export function GroupModelAccess({
           saving={writes.isPending}
           error={dialogError}
           onOpenChange={(open) => !open && setEditing(false)}
-          onSave={async (nextAllowed, nextDenied) => {
+          onSave={async (nextAllowed, nextDenied, nextQuota) => {
             setDialogError(undefined);
-            if (!policy && nextAllowed.length + nextDenied.length === 0) {
+            if (
+              !policy &&
+              nextAllowed.length + nextDenied.length === 0 &&
+              !nextQuota
+            ) {
               setEditing(false);
               return;
             }
             try {
               await writes.save(
                 policy,
-                buildGroupPolicySpec(kind, name, nextAllowed, nextDenied),
+                buildGroupPolicySpec(
+                  kind,
+                  name,
+                  nextAllowed,
+                  nextDenied,
+                  nextQuota,
+                ),
               );
+              void pool.refetch();
               setEditing(false);
             } catch (err) {
               setDialogError(errorText(err));

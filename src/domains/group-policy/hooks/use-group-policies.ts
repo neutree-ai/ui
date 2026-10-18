@@ -10,6 +10,7 @@ import type {
   GroupPolicy,
   GroupPolicySpec,
   GroupPolicySubjectKind,
+  GroupTokenPool,
   UserGroupPolicy,
 } from "@/domains/group-policy/types";
 import { getApiErrorCode } from "@/foundation/lib/api-error-code";
@@ -113,6 +114,28 @@ export const useUserGroupPolicy = (
     isLoading: enabled && workspace !== "" && query.isLoading,
     denied,
     error: denied ? null : query.error,
+  };
+};
+
+/** The token pool of one group with its usage in the current period. */
+export const useGroupTokenPool = (
+  kind: GroupPolicySubjectKind,
+  name: string,
+  enabled: boolean,
+) => {
+  const query = useCustom<GroupTokenPool[]>({
+    url: "/rpc/get_group_token_pools",
+    method: "post",
+    config: { payload: { p_kind: kind, p_name: name } },
+    queryOptions: { enabled: enabled && name !== "", retry: false },
+    successNotification: false,
+    errorNotification: false,
+  });
+  const rows = query.data?.data as GroupTokenPool[] | undefined;
+  return {
+    pool: rows?.[0],
+    error: query.error,
+    refetch: query.refetch,
   };
 };
 
