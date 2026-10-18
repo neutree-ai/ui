@@ -118,3 +118,22 @@ export type ApiUsageRecord = {
   prompt_tokens: number | null;
   completion_tokens: number | null;
 };
+
+export type GroupUsageKind = "User" | "Team" | "OrgUnit";
+
+// One row of get_usage_by_group. name is the user id or the group's
+// metadata.name; an OrgUnit row covers its whole subtree.
+export type GroupUsageRecord = {
+  date: string;
+  kind: GroupUsageKind;
+  name: string;
+  display_name: string | null;
+  workspace: string;
+  endpoint_type: string | null;
+  endpoint_name: string;
+  model_name: string | null;
+  requests: number;
+  usage: number;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+};

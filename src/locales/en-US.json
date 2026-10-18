@@ -3356,7 +3356,21 @@
 			"bar": "Bar chart"
 		},
 		"byApiKeyOnDay": "By API key · {{date}}",
-		"byModelOnDay": "By model · {{date}}"
+		"byModelOnDay": "By model · {{date}}",
+		"group": {
+			"title": "By user or group",
+			"titleOnDay": "By user or group · {{date}}",
+			"kind": "Group by",
+			"kinds": {
+				"User": "User",
+				"Team": "Team",
+				"OrgUnit": "Department"
+			},
+			"requests": "Requests",
+			"historyHint": "Usage counts toward the groups the user was in at the time.",
+			"subtreeHint": "A department includes its sub-departments. Usage counts toward the department the user was in at the time.",
+			"apiKeyIgnored": "The API key filter does not apply here."
+		}
 	},
 	"observations": {
 		"actualMemory": "Actual VRAM",

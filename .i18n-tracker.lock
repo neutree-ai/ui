@@ -196,7 +196,7 @@
   "src/domains/cluster/components/ClusterStatus.tsx": "5ddd108e4c3237b3e08c0beb093b455a",
   "src/domains/cluster/components/ClusterType.tsx": "eab96797deed4ce4ac3bd78512ef04cc",
   "src/domains/cluster/components/NodeIPsField.tsx": "c252ebd7c87fb4bcf58fae1a2be15c65",
-  "src/domains/api-key/types.ts": "907485c68916031f88af66cec3bd1109",
+  "src/domains/api-key/types.ts": "bfed5bdc7f12ad88b733422636c195a5",
   "src/foundation/lib/yaml-transform.ts": "fc6cdbf1799ec200546afc649acedf4f",
   "src/foundation/lib/grafana-dashboard-url.ts": "5301dbc1a951077f4ea0b08b58dd681b",
   "src/foundation/lib/sidebar-active.ts": "304b37b5816efbc5ab281e338f9b7180",
@@ -281,8 +281,8 @@
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "23924b8394b1d7f9c6b5fbc9d891fea1",
   "src/foundation/lib/api/ai-traces.ts": "36c9381b750cd6c5ca54ad09e72f7d93",
   "src/foundation/components/DateRangePicker.tsx": "29e85301b89a62100b34c46124d329ce",
-  "src/pages/model-usage/list.tsx": "3c35502aa4485da3a942b55584da9bd2",
-  "src/domains/api-key/hooks/use-usage-by-dimension.ts": "b7e55f4a3573c6f2f2e51d8171cbf393",
+  "src/pages/model-usage/list.tsx": "c714bebce705a9e852607d3b2cb1a51a",
+  "src/domains/api-key/hooks/use-usage-by-dimension.ts": "7b6574f7de10a952b6df8b1ff8ff19ab",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "5f008c9efecb5f75398ae4fb67414d69",
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
   "src/domains/endpoint/lib/vgpu.ts": "f469e7def2573f6b5f0eb3e78a905817",
@@ -403,7 +403,7 @@
   "src/foundation/hooks/use-stick-to-bottom.ts": "2254836f70966103fd9c82e8abc56f3e",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
   "src/pages/model-usage/components/UsageChart.tsx": "4c28ea01eb95328f0652defb21956d4a",
-  "src/pages/model-usage/lib/usage-series.ts": "1e91a8c738600220a8aac4af25e86bfe",
+  "src/pages/model-usage/lib/usage-series.ts": "21295515efdfeb93c1d89010461e3480",
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "685be5ca01d449960d0e8515faedc026",
@@ -576,5 +576,6 @@
   "src/domains/group-policy/hooks/use-group-policies.ts": "9325204b386a2aebe3333d6cbbd805ad",
   "src/domains/group-policy/lib/group-policy-errors.ts": "86f825b53c56941e64f583c954fd6285",
   "src/domains/group-policy/lib/model-entries.ts": "853339c3d52c166bd4acac75eb8aaecd",
-  "src/domains/group-policy/types.ts": "82827b637524d1d4a9ad28342459e425"
+  "src/domains/group-policy/types.ts": "82827b637524d1d4a9ad28342459e425",
+  "src/domains/api-key/hooks/use-group-usage.ts": "3a0a2ad37253cd5f402acaa7f4936ea5"
 }

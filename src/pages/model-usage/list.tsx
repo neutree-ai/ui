@@ -1,6 +1,6 @@
 import { useParsed } from "@refinedev/core";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useId, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
+import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
-import type { ApiUsageRecord } from "@/domains/api-key/types";
+import type {
+  ApiUsageRecord,
+  GroupUsageKind,
+  GroupUsageRecord,
+} from "@/domains/api-key/types";
 import {
   type DateRange,
   DateRangePicker,
@@ -31,6 +36,7 @@ import {
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
+import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -58,6 +64,7 @@ const TOP_K = 8;
 // per-record table is where people hunt for a specific request, so it shows 50.
 const CARD_PAGE_SIZE = 10;
 const DETAIL_PAGE_SIZE = 50;
+const GROUP_KINDS: GroupUsageKind[] = ["User", "Team", "OrgUnit"];
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
@@ -82,6 +89,18 @@ export const ModelUsageList = () => {
     workspace,
     range.start,
     range.end,
+  );
+
+  // Group totals include other users' usage, so the RPC wants a global
+  // workspace:usage-read; nobody else gets the card or the call.
+  const canReadGroups =
+    useHasGlobalPermission("workspace:usage-read").allowed === true;
+  const [groupKind, setGroupKind] = useState<GroupUsageKind>("User");
+  const groupUsage = useGroupUsage(
+    canReadGroups ? workspace : undefined,
+    range.start,
+    range.end,
+    groupKind,
   );
 
   // Picking a day in the chart narrows the range itself to that day — there is
@@ -239,6 +258,31 @@ export const ModelUsageList = () => {
         (r) => ({ name: r.model_name ?? EMPTY_VALUE, description: null }),
       ),
     [filtered],
+  );
+
+  // The group RPC has no API key column, so only the type and model filters
+  // apply to it.
+  const byGroup = useMemo(
+    () =>
+      aggregateSeries(
+        groupUsage.usageData.filter(
+          (r: GroupUsageRecord) =>
+            (!endpointType || r.endpoint_type === endpointType) &&
+            (!model ||
+              (r.model_name ?? "")
+                .toLowerCase()
+                .includes(model.trim().toLowerCase())),
+        ),
+        (r) => r.name,
+        (r) => ({
+          name: r.display_name || r.name,
+          description:
+            r.kind !== "User" && r.display_name && r.display_name !== r.name
+              ? r.name
+              : null,
+        }),
+      ),
+    [groupUsage.usageData, endpointType, model],
   );
 
   const detailRows = useMemo(
@@ -402,6 +446,56 @@ export const ModelUsageList = () => {
         />
       </div>
 
+      {canReadGroups ? (
+        <div className="mt-4">
+          <UsageTable
+            title={
+              <div className="flex flex-wrap items-center gap-2">
+                <span>
+                  {scopeTitle(
+                    t("model_usage.group.title"),
+                    t("model_usage.group.titleOnDay", { date: range.start }),
+                  )}
+                </span>
+                <Select
+                  value={groupKind}
+                  onValueChange={(v) => setGroupKind(v as GroupUsageKind)}
+                >
+                  <SelectTrigger
+                    className="h-7 w-[140px]"
+                    aria-label={t("model_usage.group.kind")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GROUP_KINDS.map((kind) => (
+                      <SelectItem key={kind} value={kind}>
+                        {t(`model_usage.group.kinds.${kind}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {groupKind === "OrgUnit"
+                    ? t("model_usage.group.subtreeHint")
+                    : t("model_usage.group.historyHint")}
+                  {apiKeyId ? ` ${t("model_usage.group.apiKeyIgnored")}` : ""}
+                </span>
+              </div>
+            }
+            nameHeader={t(`model_usage.group.kinds.${groupKind}`)}
+            rows={byGroup}
+            resetKey={`${scopeKey}|${groupKind}`}
+            showRequests
+          />
+          {groupUsage.error ? (
+            <div className="mt-2 text-sm text-destructive">
+              {groupUsage.error.message}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mt-4">
         <DetailTable rows={detailRows} resetKey={scopeKey} />
       </div>
@@ -461,11 +555,13 @@ const UsageTable = ({
   nameHeader,
   rows,
   resetKey,
+  showRequests = false,
 }: {
-  title: string;
+  title: ReactNode;
   nameHeader: string;
   rows: UsageSeries[];
   resetKey: string;
+  showRequests?: boolean;
 }) => {
   const { t } = useTranslation();
   const { page, pageCount, setPage, pagedRows } = usePagedRows(
@@ -489,6 +585,11 @@ const UsageTable = ({
         <TableHeader>
           <TableRow>
             <TableHead>{nameHeader}</TableHead>
+            {showRequests ? (
+              <TableHead className="w-[120px] text-right">
+                {t("model_usage.group.requests")}
+              </TableHead>
+            ) : null}
             <TableHead className="w-[160px] text-right">
               {t("model_usage.promptTokens")}
             </TableHead>
@@ -504,7 +605,7 @@ const UsageTable = ({
           {rows.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={showRequests ? 5 : 4}
                 className="text-center py-8 text-muted-foreground"
               >
                 {t("model_usage.empty")}
@@ -516,6 +617,11 @@ const UsageTable = ({
                 <TableCell className="max-w-[160px]">
                   <ApiKeyLabel name={r.name} description={r.description} />
                 </TableCell>
+                {showRequests ? (
+                  <TableCell className="text-right font-mono text-xs">
+                    {(r.requests ?? 0).toLocaleString()}
+                  </TableCell>
+                ) : null}
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(r.prompt)}
                 </TableCell>

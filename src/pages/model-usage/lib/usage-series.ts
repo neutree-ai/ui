@@ -10,6 +10,8 @@ export type UsageSeries = {
   prompt: number;
   completion: number;
   total: number;
+  // Only set when the rows carry a request count (usage by group).
+  requests?: number;
   // Only set on the folded "other" series: how many series it stands for.
   hiddenCount?: number;
 };
@@ -20,11 +22,16 @@ export const OTHER_SERIES_KEY = "__other";
 
 type SeriesMeta = { name: string; description: string | null };
 
+type UsageRow = Pick<
+  ApiUsageRecord,
+  "usage" | "prompt_tokens" | "completion_tokens"
+> & { requests?: number };
+
 // Sums usage into one series per key, biggest total first.
-export function aggregateSeries(
-  rows: ApiUsageRecord[],
-  keyOf: (r: ApiUsageRecord) => string,
-  metaOf: (r: ApiUsageRecord) => SeriesMeta,
+export function aggregateSeries<R extends UsageRow>(
+  rows: R[],
+  keyOf: (r: R) => string,
+  metaOf: (r: R) => SeriesMeta,
 ): UsageSeries[] {
   const byKey = new Map<string, UsageSeries>();
   for (const r of rows) {
@@ -45,6 +52,9 @@ export function aggregateSeries(
     series.prompt += r.prompt_tokens ?? 0;
     series.completion += r.completion_tokens ?? 0;
     series.total += r.usage ?? 0;
+    if (r.requests !== undefined) {
+      series.requests = (series.requests ?? 0) + r.requests;
+    }
   }
   return [...byKey.values()].sort((a, b) => b.total - a.total);
 }

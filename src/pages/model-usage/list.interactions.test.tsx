@@ -7,7 +7,11 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ApiUsageRecord } from "@/domains/api-key/types";
+import type {
+  ApiUsageRecord,
+  GroupUsageKind,
+  GroupUsageRecord,
+} from "@/domains/api-key/types";
 import { openMenu } from "@/foundation/testing/interactions";
 import { ModelUsageList } from "@/pages/model-usage/list";
 
@@ -225,6 +229,31 @@ vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   useWorkspaceUsage: () => ({ ...hookState, refetch }),
 }));
 
+let canReadGroups = false;
+let groupRows: GroupUsageRecord[] = [];
+const groupKinds: Array<string | undefined> = [];
+
+vi.mock("@/foundation/hooks/use-has-permission", () => ({
+  useHasGlobalPermission: () => ({ allowed: canReadGroups, isLoading: false }),
+}));
+
+vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
+  useGroupUsage: (
+    workspace: string | undefined,
+    _start: string,
+    _end: string,
+    kind: GroupUsageKind,
+  ) => {
+    groupKinds.push(workspace ? kind : undefined);
+    return {
+      usageData: workspace ? groupRows.filter((r) => r.kind === kind) : [],
+      isLoading: false,
+      error: null,
+      refetch,
+    };
+  },
+}));
+
 const cardFor = (title: string) =>
   within(screen.getByRole("region", { name: title }));
 
@@ -248,6 +277,8 @@ const pickOption = (label: string) => {
 
 beforeEach(() => {
   refetch.mockClear();
+  canReadGroups = false;
+  groupKinds.length = 0;
   hookState = { usageData: rows, isLoading: false, error: null };
   render(<ModelUsageList />);
 });
@@ -462,5 +493,84 @@ describe("model usage states", () => {
     renderWith({ usageData: [], error: new Error("usage rpc failed") });
 
     screen.getByText("usage rpc failed");
+  });
+});
+
+describe("usage by group", () => {
+  const groupRow = (
+    kind: GroupUsageKind,
+    name: string,
+    displayName: string | null,
+    endpointType: string,
+    requests: number,
+    usage: number,
+  ): GroupUsageRecord => ({
+    date: "2026-09-01",
+    kind,
+    name,
+    display_name: displayName,
+    workspace: "design-lab",
+    endpoint_type: endpointType,
+    endpoint_name: "ep",
+    model_name: "m",
+    requests,
+    usage,
+    prompt_tokens: usage,
+    completion_tokens: 0,
+  });
+
+  const renderAsReader = () => {
+    cleanup();
+    canReadGroups = true;
+    groupRows = [
+      groupRow("User", "u-1", "Alice", "endpoint", 2, 30),
+      groupRow("User", "u-1", "Alice", "external-endpoint", 1, 5),
+      groupRow("User", "u-2", "Bob", "endpoint", 1, 100),
+      groupRow("OrgUnit", "dept-a", "Dept A", "endpoint", 3, 35),
+    ];
+    render(<ModelUsageList />);
+  };
+
+  it("is hidden without a global workspace:usage-read", () => {
+    expect(screen.queryByText("model_usage.group.title")).toBeNull();
+    expect(groupKinds.every((kind) => kind === undefined)).toBe(true);
+  });
+
+  const groupCard = () =>
+    within(screen.getByRole("region", { name: /^model_usage\.group\.title/ }));
+
+  it("sums requests and tokens per user", () => {
+    renderAsReader();
+
+    const card = groupCard();
+    const [bob, alice] = bodyRows(card);
+    expect(bob.textContent).toContain("Bob");
+    expect(alice.textContent).toContain("Alice");
+    expect(alice.textContent).toContain("3");
+    expect(card.getByText("model_usage.group.requests")).toBeDefined();
+  });
+
+  it("applies the type filter", () => {
+    renderAsReader();
+
+    openSelect(1);
+    pickOption("model_usage.detail.external");
+
+    const rowsShown = bodyRows(groupCard());
+    expect(rowsShown).toHaveLength(1);
+    expect(rowsShown[0].textContent).toContain("Alice");
+  });
+
+  it("switches to departments", () => {
+    renderAsReader();
+
+    openSelect(2);
+    pickOption("model_usage.group.kinds.OrgUnit");
+
+    expect(groupKinds.at(-1)).toBe("OrgUnit");
+    const rowsShown = bodyRows(groupCard());
+    expect(rowsShown).toHaveLength(1);
+    expect(rowsShown[0].textContent).toContain("Dept A");
+    expect(rowsShown[0].textContent).toContain("dept-a");
   });
 });
