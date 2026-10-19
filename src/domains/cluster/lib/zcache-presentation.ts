@@ -5,6 +5,7 @@ export function sameCacheConfig(a?: ZCacheSpec, b?: ZCacheSpec) {
   return (
     !!a?.enabled &&
     !!b?.enabled &&
+    (!a.version || a.version === b.version) &&
     a.l1_size_gib === b.l1_size_gib &&
     [...a.target_nodes].sort().join("\n") ===
       [...b.target_nodes].sort().join("\n")

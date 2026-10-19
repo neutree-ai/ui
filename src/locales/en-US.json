@@ -617,6 +617,31 @@
 			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds.",
 			"monitorTitle": "Shared L1 monitoring",
 			"monitorHint": "Shared cache per node, not exclusive inference instance memory. Read/write rates are chunks/s. Missing or uncollected metrics show no samples, not zero."
+		},
+		"cacheUpgrade": {
+			"title": "Upgrade cache version",
+			"current": "Running version: {{version}}",
+			"target": "Target version: {{version}}",
+			"description": "Upgrade the shared cache first, then update these instances in parallel. Single-replica instances may be briefly unavailable. Paused instances remain paused. Cached data may be lost.",
+			"selectVersion": "Target cache version",
+			"chooseAction": "Choose an action",
+			"keep": "Keep engine and update connection",
+			"engine": "Upgrade engine to {{version}}",
+			"disable": "Keep engine and disable cache",
+			"noInstances": "No inference instances use this cache.",
+			"loadFailed": "Could not load the upgrade plan. Refresh and try again.",
+			"confirm": "Confirm upgrade",
+			"incompatible": "This engine is incompatible with the cache version. Disable inference cache or upgrade cache from the cluster page.",
+			"phases": {
+				"UpdatingRuntime": "Updating cache runtime",
+				"UpdatingEndpoints": "Updating inference instances",
+				"Succeeded": "Completed",
+				"Failed": "Failed — inspect the reason and retry",
+				"WaitingForRuntime": "Waiting for cache runtime",
+				"Updating": "Updating",
+				"Paused": "Paused",
+				"Removed": "Removed"
+			}
 		}
 	},
 	"model_registries": {
