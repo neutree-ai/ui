@@ -21,6 +21,7 @@ import type { Cluster } from "../types";
 import { CacheRetry } from "./CacheRetry";
 import { ZCacheActivity } from "./ZCacheActivity";
 import { ZCacheEditor } from "./ZCacheEditor";
+import { ZCacheUpgrade } from "./ZCacheUpgrade";
 
 export function ClusterCacheSection({
   cluster,
@@ -118,6 +119,7 @@ function ZCacheDetails({
       }
     >
       <div className="space-y-4">
+        <ZCacheUpgrade cluster={cluster} />
         {phase === "Unavailable" && (
           <p
             role="alert"
