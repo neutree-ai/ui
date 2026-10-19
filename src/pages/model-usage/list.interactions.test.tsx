@@ -585,6 +585,22 @@ describe("usage by group", () => {
     expect(rowsShown[0].textContent).toContain("Dept A");
   });
 
+  it("shows a team by its display name, not its internal name", () => {
+    cleanup();
+    canReadGroups = true;
+    groupRows = [
+      groupRow("Team", "org-ldap-3f9a2c", "Platform", "endpoint", 1, 10),
+    ];
+    render(<ModelUsageList />);
+
+    openSelect(2);
+    pickOption("Team");
+
+    const [row] = bodyRows(cardFor("By user or group"));
+    expect(row.textContent).toContain("Platform");
+    expect(row.textContent).not.toContain("org-ldap-3f9a2c");
+  });
+
   it("offers users and departments only to a subtree reader", () => {
     cleanup();
     canReadSubtree = true;

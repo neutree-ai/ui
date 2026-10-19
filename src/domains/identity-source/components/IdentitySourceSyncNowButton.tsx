@@ -9,6 +9,7 @@ import {
 import { identitySourceErrorMessage } from "@/domains/identity-source/lib/identity-source-errors";
 import {
   isSyncEnabled,
+  isSyncPaused,
   isSyncRequestPending,
 } from "@/domains/identity-source/lib/identity-source-sync";
 import type { IdentitySource } from "@/domains/identity-source/types";
@@ -92,7 +93,11 @@ export function IdentitySourceSyncNowButton({
         <span className="inline-flex">{button}</span>
       </TooltipTrigger>
       <TooltipContent>
-        {t("identity_sources.hints.syncNowDisabled")}
+        {t(
+          isSyncPaused(record)
+            ? "identity_sources.hints.syncNowPaused"
+            : "identity_sources.hints.syncNowDisabled",
+        )}
       </TooltipContent>
     </Tooltip>
   );

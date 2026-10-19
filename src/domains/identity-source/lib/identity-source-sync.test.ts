@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { IdentitySource } from "@/domains/identity-source/types";
 import {
   isSyncEnabled,
+  isSyncPaused,
   isSyncRequestPending,
   syncIntervalLabel,
 } from "./identity-source-sync";
@@ -26,6 +27,14 @@ describe("isSyncEnabled", () => {
     expect(
       isSyncEnabled(source({ type: "oidc", sync: { enabled: true } })),
     ).toBe(false);
+  });
+
+  it("is paused, not enabled, while the source is disabled", () => {
+    const disabled = source({ enabled: false, sync: { enabled: true } });
+    expect(isSyncEnabled(disabled)).toBe(false);
+    expect(isSyncPaused(disabled)).toBe(true);
+    expect(isSyncPaused(source({ sync: { enabled: true } }))).toBe(false);
+    expect(isSyncPaused(source({ enabled: false }))).toBe(false);
   });
 });
 

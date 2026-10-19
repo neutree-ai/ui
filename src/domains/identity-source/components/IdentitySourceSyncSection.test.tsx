@@ -55,10 +55,12 @@ import { IdentitySourceSyncSection } from "./IdentitySourceSyncSection";
 const REQUESTED = "2026-10-13T08:00:00+00:00";
 
 const source = ({
+  enabled = true,
   syncEnabled = true,
   requestedAt,
   lastSync,
 }: {
+  enabled?: boolean;
   syncEnabled?: boolean;
   requestedAt?: string;
   lastSync?: Partial<IdentitySourceSyncStatus>;
@@ -70,7 +72,7 @@ const source = ({
     metadata: { name: "org-ldap", display_name: "Org" },
     spec: {
       type: "ldap",
-      enabled: true,
+      enabled,
       ldap: {
         url: "ldap://x",
         bind_dn: "cn=a",
@@ -105,6 +107,20 @@ describe("IdentitySourceSyncSection", () => {
       "identity_sources.status.syncOff",
     );
     expect(screen.getByText("identity_sources.values.off")).toBeTruthy();
+    expect(syncNow().disabled).toBe(true);
+  });
+
+  it("says sync is paused and offers no sync while the source is disabled", () => {
+    renderSection(
+      source({
+        enabled: false,
+        lastSync: { started_at: REQUESTED, finished_at: REQUESTED },
+      }),
+    );
+    expect(screen.getByTestId("identity-source-sync-paused").textContent).toBe(
+      "identity_sources.status.syncPaused",
+    );
+    expect(screen.getByText("identity_sources.values.paused")).toBeTruthy();
     expect(syncNow().disabled).toBe(true);
   });
 

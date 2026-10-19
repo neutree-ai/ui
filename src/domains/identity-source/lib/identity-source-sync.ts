@@ -1,9 +1,17 @@
 import type { IdentitySource } from "@/domains/identity-source/types";
 import { DEFAULT_SYNC_INTERVAL_SECONDS } from "./identity-source-values";
 
-/** Only LDAP sources sync; the server refuses a request otherwise (10264). */
-export const isSyncEnabled = (record: IdentitySource): boolean =>
+/** Sync is turned on in the settings of an LDAP source (else 10264). */
+const isSyncConfigured = (record: IdentitySource): boolean =>
   record.spec?.type === "ldap" && record.spec.sync?.enabled === true;
+
+/** Whether the sync runs: configured, and the source is enabled (else 10304). */
+export const isSyncEnabled = (record: IdentitySource): boolean =>
+  isSyncConfigured(record) && record.spec.enabled === true;
+
+/** Sync is on in the settings, but the disabled source pauses it. */
+export const isSyncPaused = (record: IdentitySource): boolean =>
+  isSyncConfigured(record) && record.spec.enabled !== true;
 
 const time = (value?: string | null): number =>
   value ? Date.parse(value) : Number.NaN;

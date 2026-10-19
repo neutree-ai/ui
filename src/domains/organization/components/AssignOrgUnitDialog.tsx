@@ -111,9 +111,9 @@ export function AssignOrgUnitDialog({
           )}
         </div>
         <div className="text-sm text-muted-foreground">
-          {t("user_profiles.department.selected")}:{" "}
+          {t("user_profiles.department.selected")}
           <span
-            className="text-foreground"
+            className="ms-1 text-foreground"
             data-testid="assign-org-unit-selected"
           >
             {selected?.pathLabel ?? "-"}

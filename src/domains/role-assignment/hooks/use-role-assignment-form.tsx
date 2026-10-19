@@ -295,7 +295,7 @@ export const useRoleAssignmentForm = ({
           <FormFieldGroup
             {...form}
             name="spec.org_unit"
-            label={t("organization.fields.department")}
+            label={t("role_assignments.fields.subtreeRoot")}
             className={scope === "org_unit" ? "" : "hidden"}
             rules={{
               validate: (value) =>

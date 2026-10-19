@@ -317,13 +317,9 @@ export const ModelUsageList = () => {
               node && node.pathLabel !== node.label ? node.pathLabel : null,
           };
         }
-        return {
-          name: r.display_name || r.name,
-          description:
-            r.kind !== "User" && r.display_name && r.display_name !== r.name
-              ? r.name
-              : null,
-        };
+        // A synced Team's name is an internal hash (org-ldap-…), so it is not
+        // shown, as for departments.
+        return { name: r.display_name || r.name, description: null };
       },
     );
     return groupKind === "OrgUnit"

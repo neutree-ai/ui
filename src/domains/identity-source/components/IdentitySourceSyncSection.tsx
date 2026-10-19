@@ -1,5 +1,6 @@
 import {
   isSyncEnabled,
+  isSyncPaused,
   syncIntervalLabel,
 } from "@/domains/identity-source/lib/identity-source-sync";
 import type {
@@ -32,6 +33,7 @@ export function IdentitySourceSyncSection({
 }) {
   const { t } = useTranslation();
   const enabled = isSyncEnabled(record);
+  const paused = isSyncPaused(record);
   const last = record.status?.last_sync;
   const result = syncResultOf(record);
   const interval = syncIntervalLabel(record.spec.sync?.interval);
@@ -42,12 +44,22 @@ export function IdentitySourceSyncSection({
       actions={<IdentitySourceSyncNowButton record={record} />}
       data-testid="identity-source-sync-section"
     >
+      {paused && (
+        <p
+          className="mb-5 text-sm text-muted-foreground"
+          data-testid="identity-source-sync-paused"
+        >
+          {t("identity_sources.status.syncPaused")}
+        </p>
+      )}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
         <ShowPage.Row title={t("identity_sources.fields.syncEnabled")}>
           {t(
             enabled
               ? "identity_sources.values.on"
-              : "identity_sources.values.off",
+              : paused
+                ? "identity_sources.values.paused"
+                : "identity_sources.values.off",
           )}
         </ShowPage.Row>
         <ShowPage.Row title={t("identity_sources.fields.syncSchedule")}>
@@ -106,7 +118,7 @@ export function IdentitySourceSyncSection({
           {t(
             result === "pending"
               ? "identity_sources.status.syncWaiting"
-              : enabled
+              : enabled || paused
                 ? "identity_sources.status.notSynced"
                 : "identity_sources.status.syncOff",
           )}

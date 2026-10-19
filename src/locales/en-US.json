@@ -2044,7 +2044,7 @@
 			"remove": "Remove",
 			"assignTitle": "Assign Department",
 			"assignHint": "Pick an active department. It replaces the user's current department.",
-			"selected": "Selected",
+			"selected": "Selected:",
 			"removeTitle": "Remove the department?",
 			"removeHint": "The user will not belong to any department.",
 			"none": "Not in a department.",
@@ -2076,7 +2076,8 @@
 			"policyScope": "Policy Scope",
 			"scope": "Scope",
 			"subject": "Subject",
-			"subjectKind": "Subject Type"
+			"subjectKind": "Subject Type",
+			"subtreeRoot": "Subtree root department"
 		},
 		"placeholders": {
 			"policyName": "Workspace Policy Name",
@@ -2129,7 +2130,7 @@
 				"Team": "Every member of this team holds these roles.",
 				"OrgUnit": "Every member of this department and its sub-departments holds these roles."
 			},
-			"empty": "No policies are granted to this group."
+			"empty": "No policies are granted to this team or department."
 		},
 		"effective": {
 			"hint": "The policies that apply to this user: granted to the user, or through a team or a department.",
@@ -2704,6 +2705,7 @@
 			"notTested": "Not tested yet",
 			"notSynced": "Not synced yet.",
 			"syncOff": "Organization sync is off. Turn it on in the settings to read departments, teams and users from the directory.",
+			"syncPaused": "The identity source is disabled, so organization sync is paused. Enable the source to resume it.",
 			"syncWaiting": "Sync requested. Waiting for the result."
 		},
 		"values": {
@@ -2715,6 +2717,7 @@
 			"systemTrust": "System trust store",
 			"on": "On",
 			"off": "Off",
+			"paused": "Paused",
 			"everyHours_one": "Every hour",
 			"everyHours_other": "Every {{count}} hours",
 			"everyMinutes_one": "Every minute",
@@ -2804,7 +2807,8 @@
 			"groupMemberAttribute": "Use uniqueMember for groupOfUniqueNames.",
 			"userListFilter": "Selects every user to sync. Empty uses the user filter with {username} replaced by *.",
 			"pageSize": "Entries per page when reading the directory. Empty means 500.",
-			"syncNowDisabled": "Turn on organization sync in the settings first."
+			"syncNowDisabled": "Turn on organization sync in the settings first.",
+			"syncNowPaused": "Enable the identity source first. Its sync is paused while it is disabled."
 		},
 		"validation": {
 			"required": "This field is required",
@@ -2850,7 +2854,8 @@
 			"invalid": "The identity source is not valid: {{hint}}",
 			"invalidSync": "The organization sync settings are not valid. {{hint}}",
 			"notFound": "The identity source no longer exists.",
-			"syncNotEnabled": "Organization sync is not enabled for this identity source. Turn it on in the settings first."
+			"syncNotEnabled": "Organization sync is not enabled for this identity source. Turn it on in the settings first.",
+			"syncPaused": "The identity source is disabled, so its sync is paused. Enable the source first."
 		},
 		"syncResults": {
 			"ok": "Succeeded",
