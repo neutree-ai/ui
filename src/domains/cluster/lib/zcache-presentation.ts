@@ -20,6 +20,38 @@ export function activeCacheChange(status?: ZCacheStatus) {
   return change;
 }
 
+export function operationLabel(kind?: string) {
+  switch (kind) {
+    case "install":
+      return "clusters.zcache.actions.install";
+    case "add_nodes":
+      return "clusters.zcache.actions.addNodes";
+    case "remove_nodes":
+      return "clusters.zcache.actions.removeNodes";
+    case "update_cache":
+      return "clusters.zcache.actions.capacity";
+    default:
+      return "clusters.zcache.actions.configure";
+  }
+}
+
+export function operationPhase(phase?: string) {
+  switch (phase) {
+    case "Succeeded":
+      return "clusters.zcache.operationSucceeded";
+    case "Failed":
+    case "Rejected":
+      return "clusters.zcache.operationFailed";
+    case "Running":
+      return "clusters.zcache.operationRunning";
+    case "Pending":
+    case "Submitting":
+      return "clusters.zcache.operationPending";
+    default:
+      return "clusters.zcache.unknown";
+  }
+}
+
 // Use the product's neutral name in messages; keep resource identifiers intact.
 export function cacheMessage(message: string | undefined, serviceName: string) {
   return message?.replace(/\bzcache(?=\s|:|$)/gi, serviceName);
