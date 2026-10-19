@@ -29,8 +29,6 @@ import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
-const tokens = new Intl.NumberFormat("en-US");
-
 /** Limit, period and, when read, the usage of the current period. */
 export function TokenPoolSummary({
   quota,
@@ -62,8 +60,8 @@ export function TokenPoolSummary({
           data-testid="group-policy-pool-usage"
         >
           {t("group_policies.pool.usage", {
-            used: tokens.format(pool.used),
-            remaining: tokens.format(Math.max(pool.remaining, 0)),
+            used: formatTokenQuota(pool.used),
+            remaining: formatTokenQuota(Math.max(pool.remaining, 0)),
             resetsAt: pool.resets_at,
           })}
         </p>

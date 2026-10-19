@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, values?: Record<string, unknown>) =>
+      values ? `${key} ${JSON.stringify(values)}` : key,
+  }),
 }));
 vi.mock("@/foundation/components/ShowPage", () => ({
   ShowPage: {
@@ -136,6 +139,31 @@ describe("GroupModelAccess", () => {
       "sre",
       true,
     );
+  });
+
+  it("formats the limit, used and remaining tokens alike", () => {
+    grant("read");
+    withPolicy({ token_quota: { limit: 1_500_000, period: "monthly" } });
+    vi.mocked(useGroupTokenPool).mockReturnValue({
+      pool: {
+        kind: "Team",
+        name: "sre",
+        token_limit: 1_500_000,
+        period: "monthly",
+        used: 250_000,
+        remaining: 1_250_000,
+        resets_at: "2026-11-01",
+      },
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useGroupTokenPool>);
+    render(<GroupModelAccess kind="Team" name="sre" />);
+    expect(screen.getByTestId("group-policy-pool").textContent).toContain(
+      '"limit":"1.5M"',
+    );
+    const usage = screen.getByTestId("group-policy-pool-usage").textContent;
+    expect(usage).toContain('"used":"250K"');
+    expect(usage).toContain('"remaining":"1.25M"');
   });
 
   it("does not read a pool the policy does not set", () => {
