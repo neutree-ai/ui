@@ -1,9 +1,11 @@
+import { useList } from "@refinedev/core";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { cacheMessage } from "../lib/zcache-presentation";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 
@@ -21,6 +23,34 @@ export function ZCacheFields({
   isEdit: boolean;
 }) {
   const { t } = useTranslation();
+  const name = form.watch("metadata.name");
+  const workspace = form.watch("metadata.workspace");
+  const dependencies = useList<{
+    id: number;
+    spec: { kv_cache?: { provider: string } | null };
+    status?: {
+      kv_cache?: { provider: string; details?: { in_use?: boolean } };
+    };
+  }>({
+    resource: "endpoints",
+    pagination: { mode: "off" },
+    filters: [{ field: "spec->>cluster", operator: "eq", value: name }],
+    meta: { workspace, workspaced: true },
+    queryOptions: {
+      enabled: isEdit && !!name && !!workspace,
+      refetchInterval: 5000,
+    },
+  });
+  const inUse =
+    dependencies.data?.data.some(
+      (e) =>
+        e.spec.kv_cache?.provider === "zcache" ||
+        (e.status?.kv_cache?.provider === "zcache" &&
+          e.status.kv_cache.details?.in_use),
+    ) === true;
+  const guardRemoval = inUse || dependencies.isLoading || dependencies.isError;
+  const persistedNodes: string[] =
+    form.formState.defaultValues?.spec?.cache?.options?.target_nodes ?? [];
   const enabled = form.watch("spec.cache.options.enabled") === true;
   const selected: string[] =
     form.watch("spec.cache.options.target_nodes") ?? [];
@@ -42,38 +72,50 @@ export function ZCacheFields({
       )}
       {isEdit && (
         <>
-          <FormFieldGroup
-            {...form}
-            name="spec.cache.options.enabled"
-            label={t("clusters.zcache.enable")}
-            isCheckbox
-            className="col-span-full"
-          >
-            <Checkbox
-              checked={enabled}
-              onCheckedChange={(value) =>
-                form.setValue(
-                  "spec.cache",
-                  {
-                    provider: "zcache",
-                    options: {
-                      ...form.getValues("spec.cache.options"),
-                      enabled: value === true,
-                      l1_size_gib:
-                        Number.isInteger(
-                          form.getValues("spec.cache.options.l1_size_gib"),
-                        ) &&
-                        form.getValues("spec.cache.options.l1_size_gib") > 0
-                          ? form.getValues("spec.cache.options.l1_size_gib")
-                          : 1,
-                      target_nodes: selected,
+          <div className="col-span-full flex items-center gap-2">
+            <FormFieldGroup
+              {...form}
+              name="spec.cache.options.enabled"
+              label={t("clusters.zcache.enable")}
+              isCheckbox
+              className="col-span-full"
+            >
+              <Checkbox
+                checked={enabled}
+                disabled={enabled && guardRemoval}
+                onCheckedChange={(value) =>
+                  form.setValue(
+                    "spec.cache",
+                    {
+                      provider: "zcache",
+                      options: {
+                        ...form.getValues("spec.cache.options"),
+                        enabled: value === true,
+                        l1_size_gib:
+                          Number.isInteger(
+                            form.getValues("spec.cache.options.l1_size_gib"),
+                          ) &&
+                          form.getValues("spec.cache.options.l1_size_gib") > 0
+                            ? form.getValues("spec.cache.options.l1_size_gib")
+                            : 1,
+                        target_nodes: selected,
+                      },
                     },
-                  },
-                  { shouldDirty: true, shouldValidate: true },
-                )
-              }
-            />
-          </FormFieldGroup>
+                    { shouldDirty: true, shouldValidate: true },
+                  )
+                }
+              />
+            </FormFieldGroup>
+            {guardRemoval && enabled && (
+              <InfoHint
+                label={t(
+                  inUse
+                    ? "clusters.zcache.dependencyHint"
+                    : "clusters.zcache.dependencyChecking",
+                )}
+              />
+            )}
+          </div>
           {enabled && (
             <>
               <FormFieldGroup
@@ -142,9 +184,10 @@ export function ZCacheFields({
                         aria-label={name}
                         checked={selected.includes(name)}
                         disabled={
-                          !selected.includes(name) &&
-                          (!candidate?.selectable ||
-                            !!status?.observation_error)
+                          (guardRemoval && persistedNodes.includes(name)) ||
+                          (!selected.includes(name) &&
+                            (!candidate?.selectable ||
+                              !!status?.observation_error))
                         }
                         onCheckedChange={(checked) =>
                           form.setValue(

@@ -12,6 +12,7 @@ import type { Cluster } from "@/domains/cluster/types";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
+import { EndpointKVCacheSummary } from "@/domains/endpoint/components/EndpointKVCacheSummary";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
 import EndpointRuntimeResourcesCard, {
@@ -137,7 +138,7 @@ const getSchedulerText = (
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
-  const { grafanaUrl } = useSystemApi();
+  const { grafanaUrl, systemInfo } = useSystemApi();
   const {
     query: { data, isLoading },
   } = useShow<Endpoint>();
@@ -326,6 +327,15 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
+            {(systemInfo?.capabilities?.cluster_cache_providers?.includes(
+              "zcache",
+            ) ||
+              record.spec.kv_cache) && (
+              <EndpointKVCacheSummary
+                endpoint={record}
+                cluster={clusterData?.data?.[0]}
+              />
+            )}
             <div className="space-y-3">
               <ShowPage.Section
                 title={t("endpoints.sections.runtimeAllocation")}
