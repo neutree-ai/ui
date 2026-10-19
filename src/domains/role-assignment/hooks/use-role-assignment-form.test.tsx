@@ -192,6 +192,35 @@ describe("useRoleAssignmentForm", () => {
       );
     });
 
+    it("starts global whether or not the license has loaded", () => {
+      setup({ supportMultiWorkspace: false });
+      const { unmount } = render(<TestForm />);
+      expect(spec()?.global).toBe(true);
+      unmount();
+
+      setup({ supportMultiWorkspace: true });
+      render(<TestForm />);
+      expect(spec()?.global).toBe(true);
+      expect(scopeTrigger().textContent).toBe(GLOBAL);
+    });
+
+    it("requires a workspace for a workspace scope", async () => {
+      render(<TestForm />);
+      selectScope(WORKSPACE);
+
+      let valid: boolean | undefined;
+      await act(async () => {
+        valid = await formRef?.trigger("spec.workspace");
+      });
+      expect(valid).toBe(false);
+
+      act(() => formRef?.setValue("spec.workspace", "ws-1"));
+      await act(async () => {
+        valid = await formRef?.trigger("spec.workspace");
+      });
+      expect(valid).toBe(true);
+    });
+
     it("builds a workspace spec", async () => {
       render(<TestForm />);
       selectScope(WORKSPACE);

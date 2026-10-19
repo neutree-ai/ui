@@ -69,7 +69,9 @@ export const useRoleAssignmentForm = ({
       spec: {
         user_id: "",
         workspace: "",
-        global: !supportMultiWorkspace,
+        // Not derived from the license: it loads after the first render, so a
+        // license-based default differs between the first and later opens.
+        global: true,
         role: "",
         org_unit: null,
         subject_kind: "User",
@@ -281,6 +283,12 @@ export const useRoleAssignmentForm = ({
           name="spec.workspace"
           label={t("common.fields.workspace")}
           className={scope === "workspace" ? "" : "hidden"}
+          rules={{
+            validate: (value) =>
+              scopeOf(form.getValues("spec")) !== "workspace" ||
+              (value ?? "").trim() !== "" ||
+              t("role_assignments.validation.workspaceRequired"),
+          }}
         >
           <WorkspaceField />
         </FormFieldGroup>
