@@ -72,6 +72,17 @@ vi.mock("@/domains/cluster/components/ModelCacheFields", () => ({
   ModelCacheFields: () => <div data-testid="model-cache-fields-mock" />,
 }));
 
+const cacheCapability = vi.hoisted(() => ({ value: false }));
+vi.mock("@/foundation/hooks/use-system-api", () => ({
+  useSystemApi: () => ({
+    systemInfo: {
+      capabilities: {
+        cluster_cache_providers: cacheCapability.value ? ["zcache"] : [],
+      },
+    },
+  }),
+}));
+
 import { useClusterForm } from "./use-cluster-form";
 
 let formInstance: ReturnType<typeof useClusterForm>["form"] | null = null;
@@ -379,3 +390,24 @@ describe("useClusterForm", () => {
     });
   });
 });
+
+function CacheCapabilityForm() {
+  const { form, cacheFields } = useClusterForm({ action: "create" });
+  React.useEffect(() => {
+    form.setValue("spec.type", "kubernetes");
+  }, [form.setValue]);
+  return <FormProvider {...form}>{cacheFields}</FormProvider>;
+}
+it.each([false, true])(
+  "offers cache configuration only when server supports it (%s)",
+  async (supported) => {
+    cacheCapability.value = supported;
+    render(<CacheCapabilityForm />);
+    await waitFor(() => {
+      expect(screen.queryByText("clusters.cache.title") !== null).toBe(
+        supported,
+      );
+    });
+    cacheCapability.value = false;
+  },
+);

@@ -87,6 +87,7 @@ export type Cluster = {
 };
 
 export type ClusterSpec = {
+  cache?: ClusterCacheSpec;
   /**
    * The type of the cluster.
    * supported: 'ssh' | 'kubernetes'
@@ -109,6 +110,7 @@ type NodeProvisionStatus =
   (typeof NodeProvisionStatus)[keyof typeof NodeProvisionStatus];
 
 export type ClusterStatus = BaseStatus<ClusterPhase> & {
+  cache?: ClusterCacheStatus;
   image: string | null;
   dashboard_url: string | null;
   /**
@@ -153,4 +155,99 @@ enum ClusterPhase {
   FAILED = "Failed",
   DELETING = "Deleting",
   DELETED = "Deleted",
+}
+
+export type ZCacheSpec = {
+  control_plane?: { version: string; request_id: string };
+  enabled: boolean;
+  l1_size_gib: number;
+  target_nodes: string[];
+};
+export type ZCacheStatus = {
+  control_plane?: ZCacheControlPlaneStatus;
+  observed_at?: string;
+  observation_error?: string;
+  current?: ZCacheSpec;
+  configured_runtime_version?: string;
+  runtime_endpoint?: { address: string; port: number };
+  nodes?: {
+    name: string;
+    runtime: string;
+    cache: string;
+    capacity_bytes: number;
+    reason?: string;
+  }[];
+  candidates?: { name: string; selectable: boolean; reason?: string }[];
+  change?: {
+    operation_id?: string;
+    phase: string;
+    message?: string;
+    request?: {
+      lmcache?: { l1SizeGb?: number; targetNodes?: string[] };
+      operation?: { kind?: string };
+    };
+  };
+  operations?: {
+    id: string;
+    phase: string;
+    kind: string;
+    created_at?: string;
+    completed_at?: string;
+    message?: string;
+    nodes?: { name: string; phase: string; reason?: string }[];
+  }[];
+};
+
+export type ZCacheControlPlaneStatus = {
+  version?: string;
+  target_version?: string;
+  request_id?: string;
+  phase?: string;
+  message?: string;
+  started_at?: string;
+  completed_at?: string;
+  revision?: number;
+  ready: boolean;
+  health_message?: string;
+  available_versions: {
+    version: string;
+    chart_version: string;
+    node_agent_version: string;
+    runtime_versions: string[];
+    upgrade_from: string[];
+  }[];
+};
+
+export type ClusterCacheSpec = {
+  provider: string;
+  options: Record<string, unknown>;
+};
+export type CacheCondition = {
+  type: "ConfigurationApplied" | "Ready";
+  status: "True" | "False" | "Unknown";
+  reason: string;
+  message?: string;
+};
+export type ClusterCacheStatus = {
+  provider: string;
+  phase: "Disabled" | "Reconciling" | "Ready" | "Unavailable" | "Failed";
+  error_message?: string;
+  conditions: CacheCondition[];
+  details?: Record<string, unknown>;
+};
+
+export function zcacheSpec(
+  cluster?: Pick<Cluster, "spec">,
+): ZCacheSpec | undefined {
+  return cluster?.spec.cache?.provider === "zcache"
+    ? (cluster.spec.cache.options as ZCacheSpec)
+    : undefined;
+}
+
+export function zcacheStatus(
+  cluster?: Pick<Cluster, "status">,
+): ZCacheStatus | undefined {
+  return cluster?.status?.cache?.provider === "zcache"
+    ? (cluster.status.cache.details as ZCacheStatus | undefined)
+    : undefined;
 }
