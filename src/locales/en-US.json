@@ -534,6 +534,30 @@
 			"storageRequired": "Storage is required",
 			"invalidStorageFormat": "Invalid storage format (e.g., 10Gi, 100Mi, 1Ti)",
 			"invalidK8sName": "Invalid name format (lowercase alphanumeric and hyphens only, max 253 characters)"
+		},
+		"zcache": {
+			"enable": "Enable cache",
+			"saveHint": "After saving, check application progress on the cluster details page.",
+			"createHint": "After connecting the cluster, select nodes and enable caching.",
+			"capacity": "L1 configured capacity (GiB)",
+			"capacityChangeTitle": "Adjust cache capacity?",
+			"capacityChangeDescription": "Changing capacity will restart cache processes and clear the existing cache.",
+			"confirmSave": "Confirm and save",
+			"targetNodes": "Cache nodes",
+			"stale": "Latest status is unavailable. The last observed values are shown below.",
+			"noCandidates": "Node inventory is unavailable. Check the cache service status.",
+			"ready": "Ready",
+			"notReady": "Not ready",
+			"selectNodes": "Select at least one node.",
+			"saved": "Configuration saved; awaiting application",
+			"retryHint": "Save again to retry this failed configuration.",
+			"kubernetesControlPlane": "Kubernetes control-plane node; excluded from cache deployment by default",
+			"eligibleNode": "Available",
+			"unavailableNode": "Currently unavailable",
+			"serviceName": "Cache service"
+		},
+		"cache": {
+			"title": "KV Cache"
 		}
 	},
 	"model_registries": {

@@ -208,13 +208,13 @@ export type ClusterCacheSpec = {
   provider: string;
   options: Record<string, unknown>;
 };
-type CacheCondition = {
+export type CacheCondition = {
   type: "ConfigurationApplied" | "Ready";
   status: "True" | "False" | "Unknown";
   reason: string;
   message?: string;
 };
-type ClusterCacheStatus = {
+export type ClusterCacheStatus = {
   provider: string;
   phase: "Disabled" | "Reconciling" | "Ready" | "Unavailable" | "Failed";
   error_message?: string;
@@ -222,3 +222,18 @@ type ClusterCacheStatus = {
   details?: Record<string, unknown>;
 };
 
+export function zcacheSpec(
+  cluster?: Pick<Cluster, "spec">,
+): ZCacheSpec | undefined {
+  return cluster?.spec.cache?.provider === "zcache"
+    ? (cluster.spec.cache.options as ZCacheSpec)
+    : undefined;
+}
+
+export function zcacheStatus(
+  cluster?: Pick<Cluster, "status">,
+): ZCacheStatus | undefined {
+  return cluster?.status?.cache?.provider === "zcache"
+    ? (cluster.status.cache.details as ZCacheStatus | undefined)
+    : undefined;
+}
