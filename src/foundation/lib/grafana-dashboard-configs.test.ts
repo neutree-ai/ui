@@ -6,6 +6,7 @@ import {
   getClusterSplitDashboardProps,
   getEndpointSplitDashboardProps,
   getOverviewDashboardProps,
+  getZCacheDashboardProps,
 } from "./grafana-dashboard-configs";
 
 describe("getOverviewDashboardProps", () => {
@@ -65,7 +66,88 @@ describe("getEndpointSplitDashboardProps", () => {
         datasource: "neutree-cluster",
         Cluster: "cluster-a",
         Endpoint: "endpoint-a",
+        ...(dashboardType === "cache"
+          ? { Workspace: "default", L1CapacityBytes: "0", L1Nodes: "a^" }
+          : {}),
       });
     },
   );
+});
+
+describe("cache dashboard scope", () => {
+  it("passes observed node capacity and escapes node names for the PromQL regex", () => {
+    const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
+      clusterName: "cluster-a",
+      endpointName: "model",
+      cacheNodes: [
+        { name: "worker.a", capacity_bytes: 2 ** 31 },
+        { name: "worker-b", capacity_bytes: 2 ** 31 },
+      ],
+    });
+    expect(cache.dashboardConfig.variables).toMatchObject({
+      L1CapacityBytes: String(2 ** 31),
+      L1Nodes: "worker\\\\.a|worker-b",
+    });
+  });
+
+  it.each([
+    [{ name: "worker-a", capacity_bytes: 0 }],
+    [
+      { name: "worker-a", capacity_bytes: 2 ** 31 },
+      { name: "worker-b", capacity_bytes: 2 ** 32 },
+    ],
+  ])(
+    "leaves unknown or mixed-capacity inventories unavailable",
+    (...cacheNodes) => {
+      const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
+        clusterName: "cluster-a",
+        endpointName: "model",
+        cacheNodes,
+      });
+      expect(cache.dashboardConfig.variables).toMatchObject({
+        L1CapacityBytes: "0",
+        L1Nodes: "a^",
+      });
+    },
+  );
+
+  it("keeps identical names in different workspaces distinct", () => {
+    const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
+      workspace: "team-b",
+      clusterName: "shared-name",
+      endpointName: "model",
+    });
+    expect(cache.dashboardConfig.variables).toMatchObject({
+      Workspace: "team-b",
+      Cluster: "shared-name",
+      Endpoint: "model",
+    });
+    const pool = getZCacheDashboardProps("http://grafana", {
+      workspace: "team-b",
+      clusterName: "shared-name",
+    });
+    expect(pool.dashboardConfig.dashboardId).toBe("neutree-zcache-embed");
+    expect(pool.dashboardConfig.variables).toEqual({
+      datasource: "neutree-cluster",
+      Workspace: "team-b",
+      Cluster: "shared-name",
+      CacheCapacity: "(vector(0) > 0)",
+      CacheReady: "(vector(0) > 0)",
+    });
+  });
+
+  it("preserves different observed node capacities and readiness", () => {
+    const vars = getZCacheDashboardProps("http://grafana", {
+      workspace: "team-a",
+      clusterName: "pool",
+      nodes: [
+        { name: "node-a", capacity_bytes: 1024, runtime: "Ready" },
+        { name: "node-b", capacity_bytes: 2048, runtime: "NotReady" },
+      ],
+    }).dashboardConfig.variables;
+    expect(vars?.CacheCapacity).toContain("vector(1024)");
+    expect(vars?.CacheCapacity).toContain("vector(2048)");
+    expect(vars?.CacheReady).toContain("vector(1)");
+    expect(vars?.CacheReady).toContain("vector(0)");
+  });
 });
