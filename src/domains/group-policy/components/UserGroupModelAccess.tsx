@@ -23,7 +23,7 @@ import { useUserGroupPolicy } from "@/domains/group-policy/hooks/use-group-polic
 import type { GroupPolicyModel } from "@/domains/group-policy/types";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -33,9 +33,13 @@ export const USER_MODEL_ACCESS_ANCHOR = "user-model-access";
 /** Query parameter that preselects the workspace. */
 export const USER_MODEL_ACCESS_WORKSPACE_PARAM = "model_access_workspace";
 
-const inWorkspace = (entries: GroupPolicyModel[] | null, workspace: string) =>
+const inWorkspace = (
+  entries: GroupPolicyModel[] | null,
+  workspace: string | null,
+) =>
   (entries ?? []).filter(
-    (entry) => !entry.workspace || entry.workspace === workspace,
+    (entry) =>
+      workspace === null || !entry.workspace || entry.workspace === workspace,
   );
 
 const Names = ({
@@ -64,7 +68,9 @@ const Names = ({
 /**
  * How the user's groups limit the models they can call in a workspace: the
  * merged result, then each group's share. Shown to the user and to holders of
- * a global group_policy:read; hidden when the server refuses.
+ * group_policy:read on any scope (a department admin reads their subtree's
+ * users); hidden when the server refuses. A reader who sees no workspace gets
+ * each group's rules without the merged result.
  */
 export function UserGroupModelAccess({
   userId,
@@ -79,13 +85,15 @@ export function UserGroupModelAccess({
 }) {
   const { t } = useTranslation();
   const { data: identity } = useGetIdentity<{ id?: string }>();
-  const canReadAny =
-    useHasGlobalPermission("group_policy:read").allowed === true;
-  const visible = canReadAny || (!!identity?.id && identity.id === userId);
-  const { workspaces } = useWorkspaceOptions();
+  const canRead = useHasPermission("group_policy:read").allowed === true;
+  const visible = canRead || (!!identity?.id && identity.id === userId);
+  const { workspaces, isLoading: workspacesLoading } = useWorkspaceOptions();
   const names = workspaces.map((ws) => ws.metadata.name as string);
   const [picked, setPicked] = useState(initialWorkspace ?? "");
-  const workspace = picked || names[0] || "";
+  const noWorkspace = !workspacesLoading && names.length === 0;
+  const workspace: string | null = noWorkspace
+    ? null
+    : picked || names[0] || "";
   const { policy, isLoading, denied, error } = useUserGroupPolicy(
     userId,
     workspace,
@@ -111,22 +119,24 @@ export function UserGroupModelAccess({
         title={t("group_policies.title")}
         description={t("group_policies.userHint")}
         actions={
-          <Select value={workspace} onValueChange={setPicked}>
-            <SelectTrigger
-              className="w-48"
-              aria-label={t("common.fields.workspace")}
-              data-testid="user-model-access-workspace"
-            >
-              <SelectValue placeholder={t("common.fields.workspace")} />
-            </SelectTrigger>
-            <SelectContent>
-              {names.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          workspace === null ? undefined : (
+            <Select value={workspace} onValueChange={setPicked}>
+              <SelectTrigger
+                className="w-48"
+                aria-label={t("common.fields.workspace")}
+                data-testid="user-model-access-workspace"
+              >
+                <SelectValue placeholder={t("common.fields.workspace")} />
+              </SelectTrigger>
+              <SelectContent>
+                {names.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
         }
         data-testid="user-model-access"
       >
@@ -138,41 +148,50 @@ export function UserGroupModelAccess({
           </p>
         ) : policy ? (
           <div className="space-y-4">
-            <dl className="grid gap-3 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="mb-1 text-xs font-medium text-muted-foreground">
-                  {t("group_policies.effective.allowed")}
-                </dt>
-                <dd>
-                  {policy.allowed_models === null ? (
-                    <span
-                      className="text-sm text-muted-foreground"
-                      data-testid="user-model-access-allowed"
-                    >
-                      {t("group_policies.unrestricted")}
-                    </span>
-                  ) : (
+            {workspace === null ? (
+              <p
+                className="text-sm text-muted-foreground"
+                data-testid="user-model-access-no-workspace"
+              >
+                {t("group_policies.effective.noWorkspace")}
+              </p>
+            ) : (
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="mb-1 text-xs font-medium text-muted-foreground">
+                    {t("group_policies.effective.allowed")}
+                  </dt>
+                  <dd>
+                    {policy.allowed_models === null ? (
+                      <span
+                        className="text-sm text-muted-foreground"
+                        data-testid="user-model-access-allowed"
+                      >
+                        {t("group_policies.unrestricted")}
+                      </span>
+                    ) : (
+                      <Names
+                        names={policy.allowed_models}
+                        emptyText={t("group_policies.effective.noneAllowed")}
+                        testId="user-model-access-allowed"
+                      />
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="mb-1 text-xs font-medium text-muted-foreground">
+                    {t("group_policies.effective.denied")}
+                  </dt>
+                  <dd>
                     <Names
-                      names={policy.allowed_models}
-                      emptyText={t("group_policies.effective.noneAllowed")}
-                      testId="user-model-access-allowed"
+                      names={policy.denied_models ?? []}
+                      emptyText={t("group_policies.effective.noneDenied")}
+                      testId="user-model-access-denied"
                     />
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="mb-1 text-xs font-medium text-muted-foreground">
-                  {t("group_policies.effective.denied")}
-                </dt>
-                <dd>
-                  <Names
-                    names={policy.denied_models ?? []}
-                    emptyText={t("group_policies.effective.noneDenied")}
-                    testId="user-model-access-denied"
-                  />
-                </dd>
-              </div>
-            </dl>
+                  </dd>
+                </div>
+              </dl>
+            )}
             {groups.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {t("group_policies.effective.noGroups")}

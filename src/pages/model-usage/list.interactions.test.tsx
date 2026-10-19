@@ -230,11 +230,13 @@ vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
 }));
 
 let canReadGroups = false;
+let canReadSubtree = false;
 let groupRows: GroupUsageRecord[] = [];
 const groupKinds: Array<string | undefined> = [];
 
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: () => ({ allowed: canReadGroups, isLoading: false }),
+  useHasPermission: () => ({ allowed: canReadSubtree, isLoading: false }),
 }));
 
 let orgUnits: Array<{
@@ -287,6 +289,7 @@ const pickOption = (label: string) => {
 beforeEach(() => {
   refetch.mockClear();
   canReadGroups = false;
+  canReadSubtree = false;
   groupKinds.length = 0;
   hookState = { usageData: rows, isLoading: false, error: null };
   render(<ModelUsageList />);
@@ -580,6 +583,23 @@ describe("usage by group", () => {
     const rowsShown = bodyRows(groupCard());
     expect(rowsShown).toHaveLength(1);
     expect(rowsShown[0].textContent).toContain("Dept A");
+  });
+
+  it("offers users and departments only to a subtree reader", () => {
+    cleanup();
+    canReadSubtree = true;
+    groupRows = [groupRow("User", "u-1", "Alice", "endpoint", 2, 30)];
+    render(<ModelUsageList />);
+
+    const card = cardFor("By user or group");
+    expect(bodyRows(card)[0].textContent).toContain("Alice");
+    expect(screen.getByText(/model_usage\.group\.subtreeOnly/)).toBeDefined();
+
+    openSelect(2);
+    const options = screen
+      .getAllByRole("option")
+      .map((node) => node.textContent);
+    expect(options).toEqual(["User", "Department"]);
   });
 
   it("lists departments in tree order with their path", () => {

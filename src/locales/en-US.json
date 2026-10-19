@@ -3016,7 +3016,8 @@
 			"noGroups": "None of this user's groups has a model access policy.",
 			"group": "Group",
 			"inactive": "Inactive",
-			"inactiveHint": "The group is inactive, but its policy still applies."
+			"inactiveHint": "The group is inactive, but its policy still applies.",
+			"noWorkspace": "You cannot see any workspace, so the merged result per workspace is not shown. Each group's rules are listed below; an entry limited to a workspace names it."
 		},
 		"errors": {
 			"groupNotFound": "The team or department does not exist.",
@@ -3383,7 +3384,8 @@
 			"requests": "Requests",
 			"historyHint": "Usage counts toward the groups the user was in at the time.",
 			"subtreeHint": "A department includes its sub-departments. Usage counts toward the department the user was in at the time.",
-			"apiKeyIgnored": "The API key filter does not apply here."
+			"apiKeyIgnored": "The API key filter does not apply here.",
+			"subtreeOnly": "Only the departments you manage: usage a user had in another department is not included."
 		}
 	},
 	"observations": {

@@ -19,11 +19,12 @@ vi.mock("@/foundation/components/ShowPage", () => ({
   },
 }));
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
-  useHasGlobalPermission: vi.fn(),
+  useHasPermission: vi.fn(),
 }));
+let workspaceNames = ["ws1", "ws2"];
 vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspaceOptions: () => ({
-    workspaces: [{ metadata: { name: "ws1" } }, { metadata: { name: "ws2" } }],
+    workspaces: workspaceNames.map((name) => ({ metadata: { name } })),
     isLoading: false,
   }),
 }));
@@ -34,7 +35,7 @@ vi.mock("@/domains/group-policy/hooks/use-group-policies", () => ({
 import { useGetIdentity } from "@refinedev/core";
 import { useUserGroupPolicy } from "@/domains/group-policy/hooks/use-group-policies";
 import type { UserGroupPolicy } from "@/domains/group-policy/types";
-import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { UserGroupModelAccess } from "./UserGroupModelAccess";
 
 const setup = ({
@@ -51,7 +52,7 @@ const setup = ({
   vi.mocked(useGetIdentity).mockReturnValue({
     data: { id: self ? "u-1" : "admin" },
   } as unknown as ReturnType<typeof useGetIdentity>);
-  vi.mocked(useHasGlobalPermission).mockReturnValue({
+  vi.mocked(useHasPermission).mockReturnValue({
     allowed: canRead,
     isLoading: false,
   });
@@ -77,7 +78,10 @@ const policy: UserGroupPolicy = {
   ],
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  workspaceNames = ["ws1", "ws2"];
+});
 
 describe("UserGroupModelAccess", () => {
   it("does not ask for another user's policy without group_policy:read", () => {
@@ -119,5 +123,20 @@ describe("UserGroupModelAccess", () => {
     expect(row.textContent).toContain("group_policies.effective.inactive");
     // The entry pinned to ws2 does not apply in ws1.
     expect(row.textContent).not.toContain("other");
+  });
+
+  it("lists each group's rules without a merged result when no workspace is readable", () => {
+    workspaceNames = [];
+    setup({ self: false, canRead: true, policy });
+    render(<UserGroupModelAccess userId="u-1" />);
+    expect(vi.mocked(useUserGroupPolicy).mock.calls[0][1]).toBeNull();
+    expect(screen.queryByTestId("user-model-access-allowed")).toBeNull();
+    expect(
+      screen.getByTestId("user-model-access-no-workspace").textContent,
+    ).toBe("group_policies.effective.noWorkspace");
+    // Every entry shows, the one pinned to ws2 included.
+    expect(
+      screen.getByTestId("user-model-access-group-OrgUnit-rd").textContent,
+    ).toContain("other");
   });
 });

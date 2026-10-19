@@ -92,26 +92,28 @@ const isDenied = (error: unknown) =>
   (error as { statusCode?: number } | null)?.statusCode === 403;
 
 /**
- * A user's merged group policy in a workspace. `denied` when the caller is
- * neither the user nor holds a global group_policy:read.
+ * A user's merged group policy in a workspace. With workspace null, only the
+ * groups and pools (no merged lists); "" waits. `denied` when the caller
+ * holds no group_policy:read on the user and is not the user.
  */
 export const useUserGroupPolicy = (
   userId: string,
-  workspace: string,
+  workspace: string | null,
   enabled: boolean,
 ) => {
+  const ready = enabled && workspace !== "";
   const query = useCustom<UserGroupPolicy>({
     url: "/rpc/get_user_group_policy",
     method: "post",
     config: { payload: { p_user_id: userId, p_workspace: workspace } },
-    queryOptions: { enabled: enabled && workspace !== "", retry: false },
+    queryOptions: { enabled: ready, retry: false },
     successNotification: false,
     errorNotification: false,
   });
   const denied = isDenied(query.error);
   return {
     policy: query.data?.data as UserGroupPolicy | undefined,
-    isLoading: enabled && workspace !== "" && query.isLoading,
+    isLoading: ready && query.isLoading,
     denied,
     error: denied ? null : query.error,
   };

@@ -42,7 +42,10 @@ import {
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
-import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
+import {
+  useHasGlobalPermission,
+  useHasPermission,
+} from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -72,6 +75,9 @@ const TOP_K = 8;
 const CARD_PAGE_SIZE = 10;
 const DETAIL_PAGE_SIZE = 50;
 const GROUP_KINDS: GroupUsageKind[] = ["User", "Team", "OrgUnit"];
+// org_unit:usage-read alone reads users and departments of the caller's
+// subtree; Team totals stay with a global workspace:usage-read.
+const SUBTREE_GROUP_KINDS: GroupUsageKind[] = ["User", "OrgUnit"];
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
@@ -98,11 +104,19 @@ export const ModelUsageList = () => {
     range.end,
   );
 
-  // Group totals include other users' usage, so the RPC wants a global
-  // workspace:usage-read; nobody else gets the card or the call.
-  const canReadGroups =
+  // Group totals include other users' usage: a global workspace:usage-read
+  // reads every group, org_unit:usage-read the users and departments of the
+  // caller's subtree. Nobody else gets the card or the call.
+  const canReadAllGroups =
     useHasGlobalPermission("workspace:usage-read").allowed === true;
-  const [groupKind, setGroupKind] = useState<GroupUsageKind>("User");
+  const canReadSubtree =
+    useHasPermission("org_unit:usage-read").allowed === true;
+  const canReadGroups = canReadAllGroups || canReadSubtree;
+  const groupKinds = canReadAllGroups ? GROUP_KINDS : SUBTREE_GROUP_KINDS;
+  const [pickedGroupKind, setGroupKind] = useState<GroupUsageKind>("User");
+  const groupKind = groupKinds.includes(pickedGroupKind)
+    ? pickedGroupKind
+    : "User";
   const groupUsage = useGroupUsage(
     canReadGroups ? workspace : undefined,
     range.start,
@@ -500,7 +514,7 @@ export const ModelUsageList = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {GROUP_KINDS.map((kind) => (
+                    {groupKinds.map((kind) => (
                       <SelectItem key={kind} value={kind}>
                         {t(`model_usage.group.kinds.${kind}`)}
                       </SelectItem>
@@ -511,6 +525,9 @@ export const ModelUsageList = () => {
                   {groupKind === "OrgUnit"
                     ? t("model_usage.group.subtreeHint")
                     : t("model_usage.group.historyHint")}
+                  {canReadAllGroups
+                    ? ""
+                    : ` ${t("model_usage.group.subtreeOnly")}`}
                   {apiKeyId ? ` ${t("model_usage.group.apiKeyIgnored")}` : ""}
                 </span>
               </div>
