@@ -6,7 +6,9 @@ import { ClusterCacheSection } from "./ClusterCacheSection";
 
 vi.mock("@refinedev/core", () => ({ useCan: () => ({ data: { can: true } }) }));
 vi.mock("./ZCacheEditor", () => ({ ZCacheEditor: () => null }));
-vi.mock("./ZCacheControlPlane", () => ({ ZCacheControlPlane: () => null }));
+vi.mock("./CacheRetry", () => ({
+  CacheRetry: () => <button type="button">Retry service</button>,
+}));
 const capability = vi.hoisted(() => ({ value: true as boolean | undefined }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
@@ -261,4 +263,33 @@ it("distinguishes unknown availability from confirmed unavailability", () => {
   cluster.status!.cache!.conditions[0].status = "False";
   rerender(<ClusterCacheSection cluster={cluster} />);
   expect(screen.getByText("clusters.zcache.unavailable")).toBeTruthy();
+});
+
+it("exposes a retry for initial installation failure with no node inventory", () => {
+  const cluster = {
+    spec: {
+      cache: {
+        provider: "zcache",
+        options: { enabled: false, l1_size_gib: 1, target_nodes: [] },
+      },
+    },
+    status: {
+      cache: {
+        provider: "zcache",
+        phase: "Failed",
+        conditions: [],
+        details: {
+          control_plane: {
+            phase: "Failed",
+            ready: false,
+            message: "install failed",
+          },
+        },
+      },
+    },
+  } as unknown as Cluster;
+  render(<ClusterCacheSection cluster={cluster} />);
+  expect(screen.getByRole("button", { name: "Retry service" })).toBeTruthy();
+  expect(screen.queryByText("clusters.zcache.controlPlane.title")).toBeNull();
+  expect(screen.queryByText("clusters.cache.providerLabel")).toBeNull();
 });

@@ -30,7 +30,6 @@ const cluster = {
         enabled: true,
         l1_size_gib: 2,
         target_nodes: ["a"],
-        control_plane: { version: "v1", request_id: "old" },
       },
     },
   },
@@ -57,9 +56,6 @@ describe("cache editing", () => {
       target: { value: "5" },
     });
     const refreshed = structuredClone(cluster);
-    (
-      refreshed.spec.cache!.options.control_plane as { request_id: string }
-    ).request_id = "new";
     refreshed.spec.config.kubernetes_config!.router!.replicas = 3;
     rerender(<ZCacheEditor cluster={refreshed} onClose={close} />);
     expect((screen.getByRole("spinbutton") as HTMLInputElement).value).toBe(
@@ -77,7 +73,6 @@ describe("cache editing", () => {
     const { values } = mocks.update.mock.calls[0][0];
     expect(values.spec.cache?.options).toMatchObject({
       l1_size_gib: 5,
-      control_plane: { request_id: "new" },
     });
     expect(values.spec.config.kubernetes_config).toEqual({
       router: { replicas: 3 },

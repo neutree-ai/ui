@@ -1,22 +1,22 @@
 import { useCan } from "@refinedev/core";
-import { CircleAlert, CircleCheck, History, Settings2 } from "lucide-react";
+import { History, Settings2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
-
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   activeCacheChange,
+  cacheMessage,
   operationLabel,
   sameCacheConfig,
 } from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
+import { CacheRetry } from "./CacheRetry";
 import { ZCacheActivity } from "./ZCacheActivity";
-import { ZCacheControlPlane } from "./ZCacheControlPlane";
 import { ZCacheEditor } from "./ZCacheEditor";
 
 export function ClusterCacheSection({ cluster }: { cluster: Cluster }) {
@@ -48,12 +48,6 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
   const busy = activeCacheChange(status);
   const request = busy?.request;
   const cp = status?.control_plane;
-  const ControlPlaneIcon = cp?.ready ? CircleCheck : CircleAlert;
-  const cpPending =
-    !!desired?.control_plane &&
-    desired.control_plane.request_id !== cp?.request_id;
-  const cpBusy =
-    cpPending || cp?.phase === "Installing" || cp?.phase === "Upgrading";
   const resultKey =
     phase === "Failed"
       ? "clusters.zcache.failed"
@@ -78,6 +72,9 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
       }
       actions={
         <div className="flex gap-2">
+          {(phase === "Failed" || (cp?.health_message && !cp.ready)) && (
+            <CacheRetry cluster={cluster} />
+          )}
           <Button variant="ghost" size="sm" onClick={() => setHistory(true)}>
             <History className="mr-2 h-4 w-4" />
             {t("clusters.zcache.operations")}
@@ -94,20 +91,15 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
       }
     >
       <div className="space-y-4">
-        <div className="text-sm">
-          <span className="text-muted-foreground">
-            {t("clusters.cache.providerLabel")}:{" "}
-          </span>
-          {cluster.spec.cache?.provider === "zcache"
-            ? t("clusters.zcache.title")
-            : (cluster.spec.cache?.provider ?? cluster.status?.cache?.provider)}
-        </div>
         {phase === "Unavailable" && (
           <p
             role="alert"
             className="rounded-md bg-destructive/5 p-3 text-sm text-destructive"
           >
-            {summary?.error_message || t("clusters.zcache.stale")}
+            {cacheMessage(
+              summary?.error_message,
+              t("clusters.zcache.serviceName"),
+            ) || t("clusters.zcache.stale")}
           </p>
         )}
         {phase === "Failed" && (
@@ -199,7 +191,10 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
                               {t("clusters.zcache.viewReason")}
                             </summary>
                             <p className="mt-1 max-w-xl break-words">
-                              {node.reason}
+                              {cacheMessage(
+                                node.reason,
+                                t("clusters.zcache.serviceName"),
+                              )}
                             </p>
                           </details>
                         )}
@@ -251,44 +246,12 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
             )}
           </p>
         )}
-        <details className="border-t pt-3">
-          <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-sm">
-            <span className="flex items-center gap-2">
-              <ControlPlaneIcon className="h-4 w-4 text-muted-foreground" />
-              {t("clusters.zcache.controlPlane.title")}
-              <span
-                className={
-                  !cp?.ready || cpBusy
-                    ? "text-amber-600"
-                    : "text-muted-foreground"
-                }
-              >
-                {t(
-                  cpBusy
-                    ? "clusters.zcache.reconciling"
-                    : !cp
-                      ? "clusters.zcache.unknown"
-                      : cp.ready
-                        ? "clusters.zcache.ready"
-                        : "clusters.zcache.notReady",
-                )}
-              </span>
-              {cp?.phase === "Failed" && (
-                <Badge variant="destructive">
-                  {t("clusters.zcache.controlPlane.failed")}
-                </Badge>
-              )}
-            </span>
-          </summary>
-          <div className="mt-4">
-            <ZCacheControlPlane cluster={cluster} />
-            <p className="mt-3 text-xs text-muted-foreground">
-              {t("clusters.zcache.configuredVersion")}:{" "}
-              {status?.configured_runtime_version ||
-                t("clusters.zcache.unknown")}
-            </p>
-          </div>
-        </details>
+        {status?.configured_runtime_version && (
+          <p className="border-t pt-3 text-sm text-muted-foreground">
+            {t("clusters.zcache.configuredVersion")}:{" "}
+            {status.configured_runtime_version}
+          </p>
+        )}
       </div>
       {editing && (
         <ZCacheEditor cluster={cluster} onClose={() => setEditing(false)} />

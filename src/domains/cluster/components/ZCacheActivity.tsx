@@ -6,7 +6,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import Timestamp from "@/foundation/components/Timestamp";
-import { operationLabel, operationPhase } from "../lib/zcache-presentation";
+import {
+  cacheMessage,
+  operationLabel,
+  operationPhase,
+} from "../lib/zcache-presentation";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 export function ZCacheActivity({
   status,
@@ -43,12 +47,27 @@ export function ZCacheActivity({
                 {t("clusters.zcache.currentDetails")}
               </summary>
               <div className="mt-3 space-y-2 break-words">
-                <p>{summary?.error_message}</p>
-                <p>{status?.observation_error}</p>
+                <p>
+                  {cacheMessage(
+                    summary?.error_message,
+                    t("clusters.zcache.serviceName"),
+                  )}
+                </p>
+                <p>
+                  {cacheMessage(
+                    status?.observation_error,
+                    t("clusters.zcache.serviceName"),
+                  )}
+                </p>
                 {status?.change && (
                   <>
                     <p>{t(operationPhase(status.change.phase))}</p>
-                    <p>{status.change.message}</p>
+                    <p>
+                      {cacheMessage(
+                        status.change.message,
+                        t("clusters.zcache.serviceName"),
+                      )}
+                    </p>
                     <p className="font-mono text-xs">
                       {status.change.operation_id ||
                         t("clusters.zcache.notAccepted")}
@@ -88,7 +107,12 @@ export function ZCacheActivity({
                       {n.name} · {t(operationPhase(n.phase))}
                     </p>
                     {n.reason && (
-                      <p className="text-muted-foreground">{n.reason}</p>
+                      <p className="text-muted-foreground">
+                        {cacheMessage(
+                          n.reason,
+                          t("clusters.zcache.serviceName"),
+                        )}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -97,7 +121,9 @@ export function ZCacheActivity({
                     {t("clusters.zcache.diagnostics")}
                   </summary>
                   <p className="mt-2 break-all font-mono">{op.id}</p>
-                  <p className="mt-1 break-words">{op.message}</p>
+                  <p className="mt-1 break-words">
+                    {cacheMessage(op.message, t("clusters.zcache.serviceName"))}
+                  </p>
                 </details>
               </div>
             </details>

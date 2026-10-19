@@ -158,7 +158,6 @@ enum ClusterPhase {
 }
 
 export type ZCacheSpec = {
-  control_plane?: { version: string; request_id: string };
   enabled: boolean;
   l1_size_gib: number;
   target_nodes: string[];
@@ -199,23 +198,10 @@ export type ZCacheStatus = {
 };
 
 export type ZCacheControlPlaneStatus = {
-  version?: string;
-  target_version?: string;
-  request_id?: string;
   phase?: string;
   message?: string;
-  started_at?: string;
-  completed_at?: string;
-  revision?: number;
   ready: boolean;
   health_message?: string;
-  available_versions: {
-    version: string;
-    chart_version: string;
-    node_agent_version: string;
-    runtime_versions: string[];
-    upgrade_from: string[];
-  }[];
 };
 
 export type ClusterCacheSpec = {

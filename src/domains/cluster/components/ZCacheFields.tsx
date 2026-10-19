@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { cacheMessage } from "../lib/zcache-presentation";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 
 export function ZCacheFields({
@@ -153,7 +154,10 @@ export function ZCacheFields({
                         <span className="block break-all">{name}</span>
                         <span
                           className="mt-1 block text-xs text-muted-foreground"
-                          title={candidate?.reason}
+                          title={cacheMessage(
+                            candidate?.reason,
+                            t("clusters.zcache.serviceName"),
+                          )}
                         >
                           {node
                             ? t(

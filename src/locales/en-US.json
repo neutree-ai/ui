@@ -535,19 +535,22 @@
 			"invalidStorageFormat": "Invalid storage format (e.g., 10Gi, 100Mi, 1Ti)",
 			"invalidK8sName": "Invalid name format (lowercase alphanumeric and hyphens only, max 253 characters)"
 		},
-		"cache": { "title": "KVCache Provider", "providerLabel": "Cache provider" },
+		"cache": {
+			"title": "KV Cache",
+			"providerLabel": "Cache provider"
+		},
 		"zcache": {
-			"title": "ZCache",
+			"title": "KV Cache",
 			"enable": "Enable cache",
 			"saveHint": "After saving, check application progress on the cluster details page.",
-			"createHint": "The ZCache control plane is installed when the cluster is connected. Then edit the cluster to select nodes and enable Runtime.",
+			"createHint": "After connecting the cluster, select nodes and enable caching.",
 			"capacity": "L1 configured capacity (GiB)",
 			"capacityChangeTitle": "Adjust cache capacity?",
 			"capacityChangeDescription": "Changing capacity will restart cache processes and clear the existing cache.",
 			"confirmSave": "Confirm and save",
 			"targetNodes": "Cache nodes",
 			"stale": "Latest status is unavailable. The last observed values are shown below.",
-			"noCandidates": "Node inventory is not available yet. Check ZCache on the cluster details page.",
+			"noCandidates": "Node inventory is unavailable. Check the cache service status.",
 			"ready": "Ready",
 			"notReady": "Not ready",
 			"selectNodes": "Select at least one node.",
@@ -574,29 +577,7 @@
 			"saved": "Configuration saved; awaiting application",
 			"retryHint": "Save again to retry this failed configuration.",
 			"reportedCapacity": "L1 configured capacity",
-			"configuredVersion": "Configured Runtime version",
-			"controlPlane": {
-				"title": "ZCache control plane",
-				"manage": "Upgrade / reapply control plane",
-				"installed": "Installed version",
-				"target": "Target version",
-				"result": "Last action",
-				"health": "Current health",
-				"succeeded": "Succeeded",
-				"failed": "Failed",
-				"installing": "Installing",
-				"upgrading": "Applying",
-				"pending": "Awaiting execution",
-				"submitted": "Control-plane request submitted. Follow its result on this page.",
-				"submitFailed": "Unable to submit control-plane request",
-				"completed": "Completed at:",
-				"policy": "Manual resource changes are not automatically repaired. Updating Neutree does not upgrade this installation.",
-				"impact": "This operation applies the selected control-plane bundle and may update node agents or overwrite manual changes. Runtime image versions remain unchanged. Review compatibility before confirming.",
-				"compatibility": "Compatible Runtime versions",
-				"reapplyHint": "This is the installed version. Reapply explicitly to repair resources or retry a failed action. No newer supported version is required.",
-				"reapply": "Confirm reapply / retry",
-				"confirm": "Confirm installation / upgrade"
-			},
+			"configuredVersion": "Cache service version (configured)",
 			"edit": "Edit configuration",
 			"editDescription": "Change cache capacity and selected nodes.",
 			"historyHint": "Recent configuration operations. Past results do not represent current node health.",
@@ -626,7 +607,7 @@
 			"saveFailed": "Could not save. Please retry.",
 			"retry": "Retry configuration",
 			"disableTitle": "Disable cache",
-			"disableDescription": "Disabling removes cache nodes and clears cached data. Inference instances using the cache may be affected. The ZCache control plane remains installed.",
+			"disableDescription": "Disabling removes cache nodes and clears cached data.",
 			"discardTitle": "Discard changes",
 			"discardDescription": "You have unsaved changes. Discard them?",
 			"kubernetesControlPlane": "Kubernetes control-plane node; excluded from cache deployment by default",
@@ -638,7 +619,8 @@
 				"removeNodes": "Remove cache nodes",
 				"capacity": "Change cache capacity",
 				"configure": "Update cache configuration"
-			}
+			},
+			"serviceName": "Cache service"
 		}
 	},
 	"model_registries": {

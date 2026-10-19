@@ -51,3 +51,8 @@ export function operationPhase(phase?: string) {
       return "clusters.zcache.unknown";
   }
 }
+
+// Use the product's neutral name in messages; keep resource identifiers intact.
+export function cacheMessage(message: string | undefined, serviceName: string) {
+  return message?.replace(/\bzcache(?=\s|:|$)/gi, serviceName);
+}

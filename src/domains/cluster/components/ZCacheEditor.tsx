@@ -23,7 +23,11 @@ import {
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useCacheCapacityConfirmation } from "../hooks/use-cache-capacity-confirmation";
-import { activeCacheChange, sameCacheConfig } from "../lib/zcache-presentation";
+import {
+  activeCacheChange,
+  cacheMessage,
+  sameCacheConfig,
+} from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
 
@@ -61,7 +65,6 @@ export function ZCacheEditor({
     spec.cache = {
       provider: "zcache",
       options: {
-        ...spec.cache?.options,
         enabled: draft.enabled,
         l1_size_gib: Number(draft.l1_size_gib),
         target_nodes: [...draft.target_nodes],
@@ -164,7 +167,7 @@ export function ZCacheEditor({
                   role="alert"
                   className="break-words text-sm text-destructive"
                 >
-                  {error}
+                  {cacheMessage(error, t("clusters.zcache.serviceName"))}
                 </p>
               )}
             </fieldset>
