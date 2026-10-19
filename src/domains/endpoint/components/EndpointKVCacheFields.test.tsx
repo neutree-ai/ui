@@ -73,18 +73,18 @@ it("disables ZCache by clearing the provider configuration", async () => {
   expect(save.mock.calls[0][0].spec.kv_cache).toBeNull();
 });
 
-it("requires a provider before displaying cache options", async () => {
+it("enables cache with its provider and default timeout without a selector", async () => {
   const save = vi.fn();
-  render(<Editor cache={{ provider: "", options: {} }} save={save} />);
-  expect(screen.getByRole("combobox")).toBeTruthy();
-  expect(screen.queryByRole("spinbutton")).toBeNull();
+  render(<Editor cache={null} save={save} />);
+  fireEvent.click(screen.getByRole("switch"));
+  expect(screen.queryByRole("combobox")).toBeNull();
+  expect(screen.getByRole("spinbutton")).toBeTruthy();
   fireEvent.click(screen.getByText("save"));
-  await vi.waitFor(() =>
-    expect(
-      screen.getAllByText("endpoints.kvCacheSettings.selectProvider").length,
-    ).toBeGreaterThan(1),
-  );
-  expect(save).not.toHaveBeenCalled();
+  await vi.waitFor(() => expect(save).toHaveBeenCalled());
+  expect(save.mock.calls[0][0].spec.kv_cache).toEqual({
+    provider: "zcache",
+    options: { timeout_seconds: 5 },
+  });
 });
 
 it("saves the common timeout option and rejects values outside its range", async () => {

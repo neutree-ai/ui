@@ -39,12 +39,6 @@ export function EndpointKVCacheSummary({
         <>
           <div className="border-l pl-8">
             <div className="text-xs font-medium text-muted-foreground">
-              {t("endpoints.kvCacheSettings.providerLabel")}
-            </div>
-            <div className="mt-1 text-sm font-semibold">ZCache</div>
-          </div>
-          <div className="border-l pl-8">
-            <div className="text-xs font-medium text-muted-foreground">
               {t("endpoints.kvCacheSettings.timeoutLabel")}
             </div>
             <div className="mt-1 text-sm font-semibold">

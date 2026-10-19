@@ -2,13 +2,6 @@ import { AlertCircle } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -91,46 +84,8 @@ export function EndpointKVCacheFields({
       )}
       {enabled && (
         <div className="space-y-5 p-4">
-          <div className="max-w-sm">
-            <FormFieldGroup
-              {...form}
-              name="spec.kv_cache.provider"
-              label={t("endpoints.kvCacheSettings.providerLabel")}
-              rules={{
-                validate: (value) =>
-                  !form.getValues("spec.kv_cache") ||
-                  Boolean(value) ||
-                  t("endpoints.kvCacheSettings.selectProvider"),
-              }}
-            >
-              <Select
-                value={cache?.provider ?? ""}
-                onValueChange={(provider) =>
-                  form.setValue(
-                    "spec.kv_cache",
-                    {
-                      provider,
-                      options: {
-                        timeout_seconds: cache?.options?.timeout_seconds ?? 5,
-                      },
-                    },
-                    { shouldDirty: true, shouldValidate: true },
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t("endpoints.kvCacheSettings.selectProvider")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="zcache">ZCache</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormFieldGroup>
-          </div>
           {cache?.provider && (
-            <div className="border-t pt-5">
+            <div>
               <div className="max-w-sm">
                 <FormFieldGroup
                   {...form}

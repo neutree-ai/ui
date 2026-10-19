@@ -233,7 +233,7 @@
   "src/foundation/components/VariablesInput.tsx": "3b5e4cf926481133c4ee746787283e65",
   "src/domains/endpoint/lib/cluster-resources.ts": "f3f80199d815d8ee43452637669008f1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "eaab63ebe07545a130dfab66dddf846a",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "6d45e170be8703916ca643b08f441ce9",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "b9300a50e9063d4fba7102cc0b9548b1",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "e7228007a3166e3a030194d812bb8f35",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "faa9a8e7dfade8a200eb601d021b1814",
   "src/pages/external-endpoints/create.tsx": "78286cb967917dee72c9c2b2ea415b43",
@@ -455,6 +455,6 @@
   "src/domains/cluster/lib/zcache-presentation.ts": "09dfa96ff79b53f61a9fffa2624a4dc5",
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
   "src/domains/endpoint/lib/zcache.ts": "a7b5ba66e96c0002ada91e339b052732",
-  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "49e72860e42f564602454d42f45200c0",
-  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "b90cff873c9c6d3a81f5c3b5fde3098d"
+  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "ec61057c20649d0248c4e495dc2af35b",
+  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5"
 }

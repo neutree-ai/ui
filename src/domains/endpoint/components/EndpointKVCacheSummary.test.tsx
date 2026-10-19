@@ -34,6 +34,7 @@ describe("EndpointKVCacheSummary", () => {
         <EndpointKVCacheSummary endpoint={endpoint} cluster={cluster} />
       </MemoryRouter>,
     );
+    expect(screen.queryByText("ZCache")).toBeNull();
     const toggle = screen.getByRole("switch") as HTMLButtonElement;
     expect(toggle.disabled).toBe(true);
     expect(toggle.getAttribute("aria-checked")).toBe(String(enabled));
