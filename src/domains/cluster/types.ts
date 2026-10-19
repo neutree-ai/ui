@@ -87,6 +87,7 @@ export type Cluster = {
 };
 
 export type ClusterSpec = {
+  cache?: ClusterCacheSpec;
   /**
    * The type of the cluster.
    * supported: 'ssh' | 'kubernetes'
@@ -109,6 +110,7 @@ type NodeProvisionStatus =
   (typeof NodeProvisionStatus)[keyof typeof NodeProvisionStatus];
 
 export type ClusterStatus = BaseStatus<ClusterPhase> & {
+  cache?: ClusterCacheStatus;
   image: string | null;
   dashboard_url: string | null;
   /**
@@ -154,3 +156,69 @@ enum ClusterPhase {
   DELETING = "Deleting",
   DELETED = "Deleted",
 }
+
+export type ZCacheSpec = {
+  enabled: boolean;
+  l1_size_gib: number;
+  target_nodes: string[];
+};
+export type ZCacheStatus = {
+  control_plane?: ZCacheControlPlaneStatus;
+  observed_at?: string;
+  observation_error?: string;
+  current?: ZCacheSpec;
+  configured_runtime_version?: string;
+  runtime_endpoint?: { address: string; port: number };
+  nodes?: {
+    name: string;
+    runtime: string;
+    cache: string;
+    capacity_bytes: number;
+    reason?: string;
+  }[];
+  candidates?: { name: string; selectable: boolean; reason?: string }[];
+  change?: {
+    operation_id?: string;
+    phase: string;
+    message?: string;
+    request?: {
+      lmcache?: { l1SizeGb?: number; targetNodes?: string[] };
+      operation?: { kind?: string };
+    };
+  };
+  operations?: {
+    id: string;
+    phase: string;
+    kind: string;
+    created_at?: string;
+    completed_at?: string;
+    message?: string;
+    nodes?: { name: string; phase: string; reason?: string }[];
+  }[];
+};
+
+export type ZCacheControlPlaneStatus = {
+  phase?: string;
+  message?: string;
+  ready: boolean;
+  health_message?: string;
+};
+
+export type ClusterCacheSpec = {
+  provider: string;
+  options: Record<string, unknown>;
+};
+type CacheCondition = {
+  type: "ConfigurationApplied" | "Ready";
+  status: "True" | "False" | "Unknown";
+  reason: string;
+  message?: string;
+};
+type ClusterCacheStatus = {
+  provider: string;
+  phase: "Disabled" | "Reconciling" | "Ready" | "Unavailable" | "Failed";
+  error_message?: string;
+  conditions: CacheCondition[];
+  details?: Record<string, unknown>;
+};
+

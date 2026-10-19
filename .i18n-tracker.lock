@@ -88,7 +88,7 @@
   "src/foundation/types/chat-types.ts": "c31082555c7146ce3cb384794d530d87",
   "src/foundation/types/license.ts": "e7cd2bf058d508b41b5521f5cee745a3",
   "src/foundation/types/serving-types.ts": "c194c0b8901a79ee35ac8b08eca24968",
-  "src/foundation/types/system-types.ts": "95251bc1ec54424d96b599dedf23ffeb",
+  "src/foundation/types/system-types.ts": "c70cf9f798ed3941455c8d1bba2e6198",
   "src/foundation/providers/data-provider/index.ts": "0d6290230ad411bc4582668f1c2e43ca",
   "src/foundation/providers/data-provider/utils/generate-filter.ts": "5d3bce54e997574b28f34e20392290be",
   "src/foundation/providers/data-provider/utils/handle-error.ts": "be5adb9acfc4090c82c78fff122c1223",
@@ -194,7 +194,7 @@
   "src/domains/endpoint/components/ResourcesCard.tsx": "a0abe5eee7ba64c873df47333bf3f7fd",
   "src/domains/endpoint/components/SliderWithInput.tsx": "115cfe56a0c6ea05a7fed3aa8dfed3fb",
   "src/domains/endpoint/components/VirtualLog.tsx": "9f0aae0f2ec30cb6fbfc94546fde0f82",
-  "src/domains/cluster/types.ts": "5d2d2f05b4701d4a771055dc9dcbf799",
+  "src/domains/cluster/types.ts": "c83680f3be1e1c166e2602fbf3fd43a1",
   "src/domains/cluster/lib/get-ray-dashboard-proxy.ts": "a4a3c75f58c68ee9dca572ad3a70c62b",
   "src/domains/cluster/hooks/use-cluster-monitor-panels.ts": "9b1755f6538148e43f76f6f7aab08420",
   "src/domains/cluster/components/ClusterStatus.tsx": "5ddd108e4c3237b3e08c0beb093b455a",
@@ -441,5 +441,6 @@
   "src/domains/external-endpoint/lib/convert-timeout.tsx": "58a7ced63eb42b6ef150cebb41e795c2",
   "src/foundation/components/EmptyValue.tsx": "3f27a00c39815a06bffb462c62204db3",
   "src/pages/ai-traces/components/TraceNameFilter.tsx": "ac4d9a7b7886d7fc6be94027b598e27b",
-  "src/pages/ai-traces/components/TraceExportButton.tsx": "df38c12b350df286f45c4131040a683f"
+  "src/pages/ai-traces/components/TraceExportButton.tsx": "df38c12b350df286f45c4131040a683f",
+  "src/domains/cluster/lib/zcache-presentation.ts": "7057265bc374861df10086a4b322a5d0"
 }
