@@ -237,6 +237,15 @@ vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: () => ({ allowed: canReadGroups, isLoading: false }),
 }));
 
+let orgUnits: Array<{
+  id: number;
+  path: string;
+  metadata: { name: string; display_name?: string };
+}> = [];
+vi.mock("@/domains/organization/hooks/use-organization", () => ({
+  useOrgUnits: () => ({ data: { data: orgUnits } }),
+}));
+
 vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
   useGroupUsage: (
     workspace: string | undefined,
@@ -571,6 +580,35 @@ describe("usage by group", () => {
     const rowsShown = bodyRows(groupCard());
     expect(rowsShown).toHaveLength(1);
     expect(rowsShown[0].textContent).toContain("Dept A");
-    expect(rowsShown[0].textContent).toContain("dept-a");
+  });
+
+  it("lists departments in tree order with their path", () => {
+    orgUnits = [
+      { id: 1, path: "1", metadata: { name: "org-1", display_name: "Corp" } },
+      { id: 2, path: "1/2", metadata: { name: "org-2", display_name: "R&D" } },
+      { id: 3, path: "1/3", metadata: { name: "org-3", display_name: "Ops" } },
+    ];
+    cleanup();
+    canReadGroups = true;
+    groupRows = [
+      groupRow("OrgUnit", "org-2", "R&D", "endpoint", 1, 10),
+      groupRow("OrgUnit", "org-1", "Corp", "endpoint", 3, 50),
+      groupRow("OrgUnit", "org-3", "Ops", "endpoint", 2, 40),
+      groupRow("OrgUnit", "org-gone", "Gone", "endpoint", 1, 90),
+    ];
+    render(<ModelUsageList />);
+
+    openSelect(2);
+    pickOption("Department");
+
+    const rowsShown = bodyRows(cardFor("By user or group")).map(
+      (row: HTMLElement) => row.textContent,
+    );
+    expect(rowsShown[0]).toContain("Corp");
+    expect(rowsShown[1]).toContain("Corp / Ops");
+    expect(rowsShown[2]).toContain("Corp / R&D");
+    expect(rowsShown[3]).toContain("Gone");
+    expect(rowsShown.join()).not.toContain("org-");
+    orgUnits = [];
   });
 });

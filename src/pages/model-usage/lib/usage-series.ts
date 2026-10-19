@@ -59,6 +59,21 @@ export function aggregateSeries<R extends UsageRow>(
   return [...byKey.values()].sort((a, b) => b.total - a.total);
 }
 
+// Puts the series with a known position first, in that order; the others
+// follow in their current order.
+export function orderSeries(
+  series: UsageSeries[],
+  positionOf: (key: string) => number | undefined,
+): UsageSeries[] {
+  const rank = (s: UsageSeries) =>
+    positionOf(s.key) ?? Number.POSITIVE_INFINITY;
+  return [...series].sort((a, b) => {
+    const ra = rank(a);
+    const rb = rank(b);
+    return ra === rb ? 0 : ra < rb ? -1 : 1;
+  });
+}
+
 // Keeps the `limit` biggest series and folds the rest into one "other" series
 // holding their combined totals. A list that already fits is returned as-is, so
 // a small workspace never sees an empty "other" entry.

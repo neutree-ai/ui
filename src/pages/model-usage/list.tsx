@@ -27,6 +27,12 @@ import type {
   GroupUsageKind,
   GroupUsageRecord,
 } from "@/domains/api-key/types";
+import { useOrgUnits } from "@/domains/organization/hooks/use-organization";
+import {
+  buildOrgTree,
+  indexNodes,
+  type OrgTreeNode,
+} from "@/domains/organization/lib/org-tree";
 import {
   type DateRange,
   DateRangePicker,
@@ -48,6 +54,7 @@ import {
   aggregateSeries,
   buildTrend,
   foldRemainder,
+  orderSeries,
   type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
 
@@ -102,6 +109,20 @@ export const ModelUsageList = () => {
     range.end,
     groupKind,
   );
+  // Departments are listed in tree order with their path. Without
+  // org_unit:read the list is empty and the rows keep the usage order.
+  const orgUnits = useOrgUnits(canReadGroups && groupKind === "OrgUnit");
+  const orgNodes = useMemo(() => {
+    const nodes = [
+      ...indexNodes(buildOrgTree(orgUnits.data?.data ?? [])).values(),
+    ];
+    return new Map<string, { position: number; node: OrgTreeNode }>(
+      nodes.map((node, position) => [
+        node.unit.metadata.name,
+        { position, node },
+      ]),
+    );
+  }, [orgUnits.data]);
 
   // Picking a day in the chart narrows the range itself to that day — there is
   // no second "focused day" state, so every panel on the page follows the same
@@ -262,28 +283,39 @@ export const ModelUsageList = () => {
 
   // The group RPC has no API key column, so only the type and model filters
   // apply to it.
-  const byGroup = useMemo(
-    () =>
-      aggregateSeries(
-        groupUsage.usageData.filter(
-          (r: GroupUsageRecord) =>
-            (!endpointType || r.endpoint_type === endpointType) &&
-            (!model ||
-              (r.model_name ?? "")
-                .toLowerCase()
-                .includes(model.trim().toLowerCase())),
-        ),
-        (r) => r.name,
-        (r) => ({
+  const byGroup = useMemo(() => {
+    const series = aggregateSeries(
+      groupUsage.usageData.filter(
+        (r: GroupUsageRecord) =>
+          (!endpointType || r.endpoint_type === endpointType) &&
+          (!model ||
+            (r.model_name ?? "")
+              .toLowerCase()
+              .includes(model.trim().toLowerCase())),
+      ),
+      (r) => r.name,
+      (r) => {
+        if (r.kind === "OrgUnit") {
+          const node = orgNodes.get(r.name)?.node;
+          return {
+            name: r.display_name || node?.label || r.name,
+            description:
+              node && node.pathLabel !== node.label ? node.pathLabel : null,
+          };
+        }
+        return {
           name: r.display_name || r.name,
           description:
             r.kind !== "User" && r.display_name && r.display_name !== r.name
               ? r.name
               : null,
-        }),
-      ),
-    [groupUsage.usageData, endpointType, model],
-  );
+        };
+      },
+    );
+    return groupKind === "OrgUnit"
+      ? orderSeries(series, (key) => orgNodes.get(key)?.position)
+      : series;
+  }, [groupUsage.usageData, endpointType, model, groupKind, orgNodes]);
 
   const detailRows = useMemo(
     () =>
