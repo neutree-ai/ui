@@ -456,5 +456,6 @@
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
   "src/domains/endpoint/lib/zcache.ts": "a7b5ba66e96c0002ada91e339b052732",
   "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "959dec39641e70aabfcb6e0793d19693",
-  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5"
+  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
+  "src/foundation/components/GrafanaDashboardLink.tsx": "8759bc1412fb0d563189892ce8269b31"
 }

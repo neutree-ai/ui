@@ -513,7 +513,9 @@
 			"acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
 		},
 		"monitor": {
-			"overviewMetrics": "Cluster Overview"
+			"overviewMetrics": "Cluster Overview",
+			"overview": "Overview",
+			"cache": "Cache"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
@@ -612,7 +614,9 @@
 			},
 			"serviceName": "Cache service",
 			"dependencyHint": "Inference instances still use the cache. Turn off their cache before disabling the cluster cache.",
-			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
+			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds.",
+			"monitorTitle": "Shared L1 monitoring",
+			"monitorHint": "Shared cache per node, not exclusive inference instance memory. Read/write rates are chunks/s. Missing or uncollected metrics show no samples, not zero."
 		}
 	},
 	"model_registries": {
