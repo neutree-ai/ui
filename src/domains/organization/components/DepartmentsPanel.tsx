@@ -39,7 +39,7 @@ const ALL_SOURCES = "__all__";
 export function DepartmentsPanel({
   renderRoleAssignments,
 }: {
-  renderRoleAssignments?: (orgUnitName: string) => ReactNode;
+  renderRoleAssignments?: (orgUnitName: string, label: string) => ReactNode;
 } = {}) {
   const { t } = useTranslation();
   const errorText = (error: unknown) =>
@@ -232,7 +232,11 @@ export function DepartmentsPanel({
               </EmptyState>
             )}
           </ShowPage.Section>
-          {selected && renderRoleAssignments?.(selected.unit.metadata.name)}
+          {selected &&
+            renderRoleAssignments?.(
+              selected.unit.metadata.name,
+              selected.label,
+            )}
         </div>
       </div>
     </div>

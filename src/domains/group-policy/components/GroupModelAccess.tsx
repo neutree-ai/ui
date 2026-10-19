@@ -77,9 +77,12 @@ export function TokenPoolSummary({
 export function GroupModelAccess({
   kind,
   name,
+  label,
 }: {
   kind: GroupPolicySubjectKind;
   name: string;
+  /** The group's display name; defaults to the name. */
+  label?: string;
 }) {
   const { t } = useTranslation();
   const canRead = useHasGlobalPermission("group_policy:read").allowed === true;
@@ -231,7 +234,7 @@ export function GroupModelAccess({
       {editing && (
         <GroupPolicyDialog
           policy={policy}
-          groupLabel={name}
+          groupLabel={label ?? name}
           saving={writes.isPending}
           error={dialogError}
           onOpenChange={(open) => !open && setEditing(false)}

@@ -51,7 +51,7 @@ type OpenDialog =
 export function TeamsPanel({
   renderRoleAssignments,
 }: {
-  renderRoleAssignments?: (teamName: string) => ReactNode;
+  renderRoleAssignments?: (teamName: string, label: string) => ReactNode;
 } = {}) {
   const { t } = useTranslation();
   const errorText = (error: unknown, creating = false) => {
@@ -365,7 +365,11 @@ export function TeamsPanel({
               </Alert>
             )}
           </ShowPage.Section>
-          {selected && renderRoleAssignments?.(selected.metadata.name)}
+          {selected &&
+            renderRoleAssignments?.(
+              selected.metadata.name,
+              displayName(selected.metadata),
+            )}
         </div>
       </div>
 

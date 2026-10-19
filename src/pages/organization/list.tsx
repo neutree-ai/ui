@@ -44,14 +44,14 @@ export const OrganizationList = () => {
         )}
         <TabsContent value="departments" className="mt-0">
           <DepartmentsPanel
-            renderRoleAssignments={(name) => (
+            renderRoleAssignments={(name, label) => (
               <>
                 <GroupRoleAssignments
                   kind="OrgUnit"
                   name={name}
                   renderOrgUnit={renderOrgUnit}
                 />
-                <GroupModelAccess kind="OrgUnit" name={name} />
+                <GroupModelAccess kind="OrgUnit" name={name} label={label} />
               </>
             )}
           />
@@ -59,14 +59,14 @@ export const OrganizationList = () => {
         {canReadTeams && (
           <TabsContent value="teams" className="mt-0">
             <TeamsPanel
-              renderRoleAssignments={(name) => (
+              renderRoleAssignments={(name, label) => (
                 <>
                   <GroupRoleAssignments
                     kind="Team"
                     name={name}
                     renderOrgUnit={renderOrgUnit}
                   />
-                  <GroupModelAccess kind="Team" name={name} />
+                  <GroupModelAccess kind="Team" name={name} label={label} />
                 </>
               )}
             />
