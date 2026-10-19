@@ -4,10 +4,11 @@ import type { EndpointClusterRef } from "../types";
 // cluster management UI's control-plane and operation types.
 export function endpointZCacheOptions(
   cluster?: EndpointClusterRef,
-): { enabled: boolean; target_nodes?: string[] } | undefined {
+): { enabled: boolean; version?: string; target_nodes?: string[] } | undefined {
   return cluster?.spec.cache?.provider === "zcache"
     ? (cluster.spec.cache.options as {
         enabled: boolean;
+        version?: string;
         target_nodes?: string[];
       })
     : undefined;

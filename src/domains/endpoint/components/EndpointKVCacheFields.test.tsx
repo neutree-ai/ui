@@ -210,3 +210,8 @@ it("blocks cache after switching to an embedding task and allows disabling it", 
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].spec.kv_cache).toBeNull();
 });
+vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+  useCacheVersions: () => ({
+    data: { data: [{ version: "v0.5.5", engine_versions: ["v0.31.0"] }] },
+  }),
+}));
