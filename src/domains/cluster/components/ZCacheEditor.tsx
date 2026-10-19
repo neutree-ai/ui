@@ -66,6 +66,7 @@ export function ZCacheEditor({
       provider: "zcache",
       options: {
         enabled: draft?.enabled === true,
+        ...(draft?.version ? { version: draft.version } : {}),
         l1_size_gib: Number(draft?.l1_size_gib ?? 1),
         target_nodes: [...(draft?.target_nodes ?? [])],
       },

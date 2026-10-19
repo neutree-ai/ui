@@ -113,3 +113,9 @@ it("saves the common timeout option and rejects values outside its range", async
     options: { timeout_seconds: 1.5 },
   });
 });
+
+vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+  useCacheVersions: () => ({
+    data: { data: [{ version: "v0.5.5", engine_versions: ["v0.31.0"] }] },
+  }),
+}));
