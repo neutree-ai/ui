@@ -39,7 +39,18 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
   const [open, setOpen] = useState(false);
   const { data: permission } = useCan({ resource: "clusters", action: "edit" });
   const status = zcacheStatus(cluster);
-  const upgrade = status?.upgrade;
+  let requestedId: string | undefined;
+  try {
+    requestedId = JSON.parse(
+      cluster.metadata.annotations?.["neutree.ai/cache-upgrade"] ?? "{}",
+    ).id;
+  } catch {
+    // Malformed external annotations do not hide the last observed status.
+  }
+  const upgrade =
+    requestedId && requestedId !== status?.upgrade?.id
+      ? { id: requestedId, phase: "UpdatingRuntime", endpoints: [] }
+      : status?.upgrade;
   const busy = upgrade && !["Succeeded", "Failed"].includes(upgrade.phase);
   return (
     <div className="space-y-3 rounded-md border p-4">
