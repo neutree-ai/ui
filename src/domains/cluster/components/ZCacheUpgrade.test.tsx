@@ -124,3 +124,24 @@ it("requires choices for every incompatible instance and submits one atomic plan
   });
   await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(2));
 });
+
+it("does not show the previous success while a new request awaits reconciliation", () => {
+  const pending = structuredClone(cluster);
+  pending.metadata.annotations!["neutree.ai/cache-upgrade"] = JSON.stringify({
+    id: "new",
+  });
+  pending.status!.cache!.details = {
+    ready_runtime_version: "v0.5.0",
+    upgrade: { id: "old", phase: "Succeeded", endpoints: [] },
+  };
+  render(<ZCacheUpgrade cluster={pending} />);
+  expect(
+    screen.queryByText("clusters.cacheUpgrade.phases.Succeeded"),
+  ).toBeNull();
+  expect(
+    screen.getByText("clusters.cacheUpgrade.phases.UpdatingRuntime"),
+  ).toBeDefined();
+  expect(
+    screen.getByText("clusters.cacheUpgrade.title").closest("button")?.disabled,
+  ).toBe(true);
+});
