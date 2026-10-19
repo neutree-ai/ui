@@ -51,7 +51,7 @@ export const useRoleAssignmentForm = ({
   teamField?: ReactElement;
 }) => {
   const { t } = useTranslation();
-  const { supportMultiWorkspace, isEnterprise } = useLicense();
+  const { supportMultiWorkspace } = useLicense();
   const permission = `role_assignment:${action === "edit" ? "update" : "create"}`;
   const { allowed: globalAllowed } = useHasGlobalPermission(permission);
   const { allowed: anyScopeAllowed } = useHasPermission(permission);
@@ -100,7 +100,6 @@ export const useRoleAssignmentForm = ({
   const spec = form.watch("spec");
   const scope = scopeOf(spec);
   const scopes = availableScopes({
-    isEnterprise,
     supportMultiWorkspace,
     delegated,
   });

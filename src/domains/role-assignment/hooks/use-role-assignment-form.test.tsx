@@ -143,17 +143,14 @@ const WORKSPACE = "role_assignments.options.workspace";
 const SUBTREE = "role_assignments.options.orgUnit";
 
 function setup({
-  isEnterprise = true,
   supportMultiWorkspace = true,
   globalGrant = true,
 }: {
-  isEnterprise?: boolean;
   supportMultiWorkspace?: boolean;
   globalGrant?: boolean;
 } = {}) {
   vi.mocked(useLicense).mockReturnValue({
     supportMultiWorkspace,
-    isEnterprise,
   } as ReturnType<typeof useLicense>);
   vi.mocked(useHasGlobalPermission).mockReturnValue({
     allowed: globalGrant,
@@ -441,15 +438,17 @@ describe("useRoleAssignmentForm", () => {
   });
 
   describe("available scopes", () => {
-    it("offers all three scopes in the enterprise edition", () => {
+    it("offers all three scopes with multi-workspace", () => {
       render(<TestForm />);
       expect(scopeOptions()).toEqual([GLOBAL, WORKSPACE, SUBTREE]);
     });
 
-    it("hides the subtree scope in the community edition", () => {
-      setup({ isEnterprise: false });
+    it("offers the subtree scope without multi-workspace", () => {
+      setup({ supportMultiWorkspace: false });
       render(<TestForm />);
-      expect(scopeOptions()).toEqual([GLOBAL, WORKSPACE]);
+
+      expect(spec()?.global).toBe(true);
+      expect(scopeOptions()).toEqual([GLOBAL, SUBTREE]);
     });
 
     it("gives a delegated administrator only the subtree scope, preselected", async () => {
@@ -462,14 +461,6 @@ describe("useRoleAssignmentForm", () => {
         workspace: null,
         org_unit: "",
       });
-      expect(scopeTrigger().disabled).toBe(true);
-    });
-
-    it("stays global-only without multi-workspace in community", () => {
-      setup({ isEnterprise: false, supportMultiWorkspace: false });
-      render(<TestForm />);
-
-      expect(spec()?.global).toBe(true);
       expect(scopeTrigger().disabled).toBe(true);
     });
   });

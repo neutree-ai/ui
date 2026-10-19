@@ -43,14 +43,12 @@ export const scopeFields = (
 /**
  * The scopes the caller may pick. A delegated administrator (role_assignment
  * granted only on a subtree) can grant subtree assignments only; the
- * community edition has no subtree scope.
+ * workspace scope needs a multi-workspace license.
  */
 export const availableScopes = ({
-  isEnterprise,
   supportMultiWorkspace,
   delegated,
 }: {
-  isEnterprise: boolean;
   supportMultiWorkspace: boolean;
   delegated: boolean;
 }): RoleAssignmentScope[] => {
@@ -58,6 +56,6 @@ export const availableScopes = ({
   return [
     "global",
     ...(supportMultiWorkspace ? (["workspace"] as const) : []),
-    ...(isEnterprise ? (["org_unit"] as const) : []),
+    "org_unit",
   ];
 };

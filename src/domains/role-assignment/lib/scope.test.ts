@@ -57,24 +57,21 @@ describe("availableScopes", () => {
   it("limits a delegated administrator to the subtree scope", () => {
     expect(
       availableScopes({
-        isEnterprise: true,
         supportMultiWorkspace: true,
         delegated: true,
       }),
     ).toEqual(["org_unit"]);
   });
 
-  it("offers the subtree scope only in the enterprise edition", () => {
+  it("offers the workspace scope only with multi-workspace", () => {
     expect(
       availableScopes({
-        isEnterprise: false,
         supportMultiWorkspace: true,
         delegated: false,
       }),
-    ).toEqual(["global", "workspace"]);
+    ).toEqual(["global", "workspace", "org_unit"]);
     expect(
       availableScopes({
-        isEnterprise: true,
         supportMultiWorkspace: false,
         delegated: false,
       }),
