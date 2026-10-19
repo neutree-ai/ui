@@ -2882,7 +2882,8 @@
 			"title": "Departments",
 			"fromSource": "From {{source}}",
 			"empty": "No departments have been synced yet.",
-			"noMatch": "No departments match the filter."
+			"noMatch": "No departments match the filter.",
+			"noPermission": "You do not have permission to view departments."
 		},
 		"teams": {
 			"title": "Teams",

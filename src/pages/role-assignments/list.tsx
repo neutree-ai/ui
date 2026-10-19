@@ -7,6 +7,7 @@ import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const useRoleAssignmentColumns = () => {
@@ -97,9 +98,11 @@ const useRoleAssignmentColumns = () => {
 export const RoleAssignmentsList = () => {
   const metadataColumns = useMetadataColumns();
   const roleAssignmentColumns = useRoleAssignmentColumns();
+  // Any scope: a department admin may grant subtree policies.
+  const { allowed: canCreate } = useHasPermission("role_assignment:create");
 
   return (
-    <ListPage>
+    <ListPage canCreate={canCreate === true}>
       <Table
         enableSorting
         enableFilters

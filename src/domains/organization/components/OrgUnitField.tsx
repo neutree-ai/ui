@@ -9,6 +9,7 @@ import {
   orgUnitPathLabel,
 } from "@/domains/organization/lib/org-tree";
 import type { OrgUnit } from "@/domains/organization/types";
+import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const useOrgUnitsByName = () => {
@@ -38,6 +39,8 @@ export const OrgUnitField = forwardRef<HTMLButtonElement, OrgUnitFieldProps>(
     const tree = useMemo(() => buildOrgTree(list), [list]);
     const [open, setOpen] = useState(false);
     const selected = value ? byName.get(value) : undefined;
+    // Without read access the list comes back empty, not refused.
+    const { allowed: canRead } = useHasPermission("org_unit:read");
 
     return (
       <>
@@ -68,6 +71,11 @@ export const OrgUnitField = forwardRef<HTMLButtonElement, OrgUnitFieldProps>(
             currentId={selected?.id}
             title={t("organization.picker.title")}
             description={t("organization.picker.hint")}
+            emptyText={
+              canRead === false
+                ? t("organization.departments.noPermission")
+                : undefined
+            }
             onSave={(id) => {
               const unit = byId.get(id);
               if (unit) onChange?.(unit.metadata.name);

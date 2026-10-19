@@ -31,6 +31,8 @@ type AssignOrgUnitDialogProps = {
   onSave: (orgUnitId: number) => void;
   title?: string;
   description?: string;
+  /** Replaces the "nothing synced" text, e.g. for a user who cannot read departments. */
+  emptyText?: string;
 };
 
 /**
@@ -48,6 +50,7 @@ export function AssignOrgUnitDialog({
   onSave,
   title,
   description,
+  emptyText,
 }: AssignOrgUnitDialogProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -103,7 +106,7 @@ export function AssignOrgUnitDialog({
             <EmptyState variant="inline">
               {tree.length
                 ? t("organization.departments.noMatch")
-                : t("organization.departments.empty")}
+                : (emptyText ?? t("organization.departments.empty"))}
             </EmptyState>
           )}
         </div>
