@@ -64,6 +64,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BatchDeleteBar } from "@/foundation/components/BatchDeleteBar";
+import type { DeleteConfirmation } from "@/foundation/components/DeleteConfirmDialog";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
@@ -299,6 +300,7 @@ type DeleteActionProps = RowActionProps & {
   resource: string;
   title: string;
   onAfterHandle?: () => void;
+  confirmation?: DeleteConfirmation;
 };
 
 export function DeleteAction({
@@ -307,6 +309,7 @@ export function DeleteAction({
   title,
   disabled,
   onAfterHandle,
+  confirmation,
   ...props
 }: DeleteActionProps) {
   const _meta = row.metadata;
@@ -324,6 +327,7 @@ export function DeleteAction({
           resource,
           toogle: true,
           onAfterHandle,
+          confirmation,
         })
       }
     />

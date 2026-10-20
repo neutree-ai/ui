@@ -32,6 +32,7 @@ type ConfirmDialogProps = AlertDialogProps & {
   okText?: string;
   cancelText?: string;
   loading?: boolean;
+  okDisabled?: boolean;
   onConfirm: () => void;
   children?: ReactElement<SVGSVGElement>;
   content?: ReactNode;
@@ -52,6 +53,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   okButtonVariant = "default",
   cancelButtonVariant = "outline",
   loading = false,
+  okDisabled = false,
   okIconSide = "left",
   cancelIconSide = "left",
   onConfirm,
@@ -109,7 +111,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
           <AlertDialogAction
             variant={okButtonVariant}
             size={okButtonSize}
-            disabled={loading}
+            disabled={loading || okDisabled}
             onClick={onConfirm}
           >
             {okIconSide === "left" && OkIcon}

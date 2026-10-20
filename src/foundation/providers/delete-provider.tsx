@@ -5,7 +5,10 @@ import {
   useCallback,
   useState,
 } from "react";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
+import {
+  type DeleteConfirmation,
+  DeleteConfirmDialog,
+} from "@/foundation/components/DeleteConfirmDialog";
 import { useDeleteHelper } from "@/foundation/hooks/use-delete-helper";
 import { useOnBack } from "@/foundation/hooks/use-on-back";
 
@@ -15,6 +18,7 @@ type DeleteDataType = {
   resource: string;
   redirectBack?: boolean;
   onAfterHandle?: () => void;
+  confirmation?: DeleteConfirmation;
 };
 
 interface DeleteContextType {
@@ -63,6 +67,9 @@ function DeleteActionModal(props: DeleteContextType) {
       open={props?.data?.toogle}
       loading={isLoading}
       errorMessage={props.data?.row?.status?.error_message}
+      description={props.data?.confirmation?.description}
+      confirmName={props.data?.confirmation?.confirmName}
+      allowForceDelete={props.data?.confirmation?.allowForceDelete}
       onOpenChange={() => {
         if (!isLoading) {
           props?.updateData({
