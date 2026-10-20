@@ -32,6 +32,10 @@ import {
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
+import {
+  GpuObservationCard,
+  ObservationStatus,
+} from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
@@ -39,7 +43,9 @@ import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
+import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { gpuAllocations } from "@/foundation/lib/accelerator-observations";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
@@ -140,8 +146,28 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { grafanaUrl } = useSystemApi();
   const {
     query: { data, isLoading },
-  } = useShow<Endpoint>();
+  } = useShow<Endpoint>({ queryOptions: { refetchInterval: 15000 } });
   const record = data?.data;
+  const observations = useAcceleratorObservations(
+    "endpoints",
+    record?.metadata.workspace,
+    record?.metadata.name,
+  );
+  const clusterObservations = useAcceleratorObservations(
+    "clusters",
+    record?.metadata.workspace,
+    record?.spec.cluster,
+  );
+  const allocations = gpuAllocations(record ? [record] : []);
+  const gpuSamples =
+    record?.status?.phase === "Paused"
+      ? []
+      : [
+          ...observations.samples,
+          ...clusterObservations.samples.filter(
+            (sample) => !sample.metric.startsWith("neutree_endpoint_"),
+          ),
+        ];
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -336,7 +362,39 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 }
               >
                 <div className="space-y-6">
+                  <ObservationStatus
+                    status={
+                      record.status?.phase === "Paused"
+                        ? "no_data"
+                        : observations.status
+                    }
+                  />
                   <EndpointRuntimeResourcesCard
+                    renderDevice={(device) => (
+                      <GpuObservationCard
+                        device={{
+                          node: device.nodeId,
+                          uuid: device.uuid,
+                          index: device.order ?? 0,
+                          product: device.product,
+                          totalMiB: device.physicalMemoryMiB,
+                          allocatedMiB: device.memoryMiB,
+                        }}
+                        samples={gpuSamples}
+                        allocations={allocations}
+                        replica={{
+                          endpoint: record.metadata.name,
+                          workspace: record.metadata.workspace ?? "default",
+                          model: record.spec.model?.name ?? "",
+                          node: device.nodeId,
+                          uuid: device.uuid,
+                          replica: device.replicaId,
+                          instance: device.instanceId,
+                          vdevice: device.vdeviceIndex ?? undefined,
+                          memoryMiB: device.memoryMiB,
+                        }}
+                      />
+                    )}
                     resources={record.status?.resources}
                     requestedResources={record.spec.resources}
                     clusterResourceInfo={

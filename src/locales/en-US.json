@@ -2353,5 +2353,39 @@
 		},
 		"byApiKeyOnDay": "By API key · {{date}}",
 		"byModelOnDay": "By model · {{date}}"
+	},
+	"observations": {
+		"actualMemory": "Actual VRAM",
+		"actual": "Actual",
+		"allocated": "Allocated",
+		"physical": "Physical",
+		"noMeasurement": "No recent measurement",
+		"utilization": "GPU utilization",
+		"assignments": "Allocated inference instances",
+		"unhealthy": "Device unhealthy",
+		"replicaUsage": "Replica usage",
+		"deviceUsage": "Physical device usage",
+		"deviceTemperature": "Device temperature",
+		"devicePower": "Device power",
+		"sampleTime": "VRAM sampled at",
+		"hardware": "Hardware and connection",
+		"noAssignments": "No visible instance allocations",
+		"status": {
+			"ok": "Refreshes every 15 s · Dark: actual VRAM · Light: allocation · Track: physical capacity",
+			"loading": "Loading GPU measurements…",
+			"no_data": "No recent GPU measurements. Allocation information remains available.",
+			"not_configured": "GPU monitoring query service is not configured.",
+			"unavailable": "GPU measurements are unavailable. Allocation information remains available."
+		},
+		"hardwareFields": {
+			"architecture": "Architecture",
+			"cuda_capability": "CUDA capability",
+			"driver_version": "Driver",
+			"cuda_driver_version": "CUDA driver",
+			"pcie_bus_id": "PCIe bus ID",
+			"pcie_generation": "PCIe generation",
+			"pcie_width": "PCIe width",
+			"numa_node": "NUMA node"
+		}
 	}
 }

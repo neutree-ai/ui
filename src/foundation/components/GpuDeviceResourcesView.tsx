@@ -100,6 +100,7 @@ type GpuDeviceResourcesViewProps = {
   resourceControlsTestId?: string;
   showNodeColumn?: boolean;
   request?: GpuDeviceRequestFitContext;
+  renderGridDevice?: (row: GpuDeviceResourceRow) => ReactNode;
 };
 
 type GpuDeviceRequestFitContext = {
@@ -572,6 +573,7 @@ export function GpuDeviceResourcesView({
   resourceControlsTestId = "gpu-device-resource-toolbar",
   showNodeColumn = true,
   request,
+  renderGridDevice,
 }: GpuDeviceResourcesViewProps) {
   const [productFilter, setProductFilter] = useState(GPU_DEVICE_FILTER_ALL);
   const [nodeFilter, setNodeFilter] = useState(GPU_DEVICE_FILTER_ALL);
@@ -781,14 +783,20 @@ export function GpuDeviceResourcesView({
             className={GPU_GRID_CLASS}
             style={GPU_GRID_STYLE}
           >
-            {visibleRows.map((row) => (
-              <GpuGridCell
-                key={`${row.nodeName}:${row.uuid}`}
-                row={row}
-                labels={labels}
-                copy={copy}
-              />
-            ))}
+            {visibleRows.map((row) =>
+              renderGridDevice ? (
+                <div key={`${row.nodeName}:${row.uuid}`}>
+                  {renderGridDevice(row)}
+                </div>
+              ) : (
+                <GpuGridCell
+                  key={`${row.nodeName}:${row.uuid}`}
+                  row={row}
+                  labels={labels}
+                  copy={copy}
+                />
+              ),
+            )}
           </div>
         </div>
       ) : variant === "cards" ? (

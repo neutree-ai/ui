@@ -40,12 +40,14 @@ import type {
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
+import type { EndpointReplicaResourceRow } from "../lib/resource-status";
 
 type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
+  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
 };
 
 const formatInteger = (value: number): ReactNode =>
@@ -153,6 +155,7 @@ export function EndpointRuntimeResourcesSummary({
 }: {
   resources: EndpointResourceStatus | null | undefined;
   className?: string;
+  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
 }) {
   const { t } = useTranslation();
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
@@ -183,6 +186,7 @@ export default function EndpointRuntimeResourcesCard({
   requestedResources,
   clusterResourceInfo,
   className,
+  renderDevice,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
@@ -222,6 +226,7 @@ export default function EndpointRuntimeResourcesCard({
               <Replica
                 key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
                 group={group}
+                renderDevice={renderDevice}
                 groupIndex={groupIndex}
                 requestedCpu={requestedCpu}
                 requestedMemory={requestedMemory}
@@ -278,6 +283,7 @@ export default function EndpointRuntimeResourcesCard({
 }
 
 function Replica({
+  renderDevice,
   group,
   groupIndex,
   requestedCpu,
@@ -288,6 +294,7 @@ function Replica({
   t,
 }: {
   group: EndpointReplicaResourceGroup;
+  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
   groupIndex: number;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
@@ -362,13 +369,14 @@ function Replica({
           <span className="text-xs text-muted-foreground">
             {t("endpoints.sections.gpuAllocation")}
           </span>
-          <Legend t={t} />
+          {!renderDevice && <Legend t={t} />}
         </div>
         <div className="mt-3">
           {group.nodes.map((node) => (
             <Host
               key={node.nodeId}
               node={node}
+              renderDevice={renderDevice}
               requestedCpu={requestedCpu}
               requestedMemory={requestedMemory}
               acceleratorType={acceleratorType}
@@ -383,6 +391,7 @@ function Replica({
 }
 
 function Host({
+  renderDevice,
   node,
   requestedCpu,
   requestedMemory,
@@ -391,6 +400,7 @@ function Host({
   t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
+  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
   acceleratorType: string | null;
@@ -424,16 +434,24 @@ function Host({
 
         <div className={cn("mt-3", GPU_GRID_FRAME_CLASS)}>
           <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>
-            {node.devices.map((device, deviceIndex) => (
-              <GpuCell
-                key={device.uuid || deviceIndex}
-                device={device}
-                deviceIndex={deviceIndex}
-                acceleratorType={acceleratorType}
-                onCopyUuid={onCopyUuid}
-                t={t}
-              />
-            ))}
+            {node.devices.map((device, deviceIndex) =>
+              renderDevice ? (
+                <div
+                  key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
+                >
+                  {renderDevice(device)}
+                </div>
+              ) : (
+                <GpuCell
+                  key={device.uuid || deviceIndex}
+                  device={device}
+                  deviceIndex={deviceIndex}
+                  acceleratorType={acceleratorType}
+                  onCopyUuid={onCopyUuid}
+                  t={t}
+                />
+              ),
+            )}
           </div>
         </div>
       </div>

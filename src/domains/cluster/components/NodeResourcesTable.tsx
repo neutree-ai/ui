@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Server } from "lucide-react";
-import { Fragment, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
+import type { GpuDeviceResourceRow } from "@/foundation/lib/gpu-device-resources";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
@@ -62,6 +63,7 @@ interface NodeResourcesTableProps {
   t: (key: string, options?: Record<string, unknown>) => string;
   framed?: boolean;
   className?: string;
+  renderGpuDevice?: (row: GpuDeviceResourceRow) => ReactNode;
 }
 
 export const NodeResourcesTable = ({
@@ -70,6 +72,7 @@ export const NodeResourcesTable = ({
   t,
   framed = true,
   className,
+  renderGpuDevice,
 }: NodeResourcesTableProps) => {
   const sortedNodeEntries = Object.entries(nodeResources).sort(
     ([, left], [, right]) => {
@@ -230,6 +233,7 @@ export const NodeResourcesTable = ({
                     <TableCell colSpan={3 + acceleratorTypes.length}>
                       <div className="pl-9">
                         <GpuDeviceResourcesView
+                          renderGridDevice={renderGpuDevice}
                           nodeResources={{ [nodeName]: nodeStatus }}
                           labels={{
                             title: t("clusters.sections.nodeDevices"),
