@@ -39,6 +39,27 @@ describe("buildValueSchemaRows", () => {
     });
   });
 
+  it("ignores a required that is not a list of names", () => {
+    const { rows } = buildValueSchemaRows({
+      type: "object",
+      required: "command",
+      properties: {
+        command: { type: "string", required: true },
+        rope_scaling: {
+          type: "object",
+          required: true,
+          properties: { factor: { type: "number" } },
+        },
+      },
+    });
+
+    expect(rows.map((row) => [row.path, row.required])).toEqual([
+      ["command", false],
+      ["rope_scaling", false],
+      ["rope_scaling.factor", false],
+    ]);
+  });
+
   it("keeps nested fields as children addressed by path", () => {
     const { rows } = buildValueSchemaRows({
       type: "object",

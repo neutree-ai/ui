@@ -12,7 +12,8 @@ type JsonSchemaNode = {
   description?: string;
   default?: unknown;
   enum?: unknown[];
-  required?: string[];
+  /** Field names; draft-3 schemas use a boolean on the field itself instead. */
+  required?: unknown;
   properties?: Record<string, JsonSchemaNode>;
   items?: JsonSchemaNode;
   additionalProperties?: unknown;
@@ -62,6 +63,13 @@ const normalizeTypes = (type: JsonSchemaNode["type"]): string[] => {
   return typeof type === "string" ? [type] : [];
 };
 
+const normalizeRequired = (required: unknown): Set<string> =>
+  new Set(
+    Array.isArray(required)
+      ? required.filter((entry) => typeof entry === "string")
+      : [],
+  );
+
 const normalizeEnum = (node: JsonSchemaNode): unknown[] | null =>
   Array.isArray(node.enum) && node.enum.length > 0 ? node.enum : null;
 
@@ -86,10 +94,8 @@ function buildRows(
       : isNode(itemNode?.properties)
         ? itemNode.properties
         : null;
-    const childRequired = new Set(
-      isNode(node.properties)
-        ? (node.required ?? [])
-        : (itemNode?.required ?? []),
+    const childRequired = normalizeRequired(
+      isNode(node.properties) ? node.required : itemNode?.required,
     );
     // Array members are addressed as `volumes[].mount_path` so the path still
     // reads as a path into the request payload.
@@ -139,7 +145,7 @@ export function buildValueSchemaRows(schema: unknown): ValueSchemaRows {
   }
 
   const rows: ValueSchemaRow[] = [];
-  buildRows(schema.properties, new Set(schema.required ?? []), rows, {
+  buildRows(schema.properties, normalizeRequired(schema.required), rows, {
     parentId: null,
     parentName: null,
     pathPrefix: "",
