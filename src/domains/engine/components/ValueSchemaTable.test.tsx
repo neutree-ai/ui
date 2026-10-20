@@ -414,6 +414,20 @@ describe("ValueSchemaTable", () => {
     expect(panel.textContent).toContain("dynamic");
   });
 
+  it.each([null, undefined])(
+    "renders an empty state for a %s schema",
+    (value) => {
+      render(
+        <TooltipProvider>
+          <ValueSchemaTable schema={value} />
+        </TooltipProvider>,
+      );
+
+      expect(screen.getByText("engines.schema.empty")).toBeTruthy();
+      expect(screen.queryByText("engines.schema.allowsAdditional")).toBeNull();
+    },
+  );
+
   it("renders an empty state for a version that declares nothing", () => {
     renderTable({ type: "object", additionalProperties: true });
 
