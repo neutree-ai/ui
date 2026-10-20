@@ -53,12 +53,17 @@ const POLICY_READ_URLS = new Set([
   "/rpc/get_user_group_policy",
 ]);
 
+// refine keys a custom query by its url: a plain segment in the legacy key
+// shape, a field of the params segment in the new one.
 const readsPolicies = (key: readonly unknown[]) =>
-  key.some(
-    (part) =>
-      typeof part === "object" &&
-      part !== null &&
-      POLICY_READ_URLS.has(String((part as { url?: unknown }).url)),
+  key.some((part) =>
+    POLICY_READ_URLS.has(
+      String(
+        typeof part === "object" && part !== null
+          ? (part as { url?: unknown }).url
+          : part,
+      ),
+    ),
   );
 
 export const useGroupPolicyWrites = () => {

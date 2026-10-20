@@ -58,22 +58,26 @@ describe("useGroupPolicyWrites", () => {
   });
 
   it("refreshes the pool and user policy reads after a save", async () => {
-    const key = (url: string) => ["default", "custom", { method: "post", url }];
-    for (const url of [
-      "/rpc/get_group_token_pools",
-      "/rpc/get_user_group_policy",
-      "/rpc/get_workspace_models",
-    ]) {
-      queryClient.setQueryData(key(url), { data: [] });
-    }
+    // refine's legacy key shape (its default) and its new one.
+    const legacy = (url: string) => ["default", "custom", "post", url, {}];
+    const current = (url: string) => [
+      "data",
+      "default",
+      "custom",
+      { method: "post", url },
+    ];
+    const keys = [
+      legacy("/rpc/get_group_token_pools"),
+      current("/rpc/get_user_group_policy"),
+      legacy("/rpc/get_workspace_models"),
+    ];
+    for (const key of keys) queryClient.setQueryData(key, { data: [] });
     mutateAsync.mockResolvedValue({ data: [policy] });
     const { result } = renderWrites();
     await result.current.save(policy, spec);
-    const invalidated = (url: string) =>
-      queryClient.getQueryState(key(url))?.isInvalidated;
-    expect(invalidated("/rpc/get_group_token_pools")).toBe(true);
-    expect(invalidated("/rpc/get_user_group_policy")).toBe(true);
-    expect(invalidated("/rpc/get_workspace_models")).toBe(false);
+    expect(
+      keys.map((key) => queryClient.getQueryState(key)?.isInvalidated),
+    ).toEqual([true, true, false]);
   });
 
   it("patches the whole spec, both lists included", async () => {
