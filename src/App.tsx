@@ -32,6 +32,7 @@ import {
   Layers,
   LayoutDashboard,
   LayoutTemplate,
+  ScrollText,
   Server,
   Settings,
   User,
@@ -225,6 +226,21 @@ const RolesEdit = lazy(() =>
 );
 const RolesCreate = lazy(() =>
   import("./pages/roles/create").then((m) => ({ default: m.RolesCreate })),
+);
+
+const LogSinksList = lazy(() =>
+  import("./pages/log-sinks/list").then((m) => ({ default: m.LogSinksList })),
+);
+const LogSinksShow = lazy(() =>
+  import("./pages/log-sinks/show").then((m) => ({ default: m.LogSinksShow })),
+);
+const LogSinksEdit = lazy(() =>
+  import("./pages/log-sinks/edit").then((m) => ({ default: m.LogSinksEdit })),
+);
+const LogSinksCreate = lazy(() =>
+  import("./pages/log-sinks/create").then((m) => ({
+    default: m.LogSinksCreate,
+  })),
 );
 
 const UsersList = lazy(() =>
@@ -431,6 +447,18 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "log_sinks",
+    list: "/log-sinks",
+    create: "/log-sinks/create",
+    edit: "/log-sinks/edit/:id",
+    show: "/log-sinks/show/:id",
+    meta: {
+      icon: <ScrollText />,
+      idColumnName: "metadata->name",
+      parent: "access_control",
+    },
+  },
+  {
     name: "api_keys",
     list: "/:workspace/api-keys",
     show: "/:workspace/api-keys/show/:id",
@@ -631,6 +659,12 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   <Route path="show/:id" element={<RoleAssignmentsShow />} />
                   <Route path="edit/:id" element={<RoleAssignmentsEdit />} />
                   <Route path="create" element={<RoleAssignmentsCreate />} />
+                </Route>
+                <Route path="/log-sinks">
+                  <Route index element={<LogSinksList />} />
+                  <Route path="show/:id" element={<LogSinksShow />} />
+                  <Route path="edit/:id" element={<LogSinksEdit />} />
+                  <Route path="create" element={<LogSinksCreate />} />
                 </Route>
                 <Route path="/:workspace/api-keys">
                   <Route index element={<ApiKeysList />} />

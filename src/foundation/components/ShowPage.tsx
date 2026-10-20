@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
+import type { DeleteConfirmation } from "@/foundation/components/DeleteConfirmDialog";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { Section } from "@/foundation/components/Section";
 import { DeleteAction, EditAction } from "@/foundation/components/Table";
@@ -128,6 +129,7 @@ type ShowProps = {
   breadcrumb?: React.ReactNode;
   canDelete?: boolean;
   canEdit?: boolean;
+  deleteConfirmation?: DeleteConfirmation;
   extra?: React.ReactNode;
   record?: Record<string, any>;
   extraActions?: (record?: Record<string, any>) => React.ReactNode;
@@ -146,6 +148,7 @@ export const ShowPage: FC<ShowProps> & {
   breadcrumb: breadcrumbFromProps = null,
   canDelete = true,
   canEdit = true,
+  deleteConfirmation,
   extra,
   extraActions,
   record,
@@ -209,6 +212,7 @@ export const ShowPage: FC<ShowProps> & {
                         resource={resource?.name ?? ""}
                         title={translate("buttons.delete")}
                         icon={<Trash2 size={16} />}
+                        confirmation={deleteConfirmation}
                       />
                     )}
                   </DropdownMenuContent>

@@ -260,7 +260,8 @@
 			"forceDelete": {
 				"label": "Force Delete",
 				"description": "Use when normal deletion fails. Deletes the record but may not clean up associated external resources."
-			}
+			},
+			"typeNameToConfirm": "Type \"{{name}}\" to confirm."
 		}
 	},
 	"warnWhenUnsavedChanges": "Are you sure you want to leave? You have unsaved changes.",
@@ -823,6 +824,106 @@
 		"validation": {
 			"nameRequired": "Name is required",
 			"urlRequired": "URL is required"
+		}
+	},
+	"log_sinks": {
+		"log_sinks": "log sink",
+		"title": "Log Sinks",
+		"create": {
+			"title": "Create Log Sink"
+		},
+		"sections": {
+			"destination": "Destination",
+			"advanced": "Advanced",
+			"delivery": "Delivery"
+		},
+		"fields": {
+			"enabled": "Enabled",
+			"type": "Type",
+			"url": "URL",
+			"authType": "Authentication",
+			"username": "Username",
+			"password": "Password",
+			"token": "Token",
+			"caCert": "CA Certificate",
+			"insecureSkipVerify": "Skip TLS verification",
+			"timeoutSeconds": "Timeout (seconds)",
+			"bufferSize": "Buffer Size (GiB)",
+			"extraFields": "Extra Fields",
+			"extraFieldKey": "Key",
+			"extraFieldValue": "Value",
+			"sentEvents": "Sent Events",
+			"droppedEvents": "Dropped Events",
+			"lastSentTime": "Last Sent",
+			"lastConnectionTest": "Last Automatic Test",
+			"timeout": "Timeout",
+			"bufferSizeShort": "Buffer Size"
+		},
+		"types": {
+			"victorialogs": "VictoriaLogs"
+		},
+		"authTypes": {
+			"none": "None",
+			"basic": "Basic",
+			"bearer": "Bearer token"
+		},
+		"values": {
+			"yes": "Yes",
+			"no": "No",
+			"set": "Set",
+			"notSet": "Not set",
+			"timeoutDefault": "60s (default)",
+			"timeoutSeconds": "{{count}}s",
+			"bufferDefault": "1 GiB (default)",
+			"bufferGib": "{{value}} GiB",
+			"testOk": "Succeeded",
+			"testFailed": "Failed",
+			"never": "Not run yet"
+		},
+		"placeholders": {
+			"name": "Log sink name",
+			"url": "e.g. https://vl.example.com:9428",
+			"caCert": "-----BEGIN CERTIFICATE-----",
+			"timeoutSeconds": "60",
+			"bufferSize": "1"
+		},
+		"descriptions": {
+			"enabled": "When off, nothing is sent to this sink. Traces produced while it is off are never sent later.",
+			"insecureSkipVerify": "Do not verify the server's TLS certificate.",
+			"timeoutSeconds": "Leave empty to use the default (60 seconds).",
+			"bufferSize": "On-disk buffer for this sink. Leave empty to use the default (1 GiB). When full, the newest events are dropped.",
+			"extraFields": "Added to every record sent to this sink as stream fields."
+		},
+		"buttons": {
+			"addExtraField": "Add field",
+			"removeExtraField": "Remove field"
+		},
+		"delete": {
+			"description": "Delivery to this log store stops and buffered events that have not been sent are discarded. Data already in the log store is not touched."
+		},
+		"validation": {
+			"nameRequired": "Name is required",
+			"namePattern": "Use lowercase letters, digits, '-' and '.', starting and ending with a letter or digit",
+			"urlRequired": "URL is required",
+			"urlScheme": "URL must start with http:// or https://",
+			"urlInvalid": "URL is not valid",
+			"urlHost": "URL must include a host",
+			"urlQueryOrFragment": "URL must not contain a query or fragment",
+			"usernameRequired": "Username is required for basic authentication",
+			"tokenRequired": "Token is required for bearer authentication",
+			"timeoutInvalid": "Enter a whole number of seconds (0 or more)",
+			"bufferInvalid": "Enter a positive number of GiB",
+			"bufferMin": "Must be at least 268435488 bytes (just over 0.25 GiB)",
+			"extraFieldKeyRequired": "Key is required",
+			"extraFieldKeyInvalid": "Key must not contain ',' or '='",
+			"extraFieldKeyDuplicate": "Key is already used",
+			"extraFieldValueComma": "Value must not contain ','"
+		},
+		"testConnection": {
+			"button": "Test connection",
+			"testing": "Testing...",
+			"ok": "Connection test succeeded",
+			"failed": "Connection test failed: {{message}}"
 		}
 	},
 	"engines": {
@@ -2017,6 +2118,14 @@
 			"nodeProvision": {
 				"provisioning": "Provisioning",
 				"provisioned": "Provisioned"
+			},
+			"logSink": {
+				"Pending": "Pending",
+				"Running": "Running",
+				"Degraded": "Degraded",
+				"Failed": "Failed",
+				"Disabled": "Disabled",
+				"Deleted": "Deleted"
 			}
 		},
 		"accessModes": {
