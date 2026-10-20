@@ -1,4 +1,5 @@
 import { useShow } from "@refinedev/core";
+import { LogSinkEnableAction } from "@/domains/log-sink/components/LogSinkEnableAction";
 import LogSinkEnabled from "@/domains/log-sink/components/LogSinkEnabled";
 import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import TestConnectionButton from "@/domains/log-sink/components/TestConnectionButton";
@@ -46,6 +47,7 @@ export const LogSinksShow = () => {
       record={record}
       showCurrentBreadcrumb={false}
       deleteConfirmation={deleteConfirmation(record.metadata.name)}
+      extraActions={() => <LogSinkEnableAction sink={record} />}
     >
       <ShowPage.ObjectHeader
         title={record.metadata.name}

@@ -1,4 +1,5 @@
 import { Edit, Trash2 } from "lucide-react";
+import { LogSinkEnableAction } from "@/domains/log-sink/components/LogSinkEnableAction";
 import LogSinkEnabled from "@/domains/log-sink/components/LogSinkEnabled";
 import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
@@ -96,6 +97,7 @@ export const LogSinksList = () => {
                 resource="log_sinks"
                 icon={<Edit size={16} />}
               />
+              <LogSinkEnableAction sink={original as LogSink} />
               <Table.DeleteAction
                 title={t("buttons.delete")}
                 row={original}

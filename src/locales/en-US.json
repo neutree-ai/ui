@@ -919,6 +919,16 @@
 			"extraFieldKeyDuplicate": "Key is already used",
 			"extraFieldValueComma": "Value must not contain ','"
 		},
+		"actions": {
+			"enable": "Enable",
+			"disable": "Disable"
+		},
+		"messages": {
+			"enableSuccess": "Log sink enabled",
+			"disableSuccess": "Log sink disabled",
+			"enableFailed": "Failed to enable log sink",
+			"disableFailed": "Failed to disable log sink"
+		},
 		"testConnection": {
 			"button": "Test connection",
 			"testing": "Testing...",

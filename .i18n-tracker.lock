@@ -451,7 +451,7 @@
   "src/domains/log-sink/components/LogSinkStatus.tsx": "98ac8316261800c66b7784dc78faba0a",
   "src/domains/log-sink/components/TestConnectionButton.tsx": "ced44d034156997d60a4b726aaeddf27",
   "src/domains/log-sink/hooks/use-log-sink-delete-confirmation.ts": "5bf034410810ca273aa769fd344ce92c",
-  "src/domains/log-sink/hooks/use-log-sink-form.tsx": "845d5690adb0ad7982aedb52574196de",
+  "src/domains/log-sink/hooks/use-log-sink-form.tsx": "19d9d4b1693509fc1621eeac88f8bae9",
   "src/domains/log-sink/hooks/use-log-sink-test-connection.ts": "e581ef561867f1d7cf4756f230e0ef54",
   "src/domains/log-sink/lib/log-sink-display.ts": "dec96a56c5f0b8d1fbb1de9bde07fd2a",
   "src/domains/log-sink/lib/log-sink-form.ts": "d3d72d49d51049859311aa278f511961",
@@ -459,6 +459,7 @@
   "src/domains/log-sink/types.ts": "ea5233fbc140ce4d9225db57d524ab00",
   "src/pages/log-sinks/create.tsx": "63f96513deb43cc99d59f974694bf2c5",
   "src/pages/log-sinks/edit.tsx": "44aca0e63b3d4fe86a1356bdcf16299a",
-  "src/pages/log-sinks/list.tsx": "bbcde6d35f7708dab5dd52b840fc28ad",
-  "src/pages/log-sinks/show.tsx": "b698068b0a531984b5180894da8c214c"
+  "src/pages/log-sinks/list.tsx": "f2f53723d976923961e4da003bb2e1ee",
+  "src/pages/log-sinks/show.tsx": "ea9920433ef01cf7acead3e4e6dfb148",
+  "src/domains/log-sink/components/LogSinkEnableAction.tsx": "87ecd20ab60f8198c791dca75ccabee7"
 }
