@@ -995,7 +995,7 @@
 			"insecureSkipVerify": "Do not verify the server's TLS certificate.",
 			"timeoutSeconds": "Leave empty to use the default (60 seconds).",
 			"bufferSize": "On-disk buffer for this sink. Leave empty to use the default (1 GiB). When full, the newest events are dropped.",
-			"extraFields": "Added to every record sent to this sink as stream fields."
+			"extraFields": "Added as fields to every record sent to this sink."
 		},
 		"buttons": {
 			"addExtraField": "Add field",
