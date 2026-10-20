@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "2f4ea227a08df0d1587921fe627a10e3",
-  "src/App.tsx": "f61bf51cb6f55118b21dfd5d10c371e3",
+  "src/App.tsx": "fd119b970c5e0509bcbe68c0aaed0e16",
   "src/Root.tsx": "dd7ccc8e83bb3cb7f8c8fb879e4aa203",
   "src/index.tsx": "eea917dfd0f718cd42c34525bfc8cf21",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",
@@ -483,7 +483,7 @@
   "src/pages/identity-sources/show.tsx": "2e4fe4ee85ba6a3e9b1f6d7d5e66f894",
   "src/domains/log-sink/components/LogSinkEnabled.tsx": "e0456654f7615a2d908deb44ce2d19fe",
   "src/domains/log-sink/components/LogSinkStatus.tsx": "98ac8316261800c66b7784dc78faba0a",
-  "src/domains/log-sink/components/TestConnectionButton.tsx": "3a784e25f92a7e5d3233fc1ed4443a99",
+  "src/domains/log-sink/components/TestConnectionButton.tsx": "ced44d034156997d60a4b726aaeddf27",
   "src/domains/log-sink/hooks/use-log-sink-delete-confirmation.ts": "5bf034410810ca273aa769fd344ce92c",
   "src/domains/log-sink/hooks/use-log-sink-form.tsx": "845d5690adb0ad7982aedb52574196de",
   "src/domains/log-sink/hooks/use-log-sink-test-connection.ts": "e581ef561867f1d7cf4756f230e0ef54",

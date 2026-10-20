@@ -1,5 +1,10 @@
 import { CheckCircle2, Loader2, Plug, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { TestConnectionResult } from "@/domains/log-sink/lib/test-connection";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -16,6 +21,12 @@ export default function TestConnectionButton({
   onTest,
 }: Props) {
   const { t } = useTranslation();
+  const failedText =
+    result && !result.ok
+      ? t("log_sinks.testConnection.failed", {
+          message: result.message || t("common.errors.unknown"),
+        })
+      : "";
 
   return (
     <div className="flex flex-wrap items-start gap-3">
@@ -35,28 +46,34 @@ export default function TestConnectionButton({
           ? t("log_sinks.testConnection.testing")
           : t("log_sinks.testConnection.button")}
       </Button>
-      {result && !testing && (
+      {result && !testing && result.ok && (
         <span
           data-testid="log-sink-test-result"
-          className={`inline-flex min-w-0 items-start gap-1 pt-2 text-sm ${
-            result.ok
-              ? "text-[var(--nt-text-colorful-positive)]"
-              : "text-[var(--nt-text-colorful-serious)]"
-          }`}
+          className="inline-flex items-center gap-1 pt-2 text-sm text-[var(--nt-text-colorful-positive)]"
         >
-          {result.ok ? (
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-          ) : (
-            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          )}
-          <span className="whitespace-pre-wrap break-words">
-            {result.ok
-              ? t("log_sinks.testConnection.ok")
-              : t("log_sinks.testConnection.failed", {
-                  message: result.message || t("common.errors.unknown"),
-                })}
-          </span>
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          {t("log_sinks.testConnection.ok")}
         </span>
+      )}
+      {result && !testing && !result.ok && (
+        // The message can carry the store's whole error body (e.g. a proxy's
+        // HTML page): keep one line here and show all of it on hover.
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              data-testid="log-sink-test-result"
+              className="inline-flex min-w-0 max-w-xl items-center gap-1 pt-2 text-sm text-[var(--nt-text-colorful-serious)]"
+            >
+              <XCircle className="h-4 w-4 shrink-0" />
+              <span className="truncate">{failedText}</span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-lg">
+            <pre className="max-h-96 max-w-lg overflow-auto whitespace-pre-wrap break-words">
+              {failedText}
+            </pre>
+          </TooltipContent>
+        </Tooltip>
       )}
     </div>
   );
