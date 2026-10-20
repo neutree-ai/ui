@@ -79,7 +79,7 @@ describe("ClusterResourceSummary", () => {
 
     expect(screen.getByText("CPU")).toBeTruthy();
     expect(screen.getByText("4.0 / 16.0")).toBeTruthy();
-    expect(screen.getAllByText("25% used")).toHaveLength(2);
+    expect(screen.getAllByText("25% allocated")).toHaveLength(2);
     expect(screen.getByText("Memory")).toBeTruthy();
     expect(screen.getByText("16.0 / 64.0")).toBeTruthy();
 
@@ -91,9 +91,9 @@ describe("ClusterResourceSummary", () => {
     expect(cardBar.children[1].className).toContain("bg-muted");
 
     expect(screen.getByText("20.0 / 30.0")).toBeTruthy();
-    expect(screen.getByText("67% used")).toBeTruthy();
+    expect(screen.getByText("67% allocated")).toBeTruthy();
     expect(screen.getByText("150 / 200")).toBeTruthy();
-    expect(screen.getByText("75% used")).toBeTruthy();
+    expect(screen.getByText("75% allocated")).toBeTruthy();
 
     const progressBars = screen.getAllByRole("progressbar");
     expect(progressBars).toHaveLength(4);

@@ -77,7 +77,7 @@ const UsageMetric = ({
   available,
   unit,
   series = "blue",
-  allocationLabels = false,
+  allocationLabels = true,
   valueScale = 1,
   valuePrecision = 1,
   discrete = false,
