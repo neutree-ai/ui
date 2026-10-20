@@ -35,6 +35,7 @@ export function transformClusterValues(
       transformed.spec.cache = {
         provider: "zcache",
         options: {
+          ...(options.version ? { version: options.version } : {}),
           enabled: options.enabled,
           l1_size_gib: Number(options.l1_size_gib ?? 0),
           target_nodes: [...(options.target_nodes ?? [])],
