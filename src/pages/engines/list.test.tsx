@@ -50,8 +50,12 @@ const engine = (name: string, phase?: string) => ({
   status: phase ? { phase } : undefined,
 });
 
-const listReturns = ({ engines = [] as unknown[], isLoading = false } = {}) => {
-  useListMock.mockReturnValue({ data: { data: engines }, isLoading });
+const listReturns = ({
+  engines = [] as unknown[],
+  isLoading = false,
+  isError = false,
+} = {}) => {
+  useListMock.mockReturnValue({ data: { data: engines }, isLoading, isError });
 };
 
 const cardNames = () =>
@@ -88,6 +92,28 @@ describe("EnginesList", () => {
     render(<EnginesList />);
 
     expect(screen.getByText("engines.list.empty")).toBeTruthy();
+  });
+
+  it("says the engines failed to load instead of calling the workspace empty", () => {
+    useListMock.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    });
+
+    render(<EnginesList />);
+
+    expect(screen.getByText("engines.list.loadFailed")).toBeTruthy();
+    expect(screen.queryByText("engines.list.empty")).toBeNull();
+  });
+
+  it("keeps the last cards when a later poll fails", () => {
+    listReturns({ engines: [engine("vllm")], isError: true });
+
+    render(<EnginesList />);
+
+    expect(cardNames()).toEqual(["vllm"]);
+    expect(screen.queryByText("engines.list.loadFailed")).toBeNull();
   });
 
   it("renders one card per engine", () => {

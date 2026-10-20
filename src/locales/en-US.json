@@ -837,7 +837,8 @@
 		},
 		"list": {
 			"searchPlaceholder": "Search by name",
-			"empty": "No engines in this workspace."
+			"empty": "No engines in this workspace.",
+			"loadFailed": "Unable to load engines."
 		},
 		"versions": {
 			"all": "All versions",

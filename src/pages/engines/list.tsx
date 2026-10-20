@@ -29,7 +29,7 @@ export const EnginesList = () => {
   const workspace = (params?.workspace as string) ?? "";
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useList<Engine>({
+  const { data, isLoading, isError } = useList<Engine>({
     resource: "engines",
     pagination: { mode: "off" },
     meta: { workspace },
@@ -78,6 +78,10 @@ export const EnginesList = () => {
 
       {isLoading ? (
         <Loader className="h-4 text-primary" />
+      ) : isError && !data ? (
+        // A failed first load is not an empty workspace; a failed poll keeps
+        // the cards from the last successful one.
+        <EmptyState>{t("engines.list.loadFailed")}</EmptyState>
       ) : engines.length === 0 ? (
         <EmptyState>{t("engines.list.empty")}</EmptyState>
       ) : (
