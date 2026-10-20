@@ -49,7 +49,7 @@ describe("accelerator readings", () => {
       { node: "other" },
       { replica: "other" },
       { endpoint: "other" },
-    ])
+    ] as Record<string, string>[])
       expect(
         reading([sample(40, labels)], metric, "node", "gpu", allocation),
       ).toBeUndefined();
