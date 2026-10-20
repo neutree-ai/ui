@@ -1892,6 +1892,7 @@
 			"root": "Root"
 		},
 		"jsonSchemaVisualizer": {
+			"empty": "This version declares no values schema.",
 			"required": "required",
 			"root": "Root"
 		},

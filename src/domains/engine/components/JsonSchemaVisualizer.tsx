@@ -109,6 +109,15 @@ interface JSONSchemaVisualizerProps {
 const JSONSchemaVisualizer = ({ schema }: JSONSchemaVisualizerProps) => {
   const { t } = useTranslation();
 
+  // An engine version may declare no schema at all.
+  if (!schema || typeof schema !== "object") {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("components.jsonSchemaVisualizer.empty")}
+      </p>
+    );
+  }
+
   return (
     <div className="w-full bg-background text-foreground">
       <PropertyNode
