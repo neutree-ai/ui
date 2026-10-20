@@ -55,7 +55,7 @@ export type EngineCapabilities = {
 
 export type EngineVersion = {
   version: string;
-  values_schema: Record<string, string | number | boolean>;
+  values_schema: Record<string, string | number | boolean> | null;
   capabilities?: EngineCapabilities | null;
 };
 
