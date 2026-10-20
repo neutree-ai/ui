@@ -57,11 +57,13 @@ import { emptyLogSinkFormValues } from "@/domains/log-sink/lib/log-sink-form";
 import { useLogSinkForm } from "./use-log-sink-form";
 
 let submit: () => Promise<unknown>;
+let validate: () => Promise<boolean>;
 
 function Form({ action }: { action: "create" | "edit" }) {
   const { form, metadataFields, specFields } = useLogSinkForm({ action });
   submit = () =>
     form.refineCore.onFinish(form.getValues() as LogSinkFormValues);
+  validate = () => form.trigger();
   return (
     <FormProvider {...form}>
       <form>
@@ -172,5 +174,95 @@ describe("useLogSinkForm", () => {
       values: { id: 7, spec },
     });
     expect(await screen.findByTestId("log-sink-test-result")).toBeTruthy();
+  });
+  it("create s3: shows only s3 fields; submit and test send only spec.s3", async () => {
+    render(<Form action="create" />);
+    selectOption("field-spec.type", "log_sinks.types.s3");
+    expect(screen.queryByTestId("field-spec.victorialogs.url")).toBeNull();
+    // Region, bucket and both keys are required at create.
+    expect(await validate()).toBe(false);
+    fireEvent.change(input("field-metadata.name"), {
+      target: { value: "archive" },
+    });
+    fireEvent.change(input("field-spec.s3.endpoint"), {
+      target: { value: "http://demo-s3:9000" },
+    });
+    fireEvent.change(input("field-spec.s3.region"), {
+      target: { value: "us-east-1" },
+    });
+    fireEvent.change(input("field-spec.s3.bucket"), {
+      target: { value: "traces" },
+    });
+    fireEvent.change(input("field-spec.s3.auth.access_key_id"), {
+      target: { value: "ak" },
+    });
+    fireEvent.change(input("field-spec.s3.auth.secret_access_key"), {
+      target: { value: "sk" },
+    });
+    fireEvent.change(input("field-spec.s3.flush_interval_seconds"), {
+      target: { value: "10" },
+    });
+    // The hidden VictoriaLogs URL (empty) does not block an s3 sink.
+    expect(await validate()).toBe(true);
+
+    const spec = {
+      type: "s3",
+      enabled: true,
+      s3: {
+        endpoint: "http://demo-s3:9000",
+        region: "us-east-1",
+        bucket: "traces",
+        flush_interval_seconds: 10,
+        auth: { access_key_id: "ak", secret_access_key: "sk" },
+      },
+    };
+
+    await submit();
+    expect(mocks.onFinish).toHaveBeenCalledWith({
+      api_version: "v1",
+      kind: "LogSink",
+      metadata: { name: "archive" },
+      spec,
+    });
+
+    fireEvent.click(screen.getByTestId("log-sink-test-connection"));
+    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalled());
+    expect(mocks.mutateAsync.mock.calls[0][0]).toMatchObject({
+      values: { spec },
+    });
+  });
+
+  it("edit s3 with blank keys: type locked, keys left out of the PATCH and the test", async () => {
+    const stored = emptyLogSinkFormValues();
+    stored.metadata.name = "archive";
+    stored.spec.type = "s3";
+    stored.spec.s3.region = "us-east-1";
+    stored.spec.s3.bucket = "traces";
+    mocks.queryData = { ...stored, id: 9 };
+
+    render(<Form action="edit" />);
+    expect(
+      screen
+        .getByTestId("field-spec.type")
+        .querySelector('button[role="combobox"]')
+        ?.hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      (input("field-spec.s3.auth.secret_access_key") as HTMLInputElement).value,
+    ).toBe("");
+
+    const spec = {
+      type: "s3",
+      enabled: true,
+      s3: { region: "us-east-1", bucket: "traces" },
+    };
+    await submit();
+    expect(mocks.onFinish).toHaveBeenCalledWith({ spec });
+
+    fireEvent.click(screen.getByTestId("log-sink-test-connection"));
+    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalled());
+    expect(mocks.mutateAsync.mock.calls[0][0]).toMatchObject({
+      values: { id: 9, spec },
+    });
   });
 });
