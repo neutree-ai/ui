@@ -29,12 +29,13 @@ export function EndpointKVCacheFields({
   const enabled = cache != null;
   const engine = form.watch("spec.engine");
   const task = form.watch("spec.model.task");
-  const runtimeVersion = endpointZCacheOptions(cluster)?.version;
-  const compatible =
-    !runtimeVersion ||
-    !!versions.data?.data
-      .find((v) => v.version === runtimeVersion)
-      ?.engine_versions.includes(engine?.version);
+  const runtimeVersion =
+    endpointZCacheOptions(cluster)?.version ??
+    cluster?.status?.cache?.details?.configured_runtime_version ??
+    "v0.5.5";
+  const compatible = !!versions.data?.data
+    .find((v) => v.version === runtimeVersion)
+    ?.engine_versions.includes(engine?.version);
   const supported =
     cluster?.spec.type === "kubernetes" &&
     endpointZCacheOptions(cluster)?.enabled &&
