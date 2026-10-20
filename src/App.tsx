@@ -425,6 +425,18 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    name: "log_sinks",
+    list: "/log-sinks",
+    create: "/log-sinks/create",
+    edit: "/log-sinks/edit/:id",
+    show: "/log-sinks/show/:id",
+    meta: {
+      icon: <ScrollText />,
+      idColumnName: "metadata->name",
+      parent: "model_gateway",
+    },
+  },
+  {
     name: "access_control",
   },
   {
@@ -475,18 +487,7 @@ const resources: ResourceProps[] = [
       parent: "access_control",
     },
   },
-  {
-    name: "log_sinks",
-    list: "/log-sinks",
-    create: "/log-sinks/create",
-    edit: "/log-sinks/edit/:id",
-    show: "/log-sinks/show/:id",
-    meta: {
-      icon: <ScrollText />,
-      idColumnName: "metadata->name",
-      parent: "access_control",
-    },
-  },
+
   {
     name: "api_keys",
     list: "/:workspace/api-keys",
