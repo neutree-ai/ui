@@ -62,13 +62,14 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
                 status?.ready_runtime_version ?? t("clusters.zcache.unknown"),
             })}
           </div>
-          {zcacheSpec(cluster)?.version && (
-            <div className="text-muted-foreground">
-              {t("clusters.cacheUpgrade.target", {
-                version: zcacheSpec(cluster)?.version,
-              })}
-            </div>
-          )}
+          {zcacheSpec(cluster)?.version &&
+            zcacheSpec(cluster)?.version !== status?.ready_runtime_version && (
+              <div className="text-muted-foreground">
+                {t("clusters.cacheUpgrade.target", {
+                  version: zcacheSpec(cluster)?.version,
+                })}
+              </div>
+            )}
         </div>
         <Button
           size="sm"
@@ -81,12 +82,17 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
           {t("clusters.cacheUpgrade.title")}
         </Button>
       </div>
-      {upgrade && (
+      {upgrade && upgrade.phase !== "Succeeded" && (
         <div role="status" className="space-y-1 text-sm">
           <p>{t(`clusters.cacheUpgrade.phases.${upgrade.phase}`)}</p>
           {upgrade.endpoints.map((ep) => (
             <div key={ep.name} className="flex flex-wrap gap-2">
-              <span>{ep.name}</span>
+              <a
+                className="underline"
+                href={`#/${encodeURIComponent(cluster.metadata.workspace ?? "default")}/endpoints/show/${encodeURIComponent(ep.name)}`}
+              >
+                {ep.name}
+              </a>
               <span>{t(`clusters.cacheUpgrade.phases.${ep.phase}`)}</span>
               {ep.message && (
                 <span className="text-destructive">{ep.message}</span>
@@ -242,6 +248,9 @@ function UpgradeDialog({
                 {ep.metadata.display_name || ep.metadata.name}
                 <div className="text-xs text-muted-foreground">
                   {ep.spec.engine.version}
+                  {version &&
+                    !supported.includes(ep.spec.engine.version) &&
+                    ` · ${t("clusters.cacheUpgrade.incompatible")}`}
                   {ep.spec.replicas?.num === 0 &&
                     ` · ${t("clusters.cacheUpgrade.phases.Paused")}`}
                 </div>
