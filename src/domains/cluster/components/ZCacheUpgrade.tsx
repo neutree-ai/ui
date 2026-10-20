@@ -250,7 +250,7 @@ function UpgradeDialog({
                   {ep.spec.engine.version}
                   {version &&
                     !supported.includes(ep.spec.engine.version) &&
-                    ` · ${t("clusters.cacheUpgrade.incompatible")}`}
+                    ` · ${t("clusters.cacheUpgrade.incompatibleTarget")}`}
                   {ep.spec.replicas?.num === 0 &&
                     ` · ${t("clusters.cacheUpgrade.phases.Paused")}`}
                 </div>
