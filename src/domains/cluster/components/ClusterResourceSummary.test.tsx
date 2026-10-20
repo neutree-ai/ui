@@ -127,7 +127,7 @@ describe("ClusterResourceSummary", () => {
       }),
     );
 
-    screen.getByText("25% allocated");
+    expect(screen.getAllByText("25% allocated")).toHaveLength(3);
     screen.getByText("1.5 cards");
     expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
     screen.getByRole("progressbar", { name: "GPU Cards: 0.5 / 2.0" });
