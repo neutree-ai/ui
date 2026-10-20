@@ -25,7 +25,8 @@ const ENGINES_WITHOUT_MODEL_SPEC = ["flex"];
  * The two rules are therefore deliberately different and both fail safe — do not
  * "align" them. The convergence is an engine capability declaration both sides
  * read, which is a separate change; it lives here rather than under the engine
- * domain because an L2 domain may not import from another one.
+ * domain because both the endpoint form and the catalog editor ask it, and an
+ * L2 domain may not import from another one.
  */
 export function engineNeedsModelSpec(engineName?: string | null): boolean {
   return !engineName || !ENGINES_WITHOUT_MODEL_SPEC.includes(engineName);

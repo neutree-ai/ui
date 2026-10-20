@@ -3,8 +3,9 @@ import {
   looksLikeDocument,
   type Mapping,
 } from "@/domains/model-catalog/lib/parse-catalog-spec-yaml";
+import { writesWorkloadImage } from "@/foundation/recipe/image-feature";
 import { isRecipeShape } from "@/foundation/recipe/normalize";
-import type { RecipeInputSpec } from "@/foundation/recipe/types";
+import type { RecipeFeature, RecipeInputSpec } from "@/foundation/recipe/types";
 import type { ModelSpec } from "@/foundation/types/serving-types";
 
 /**
@@ -177,6 +178,69 @@ export function writeCatalogModelSlot(
       variants: { ...variants, [slot.key]: repoint(variant) },
     };
   }
+
+  return spec === doc ? nextSpec : { ...(doc as Mapping), spec: nextSpec };
+}
+
+/**
+ * A recipe feature whose input is the whole workload image, as one row of the
+ * panel. `index` addresses the feature in `spec.features`, which is a list.
+ */
+type CatalogImageSlot = {
+  index: number;
+  label: string;
+  image: string;
+};
+
+/**
+ * Reads every workload image a catalog asks the deployer for.
+ *
+ * An engine that runs its own workload names no model — a Flex catalog's
+ * variants carry `name: "-"` — so what an imported one needs repointed is the
+ * image, which lives as the default of the feature that fills the `image`
+ * engine argument. The default is routinely a placeholder such as
+ * `<your-registry>/…`, and it is what every endpoint deployed from the catalog
+ * starts from.
+ */
+export function readCatalogImageSlots(doc: unknown): CatalogImageSlot[] {
+  const spec = specOf(doc);
+  if (!spec || !Array.isArray(spec.features)) return [];
+
+  return spec.features.flatMap((feature, index) => {
+    if (!isMapping(feature) || !writesWorkloadImage(feature as RecipeFeature)) {
+      return [];
+    }
+
+    const { name, display_name: displayName, input } = feature as RecipeFeature;
+    const image = input?.default;
+
+    return [
+      {
+        index,
+        label: displayName || name,
+        image: typeof image === "string" ? image : "",
+      },
+    ];
+  });
+}
+
+/** Returns the document with one image feature defaulting to `image`. */
+export function writeCatalogImageSlot(
+  doc: unknown,
+  index: number,
+  image: string,
+): unknown {
+  const spec = specOf(doc);
+  if (!spec || !Array.isArray(spec.features)) return doc;
+
+  const feature = spec.features[index];
+  if (!isMapping(feature)) return doc;
+
+  const input = isMapping(feature.input) ? feature.input : {};
+  const features = spec.features.map((current, i) =>
+    i === index ? { ...feature, input: { ...input, default: image } } : current,
+  );
+  const nextSpec = { ...spec, features };
 
   return spec === doc ? nextSpec : { ...(doc as Mapping), spec: nextSpec };
 }

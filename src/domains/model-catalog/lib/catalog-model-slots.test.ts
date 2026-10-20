@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   type CatalogModelSlot,
   readCatalogEngine,
+  readCatalogImageSlots,
   readCatalogModelSlots,
   slotKey,
   writeCatalogEngineVersion,
+  writeCatalogImageSlot,
   writeCatalogModelSlot,
 } from "./catalog-model-slots";
 
@@ -255,5 +257,112 @@ describe("writeCatalogEngineVersion", () => {
     const noEngine = { kind: "ModelCatalog", spec: { model: { name: "m" } } };
 
     expect(writeCatalogEngineVersion(noEngine, "0.25")).toEqual(noEngine);
+  });
+});
+
+// The shape the published Flex catalogs use: no model worth naming, and the
+// workload image asked for through a feature that fills the `image` argument.
+const flex = {
+  apiVersion: "v1",
+  kind: "ModelCatalog",
+  metadata: { name: "mineru", workspace: "team-a" },
+  spec: {
+    engine: { engine: "flex", version: "v0.1.2" },
+    variants: { airgap: { model: { name: "-" } } },
+    features: [
+      { name: "max-pages", type: "input", engine_args: { pages: "${value}" } },
+      {
+        name: "image",
+        display_name: "工作负载镜像",
+        type: "input",
+        engine_args: { image: "${value}" },
+        input: {
+          value_type: "string",
+          default: "<your-registry>/mineru:v0.1.2",
+        },
+      },
+    ],
+  },
+};
+
+describe("readCatalogImageSlots", () => {
+  it("reads the feature that fills the image argument, by position", () => {
+    expect(readCatalogImageSlots(flex)).toEqual([
+      {
+        index: 1,
+        label: "工作负载镜像",
+        image: "<your-registry>/mineru:v0.1.2",
+      },
+    ]);
+  });
+
+  it("labels a feature without a display name by its name", () => {
+    const doc = { features: [{ ...flex.spec.features[1], display_name: "" }] };
+
+    expect(readCatalogImageSlots(doc)[0].label).toBe("image");
+  });
+
+  it("offers a feature with no default yet as an empty image", () => {
+    const { input: _input, ...feature } = flex.spec.features[1];
+
+    expect(readCatalogImageSlots({ features: [feature] })).toEqual([
+      { index: 0, label: "工作负载镜像", image: "" },
+    ]);
+  });
+
+  it("finds nothing where the input is only part of the reference", () => {
+    const doc = {
+      features: [
+        {
+          name: "image",
+          type: "input",
+          engine_args: { image: "myprefix/${value}" },
+        },
+      ],
+    };
+
+    expect(readCatalogImageSlots(doc)).toEqual([]);
+  });
+
+  it("finds nothing in a catalog without features, or one mid-edit", () => {
+    expect(readCatalogImageSlots(plain)).toEqual([]);
+    expect(readCatalogImageSlots({ features: "ima" })).toEqual([]);
+  });
+});
+
+describe("writeCatalogImageSlot", () => {
+  it("replaces that feature's default and leaves the rest alone", () => {
+    const next = writeCatalogImageSlot(
+      flex,
+      1,
+      "harbor.local/neutree/mineru:v0.1.2",
+    ) as typeof flex;
+
+    expect(next.spec.features[1].input).toEqual({
+      value_type: "string",
+      default: "harbor.local/neutree/mineru:v0.1.2",
+    });
+    expect(next.spec.features[0]).toBe(flex.spec.features[0]);
+    expect(next.spec.variants).toBe(flex.spec.variants);
+    expect(next.metadata).toBe(flex.metadata);
+    expect(flex.spec.features[1].input?.default).toBe(
+      "<your-registry>/mineru:v0.1.2",
+    );
+  });
+
+  it("gives a feature without an input block one", () => {
+    const { input: _input, ...feature } = flex.spec.features[1];
+    const next = writeCatalogImageSlot(
+      { features: [feature] },
+      0,
+      "harbor.local/x:v1",
+    ) as { features: { input: unknown }[] };
+
+    expect(next.features[0].input).toEqual({ default: "harbor.local/x:v1" });
+  });
+
+  it("returns the document untouched when there is no such feature", () => {
+    expect(writeCatalogImageSlot(flex, 5, "x")).toBe(flex);
+    expect(writeCatalogImageSlot(plain, 0, "x")).toBe(plain);
   });
 });
