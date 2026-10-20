@@ -27,10 +27,27 @@ export type VictoriaLogsSinkSpec = {
   extra_fields?: Record<string, string>;
 };
 
+export type LogSinkType = "victorialogs" | "s3";
+
+export type S3Compression = "gzip" | "zstd" | "none";
+
+export type S3SinkSpec = {
+  endpoint?: string;
+  region: string;
+  bucket: string;
+  key_prefix?: string;
+  force_path_style?: boolean;
+  compression?: S3Compression;
+  flush_interval_seconds?: number;
+  // Masked on read (returned as {}); a blank or omitted key keeps the stored one.
+  auth?: { access_key_id?: string; secret_access_key?: string };
+};
+
 export type LogSinkSpec = {
-  type: "victorialogs";
+  type: LogSinkType;
   enabled?: boolean;
-  victorialogs?: VictoriaLogsSinkSpec;
+  victorialogs?: VictoriaLogsSinkSpec | null;
+  s3?: S3SinkSpec | null;
   buffer?: { max_size?: number } | null;
 };
 

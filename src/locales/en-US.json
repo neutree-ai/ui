@@ -961,10 +961,22 @@
 			"lastSentTime": "Last Sent",
 			"lastConnectionTest": "Last Automatic Test",
 			"timeout": "Timeout",
-			"bufferSizeShort": "Buffer Size"
+			"bufferSizeShort": "Buffer Size",
+			"endpoint": "Endpoint",
+			"region": "Region",
+			"bucket": "Bucket",
+			"keyPrefix": "Key Prefix",
+			"accessKeyId": "Access Key ID",
+			"secretAccessKey": "Secret Access Key",
+			"forcePathStyle": "Path-style addressing",
+			"addressing": "Addressing",
+			"compression": "Compression",
+			"flushIntervalSeconds": "Flush Interval (seconds)",
+			"flushInterval": "Flush Interval"
 		},
 		"types": {
-			"victorialogs": "VictoriaLogs"
+			"victorialogs": "VictoriaLogs",
+			"s3": "S3"
 		},
 		"authTypes": {
 			"none": "None",
@@ -982,21 +994,33 @@
 			"bufferGib": "{{value}} GiB",
 			"testOk": "Succeeded",
 			"testFailed": "Failed",
-			"never": "Not run yet"
+			"never": "Not run yet",
+			"endpointDefault": "AWS (default)",
+			"defaultSuffix": "{{value}} (default)",
+			"pathStyle": "Path-style",
+			"virtualHosted": "Virtual-hosted",
+			"flushIntervalDefault": "300s (default)"
 		},
 		"placeholders": {
 			"name": "Destination name",
 			"url": "e.g. https://vl.example.com:9428",
 			"caCert": "-----BEGIN CERTIFICATE-----",
 			"timeoutSeconds": "60",
-			"bufferSize": "1"
+			"bufferSize": "1",
+			"endpoint": "e.g. http://minio.example.com:9000",
+			"region": "e.g. us-east-1"
 		},
 		"descriptions": {
 			"enabled": "When off, nothing is sent to this destination. Access logs produced while it is off are never sent later.",
 			"insecureSkipVerify": "Do not verify the server's TLS certificate.",
 			"timeoutSeconds": "Leave empty to use the default (60 seconds).",
 			"bufferSize": "On-disk buffer for this destination. Leave empty to use the default (1 GiB). When full, the newest events are dropped.",
-			"extraFields": "Added as fields to every record sent to this destination."
+			"extraFields": "Added as fields to every record sent to this destination.",
+			"endpoint": "Leave empty to use the AWS endpoint for the region. Set it for S3-compatible stores.",
+			"bucket": "The bucket must already exist.",
+			"keyPrefix": "Leave empty to use the default (neutree/%Y/%m/%d/). Date placeholders use UTC.",
+			"forcePathStyle": "Address the bucket as <endpoint>/<bucket>. Turn off for virtual-hosted style (<bucket>.<endpoint host>), which most S3-compatible stores do not support.",
+			"flushIntervalSeconds": "Leave empty to use the default (300 seconds). With little traffic, the first object appears only after this interval."
 		},
 		"buttons": {
 			"addDestination": "Add destination",
@@ -1022,7 +1046,20 @@
 			"extraFieldKeyRequired": "Key is required",
 			"extraFieldKeyInvalid": "Key must not contain ',' or '='",
 			"extraFieldKeyDuplicate": "Key is already used",
-			"extraFieldValueComma": "Value must not contain ','"
+			"extraFieldValueComma": "Value must not contain ','",
+			"endpointScheme": "Endpoint must start with http:// or https://",
+			"endpointInvalid": "Endpoint is not a valid URL",
+			"endpointHost": "Endpoint must include a host",
+			"endpointExtraParts": "Endpoint must not contain credentials, a query or a fragment",
+			"regionRequired": "Region is required",
+			"bucketRequired": "Bucket is required",
+			"keyPrefixTooLong": "Key prefix must be at most 512 characters",
+			"keyPrefixLeadingSlash": "Key prefix must not start with '/'",
+			"keyPrefixTemplate": "Key prefix must not contain double curly braces",
+			"keyPrefixInvalidChars": "Key prefix must not contain control characters or '\\'",
+			"flushIntervalInvalid": "Enter a whole number of seconds from 1 to 86400",
+			"accessKeyIdRequired": "Access key ID is required",
+			"secretAccessKeyRequired": "Secret access key is required"
 		},
 		"actions": {
 			"enable": "Enable",
@@ -1039,6 +1076,11 @@
 			"testing": "Testing...",
 			"ok": "Connection test succeeded",
 			"failed": "Connection test failed: {{message}}"
+		},
+		"compressions": {
+			"gzip": "gzip",
+			"zstd": "zstd",
+			"none": "None"
 		}
 	},
 	"engines": {
