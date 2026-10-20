@@ -285,12 +285,6 @@ function ZCacheDetails({
             )}
           </p>
         )}
-        {status?.configured_runtime_version && (
-          <p className="border-t pt-3 text-sm text-muted-foreground">
-            {t("clusters.zcache.configuredVersion")}:{" "}
-            {status.configured_runtime_version}
-          </p>
-        )}
       </div>
       {editing && (
         <ZCacheEditor cluster={cluster} onClose={() => setEditing(false)} />
