@@ -451,7 +451,7 @@
   "src/domains/cluster/components/ZCacheFields.tsx": "2c0361af14691f4a41326f8b4bfac89c",
   "src/domains/cluster/hooks/use-cache-capacity-confirmation.tsx": "3bfba59ff6c2ff7a5906144145982c0d",
   "src/domains/cluster/components/ZCacheActivity.tsx": "052bc26838c3a7e4a0f0faa7d4c64e28",
-  "src/domains/cluster/components/ClusterCacheSection.tsx": "72e24a0480ae4a4b7a61bc3a11a092e1",
+  "src/domains/cluster/components/ClusterCacheSection.tsx": "a635456ad56fa1853509b9532737113f",
   "src/domains/cluster/lib/zcache-presentation.ts": "52e676e791d5c8dc4edb0c88b59accef",
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
   "src/domains/endpoint/lib/zcache.ts": "941fc08ce09923211222f927b72b1a84",
@@ -459,5 +459,5 @@
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
   "src/foundation/components/GrafanaDashboardLink.tsx": "8759bc1412fb0d563189892ce8269b31",
   "src/foundation/hooks/use-cache-versions.ts": "5a45cba264be741ddb0834821157162b",
-  "src/domains/cluster/components/ZCacheUpgrade.tsx": "04e568d6ac18127c245cd72557809de9"
+  "src/domains/cluster/components/ZCacheUpgrade.tsx": "1153da0017bb2c5fb1af74a3f8f4667d"
 }
