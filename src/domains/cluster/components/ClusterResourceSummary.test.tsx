@@ -72,13 +72,13 @@ describe("ClusterResourceSummary", () => {
     renderSummary(makeInfo());
 
     screen.getByText("4.0 / 16.0");
-    expect(screen.getAllByText("25% used")).toHaveLength(2);
+    expect(screen.getAllByText("25% allocated")).toHaveLength(2);
     screen.getByText("16.0 / 64.0");
     screen.getByRole("img", { name: "GPU Cards: 1 / 2" });
     screen.getByText("20.0 / 30.0");
-    screen.getByText("67% used");
+    screen.getByText("67% allocated");
     screen.getByText("150 / 200");
-    screen.getByText("75% used");
+    screen.getByText("75% allocated");
   });
 
   it("reports pooled usage as unknown when a product omits availability", () => {
