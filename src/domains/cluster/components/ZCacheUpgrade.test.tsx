@@ -145,3 +145,32 @@ it("does not show the previous success while a new request awaits reconciliation
     screen.getByText("clusters.cacheUpgrade.title").closest("button")?.disabled,
   ).toBe(true);
 });
+
+it("hides successful details but retains failures with instance links", () => {
+  const done = structuredClone(cluster);
+  done.status!.cache!.details = {
+    ready_runtime_version: "v0.5.5",
+    upgrade: {
+      id: "done",
+      phase: "Succeeded",
+      endpoints: [{ name: "ep", phase: "Succeeded" }],
+    },
+  };
+  const view = render(<ZCacheUpgrade cluster={done} />);
+  expect(screen.queryByRole("status")).toBeNull();
+  done.status!.cache!.details = {
+    ready_runtime_version: "v0.5.5",
+    upgrade: {
+      id: "done",
+      phase: "Failed",
+      endpoints: [
+        { name: "ep", phase: "Failed", message: "image pull failed" },
+      ],
+    },
+  };
+  view.rerender(<ZCacheUpgrade cluster={done} />);
+  expect(screen.getByRole("link", { name: "ep" }).getAttribute("href")).toBe(
+    "#/default/endpoints/show/ep",
+  );
+  expect(screen.getByText("image pull failed")).toBeDefined();
+});
