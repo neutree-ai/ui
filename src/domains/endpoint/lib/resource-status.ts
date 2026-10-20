@@ -26,6 +26,7 @@ export type EndpointReplicaResourceRow = {
   coreUnits: number;
   physicalMemoryMiB: number | null;
   actualMemoryMiB: number | null;
+  vdeviceIndex?: string | null;
 };
 
 export type EndpointReplicaNodeResourceGroup = {
@@ -84,6 +85,7 @@ const toReplicaResourceRow = (
     replicaId: replica.replica_id ?? "",
     nodeId: device.node_id || replica.node_id || "",
     uuid: device.uuid,
+    vdeviceIndex: device.vdevice_index,
     order: getDeviceOrder(device.order),
     product: device.product,
     memoryMiB: device.memory_mib,

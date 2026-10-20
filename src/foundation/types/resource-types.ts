@@ -126,6 +126,7 @@ export type ClusterResourceInfo = ResourceStatus & {
 };
 
 export type DeviceAllocation = {
+  vdevice_index?: string | null;
   uuid: string;
   order?: number | null;
   product: string;
