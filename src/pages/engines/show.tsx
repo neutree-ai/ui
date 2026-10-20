@@ -136,7 +136,10 @@ export const EnginesShow = () => {
             {selected && (
               <div className="min-w-0 md:flex-1">
                 <ShowPage.Row title={t("engines.fields.valuesSchema")}>
-                  <ValueSchemaTable schema={selected.values_schema} />
+                  <ValueSchemaTable
+                    key={selected.version}
+                    schema={selected.values_schema}
+                  />
                 </ShowPage.Row>
               </div>
             )}

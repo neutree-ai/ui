@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EnginesShow } from "@/pages/engines/show";
 
@@ -96,10 +96,17 @@ vi.mock("@/domains/engine/components/EngineStatus", () => ({
   ),
 }));
 
+// Local state stands in for the table's search and filters, which must not
+// carry over from one version to the next.
 vi.mock("@/domains/engine/components/ValueSchemaTable", () => ({
-  ValueSchemaTable: ({ schema }: { schema: unknown }) => (
-    <div data-testid="schema">{JSON.stringify(schema)}</div>
-  ),
+  ValueSchemaTable: ({ schema }: { schema: unknown }) => {
+    const [mountedWith] = useState(() => JSON.stringify(schema));
+    return (
+      <div data-testid="schema" data-mounted-with={mountedWith}>
+        {JSON.stringify(schema)}
+      </div>
+    );
+  },
 }));
 
 const engineWith = (
@@ -206,6 +213,24 @@ describe("EnginesShow", () => {
       "schema v0.24.0",
     );
     expect(versionLinks()[0].current).toBe("true");
+  });
+
+  it("starts the schema table afresh when the version changes", () => {
+    const versions = [
+      { version: "v0.8.5", values_schema: schemaOf("v0.8.5") },
+      { version: "v0.24.0", values_schema: schemaOf("v0.24.0") },
+    ];
+    showReturns(engineWith(versions));
+    searchParamsMock.mockReturnValue(new URLSearchParams("version=v0.8.5"));
+
+    const { rerender } = render(<EnginesShow />);
+
+    searchParamsMock.mockReturnValue(new URLSearchParams("version=v0.24.0"));
+    rerender(<EnginesShow />);
+
+    expect(
+      screen.getByTestId("schema").getAttribute("data-mounted-with"),
+    ).toContain("schema v0.24.0");
   });
 
   it("shows a status badge only for a phase that needs attention", () => {
