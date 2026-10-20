@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import TestConnectionButton from "@/domains/log-sink/components/TestConnectionButton";
 import { useLogSinkTestConnection } from "@/domains/log-sink/hooks/use-log-sink-test-connection";
@@ -153,10 +154,10 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
           isCheckbox
           className="col-span-4"
         >
-          <Checkbox
+          <Switch
             checked={enabled === true}
             onCheckedChange={(checked) =>
-              form.setValue("spec.enabled", checked === true, {
+              form.setValue("spec.enabled", checked, {
                 shouldDirty: true,
               })
             }
