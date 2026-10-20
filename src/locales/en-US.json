@@ -632,6 +632,7 @@
 			"loadFailed": "Could not load the upgrade plan. Refresh and try again.",
 			"confirm": "Confirm upgrade",
 			"incompatible": "This engine is incompatible with the cache version. Disable inference cache or upgrade cache from the cluster page.",
+			"incompatibleTarget": "Incompatible with the target cache version",
 			"phases": {
 				"UpdatingRuntime": "Updating cache runtime",
 				"UpdatingEndpoints": "Updating inference instances",

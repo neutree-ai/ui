@@ -459,5 +459,5 @@
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
   "src/foundation/components/GrafanaDashboardLink.tsx": "8759bc1412fb0d563189892ce8269b31",
   "src/foundation/hooks/use-cache-versions.ts": "5a45cba264be741ddb0834821157162b",
-  "src/domains/cluster/components/ZCacheUpgrade.tsx": "1153da0017bb2c5fb1af74a3f8f4667d"
+  "src/domains/cluster/components/ZCacheUpgrade.tsx": "5e434c0769799c0b57a1cb4e307d780a"
 }
