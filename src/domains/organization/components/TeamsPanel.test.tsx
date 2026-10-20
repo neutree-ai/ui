@@ -1,10 +1,12 @@
 import {
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
   within,
 } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -63,6 +65,19 @@ import {
 import type { MemberProfile, Team } from "@/domains/organization/types";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { TeamsPanel } from "./TeamsPanel";
+
+const LocationProbe = () => (
+  <output data-testid="location">{useLocation().search}</output>
+);
+const render = (ui: ReactElement, path = "/organization") =>
+  rtlRender(
+    <MemoryRouter initialEntries={[path]}>
+      {ui}
+      <LocationProbe />
+    </MemoryRouter>,
+  );
+const search = () =>
+  decodeURIComponent(screen.getByTestId("location").textContent ?? "");
 
 const synced = {
   id: 1,
@@ -183,6 +198,68 @@ describe("TeamsPanel", () => {
       }),
     );
     await waitFor(() => expect(writes.remove).toHaveBeenCalledWith(manual));
+  });
+
+  it("keeps the selected team in the URL and restores it from there", () => {
+    grant(...ALL);
+    const { unmount } = render(<TeamsPanel />);
+    fireEvent.click(screen.getByTestId("team-2"));
+    expect(search()).toBe("?team=guild");
+    unmount();
+
+    render(<TeamsPanel />, "/organization?tab=teams&team=guild");
+    expect(screen.getByTestId("team-2").getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(screen.getByTestId("team-delete")).toBeTruthy();
+  });
+
+  it("says up front that policies block the delete, and disables it", () => {
+    grant(...ALL);
+    const useDeleteCheck = vi.fn((_name: string, enabled: boolean) =>
+      enabled
+        ? { roleAssignments: 2, hasPolicy: true, isLoading: false }
+        : undefined,
+    );
+    render(<TeamsPanel useDeleteCheck={useDeleteCheck} />, "/o?team=guild");
+    expect(useDeleteCheck).toHaveBeenLastCalledWith("guild", false);
+    fireEvent.click(screen.getByTestId("team-delete"));
+    expect(useDeleteCheck).toHaveBeenLastCalledWith("guild", true);
+    const dialog = screen.getByRole("alertdialog");
+    expect(
+      within(dialog).getByText("organization.teams.deleteBlocked"),
+    ).toBeTruthy();
+    const confirm = within(dialog).getByRole("button", {
+      name: "buttons.delete",
+    }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
+    expect(writes.remove).not.toHaveBeenCalled();
+  });
+
+  it("waits for the check, then notes the policy deleted with the team", () => {
+    grant(...ALL);
+    let check = { roleAssignments: 0, hasPolicy: true, isLoading: true };
+    const { rerender } = render(
+      <TeamsPanel useDeleteCheck={() => check} />,
+      "/o?team=guild",
+    );
+    fireEvent.click(screen.getByTestId("team-delete"));
+    const button = () =>
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "buttons.delete",
+      }) as HTMLButtonElement;
+    expect(screen.getByTestId("team-delete-checking")).toBeTruthy();
+    expect(button().disabled).toBe(true);
+
+    check = { ...check, isLoading: false };
+    rerender(
+      <MemoryRouter initialEntries={["/o?team=guild"]}>
+        <TeamsPanel useDeleteCheck={() => check} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId("team-delete-policy")).toBeTruthy();
+    expect(button().disabled).toBe(false);
   });
 
   it("explains a delete refused for the team's role assignments", async () => {

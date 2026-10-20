@@ -125,6 +125,55 @@ describe("UserGroupModelAccess", () => {
     expect(row.textContent).not.toContain("other");
   });
 
+  it("names the user's teams and pools by the display name sent with the policy", () => {
+    setup({
+      self: true,
+      canRead: false,
+      policy: {
+        ...policy,
+        groups: [
+          {
+            kind: "Team",
+            name: "demo-team-a",
+            display_name: "Demo Team A",
+            active: true,
+            allowed_models: [{ model: "m" }],
+            denied_models: null,
+          },
+        ],
+        token_pools: [
+          {
+            kind: "Team",
+            name: "demo-team-a",
+            display_name: "Demo Team A",
+            token_limit: 1000,
+            period: "daily",
+            used: 10,
+            remaining: 990,
+            resets_at: "2026-10-21",
+          },
+        ],
+      },
+    });
+    const renderTeam = vi.fn(
+      (name: string, label?: string | null) => `team:${label ?? name}`,
+    );
+    const { unmount } = render(
+      <UserGroupModelAccess userId="u-1" renderTeam={renderTeam} />,
+    );
+    expect(renderTeam).toHaveBeenCalledWith("demo-team-a", "Demo Team A");
+    expect(
+      screen.getByTestId("user-token-pool-Team-demo-team-a").textContent,
+    ).toContain("team:Demo Team A");
+    unmount();
+
+    // Without a renderer the display name still wins over the internal name.
+    render(<UserGroupModelAccess userId="u-1" />);
+    const row = screen.getByTestId("user-model-access-group-Team-demo-team-a");
+    expect(row.textContent).toContain("Demo Team A");
+    expect(row.textContent).not.toContain("demo-team-a");
+  });
+
   it("lists each group's rules without a merged result when no workspace is readable", () => {
     workspaceNames = [];
     setup({ self: false, canRead: true, policy });

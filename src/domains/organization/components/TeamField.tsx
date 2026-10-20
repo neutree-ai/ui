@@ -1,5 +1,6 @@
 import { forwardRef, useMemo } from "react";
 import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
+import { LabelPlaceholder } from "@/domains/organization/components/LabelPlaceholder";
 import { TeamSourceLabel } from "@/domains/organization/components/TeamSourceLabel";
 import { useTeams } from "@/domains/organization/hooks/use-organization";
 import { displayName, isInactive } from "@/domains/organization/lib/org-tree";
@@ -78,13 +79,23 @@ export const TeamField = forwardRef<HTMLDivElement, TeamFieldProps>(
 
 TeamField.displayName = "TeamField";
 
-/** A Team by metadata.name, shown by its display name. */
-export function TeamLabel({ name }: { name: string }) {
-  const { byName } = useTeamsByName();
+/**
+ * A Team by metadata.name, shown by its display name. Like OrgUnitLabel, a
+ * placeholder while loading and `fallback` or the name when not readable.
+ */
+export function TeamLabel({
+  name,
+  fallback,
+}: {
+  name: string;
+  fallback?: string | null;
+}) {
+  const { byName, isLoading } = useTeamsByName();
   const team: Team | undefined = byName.get(name);
+  if (!team && isLoading) return <LabelPlaceholder testId="team-label" />;
   return (
     <span className="inline-flex items-center gap-2" data-testid="team-label">
-      {team ? displayName(team.metadata) : name}
+      {team ? displayName(team.metadata) : fallback?.trim() || name}
       {team && isInactive(team) && <InactiveBadge />}
     </span>
   );

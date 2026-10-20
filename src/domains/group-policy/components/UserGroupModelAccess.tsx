@@ -72,16 +72,21 @@ const Names = ({
  * users); hidden when the server refuses. A reader who sees no workspace gets
  * each group's rules without the merged result.
  */
+type GroupRenderer = (name: string, displayName?: string | null) => ReactNode;
+const plainLabel: GroupRenderer = (name, displayName) =>
+  displayName?.trim() || name;
+
 export function UserGroupModelAccess({
   userId,
   initialWorkspace,
-  renderTeam = (name) => name,
-  renderOrgUnit = (name) => name,
+  renderTeam = plainLabel,
+  renderOrgUnit = plainLabel,
 }: {
   userId: string;
   initialWorkspace?: string;
-  renderTeam?: (name: string) => ReactNode;
-  renderOrgUnit?: (name: string) => ReactNode;
+  /** `displayName` comes with the policy, for readers of no groups. */
+  renderTeam?: GroupRenderer;
+  renderOrgUnit?: GroupRenderer;
 }) {
   const { t } = useTranslation();
   const { data: identity } = useGetIdentity<{ id?: string }>();
@@ -224,8 +229,8 @@ export function UserGroupModelAccess({
                               }
                             />
                             {group.kind === "Team"
-                              ? renderTeam(group.name)
-                              : renderOrgUnit(group.name)}
+                              ? renderTeam(group.name, group.display_name)
+                              : renderOrgUnit(group.name, group.display_name)}
                             {!group.active && (
                               <Badge
                                 variant="secondary"
@@ -277,8 +282,8 @@ export function UserGroupModelAccess({
                     >
                       <span className="min-w-32 font-medium">
                         {pool.kind === "Team"
-                          ? renderTeam(pool.name)
-                          : renderOrgUnit(pool.name)}
+                          ? renderTeam(pool.name, pool.display_name)
+                          : renderOrgUnit(pool.name, pool.display_name)}
                       </span>
                       <TokenPoolSummary
                         quota={{ limit: pool.token_limit, period: pool.period }}

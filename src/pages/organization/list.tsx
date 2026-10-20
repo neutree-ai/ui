@@ -3,10 +3,12 @@ import { GroupModelAccess } from "@/domains/group-policy/components/GroupModelAc
 import { DepartmentsPanel } from "@/domains/organization/components/DepartmentsPanel";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamsPanel } from "@/domains/organization/components/TeamsPanel";
+import { useOrganizationView } from "@/domains/organization/hooks/use-organization-view";
 import { GroupRoleAssignments } from "@/domains/role-assignment/components/GroupRoleAssignments";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { useTeamDeleteCheck } from "@/pages/organization/use-team-delete-check";
 
 const renderOrgUnit = (name: string) => <OrgUnitLabel name={name} />;
 
@@ -19,6 +21,8 @@ export const OrganizationList = () => {
   // The teams RLS accepts a global team:read only; without it the tab would
   // read empty, so it is hidden (D69).
   const { allowed: canReadTeams } = useHasGlobalPermission("team:read");
+  const [view, updateView] = useOrganizationView();
+  const tab = canReadTeams === true ? view.tab : "departments";
 
   return (
     <ListPage
@@ -31,7 +35,12 @@ export const OrganizationList = () => {
     >
       {/* Tabs stay mounted while team:read is checked, so the departments
           panel keeps its state when the Teams tab appears. */}
-      <Tabs defaultValue="departments">
+      <Tabs
+        value={tab}
+        onValueChange={(next) =>
+          updateView({ tab: next === "teams" ? "teams" : "departments" })
+        }
+      >
         {canReadTeams && (
           <TabsList className="mb-3">
             <TabsTrigger value="departments">
@@ -59,6 +68,7 @@ export const OrganizationList = () => {
         {canReadTeams && (
           <TabsContent value="teams" className="mt-0">
             <TeamsPanel
+              useDeleteCheck={useTeamDeleteCheck}
               renderRoleAssignments={(name, label) => (
                 <>
                   <GroupRoleAssignments

@@ -1,4 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render as rtlRender, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -25,9 +27,23 @@ vi.mock("@/domains/group-policy/components/GroupModelAccess", () => ({
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: vi.fn(),
 }));
+vi.mock("@/pages/organization/use-team-delete-check", () => ({
+  useTeamDeleteCheck: vi.fn(),
+}));
 
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { OrganizationList } from "./list";
+
+const LocationProbe = () => (
+  <output data-testid="location">{useLocation().search}</output>
+);
+const render = (ui: ReactElement, path = "/organization") =>
+  rtlRender(
+    <MemoryRouter initialEntries={[path]}>
+      {ui}
+      <LocationProbe />
+    </MemoryRouter>,
+  );
 
 describe("OrganizationList", () => {
   it("offers the Teams tab only with a global team:read", () => {
@@ -47,5 +63,32 @@ describe("OrganizationList", () => {
     });
     render(<OrganizationList />);
     expect(screen.getByTestId("organization-teams-tab")).toBeTruthy();
+  });
+
+  it("opens the tab named in the URL and records a switch", () => {
+    vi.mocked(useHasGlobalPermission).mockReturnValue({
+      allowed: true,
+      isLoading: false,
+    });
+    const { unmount } = render(
+      <OrganizationList />,
+      "/organization?tab=teams&team=guild",
+    );
+    expect(screen.getByTestId("teams-panel")).toBeTruthy();
+    expect(screen.queryByTestId("departments-panel")).toBeNull();
+
+    const departments = screen.getByText("organization.departments.title");
+    fireEvent.mouseDown(departments);
+    fireEvent.click(departments);
+    expect(screen.getByTestId("location").textContent).toBe("?team=guild");
+    unmount();
+
+    // Without team:read the Teams tab in a link falls back to Departments.
+    vi.mocked(useHasGlobalPermission).mockReturnValue({
+      allowed: false,
+      isLoading: false,
+    });
+    render(<OrganizationList />, "/organization?tab=teams");
+    expect(screen.getByTestId("departments-panel")).toBeTruthy();
   });
 });

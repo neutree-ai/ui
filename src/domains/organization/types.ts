@@ -59,3 +59,12 @@ export type TeamMember = {
   user_profiles?: MemberProfile | null;
   teams?: Team | null;
 };
+
+/** What stands in the way of deleting a Team; the page supplies it. */
+export type TeamDeleteCheck = {
+  /** Live role assignments naming the Team: the server refuses the delete. */
+  roleAssignments: number;
+  /** The Team's model access policy, which is deleted with it. */
+  hasPolicy: boolean;
+  isLoading: boolean;
+};

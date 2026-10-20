@@ -2917,6 +2917,9 @@
 			"removeMemberHint": "{{user}} will no longer be a member of {{team}}.",
 			"deleteTitle": "Delete team {{team}}?",
 			"deleteHint": "The team is deleted together with its member list ({{count}} members). This cannot be undone.",
+			"deleteBlocked": "{{count}} policies still grant roles to this team. Delete them in Workspace Policies first, then delete the team.",
+			"deleteChecking": "Checking the policies granted to this team…",
+			"deletePolicyHint": "Its model access and token pool are deleted with it.",
 			"validation": {
 				"nameRequired": "Enter a name.",
 				"nameFormat": "Use lowercase letters, digits, '-' and '.', starting and ending with a letter or digit.",

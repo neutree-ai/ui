@@ -2,6 +2,7 @@ import { forwardRef, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AssignOrgUnitDialog } from "@/domains/organization/components/AssignOrgUnitDialog";
 import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
+import { LabelPlaceholder } from "@/domains/organization/components/LabelPlaceholder";
 import { useOrgUnits } from "@/domains/organization/hooks/use-organization";
 import {
   buildOrgTree,
@@ -20,8 +21,9 @@ const useOrgUnitsByName = () => {
       list,
       byName: new Map(list.map((unit) => [unit.metadata.name, unit])),
       byId: new Map(list.map((unit) => [unit.id, unit])),
+      isLoading: units.isLoading,
     };
-  }, [units.data]);
+  }, [units.data, units.isLoading]);
 };
 
 type OrgUnitFieldProps = {
@@ -91,13 +93,23 @@ export const OrgUnitField = forwardRef<HTMLButtonElement, OrgUnitFieldProps>(
 OrgUnitField.displayName = "OrgUnitField";
 
 /**
- * A department by metadata.name, shown as its path. Falls back to the name
- * when the department is not readable.
+ * A department by metadata.name, shown as its path. While the departments
+ * load it shows a placeholder; when the department is not readable, the
+ * `fallback` label (a display name the caller already has) or the name.
  */
-export function OrgUnitLabel({ name }: { name: string }) {
-  const { byName, byId } = useOrgUnitsByName();
+export function OrgUnitLabel({
+  name,
+  fallback,
+}: {
+  name: string;
+  fallback?: string | null;
+}) {
+  const { byName, byId, isLoading } = useOrgUnitsByName();
   const unit: OrgUnit | undefined = byName.get(name);
-  if (!unit) return <span data-testid="org-unit-label">{name}</span>;
+  if (!unit) {
+    if (isLoading) return <LabelPlaceholder testId="org-unit-label" />;
+    return <span data-testid="org-unit-label">{fallback?.trim() || name}</span>;
+  }
   return (
     <span
       className="inline-flex items-center gap-2"

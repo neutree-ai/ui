@@ -151,7 +151,6 @@ export function GroupModelAccess({
                 setActionError(undefined);
                 try {
                   await writes.remove(policy);
-                  void pool.refetch();
                 } catch (err) {
                   setActionError(errorText(err));
                 }
@@ -259,7 +258,6 @@ export function GroupModelAccess({
                   nextQuota,
                 ),
               );
-              void pool.refetch();
               setEditing(false);
             } catch (err) {
               setDialogError(errorText(err));

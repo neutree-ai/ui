@@ -19,6 +19,7 @@ import {
   useOrgUnitMembers,
   useOrgUnits,
 } from "@/domains/organization/hooks/use-organization";
+import { useOrganizationView } from "@/domains/organization/hooks/use-organization-view";
 import {
   buildOrgTree,
   expandableIds,
@@ -51,15 +52,35 @@ export function DepartmentsPanel({
   const [query, setQuery] = useState("");
   const [source, setSource] = useState(ALL_SOURCES);
   const [showInactive, setShowInactive] = useState(false);
-  const [selectedId, setSelectedId] = useState<number>();
   const [includeSubtree, setIncludeSubtree] = useState(false);
-  // null: the default for the current query (roots open, or every match
-  // open while searching); a set once the user toggles a node.
-  const [expanded, setExpanded] = useState<Set<number> | null>(null);
+  // The selection and the expanded nodes live in the URL. Expanded null: the
+  // default for the current query (roots open, or every match open while
+  // searching); a list once the user toggles a node.
+  const [view, updateView] = useOrganizationView();
 
   const { data, isLoading, error } = useOrgUnits();
   const tree = useMemo(() => buildOrgTree(data?.data ?? []), [data]);
   const nodesById = useMemo(() => indexNodes(tree), [tree]);
+  const idsByName = useMemo(
+    () =>
+      new Map(
+        [...nodesById.values()].map((n) => [n.unit.metadata.name, n.unit.id]),
+      ),
+    [nodesById],
+  );
+  const selectedId = view.department
+    ? idsByName.get(view.department)
+    : undefined;
+  const expanded = useMemo(
+    () =>
+      view.expanded &&
+      new Set(
+        view.expanded
+          .map((name) => idsByName.get(name))
+          .filter((id): id is number => id !== undefined),
+      ),
+    [view.expanded, idsByName],
+  );
   const groups = useMemo(() => groupByIdentitySource(tree), [tree]);
   const visibleGroups = useMemo(
     () =>
@@ -77,23 +98,42 @@ export function DepartmentsPanel({
   const effectiveExpanded = useMemo(() => {
     if (expanded) return expanded;
     const roots = visibleGroups.flatMap((g) => g.roots);
-    return new Set(
-      searching
-        ? expandableIds(roots)
-        : roots.filter((r) => r.children.length).map((r) => r.unit.id),
-    );
-  }, [expanded, visibleGroups, searching]);
+    const ids = searching
+      ? expandableIds(roots)
+      : roots.filter((r) => r.children.length).map((r) => r.unit.id);
+    // A link to a deep department opens the way down to it.
+    const selectedUnit =
+      selectedId === undefined ? undefined : nodesById.get(selectedId)?.unit;
+    const ancestors = selectedUnit
+      ? selectedUnit.path
+          .split("/")
+          .filter(Boolean)
+          .map(Number)
+          .filter((id) => id !== selectedUnit.id)
+      : [];
+    return new Set([...ids, ...ancestors]);
+  }, [expanded, visibleGroups, searching, selectedId, nodesById]);
 
   const onQueryChange = (next: string) => {
     setQuery(next);
-    setExpanded(null);
+    if (view.expanded) updateView({ expanded: null }, { replace: true });
   };
   const onExpandedChange = (id: number, open: boolean) => {
     const next = new Set(effectiveExpanded);
     if (open) next.add(id);
     else next.delete(id);
-    setExpanded(next);
+    updateView(
+      {
+        expanded: [...next]
+          .map((nodeId) => nodesById.get(nodeId)?.unit.metadata.name)
+          .filter((name): name is string => !!name)
+          .sort(),
+      },
+      { replace: true },
+    );
   };
+  const onSelect = (id: number) =>
+    updateView({ department: nodesById.get(id)?.unit.metadata.name });
 
   const selected =
     selectedId === undefined ? undefined : nodesById.get(selectedId);
@@ -173,7 +213,7 @@ export function DepartmentsPanel({
                     expanded={effectiveExpanded}
                     onExpandedChange={onExpandedChange}
                     selectedId={selectedId}
-                    onSelect={setSelectedId}
+                    onSelect={onSelect}
                   />
                 </div>
               ))}

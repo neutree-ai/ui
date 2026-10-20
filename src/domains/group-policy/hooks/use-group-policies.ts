@@ -5,7 +5,7 @@ import {
   useInvalidate,
   useList,
 } from "@refinedev/core";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import type {
   GroupPolicy,
   GroupPolicySpec,
@@ -47,9 +47,24 @@ export class GroupPolicyGoneError extends Error {
 
 const RETURN_ROWS = { headers: { Prefer: "return=representation" } };
 
+/** The RPCs whose answers derive from group policies. */
+const POLICY_READ_URLS = new Set([
+  "/rpc/get_group_token_pools",
+  "/rpc/get_user_group_policy",
+]);
+
+const readsPolicies = (key: readonly unknown[]) =>
+  key.some(
+    (part) =>
+      typeof part === "object" &&
+      part !== null &&
+      POLICY_READ_URLS.has(String((part as { url?: unknown }).url)),
+  );
+
 export const useGroupPolicyWrites = () => {
   const { mutateAsync, isLoading } = useCustomMutation();
   const invalidate = useInvalidate();
+  const queryClient = useQueryClient();
 
   const run = async (
     url: string,
@@ -67,7 +82,19 @@ export const useGroupPolicyWrites = () => {
     if (method !== "post" && Array.isArray(data) && data.length === 0) {
       throw new GroupPolicyGoneError();
     }
-    await invalidate({ resource: "group_policies", invalidates: ["list"] });
+    // cancelRefetch: a read already in flight started before the write and
+    // would otherwise land last with the old policy.
+    await Promise.all([
+      invalidate({
+        resource: "group_policies",
+        invalidates: ["list"],
+        invalidationOptions: { cancelRefetch: true },
+      }),
+      queryClient.invalidateQueries(
+        { predicate: (query) => readsPolicies(query.queryKey) },
+        { cancelRefetch: true },
+      ),
+    ]);
   };
 
   return {
@@ -137,7 +164,6 @@ export const useGroupTokenPool = (
   return {
     pool: rows?.[0],
     error: query.error,
-    refetch: query.refetch,
   };
 };
 

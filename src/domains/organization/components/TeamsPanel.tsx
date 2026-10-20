@@ -15,6 +15,7 @@ import {
   useTeams,
   useTeamWrites,
 } from "@/domains/organization/hooks/use-organization";
+import { useOrganizationView } from "@/domains/organization/hooks/use-organization-view";
 import {
   displayName,
   filterTeams,
@@ -22,6 +23,7 @@ import {
 } from "@/domains/organization/lib/org-tree";
 import { organizationErrorMessage } from "@/domains/organization/lib/organization-errors";
 import { isManualTeam, teamSource } from "@/domains/organization/lib/team";
+import type { TeamDeleteCheck } from "@/domains/organization/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
@@ -48,10 +50,21 @@ type OpenDialog =
  * A manual Team is always Active, so there is no phase switch.
  * `renderRoleAssignments` lists the selected Team's role assignments.
  */
+const noDeleteCheck = (): TeamDeleteCheck | undefined => undefined;
+
 export function TeamsPanel({
   renderRoleAssignments,
+  useDeleteCheck = noDeleteCheck,
 }: {
   renderRoleAssignments?: (teamName: string, label: string) => ReactNode;
+  /**
+   * Reads what blocks deleting the Team while the delete dialog is open; a
+   * hook, as the reads belong to other domains.
+   */
+  useDeleteCheck?: (
+    teamName: string,
+    enabled: boolean,
+  ) => TeamDeleteCheck | undefined;
 } = {}) {
   const { t } = useTranslation();
   const errorText = (error: unknown, creating = false) => {
@@ -83,7 +96,7 @@ export function TeamsPanel({
 
   const [query, setQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
-  const [selectedId, setSelectedId] = useState<number>();
+  const [view, updateView] = useOrganizationView();
   const [dialog, setDialog] = useState<OpenDialog>();
   const [dialogError, setDialogError] = useState<string>();
   const [actionError, setActionError] = useState<string>();
@@ -94,8 +107,16 @@ export function TeamsPanel({
     () => filterTeams(data?.data ?? [], { query, showInactive }),
     [data, query, showInactive],
   );
-  const selected = all.find((team) => team.id === selectedId);
+  const selected = view.team
+    ? all.find((team) => team.metadata.name === view.team)
+    : undefined;
+  const selectedId = selected?.id;
   const members = useTeamMembers(selected?.id);
+  const deleteCheck = useDeleteCheck(
+    selected?.metadata.name ?? "",
+    !!selected && dialog?.kind === "delete",
+  );
+  const deleteBlocked = !!deleteCheck?.roleAssignments;
   const teamWrites = useTeamWrites();
   const memberWrites = useTeamMemberWrites(selected?.id);
   const manual = !!selected && isManualTeam(selected);
@@ -111,8 +132,8 @@ export function TeamsPanel({
   };
   const close = () => setDialog(undefined);
 
-  const select = (id: number | undefined) => {
-    setSelectedId(id);
+  const select = (name: string | undefined) => {
+    updateView({ team: name });
     setActionError(undefined);
   };
 
@@ -189,7 +210,7 @@ export function TeamsPanel({
                         : "hover:bg-muted",
                       isInactive(team) && "text-muted-foreground",
                     )}
-                    onClick={() => select(team.id)}
+                    onClick={() => select(team.metadata.name)}
                     data-testid={`team-${team.id}`}
                   >
                     <span className="truncate">
@@ -260,12 +281,39 @@ export function TeamsPanel({
                       title={t("organization.teams.deleteTitle", {
                         team: displayName(selected.metadata),
                       })}
-                      description={t("organization.teams.deleteHint", {
-                        count: members.members.length,
-                      })}
+                      description={
+                        deleteBlocked
+                          ? t("organization.teams.deleteBlocked", {
+                              count: deleteCheck?.roleAssignments,
+                            })
+                          : t("organization.teams.deleteHint", {
+                              count: members.members.length,
+                            })
+                      }
+                      content={
+                        deleteCheck?.isLoading ? (
+                          <p
+                            className="text-sm text-muted-foreground"
+                            data-testid="team-delete-checking"
+                          >
+                            {t("organization.teams.deleteChecking")}
+                          </p>
+                        ) : (
+                          !deleteBlocked &&
+                          deleteCheck?.hasPolicy && (
+                            <p
+                              className="text-sm text-muted-foreground"
+                              data-testid="team-delete-policy"
+                            >
+                              {t("organization.teams.deletePolicyHint")}
+                            </p>
+                          )
+                        )
+                      }
                       okText={t("buttons.delete")}
                       cancelText={t("buttons.cancel")}
                       okButtonVariant="destructive"
+                      okDisabled={deleteBlocked || !!deleteCheck?.isLoading}
                       loading={teamWrites.isPending}
                       onConfirm={() =>
                         attempt(
@@ -382,7 +430,7 @@ export function TeamsPanel({
             attempt(
               async () => {
                 const created = await teamWrites.create(name, label);
-                if (created) select(created.id);
+                if (created) select(created.metadata.name);
               },
               { creating: true },
             )

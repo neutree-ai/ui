@@ -30,6 +30,8 @@ export type GroupPolicySpec = {
 export type GroupTokenPool = {
   kind: GroupPolicySubjectKind;
   name: string;
+  /** In get_user_group_policy only; absent on older servers. */
+  display_name?: string | null;
   token_limit: number;
   period: GroupTokenPoolPeriod;
   used: number;
@@ -49,6 +51,8 @@ export type GroupPolicy = {
 export type UserGroupPolicyGroup = {
   kind: GroupPolicySubjectKind;
   name: string;
+  /** Absent on older servers. */
+  display_name?: string | null;
   active: boolean;
   allowed_models: GroupPolicyModel[] | null;
   denied_models: GroupPolicyModel[] | null;

@@ -76,8 +76,12 @@ export const UsersShow = () => {
         <UserGroupModelAccess
           userId={record.id}
           initialWorkspace={params?.[USER_MODEL_ACCESS_WORKSPACE_PARAM]}
-          renderTeam={(name) => <TeamLabel name={name} />}
-          renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+          renderTeam={(name, label) => (
+            <TeamLabel name={name} fallback={label} />
+          )}
+          renderOrgUnit={(name, label) => (
+            <OrgUnitLabel name={name} fallback={label} />
+          )}
         />
         <ShowPage.Section
           title={t("user_profiles.sections.globalRoles")}

@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render as rtlRender,
+  screen,
+  within,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -42,6 +49,19 @@ import {
 } from "@/domains/organization/hooks/use-organization";
 import type { OrgUnit } from "@/domains/organization/types";
 import { DepartmentsPanel } from "./DepartmentsPanel";
+
+const LocationProbe = () => (
+  <output data-testid="location">{useLocation().search}</output>
+);
+const render = (ui: ReactElement, path = "/organization") =>
+  rtlRender(
+    <MemoryRouter initialEntries={[path]}>
+      {ui}
+      <LocationProbe />
+    </MemoryRouter>,
+  );
+const search = () =>
+  decodeURIComponent(screen.getByTestId("location").textContent ?? "");
 
 const unit = (id: number, path: string, name: string, inactive = false) =>
   ({
@@ -113,6 +133,20 @@ describe("DepartmentsPanel", () => {
     expect(screen.getByTestId("org-units-empty").textContent).toBe(
       "organization.departments.noMatch",
     );
+  });
+
+  it("keeps the selection and the expanded nodes in the URL", () => {
+    const { unmount } = render(<DepartmentsPanel />);
+    fireEvent.click(screen.getByTestId("org-unit-2"));
+    expect(search()).toBe("?department=ou-2");
+    fireEvent.click(screen.getByTestId("org-unit-toggle-2"));
+    expect(search()).toBe("?department=ou-2&expanded=ou-1&expanded=ou-2");
+    unmount();
+
+    // A shared link to a deep department opens the way down to it.
+    render(<DepartmentsPanel />, "/organization?department=ou-3");
+    expect(screen.getByTestId("org-unit-3")).toBeTruthy();
+    expect(vi.mocked(useOrgUnitMembers)).toHaveBeenLastCalledWith(3, false);
   });
 
   it("shows the members of the selected department, then of its subtree", () => {
