@@ -154,9 +154,22 @@ export function GpuObservationCard({
         role="group"
         aria-label={`${t("observations.actual")}: ${gib(actual)}, ${t("observations.allocated")}: ${gib(device.allocatedMiB)}, ${t("observations.physical")}: ${gib(total)}`}
       >
-        {assigned.length > 0 && !replica ? (
+        {assigned.length > 0 &&
+        !replica &&
+        (assigned.length === 1 ||
+          assigned.some((a) =>
+            Boolean(
+              reading(
+                samples,
+                "neutree_endpoint_replica_accelerator_memory_used_bytes",
+                device.node,
+                device.uuid,
+                a,
+              ),
+            ),
+          )) ? (
           <div className="flex h-full">
-            {assigned.map((a) => {
+            {assigned.map((a, index) => {
               const measured = reading(
                 samples,
                 "neutree_endpoint_replica_accelerator_memory_used_bytes",
@@ -165,29 +178,37 @@ export function GpuObservationCard({
                 a,
               );
               const usedMiB = measured ? measured.value / 1024 ** 2 : null;
+              const fallbackMiB = usedMiB ?? (assigned.length === 1 ? actual : null);
+              const segmentWidth =
+                a.memoryMiB > 0
+                  ? ratio(a.memoryMiB, total)
+                  : assigned.length > 0
+                    ? 100 / assigned.length
+                    : 0;
+              const color = allocationColor(a.endpoint, index);
               return (
                 <Tooltip key={`${a.endpoint}:${a.instance}:${a.vdevice}`}>
                   <TooltipTrigger asChild>
                     <Link
                       className="relative block h-full shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
                       to={`/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`}
-                      aria-label={`${a.endpoint}: ${t("observations.actual")} ${gib(usedMiB)}, ${t("observations.allocated")} ${gib(a.memoryMiB)}`}
-                      style={{ width: `${ratio(a.memoryMiB, total)}%` }}
+                      aria-label={`${a.endpoint}: ${t("observations.actual")} ${gib(fallbackMiB)}, ${t("observations.allocated")} ${gib(a.memoryMiB)}`}
+                      style={{ width: `${segmentWidth}%` }}
                     >
                       <span
                         className="absolute inset-0 opacity-30"
-                        style={{ backgroundColor: allocationColor(a.endpoint) }}
+                        style={{ backgroundColor: color }}
                       />
-                      {usedMiB != null && (
+                      {fallbackMiB != null && (
                         <span
                           className="absolute inset-y-0 left-0"
                           style={{
-                            backgroundColor: allocationColor(a.endpoint),
-                            width: `${ratio(usedMiB, a.memoryMiB)}%`,
+                            backgroundColor: color,
+                            width: `${ratio(fallbackMiB, a.memoryMiB || total)}%`,
                           }}
                         />
                       )}
-                      {usedMiB == null && (
+                      {fallbackMiB == null && (
                         <span className="absolute inset-0 border border-dashed border-[var(--nt-stroke-neutral-trans-3)]" />
                       )}
                     </Link>
@@ -196,10 +217,10 @@ export function GpuObservationCard({
                     <p>{a.endpoint} ↗</p>
                     <p>{a.model}</p>
                     <p>
-                      {t("observations.actual")} {gib(usedMiB)} /{" "}
+                      {t("observations.actual")} {gib(fallbackMiB)} /{" "}
                       {t("observations.allocated")} {gib(a.memoryMiB)}
                     </p>
-                    {usedMiB != null && usedMiB > a.memoryMiB && (
+                    {fallbackMiB != null && fallbackMiB > a.memoryMiB && (
                       <p>{t("observations.overAllocation")}</p>
                     )}
                   </TooltipContent>
@@ -239,13 +260,6 @@ export function GpuObservationCard({
   );
   return (
     <div className="mt-2 space-y-2" data-testid="gpu-observation-card">
-      <button
-        type="button"
-        className="flex items-center gap-1 text-xs text-primary hover:underline"
-        onClick={() => setOpen(true)}
-      >
-        {t("observations.details")} <ArrowUpRight className="h-3.5 w-3.5" />
-      </button>
       {memory}
       <div className="flex flex-wrap justify-between gap-2 text-xs">
         <span className="text-muted-foreground">
@@ -259,6 +273,15 @@ export function GpuObservationCard({
         value={utilization ? utilization.value * 100 : null}
         track={utilization ? "subtle" : "unavailable"}
       />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="flex items-center gap-1 text-xs text-primary hover:underline"
+          onClick={() => setOpen(true)}
+        >
+          {t("observations.details")} <ArrowUpRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader>
