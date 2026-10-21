@@ -1,5 +1,4 @@
 import { useCustom } from "@refinedev/core";
-import { useEffect, useState } from "react";
 import type { AcceleratorSnapshot } from "@/foundation/lib/accelerator-observations";
 
 export function useAcceleratorObservations(
@@ -7,11 +6,6 @@ export function useAcceleratorObservations(
   workspace?: string | null,
   name?: string | null,
 ) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 15000);
-    return () => clearInterval(timer);
-  }, []);
   const query = useCustom<AcceleratorSnapshot>({
     url: `/${resource}/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/accelerator-observations`,
     method: "get",
@@ -23,9 +17,7 @@ export function useAcceleratorObservations(
   });
   const samples = query.error
     ? []
-    : (query.data?.data.samples ?? []).filter(
-        (s) => now / 1000 - s.observed_at <= 90,
-      );
+    : (query.data?.data.samples ?? []);
   return {
     samples,
     status: query.error

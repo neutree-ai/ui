@@ -1,4 +1,4 @@
-import { ArrowUpRight, Cpu } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import {
@@ -14,7 +14,8 @@ import {
   type GpuAllocation,
   reading,
 } from "@/foundation/lib/accelerator-observations";
-import { GPU_GRID_CELL_CLASS } from "@/foundation/lib/gpu-device-resources";
+import { MetricBar } from "./MetricBar";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export type ObservedGpu = {
@@ -44,6 +45,7 @@ const ratio = (
 
 export function ObservationStatus({ status }: { status: string }) {
   const { t } = useTranslation();
+  if (status !== "unavailable" && status !== "not_configured") return null;
   return (
     <p role="status" className="mb-3 text-xs text-muted-foreground">
       {t(`observations.status.${status}`)}
@@ -87,8 +89,8 @@ export function GpuObservationCard({
     ...[
       "neutree_node_accelerator_hardware_info",
       "neutree_node_accelerator_nvidia_info",
-      "neutree_node_accelerator_ascend_info",
-      "neutree_node_accelerator_hygon_info",
+      "neutree_node_accelerator_npu_info",
+      "neutree_node_accelerator_hcu_info",
     ].map((name) => get(name)?.labels ?? {}),
   ) as Record<string, string>;
   const assigned = allocations.filter(
@@ -100,15 +102,17 @@ export function GpuObservationCard({
     ? `${(utilization.value * 100).toFixed(0)}%`
     : "—";
   const hardwareFields = [
-    "architecture",
-    "cuda_capability",
-    "driver_version",
-    "cuda_driver_version",
-    "pcie_bus_id",
-    "pcie_generation",
-    "pcie_width",
-    "numa_node",
+    ...(get("neutree_node_accelerator_nvidia_info") ? ["architecture", "cuda_capability", "cuda_driver_version", "nvlink", "nvswitch"] : []),
+    ...(get("neutree_node_accelerator_npu_info") ? ["hccs_capable"] : []),
+    "driver_version", "pcie_bus_id", "pcie_generation", "pcie_width", "numa_node",
   ];
+  const hardwareLabel = (key: string) => {
+    const value = hardware[key];
+    if (["nvlink", "nvswitch", "hccs_capable"].includes(key)) {
+      return value === "1" ? t(key === "hccs_capable" ? "observations.supported" : "observations.present") : value === "0" ? t(key === "hccs_capable" ? "observations.unsupported" : "observations.absent") : "—";
+    }
+    return label(value);
+  };
   const memory = (
     <div className="space-y-2">
       <div className="flex justify-between text-xs">
@@ -122,22 +126,37 @@ export function GpuObservationCard({
         role="img"
         aria-label={`${t("observations.actual")}: ${gib(actual)}, ${t("observations.allocated")}: ${gib(device.allocatedMiB)}, ${t("observations.physical")}: ${gib(total)}`}
       >
-        <div
-          className="absolute inset-y-0 left-0 bg-blue-200 dark:bg-blue-950"
-          style={{ width: `${ratio(device.allocatedMiB, total)}%` }}
-        />
-        <div
-          className="absolute inset-y-0 left-0 bg-blue-600"
-          style={{ width: `${ratio(actual, total)}%` }}
-        />
-        {device.allocatedMiB != null && !!total && (
-          <span
-            className="absolute inset-y-0 w-0.5 bg-slate-700 dark:bg-slate-200"
-            style={{
-              left: `calc(${ratio(device.allocatedMiB, total)}% - 2px)`,
-            }}
-          />
-        )}
+        {assigned.length > 0 && !replica ? (
+          <div className="flex h-full">
+            {assigned.map((a) => {
+              const measured = reading(samples, "neutree_endpoint_replica_accelerator_memory_used_bytes", device.node, device.uuid, a);
+              const usedMiB = measured ? measured.value / 1024 ** 2 : null;
+              return (
+                <Tooltip key={`${a.endpoint}:${a.instance}:${a.vdevice}`}>
+                  <TooltipTrigger asChild>
+                    <Link className="relative block h-full shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                      to={`/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`}
+                      aria-label={`${a.endpoint}: ${t("observations.actual")} ${gib(usedMiB)}, ${t("observations.allocated")} ${gib(a.memoryMiB)}`}
+                      style={{ width: `${ratio(a.memoryMiB, total)}%` }}>
+                      <span className="absolute inset-0 opacity-30" style={{ backgroundColor: allocationColor(a.endpoint) }} />
+                      {usedMiB != null && <span className="absolute inset-y-0 left-0" style={{ backgroundColor: allocationColor(a.endpoint), width: `${ratio(usedMiB, a.memoryMiB)}%` }} />}
+                      {usedMiB == null && <span className="absolute inset-0 border border-dashed border-[var(--nt-stroke-neutral-trans-3)]" />}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{a.endpoint} ↗</p><p>{a.model}</p>
+                    <p>{t("observations.actual")} {gib(usedMiB)} / {t("observations.allocated")} {gib(a.memoryMiB)}</p>
+                    {usedMiB != null && usedMiB > a.memoryMiB && <p>{t("observations.overAllocation")}</p>}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        ) : <>
+          <div className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)] opacity-30" style={{ width: `${ratio(device.allocatedMiB, total)}%` }} />
+          {actual != null && <div className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)]" style={{ width: `${ratio(actual, total)}%` }} />}
+        </>}
+
       </div>
       <div className="flex flex-wrap justify-between gap-1 text-xs text-muted-foreground">
         <span>
@@ -155,32 +174,10 @@ export function GpuObservationCard({
     </div>
   );
   return (
-    <div
-      className={`min-w-0 space-y-3 p-3 ${GPU_GRID_CELL_CLASS}`}
-      data-testid="gpu-observation-card"
-    >
-      <div>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-          onClick={() => setOpen(true)}
-        >
-          <Cpu className="h-4 w-4" />
-          GPU {device.index}
-          <ArrowUpRight className="h-3.5 w-3.5" />
-        </button>
-        <div
-          className="mt-1 truncate text-xs text-muted-foreground"
-          title={device.product}
-        >
-          {device.product}
-        </div>
-        {device.healthy === false && (
-          <p className="text-xs text-destructive">
-            {t("observations.unhealthy")}
-          </p>
-        )}
-      </div>
+    <div className="mt-2 space-y-2" data-testid="gpu-observation-card">
+      <button type="button" className="flex items-center gap-1 text-xs text-primary hover:underline" onClick={() => setOpen(true)}>
+        {t("observations.details")} <ArrowUpRight className="h-3.5 w-3.5" />
+      </button>
       {memory}
       <div className="flex flex-wrap justify-between gap-2 text-xs">
         <span className="text-muted-foreground">
@@ -188,50 +185,7 @@ export function GpuObservationCard({
         </span>
         <span className="tabular-nums">{utilizationText}</span>
       </div>
-      <div className="h-1 rounded bg-muted">
-        <div
-          className="h-1 rounded bg-emerald-500"
-          style={{ width: `${ratio(utilization?.value, 1)}%` }}
-        />
-      </div>
-      {!replica && assigned.length > 0 && (
-        <div className="space-y-2 border-t pt-2">
-          <div className="text-xs text-muted-foreground">
-            {t("observations.assignments")}
-          </div>
-          <div className="flex h-2 overflow-hidden rounded bg-muted">
-            {assigned.map((a) => (
-              <Link
-                key={`${a.endpoint}:${a.instance}:${a.vdevice}`}
-                to={`/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`}
-                title={`${a.endpoint} · ${a.model} · ${gib(a.memoryMiB)}`}
-                aria-label={a.endpoint}
-                style={{
-                  width: `${ratio(a.memoryMiB, total)}%`,
-                  backgroundColor: allocationColor(a.endpoint),
-                  flexShrink: 0,
-                }}
-              />
-            ))}
-          </div>
-          {[...new Map(assigned.map((a) => [a.endpoint, a])).values()].map(
-            (a) => (
-              <Link
-                className="flex items-center gap-1.5 truncate text-xs hover:underline"
-                key={a.endpoint}
-                to={`/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`}
-                title={`${a.endpoint} · ${a.model}`}
-              >
-                <span
-                  className="h-2 w-2 shrink-0 rounded-sm"
-                  style={{ backgroundColor: allocationColor(a.endpoint) }}
-                />
-                <span className="truncate">{a.endpoint}</span>
-              </Link>
-            ),
-          )}
-        </div>
-      )}
+      <MetricBar size="sm" series="green" value={utilization ? utilization.value * 100 : null} track={utilization ? "subtle" : "unavailable"} />
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader>
@@ -293,7 +247,7 @@ export function GpuObservationCard({
                     <dt className="text-xs text-muted-foreground">
                       {t(`observations.hardwareFields.${key}`)}
                     </dt>
-                    <dd className="break-all">{label(hardware[key])}</dd>
+                    <dd className="break-all">{hardwareLabel(key)}</dd>
                   </div>
                 ))}
               </dl>

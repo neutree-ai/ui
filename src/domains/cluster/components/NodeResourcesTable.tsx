@@ -63,7 +63,7 @@ interface NodeResourcesTableProps {
   t: (key: string, options?: Record<string, unknown>) => string;
   framed?: boolean;
   className?: string;
-  renderGpuDevice?: (row: GpuDeviceResourceRow) => ReactNode;
+  renderGpuMemory?: (row: GpuDeviceResourceRow) => ReactNode;
 }
 
 export const NodeResourcesTable = ({
@@ -72,7 +72,7 @@ export const NodeResourcesTable = ({
   t,
   framed = true,
   className,
-  renderGpuDevice,
+  renderGpuMemory,
 }: NodeResourcesTableProps) => {
   const sortedNodeEntries = Object.entries(nodeResources).sort(
     ([, left], [, right]) => {
@@ -233,7 +233,7 @@ export const NodeResourcesTable = ({
                     <TableCell colSpan={3 + acceleratorTypes.length}>
                       <div className="pl-9">
                         <GpuDeviceResourcesView
-                          renderGridDevice={renderGpuDevice}
+                          renderMemory={renderGpuMemory}
                           nodeResources={{ [nodeName]: nodeStatus }}
                           labels={{
                             title: t("clusters.sections.nodeDevices"),

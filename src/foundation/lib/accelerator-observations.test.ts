@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   type AcceleratorSample,
   type GpuAllocation,
@@ -36,13 +36,13 @@ const sample = (
   },
 });
 describe("accelerator readings", () => {
-  it("preserves measured zero and rejects stale samples", () => {
-    expect(reading([sample()], metric, "node", "gpu", allocation)?.value).toBe(
-      0,
-    );
-    expect(
-      reading([sample(40, {}, 91)], metric, "node", "gpu", allocation),
-    ).toBeUndefined();
+  it("uses server-approved samples regardless of client clock offset", () => {
+    const approved = sample();
+    for (const offset of [-600000, 600000]) {
+      const clock = vi.spyOn(Date, "now").mockReturnValue(approved.observed_at * 1000 + offset);
+      expect(reading([approved], metric, "node", "gpu", allocation)?.value).toBe(0);
+      clock.mockRestore();
+    }
   });
   it("does not conflate nodes, replicas, endpoints or vGPU slices", () => {
     for (const labels of [
