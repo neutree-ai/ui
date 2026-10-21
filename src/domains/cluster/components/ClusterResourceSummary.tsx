@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   type AcceleratorProductResourceRow,
   getAcceleratorProductResourceRows,
@@ -174,8 +175,10 @@ const UsageMetric = ({
 export function ClusterResourceSummary({
   resourceInfo,
   t,
+  children,
 }: {
   resourceInfo: ClusterResourceInfo;
+  children?: ReactNode;
   t: Translate;
 }) {
   const allocatable = resourceInfo.allocatable;
@@ -285,6 +288,7 @@ export function ClusterResourceSummary({
           </div>
         </div>
       )}
+      {children}
     </div>
   );
 }

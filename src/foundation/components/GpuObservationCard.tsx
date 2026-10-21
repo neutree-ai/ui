@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { peakTflops } from "@/foundation/lib/accelerator-tflops";
 import { Link } from "react-router";
 import {
   Sheet,
@@ -36,6 +37,8 @@ type Props = {
   samples: AcceleratorSample[];
   allocations: GpuAllocation[];
   replica?: GpuAllocation;
+  tflopsOverrides?: Record<string, number>;
+  detailsTrigger?: ReactNode;
 };
 const gib = (mib: number | null | undefined) =>
   mib == null ? "—" : `${(mib / 1024).toFixed(1)} GiB`;
@@ -62,6 +65,8 @@ export function GpuObservationCard({
   samples,
   allocations,
   replica,
+  tflopsOverrides = {},
+  detailsTrigger,
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -83,6 +88,7 @@ export function GpuObservationCard({
       ? "neutree_endpoint_replica_accelerator_utilization_ratio"
       : "neutree_accelerator_utilization_ratio",
   );
+  const nominalTflops = peakTflops(device.product, tflopsOverrides);
   const physical = get("neutree_accelerator_memory_total_bytes");
   const total = physical ? physical.value / 1024 ** 2 : device.totalMiB;
   const actual = used ? used.value / 1024 ** 2 : null;
@@ -260,6 +266,7 @@ export function GpuObservationCard({
   );
   return (
     <div className="mt-2 space-y-2" data-testid="gpu-observation-card">
+      {!detailsTrigger && <>
       {memory}
       <div className="flex flex-wrap justify-between gap-2 text-xs">
         <span className="text-muted-foreground">
@@ -273,13 +280,14 @@ export function GpuObservationCard({
         value={utilization ? utilization.value * 100 : null}
         track={utilization ? "subtle" : "unavailable"}
       />
+      </>}
       <div className="flex justify-end">
         <button
           type="button"
           className="flex items-center gap-1 text-xs text-primary hover:underline"
           onClick={() => setOpen(true)}
         >
-          {t("observations.details")} <ArrowUpRight className="h-3.5 w-3.5" />
+          {detailsTrigger ?? <>{t("observations.details")} <ArrowUpRight className="h-3.5 w-3.5" /></>}
         </button>
       </div>
       <Sheet open={open} onOpenChange={setOpen}>
@@ -308,7 +316,7 @@ export function GpuObservationCard({
                 )}
               </h3>
               {memory}
-              <div className="grid grid-cols-3 gap-3 rounded-md bg-muted/50 p-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 rounded-md bg-muted/50 p-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">
                     {t("observations.utilization")}
@@ -326,6 +334,11 @@ export function GpuObservationCard({
                     {t("observations.devicePower")}
                   </p>
                   {power ? `${power.value.toFixed(0)} W` : "—"}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("observations.fp16")}</p>
+                  <span className="tabular-nums">{nominalTflops != null && utilization ? (nominalTflops * utilization.value).toFixed(1) : "—"} / {nominalTflops?.toFixed(1) ?? "—"} TFLOPS</span>
+                  <p className="text-xs text-muted-foreground">{t("observations.flopsEstimate")}</p>
                 </div>
               </div>
               {used && (

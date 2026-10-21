@@ -1,3 +1,4 @@
+import { parseTflops, TFLOPS_ANNOTATION } from "@/foundation/lib/accelerator-tflops";
 import {
   type IResourceComponentsProps,
   useList,
@@ -368,6 +369,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                           totalMiB: device.physicalMemoryMiB,
                           allocatedMiB: device.memoryMiB,
                         }}
+                        tflopsOverrides={parseTflops(clusterData?.data?.[0]?.metadata.annotations?.[TFLOPS_ANNOTATION])}
                         samples={gpuSamples}
                         allocations={allocations}
                         replica={{
