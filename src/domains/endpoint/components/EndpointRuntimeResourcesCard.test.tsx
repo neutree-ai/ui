@@ -659,3 +659,41 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(within(summary).getByText("30.0 GiB")).toBeTruthy();
   });
 });
+
+it("preserves numbering, copy and core quota with observed memory", () => {
+  render(
+    <EndpointRuntimeResourcesCard
+      resources={{
+        replicas: [
+          {
+            instance_id: "pod",
+            node_id: "node",
+            devices: [
+              {
+                uuid: "gpu-a",
+                product: "T4",
+                node_id: "node",
+                memory_mib: 100,
+                core_units: 25,
+              },
+              {
+                uuid: "gpu-b",
+                product: "T4",
+                node_id: "node",
+                memory_mib: 100,
+                core_units: 25,
+              },
+            ],
+          },
+        ],
+      }}
+      renderMemory={(_device, index) => <span>Observed card {index + 1}</span>}
+    />,
+  );
+  expect(screen.getByText("GPU 1")).toBeTruthy();
+  expect(screen.getByText("GPU 2")).toBeTruthy();
+  expect(screen.getByText("Observed card 2")).toBeTruthy();
+  expect(screen.getAllByText(/Core.*25/).length).toBeGreaterThan(0);
+  fireEvent.click(screen.getByRole("button", { name: "GPU 2 Copy UUID" }));
+  expect(copyMock).toHaveBeenCalledWith("gpu-b", expect.anything());
+});

@@ -235,12 +235,19 @@ export const ClustersShow = () => {
                     <ResourceUsageLegend
                       items={[
                         {
-                          label: t("observations.actual"),
-                          markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
+                          label: t("observations.actualMemory"),
+                          markerClassName:
+                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
                         },
                         {
                           label: t("observations.allocated"),
-                          markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
+                          markerClassName:
+                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
+                        },
+                        {
+                          label: t("clusters.fields.coreUsed"),
+                          markerClassName:
+                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-2)]",
                         },
                       ]}
                     />

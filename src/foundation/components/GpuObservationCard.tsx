@@ -15,7 +15,11 @@ import {
   reading,
 } from "@/foundation/lib/accelerator-observations";
 import { MetricBar } from "./MetricBar";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export type ObservedGpu = {
@@ -102,14 +106,38 @@ export function GpuObservationCard({
     ? `${(utilization.value * 100).toFixed(0)}%`
     : "—";
   const hardwareFields = [
-    ...(get("neutree_node_accelerator_nvidia_info") ? ["architecture", "cuda_capability", "cuda_driver_version", "nvlink", "nvswitch"] : []),
+    ...(get("neutree_node_accelerator_nvidia_info")
+      ? [
+          "architecture",
+          "cuda_capability",
+          "cuda_driver_version",
+          "nvlink",
+          "nvswitch",
+        ]
+      : []),
     ...(get("neutree_node_accelerator_npu_info") ? ["hccs_capable"] : []),
-    "driver_version", "pcie_bus_id", "pcie_generation", "pcie_width", "numa_node",
+    "driver_version",
+    "pcie_bus_id",
+    "pcie_generation",
+    "pcie_width",
+    "numa_node",
   ];
   const hardwareLabel = (key: string) => {
     const value = hardware[key];
     if (["nvlink", "nvswitch", "hccs_capable"].includes(key)) {
-      return value === "1" ? t(key === "hccs_capable" ? "observations.supported" : "observations.present") : value === "0" ? t(key === "hccs_capable" ? "observations.unsupported" : "observations.absent") : "—";
+      return value === "1"
+        ? t(
+            key === "hccs_capable"
+              ? "observations.supported"
+              : "observations.present",
+          )
+        : value === "0"
+          ? t(
+              key === "hccs_capable"
+                ? "observations.unsupported"
+                : "observations.absent",
+            )
+          : "—";
     }
     return label(value);
   };
@@ -123,40 +151,76 @@ export function GpuObservationCard({
       </div>
       <div
         className="relative h-2.5 overflow-hidden rounded-full bg-muted"
-        role="img"
+        role="group"
         aria-label={`${t("observations.actual")}: ${gib(actual)}, ${t("observations.allocated")}: ${gib(device.allocatedMiB)}, ${t("observations.physical")}: ${gib(total)}`}
       >
         {assigned.length > 0 && !replica ? (
           <div className="flex h-full">
             {assigned.map((a) => {
-              const measured = reading(samples, "neutree_endpoint_replica_accelerator_memory_used_bytes", device.node, device.uuid, a);
+              const measured = reading(
+                samples,
+                "neutree_endpoint_replica_accelerator_memory_used_bytes",
+                device.node,
+                device.uuid,
+                a,
+              );
               const usedMiB = measured ? measured.value / 1024 ** 2 : null;
               return (
                 <Tooltip key={`${a.endpoint}:${a.instance}:${a.vdevice}`}>
                   <TooltipTrigger asChild>
-                    <Link className="relative block h-full shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                    <Link
+                      className="relative block h-full shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
                       to={`/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`}
                       aria-label={`${a.endpoint}: ${t("observations.actual")} ${gib(usedMiB)}, ${t("observations.allocated")} ${gib(a.memoryMiB)}`}
-                      style={{ width: `${ratio(a.memoryMiB, total)}%` }}>
-                      <span className="absolute inset-0 opacity-30" style={{ backgroundColor: allocationColor(a.endpoint) }} />
-                      {usedMiB != null && <span className="absolute inset-y-0 left-0" style={{ backgroundColor: allocationColor(a.endpoint), width: `${ratio(usedMiB, a.memoryMiB)}%` }} />}
-                      {usedMiB == null && <span className="absolute inset-0 border border-dashed border-[var(--nt-stroke-neutral-trans-3)]" />}
+                      style={{ width: `${ratio(a.memoryMiB, total)}%` }}
+                    >
+                      <span
+                        className="absolute inset-0 opacity-30"
+                        style={{ backgroundColor: allocationColor(a.endpoint) }}
+                      />
+                      {usedMiB != null && (
+                        <span
+                          className="absolute inset-y-0 left-0"
+                          style={{
+                            backgroundColor: allocationColor(a.endpoint),
+                            width: `${ratio(usedMiB, a.memoryMiB)}%`,
+                          }}
+                        />
+                      )}
+                      {usedMiB == null && (
+                        <span className="absolute inset-0 border border-dashed border-[var(--nt-stroke-neutral-trans-3)]" />
+                      )}
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{a.endpoint} ↗</p><p>{a.model}</p>
-                    <p>{t("observations.actual")} {gib(usedMiB)} / {t("observations.allocated")} {gib(a.memoryMiB)}</p>
-                    {usedMiB != null && usedMiB > a.memoryMiB && <p>{t("observations.overAllocation")}</p>}
+                    <p>{a.endpoint} ↗</p>
+                    <p>{a.model}</p>
+                    <p>
+                      {t("observations.actual")} {gib(usedMiB)} /{" "}
+                      {t("observations.allocated")} {gib(a.memoryMiB)}
+                    </p>
+                    {usedMiB != null && usedMiB > a.memoryMiB && (
+                      <p>{t("observations.overAllocation")}</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               );
             })}
           </div>
-        ) : <>
-          <div className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)] opacity-30" style={{ width: `${ratio(device.allocatedMiB, total)}%` }} />
-          {actual != null && <div className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)]" style={{ width: `${ratio(actual, total)}%` }} />}
-        </>}
-
+        ) : (
+          <>
+            <div
+              className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)] opacity-30"
+              style={{ width: `${ratio(device.allocatedMiB, total)}%` }}
+            />
+            {actual != null && (
+              <div
+                className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)]"
+                style={{ width: `${ratio(actual, total)}%` }}
+              />
+            )}
+          </>
+        )}
       </div>
       <div className="flex flex-wrap justify-between gap-1 text-xs text-muted-foreground">
         <span>
@@ -175,7 +239,11 @@ export function GpuObservationCard({
   );
   return (
     <div className="mt-2 space-y-2" data-testid="gpu-observation-card">
-      <button type="button" className="flex items-center gap-1 text-xs text-primary hover:underline" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className="flex items-center gap-1 text-xs text-primary hover:underline"
+        onClick={() => setOpen(true)}
+      >
         {t("observations.details")} <ArrowUpRight className="h-3.5 w-3.5" />
       </button>
       {memory}
@@ -185,7 +253,12 @@ export function GpuObservationCard({
         </span>
         <span className="tabular-nums">{utilizationText}</span>
       </div>
-      <MetricBar size="sm" series="green" value={utilization ? utilization.value * 100 : null} track={utilization ? "subtle" : "unavailable"} />
+      <MetricBar
+        size="sm"
+        series="green"
+        value={utilization ? utilization.value * 100 : null}
+        track={utilization ? "subtle" : "unavailable"}
+      />
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader>

@@ -41,37 +41,45 @@ const samples: AcceleratorSample[] = [
 describe("GPU observation card", () => {
   it("shows actual and allocated memory separately and opens details", () => {
     render(
-      <MemoryRouter><TooltipProvider>
-        <GpuObservationCard
-          device={device}
-          samples={samples}
-          allocations={[allocation]}
-        />
-      </TooltipProvider></MemoryRouter>,
+      <MemoryRouter>
+        <TooltipProvider>
+          <GpuObservationCard
+            device={device}
+            samples={samples}
+            allocations={[allocation]}
+          />
+        </TooltipProvider>
+      </MemoryRouter>,
     );
-    expect(screen.getByRole("img").getAttribute("aria-label")).toContain(
+    expect(screen.getByRole("group").getAttribute("aria-label")).toContain(
       "13.0 GiB",
     );
-    expect(screen.getByRole("img").getAttribute("aria-label")).toContain(
+    expect(screen.getByRole("group").getAttribute("aria-label")).toContain(
       "15.0 GiB",
     );
     expect(
-      screen.getAllByRole("link", { name: /^instance:/ })[0].getAttribute("href"),
+      screen
+        .getAllByRole("link", { name: /^instance:/ })[0]
+        .getAttribute("href"),
     ).toBe("/default/endpoints/show/instance");
-    fireEvent.click(screen.getByRole("button", { name: "observations.details" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "observations.details" }),
+    );
     expect(screen.getByRole("dialog").textContent).toContain("gpu");
     expect(screen.getByRole("dialog").textContent).toContain("model");
   });
   it("does not display whole-card usage as replica usage", () => {
     render(
-      <MemoryRouter><TooltipProvider>
-        <GpuObservationCard
-          device={device}
-          samples={samples}
-          allocations={[allocation]}
-          replica={allocation}
-        />
-      </TooltipProvider></MemoryRouter>,
+      <MemoryRouter>
+        <TooltipProvider>
+          <GpuObservationCard
+            device={device}
+            samples={samples}
+            allocations={[allocation]}
+            replica={allocation}
+          />
+        </TooltipProvider>
+      </MemoryRouter>,
     );
     expect(screen.getByText("observations.noMeasurement")).toBeTruthy();
     expect(screen.queryByText("13.0 GiB")).toBeNull();

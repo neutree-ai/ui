@@ -154,7 +154,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     record?.metadata.name,
   );
   const allocations = gpuAllocations(record ? [record] : []);
-  const gpuSamples = record?.status?.phase === "Paused" ? [] : observations.samples;
+  const gpuSamples =
+    record?.status?.phase === "Paused" ? [] : observations.samples;
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
