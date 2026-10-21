@@ -98,11 +98,12 @@ export function reading(
 }
 
 const colors = Array.from(
-  { length: 5 },
-  (_, i) => `var(--nt-chart-series-${i + 1})`,
+  { length: 3 },
+  (_, i) => `var(--nt-chart-series-${[1, 4, 5][i]})`,
 );
-export function allocationColor(name: string): string {
+export function allocationColor(name: string, position = 0): string {
+  if (position === 0) return colors[0];
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return colors[hash % colors.length];
+  return colors[1 + (hash + position - 1) % (colors.length - 1)];
 }

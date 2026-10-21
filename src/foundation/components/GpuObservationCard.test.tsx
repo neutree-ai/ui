@@ -57,11 +57,13 @@ describe("GPU observation card", () => {
     expect(screen.getByRole("group").getAttribute("aria-label")).toContain(
       "15.0 GiB",
     );
-    expect(
-      screen
-        .getAllByRole("link", { name: /^instance:/ })[0]
-        .getAttribute("href"),
-    ).toBe("/default/endpoints/show/instance");
+    const allocationLink = screen.getAllByRole("link", { name: /^instance:/ })[0];
+    expect(allocationLink.getAttribute("href")).toBe(
+      "/default/endpoints/show/instance",
+    );
+    const measuredBar = allocationLink.querySelectorAll("span")[1] as HTMLElement;
+    expect(Number.parseFloat(measuredBar.style.width)).toBeCloseTo(86.6667, 3);
+    expect(measuredBar.style.backgroundColor).toBe("var(--nt-chart-series-1)");
     fireEvent.click(
       screen.getByRole("button", { name: "observations.details" }),
     );
