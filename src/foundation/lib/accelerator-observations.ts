@@ -76,7 +76,6 @@ export function reading(
       sample.metric === metric &&
       l.node === node &&
       l.accelerator_uuid === uuid &&
-      Date.now() / 1000 - sample.observed_at <= 90 &&
       (!allocation ||
         (l.endpoint === allocation.endpoint &&
           (allocation.replica
@@ -98,14 +97,7 @@ export function reading(
   return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
 }
 
-const colors = [
-  "#2563eb",
-  "#7c3aed",
-  "#059669",
-  "#d97706",
-  "#db2777",
-  "#0891b2",
-];
+const colors = Array.from({ length: 5 }, (_, i) => `var(--nt-chart-series-${i + 1})`);
 export function allocationColor(name: string): string {
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;

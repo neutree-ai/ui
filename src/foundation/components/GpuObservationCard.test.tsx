@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AcceleratorSample } from "@/foundation/lib/accelerator-observations";
@@ -40,13 +41,13 @@ const samples: AcceleratorSample[] = [
 describe("GPU observation card", () => {
   it("shows actual and allocated memory separately and opens details", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter><TooltipProvider>
         <GpuObservationCard
           device={device}
           samples={samples}
           allocations={[allocation]}
         />
-      </MemoryRouter>,
+      </TooltipProvider></MemoryRouter>,
     );
     expect(screen.getByRole("img").getAttribute("aria-label")).toContain(
       "13.0 GiB",
@@ -55,22 +56,22 @@ describe("GPU observation card", () => {
       "15.0 GiB",
     );
     expect(
-      screen.getAllByRole("link", { name: "instance" })[0].getAttribute("href"),
+      screen.getAllByRole("link", { name: /^instance:/ })[0].getAttribute("href"),
     ).toBe("/default/endpoints/show/instance");
-    fireEvent.click(screen.getByRole("button", { name: "GPU 0" }));
+    fireEvent.click(screen.getByRole("button", { name: "observations.details" }));
     expect(screen.getByRole("dialog").textContent).toContain("gpu");
     expect(screen.getByRole("dialog").textContent).toContain("model");
   });
   it("does not display whole-card usage as replica usage", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter><TooltipProvider>
         <GpuObservationCard
           device={device}
           samples={samples}
           allocations={[allocation]}
           replica={allocation}
         />
-      </MemoryRouter>,
+      </TooltipProvider></MemoryRouter>,
     );
     expect(screen.getByText("observations.noMeasurement")).toBeTruthy();
     expect(screen.queryByText("13.0 GiB")).toBeNull();

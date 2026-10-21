@@ -153,21 +153,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     record?.metadata.workspace,
     record?.metadata.name,
   );
-  const clusterObservations = useAcceleratorObservations(
-    "clusters",
-    record?.metadata.workspace,
-    record?.spec.cluster,
-  );
   const allocations = gpuAllocations(record ? [record] : []);
-  const gpuSamples =
-    record?.status?.phase === "Paused"
-      ? []
-      : [
-          ...observations.samples,
-          ...clusterObservations.samples.filter(
-            (sample) => !sample.metric.startsWith("neutree_endpoint_"),
-          ),
-        ];
+  const gpuSamples = record?.status?.phase === "Paused" ? [] : observations.samples;
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -370,12 +357,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     }
                   />
                   <EndpointRuntimeResourcesCard
-                    renderDevice={(device) => (
+                    renderMemory={(device, deviceIndex) => (
                       <GpuObservationCard
                         device={{
                           node: device.nodeId,
                           uuid: device.uuid,
-                          index: device.order ?? 0,
+                          index: device.order ?? deviceIndex + 1,
                           product: device.product,
                           totalMiB: device.physicalMemoryMiB,
                           allocatedMiB: device.memoryMiB,

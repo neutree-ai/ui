@@ -47,7 +47,7 @@ type EndpointRuntimeResourcesCardProps = {
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
-  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
+  renderMemory?: (device: EndpointReplicaResourceRow, deviceIndex: number) => ReactNode;
 };
 
 const formatInteger = (value: number): ReactNode =>
@@ -155,7 +155,7 @@ export function EndpointRuntimeResourcesSummary({
 }: {
   resources: EndpointResourceStatus | null | undefined;
   className?: string;
-  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
+  renderMemory?: (device: EndpointReplicaResourceRow, deviceIndex: number) => ReactNode;
 }) {
   const { t } = useTranslation();
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
@@ -186,7 +186,7 @@ export default function EndpointRuntimeResourcesCard({
   requestedResources,
   clusterResourceInfo,
   className,
-  renderDevice,
+  renderMemory,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
@@ -226,7 +226,7 @@ export default function EndpointRuntimeResourcesCard({
               <Replica
                 key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
                 group={group}
-                renderDevice={renderDevice}
+                renderMemory={renderMemory}
                 groupIndex={groupIndex}
                 requestedCpu={requestedCpu}
                 requestedMemory={requestedMemory}
@@ -283,7 +283,7 @@ export default function EndpointRuntimeResourcesCard({
 }
 
 function Replica({
-  renderDevice,
+  renderMemory,
   group,
   groupIndex,
   requestedCpu,
@@ -294,7 +294,7 @@ function Replica({
   t,
 }: {
   group: EndpointReplicaResourceGroup;
-  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
+  renderMemory?: (device: EndpointReplicaResourceRow, deviceIndex: number) => ReactNode;
   groupIndex: number;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
@@ -369,14 +369,14 @@ function Replica({
           <span className="text-xs text-muted-foreground">
             {t("endpoints.sections.gpuAllocation")}
           </span>
-          {!renderDevice && <Legend t={t} />}
+          {<Legend t={t} />}
         </div>
         <div className="mt-3">
           {group.nodes.map((node) => (
             <Host
               key={node.nodeId}
               node={node}
-              renderDevice={renderDevice}
+              renderMemory={renderMemory}
               requestedCpu={requestedCpu}
               requestedMemory={requestedMemory}
               acceleratorType={acceleratorType}
@@ -391,7 +391,7 @@ function Replica({
 }
 
 function Host({
-  renderDevice,
+  renderMemory,
   node,
   requestedCpu,
   requestedMemory,
@@ -400,7 +400,7 @@ function Host({
   t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
-  renderDevice?: (device: EndpointReplicaResourceRow) => ReactNode;
+  renderMemory?: (device: EndpointReplicaResourceRow, deviceIndex: number) => ReactNode;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
   acceleratorType: string | null;
@@ -434,24 +434,9 @@ function Host({
 
         <div className={cn("mt-3", GPU_GRID_FRAME_CLASS)}>
           <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>
-            {node.devices.map((device, deviceIndex) =>
-              renderDevice ? (
-                <div
-                  key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
-                >
-                  {renderDevice(device)}
-                </div>
-              ) : (
-                <GpuCell
-                  key={device.uuid || deviceIndex}
-                  device={device}
-                  deviceIndex={deviceIndex}
-                  acceleratorType={acceleratorType}
-                  onCopyUuid={onCopyUuid}
-                  t={t}
-                />
-              ),
-            )}
+            {node.devices.map((device, deviceIndex) => (
+              <GpuCell key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`} device={device} deviceIndex={deviceIndex} acceleratorType={acceleratorType} onCopyUuid={onCopyUuid} t={t} renderMemory={renderMemory} />
+            ))}
           </div>
         </div>
       </div>
@@ -461,11 +446,13 @@ function Host({
 
 function GpuCell({
   device,
+  renderMemory,
   deviceIndex,
   acceleratorType,
   onCopyUuid,
   t,
 }: {
+  renderMemory?: (device: EndpointReplicaResourceRow, deviceIndex: number) => ReactNode;
   device: EndpointReplicaResourceGroup["nodes"][number]["devices"][number];
   deviceIndex: number;
   acceleratorType: string | null;
@@ -538,10 +525,10 @@ function GpuCell({
       )}
 
       <div className="mt-2">
-        <VramBar
+        {renderMemory ? renderMemory(device, deviceIndex) : <VramBar
           requestedMiB={device.memoryMiB}
           physicalMiB={device.physicalMemoryMiB}
-        />
+        />}
       </div>
 
       <div className={cn("mt-1 text-muted-foreground", GPU_USAGE_TEXT_CLASS)}>

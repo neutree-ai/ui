@@ -100,7 +100,7 @@ type GpuDeviceResourcesViewProps = {
   resourceControlsTestId?: string;
   showNodeColumn?: boolean;
   request?: GpuDeviceRequestFitContext;
-  renderGridDevice?: (row: GpuDeviceResourceRow) => ReactNode;
+  renderMemory?: (row: GpuDeviceResourceRow) => ReactNode;
 };
 
 type GpuDeviceRequestFitContext = {
@@ -409,7 +409,9 @@ const GpuGridCell = ({
   row,
   labels,
   copy,
+  renderMemory,
 }: {
+  renderMemory?: (row: GpuDeviceResourceRow) => ReactNode;
   row: GpuDeviceResourceRow;
   labels: GpuDeviceResourcesViewLabels;
   copy: ReturnType<typeof useCopyToClipboard>["copy"];
@@ -495,6 +497,7 @@ const GpuGridCell = ({
       ) : (
         productLabel
       )}
+      {renderMemory ? renderMemory(row) : (
       <GridResourceUsage
         label={labels.memoryUsage}
         remainingLabel={labels.remaining}
@@ -505,6 +508,7 @@ const GpuGridCell = ({
         unavailable={!row.healthy}
         series="blue"
       />
+      )}
       <GridResourceUsage
         label={labels.coreUsage}
         remainingLabel={labels.remaining}
@@ -573,7 +577,7 @@ export function GpuDeviceResourcesView({
   resourceControlsTestId = "gpu-device-resource-toolbar",
   showNodeColumn = true,
   request,
-  renderGridDevice,
+  renderMemory,
 }: GpuDeviceResourcesViewProps) {
   const [productFilter, setProductFilter] = useState(GPU_DEVICE_FILTER_ALL);
   const [nodeFilter, setNodeFilter] = useState(GPU_DEVICE_FILTER_ALL);
@@ -783,20 +787,9 @@ export function GpuDeviceResourcesView({
             className={GPU_GRID_CLASS}
             style={GPU_GRID_STYLE}
           >
-            {visibleRows.map((row) =>
-              renderGridDevice ? (
-                <div key={`${row.nodeName}:${row.uuid}`}>
-                  {renderGridDevice(row)}
-                </div>
-              ) : (
-                <GpuGridCell
-                  key={`${row.nodeName}:${row.uuid}`}
-                  row={row}
-                  labels={labels}
-                  copy={copy}
-                />
-              ),
-            )}
+            {visibleRows.map((row) => (
+              <GpuGridCell key={`${row.nodeName}:${row.uuid}`} row={row} labels={labels} copy={copy} renderMemory={renderMemory} />
+            ))}
           </div>
         </div>
       ) : variant === "cards" ? (

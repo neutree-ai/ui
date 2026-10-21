@@ -236,11 +236,11 @@ export const ClustersShow = () => {
                       items={[
                         {
                           label: t("observations.actual"),
-                          markerClassName: "h-2 w-2 rounded-sm bg-blue-600",
+                          markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
                         },
                         {
                           label: t("observations.allocated"),
-                          markerClassName: "h-2 w-2 rounded-sm bg-blue-200",
+                          markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
                         },
                       ]}
                     />
@@ -248,7 +248,7 @@ export const ClustersShow = () => {
                 >
                   <ObservationStatus status={observations.status} />
                   <NodeResourcesTable
-                    renderGpuDevice={(row) => (
+                    renderGpuMemory={(row) => (
                       <GpuObservationCard
                         device={{
                           node: row.nodeName,
