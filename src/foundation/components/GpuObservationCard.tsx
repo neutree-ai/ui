@@ -184,7 +184,8 @@ export function GpuObservationCard({
                 a,
               );
               const usedMiB = measured ? measured.value / 1024 ** 2 : null;
-              const fallbackMiB = usedMiB ?? (assigned.length === 1 ? actual : null);
+              const fallbackMiB =
+                usedMiB ?? (assigned.length === 1 ? actual : null);
               const segmentWidth =
                 a.memoryMiB > 0
                   ? ratio(a.memoryMiB, total)
@@ -266,28 +267,35 @@ export function GpuObservationCard({
   );
   return (
     <div className="mt-2 space-y-2" data-testid="gpu-observation-card">
-      {!detailsTrigger && <>
-      {memory}
-      <div className="flex flex-wrap justify-between gap-2 text-xs">
-        <span className="text-muted-foreground">
-          {t("observations.utilization")}
-        </span>
-        <span className="tabular-nums">{utilizationText}</span>
-      </div>
-      <MetricBar
-        size="sm"
-        series="green"
-        value={utilization ? utilization.value * 100 : null}
-        track={utilization ? "subtle" : "unavailable"}
-      />
-      </>}
+      {!detailsTrigger && (
+        <>
+          {memory}
+          <div className="flex flex-wrap justify-between gap-2 text-xs">
+            <span className="text-muted-foreground">
+              {t("observations.utilization")}
+            </span>
+            <span className="tabular-nums">{utilizationText}</span>
+          </div>
+          <MetricBar
+            size="sm"
+            series="green"
+            value={utilization ? utilization.value * 100 : null}
+            track={utilization ? "subtle" : "unavailable"}
+          />
+        </>
+      )}
       <div className="flex justify-end">
         <button
           type="button"
           className="flex items-center gap-1 text-xs text-primary hover:underline"
           onClick={() => setOpen(true)}
         >
-          {detailsTrigger ?? <>{t("observations.details")} <ArrowUpRight className="h-3.5 w-3.5" /></>}
+          {detailsTrigger ?? (
+            <>
+              {t("observations.details")}{" "}
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </>
+          )}
         </button>
       </div>
       <Sheet open={open} onOpenChange={setOpen}>
@@ -336,9 +344,18 @@ export function GpuObservationCard({
                   {power ? `${power.value.toFixed(0)} W` : "—"}
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">{t("observations.fp16")}</p>
-                  <span className="tabular-nums">{nominalTflops != null && utilization ? (nominalTflops * utilization.value).toFixed(1) : "—"} / {nominalTflops?.toFixed(1) ?? "—"} TFLOPS</span>
-                  <p className="text-xs text-muted-foreground">{t("observations.flopsEstimate")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("observations.fp16")}
+                  </p>
+                  <span className="tabular-nums">
+                    {nominalTflops != null && utilization
+                      ? (nominalTflops * utilization.value).toFixed(1)
+                      : "—"}{" "}
+                    / {nominalTflops?.toFixed(1) ?? "—"} TFLOPS
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    {t("observations.flopsEstimate")}
+                  </p>
                 </div>
               </div>
               {used && (
