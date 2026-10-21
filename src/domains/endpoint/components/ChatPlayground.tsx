@@ -329,7 +329,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   return (
     <Form {...form}>
       <form className="h-full flex" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="h-full flex flex-1 gap-1">
+        <div className="h-full flex min-w-0 flex-1 gap-1">
           {/* Sidebar */}
           <ChatSidebar
             systemMessage={systemMessage}
@@ -372,7 +372,10 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-card">
             <div className="flex-1 relative overflow-hidden">
-              <ScrollArea className="h-full p-4" viewportRef={scrollRef}>
+              <ScrollArea
+                className="h-full p-4 [&>[data-radix-scroll-area-viewport]>div]:!block"
+                viewportRef={scrollRef}
+              >
                 <div ref={contentRef}>
                   {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full">
