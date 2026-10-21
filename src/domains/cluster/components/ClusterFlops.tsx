@@ -76,7 +76,12 @@ export function ClusterFlops({
           )?.product ||
           "";
         const peak = peakTflops(product, overrides);
-        if (peak != null && Number.isFinite(s.value) && s.value >= 0 && s.value <= 1)
+        if (
+          peak != null &&
+          Number.isFinite(s.value) &&
+          s.value >= 0 &&
+          s.value <= 1
+        )
           value = (value ?? 0) + peak * s.value;
       }
       return { time, value };
