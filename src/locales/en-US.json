@@ -2645,6 +2645,20 @@
 		"absent": "Absent",
 		"supported": "Supported",
 		"unsupported": "Unsupported",
-		"overAllocation": "Actual usage exceeds allocation"
+		"overAllocation": "Actual usage exceeds allocation",
+		"fp16": "FP16 compute (TFLOPS)",
+		"flopsEstimate": "Estimated usage = nominal FP16 peak × utilization",
+		"flops": "Compute monitoring (FLOPS)",
+		"calibrate": "Calibrate compute",
+		"flopsTrend": "Last 30 days · 6-hour average usage",
+		"noTrend": "No compute history available",
+		"calibrationHelp": "Single-card FP16 TFLOPS by model. Leave blank to restore the default.",
+		"invalidTflops": "Enter a finite number greater than zero.",
+		"calibrationFailed": "Could not save calibration. Please retry.",
+		"noTopology": "No GPU topology data available",
+		"unknownNuma": "NUMA not reported",
+		"interconnectEnabled": "High-speed interconnect enabled (reported by node)",
+		"topology": "Topology",
+		"trendEstimate": "Reported devices; calculated with current calibration"
 	}
 }

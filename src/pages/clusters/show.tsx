@@ -1,3 +1,6 @@
+import { ClusterFlops } from "@/domains/cluster/components/ClusterFlops";
+import { ClusterTopology } from "@/domains/cluster/components/ClusterTopology";
+import { parseTflops, TFLOPS_ANNOTATION } from "@/foundation/lib/accelerator-tflops";
 import { useList, useShow, useTranslation } from "@refinedev/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
@@ -192,6 +195,7 @@ export const ClustersShow = () => {
             <TabsTrigger value="basic" className={detailTabTriggerClassName}>
               {t("common.tabs.basic")}
             </TabsTrigger>
+            <TabsTrigger value="topology" className={detailTabTriggerClassName}>{t("observations.topology")}</TabsTrigger>
             {showMonitorTab && (
               <TabsTrigger
                 value="monitor"
@@ -261,7 +265,7 @@ export const ClustersShow = () => {
                 <ClusterResourceSummary
                   resourceInfo={record.status.resource_info}
                   t={t}
-                />
+                ><ClusterFlops cluster={record} samples={observations.samples} /></ClusterResourceSummary>
               </ShowPage.Section>
             )}
             {record.status?.resource_info?.node_resources &&
@@ -304,6 +308,7 @@ export const ClustersShow = () => {
                           allocatedMiB: row.memory.used,
                           healthy: row.healthy,
                         }}
+                        tflopsOverrides={parseTflops(record.metadata.annotations?.[TFLOPS_ANNOTATION])}
                         samples={observations.samples}
                         allocations={allocations}
                       />
@@ -481,6 +486,7 @@ export const ClustersShow = () => {
               </Table>
             </ShowPage.Section>
           </TabsContent>
+          <TabsContent value="topology" className="mt-0 flex-1 overflow-auto pt-4"><ClusterTopology cluster={record} samples={observations.samples} allocations={allocations}/></TabsContent>
           {showMonitorTab && (
             <TabsContent
               value="monitor"
