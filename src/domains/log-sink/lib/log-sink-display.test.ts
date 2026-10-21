@@ -18,7 +18,7 @@ describe("formatLogSinkDestination", () => {
         s3: { region: "us-east-1", bucket: "traces", auth: {} },
       }),
     ).toEqual({
-      primary: "s3://traces/neutree/%Y/%m/%d/",
+      primary: "s3://traces/traces/%Y/%m/%d/",
       secondary: undefined,
     });
   });
