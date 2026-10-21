@@ -1,2412 +1,2412 @@
 {
-  "nativeName": "English",
-  "common": {
-    "fields": {
-      "resources": "Resources",
-      "gpu": "GPU",
-      "cpu": "CPU",
-      "memory": "Memory",
-      "acceleratorType": "Accelerator Type",
-      "acceleratorProduct": "Accelerator Product",
-      "replica": "Replica",
-      "scheduler": "Scheduler",
-      "variables": "Variables",
-      "name": "Name",
-      "workspace": "Workspace",
-      "createdAt": "Created at",
-      "type": "Type",
-      "imageRegistry": "Image Registry",
-      "status": "Status",
-      "model": "Model",
-      "engine": "Engine",
-      "cluster": "Cluster",
-      "task": "Task",
-      "versions": "Versions",
-      "role": "Role",
-      "user": "User",
-      "email": "Email",
-      "password": "Password",
-      "permissions": "Permissions",
-      "permissionsCount": "{{count}} permissions",
-      "labels": "Labels",
-      "openaiUrl": "OpenAI Compatible URL",
-      "anthropicUrl": "Anthropic Compatible URL",
-      "allReplicas": "All Replicas",
-      "version": "Version",
-      "description": "Description",
-      "intent": "Intent",
-      "reason": "Reason",
-      "message": "Message"
-    },
-    "sections": {
-      "basicInformation": "Basic Information",
-      "configuration": "Configuration"
-    },
-    "messages": {
-      "grafanaNotConfigured": "Grafana monitoring is not configured.",
-      "leaveEmptyToKeepValue": "Leave empty to keep existing value"
-    },
-    "errors": {
-      "unknown": "Unknown error"
-    },
-    "tabs": {
-      "basic": "Basic",
-      "monitor": "Monitor",
-      "logs": "Logs",
-      "rayDashboard": "Ray Dashboard"
-    },
-    "options": {
-      "none": "None",
-      "enabled": "Enabled",
-      "disabled": "Disabled"
-    },
-    "resourceResult": {
-      "created": "Successfully created",
-      "skipped": "Skipped (already exists)",
-      "creating": "Creating...",
-      "error": "Error"
-    },
-    "dateRange": {
-      "lastDays": "Last {{days}} days",
-      "from": "From",
-      "to": "To"
-    },
-    "validation": {
-      "workspaceRequired": "Please select a workspace before creating the resource"
-    },
-    "modelRegistry": {
-      "unreachable": "Not answering — cannot list models",
-      "deleted": "Being deleted"
-    }
-  },
-  "appearance": {
-    "light": "Light Mode",
-    "dark": "Dark Mode",
-    "system": "Follow System"
-  },
-  "models": {
-    "title": "Models",
-    "scheduler": {
-      "roundRobin": "Round robin",
-      "consistentHashing": "Consistent hashing",
-      "unavailable": "Unavailable"
-    },
-    "tasks": {
-      "text-generation": "Text Generation",
-      "text-embedding": "Text Embedding",
-      "text-rerank": "Text Rerank"
-    }
-  },
-  "pages": {
-    "auth": {
-      "loading": "Loading...",
-      "signIn": "Sign in",
-      "divider": "or",
-      "emailPlaceholder": "you@example.com",
-      "passwordPlaceholder": "••••••••",
-      "errors": {
-        "validEmail": "Invalid email address",
-        "requiredEmail": "Email is required",
-        "requiredPassword": "Password is required",
-        "confirmPasswordNotMatch": "Passwords do not match",
-        "confirmPasswordRequired": "Confirm password is required"
-      }
-    },
-    "login": {
-      "title": "Sign in to your account",
-      "signup": "Sign up",
-      "fields": {
-        "identifier": "Username or Email",
-        "identifierPlaceholder": "username or email"
-      },
-      "buttons": {
-        "submit": "Login",
-        "forgotPassword": "Forgot password?",
-        "noAccount": "Don't have an account?",
-        "rememberMe": "Remember me"
-      }
-    },
-    "forgotPassword": {
-      "title": "Forgot your password?",
-      "buttons": {
-        "submit": "Send reset instructions",
-        "backLogin": "Back to login"
-      }
-    },
-    "register": {
-      "title": "Sign up for your account",
-      "buttons": {
-        "submit": "Sign up",
-        "haveAccount": "Have an account?"
-      }
-    },
-    "updatePassword": {
-      "title": "Set New Password",
-      "fields": {
-        "password": "New Password",
-        "confirmPassword": "Confirm New Password"
-      },
-      "buttons": {
-        "submit": "Update"
-      }
-    },
-    "error": {
-      "info": "You may have forgotten to add the {{action}} component to {{resource}} resource.",
-      "404": "Sorry, the page you visited does not exist.",
-      "resource404": "Are you sure you have created the {{resource}} resource.",
-      "notFound": "404 not found",
-      "backHome": "Back Home",
-      "unknown": "Unknown Error"
-    },
-    "vramCalculator": {
-      "title": "VRAM Calculator",
-      "sections": {
-        "performanceMemory": "Performance & Memory Results",
-        "memoryAllocation": "Memory Allocation",
-        "cpuResources": "CPU & Memory Resources"
-      },
-      "fields": {
-        "selectModel": "Select Model",
-        "quantization": "Inference Quantization",
-        "kvQuantization": "KV Cache Quantization",
-        "hardwareConfig": "Hardware Configuration",
-        "gpuCount": "GPU Count",
-        "customVram": "Custom VRAM (GB)",
-        "batchSize": "Batch Size",
-        "sequenceLength": "Sequence Length",
-        "concurrentUsers": "Concurrent Users"
-      },
-      "placeholders": {
-        "selectModel": "Select model...",
-        "selectGpu": "Select GPU...",
-        "selectQuantization": "Select quantization method",
-        "selectKvQuantization": "Select KV cache quantization"
-      },
-      "validation": {
-        "selectModel": "Please select a model",
-        "selectGpu": "Please select GPU"
-      },
-      "metrics": {
-        "generationSpeed": "Generation Speed",
-        "totalThroughput": "Total Throughput",
-        "recommendedMemory": "Recommended Memory",
-        "recommendedCores": "Recommended Cores",
-        "totalVram": "Total VRAM",
-        "vramUsage": "VRAM",
-        "parameters": "Parameters",
-        "layers": "Layers",
-        "hiddenDim": "Hidden Dimension",
-        "attention": "Attention",
-        "mode": "Mode",
-        "batch": "Batch",
-        "users": "Users",
-        "cores": "cores",
-        "inference": "Inference"
-      },
-      "memoryTypes": {
-        "modelWeights": "Model Weights",
-        "kvCache": "KV Cache",
-        "activations": "Activations",
-        "multiDeviceOverhead": "Multi-device Overhead",
-        "frameworkOverhead": "Framework Overhead"
-      }
-    }
-  },
-  "actions": {
-    "list": "List",
-    "create": "Create",
-    "edit": "Edit",
-    "show": "Show"
-  },
-  "buttons": {
-    "copy": "Copy",
-    "add": "Add",
-    "create": "Create",
-    "save": "Save",
-    "logout": "Logout",
-    "delete": "Delete",
-    "edit": "Edit",
-    "cancel": "Cancel",
-    "close": "Close",
-    "confirm": "Are you sure?",
-    "filter": "Filter",
-    "clear": "Clear",
-    "refresh": "Refresh",
-    "show": "Show",
-    "undo": "Undo",
-    "import": "Import",
-    "clone": "Clone",
-    "notAccessTitle": "You don't have permission to access",
-    "updatePassword": "Update Password",
-    "license": "License"
-  },
-  "ui": {
-    "language": "Language",
-    "more": "More",
-    "version": "Version"
-  },
-  "accessibility": {
-    "openMenu": "Open menu"
-  },
-  "dialogs": {
-    "batchDelete": {
-      "title": "Delete {{count}} items?",
-      "description": "This action cannot be undone."
-    },
-    "delete": {
-      "title": "Are you sure?",
-      "description": "This action cannot be undone.",
-      "currentError": "Current Error",
-      "forceDelete": {
-        "label": "Force Delete",
-        "description": "Use when normal deletion fails. Deletes the record but may not clean up associated external resources."
-      }
-    }
-  },
-  "warnWhenUnsavedChanges": "Are you sure you want to leave? You have unsaved changes.",
-  "notifications": {
-    "success": "Successful",
-    "error": "Error (status code: {{statusCode}})",
-    "undoable": "You have {{seconds}} seconds to undo",
-    "createSuccess": "Successfully created {{resource}}",
-    "createError": "There was an error creating {{resource}} (status code: {{statusCode}})",
-    "deleteSuccess": "Successfully deleted {{resource}}",
-    "deleteError": "Error when deleting {{resource}} (status code: {{statusCode}})",
-    "editSuccess": "Successfully edited {{resource}}",
-    "editError": "Error when editing {{resource}} (status code: {{statusCode}})",
-    "importProgress": "Importing: {{processed}}/{{total}}"
-  },
-  "loading": "Loading",
-  "tags": {
-    "clone": "Clone"
-  },
-  "table": {
-    "actions": "Actions",
-    "columns": "Columns",
-    "toggleColumns": "Toggle columns",
-    "noResults": "No results.",
-    "selected": "selected",
-    "noResultsFound": "No results found",
-    "clearFilters": "Clear filters",
-    "filter": "{{column}} Filter",
-    "selectAll": "Select all",
-    "selectRow": "Select row",
-    "bulkActions": "Bulk Actions",
-    "batchDelete": "Delete",
-    "selectedCount": "{{count}} selected",
-    "searchPlaceholder": "Search by name...",
-    "pagination": {
-      "totalItems": "Total: {{total}} items",
-      "rowsPerPage": "Rows per page",
-      "page": "Page {{current}} of {{total}}",
-      "goToFirstPage": "Go to first page",
-      "goToPreviousPage": "Go to previous page",
-      "goToNextPage": "Go to next page",
-      "goToLastPage": "Go to last page"
-    }
-  },
-  "documentTitle": {
-    "default": "refine",
-    "suffix": " | Refine",
-    "post": {
-      "list": "Posts | Refine",
-      "show": "#{{id}} Show Post | Refine",
-      "edit": "#{{id}} Edit Post | Refine",
-      "create": "Create new Post | Refine",
-      "clone": "#{{id}} Clone Post | Refine"
-    }
-  },
-  "autoSave": {
-    "success": "saved",
-    "error": "auto save failure",
-    "loading": "saving...",
-    "idle": "waiting for changes"
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "quickStart": "Quick Start",
-    "quickStartDescription": "Deploy your first AI inference endpoint in minutes"
-  },
-  "quick_start": {
-    "title": "Quick Start",
-    "description": "Set up a 1-node SSH cluster with a llama.cpp endpoint running the Tinystories-gpt-0.1-3m model.",
-    "fields": {
-      "serverIp": "Node IP Address",
-      "serverIpDescription": "The IP address of the node to deploy on",
-      "serverIpPlaceholder": "e.g., 192.168.1.100",
-      "sshUser": "SSH Username",
-      "sshUserDescription": "The SSH user for connecting to the node",
-      "sshUserPlaceholder": "e.g., root",
-      "sshPrivateKey": "SSH Private Key",
-      "sshPrivateKeyDescription": "Paste your SSH private key.",
-      "sshPrivateKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----"
-    },
-    "buttons": {
-      "deploy": "Deploy",
-      "retry": "Retry"
-    },
-    "steps": {
-      "imageRegistry": "Image Registry",
-      "modelRegistry": "Model Registry",
-      "cluster": "Cluster",
-      "endpoint": "Inference Endpoint"
-    },
-    "status": {
-      "pending": "Waiting",
-      "inProgress": "Creating...",
-      "success": "Created",
-      "skipped": "Already exists, skipped",
-      "error": "Failed"
-    },
-    "messages": {
-      "creating": "Setting up your infrastructure...",
-      "success": "All resources created. Cluster provisioning may take several minutes. You can check progress on the Cluster detail page, and then the Endpoint detail page once the cluster is ready.",
-      "error": "Something went wrong. You can retry — already created resources will be skipped."
-    },
-    "validation": {
-      "invalidIp": "Please enter a valid IP address",
-      "required": "This field is required"
-    }
-  },
-  "workspaces": {
-    "workspaces": "workspace",
-    "title": "Workspaces",
-    "placeholders": {
-      "workspaceName": "Workspace Name",
-      "selectWorkspace": "Select a workspace"
-    },
-    "options": {
-      "allWorkspaces": "All workspaces"
-    }
-  },
-  "clusters": {
-    "clusters": "cluster",
-    "title": "Clusters",
-    "create": "Create Cluster",
-    "edit": "Edit Cluster",
-    "upgrade": "Upgrade Cluster",
-    "fields": {
-      "accessMode": "Access Mode",
-      "headIp": "Head IP",
-      "workerIps": "Worker IPs",
-      "nodeName": "Node",
-      "usedSlashTotal": "used / total",
-      "kubeconfig": "Kubeconfig",
-      "acceleratorCount": "Accelerator Count",
-      "acceleratorVirtualization": "Accelerator Virtualization",
-      "componentName": "Component",
-      "managed": "Managed",
-      "physicalGpu": "Card Count",
-      "singleCardVram": "Single-card VRAM",
-      "memoryUsage": "VRAM",
-      "coreUsage": "Core",
-      "acceleratorMemoryPool": "Total VRAM",
-      "acceleratorCorePool": "Core",
-      "vgpuMemoryUsage": "VRAM",
-      "vgpuCoreUsage": "Core",
-      "gpuNumber": "GPU",
-      "gpuType": "GPU Type",
-      "deviceUuid": "Device UUID",
-      "deviceCount": "Devices",
-      "healthyDevices": "Healthy Devices",
-      "cardProducts": "Card Products",
-      "cardUsageSummary": "{{product}} · {{used}} in use · {{total}} total",
-      "vramUsed": "VRAM used",
-      "coreUsed": "Core used",
-      "remaining": "Remaining",
-      "selected": "Selected",
-      "resourceScope": "Resource Scope",
-      "replicas": "Replicas",
-      "currentVersion": "Current Version",
-      "targetVersion": "Target Version",
-      "sshHeadNodeIP": "Head Node IP",
-      "sshWorkerNodeIPs": "Worker Node IPs",
-      "sshUser": "SSH User",
-      "sshPrivateKey": "SSH Private Key",
-      "modelCache": {
-        "title": "Model Cache",
-        "type": {
-          "host_path": "Local",
-          "nfs": "NFS",
-          "pvc": "PVC"
-        },
-        "cacheType": "Cache Type",
-        "modelRegistry": "Model Registry",
-        "cachePath": "Cache Path",
-        "nfsServer": "NFS Server",
-        "storage": "Storage",
-        "storageClassName": "Storage Class Name"
-      }
-    },
-    "acceleratorTypes": {
-      "nvidia_gpu": "NVIDIA GPU",
-      "amd_gpu": "AMD GPU"
-    },
-    "sections": {
-      "clusterConfiguration": "Cluster Configuration",
-      "provider": "Provider",
-      "router": "Router",
-      "acceleratorVirtualization": "Accelerator Virtualization",
-      "modelCaches": "Model Caches",
-      "nodeAuthentication": "Node Authentication",
-      "nodes": "Nodes",
-      "nodeDevices": "Node Devices"
-    },
-    "placeholders": {
-      "clusterName": "Cluster Name",
-      "selectImageRegistry": "Select A Image Registry",
-      "selectVersion": "Select A Version",
-      "sshHeadNodeExample": "e.g 192.168.1.1",
-      "sshUserExample": "e.g root",
-      "sshAddNewWorkerNode": "Add New Worker Node IP",
-      "nfsServerExample": "192.168.1.1",
-      "modelCacheName": "Model Cache Name",
-      "cachePath": "/path/to/cache",
-      "storage": "10Gi",
-      "storageClassName": "e.g standard, fast",
-      "searchGpuDevices": "Search card UUID, product, or node",
-      "searchGpuCards": "Search card product or type"
-    },
-    "labels": {
-      "nodes": "nodes"
-    },
-    "options": {
-      "multipleStaticNodes": "Static Nodes",
-      "kubernetes": "Kubernetes",
-      "loadBalancer": "LoadBalancer",
-      "nodePort": "NodePort",
-      "ingress": "Ingress",
-      "none": "None",
-      "hostPath": "Host Path",
-      "nfs": "NFS",
-      "pvc": "PVC",
-      "healthy": "Healthy",
-      "unhealthy": "Unhealthy",
-      "allGpuProducts": "All Card Products",
-      "allNodes": "All Nodes",
-      "allDevices": "All Devices",
-      "used": "Used",
-      "usable": "Usable",
-      "free": "Free",
-      "total": "Total",
-      "allocated": "Allocated",
-      "freeCards": "Free Cards",
-      "usableForRequest": "Usable For Request"
-    },
-    "messages": {
-      "notFound": "404 not found",
-      "sshEmptyWorkerNodeIPs": "No worker nodes added",
-      "noModelCaches": "No model caches",
-      "upgradeSuccess": "Cluster upgrade initiated successfully",
-      "upgradeFailed": "Failed to initiate cluster upgrade",
-      "noUpgradeVersions": "No upgrade versions available",
-      "upgradeWarningSSH": "SSH clusters will experience downtime during upgrade. All running endpoints will be temporarily interrupted.",
-      "upgradeWarningK8s": "Kubernetes clusters use rolling updates with zero downtime.",
-      "newVersionAvailable": "New version available",
-      "copyUuidSuccess": "GPU UUID copied",
-      "copyUuidFailed": "Failed to copy GPU UUID",
-      "noGpuDevices": "No accelerator cards found",
-      "noNodeResources": "No node resources found"
-    },
-    "descriptions": {
-      "acceleratorVirtualization": "Enable accelerator virtualization for Kubernetes clusters.",
-      "acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
-    },
-    "monitor": {
-      "overviewMetrics": "Cluster Overview"
-    },
-    "actions": {
-      "addModelCache": "Add Model Cache",
-      "copyUuid": "Copy UUID",
-      "toggleNodeDevices": "{{nodeName}} devices",
-      "upgrade": "Upgrade",
-      "upgradeTitle": "Upgrade Cluster"
-    },
-    "validation": {
-      "versionRequired": "Version is required",
-      "ipRequired": "IP address is required",
-      "ipDuplicated": "IP address is already in use",
-      "modelRegistryRequired": "Model registry type is required",
-      "nfsServerRequired": "Server address is required",
-      "invalidIPAddress": "Invalid IP address",
-      "cachePathRequired": "Cache path is required",
-      "invalidPath": "Invalid path (Must start with /)",
-      "storageRequired": "Storage is required",
-      "invalidStorageFormat": "Invalid storage format (e.g., 10Gi, 100Mi, 1Ti)",
-      "invalidK8sName": "Invalid name format (lowercase alphanumeric and hyphens only, max 253 characters)"
-    }
-  },
-  "model_registries": {
-    "model_registries": "model registry",
-    "title": "Model Registries",
-    "fields": {
-      "modelRegistry": "Model Registry",
-      "url": "URL",
-      "credentials": "Credentials",
-      "visibility": "Visibility"
-    },
-    "placeholders": {
-      "registryName": "Model Registry Name",
-      "selectType": "Select Model Registry Type",
-      "huggingFaceUrl": "e.g https://huggingface.co",
-      "modelScopeUrl": "e.g https://www.modelscope.cn",
-      "fileSystemUrl": "e.g nfs://path/to/registry",
-      "credentials": "Credentials"
-    },
-    "descriptions": {
-      "credentials": "Credentials for the model registry. For a public hub, this is that hub's access token — a Hugging Face token or a ModelScope token."
-    },
-    "types": {
-      "huggingFace": "Hugging Face",
-      "modelScope": "ModelScope",
-      "fileSystem": "File System",
-      "filterTitle": "Filter by type"
-    },
-    "validation": {
-      "urlRequired": "URL is required",
-      "mustUseNfsProtocol": "File system registry must use nfs:// protocol"
-    },
-    "tabs": {
-      "models": "Models"
-    },
-    "actions": {
-      "copyUrl": "Copy URL"
-    },
-    "messages": {
-      "copyUrlSuccess": "URL copied to clipboard",
-      "copyUrlFailed": "Failed to copy URL"
-    },
-    "stats": {
-      "modelCount": "Models",
-      "storage": "Storage",
-      "collecting": "Collecting…",
-      "notApplicableHint": "Not counted: this registry's contents are not stored by the control plane.",
-      "updatedAt": "Updated {{time}}"
-    },
-    "models": {
-      "empty": "No models in this registry.",
-      "searchPlaceholder": "Search models",
-      "totalUnknown": "Total: unknown",
-      "noMatches": "No models match “{{search}}”.",
-      "registryUnreachable": "The registry cannot be reached, so its models cannot be listed.",
-      "registryDisabled": "This registry has been removed, so its models cannot be listed.",
-      "showMore": "Show more",
-      "listingEnd": "End of the listing.",
-      "windowCapped": "Showing the first {{count}}. This registry cannot be paged, so narrow the search to find a specific model.",
-      "dataAsOf": "Registry read at {{time}}",
-      "dataAsOfCached": "Cached registry data from {{time}}",
-      "fields": {
-        "alias": "Alias",
-        "modelName": "Model name",
-        "size": "Size",
-        "parameterCount": "Parameters",
-        "architecture": "Architecture",
-        "parameterDtype": "Precision",
-        "quantization": "Quantization",
-        "quantizationBits": "Quantization bits",
-        "contextLength": "Context length",
-        "maxPositionEmbeddings": "Max position embeddings",
-        "numHiddenLayers": "Hidden layers",
-        "numAttentionHeads": "Attention heads",
-        "numKeyValueHeads": "Key/value heads",
-        "headDim": "Head dimension",
-        "isMoe": "Mixture of experts",
-        "numExperts": "Experts",
-        "numExpertsPerToken": "Experts per token"
-      },
-      "values": {
-        "unknown": "Unknown",
-        "notApplicable": "Not applicable",
-        "yes": "Yes",
-        "no": "No"
-      },
-      "sources": {
-        "manual": "Hand-filled",
-        "derived": "Derived"
-      },
-      "sourceHints": {
-        "manual": "Typed in by a user, not read from the checkpoint.",
-        "derived": "Computed from other checkpoint values by a documented convention."
-      },
-      "detail": {
-        "infoSection": "Model information",
-        "infoHint": "Values the registry reports for this checkpoint. A field it could not establish is shown as unknown."
-      },
-      "actions": {
-        "edit": "Edit metadata"
-      },
-      "edit": {
-        "title": "Edit model metadata",
-        "description": "{{name}}:{{version}}. The model's name, version and storage path do not change.",
-        "aliasPlaceholder": "No alias",
-        "aliasHint": "A display name only. It is never the name the model is served under.",
-        "conflictModel": "This alias is already used by {{name}}:{{version}} in this registry.",
-        "conflictModelName": "This alias is the name of the model {{name}} in this registry, which would make model selection ambiguous.",
-        "manualSection": "Hand-filled metadata",
-        "manualHint": "Values entered here are recorded as hand-filled and replace the previously recorded set. Leave a field empty to leave it to the checkpoint.",
-        "unset": "Leave to the checkpoint",
-        "success": "Model metadata updated"
-      },
-      "delete": {
-        "title": "Delete this model?",
-        "description": "{{name}}:{{version}} will be removed from the registry. This cannot be undone.",
-        "blocked": "This model cannot be deleted while the following objects still reference it:",
-        "variant": "variant: {{variant}}",
-        "success": "Model deleted"
-      },
-      "readme": {
-        "title": "README.md",
-        "none": "No README.md available.",
-        "truncated": "This card is long and has been shortened."
-      }
-    },
-    "visibility": {
-      "public": "Public",
-      "private": "Private"
-    },
-    "availability": {
-      "unreachable": "This registry cannot be reached",
-      "lastChecked": "Last checked {{time}}",
-      "lastCheckedUnknown": "Not checked yet",
-      "retry": "Retry connection",
-      "retryHint": "The control plane keeps retrying on its own. Checking now also clears the cached results held for this registry, so the model list is re-read rather than replayed.",
-      "retrySucceeded": "Registry reached",
-      "retryStillFailing": "The registry still cannot be reached",
-      "retryNotRun": "The check could not be run",
-      "disabled": "This registry has been removed",
-      "disabledHint": "It is being torn down and no longer serves models."
-    }
-  },
-  "model_catalogs": {
-    "title": "Model Catalogs",
-    "fields": {
-      "lastTransition": "Last Transition",
-      "errorMessage": "Error Message",
-      "registry": "Registry",
-      "modelFile": "Model File"
-    },
-    "sections": {
-      "keyConfig": "Key Configuration",
-      "env": "Environment Variables",
-      "advanced": "Advanced (all fields)"
-    },
-    "keyConfig": {
-      "contextLength": "Context Length",
-      "tensorParallel": "Tensor Parallel",
-      "dataParallel": "Data Parallel",
-      "pipelineParallel": "Pipeline Parallel",
-      "expertParallel": "Expert Parallel",
-      "quantization": "Quantization",
-      "kvCacheDtype": "KV Cache Dtype",
-      "reasoningParser": "Reasoning Parser",
-      "toolParser": "Tool Parser",
-      "prefixCaching": "Prefix Caching",
-      "speculative": "Speculative Decoding",
-      "none": "-"
-    },
-    "recipe": {
-      "variants": "Variants",
-      "servingProfile": "Serving Profile",
-      "profile": "Profile",
-      "selectProfile": "Select {{profile}} profile",
-      "defaultProfile": "Default profile",
-      "features": "Features",
-      "variantKey": "Variant",
-      "argsOverrides": "Args overrides",
-      "defaultOn": "default on",
-      "optIn": "opt-in",
-      "conflictsWith": "conflicts with",
-      "verifiedHardware": "Verified hardware",
-      "performanceTuning": "Performance tuning",
-      "vramMin": "Min VRAM"
-    },
-    "modelInfo": {
-      "title": "Model info",
-      "parameterCount": "Parameters",
-      "quantization": "Quantization",
-      "contextLength": "Context",
-      "architecture": "Architecture"
-    },
-    "card": {
-      "deploy": "Deploy",
-      "details": "Details",
-      "variantCount": "{{count}} variants",
-      "searchPlaceholder": "Search by name",
-      "empty": "No model catalogs yet. Import one to get started.",
-      "deleteTitle": "Delete model catalog",
-      "deleteDescription": "Delete \"{{name}}\"? This cannot be undone."
-    },
-    "import": {
-      "button": "Import",
-      "title": "Import model catalogs",
-      "description": "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported. A catalog that already exists in the same workspace is updated.",
-      "tabYaml": "Paste YAML",
-      "tabFile": "Upload file",
-      "tabUrl": "From URL",
-      "chooseFile": "Choose file",
-      "urlHint": "Fetched in your browser — the URL must allow cross-origin (CORS) access. Use a raw YAML link.",
-      "workspaceLabel": "Default workspace",
-      "workspacePlaceholder": "Used when the YAML has no metadata.workspace",
-      "submit": "Import",
-      "detail": "Detail",
-      "created": "Created",
-      "fetchFailed": "Failed to fetch URL: {{status}} {{statusText}}",
-      "noDocuments": "No model catalog documents found in the input.",
-      "invalidResource": "Missing apiVersion, kind, or metadata.name.",
-      "successAll": "Imported {{count}} catalogs",
-      "failedAll": "All {{count}} imports failed",
-      "partial": "{{ok}} imported, {{failed}} failed",
-      "updated": "Updated",
-      "successAllWithUpdates": "Imported {{count}} catalogs ({{updated}} updated)",
-      "createdConcurrently": "A model catalog named \"{{name}}\" was created while this import was running. Import again to update it.",
-      "cancelled": "Import cancelled — nothing was changed.",
-      "typeChangeTitle": "This import changes the catalog type",
-      "typeChangeDescription": "{{names}} would switch between a recipe template and a plain catalog. Overwriting replaces the stored spec, including its variants and features. Nothing has been written yet.",
-      "typeChangeConfirm": "Overwrite"
-    },
-    "edit": {
-      "title": "Edit model catalog",
-      "specLabel": "Catalog (YAML)",
-      "specHint": "Edit the catalog, or paste a whole ModelCatalog document over it. Spec, labels and annotations are applied; name and workspace cannot change. Invalid recipes surface as a Failed status after saving.",
-      "saved": "Catalog updated",
-      "invalidSpec": "Spec must be a mapping",
-      "missingSpec": "This looks like a ModelCatalog document but has no spec. Paste the whole document, or just the spec body.",
-      "nameMismatch": "This document is for \"{{actual}}\", but you are editing \"{{expected}}\". Import it as a new catalog instead.",
-      "workspaceMismatch": "This document belongs to workspace \"{{actual}}\", but this catalog is in \"{{expected}}\"."
-    },
-    "wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\"",
-    "models": {
-      "registryLabel": "Model registry",
-      "selectRegistry": "Select a registry",
-      "selectModel": "Select a model",
-      "catalogModel": "Catalog model",
-      "unparsable": "Fix the YAML below to choose models here.",
-      "none": "This catalog names no model yet.",
-      "listFailed": "Could not list this registry's models.",
-      "title": "Models",
-      "hint": "Point each of this catalog's models at one in a registry you can reach, and choose the engine version it deploys with. Edits land in the YAML below.",
-      "unset": "No model chosen",
-      "engine": "Engine",
-      "selectEngineVersion": "Select a version"
-    },
-    "images": {
-      "title": "Workload image",
-      "hint": "Point this catalog's workload image at one in a registry you can reach, and choose the engine version it deploys with. Edits land in the YAML below.",
-      "none": "This catalog asks for no workload image.",
-      "placeholder": "registry/project/name:tag"
-    }
-  },
-  "image_registries": {
-    "image_registries": "image registry",
-    "title": "Image Registries",
-    "create": {
-      "title": "Create Image Registry"
-    },
-    "fields": {
-      "url": "URL",
-      "repository": "Repository",
-      "certificateAuthority": "Certificate Authority",
-      "authentication": "Authentication",
-      "username": "Username",
-      "password": "Password",
-      "base64Auth": "Base64 Auth",
-      "repo": "Repo"
-    },
-    "placeholders": {
-      "registryName": "Image Registry Name",
-      "dockerUrl": "e.g https://index.docker.io/v1"
-    },
-    "descriptions": {
-      "certificateAuthority": "CA certificate for a self-signed registry",
-      "base64Auth": "Base64 encoded username:password"
-    },
-    "validation": {
-      "nameRequired": "Name is required",
-      "urlRequired": "URL is required"
-    }
-  },
-  "engines": {
-    "title": "Engines",
-    "fields": {
-      "supportedTasks": "Supported Tasks",
-      "engineVersion": "Engine Version",
-      "valuesSchema": "Values Schema"
-    },
-    "card": {
-      "open": "Open {{name}}"
-    },
-    "list": {
-      "searchPlaceholder": "Search by name",
-      "empty": "No engines in this workspace.",
-      "loadFailed": "Unable to load engines."
-    },
-    "versions": {
-      "all": "All versions",
-      "count": "{{count}} versions",
-      "count_one": "1 version",
-      "latest": "Latest"
-    },
-    "schema": {
-      "columns": {
-        "parameter": "Parameter",
-        "type": "Type",
-        "default": "Default",
-        "description": "Description"
-      },
-      "required": "required",
-      "searchPlaceholder": "Search parameters",
-      "filters": {
-        "type": "Type",
-        "allTypes": "All types",
-        "onlyRequired": "Required only"
-      },
-      "parameterCount": "{{count}} parameters",
-      "parameterCount_one": "1 parameter",
-      "filteredCount": "{{visible}} of {{total}} parameters",
-      "noMatches": "No parameters match the filters.",
-      "nestedCount": "{{count}} nested parameters",
-      "nestedCount_one": "1 nested parameter",
-      "empty": "This version declares no parameters.",
-      "allowsAdditional": "This schema also accepts parameters it does not list.",
-      "enumLead": "one of",
-      "expandDescription": "Show the full description of {{name}}",
-      "copyJson": "Copy JSON",
-      "toggleNested": "Expand or collapse {{name}}",
-      "enumAll": "{{count}} allowed values",
-      "enumAll_one": "1 allowed value"
-    }
-  },
-  "endpoints": {
-    "endpoints": "endpoint",
-    "title": "Endpoints",
-    "create": "Create Endpoint",
-    "edit": "Edit Endpoint",
-    "access": {
-      "summary": "Access · {{count}} URLs",
-      "hoverTitle": "Access URLs"
-    },
-    "fields": {
-      "serviceUrl": "Service URL",
-      "npu": "NPU",
-      "modelRegistry": "Model Registry",
-      "modelCatalog": "Model Catalog (Template)",
-      "memoryGb": "Memory (GB)",
-      "acceleratorCount": "Accelerator Count",
-      "allocatedCard": "allocated card",
-      "allocatedCards": "allocated cards",
-      "allocationMode": "Allocation Mode",
-      "card": "card",
-      "cards": "cards",
-      "fullGpu": "Full Card",
-      "vgpu": "Virtual Card",
-      "physicalGpuCount": "Card Count",
-      "physicalGpu": "Card Count",
-      "perReplica": "Per Replica",
-      "perCard": "per card",
-      "vgpuCount": "Card Count",
-      "npuCount": "NPU Count",
-      "modelName": "Model Name",
-      "modelVersion": "Model Version",
-      "modelFile": "Model File",
-      "engineVersion": "Engine Version",
-      "taskType": "Task Type",
-      "replicas": "Replicas",
-      "schedulingScope": "Scheduling Scope",
-      "scheduling": "Scheduling",
-      "schedulerType": "Scheduler Type",
-      "engineVariables": "Engine Variables",
-      "parameterValue": "Value",
-      "remaining": "Remaining",
-      "environment": "Environment Variables",
-      "accelerator": "Accelerator",
-      "clusterCapability": "Cluster Capability",
-      "vgpuMemoryMode": "VRAM Mode",
-      "vgpuMemory": "VRAM",
-      "vgpuMemoryPercent": "VRAM Percent",
-      "vgpuCoreLimit": "Core",
-      "vgpuCorePercent": "Core",
-      "vgpuCoreUnits": "Core",
-      "singleCardMemory": "VRAM",
-      "requestedVgpuMemory": "Requested VRAM",
-      "effectiveVgpuMemory": "Effective VRAM",
-      "virtualCardCount": "Card Count",
-      "vgpuMemoryCapacity": "VRAM",
-      "vgpuCoreCapacity": "Core",
-      "matchingGpuCards": "Matching Cards",
-      "replicaUnit": "replica",
-      "replicaUnits": "replicas",
-      "instance": "Instance",
-      "nodeCount": "Node Count",
-      "restartCount": "Restarts",
-      "actualMemory": "Actual usage",
-      "requestedMemory": "Requested VRAM",
-      "physicalMemory": "Physical VRAM",
-      "vramExceedsRequested": "Usage exceeds requested VRAM",
-      "crossNodes": "Across {{count}} nodes"
-    },
-    "sections": {
-      "clusterSettings": "Cluster",
-      "modelAndReplicas": "Model & Replicas",
-      "schedulingTargetResources": "Scheduling Target and Resource Selection",
-      "schedulingTarget": "Scheduling Target",
-      "customizeSettings": "Customize Settings",
-      "configurationDetails": "Configuration Details",
-      "engineSettings": "Engine",
-      "advancedOptions": "Advanced Options",
-      "environmentVariables": "Environment Variables",
-      "currentRequest": "Current Request",
-      "resourcePlan": "Resource Plan",
-      "virtualCardSplitResources": "Virtual card split resources",
-      "access": "Access",
-      "runtimeAllocation": "Runtime Allocation",
-      "requestedResources": "Requested Resources",
-      "deploymentConfig": "Deployment Config",
-      "allocatedResources": "Allocated Resources",
-      "clusterDeviceResources": "Cluster Resources",
-      "resourceSummary": "Resource Summary",
-      "replicaResources": "Replica Resources",
-      "gpuAllocation": "GPU Allocation & Usage",
-      "weights": "Weights & Cache"
-    },
-    "placeholders": {
-      "endpointName": "Endpoint Name",
-      "selectCluster": "Select A Cluster",
-      "selectModelRegistry": "Select A Model Registry",
-      "selectModelCatalog": "Select A Model Catalog",
-      "selectGpuType": "Select Accelerator Type",
-      "selectNpuType": "Select NPU Type",
-      "selectModel": "Select A Model",
-      "selectEngine": "Select An Engine",
-      "selectVersion": "Select A Version",
-      "selectTaskType": "Select A Support Task Type",
-      "selectAccelerator": "Select An Accelerator",
-      "selectSchedulerType": "Select Scheduler Type",
-      "workloadImage": "repository:tag"
-    },
-    "options": {
-      "generic": "Generic",
-      "clusterScheduling": "Cluster Scheduling",
-      "mib": "MiB",
-      "gib": "GiB",
-      "percent": "%",
-      "shared": "Shared"
-    },
-    "descriptions": {
-      "clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
-      "basicResources": "Capacity shared with the selected cluster.",
-      "vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card.",
-      "declaredWeights": "What the catalog's author measured for the model weights alone, per replica — it does not include the KV cache, which is estimated separately below from this deployment's context and concurrency."
-    },
-    "actions": {
-      "openResources": "Open Resources",
-      "pause": "Pause",
-      "saveAsCatalog": "Save as Catalog",
-      "resume": "Resume"
-    },
-    "messages": {
-      "parameterCount": "{{count}} parameters",
-      "expandParameterValue": "Show the full value of {{name}}",
-      "rayDashboardNotAvailable": "Ray dashboard is not available.",
-      "fetching": "fetching...",
-      "modelNotFoundInRegistry": "Model not found in selected registry",
-      "saveAsCatalogSuccess": "Saved as catalog \"{{name}}\"",
-      "saveAsCatalogFailed": "Failed to save as catalog",
-      "saveAsCatalogDuplicate": "A catalog named \"{{name}}\" already exists in this workspace",
-      "modelRegistryNotInWorkspace": "Model registry \"{{name}}\" does not exist in this workspace",
-      "fetchingClusterResources": "Fetching cluster resources",
-      "failedToFetchClusterResources": "Failed to fetch cluster resources",
-      "clusterResourcesUnavailable": "Cluster resources unavailable",
-      "acceleratorVirtualizationEnabled": "Accelerator virtualization enabled",
-      "acceleratorVirtualizationDisabled": "No accelerator virtualization",
-      "pauseSuccess": "Endpoint paused successfully",
-      "pauseFailed": "Failed to pause endpoint",
-      "resumeSuccess": "Endpoint resumed successfully",
-      "resumeFailed": "Failed to resume endpoint",
-      "noAcceleratorsAvailable": "No accelerators available in this cluster",
-      "noAcceleratorSelected": "No accelerator selected",
-      "replicasMustBeAtLeastOne": "Replicas must be at least 1",
-      "schedulerTypeRequired": "Scheduler type is required",
-      "gpuCountPrecisionSsh": "Accelerator card count must be a one-decimal value below 1, or an integer at or above 1",
-      "gpuCountPrecisionK8s": "Accelerator card count must be an integer",
-      "vgpuMemoryMutuallyExclusive": "Use either virtual card memory amount or memory percent, not both",
-      "vgpuMemoryMiBPositive": "Virtual card memory must be greater than 0",
-      "vgpuMemoryPercentRange": "Virtual card memory percent must be between 1 and 100",
-      "vgpuCorePercentRange": "Virtual card core percent must be between 0 and 100",
-      "cardsAvailable": "{{count}} cards available",
-      "fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
-      "fullGpuCardCapacityInsufficient": "The request needs {{requested}} full cards, but only {{available}} are currently available.",
-      "fractionalGpuResourcesInsufficient": "Requested fractional GPU capacity exceeds the remaining physical-card capacity for this cluster.",
-      "noNodeCanScheduleFullGpuRequest": "No single node can satisfy the scheduling requirements for a replica requesting {{count}} full cards.",
-      "noNodeCanScheduleFractionalGpuRequest": "No single node has a physical card with enough remaining capacity for one fractional-GPU replica.",
-      "noNodeCanScheduleVgpuRequest": "No single node can accommodate a replica with the requested virtual card resources.",
-      "partialGpuReplicaPlacement": "Only {{available}} of {{requested}} replicas can be scheduled with the requested accelerator resources.",
-      "noMatchingAccelerator": "No healthy {{product}} accelerator is available in this cluster.",
-      "vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
-      "vgpuMemoryResourcesInsufficient": "Requested virtual card memory exceeds the currently available virtual card memory.",
-      "vgpuCoreResourcesInsufficient": "Requested virtual card core capacity exceeds the currently available virtual card core capacity.",
-      "cpuResourcesInsufficient": "Requested CPU exceeds the currently available capacity for this cluster.",
-      "memoryResourcesInsufficient": "Requested memory exceeds the currently available capacity for this cluster.",
-      "noNodeCanScheduleCpuRequest": "No node with the selected accelerator has enough CPU for one replica.",
-      "noNodeCanScheduleMemoryRequest": "No node with the selected accelerator has enough memory for one replica.",
-      "noNodeCanScheduleCombinedResourceRequest": "No single node can satisfy the selected accelerator, CPU, and memory requirements for one replica.",
-      "noRunningVgpuPods": "No running virtual accelerator pods",
-      "vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared",
-      "vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting",
-      "runtimeDownloadHint": "Models in a public registry are downloaded when the endpoint starts: the first start takes noticeably longer, and it cannot start at all without access to the registry.",
-      "runtimeDownloadUnknown": "This registry did not report whether it stores its models locally, so whether they are downloaded when the endpoint starts is unknown.",
-      "fetchingImageTags": "Looking up tags…"
-    },
-    "tabs": {
-      "playground": "Playground"
-    },
-    "recipe": {
-      "section": "Recipe options",
-      "variant": "Variant",
-      "features": "Features",
-      "selectVariant": "Select a variant",
-      "defaultOn": "default on",
-      "conflictsWith": "conflicts with",
-      "preview": "Composed preview",
-      "previewError": "Cannot compose",
-      "engineArgs": "Engine args",
-      "env": "Environment",
-      "performanceTuning": "Performance tuning",
-      "verifiedOn": "Verified on:",
-      "resourceEstimate": "Resource estimate",
-      "estimatedVram": "Estimated VRAM",
-      "replicasCount": "{{count}} replica",
-      "noVerifiedAccelerator": "This recipe has not been validated on the GPUs in this cluster.",
-      "requiredVram": "Requires ≥ {{gb}} GB VRAM.",
-      "vramSufficient": "Sufficient VRAM: {{total}} GB available, {{required}} GB required",
-      "vramInsufficient": "Insufficient VRAM: {{total}} GB available, {{required}} GB required",
-      "vramRequiredOnly": "Requires ≥ {{gb}} GB VRAM",
-      "composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}",
-      "defaultVariant": "Default variant",
-      "engineArgCount": "{{count}} engine args",
-      "engineArgCount_one": "1 engine arg",
-      "envCount": "{{count}} env vars",
-      "envCount_one": "1 env var",
-      "verifiedAccelerator": "Validated by this recipe"
-    },
-    "kvCache": {
-      "title": "KV cache estimate",
-      "titleHint": "Computed from this checkpoint's cache layout, the tokens and sequences below, and the KV precision you pick — not a value the catalog states.",
-      "tokensPerSequence": "Tokens per sequence",
-      "sequences": "Concurrent sequences",
-      "precision": "KV precision",
-      "precisionPlaceholder": "Select a precision",
-      "precisions": {
-        "bf16": "BF16 / FP16 — 2 bytes",
-        "fp8": "FP8 / INT8 — 1 byte",
-        "fp4": "FP4 / INT4 — 0.5 bytes",
-        "fp32": "FP32 — 4 bytes"
-      },
-      "bytesPerToken": "{{bytes}} bytes per token",
-      "families": {
-        "head": "Head-based cache (MHA / GQA)",
-        "latent": "Latent cache (MLA)",
-        "mixed_full_sliding_gqa": "Mixed full / sliding GQA",
-        "qwen_linear_full_hybrid": "Linear / full attention hybrid",
-        "deepseek_v4_hybrid": "Hybrid sparse attention (DeepSeek V4)"
-      },
-      "familyBasis": {
-        "uniform_layers": "Head-based because this checkpoint reports no kv_lora_rank or qk_rope_head_dim and no layer kind that caches differently. A control plane that does not report those fields yet looks the same from here.",
-        "latent_widths": "Latent because this checkpoint reports kv_lora_rank and qk_rope_head_dim, which describe what an MLA layer caches.",
-        "sliding_layer_types": "Mixed because layer_types names sliding_attention layers alongside full ones, and the checkpoint states the window they cap at.",
-        "linear_layer_types": "Hybrid because layer_types names linear_attention layers, which hold one fixed-size recurrent state per sequence instead of a key and value per token.",
-        "compress_ratios": "Sparse because this checkpoint states compress_ratios, a per-layer schedule of how many tokens each layer folds into one cached slot. The head fields it also states describe what attention is computed over, not what is cached."
-      },
-      "factors": {
-        "tokens_per_sequence": "tokens",
-        "sequences": "sequences",
-        "num_hidden_layers": "layers",
-        "key_and_value": "key and value",
-        "num_key_value_heads": "KV heads",
-        "head_dim": "head dim",
-        "latent_width": "latent width",
-        "kv_lora_rank": "kv_lora_rank",
-        "qk_rope_head_dim": "qk_rope_head_dim",
-        "bytes_per_element": "bytes",
-        "full_attention_layers": "full layers",
-        "sliding_attention_layers": "sliding layers",
-        "linear_attention_layers": "linear layers",
-        "active_layers": "layers",
-        "sliding_window": "window",
-        "cached_sliding_tokens": "cached tokens",
-        "compressed_slots": "compressed slots",
-        "indexed_slots": "indexed slots",
-        "index_head_dim": "indexer dim",
-        "indexer_bytes_per_element": "bytes",
-        "retained_states": "retained states",
-        "conv_history_steps": "history steps",
-        "conv_channels": "channels",
-        "conv_state_bytes_per_element": "bytes",
-        "recurrent_state_bytes_per_element": "bytes",
-        "linear_conv_kernel_dim": "kernel",
-        "minus_the_current_step": "current step",
-        "linear_num_key_heads": "key heads",
-        "linear_key_head_dim": "key dim",
-        "linear_num_value_heads": "value heads",
-        "linear_value_head_dim": "value dim",
-        "mtp_num_layers": "draft layers"
-      },
-      "sources": {
-        "derived": "derived",
-        "manual": "manual",
-        "unstated": "unverified",
-        "constant": "constant",
-        "deployment": "this deployment"
-      },
-      "sourceHints": {
-        "derived": "Computed from other checkpoint values by a documented convention",
-        "manual": "Typed in by a user, overriding what the checkpoint states",
-        "unstated": "This value states no provenance, so it is not known to come from the checkpoint",
-        "constant": "A fixed factor of the formula, not a value from the checkpoint",
-        "deployment": "Taken from the engine args this deployment will be created with, not from the checkpoint"
-      },
-      "reading": "Reading the checkpoint…",
-      "unread": {
-        "unauthorized": "Cannot read this checkpoint: the registry refused the request. A gated model needs an access token on the registry before its files can be read.",
-        "not-found": "Cannot read this checkpoint: the registry has no model or version by that name.",
-        "unavailable": "Cannot read this checkpoint: the registry did not answer."
-      },
-      "unreported": "This registry reports nothing about the checkpoint, so there is nothing to compute from.",
-      "unparsed": "The registry read this model and found no config.json it could parse, so the shape of the checkpoint is unknown.",
-      "missingFields": "Cannot estimate: this checkpoint does not state {{fields}}.",
-      "layerTypes": "Cannot estimate: this checkpoint states {{types}} layers, and none of the formulas here describes what such a layer caches.",
-      "noModelInfo": "Cannot estimate: nothing is known about this checkpoint.",
-      "invalidInput": "Enter a whole number of tokens and sequences, and pick a KV precision.",
-      "components": {
-        "full_kv": "Full-attention KV",
-        "sliding_kv": "Sliding-window KV",
-        "compressed_kv": "Compressed KV",
-        "indexer": "Sparse-attention indexer",
-        "linear_conv_state": "Short-convolution history",
-        "linear_recurrent_state": "Recurrent state",
-        "draft_kv": "Draft (MTP) KV"
-      },
-      "averageBytesPerToken": "{{bytes}} bytes per token on average",
-      "countedFrom": "Counted out of {{field}}",
-      "notPerToken": "does not grow with the sequence",
-      "recurrentPrecision": "Recurrent state precision",
-      "recurrentPrecisionHint": "Linear-attention state is held at this width. Its short-convolution history stays BF16.",
-      "indexerPrecision": "Indexer precision",
-      "indexerPrecisionHint": "Sparse-attention indexer entries are held separately from the KV cache.",
-      "checkpointInterval": "Recurrent state interval",
-      "checkpointIntervalPlaceholder": "Prompt end only",
-      "includeLinearState": "Retain linear-attention state",
-      "includeDraftKvCache": "Include draft (MTP) KV",
-      "compressionRates": "Cannot estimate: this checkpoint compresses at a rate ({{rates}}) whose cache layout has not been established from any released checkpoint, so whether those layers carry an indexer is unknown.",
-      "showFormula": "Show the formula",
-      "hideFormula": "Hide the formula",
-      "ownedBy": "Set by “{{control}}” above"
-    },
-    "monitor": {
-      "overviewMetrics": "Overview",
-      "latencyMetrics": "Latency",
-      "throughputMetrics": "Throughput",
-      "queueMetrics": "Queue",
-      "cacheMetrics": "Cache",
-      "overviewDescription": "Consumed GPUs, VRAM used, CPU cores, memory working set, GPU, VRAM, CPU, and memory trends, plus GPU allocation details",
-      "latencyDescription": "E2E, TTFT, TPOT, and ITL latency metrics",
-      "throughputDescription": "Prompt, generation, and total token throughput plus request length distributions",
-      "queueDescription": "Running, swapped, waiting, preemptions, and queue time metrics",
-      "cacheDescription": "KV token capacity, KV usage, and cache hit metrics"
-    },
-    "logs": {
-      "application": "Application",
-      "stderr": "Stderr",
-      "stdout": "Stdout",
-      "loading": "Loading logs...",
-      "noLogsAvailable": "No logs available",
-      "applicationLogsNotAvailable": "Application logs not available",
-      "stderrLogsNotAvailable": "Stderr logs not available",
-      "stdoutLogsNotAvailable": "Stdout logs not available",
-      "failedToLoadRayApplication": "Failed to load Ray application information. Please check if the cluster is accessible.",
-      "noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
-    },
-    "simplified": {
-      "autoConfigured": "Model, engine and resources are auto-configured from the selected variant.",
-      "showAdvanced": "Show all options",
-      "hideAdvanced": "Hide advanced options"
-    },
-    "saveAsCatalog": {
-      "title": "Save as Catalog",
-      "description": "Creates a new catalog from this endpoint's current configuration. It is not linked to the catalog this endpoint was deployed from, and carries no variants or features.",
-      "nameLabel": "Catalog name",
-      "submit": "Save"
-    },
-    "origin": {
-      "hint": "What this endpoint was deployed from. Its settings are edited below; changing them here does not change the catalog.",
-      "featuresUnreadable": "the recorded options could not be read"
-    },
-    "imageExplorer": {
-      "open": "Explore image registry",
-      "title": "Explore image registry",
-      "description": "Pick a registry, an image and a tag. Anything you cannot pick, you can type.",
-      "registryLabel": "Image registry",
-      "selectRegistry": "Select an image registry",
-      "registryInUse": "{{name}} · used by this cluster",
-      "foreignRegistry": "This is not the registry this cluster pulls with. The pull uses the credentials in {{name}}, so an image found here may not be pullable.",
-      "namespaceLabel": "Namespace",
-      "selectNamespace": "Select or type a namespace",
-      "namespaceNote": "Docker Hub cannot list namespaces, so this is not the full set — \"{{official}}\" holds its official images, and the rest are namespaces this deployment already uses. Type any other.",
-      "chooseNamespaceFirst": "Choose a namespace above and its images will be listed here.",
-      "imageLabel": "Image",
-      "selectImage": "Select or type an image",
-      "tagLabel": "Tag",
-      "selectTag": "Select or type a tag",
-      "tagOptional": "Optional — an image with no tag is a complete answer.",
-      "lookingForTags": "Looking for tags…",
-      "useTyped": "Use “{{typed}}”",
-      "apply": "Use this image",
-      "noRegistry": "Choose a registry above and its images will be listed here.",
-      "listing": "Type to narrow the images this registry holds.",
-      "looking": "Looking for images…",
-      "notChecked": "This registry has not reported yet whether its images can be listed. Type the image name — its tags will still be listed.",
-      "unsupported": "This registry cannot list its images. Type the image name instead; its tags will still be listed.",
-      "unauthorized": "The credentials stored for this registry can pull but cannot list its images. Ask an operator for credentials that can, or type the image name.",
-      "unavailable": "The registry could not be reached just now. Type the image name, or close this and try again."
-    },
-    "weights": {
-      "declared": "Declared by the catalog",
-      "breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
-      "acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
-    }
-  },
-  "external_endpoints": {
-    "external_endpoints": "external endpoint",
-    "title": "External Endpoints",
-    "create": "Create External Endpoint",
-    "fields": {
-      "upstreamName": "Upstream Name",
-      "provider": "Upstream Channel",
-      "virtualModel": "Exposed Model Name",
-      "virtualModelName": "Exposed Model Name",
-      "weightRatio": "Weight Ratio",
-      "weight": "Weight",
-      "serviceUrl": "Service URL",
-      "routeType": "Route Type",
-      "timeout": "Timeout",
-      "timeoutUnitSeconds": "Seconds",
-      "timeoutUnitMinutes": "Minutes",
-      "upstreamType": "Upstream Type",
-      "endpointRef": "Internal Endpoint",
-      "upstreamUrl": "Upstream URL",
-      "authType": "Auth Type",
-      "credential": "API Key",
-      "modelMapping": "Model Mapping",
-      "exposedModelName": "Exposed Model Name",
-      "upstreamModelName": "Upstream Model Name",
-      "models": "Models",
-      "associatedVirtualModels": "Associated exposed models",
-      "unavailableModels": "Unavailable models:",
-      "type": "Type",
-      "role": "Role",
-      "unlimited": "Unlimited",
-      "routingMode": "Routing Strategy",
-      "maxInflightRequests": "Max concurrent requests",
-      "nodeRole": "Node Role",
-      "trafficWeight": "Traffic Weight"
-    },
-    "sections": {
-      "configuration": "Configuration",
-      "routeConfiguration": "Configuration: {{model}}",
-      "upstream": "Upstream {{index}}",
-      "modelService": "Upstream Channel {{index}}",
-      "virtualModels": "Exposed Model Name",
-      "modelServices": "Upstream Channels",
-      "primaryTargets": "Primary list",
-      "fallbackTargets": "Fallback list"
-    },
-    "placeholders": {
-      "endpointName": "External Endpoint Name",
-      "selectRouteType": "Select Route Type",
-      "selectEndpointRef": "Select an internal endpoint",
-      "endpointRef": "e.g. smartdddd",
-      "upstreamUrl": "e.g. https://api.openai.com/v1",
-      "selectAuthType": "Select Auth Type",
-      "credential": "Bearer token for the upstream",
-      "timeout": "e.g. 60",
-      "exposedModelName": "Model name exposed to clients",
-      "upstreamModelName": "Model name at upstream provider",
-      "virtualModel": "Model name exposed to clients",
-      "selectProvider": "Select a model service",
-      "provider": "e.g. local-vllm",
-      "weight": "1-100",
-      "maxInflightRequests": "Maximum concurrent requests",
-      "primaryCapacity": "Enter concurrency limit"
-    },
-    "quickCreate": {
-      "title": "Quickly create upstream channel",
-      "description": "Create a channel here and it will be selected for this route automatically."
-    },
-    "options": {
-      "chatCompletions": "Chat Completions",
-      "upstreamTypeExternal": "External",
-      "upstreamTypeInternal": "Internal",
-      "upstreamTypeEndpointRef": "Endpoint Ref",
-      "upstreamTypeMixed": "Mixed",
-      "fixedRouting": "Single Route",
-      "priorityRouting": "Active & Standby",
-      "weightedRouting": "Weighted Routing",
-      "fixedRole": "Fixed",
-      "primaryRole": "Primary",
-      "fallbackRole": "Fallback",
-      "noRetry": "Do not switch on failure",
-      "retryProvider": "Switch provider on failure"
-    },
-    "actions": {
-      "addUpstream": "Add Upstream",
-      "addModelService": "Add model service",
-      "addModelMapping": "Add Model Mapping",
-      "removeUpstream": "Remove Upstream",
-      "removeModelMapping": "Remove",
-      "changeStrategy": "Change strategy",
-      "addVirtualModel": "Add exposed model",
-      "testModel": "Test",
-      "addTarget": "Add model service",
-      "addPrimaryTarget": "Add primary target",
-      "addFallbackTarget": "Add fallback target",
-      "addWeightedTarget": "Add weighted target",
-      "removeTarget": "Remove upstream channel",
-      "removeVirtualModel": "Remove exposed model",
-      "quickCreateUpstream": "Quickly create upstream channel",
-      "viewModelMappings": "View model mappings",
-      "hideModelMappings": "Hide model mappings"
-    },
-    "messages": {
-      "upstreamNameHint": "Give this upstream a recognizable name. When configuring routes for an exposed model, select this name in the Upstream Channel field to choose where requests are forwarded.",
-      "curlExample": "Curl Example",
-      "unnamedModel": "Unnamed model",
-      "mappingSummary": "({{upstream}} / {{exposed}})",
-      "mappingUpstreamCount": "{{count}} upstream models",
-      "mappingUpstreamCount_one": "{{count}} upstream model",
-      "mappingUpstreamCount_other": "{{count}} upstream models",
-      "mappingExposedCount": "{{count}} exposed models",
-      "mappingExposedCount_one": "{{count}} exposed model",
-      "mappingExposedCount_other": "{{count}} exposed models",
-      "noModelMappings": "No model mappings configured.",
-      "changeStrategyTitle": "Change routing strategy?",
-      "changeStrategyDescription": "Switching strategies will reset some unsaved settings. Continue?",
-      "fixedRoutingHint": "Send all requests to the single upstream model configured below.",
-      "priorityRoutingHint": "Use active targets first. Use standby targets when no active target can accept a request, including when all are at capacity.",
-      "weightedRoutingHint": "Distribute requests across the upstream models according to their configured weights.",
-      "maxInflightRequestsHint": "Leave empty or set to 0 for no limit.",
-      "curlHint": "Set your API key first: {{exportCmd}}. You can create one at {{apiKeyPage}}.",
-      "curlExampleOpenai": "OpenAI",
-      "curlExampleAnthropic": "Anthropic",
-      "curlExampleEmbedding": "Embedding",
-      "credentialHidden": "Credential is hidden for security",
-      "upstreamUnavailable": "This upstream is excluded from the gateway configuration. Requests to the models below will fail until it is resolved.",
-      "testRequiresServing": "Available once the endpoint is serving.",
-      "testConnectivity": "Test Connection",
-      "testConnectivityTesting": "Testing...",
-      "testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
-      "testConnectivityFailed": "Connection failed: {{error}}",
-      "testConnectivityError": "Request error: {{error}}",
-      "noFallbackTargets": "No fallback model services",
-      "weightTotalValid": "Current total: {{total}}%",
-      "weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
-      "weightRequired": "Enter an integer weight from 1 to 100 for every target.",
-      "primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
-      "primaryTargetsHint": "Requests prefer primary targets and are randomly distributed with equal probability among available targets. If none are available (including when all are at their concurrency limit), standby targets are used.",
-      "fallbackTargetsHint": "Used when no primary target is available. Requests are randomly distributed with equal probability among available standby targets; targets at their concurrency limit are skipped.",
-      "primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full.",
-      "upstreamConnectionFailed": "Upstream connection failed",
-      "checkUpstreamConnection": "Check the upstream URL, API key and network connectivity."
-    },
-    "validation": {
-      "nameRequired": "Name is required",
-      "routeTypeRequired": "Route type is required",
-      "endpointRefRequired": "Internal endpoint is required",
-      "upstreamUrlRequired": "Upstream URL is required",
-      "exposedModelRequired": "Exposed model name is required",
-      "upstreamModelRequired": "Upstream model name is required",
-      "duplicateModelKey": "Duplicate model key in this upstream",
-      "unknownUpstreamModel": "This model was not found in the upstream's model list",
-      "overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream",
-      "virtualModelRequired": "Exposed model name is required",
-      "routeTargetRequired": "Select a model service and enter its upstream model",
-      "weightTotal": "Weighted targets must total 100%",
-      "duplicateProvider": "Model service names must be unique"
-    },
-    "monitor": {
-      "view": "View monitoring",
-      "legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
-      "openGrafana": "View detailed monitoring",
-      "chartArea": "Chart area (scroll inside to view details)",
-      "loading": "Loading monitoring configuration…",
-      "configError": "Could not load monitoring configuration.",
-      "retry": "Retry"
-    }
-  },
-  "user_profiles": {
-    "user_profiles": "user",
-    "title": "Users",
-    "create": "Create User",
-    "edit": "Edit User",
-    "fields": {
-      "confirmPassword": "Confirm Password"
-    },
-    "placeholders": {
-      "userName": "User Name",
-      "userEmail": "User Email"
-    },
-    "sections": {
-      "globalRoles": "Global Roles",
-      "joinedWorkspaces": "Joined Workspaces"
-    },
-    "validation": {
-      "passwordMinLength": "Password must be at least 6 characters"
-    }
-  },
-  "roles": {
-    "roles": "role",
-    "title": "Roles",
-    "fields": {
-      "presetRole": "Preset",
-      "customRole": "Custom"
-    },
-    "placeholders": {
-      "roleName": "Role Name"
-    }
-  },
-  "role_assignments": {
-    "role_assignments": "workspace policy",
-    "title": "Workspace Policies",
-    "fields": {
-      "policy": "Policy",
-      "policyScope": "Policy Scope"
-    },
-    "placeholders": {
-      "policyName": "Workspace Policy Name",
-      "selectUser": "Select A User",
-      "selectRole": "Select A Role"
-    },
-    "descriptions": {
-      "policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace."
-    },
-    "options": {
-      "global": "Global",
-      "workspace": "Workspace"
-    }
-  },
-  "api_keys": {
-    "api_keys": "API key",
-    "title": "API key",
-    "create": "Create API Key",
-    "fields": {
-      "secretKey": "Secret Key",
-      "date": "Date",
-      "endpointType": "Type",
-      "endpoint": "Endpoint",
-      "model": "Model",
-      "promptTokens": "Prompt Tokens",
-      "completionTokens": "Completion Tokens",
-      "usage": "Total Tokens",
-      "displayName": "Name",
-      "description": "Description",
-      "project": "Project",
-      "apiKey": "API key",
-      "currentProject": "Current Project",
-      "workspace": "Workspace",
-      "status": "Status",
-      "createdAt": "Created at",
-      "apiKeyAndDescription": "API key / description",
-      "projectAndDescription": "Project / description"
-    },
-    "placeholders": {
-      "selectWorkspace": "Select A Workspace",
-      "search": "Search Project, API key, or description",
-      "searchProjects": "Search Projects",
-      "projectName": "Project name",
-      "projectDescription": "Description (optional)"
-    },
-    "messages": {
-      "createSuccess": "API Key created successfully! Please copy your secret key now. You won't be able to see it again.",
-      "createDescription": "Create a new API key for your application.",
-      "loading": "Loading...",
-      "notFound": "404 not found",
-      "createFailed": "Failed to create API key. Please try again.",
-      "operationFailed": "API key operation failed. Please try again.",
-      "noResults": "No matching Projects or API keys",
-      "deleteKeySuccess": "Successfully deleted API key",
-      "deleteKeysSuccess": "Successfully deleted {{count}} API keys",
-      "deletePartialFailure": "{{failed}} of {{total}} API keys could not be deleted.",
-      "missingWorkspace": "An API key is missing its workspace. Refresh and try again.",
-      "missingName": "An API key is missing its name. Refresh and try again.",
-      "nameRequired": "Name is required",
-      "nameTooLong": "Name cannot exceed 63 characters"
-    },
-    "buttons": {
-      "copy": "Copy",
-      "copied": "Copied",
-      "create": "Create"
-    },
-    "usage": {
-      "title": "API Usage Statistics",
-      "tokens": "tokens",
-      "endpointTypes": {
-        "endpoint": "Internal",
-        "external-endpoint": "External"
-      }
-    },
-    "limits": {
-      "sectionTitle": "Limits (optional)",
-      "quotaTitle": "Token quota",
-      "quotaHint": "Cap token usage for this key over a period. Leave empty for no quota.",
-      "accessTitle": "Access control",
-      "tokenLimit": "Token limit",
-      "unit": "Unit",
-      "units": {
-        "tokens": "Tokens",
-        "K": "K",
-        "M": "M",
-        "B": "B"
-      },
-      "period": "Period",
-      "periods": {
-        "daily": "Daily",
-        "weekly": "Weekly",
-        "monthly": "Monthly",
-        "yearly": "Yearly"
-      },
-      "optional": "Optional",
-      "concurrency": "Max concurrent",
-      "allowedModels": "Allowed models",
-      "allowedModelsHint": "Pick the models this key may call, then set an optional token limit on any of them. Leave the list empty to allow all models.",
-      "rps": "Requests per second (RPS)",
-      "rpm": "Requests per minute (RPM)",
-      "selectModel": "Select a model",
-      "modelsSelected": "{{count}} model(s) selected",
-      "noModels": "No models available",
-      "tokensUnit": "tokens",
-      "invalidPositiveInt": "Must be a positive integer",
-      "invalidTokenQuota": "Must resolve to a positive whole number of tokens",
-      "consumptionTitle": "Resource consumption",
-      "remainingLabel": "remaining",
-      "usageColumn": "Usage",
-      "rateColumn": "Rate limits",
-      "modelsColumn": "Supported models",
-      "allModels": "All",
-      "showMore": "Show {{count}} more",
-      "showLess": "Show less",
-      "statusColumn": "Status",
-      "statusActive": "Active",
-      "statusDisabled": "Disabled",
-      "statusQuotaExceeded": "Quota exceeded",
-      "disable": "Disable",
-      "enable": "Enable",
-      "actions": "Actions",
-      "moreLimitedModels": "+{{count}} more",
-      "saveSuccess": "Configuration saved",
-      "saveError": "Could not save the configuration",
-      "resetsOn": "Resets {{date}}",
-      "usedTotal": "{{amount}} used",
-      "granularity": {
-        "overall": "Overall quota",
-        "per_model": "Per-model quota"
-      },
-      "perModel": {
-        "hint": "A model with no limit is unlimited. Setting a limit on any model switches the key to per-model quotas and suspends the overall quota.",
-        "emptyAllowlist": "All models are allowed, so there is nothing to attach a per-model limit to. Select models above to set per-model quotas, or use the overall quota below.",
-        "unlimited": "Unlimited",
-        "limitLabel": "Token limit for {{model}}",
-        "overallSuspended": "Not enforced while this key uses per-model quotas. It is kept, and takes effect again once every per-model limit is cleared.",
-        "overlap": "This entry overlaps another entry for {{model}}. An entry with no endpoint matches every endpoint of the model.",
-        "overlapError": "Entries for the same model must not overlap once one of them has a token limit.",
-        "consumptionTitle": "Per-model consumption",
-        "limitColumn": "Limit",
-        "usedColumn": "Used",
-        "remainingColumn": "Remaining",
-        "exhausted": "Exhausted ({{amount}})",
-        "softQuotaNote": "Quotas are enforced eventually, not in real time, so usage can briefly exceed a limit. Usage recorded before a per-model limit was configured is not counted here."
-      }
-    },
-    "ranking": {
-      "title": "API key ranking overview",
-      "subtitle": "By the last 24 hours, split into request count and token dimensions.",
-      "window": "24h",
-      "requests": "Request count",
-      "tokens": "Tokens",
-      "empty": "No data"
-    },
-    "models": {
-      "unknown": "Unknown",
-      "anySource": "Any source"
-    },
-    "performance": {
-      "title": "Last 24h request performance",
-      "subtitle": "Call volume, response latency and success rate.",
-      "viewLogs": "View call logs",
-      "requests": "Requests",
-      "avgLatency": "Avg latency",
-      "successRate": "Success rate"
-    },
-    "modelAccess": {
-      "title": "Model access",
-      "all": "All models allowed",
-      "unavailable": "Endpoint unavailable",
-      "instanceLabel": "Inference instance: {{name}}",
-      "endpointLabel": "Endpoint: {{name}}"
-    },
-    "projects": {
-      "ungrouped": "Ungrouped",
-      "select": "Select a Project",
-      "notFound": "No Projects found.",
-      "create": "Create Project",
-      "createDescription": "Create a Project in workspace {{workspace}}.",
-      "creating": "Creating...",
-      "createAndSelect": "Create and select",
-      "edit": "Edit Project",
-      "editDescription": "Renaming does not change API key associations or usage history.",
-      "delete": "Delete Project",
-      "deleteDescription": "Delete {{name}}? Only an empty Project can be deleted.",
-      "deleteBlocked": "Move or delete the {{count}} API key(s) first",
-      "deleteSuccess": "Successfully deleted Project",
-      "duplicateName": "Project name already exists. Choose another name.",
-      "loadFailed": "Unable to load Project",
-      "empty": "This Project has no API keys",
-      "createKey": "Create API key",
-      "countLabel": "{{projects}} groups, {{keys}} API keys"
-    },
-    "move": {
-      "action": "Move to Project",
-      "title": "Move API keys",
-      "description": "{{count}} selected. The operation is atomic.",
-      "confirm": "Move",
-      "success": "Moved {{count}} API key(s)",
-      "failed": "Failed to move API keys. Please try again.",
-      "multipleWorkspaces": "Selected API keys span multiple workspaces. Move one workspace at a time.",
-      "alreadyInProject": "The selected API keys already belong to this Project.",
-      "unknownProject": "Unknown Project"
-    },
-    "filters": {
-      "allKeys": "All API keys",
-      "activeKeys": "Active API keys",
-      "disabledKeys": "Disabled API keys"
-    },
-    "selection": {
-      "count": "{{count}} selected",
-      "clear": "Clear",
-      "selectAllOnPage": "Select all API keys on this page",
-      "selectAllInProject": "Select all API keys in {{name}}",
-      "deleteMany": "Delete {{count}} API keys?"
-    },
-    "detailsTitle": "API key details"
-  },
-  "infrastructure": {
-    "title": "Infrastructure"
-  },
-  "model_service": {
-    "title": "Model Service"
-  },
-  "model_gateway": {
-    "title": "Model Gateway"
-  },
-  "access_control": {
-    "title": "Access Control"
-  },
-  "components": {
-    "ui": {
-      "combobox": {
-        "select": "Select",
-        "clearSelection": "Clear selection",
-        "useCustomValue": "Use \"{{value}}\"",
-        "placeholders": {
-          "SearchPlaceholder": "Type a command or search...",
-          "SearchOrTypePlaceholder": "Search, or type a new value..."
-        },
-        "messages": {
-          "noResults": "No results found"
-        },
-        "headings": {
-          "suggestions": "Suggestions"
-        }
-      },
-      "sidebar": {
-        "title": "Sidebar",
-        "description": "Displays the mobile sidebar.",
-        "toggle": "Toggle Sidebar"
-      },
-      "filter": {
-        "selectAll": "All",
-        "modelTask": {
-          "title": "Filter by Task"
-        }
-      }
-    },
-    "yamlImport": {
-      "importYaml": "Import YAML",
-      "title": "Import Resources from YAML",
-      "description": "Import multiple resources from a YAML file or URL.",
-      "uploadYamlFile": "Upload YAML File",
-      "importFromUrl": "Import from URL",
-      "urlPlaceholder": "https://example.com/resources.yaml",
-      "fetch": "Fetch",
-      "or": "Or",
-      "pasteYamlContent": "Paste YAML Content",
-      "pasteYamlPlaceholder": "Paste your YAML content here...",
-      "importingResources": "Importing resources...",
-      "importing": "Importing...",
-      "importResources": "Import Resources",
-      "importResults": "Import Results",
-      "success": "Success",
-      "error": "Error",
-      "skipped": "Skipped",
-      "errorLabel": "Error",
-      "successfullyCreated": "Successfully created",
-      "skippedExisting": "Skipped (already exists)",
-      "importMore": "Import More",
-      "errors": {
-        "processingYamlContent": "Error processing YAML content",
-        "invalidResourceStructure": "Invalid resource structure",
-        "creatingResource": "Error creating {{resourceType}} \"{{resourceName}}\"",
-        "duringYamlImport": "Error during YAML import",
-        "readingFile": "Error reading file",
-        "failedToReadFile": "Failed to read file",
-        "fetchingYamlFromUrl": "Error fetching YAML from URL",
-        "failedToFetchFromUrl": "Failed to fetch from URL: {{status}} {{statusText}}"
-      }
-    },
-    "yamlExport": {
-      "exportYaml": "Export YAML",
-      "title": "Export Resources to YAML",
-      "description": "Select resources and entities to export as YAML. Configure export options to customize the output format.",
-      "exportOptions": "Export Options",
-      "resourceSelection": "Resource Selection",
-      "selectAll": "Select All",
-      "deselectAll": "Deselect All",
-      "loadingAll": "Loading All...",
-      "entitiesSelected": "entities selected",
-      "loading": "Loading",
-      "noEntitiesFound": "No entities found",
-      "exportingResources": "Exporting resources",
-      "exporting": "Exporting...",
-      "generateYaml": "Generate YAML",
-      "generatedYaml": "Generated YAML",
-      "copyToClipboard": "Copy to Clipboard",
-      "copied": "Copied",
-      "downloadFile": "Download File",
-      "yamlContentPlaceholder": "Generated YAML content will appear here...",
-      "backToSelection": "Back to Selection",
-      "reset": "Reset",
-      "copySuccess": "Copied to clipboard",
-      "copySuccessDescription": "YAML content has been copied to your clipboard",
-      "downloadSuccess": "File downloaded",
-      "downloadSuccessDescription": "YAML file has been downloaded successfully",
-      "options": {
-        "removeStatus": "Remove status fields",
-        "removeIds": "Remove auto-generated IDs",
-        "removeTimestamps": "Remove timestamps",
-        "includeCredentials": "Include credentials"
-      },
-      "errors": {
-        "generateFailed": "Failed to generate YAML",
-        "copyFailed": "Failed to copy to clipboard"
-      }
-    },
-    "apiKey": {
-      "copySuccess": "Copied to clipboard",
-      "copySuccessDescription": "API key has been copied to your clipboard",
-      "errors": {
-        "copyFailed": "Failed to copy to clipboard"
-      }
-    },
-    "variablesInput": {
-      "key": "Key",
-      "value": "Value",
-      "selectValue": "Select value",
-      "true": "True",
-      "false": "False",
-      "newValue": "New value",
-      "selectFromSchema": "Select from schema",
-      "orTypeCustomKey": "Or type custom key",
-      "newKey": "New key",
-      "addVariable": "Add Variable",
-      "selectOrTypeKey": "Select from schema or type custom key",
-      "noSchemaKeys": "No schema keys available",
-      "invalidJsonValue": "Enter a valid JSON object or array"
-    },
-    "playground": {
-      "chat": {
-        "selectModel": "Select a model",
-        "selectModelFirst": "Select a model first",
-        "chatPlaceholder": "Chat with your AI model...",
-        "stop": "Stop",
-        "send": "Send",
-        "images": "Images",
-        "uploadImages": "Upload Images",
-        "removeImage": "Remove image",
-        "unsupportedImage": "Not added: {{files}}. Supported image formats: {{formats}}.",
-        "systemMessage": "System Message",
-        "systemMessagePlaceholder": "Enter system message to set behavior and context...",
-        "functions": "Functions",
-        "createFunction": "Create Function",
-        "editFunction": "Edit Function",
-        "functionName": "Function Name",
-        "functionNamePlaceholder": "Enter function name...",
-        "functionDescription": "Description",
-        "functionDescriptionPlaceholder": "Enter function description...",
-        "parameters": "Parameters",
-        "parametersPlaceholder": "Enter JSON schema for parameters...",
-        "loadFromExample": "Load from example:",
-        "chooseExample": "Choose Example",
-        "weatherFunction": "Weather Function",
-        "stockPriceFunction": "Stock Price Function",
-        "delete": "Delete",
-        "noFunctions": "No functions defined. Click 'Create Function' to add one.",
-        "invalidJsonSchema": "Invalid JSON schema",
-        "toggleSidebar": "Toggle Sidebar",
-        "clearChat": "Clear Chat",
-        "latest": "Latest",
-        "jumpToLatest": "Jump to latest messages",
-        "modelParameters": "Model & Parameters",
-        "error": "Error",
-        "reasoning": "Thinking...",
-        "temperature": "Temperature",
-        "temperatureDescription": "Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.",
-        "maximumLength": "Maximum Length",
-        "maximumLengthDescription": "The maximum number of tokens to generate. Range: 1K to 1M, shared between prompt and completion. The exact limit varies by model.",
-        "topP": "Top P",
-        "topPDescription": "Control diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options are considered."
-      },
-      "embedding": {
-        "title": "Embedding",
-        "generate": "Generate",
-        "selectModel": "Select a model",
-        "selectModelFirst": "Please select a model first",
-        "batchInputMode": "Batch Input Mode",
-        "documents": "Documents",
-        "addText": "Add Text",
-        "enterText": "Enter text...",
-        "chart": "Chart",
-        "json": "JSON",
-        "noEmbeddingData": "No embedding data to display"
-      },
-      "rerank": {
-        "title": "Reranking",
-        "processing": "Processing...",
-        "rerank": "Rerank",
-        "model": "Model",
-        "query": "Query",
-        "selectModel": "Select a reranker model",
-        "selectModelAndQuery": "Please select a model and enter a query",
-        "addOneDocument": "Please add at least one document",
-        "enterSearchQuery": "Enter your search query...",
-        "documents": "Documents",
-        "results": "Results",
-        "json": "JSON",
-        "addDocument": "Add Document",
-        "enterDocumentText": "Enter document text...",
-        "noResults": "No results yet. Add documents and click \"Rerank\" to see results.",
-        "failedRerank": "Failed to rerank documents. Please check the console for details.",
-        "score": "Score",
-        "was": "was"
-      }
-    },
-    "grafanaPanels": {
-      "timeRange": {
-        "title": "Time Range",
-        "last5minutes": "Last 5 minutes",
-        "last15minutes": "Last 15 minutes",
-        "last30minutes": "Last 30 minutes",
-        "last1hour": "Last 1 hour",
-        "last3hours": "Last 3 hours",
-        "last6hours": "Last 6 hours",
-        "last12hours": "Last 12 hours",
-        "last24hours": "Last 24 hours",
-        "last2days": "Last 2 days",
-        "last7days": "Last 7 days",
-        "today": "Today"
-      },
-      "refresh": {
-        "refreshNow": "Refresh now",
-        "autoRefresh": "Auto-refresh:",
-        "off": "Off"
-      },
-      "defaultPanelTitle": "Grafana Panel {{id}}"
-    },
-    "jsonSchemaValueVisualizer": {
-      "undefined": "undefined",
-      "null": "null",
-      "typeMismatch": "type miss match: expect {{expectedType}}, actual {{actualType}}",
-      "noValue": "no value",
-      "root": "Root"
-    },
-    "jsonSchemaVisualizer": {
-      "empty": "This version declares no values schema.",
-      "required": "required",
-      "root": "Root"
-    },
-    "logViewer": {
-      "search": "Search keyword",
-      "reverse": "Reverse",
-      "startTime": "Start",
-      "endTime": "End",
-      "download": "Download",
-      "fontSize": "Font Size",
-      "noLogs": "No logs available",
-      "loading": "Loading logs...",
-      "loadMore": "Load more logs",
-      "searchPlaceholder": "Enter search term...",
-      "timeFilter": "Time Filter"
-    }
-  },
-  "status": {
-    "copyErrorSuccess": "Error message copied to clipboard",
-    "copyErrorFailed": "Failed to copy error message",
-    "phases": {
-      "apiKey": {
-        "Pending": "Pending",
-        "Created": "Created",
-        "Deleted": "Deleted"
-      },
-      "cluster": {
-        "Pending": "Pending",
-        "Running": "Running",
-        "Paused": "Paused",
-        "Failed": "Failed",
-        "Deleted": "Deleted",
-        "Initializing": "Initializing",
-        "Updating": "Updating",
-        "Upgrading": "Upgrading",
-        "Deleting": "Deleting"
-      },
-      "registry": {
-        "Pending": "Pending",
-        "Connected": "Connected",
-        "Failed": "Failed",
-        "Deleted": "Deleted"
-      },
-      "catalog": {
-        "Pending": "Pending",
-        "Ready": "Ready",
-        "Failed": "Failed",
-        "Deleted": "Deleted"
-      },
-      "endpoint": {
-        "Pending": "Pending",
-        "Deploying": "Deploying",
-        "ModelDownloading": "Model Downloading",
-        "Running": "Running",
-        "Degraded": "Degraded",
-        "Paused": "Paused",
-        "Deleting": "Deleting",
-        "Failed": "Failed",
-        "Deleted": "Deleted"
-      },
-      "externalEndpoint": {
-        "Pending": "Pending",
-        "Running": "Running",
-        "Degraded": "Degraded",
-        "Failed": "Failed",
-        "Deleted": "Deleted"
-      },
-      "externalEndpointUpstream": {
-        "Ready": "Ready",
-        "Failed": "Failed"
-      },
-      "engine": {
-        "Pending": "Pending",
-        "Created": "Created",
-        "Failed": "Failed",
-        "Deleted": "Deleted"
-      },
-      "nodeProvision": {
-        "provisioning": "Provisioning",
-        "provisioned": "Provisioned"
-      }
-    },
-    "accessModes": {
-      "LoadBalancer": "Load Balancer",
-      "NodePort": "NodePort",
-      "Ingress": "Ingress"
-    },
-    "last_transition": "Last Transition Time: "
-  },
-  "settings": {
-    "title": "Settings"
-  },
-  "vram_calculator": {
-    "title": "VRAM Calculator"
-  },
-  "oem_configs": {
-    "title": "Customize Appearance",
-    "description": "Customize your application's appearance",
-    "fields": {
-      "brandName": "Brand Name",
-      "mainLogo": "Main Logo",
-      "collapsedLogo": "Collapsed Logo",
-      "brandSettings": "Brand Settings"
-    },
-    "placeholders": {
-      "brandName": "Enter brand name"
-    },
-    "descriptions": {
-      "brandName": "This will be displayed in the navigation and login pages",
-      "mainLogo": "Recommended size: 64x64px. Supports PNG, JPG, SVG formats.",
-      "collapsedLogo": "Used when the sidebar is collapsed. If not provided, the main logo will be used."
-    },
-    "buttons": {
-      "uploadLogo": "Upload Logo",
-      "uploadCollapsedLogo": "Upload Collapsed Logo",
-      "resetToDefault": "Reset to Default",
-      "saveConfiguration": "Save Configuration"
-    },
-    "labels": {
-      "optional": "(Optional)"
-    }
-  },
-  "observability": {
-    "title": "Observability"
-  },
-  "ai_traces": {
-    "title": "Access Log",
-    "empty": "No access logs in the selected window.",
-    "forbidden": "You do not have permission to view access logs.",
-    "refresh": "Refresh",
-    "export": {
-      "button": "Export",
-      "exporting": "Exporting…",
-      "csv": "CSV (Excel)",
-      "jsonl": "JSONL",
-      "hint": "Exports the current filters and time range, up to 100,000 rows. Request and response bodies are not included.",
-      "failed": "Export failed"
-    },
-    "stats": {
-      "title": "Requests",
-      "requests": "Requests",
-      "totalRequests": "{{total}} total"
-    },
-    "filters": {
-      "requestId": "Request ID (exact match)",
-      "endpoint": "Endpoint name",
-      "allEndpoints": "All endpoints",
-      "endpointSearch": "Search or enter an endpoint name",
-      "endpointType": "Endpoint type",
-      "allTypes": "All types",
-      "status": "Status",
-      "allStatuses": "All statuses",
-      "statusSearch": "Type or pick a status code",
-      "statusHint": "Enter a 3-digit status code (100–599).",
-      "model": "Request model",
-      "allModels": "All models",
-      "modelSearch": "Search or enter a model name",
-      "optionsTruncated": "Only some values are listed. Enter the full name to filter by it.",
-      "apiKey": "API key",
-      "allApiKeys": "All API keys",
-      "finishReason": "Finish",
-      "allFinishReasons": "All finish reasons"
-    },
-    "columns": {
-      "requestId": "Request ID",
-      "time": "Time",
-      "workspace": "Workspace",
-      "endpoint": "Endpoint",
-      "app": "App",
-      "model": "Request model",
-      "status": "Status",
-      "apiKey": "API key",
-      "tokens": "Tokens",
-      "throughput": "Tok/s",
-      "duration": "Duration",
-      "finishReason": "Finish"
-    },
-    "status": {
-      "classInfo": "Informational — the server acknowledged the request and is still processing it.",
-      "classSuccess": "Success — the request completed normally.",
-      "classRedirect": "Redirect.",
-      "classClient": "Client error — the request was rejected.",
-      "classServer": "Server error — the gateway or upstream failed.",
-      "unknown": "Unknown status.",
-      "description": {
-        "200": "OK — the request completed successfully.",
-        "400": "Bad request — the request was malformed or rejected by the gateway.",
-        "401": "Unauthorized — the API key is missing or invalid.",
-        "403": "Forbidden — the API key is not allowed to access this resource.",
-        "404": "Not found — the requested model or endpoint does not exist.",
-        "408": "Request timeout — the client did not finish sending the request in time.",
-        "429": "Too many requests — a rate or quota limit was exceeded.",
-        "499": "Client closed request — the client disconnected before the response completed.",
-        "500": "Internal server error — the gateway or upstream failed unexpectedly.",
-        "502": "Bad gateway — the upstream returned an invalid response.",
-        "503": "Service unavailable — no healthy upstream was available to serve the request.",
-        "504": "Gateway timeout — the upstream did not respond within the time limit."
-      },
-      "shortInfo": "Informational",
-      "shortSuccess": "Success",
-      "shortRedirect": "Redirect",
-      "shortClient": "Client error",
-      "shortServer": "Server error",
-      "short": {
-        "200": "OK",
-        "400": "Bad request",
-        "401": "Unauthorized",
-        "403": "Forbidden",
-        "404": "Not found",
-        "408": "Request timeout",
-        "429": "Too many requests",
-        "499": "Client closed request",
-        "500": "Internal server error",
-        "502": "Bad gateway",
-        "503": "Service unavailable",
-        "504": "Gateway timeout"
-      }
-    },
-    "detail": {
-      "title": "Access log detail",
-      "time": "Time",
-      "status": "Status",
-      "endpoint": "Endpoint",
-      "workspace": "Workspace",
-      "requestModel": "Request model",
-      "responseModel": "Response model",
-      "stream": "Stream",
-      "streamOn": "Streaming",
-      "streamOff": "Non-streaming",
-      "tokens": "Tokens",
-      "tokenParts": {
-        "prompt": "prompt",
-        "completion": "completion",
-        "total": "total"
-      },
-      "apiKey": "API key",
-      "request": "Request body",
-      "response": "Response body",
-      "viewFormatted": "Formatted",
-      "viewRaw": "Raw",
-      "messageRaw": "</> View raw",
-      "messageHideRaw": "</> Hide raw",
-      "wrap": "Wrap lines",
-      "noWrap": "No wrap",
-      "collapse": "Collapse",
-      "expand": "Expand",
-      "collapseAll": "Collapse all",
-      "expandAll": "Expand all",
-      "searchPlaceholder": "Search in body…",
-      "clearSearch": "Clear search",
-      "matchCount": "{{current}} / {{total}}",
-      "noMatches": "No matches",
-      "prevMatch": "Previous match",
-      "nextMatch": "Next match",
-      "role": {
-        "system": "System",
-        "user": "User",
-        "assistant": "Assistant",
-        "tool": "Tool",
-        "developer": "Developer"
-      },
-      "block": {
-        "text": "Text",
-        "toolUse": "Tool use",
-        "toolResult": "Tool result",
-        "image": "Image",
-        "thinking": "Thinking",
-        "unknown": "Content block"
-      }
-    },
-    "routing": {
-      "target": "Upstream target",
-      "upstream": "Upstream",
-      "upstreamModel": "Upstream model"
-    }
-  },
-  "permissions": {
-    "create": "Create",
-    "read": "Read",
-    "update": "Update",
-    "delete": "Delete",
-    "push": "Push",
-    "pull": "Pull",
-    "system_admin": "System Admin",
-    "read-credentials": "Read Credentials",
-    "trace-read": "Access Log Read",
-    "usage-read": "Usage Read",
-    "requiredBy": "Required by: {{actions}}",
-    "dependenciesAdded": "Added required permissions: {{actions}}"
-  },
-  "systems": {
-    "title": "Systems"
-  },
-  "license": {
-    "title": "License",
-    "loading": "Loading license information...",
-    "noLicense": "Enterprise license not activated yet",
-    "unlimited": "Unlimited",
-    "permanent": "Permanent",
-    "fields": {
-      "edition": "Edition",
-      "vendor": "Vendor",
-      "licenseType": "License Type",
-      "signDate": "Sign Date",
-      "period": "Valid Period",
-      "expirationDate": "Expiration Date",
-      "days": "days",
-      "maxGpus": "Max GPUs",
-      "serial": "Serial Number"
-    },
-    "usage": {
-      "title": "Resource Usage"
-    },
-    "update": {
-      "title": "Update License",
-      "codeLabel": "License Code",
-      "codePlaceholder": "Enter your license code here...",
-      "submit": "Update License",
-      "updating": "Updating..."
-    },
-    "errors": {
-      "emptyCode": "License code cannot be empty",
-      "updateFailed": "Failed to update license"
-    },
-    "success": {
-      "updated": "License updated successfully",
-      "serialCopied": "Serial number copied to clipboard"
-    },
-    "phase": {
-      "active": "Active",
-      "expired": "Expired",
-      "pending": "Pending",
-      "invalid": "Invalid"
-    },
-    "edition": {
-      "enterprise": "Enterprise"
-    },
-    "licenseType": {
-      "trial": "Trial",
-      "perpetual": "Perpetual",
-      "subscription": "Subscription"
-    }
-  },
-  "url": {
-    "title": "URL"
-  },
-  "file": {
-    "title": "File"
-  },
-  "modelSource": {
-    "label": "Model source",
-    "unspecified": "Unspecified",
-    "placeholder": "Select a model source",
-    "values": {
-      "self-hosted": "Private self-deployed",
-      "private-access": "Private access",
-      "third-party-public": "Public cloud",
-      "hybrid": "Hybrid"
-    }
-  },
-  "model_usage": {
-    "title": "Model Usage",
-    "refresh": "Refresh",
-    "empty": "No usage in the selected window.",
-    "filters": {
-      "apiKey": "API key",
-      "allApiKeys": "All API keys",
-      "model": "Model",
-      "endpointType": "Type",
-      "allTypes": "All types"
-    },
-    "apiKey": "API key",
-    "model": "Model",
-    "promptTokens": "Prompt",
-    "completionTokens": "Completion",
-    "totalTokens": "Total",
-    "byApiKey": "By API key",
-    "byModel": "By model",
-    "range": {
-      "7": "Last 7 days",
-      "30": "Last 30 days",
-      "90": "Last 90 days"
-    },
-    "daily": {
-      "title": "Daily tokens",
-      "totalTokens": "{{total}} total",
-      "tooltip": {
-        "prompt": "Prompt",
-        "completion": "Completion",
-        "total": "Total"
-      },
-      "titleByKey": "Daily tokens by API key",
-      "titleByModel": "Daily tokens by model",
-      "totalLabel": "total tokens",
-      "titleDayByKey": "Tokens by API key · single day",
-      "titleDayByModel": "Tokens by model · single day",
-      "otherKeys": "Other {{n}} API keys",
-      "otherAxisLabel": "Other {{n}} (total)",
-      "clickHint": "Click a day to scope the page to that day",
-      "backToPreset": "Back to last {{days}} days",
-      "backToRange": "Back to {{range}}"
-    },
-    "detail": {
-      "title": "Daily detail",
-      "date": "Date",
-      "type": "Type",
-      "endpoint": "Endpoint",
-      "internal": "Internal",
-      "external": "External"
-    },
-    "chart": {
-      "line": "Line chart",
-      "bar": "Bar chart"
-    },
-    "byApiKeyOnDay": "By API key · {{date}}",
-    "byModelOnDay": "By model · {{date}}"
-  },
-  "observations": {
-    "actualMemory": "Actual VRAM",
-    "actual": "Actual",
-    "allocated": "Allocated",
-    "physical": "Physical",
-    "noMeasurement": "No recent measurement",
-    "utilization": "GPU utilization",
-    "assignments": "Allocated inference instances",
-    "unhealthy": "Device unhealthy",
-    "replicaUsage": "Replica usage",
-    "deviceUsage": "Physical device usage",
-    "deviceTemperature": "Device temperature",
-    "devicePower": "Device power",
-    "sampleTime": "VRAM sampled at",
-    "hardware": "Hardware and connection",
-    "noAssignments": "No visible instance allocations",
-    "status": {
-      "no_data": "No recent GPU measurements. Allocation information remains available.",
-      "not_configured": "GPU monitoring query service is not configured.",
-      "unavailable": "GPU measurements are unavailable. Allocation information remains available."
-    },
-    "hardwareFields": {
-      "architecture": "Architecture",
-      "cuda_capability": "CUDA capability",
-      "driver_version": "Driver",
-      "cuda_driver_version": "CUDA driver",
-      "pcie_bus_id": "PCIe bus ID",
-      "pcie_generation": "PCIe generation",
-      "pcie_width": "PCIe width",
-      "numa_node": "NUMA node",
-      "nvlink": "NVLink",
-      "nvswitch": "NVSwitch",
-      "hccs_capable": "HCCS capability"
-    },
-    "details": "Device details",
-    "present": "Present",
-    "absent": "Absent",
-    "supported": "Supported",
-    "unsupported": "Unsupported",
-    "overAllocation": "Actual usage exceeds allocation",
-    "fp16": "FP16 compute (TFLOPS)",
-    "flopsEstimate": "Estimated usage = nominal FP16 peak × utilization",
-    "flops": "Compute monitoring (FLOPS)",
-    "calibrate": "Calibrate compute",
-    "flopsTrend": "Last 30 days · 6-hour average usage",
-    "noTrend": "No compute history available",
-    "calibrationHelp": "Single-card FP16 TFLOPS by model. Leave blank to restore the default.",
-    "invalidTflops": "Enter a finite number greater than zero.",
-    "calibrationFailed": "Could not save calibration. Please retry.",
-    "noTopology": "No GPU topology data available",
-    "unknownNuma": "NUMA not reported",
-    "interconnectEnabled": "High-speed interconnect enabled (reported by node)",
-    "topology": "Topology",
-    "trendEstimate": "Reported devices; calculated with current calibration"
-  }
+	"nativeName": "English",
+	"common": {
+		"fields": {
+			"resources": "Resources",
+			"gpu": "GPU",
+			"cpu": "CPU",
+			"memory": "Memory",
+			"acceleratorType": "Accelerator Type",
+			"acceleratorProduct": "Accelerator Product",
+			"replica": "Replica",
+			"scheduler": "Scheduler",
+			"variables": "Variables",
+			"name": "Name",
+			"workspace": "Workspace",
+			"createdAt": "Created at",
+			"type": "Type",
+			"imageRegistry": "Image Registry",
+			"status": "Status",
+			"model": "Model",
+			"engine": "Engine",
+			"cluster": "Cluster",
+			"task": "Task",
+			"versions": "Versions",
+			"role": "Role",
+			"user": "User",
+			"email": "Email",
+			"password": "Password",
+			"permissions": "Permissions",
+			"permissionsCount": "{{count}} permissions",
+			"labels": "Labels",
+			"openaiUrl": "OpenAI Compatible URL",
+			"anthropicUrl": "Anthropic Compatible URL",
+			"allReplicas": "All Replicas",
+			"version": "Version",
+			"description": "Description",
+			"intent": "Intent",
+			"reason": "Reason",
+			"message": "Message"
+		},
+		"sections": {
+			"basicInformation": "Basic Information",
+			"configuration": "Configuration"
+		},
+		"messages": {
+			"grafanaNotConfigured": "Grafana monitoring is not configured.",
+			"leaveEmptyToKeepValue": "Leave empty to keep existing value"
+		},
+		"errors": {
+			"unknown": "Unknown error"
+		},
+		"tabs": {
+			"basic": "Basic",
+			"monitor": "Monitor",
+			"logs": "Logs",
+			"rayDashboard": "Ray Dashboard"
+		},
+		"options": {
+			"none": "None",
+			"enabled": "Enabled",
+			"disabled": "Disabled"
+		},
+		"resourceResult": {
+			"created": "Successfully created",
+			"skipped": "Skipped (already exists)",
+			"creating": "Creating...",
+			"error": "Error"
+		},
+		"dateRange": {
+			"lastDays": "Last {{days}} days",
+			"from": "From",
+			"to": "To"
+		},
+		"validation": {
+			"workspaceRequired": "Please select a workspace before creating the resource"
+		},
+		"modelRegistry": {
+			"unreachable": "Not answering — cannot list models",
+			"deleted": "Being deleted"
+		}
+	},
+	"appearance": {
+		"light": "Light Mode",
+		"dark": "Dark Mode",
+		"system": "Follow System"
+	},
+	"models": {
+		"title": "Models",
+		"scheduler": {
+			"roundRobin": "Round robin",
+			"consistentHashing": "Consistent hashing",
+			"unavailable": "Unavailable"
+		},
+		"tasks": {
+			"text-generation": "Text Generation",
+			"text-embedding": "Text Embedding",
+			"text-rerank": "Text Rerank"
+		}
+	},
+	"pages": {
+		"auth": {
+			"loading": "Loading...",
+			"signIn": "Sign in",
+			"divider": "or",
+			"emailPlaceholder": "you@example.com",
+			"passwordPlaceholder": "••••••••",
+			"errors": {
+				"validEmail": "Invalid email address",
+				"requiredEmail": "Email is required",
+				"requiredPassword": "Password is required",
+				"confirmPasswordNotMatch": "Passwords do not match",
+				"confirmPasswordRequired": "Confirm password is required"
+			}
+		},
+		"login": {
+			"title": "Sign in to your account",
+			"signup": "Sign up",
+			"fields": {
+				"identifier": "Username or Email",
+				"identifierPlaceholder": "username or email"
+			},
+			"buttons": {
+				"submit": "Login",
+				"forgotPassword": "Forgot password?",
+				"noAccount": "Don't have an account?",
+				"rememberMe": "Remember me"
+			}
+		},
+		"forgotPassword": {
+			"title": "Forgot your password?",
+			"buttons": {
+				"submit": "Send reset instructions",
+				"backLogin": "Back to login"
+			}
+		},
+		"register": {
+			"title": "Sign up for your account",
+			"buttons": {
+				"submit": "Sign up",
+				"haveAccount": "Have an account?"
+			}
+		},
+		"updatePassword": {
+			"title": "Set New Password",
+			"fields": {
+				"password": "New Password",
+				"confirmPassword": "Confirm New Password"
+			},
+			"buttons": {
+				"submit": "Update"
+			}
+		},
+		"error": {
+			"info": "You may have forgotten to add the {{action}} component to {{resource}} resource.",
+			"404": "Sorry, the page you visited does not exist.",
+			"resource404": "Are you sure you have created the {{resource}} resource.",
+			"notFound": "404 not found",
+			"backHome": "Back Home",
+			"unknown": "Unknown Error"
+		},
+		"vramCalculator": {
+			"title": "VRAM Calculator",
+			"sections": {
+				"performanceMemory": "Performance & Memory Results",
+				"memoryAllocation": "Memory Allocation",
+				"cpuResources": "CPU & Memory Resources"
+			},
+			"fields": {
+				"selectModel": "Select Model",
+				"quantization": "Inference Quantization",
+				"kvQuantization": "KV Cache Quantization",
+				"hardwareConfig": "Hardware Configuration",
+				"gpuCount": "GPU Count",
+				"customVram": "Custom VRAM (GB)",
+				"batchSize": "Batch Size",
+				"sequenceLength": "Sequence Length",
+				"concurrentUsers": "Concurrent Users"
+			},
+			"placeholders": {
+				"selectModel": "Select model...",
+				"selectGpu": "Select GPU...",
+				"selectQuantization": "Select quantization method",
+				"selectKvQuantization": "Select KV cache quantization"
+			},
+			"validation": {
+				"selectModel": "Please select a model",
+				"selectGpu": "Please select GPU"
+			},
+			"metrics": {
+				"generationSpeed": "Generation Speed",
+				"totalThroughput": "Total Throughput",
+				"recommendedMemory": "Recommended Memory",
+				"recommendedCores": "Recommended Cores",
+				"totalVram": "Total VRAM",
+				"vramUsage": "VRAM",
+				"parameters": "Parameters",
+				"layers": "Layers",
+				"hiddenDim": "Hidden Dimension",
+				"attention": "Attention",
+				"mode": "Mode",
+				"batch": "Batch",
+				"users": "Users",
+				"cores": "cores",
+				"inference": "Inference"
+			},
+			"memoryTypes": {
+				"modelWeights": "Model Weights",
+				"kvCache": "KV Cache",
+				"activations": "Activations",
+				"multiDeviceOverhead": "Multi-device Overhead",
+				"frameworkOverhead": "Framework Overhead"
+			}
+		}
+	},
+	"actions": {
+		"list": "List",
+		"create": "Create",
+		"edit": "Edit",
+		"show": "Show"
+	},
+	"buttons": {
+		"copy": "Copy",
+		"add": "Add",
+		"create": "Create",
+		"save": "Save",
+		"logout": "Logout",
+		"delete": "Delete",
+		"edit": "Edit",
+		"cancel": "Cancel",
+		"close": "Close",
+		"confirm": "Are you sure?",
+		"filter": "Filter",
+		"clear": "Clear",
+		"refresh": "Refresh",
+		"show": "Show",
+		"undo": "Undo",
+		"import": "Import",
+		"clone": "Clone",
+		"notAccessTitle": "You don't have permission to access",
+		"updatePassword": "Update Password",
+		"license": "License"
+	},
+	"ui": {
+		"language": "Language",
+		"more": "More",
+		"version": "Version"
+	},
+	"accessibility": {
+		"openMenu": "Open menu"
+	},
+	"dialogs": {
+		"batchDelete": {
+			"title": "Delete {{count}} items?",
+			"description": "This action cannot be undone."
+		},
+		"delete": {
+			"title": "Are you sure?",
+			"description": "This action cannot be undone.",
+			"currentError": "Current Error",
+			"forceDelete": {
+				"label": "Force Delete",
+				"description": "Use when normal deletion fails. Deletes the record but may not clean up associated external resources."
+			}
+		}
+	},
+	"warnWhenUnsavedChanges": "Are you sure you want to leave? You have unsaved changes.",
+	"notifications": {
+		"success": "Successful",
+		"error": "Error (status code: {{statusCode}})",
+		"undoable": "You have {{seconds}} seconds to undo",
+		"createSuccess": "Successfully created {{resource}}",
+		"createError": "There was an error creating {{resource}} (status code: {{statusCode}})",
+		"deleteSuccess": "Successfully deleted {{resource}}",
+		"deleteError": "Error when deleting {{resource}} (status code: {{statusCode}})",
+		"editSuccess": "Successfully edited {{resource}}",
+		"editError": "Error when editing {{resource}} (status code: {{statusCode}})",
+		"importProgress": "Importing: {{processed}}/{{total}}"
+	},
+	"loading": "Loading",
+	"tags": {
+		"clone": "Clone"
+	},
+	"table": {
+		"actions": "Actions",
+		"columns": "Columns",
+		"toggleColumns": "Toggle columns",
+		"noResults": "No results.",
+		"selected": "selected",
+		"noResultsFound": "No results found",
+		"clearFilters": "Clear filters",
+		"filter": "{{column}} Filter",
+		"selectAll": "Select all",
+		"selectRow": "Select row",
+		"bulkActions": "Bulk Actions",
+		"batchDelete": "Delete",
+		"selectedCount": "{{count}} selected",
+		"searchPlaceholder": "Search by name...",
+		"pagination": {
+			"totalItems": "Total: {{total}} items",
+			"rowsPerPage": "Rows per page",
+			"page": "Page {{current}} of {{total}}",
+			"goToFirstPage": "Go to first page",
+			"goToPreviousPage": "Go to previous page",
+			"goToNextPage": "Go to next page",
+			"goToLastPage": "Go to last page"
+		}
+	},
+	"documentTitle": {
+		"default": "refine",
+		"suffix": " | Refine",
+		"post": {
+			"list": "Posts | Refine",
+			"show": "#{{id}} Show Post | Refine",
+			"edit": "#{{id}} Edit Post | Refine",
+			"create": "Create new Post | Refine",
+			"clone": "#{{id}} Clone Post | Refine"
+		}
+	},
+	"autoSave": {
+		"success": "saved",
+		"error": "auto save failure",
+		"loading": "saving...",
+		"idle": "waiting for changes"
+	},
+	"dashboard": {
+		"title": "Dashboard",
+		"quickStart": "Quick Start",
+		"quickStartDescription": "Deploy your first AI inference endpoint in minutes"
+	},
+	"quick_start": {
+		"title": "Quick Start",
+		"description": "Set up a 1-node SSH cluster with a llama.cpp endpoint running the Tinystories-gpt-0.1-3m model.",
+		"fields": {
+			"serverIp": "Node IP Address",
+			"serverIpDescription": "The IP address of the node to deploy on",
+			"serverIpPlaceholder": "e.g., 192.168.1.100",
+			"sshUser": "SSH Username",
+			"sshUserDescription": "The SSH user for connecting to the node",
+			"sshUserPlaceholder": "e.g., root",
+			"sshPrivateKey": "SSH Private Key",
+			"sshPrivateKeyDescription": "Paste your SSH private key.",
+			"sshPrivateKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----"
+		},
+		"buttons": {
+			"deploy": "Deploy",
+			"retry": "Retry"
+		},
+		"steps": {
+			"imageRegistry": "Image Registry",
+			"modelRegistry": "Model Registry",
+			"cluster": "Cluster",
+			"endpoint": "Inference Endpoint"
+		},
+		"status": {
+			"pending": "Waiting",
+			"inProgress": "Creating...",
+			"success": "Created",
+			"skipped": "Already exists, skipped",
+			"error": "Failed"
+		},
+		"messages": {
+			"creating": "Setting up your infrastructure...",
+			"success": "All resources created. Cluster provisioning may take several minutes. You can check progress on the Cluster detail page, and then the Endpoint detail page once the cluster is ready.",
+			"error": "Something went wrong. You can retry — already created resources will be skipped."
+		},
+		"validation": {
+			"invalidIp": "Please enter a valid IP address",
+			"required": "This field is required"
+		}
+	},
+	"workspaces": {
+		"workspaces": "workspace",
+		"title": "Workspaces",
+		"placeholders": {
+			"workspaceName": "Workspace Name",
+			"selectWorkspace": "Select a workspace"
+		},
+		"options": {
+			"allWorkspaces": "All workspaces"
+		}
+	},
+	"clusters": {
+		"clusters": "cluster",
+		"title": "Clusters",
+		"create": "Create Cluster",
+		"edit": "Edit Cluster",
+		"upgrade": "Upgrade Cluster",
+		"fields": {
+			"accessMode": "Access Mode",
+			"headIp": "Head IP",
+			"workerIps": "Worker IPs",
+			"nodeName": "Node",
+			"usedSlashTotal": "used / total",
+			"kubeconfig": "Kubeconfig",
+			"acceleratorCount": "Accelerator Count",
+			"acceleratorVirtualization": "Accelerator Virtualization",
+			"componentName": "Component",
+			"managed": "Managed",
+			"physicalGpu": "Card Count",
+			"singleCardVram": "Single-card VRAM",
+			"memoryUsage": "VRAM",
+			"coreUsage": "Core",
+			"acceleratorMemoryPool": "Total VRAM",
+			"acceleratorCorePool": "Core",
+			"vgpuMemoryUsage": "VRAM",
+			"vgpuCoreUsage": "Core",
+			"gpuNumber": "GPU",
+			"gpuType": "GPU Type",
+			"deviceUuid": "Device UUID",
+			"deviceCount": "Devices",
+			"healthyDevices": "Healthy Devices",
+			"cardProducts": "Card Products",
+			"cardUsageSummary": "{{product}} · {{used}} in use · {{total}} total",
+			"vramUsed": "VRAM used",
+			"coreUsed": "Core used",
+			"remaining": "Remaining",
+			"selected": "Selected",
+			"resourceScope": "Resource Scope",
+			"replicas": "Replicas",
+			"currentVersion": "Current Version",
+			"targetVersion": "Target Version",
+			"sshHeadNodeIP": "Head Node IP",
+			"sshWorkerNodeIPs": "Worker Node IPs",
+			"sshUser": "SSH User",
+			"sshPrivateKey": "SSH Private Key",
+			"modelCache": {
+				"title": "Model Cache",
+				"type": {
+					"host_path": "Local",
+					"nfs": "NFS",
+					"pvc": "PVC"
+				},
+				"cacheType": "Cache Type",
+				"modelRegistry": "Model Registry",
+				"cachePath": "Cache Path",
+				"nfsServer": "NFS Server",
+				"storage": "Storage",
+				"storageClassName": "Storage Class Name"
+			}
+		},
+		"acceleratorTypes": {
+			"nvidia_gpu": "NVIDIA GPU",
+			"amd_gpu": "AMD GPU"
+		},
+		"sections": {
+			"clusterConfiguration": "Cluster Configuration",
+			"provider": "Provider",
+			"router": "Router",
+			"acceleratorVirtualization": "Accelerator Virtualization",
+			"modelCaches": "Model Caches",
+			"nodeAuthentication": "Node Authentication",
+			"nodes": "Nodes",
+			"nodeDevices": "Node Devices"
+		},
+		"placeholders": {
+			"clusterName": "Cluster Name",
+			"selectImageRegistry": "Select A Image Registry",
+			"selectVersion": "Select A Version",
+			"sshHeadNodeExample": "e.g 192.168.1.1",
+			"sshUserExample": "e.g root",
+			"sshAddNewWorkerNode": "Add New Worker Node IP",
+			"nfsServerExample": "192.168.1.1",
+			"modelCacheName": "Model Cache Name",
+			"cachePath": "/path/to/cache",
+			"storage": "10Gi",
+			"storageClassName": "e.g standard, fast",
+			"searchGpuDevices": "Search card UUID, product, or node",
+			"searchGpuCards": "Search card product or type"
+		},
+		"labels": {
+			"nodes": "nodes"
+		},
+		"options": {
+			"multipleStaticNodes": "Static Nodes",
+			"kubernetes": "Kubernetes",
+			"loadBalancer": "LoadBalancer",
+			"nodePort": "NodePort",
+			"ingress": "Ingress",
+			"none": "None",
+			"hostPath": "Host Path",
+			"nfs": "NFS",
+			"pvc": "PVC",
+			"healthy": "Healthy",
+			"unhealthy": "Unhealthy",
+			"allGpuProducts": "All Card Products",
+			"allNodes": "All Nodes",
+			"allDevices": "All Devices",
+			"used": "Used",
+			"usable": "Usable",
+			"free": "Free",
+			"total": "Total",
+			"allocated": "Allocated",
+			"freeCards": "Free Cards",
+			"usableForRequest": "Usable For Request"
+		},
+		"messages": {
+			"notFound": "404 not found",
+			"sshEmptyWorkerNodeIPs": "No worker nodes added",
+			"noModelCaches": "No model caches",
+			"upgradeSuccess": "Cluster upgrade initiated successfully",
+			"upgradeFailed": "Failed to initiate cluster upgrade",
+			"noUpgradeVersions": "No upgrade versions available",
+			"upgradeWarningSSH": "SSH clusters will experience downtime during upgrade. All running endpoints will be temporarily interrupted.",
+			"upgradeWarningK8s": "Kubernetes clusters use rolling updates with zero downtime.",
+			"newVersionAvailable": "New version available",
+			"copyUuidSuccess": "GPU UUID copied",
+			"copyUuidFailed": "Failed to copy GPU UUID",
+			"noGpuDevices": "No accelerator cards found",
+			"noNodeResources": "No node resources found"
+		},
+		"descriptions": {
+			"acceleratorVirtualization": "Enable accelerator virtualization for Kubernetes clusters.",
+			"acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
+		},
+		"monitor": {
+			"overviewMetrics": "Cluster Overview"
+		},
+		"actions": {
+			"addModelCache": "Add Model Cache",
+			"copyUuid": "Copy UUID",
+			"toggleNodeDevices": "{{nodeName}} devices",
+			"upgrade": "Upgrade",
+			"upgradeTitle": "Upgrade Cluster"
+		},
+		"validation": {
+			"versionRequired": "Version is required",
+			"ipRequired": "IP address is required",
+			"ipDuplicated": "IP address is already in use",
+			"modelRegistryRequired": "Model registry type is required",
+			"nfsServerRequired": "Server address is required",
+			"invalidIPAddress": "Invalid IP address",
+			"cachePathRequired": "Cache path is required",
+			"invalidPath": "Invalid path (Must start with /)",
+			"storageRequired": "Storage is required",
+			"invalidStorageFormat": "Invalid storage format (e.g., 10Gi, 100Mi, 1Ti)",
+			"invalidK8sName": "Invalid name format (lowercase alphanumeric and hyphens only, max 253 characters)"
+		}
+	},
+	"model_registries": {
+		"model_registries": "model registry",
+		"title": "Model Registries",
+		"fields": {
+			"modelRegistry": "Model Registry",
+			"url": "URL",
+			"credentials": "Credentials",
+			"visibility": "Visibility"
+		},
+		"placeholders": {
+			"registryName": "Model Registry Name",
+			"selectType": "Select Model Registry Type",
+			"huggingFaceUrl": "e.g https://huggingface.co",
+			"modelScopeUrl": "e.g https://www.modelscope.cn",
+			"fileSystemUrl": "e.g nfs://path/to/registry",
+			"credentials": "Credentials"
+		},
+		"descriptions": {
+			"credentials": "Credentials for the model registry. For a public hub, this is that hub's access token — a Hugging Face token or a ModelScope token."
+		},
+		"types": {
+			"huggingFace": "Hugging Face",
+			"modelScope": "ModelScope",
+			"fileSystem": "File System",
+			"filterTitle": "Filter by type"
+		},
+		"validation": {
+			"urlRequired": "URL is required",
+			"mustUseNfsProtocol": "File system registry must use nfs:// protocol"
+		},
+		"tabs": {
+			"models": "Models"
+		},
+		"actions": {
+			"copyUrl": "Copy URL"
+		},
+		"messages": {
+			"copyUrlSuccess": "URL copied to clipboard",
+			"copyUrlFailed": "Failed to copy URL"
+		},
+		"stats": {
+			"modelCount": "Models",
+			"storage": "Storage",
+			"collecting": "Collecting…",
+			"notApplicableHint": "Not counted: this registry's contents are not stored by the control plane.",
+			"updatedAt": "Updated {{time}}"
+		},
+		"models": {
+			"empty": "No models in this registry.",
+			"searchPlaceholder": "Search models",
+			"totalUnknown": "Total: unknown",
+			"noMatches": "No models match “{{search}}”.",
+			"registryUnreachable": "The registry cannot be reached, so its models cannot be listed.",
+			"registryDisabled": "This registry has been removed, so its models cannot be listed.",
+			"showMore": "Show more",
+			"listingEnd": "End of the listing.",
+			"windowCapped": "Showing the first {{count}}. This registry cannot be paged, so narrow the search to find a specific model.",
+			"dataAsOf": "Registry read at {{time}}",
+			"dataAsOfCached": "Cached registry data from {{time}}",
+			"fields": {
+				"alias": "Alias",
+				"modelName": "Model name",
+				"size": "Size",
+				"parameterCount": "Parameters",
+				"architecture": "Architecture",
+				"parameterDtype": "Precision",
+				"quantization": "Quantization",
+				"quantizationBits": "Quantization bits",
+				"contextLength": "Context length",
+				"maxPositionEmbeddings": "Max position embeddings",
+				"numHiddenLayers": "Hidden layers",
+				"numAttentionHeads": "Attention heads",
+				"numKeyValueHeads": "Key/value heads",
+				"headDim": "Head dimension",
+				"isMoe": "Mixture of experts",
+				"numExperts": "Experts",
+				"numExpertsPerToken": "Experts per token"
+			},
+			"values": {
+				"unknown": "Unknown",
+				"notApplicable": "Not applicable",
+				"yes": "Yes",
+				"no": "No"
+			},
+			"sources": {
+				"manual": "Hand-filled",
+				"derived": "Derived"
+			},
+			"sourceHints": {
+				"manual": "Typed in by a user, not read from the checkpoint.",
+				"derived": "Computed from other checkpoint values by a documented convention."
+			},
+			"detail": {
+				"infoSection": "Model information",
+				"infoHint": "Values the registry reports for this checkpoint. A field it could not establish is shown as unknown."
+			},
+			"actions": {
+				"edit": "Edit metadata"
+			},
+			"edit": {
+				"title": "Edit model metadata",
+				"description": "{{name}}:{{version}}. The model's name, version and storage path do not change.",
+				"aliasPlaceholder": "No alias",
+				"aliasHint": "A display name only. It is never the name the model is served under.",
+				"conflictModel": "This alias is already used by {{name}}:{{version}} in this registry.",
+				"conflictModelName": "This alias is the name of the model {{name}} in this registry, which would make model selection ambiguous.",
+				"manualSection": "Hand-filled metadata",
+				"manualHint": "Values entered here are recorded as hand-filled and replace the previously recorded set. Leave a field empty to leave it to the checkpoint.",
+				"unset": "Leave to the checkpoint",
+				"success": "Model metadata updated"
+			},
+			"delete": {
+				"title": "Delete this model?",
+				"description": "{{name}}:{{version}} will be removed from the registry. This cannot be undone.",
+				"blocked": "This model cannot be deleted while the following objects still reference it:",
+				"variant": "variant: {{variant}}",
+				"success": "Model deleted"
+			},
+			"readme": {
+				"title": "README.md",
+				"none": "No README.md available.",
+				"truncated": "This card is long and has been shortened."
+			}
+		},
+		"visibility": {
+			"public": "Public",
+			"private": "Private"
+		},
+		"availability": {
+			"unreachable": "This registry cannot be reached",
+			"lastChecked": "Last checked {{time}}",
+			"lastCheckedUnknown": "Not checked yet",
+			"retry": "Retry connection",
+			"retryHint": "The control plane keeps retrying on its own. Checking now also clears the cached results held for this registry, so the model list is re-read rather than replayed.",
+			"retrySucceeded": "Registry reached",
+			"retryStillFailing": "The registry still cannot be reached",
+			"retryNotRun": "The check could not be run",
+			"disabled": "This registry has been removed",
+			"disabledHint": "It is being torn down and no longer serves models."
+		}
+	},
+	"model_catalogs": {
+		"title": "Model Catalogs",
+		"fields": {
+			"lastTransition": "Last Transition",
+			"errorMessage": "Error Message",
+			"registry": "Registry",
+			"modelFile": "Model File"
+		},
+		"sections": {
+			"keyConfig": "Key Configuration",
+			"env": "Environment Variables",
+			"advanced": "Advanced (all fields)"
+		},
+		"keyConfig": {
+			"contextLength": "Context Length",
+			"tensorParallel": "Tensor Parallel",
+			"dataParallel": "Data Parallel",
+			"pipelineParallel": "Pipeline Parallel",
+			"expertParallel": "Expert Parallel",
+			"quantization": "Quantization",
+			"kvCacheDtype": "KV Cache Dtype",
+			"reasoningParser": "Reasoning Parser",
+			"toolParser": "Tool Parser",
+			"prefixCaching": "Prefix Caching",
+			"speculative": "Speculative Decoding",
+			"none": "-"
+		},
+		"recipe": {
+			"variants": "Variants",
+			"servingProfile": "Serving Profile",
+			"profile": "Profile",
+			"selectProfile": "Select {{profile}} profile",
+			"defaultProfile": "Default profile",
+			"features": "Features",
+			"variantKey": "Variant",
+			"argsOverrides": "Args overrides",
+			"defaultOn": "default on",
+			"optIn": "opt-in",
+			"conflictsWith": "conflicts with",
+			"verifiedHardware": "Verified hardware",
+			"performanceTuning": "Performance tuning",
+			"vramMin": "Min VRAM"
+		},
+		"modelInfo": {
+			"title": "Model info",
+			"parameterCount": "Parameters",
+			"quantization": "Quantization",
+			"contextLength": "Context",
+			"architecture": "Architecture"
+		},
+		"card": {
+			"deploy": "Deploy",
+			"details": "Details",
+			"variantCount": "{{count}} variants",
+			"searchPlaceholder": "Search by name",
+			"empty": "No model catalogs yet. Import one to get started.",
+			"deleteTitle": "Delete model catalog",
+			"deleteDescription": "Delete \"{{name}}\"? This cannot be undone."
+		},
+		"import": {
+			"button": "Import",
+			"title": "Import model catalogs",
+			"description": "Paste a recipe YAML, upload a file, or fetch from a URL. Multiple documents (separated by ---) are supported. A catalog that already exists in the same workspace is updated.",
+			"tabYaml": "Paste YAML",
+			"tabFile": "Upload file",
+			"tabUrl": "From URL",
+			"chooseFile": "Choose file",
+			"urlHint": "Fetched in your browser — the URL must allow cross-origin (CORS) access. Use a raw YAML link.",
+			"workspaceLabel": "Default workspace",
+			"workspacePlaceholder": "Used when the YAML has no metadata.workspace",
+			"submit": "Import",
+			"detail": "Detail",
+			"created": "Created",
+			"fetchFailed": "Failed to fetch URL: {{status}} {{statusText}}",
+			"noDocuments": "No model catalog documents found in the input.",
+			"invalidResource": "Missing apiVersion, kind, or metadata.name.",
+			"successAll": "Imported {{count}} catalogs",
+			"failedAll": "All {{count}} imports failed",
+			"partial": "{{ok}} imported, {{failed}} failed",
+			"updated": "Updated",
+			"successAllWithUpdates": "Imported {{count}} catalogs ({{updated}} updated)",
+			"createdConcurrently": "A model catalog named \"{{name}}\" was created while this import was running. Import again to update it.",
+			"cancelled": "Import cancelled — nothing was changed.",
+			"typeChangeTitle": "This import changes the catalog type",
+			"typeChangeDescription": "{{names}} would switch between a recipe template and a plain catalog. Overwriting replaces the stored spec, including its variants and features. Nothing has been written yet.",
+			"typeChangeConfirm": "Overwrite"
+		},
+		"edit": {
+			"title": "Edit model catalog",
+			"specLabel": "Catalog (YAML)",
+			"specHint": "Edit the catalog, or paste a whole ModelCatalog document over it. Spec, labels and annotations are applied; name and workspace cannot change. Invalid recipes surface as a Failed status after saving.",
+			"saved": "Catalog updated",
+			"invalidSpec": "Spec must be a mapping",
+			"missingSpec": "This looks like a ModelCatalog document but has no spec. Paste the whole document, or just the spec body.",
+			"nameMismatch": "This document is for \"{{actual}}\", but you are editing \"{{expected}}\". Import it as a new catalog instead.",
+			"workspaceMismatch": "This document belongs to workspace \"{{actual}}\", but this catalog is in \"{{expected}}\"."
+		},
+		"wrongKind": "Expected kind ModelCatalog, got \"{{kind}}\"",
+		"models": {
+			"registryLabel": "Model registry",
+			"selectRegistry": "Select a registry",
+			"selectModel": "Select a model",
+			"catalogModel": "Catalog model",
+			"unparsable": "Fix the YAML below to choose models here.",
+			"none": "This catalog names no model yet.",
+			"listFailed": "Could not list this registry's models.",
+			"title": "Models",
+			"hint": "Point each of this catalog's models at one in a registry you can reach, and choose the engine version it deploys with. Edits land in the YAML below.",
+			"unset": "No model chosen",
+			"engine": "Engine",
+			"selectEngineVersion": "Select a version"
+		},
+		"images": {
+			"title": "Workload image",
+			"hint": "Point this catalog's workload image at one in a registry you can reach, and choose the engine version it deploys with. Edits land in the YAML below.",
+			"none": "This catalog asks for no workload image.",
+			"placeholder": "registry/project/name:tag"
+		}
+	},
+	"image_registries": {
+		"image_registries": "image registry",
+		"title": "Image Registries",
+		"create": {
+			"title": "Create Image Registry"
+		},
+		"fields": {
+			"url": "URL",
+			"repository": "Repository",
+			"certificateAuthority": "Certificate Authority",
+			"authentication": "Authentication",
+			"username": "Username",
+			"password": "Password",
+			"base64Auth": "Base64 Auth",
+			"repo": "Repo"
+		},
+		"placeholders": {
+			"registryName": "Image Registry Name",
+			"dockerUrl": "e.g https://index.docker.io/v1"
+		},
+		"descriptions": {
+			"certificateAuthority": "CA certificate for a self-signed registry",
+			"base64Auth": "Base64 encoded username:password"
+		},
+		"validation": {
+			"nameRequired": "Name is required",
+			"urlRequired": "URL is required"
+		}
+	},
+	"engines": {
+		"title": "Engines",
+		"fields": {
+			"supportedTasks": "Supported Tasks",
+			"engineVersion": "Engine Version",
+			"valuesSchema": "Values Schema"
+		},
+		"card": {
+			"open": "Open {{name}}"
+		},
+		"list": {
+			"searchPlaceholder": "Search by name",
+			"empty": "No engines in this workspace.",
+			"loadFailed": "Unable to load engines."
+		},
+		"versions": {
+			"all": "All versions",
+			"count": "{{count}} versions",
+			"count_one": "1 version",
+			"latest": "Latest"
+		},
+		"schema": {
+			"columns": {
+				"parameter": "Parameter",
+				"type": "Type",
+				"default": "Default",
+				"description": "Description"
+			},
+			"required": "required",
+			"searchPlaceholder": "Search parameters",
+			"filters": {
+				"type": "Type",
+				"allTypes": "All types",
+				"onlyRequired": "Required only"
+			},
+			"parameterCount": "{{count}} parameters",
+			"parameterCount_one": "1 parameter",
+			"filteredCount": "{{visible}} of {{total}} parameters",
+			"noMatches": "No parameters match the filters.",
+			"nestedCount": "{{count}} nested parameters",
+			"nestedCount_one": "1 nested parameter",
+			"empty": "This version declares no parameters.",
+			"allowsAdditional": "This schema also accepts parameters it does not list.",
+			"enumLead": "one of",
+			"expandDescription": "Show the full description of {{name}}",
+			"copyJson": "Copy JSON",
+			"toggleNested": "Expand or collapse {{name}}",
+			"enumAll": "{{count}} allowed values",
+			"enumAll_one": "1 allowed value"
+		}
+	},
+	"endpoints": {
+		"endpoints": "endpoint",
+		"title": "Endpoints",
+		"create": "Create Endpoint",
+		"edit": "Edit Endpoint",
+		"access": {
+			"summary": "Access · {{count}} URLs",
+			"hoverTitle": "Access URLs"
+		},
+		"fields": {
+			"serviceUrl": "Service URL",
+			"npu": "NPU",
+			"modelRegistry": "Model Registry",
+			"modelCatalog": "Model Catalog (Template)",
+			"memoryGb": "Memory (GB)",
+			"acceleratorCount": "Accelerator Count",
+			"allocatedCard": "allocated card",
+			"allocatedCards": "allocated cards",
+			"allocationMode": "Allocation Mode",
+			"card": "card",
+			"cards": "cards",
+			"fullGpu": "Full Card",
+			"vgpu": "Virtual Card",
+			"physicalGpuCount": "Card Count",
+			"physicalGpu": "Card Count",
+			"perReplica": "Per Replica",
+			"perCard": "per card",
+			"vgpuCount": "Card Count",
+			"npuCount": "NPU Count",
+			"modelName": "Model Name",
+			"modelVersion": "Model Version",
+			"modelFile": "Model File",
+			"engineVersion": "Engine Version",
+			"taskType": "Task Type",
+			"replicas": "Replicas",
+			"schedulingScope": "Scheduling Scope",
+			"scheduling": "Scheduling",
+			"schedulerType": "Scheduler Type",
+			"engineVariables": "Engine Variables",
+			"parameterValue": "Value",
+			"remaining": "Remaining",
+			"environment": "Environment Variables",
+			"accelerator": "Accelerator",
+			"clusterCapability": "Cluster Capability",
+			"vgpuMemoryMode": "VRAM Mode",
+			"vgpuMemory": "VRAM",
+			"vgpuMemoryPercent": "VRAM Percent",
+			"vgpuCoreLimit": "Core",
+			"vgpuCorePercent": "Core",
+			"vgpuCoreUnits": "Core",
+			"singleCardMemory": "VRAM",
+			"requestedVgpuMemory": "Requested VRAM",
+			"effectiveVgpuMemory": "Effective VRAM",
+			"virtualCardCount": "Card Count",
+			"vgpuMemoryCapacity": "VRAM",
+			"vgpuCoreCapacity": "Core",
+			"matchingGpuCards": "Matching Cards",
+			"replicaUnit": "replica",
+			"replicaUnits": "replicas",
+			"instance": "Instance",
+			"nodeCount": "Node Count",
+			"restartCount": "Restarts",
+			"actualMemory": "Actual usage",
+			"requestedMemory": "Requested VRAM",
+			"physicalMemory": "Physical VRAM",
+			"vramExceedsRequested": "Usage exceeds requested VRAM",
+			"crossNodes": "Across {{count}} nodes"
+		},
+		"sections": {
+			"clusterSettings": "Cluster",
+			"modelAndReplicas": "Model & Replicas",
+			"schedulingTargetResources": "Scheduling Target and Resource Selection",
+			"schedulingTarget": "Scheduling Target",
+			"customizeSettings": "Customize Settings",
+			"configurationDetails": "Configuration Details",
+			"engineSettings": "Engine",
+			"advancedOptions": "Advanced Options",
+			"environmentVariables": "Environment Variables",
+			"currentRequest": "Current Request",
+			"resourcePlan": "Resource Plan",
+			"virtualCardSplitResources": "Virtual card split resources",
+			"access": "Access",
+			"runtimeAllocation": "Runtime Allocation",
+			"requestedResources": "Requested Resources",
+			"deploymentConfig": "Deployment Config",
+			"allocatedResources": "Allocated Resources",
+			"clusterDeviceResources": "Cluster Resources",
+			"resourceSummary": "Resource Summary",
+			"replicaResources": "Replica Resources",
+			"gpuAllocation": "GPU Allocation & Usage",
+			"weights": "Weights & Cache"
+		},
+		"placeholders": {
+			"endpointName": "Endpoint Name",
+			"selectCluster": "Select A Cluster",
+			"selectModelRegistry": "Select A Model Registry",
+			"selectModelCatalog": "Select A Model Catalog",
+			"selectGpuType": "Select Accelerator Type",
+			"selectNpuType": "Select NPU Type",
+			"selectModel": "Select A Model",
+			"selectEngine": "Select An Engine",
+			"selectVersion": "Select A Version",
+			"selectTaskType": "Select A Support Task Type",
+			"selectAccelerator": "Select An Accelerator",
+			"selectSchedulerType": "Select Scheduler Type",
+			"workloadImage": "repository:tag"
+		},
+		"options": {
+			"generic": "Generic",
+			"clusterScheduling": "Cluster Scheduling",
+			"mib": "MiB",
+			"gib": "GiB",
+			"percent": "%",
+			"shared": "Shared"
+		},
+		"descriptions": {
+			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
+			"basicResources": "Capacity shared with the selected cluster.",
+			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card.",
+			"declaredWeights": "What the catalog's author measured for the model weights alone, per replica — it does not include the KV cache, which is estimated separately below from this deployment's context and concurrency."
+		},
+		"actions": {
+			"openResources": "Open Resources",
+			"pause": "Pause",
+			"saveAsCatalog": "Save as Catalog",
+			"resume": "Resume"
+		},
+		"messages": {
+			"parameterCount": "{{count}} parameters",
+			"expandParameterValue": "Show the full value of {{name}}",
+			"rayDashboardNotAvailable": "Ray dashboard is not available.",
+			"fetching": "fetching...",
+			"modelNotFoundInRegistry": "Model not found in selected registry",
+			"saveAsCatalogSuccess": "Saved as catalog \"{{name}}\"",
+			"saveAsCatalogFailed": "Failed to save as catalog",
+			"saveAsCatalogDuplicate": "A catalog named \"{{name}}\" already exists in this workspace",
+			"modelRegistryNotInWorkspace": "Model registry \"{{name}}\" does not exist in this workspace",
+			"fetchingClusterResources": "Fetching cluster resources",
+			"failedToFetchClusterResources": "Failed to fetch cluster resources",
+			"clusterResourcesUnavailable": "Cluster resources unavailable",
+			"acceleratorVirtualizationEnabled": "Accelerator virtualization enabled",
+			"acceleratorVirtualizationDisabled": "No accelerator virtualization",
+			"pauseSuccess": "Endpoint paused successfully",
+			"pauseFailed": "Failed to pause endpoint",
+			"resumeSuccess": "Endpoint resumed successfully",
+			"resumeFailed": "Failed to resume endpoint",
+			"noAcceleratorsAvailable": "No accelerators available in this cluster",
+			"noAcceleratorSelected": "No accelerator selected",
+			"replicasMustBeAtLeastOne": "Replicas must be at least 1",
+			"schedulerTypeRequired": "Scheduler type is required",
+			"gpuCountPrecisionSsh": "Accelerator card count must be a one-decimal value below 1, or an integer at or above 1",
+			"gpuCountPrecisionK8s": "Accelerator card count must be an integer",
+			"vgpuMemoryMutuallyExclusive": "Use either virtual card memory amount or memory percent, not both",
+			"vgpuMemoryMiBPositive": "Virtual card memory must be greater than 0",
+			"vgpuMemoryPercentRange": "Virtual card memory percent must be between 1 and 100",
+			"vgpuCorePercentRange": "Virtual card core percent must be between 0 and 100",
+			"cardsAvailable": "{{count}} cards available",
+			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
+			"fullGpuCardCapacityInsufficient": "The request needs {{requested}} full cards, but only {{available}} are currently available.",
+			"fractionalGpuResourcesInsufficient": "Requested fractional GPU capacity exceeds the remaining physical-card capacity for this cluster.",
+			"noNodeCanScheduleFullGpuRequest": "No single node can satisfy the scheduling requirements for a replica requesting {{count}} full cards.",
+			"noNodeCanScheduleFractionalGpuRequest": "No single node has a physical card with enough remaining capacity for one fractional-GPU replica.",
+			"noNodeCanScheduleVgpuRequest": "No single node can accommodate a replica with the requested virtual card resources.",
+			"partialGpuReplicaPlacement": "Only {{available}} of {{requested}} replicas can be scheduled with the requested accelerator resources.",
+			"noMatchingAccelerator": "No healthy {{product}} accelerator is available in this cluster.",
+			"vgpuResourcesInsufficient": "Requested virtual card resources exceed the currently available capacity for this cluster.",
+			"vgpuMemoryResourcesInsufficient": "Requested virtual card memory exceeds the currently available virtual card memory.",
+			"vgpuCoreResourcesInsufficient": "Requested virtual card core capacity exceeds the currently available virtual card core capacity.",
+			"cpuResourcesInsufficient": "Requested CPU exceeds the currently available capacity for this cluster.",
+			"memoryResourcesInsufficient": "Requested memory exceeds the currently available capacity for this cluster.",
+			"noNodeCanScheduleCpuRequest": "No node with the selected accelerator has enough CPU for one replica.",
+			"noNodeCanScheduleMemoryRequest": "No node with the selected accelerator has enough memory for one replica.",
+			"noNodeCanScheduleCombinedResourceRequest": "No single node can satisfy the selected accelerator, CPU, and memory requirements for one replica.",
+			"noRunningVgpuPods": "No running virtual accelerator pods",
+			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared",
+			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting",
+			"runtimeDownloadHint": "Models in a public registry are downloaded when the endpoint starts: the first start takes noticeably longer, and it cannot start at all without access to the registry.",
+			"runtimeDownloadUnknown": "This registry did not report whether it stores its models locally, so whether they are downloaded when the endpoint starts is unknown.",
+			"fetchingImageTags": "Looking up tags…"
+		},
+		"tabs": {
+			"playground": "Playground"
+		},
+		"recipe": {
+			"section": "Recipe options",
+			"variant": "Variant",
+			"features": "Features",
+			"selectVariant": "Select a variant",
+			"defaultOn": "default on",
+			"conflictsWith": "conflicts with",
+			"preview": "Composed preview",
+			"previewError": "Cannot compose",
+			"engineArgs": "Engine args",
+			"env": "Environment",
+			"performanceTuning": "Performance tuning",
+			"verifiedOn": "Verified on:",
+			"resourceEstimate": "Resource estimate",
+			"estimatedVram": "Estimated VRAM",
+			"replicasCount": "{{count}} replica",
+			"noVerifiedAccelerator": "This recipe has not been validated on the GPUs in this cluster.",
+			"requiredVram": "Requires ≥ {{gb}} GB VRAM.",
+			"vramSufficient": "Sufficient VRAM: {{total}} GB available, {{required}} GB required",
+			"vramInsufficient": "Insufficient VRAM: {{total}} GB available, {{required}} GB required",
+			"vramRequiredOnly": "Requires ≥ {{gb}} GB VRAM",
+			"composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}",
+			"defaultVariant": "Default variant",
+			"engineArgCount": "{{count}} engine args",
+			"engineArgCount_one": "1 engine arg",
+			"envCount": "{{count}} env vars",
+			"envCount_one": "1 env var",
+			"verifiedAccelerator": "Validated by this recipe"
+		},
+		"kvCache": {
+			"title": "KV cache estimate",
+			"titleHint": "Computed from this checkpoint's cache layout, the tokens and sequences below, and the KV precision you pick — not a value the catalog states.",
+			"tokensPerSequence": "Tokens per sequence",
+			"sequences": "Concurrent sequences",
+			"precision": "KV precision",
+			"precisionPlaceholder": "Select a precision",
+			"precisions": {
+				"bf16": "BF16 / FP16 — 2 bytes",
+				"fp8": "FP8 / INT8 — 1 byte",
+				"fp4": "FP4 / INT4 — 0.5 bytes",
+				"fp32": "FP32 — 4 bytes"
+			},
+			"bytesPerToken": "{{bytes}} bytes per token",
+			"families": {
+				"head": "Head-based cache (MHA / GQA)",
+				"latent": "Latent cache (MLA)",
+				"mixed_full_sliding_gqa": "Mixed full / sliding GQA",
+				"qwen_linear_full_hybrid": "Linear / full attention hybrid",
+				"deepseek_v4_hybrid": "Hybrid sparse attention (DeepSeek V4)"
+			},
+			"familyBasis": {
+				"uniform_layers": "Head-based because this checkpoint reports no kv_lora_rank or qk_rope_head_dim and no layer kind that caches differently. A control plane that does not report those fields yet looks the same from here.",
+				"latent_widths": "Latent because this checkpoint reports kv_lora_rank and qk_rope_head_dim, which describe what an MLA layer caches.",
+				"sliding_layer_types": "Mixed because layer_types names sliding_attention layers alongside full ones, and the checkpoint states the window they cap at.",
+				"linear_layer_types": "Hybrid because layer_types names linear_attention layers, which hold one fixed-size recurrent state per sequence instead of a key and value per token.",
+				"compress_ratios": "Sparse because this checkpoint states compress_ratios, a per-layer schedule of how many tokens each layer folds into one cached slot. The head fields it also states describe what attention is computed over, not what is cached."
+			},
+			"factors": {
+				"tokens_per_sequence": "tokens",
+				"sequences": "sequences",
+				"num_hidden_layers": "layers",
+				"key_and_value": "key and value",
+				"num_key_value_heads": "KV heads",
+				"head_dim": "head dim",
+				"latent_width": "latent width",
+				"kv_lora_rank": "kv_lora_rank",
+				"qk_rope_head_dim": "qk_rope_head_dim",
+				"bytes_per_element": "bytes",
+				"full_attention_layers": "full layers",
+				"sliding_attention_layers": "sliding layers",
+				"linear_attention_layers": "linear layers",
+				"active_layers": "layers",
+				"sliding_window": "window",
+				"cached_sliding_tokens": "cached tokens",
+				"compressed_slots": "compressed slots",
+				"indexed_slots": "indexed slots",
+				"index_head_dim": "indexer dim",
+				"indexer_bytes_per_element": "bytes",
+				"retained_states": "retained states",
+				"conv_history_steps": "history steps",
+				"conv_channels": "channels",
+				"conv_state_bytes_per_element": "bytes",
+				"recurrent_state_bytes_per_element": "bytes",
+				"linear_conv_kernel_dim": "kernel",
+				"minus_the_current_step": "current step",
+				"linear_num_key_heads": "key heads",
+				"linear_key_head_dim": "key dim",
+				"linear_num_value_heads": "value heads",
+				"linear_value_head_dim": "value dim",
+				"mtp_num_layers": "draft layers"
+			},
+			"sources": {
+				"derived": "derived",
+				"manual": "manual",
+				"unstated": "unverified",
+				"constant": "constant",
+				"deployment": "this deployment"
+			},
+			"sourceHints": {
+				"derived": "Computed from other checkpoint values by a documented convention",
+				"manual": "Typed in by a user, overriding what the checkpoint states",
+				"unstated": "This value states no provenance, so it is not known to come from the checkpoint",
+				"constant": "A fixed factor of the formula, not a value from the checkpoint",
+				"deployment": "Taken from the engine args this deployment will be created with, not from the checkpoint"
+			},
+			"reading": "Reading the checkpoint…",
+			"unread": {
+				"unauthorized": "Cannot read this checkpoint: the registry refused the request. A gated model needs an access token on the registry before its files can be read.",
+				"not-found": "Cannot read this checkpoint: the registry has no model or version by that name.",
+				"unavailable": "Cannot read this checkpoint: the registry did not answer."
+			},
+			"unreported": "This registry reports nothing about the checkpoint, so there is nothing to compute from.",
+			"unparsed": "The registry read this model and found no config.json it could parse, so the shape of the checkpoint is unknown.",
+			"missingFields": "Cannot estimate: this checkpoint does not state {{fields}}.",
+			"layerTypes": "Cannot estimate: this checkpoint states {{types}} layers, and none of the formulas here describes what such a layer caches.",
+			"noModelInfo": "Cannot estimate: nothing is known about this checkpoint.",
+			"invalidInput": "Enter a whole number of tokens and sequences, and pick a KV precision.",
+			"components": {
+				"full_kv": "Full-attention KV",
+				"sliding_kv": "Sliding-window KV",
+				"compressed_kv": "Compressed KV",
+				"indexer": "Sparse-attention indexer",
+				"linear_conv_state": "Short-convolution history",
+				"linear_recurrent_state": "Recurrent state",
+				"draft_kv": "Draft (MTP) KV"
+			},
+			"averageBytesPerToken": "{{bytes}} bytes per token on average",
+			"countedFrom": "Counted out of {{field}}",
+			"notPerToken": "does not grow with the sequence",
+			"recurrentPrecision": "Recurrent state precision",
+			"recurrentPrecisionHint": "Linear-attention state is held at this width. Its short-convolution history stays BF16.",
+			"indexerPrecision": "Indexer precision",
+			"indexerPrecisionHint": "Sparse-attention indexer entries are held separately from the KV cache.",
+			"checkpointInterval": "Recurrent state interval",
+			"checkpointIntervalPlaceholder": "Prompt end only",
+			"includeLinearState": "Retain linear-attention state",
+			"includeDraftKvCache": "Include draft (MTP) KV",
+			"compressionRates": "Cannot estimate: this checkpoint compresses at a rate ({{rates}}) whose cache layout has not been established from any released checkpoint, so whether those layers carry an indexer is unknown.",
+			"showFormula": "Show the formula",
+			"hideFormula": "Hide the formula",
+			"ownedBy": "Set by “{{control}}” above"
+		},
+		"monitor": {
+			"overviewMetrics": "Overview",
+			"latencyMetrics": "Latency",
+			"throughputMetrics": "Throughput",
+			"queueMetrics": "Queue",
+			"cacheMetrics": "Cache",
+			"overviewDescription": "Consumed GPUs, VRAM used, CPU cores, memory working set, GPU, VRAM, CPU, and memory trends, plus GPU allocation details",
+			"latencyDescription": "E2E, TTFT, TPOT, and ITL latency metrics",
+			"throughputDescription": "Prompt, generation, and total token throughput plus request length distributions",
+			"queueDescription": "Running, swapped, waiting, preemptions, and queue time metrics",
+			"cacheDescription": "KV token capacity, KV usage, and cache hit metrics"
+		},
+		"logs": {
+			"application": "Application",
+			"stderr": "Stderr",
+			"stdout": "Stdout",
+			"loading": "Loading logs...",
+			"noLogsAvailable": "No logs available",
+			"applicationLogsNotAvailable": "Application logs not available",
+			"stderrLogsNotAvailable": "Stderr logs not available",
+			"stdoutLogsNotAvailable": "Stdout logs not available",
+			"failedToLoadRayApplication": "Failed to load Ray application information. Please check if the cluster is accessible.",
+			"noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
+		},
+		"simplified": {
+			"autoConfigured": "Model, engine and resources are auto-configured from the selected variant.",
+			"showAdvanced": "Show all options",
+			"hideAdvanced": "Hide advanced options"
+		},
+		"saveAsCatalog": {
+			"title": "Save as Catalog",
+			"description": "Creates a new catalog from this endpoint's current configuration. It is not linked to the catalog this endpoint was deployed from, and carries no variants or features.",
+			"nameLabel": "Catalog name",
+			"submit": "Save"
+		},
+		"origin": {
+			"hint": "What this endpoint was deployed from. Its settings are edited below; changing them here does not change the catalog.",
+			"featuresUnreadable": "the recorded options could not be read"
+		},
+		"imageExplorer": {
+			"open": "Explore image registry",
+			"title": "Explore image registry",
+			"description": "Pick a registry, an image and a tag. Anything you cannot pick, you can type.",
+			"registryLabel": "Image registry",
+			"selectRegistry": "Select an image registry",
+			"registryInUse": "{{name}} · used by this cluster",
+			"foreignRegistry": "This is not the registry this cluster pulls with. The pull uses the credentials in {{name}}, so an image found here may not be pullable.",
+			"namespaceLabel": "Namespace",
+			"selectNamespace": "Select or type a namespace",
+			"namespaceNote": "Docker Hub cannot list namespaces, so this is not the full set — \"{{official}}\" holds its official images, and the rest are namespaces this deployment already uses. Type any other.",
+			"chooseNamespaceFirst": "Choose a namespace above and its images will be listed here.",
+			"imageLabel": "Image",
+			"selectImage": "Select or type an image",
+			"tagLabel": "Tag",
+			"selectTag": "Select or type a tag",
+			"tagOptional": "Optional — an image with no tag is a complete answer.",
+			"lookingForTags": "Looking for tags…",
+			"useTyped": "Use “{{typed}}”",
+			"apply": "Use this image",
+			"noRegistry": "Choose a registry above and its images will be listed here.",
+			"listing": "Type to narrow the images this registry holds.",
+			"looking": "Looking for images…",
+			"notChecked": "This registry has not reported yet whether its images can be listed. Type the image name — its tags will still be listed.",
+			"unsupported": "This registry cannot list its images. Type the image name instead; its tags will still be listed.",
+			"unauthorized": "The credentials stored for this registry can pull but cannot list its images. Ask an operator for credentials that can, or type the image name.",
+			"unavailable": "The registry could not be reached just now. Type the image name, or close this and try again."
+		},
+		"weights": {
+			"declared": "Declared by the catalog",
+			"breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
+			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
+		}
+	},
+	"external_endpoints": {
+		"external_endpoints": "external endpoint",
+		"title": "External Endpoints",
+		"create": "Create External Endpoint",
+		"fields": {
+			"upstreamName": "Upstream Name",
+			"provider": "Upstream Channel",
+			"virtualModel": "Exposed Model Name",
+			"virtualModelName": "Exposed Model Name",
+			"weightRatio": "Weight Ratio",
+			"weight": "Weight",
+			"serviceUrl": "Service URL",
+			"routeType": "Route Type",
+			"timeout": "Timeout",
+			"timeoutUnitSeconds": "Seconds",
+			"timeoutUnitMinutes": "Minutes",
+			"upstreamType": "Upstream Type",
+			"endpointRef": "Internal Endpoint",
+			"upstreamUrl": "Upstream URL",
+			"authType": "Auth Type",
+			"credential": "API Key",
+			"modelMapping": "Model Mapping",
+			"exposedModelName": "Exposed Model Name",
+			"upstreamModelName": "Upstream Model Name",
+			"models": "Models",
+			"associatedVirtualModels": "Associated exposed models",
+			"unavailableModels": "Unavailable models:",
+			"type": "Type",
+			"role": "Role",
+			"unlimited": "Unlimited",
+			"routingMode": "Routing Strategy",
+			"maxInflightRequests": "Max concurrent requests",
+			"nodeRole": "Node Role",
+			"trafficWeight": "Traffic Weight"
+		},
+		"sections": {
+			"configuration": "Configuration",
+			"routeConfiguration": "Configuration: {{model}}",
+			"upstream": "Upstream {{index}}",
+			"modelService": "Upstream Channel {{index}}",
+			"virtualModels": "Exposed Model Name",
+			"modelServices": "Upstream Channels",
+			"primaryTargets": "Primary list",
+			"fallbackTargets": "Fallback list"
+		},
+		"placeholders": {
+			"endpointName": "External Endpoint Name",
+			"selectRouteType": "Select Route Type",
+			"selectEndpointRef": "Select an internal endpoint",
+			"endpointRef": "e.g. smartdddd",
+			"upstreamUrl": "e.g. https://api.openai.com/v1",
+			"selectAuthType": "Select Auth Type",
+			"credential": "Bearer token for the upstream",
+			"timeout": "e.g. 60",
+			"exposedModelName": "Model name exposed to clients",
+			"upstreamModelName": "Model name at upstream provider",
+			"virtualModel": "Model name exposed to clients",
+			"selectProvider": "Select a model service",
+			"provider": "e.g. local-vllm",
+			"weight": "1-100",
+			"maxInflightRequests": "Maximum concurrent requests",
+			"primaryCapacity": "Enter concurrency limit"
+		},
+		"quickCreate": {
+			"title": "Quickly create upstream channel",
+			"description": "Create a channel here and it will be selected for this route automatically."
+		},
+		"options": {
+			"chatCompletions": "Chat Completions",
+			"upstreamTypeExternal": "External",
+			"upstreamTypeInternal": "Internal",
+			"upstreamTypeEndpointRef": "Endpoint Ref",
+			"upstreamTypeMixed": "Mixed",
+			"fixedRouting": "Single Route",
+			"priorityRouting": "Active & Standby",
+			"weightedRouting": "Weighted Routing",
+			"fixedRole": "Fixed",
+			"primaryRole": "Primary",
+			"fallbackRole": "Fallback",
+			"noRetry": "Do not switch on failure",
+			"retryProvider": "Switch provider on failure"
+		},
+		"actions": {
+			"addUpstream": "Add Upstream",
+			"addModelService": "Add model service",
+			"addModelMapping": "Add Model Mapping",
+			"removeUpstream": "Remove Upstream",
+			"removeModelMapping": "Remove",
+			"changeStrategy": "Change strategy",
+			"addVirtualModel": "Add exposed model",
+			"testModel": "Test",
+			"addTarget": "Add model service",
+			"addPrimaryTarget": "Add primary target",
+			"addFallbackTarget": "Add fallback target",
+			"addWeightedTarget": "Add weighted target",
+			"removeTarget": "Remove upstream channel",
+			"removeVirtualModel": "Remove exposed model",
+			"quickCreateUpstream": "Quickly create upstream channel",
+			"viewModelMappings": "View model mappings",
+			"hideModelMappings": "Hide model mappings"
+		},
+		"messages": {
+			"upstreamNameHint": "Give this upstream a recognizable name. When configuring routes for an exposed model, select this name in the Upstream Channel field to choose where requests are forwarded.",
+			"curlExample": "Curl Example",
+			"unnamedModel": "Unnamed model",
+			"mappingSummary": "({{upstream}} / {{exposed}})",
+			"mappingUpstreamCount": "{{count}} upstream models",
+			"mappingUpstreamCount_one": "{{count}} upstream model",
+			"mappingUpstreamCount_other": "{{count}} upstream models",
+			"mappingExposedCount": "{{count}} exposed models",
+			"mappingExposedCount_one": "{{count}} exposed model",
+			"mappingExposedCount_other": "{{count}} exposed models",
+			"noModelMappings": "No model mappings configured.",
+			"changeStrategyTitle": "Change routing strategy?",
+			"changeStrategyDescription": "Switching strategies will reset some unsaved settings. Continue?",
+			"fixedRoutingHint": "Send all requests to the single upstream model configured below.",
+			"priorityRoutingHint": "Use active targets first. Use standby targets when no active target can accept a request, including when all are at capacity.",
+			"weightedRoutingHint": "Distribute requests across the upstream models according to their configured weights.",
+			"maxInflightRequestsHint": "Leave empty or set to 0 for no limit.",
+			"curlHint": "Set your API key first: {{exportCmd}}. You can create one at {{apiKeyPage}}.",
+			"curlExampleOpenai": "OpenAI",
+			"curlExampleAnthropic": "Anthropic",
+			"curlExampleEmbedding": "Embedding",
+			"credentialHidden": "Credential is hidden for security",
+			"upstreamUnavailable": "This upstream is excluded from the gateway configuration. Requests to the models below will fail until it is resolved.",
+			"testRequiresServing": "Available once the endpoint is serving.",
+			"testConnectivity": "Test Connection",
+			"testConnectivityTesting": "Testing...",
+			"testConnectivitySuccess": "Connected — {{latencyMs}}ms, {{modelCount}} model(s) found",
+			"testConnectivityFailed": "Connection failed: {{error}}",
+			"testConnectivityError": "Request error: {{error}}",
+			"noFallbackTargets": "No fallback model services",
+			"weightTotalValid": "Current total: {{total}}%",
+			"weightTotalInvalid": "Current total: {{total}}% (must be 100%)",
+			"weightRequired": "Enter an integer weight from 1 to 100 for every target.",
+			"primaryTargetRequired": "Add at least one primary target and set its concurrency limit.",
+			"primaryTargetsHint": "Requests prefer primary targets and are randomly distributed with equal probability among available targets. If none are available (including when all are at their concurrency limit), standby targets are used.",
+			"fallbackTargetsHint": "Used when no primary target is available. Requests are randomly distributed with equal probability among available standby targets; targets at their concurrency limit are skipped.",
+			"primaryCapacityRequired": "Primary targets require a positive integer limit. Requests can use standby targets when primary capacity is full.",
+			"upstreamConnectionFailed": "Upstream connection failed",
+			"checkUpstreamConnection": "Check the upstream URL, API key and network connectivity."
+		},
+		"validation": {
+			"nameRequired": "Name is required",
+			"routeTypeRequired": "Route type is required",
+			"endpointRefRequired": "Internal endpoint is required",
+			"upstreamUrlRequired": "Upstream URL is required",
+			"exposedModelRequired": "Exposed model name is required",
+			"upstreamModelRequired": "Upstream model name is required",
+			"duplicateModelKey": "Duplicate model key in this upstream",
+			"unknownUpstreamModel": "This model was not found in the upstream's model list",
+			"overlappingModelKeys": "Model key(s) {{keys}} already used in another upstream",
+			"virtualModelRequired": "Exposed model name is required",
+			"routeTargetRequired": "Select a model service and enter its upstream model",
+			"weightTotal": "Weighted targets must total 100%",
+			"duplicateProvider": "Model service names must be unique"
+		},
+		"monitor": {
+			"view": "View monitoring",
+			"legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
+			"openGrafana": "View detailed monitoring",
+			"chartArea": "Chart area (scroll inside to view details)",
+			"loading": "Loading monitoring configuration…",
+			"configError": "Could not load monitoring configuration.",
+			"retry": "Retry"
+		}
+	},
+	"user_profiles": {
+		"user_profiles": "user",
+		"title": "Users",
+		"create": "Create User",
+		"edit": "Edit User",
+		"fields": {
+			"confirmPassword": "Confirm Password"
+		},
+		"placeholders": {
+			"userName": "User Name",
+			"userEmail": "User Email"
+		},
+		"sections": {
+			"globalRoles": "Global Roles",
+			"joinedWorkspaces": "Joined Workspaces"
+		},
+		"validation": {
+			"passwordMinLength": "Password must be at least 6 characters"
+		}
+	},
+	"roles": {
+		"roles": "role",
+		"title": "Roles",
+		"fields": {
+			"presetRole": "Preset",
+			"customRole": "Custom"
+		},
+		"placeholders": {
+			"roleName": "Role Name"
+		}
+	},
+	"role_assignments": {
+		"role_assignments": "workspace policy",
+		"title": "Workspace Policies",
+		"fields": {
+			"policy": "Policy",
+			"policyScope": "Policy Scope"
+		},
+		"placeholders": {
+			"policyName": "Workspace Policy Name",
+			"selectUser": "Select A User",
+			"selectRole": "Select A Role"
+		},
+		"descriptions": {
+			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace."
+		},
+		"options": {
+			"global": "Global",
+			"workspace": "Workspace"
+		}
+	},
+	"api_keys": {
+		"api_keys": "API key",
+		"title": "API key",
+		"create": "Create API Key",
+		"fields": {
+			"secretKey": "Secret Key",
+			"date": "Date",
+			"endpointType": "Type",
+			"endpoint": "Endpoint",
+			"model": "Model",
+			"promptTokens": "Prompt Tokens",
+			"completionTokens": "Completion Tokens",
+			"usage": "Total Tokens",
+			"displayName": "Name",
+			"description": "Description",
+			"project": "Project",
+			"apiKey": "API key",
+			"currentProject": "Current Project",
+			"workspace": "Workspace",
+			"status": "Status",
+			"createdAt": "Created at",
+			"apiKeyAndDescription": "API key / description",
+			"projectAndDescription": "Project / description"
+		},
+		"placeholders": {
+			"selectWorkspace": "Select A Workspace",
+			"search": "Search Project, API key, or description",
+			"searchProjects": "Search Projects",
+			"projectName": "Project name",
+			"projectDescription": "Description (optional)"
+		},
+		"messages": {
+			"createSuccess": "API Key created successfully! Please copy your secret key now. You won't be able to see it again.",
+			"createDescription": "Create a new API key for your application.",
+			"loading": "Loading...",
+			"notFound": "404 not found",
+			"createFailed": "Failed to create API key. Please try again.",
+			"operationFailed": "API key operation failed. Please try again.",
+			"noResults": "No matching Projects or API keys",
+			"deleteKeySuccess": "Successfully deleted API key",
+			"deleteKeysSuccess": "Successfully deleted {{count}} API keys",
+			"deletePartialFailure": "{{failed}} of {{total}} API keys could not be deleted.",
+			"missingWorkspace": "An API key is missing its workspace. Refresh and try again.",
+			"missingName": "An API key is missing its name. Refresh and try again.",
+			"nameRequired": "Name is required",
+			"nameTooLong": "Name cannot exceed 63 characters"
+		},
+		"buttons": {
+			"copy": "Copy",
+			"copied": "Copied",
+			"create": "Create"
+		},
+		"usage": {
+			"title": "API Usage Statistics",
+			"tokens": "tokens",
+			"endpointTypes": {
+				"endpoint": "Internal",
+				"external-endpoint": "External"
+			}
+		},
+		"limits": {
+			"sectionTitle": "Limits (optional)",
+			"quotaTitle": "Token quota",
+			"quotaHint": "Cap token usage for this key over a period. Leave empty for no quota.",
+			"accessTitle": "Access control",
+			"tokenLimit": "Token limit",
+			"unit": "Unit",
+			"units": {
+				"tokens": "Tokens",
+				"K": "K",
+				"M": "M",
+				"B": "B"
+			},
+			"period": "Period",
+			"periods": {
+				"daily": "Daily",
+				"weekly": "Weekly",
+				"monthly": "Monthly",
+				"yearly": "Yearly"
+			},
+			"optional": "Optional",
+			"concurrency": "Max concurrent",
+			"allowedModels": "Allowed models",
+			"allowedModelsHint": "Pick the models this key may call, then set an optional token limit on any of them. Leave the list empty to allow all models.",
+			"rps": "Requests per second (RPS)",
+			"rpm": "Requests per minute (RPM)",
+			"selectModel": "Select a model",
+			"modelsSelected": "{{count}} model(s) selected",
+			"noModels": "No models available",
+			"tokensUnit": "tokens",
+			"invalidPositiveInt": "Must be a positive integer",
+			"invalidTokenQuota": "Must resolve to a positive whole number of tokens",
+			"consumptionTitle": "Resource consumption",
+			"remainingLabel": "remaining",
+			"usageColumn": "Usage",
+			"rateColumn": "Rate limits",
+			"modelsColumn": "Supported models",
+			"allModels": "All",
+			"showMore": "Show {{count}} more",
+			"showLess": "Show less",
+			"statusColumn": "Status",
+			"statusActive": "Active",
+			"statusDisabled": "Disabled",
+			"statusQuotaExceeded": "Quota exceeded",
+			"disable": "Disable",
+			"enable": "Enable",
+			"actions": "Actions",
+			"moreLimitedModels": "+{{count}} more",
+			"saveSuccess": "Configuration saved",
+			"saveError": "Could not save the configuration",
+			"resetsOn": "Resets {{date}}",
+			"usedTotal": "{{amount}} used",
+			"granularity": {
+				"overall": "Overall quota",
+				"per_model": "Per-model quota"
+			},
+			"perModel": {
+				"hint": "A model with no limit is unlimited. Setting a limit on any model switches the key to per-model quotas and suspends the overall quota.",
+				"emptyAllowlist": "All models are allowed, so there is nothing to attach a per-model limit to. Select models above to set per-model quotas, or use the overall quota below.",
+				"unlimited": "Unlimited",
+				"limitLabel": "Token limit for {{model}}",
+				"overallSuspended": "Not enforced while this key uses per-model quotas. It is kept, and takes effect again once every per-model limit is cleared.",
+				"overlap": "This entry overlaps another entry for {{model}}. An entry with no endpoint matches every endpoint of the model.",
+				"overlapError": "Entries for the same model must not overlap once one of them has a token limit.",
+				"consumptionTitle": "Per-model consumption",
+				"limitColumn": "Limit",
+				"usedColumn": "Used",
+				"remainingColumn": "Remaining",
+				"exhausted": "Exhausted ({{amount}})",
+				"softQuotaNote": "Quotas are enforced eventually, not in real time, so usage can briefly exceed a limit. Usage recorded before a per-model limit was configured is not counted here."
+			}
+		},
+		"ranking": {
+			"title": "API key ranking overview",
+			"subtitle": "By the last 24 hours, split into request count and token dimensions.",
+			"window": "24h",
+			"requests": "Request count",
+			"tokens": "Tokens",
+			"empty": "No data"
+		},
+		"models": {
+			"unknown": "Unknown",
+			"anySource": "Any source"
+		},
+		"performance": {
+			"title": "Last 24h request performance",
+			"subtitle": "Call volume, response latency and success rate.",
+			"viewLogs": "View call logs",
+			"requests": "Requests",
+			"avgLatency": "Avg latency",
+			"successRate": "Success rate"
+		},
+		"modelAccess": {
+			"title": "Model access",
+			"all": "All models allowed",
+			"unavailable": "Endpoint unavailable",
+			"instanceLabel": "Inference instance: {{name}}",
+			"endpointLabel": "Endpoint: {{name}}"
+		},
+		"projects": {
+			"ungrouped": "Ungrouped",
+			"select": "Select a Project",
+			"notFound": "No Projects found.",
+			"create": "Create Project",
+			"createDescription": "Create a Project in workspace {{workspace}}.",
+			"creating": "Creating...",
+			"createAndSelect": "Create and select",
+			"edit": "Edit Project",
+			"editDescription": "Renaming does not change API key associations or usage history.",
+			"delete": "Delete Project",
+			"deleteDescription": "Delete {{name}}? Only an empty Project can be deleted.",
+			"deleteBlocked": "Move or delete the {{count}} API key(s) first",
+			"deleteSuccess": "Successfully deleted Project",
+			"duplicateName": "Project name already exists. Choose another name.",
+			"loadFailed": "Unable to load Project",
+			"empty": "This Project has no API keys",
+			"createKey": "Create API key",
+			"countLabel": "{{projects}} groups, {{keys}} API keys"
+		},
+		"move": {
+			"action": "Move to Project",
+			"title": "Move API keys",
+			"description": "{{count}} selected. The operation is atomic.",
+			"confirm": "Move",
+			"success": "Moved {{count}} API key(s)",
+			"failed": "Failed to move API keys. Please try again.",
+			"multipleWorkspaces": "Selected API keys span multiple workspaces. Move one workspace at a time.",
+			"alreadyInProject": "The selected API keys already belong to this Project.",
+			"unknownProject": "Unknown Project"
+		},
+		"filters": {
+			"allKeys": "All API keys",
+			"activeKeys": "Active API keys",
+			"disabledKeys": "Disabled API keys"
+		},
+		"selection": {
+			"count": "{{count}} selected",
+			"clear": "Clear",
+			"selectAllOnPage": "Select all API keys on this page",
+			"selectAllInProject": "Select all API keys in {{name}}",
+			"deleteMany": "Delete {{count}} API keys?"
+		},
+		"detailsTitle": "API key details"
+	},
+	"infrastructure": {
+		"title": "Infrastructure"
+	},
+	"model_service": {
+		"title": "Model Service"
+	},
+	"model_gateway": {
+		"title": "Model Gateway"
+	},
+	"access_control": {
+		"title": "Access Control"
+	},
+	"components": {
+		"ui": {
+			"combobox": {
+				"select": "Select",
+				"clearSelection": "Clear selection",
+				"useCustomValue": "Use \"{{value}}\"",
+				"placeholders": {
+					"SearchPlaceholder": "Type a command or search...",
+					"SearchOrTypePlaceholder": "Search, or type a new value..."
+				},
+				"messages": {
+					"noResults": "No results found"
+				},
+				"headings": {
+					"suggestions": "Suggestions"
+				}
+			},
+			"sidebar": {
+				"title": "Sidebar",
+				"description": "Displays the mobile sidebar.",
+				"toggle": "Toggle Sidebar"
+			},
+			"filter": {
+				"selectAll": "All",
+				"modelTask": {
+					"title": "Filter by Task"
+				}
+			}
+		},
+		"yamlImport": {
+			"importYaml": "Import YAML",
+			"title": "Import Resources from YAML",
+			"description": "Import multiple resources from a YAML file or URL.",
+			"uploadYamlFile": "Upload YAML File",
+			"importFromUrl": "Import from URL",
+			"urlPlaceholder": "https://example.com/resources.yaml",
+			"fetch": "Fetch",
+			"or": "Or",
+			"pasteYamlContent": "Paste YAML Content",
+			"pasteYamlPlaceholder": "Paste your YAML content here...",
+			"importingResources": "Importing resources...",
+			"importing": "Importing...",
+			"importResources": "Import Resources",
+			"importResults": "Import Results",
+			"success": "Success",
+			"error": "Error",
+			"skipped": "Skipped",
+			"errorLabel": "Error",
+			"successfullyCreated": "Successfully created",
+			"skippedExisting": "Skipped (already exists)",
+			"importMore": "Import More",
+			"errors": {
+				"processingYamlContent": "Error processing YAML content",
+				"invalidResourceStructure": "Invalid resource structure",
+				"creatingResource": "Error creating {{resourceType}} \"{{resourceName}}\"",
+				"duringYamlImport": "Error during YAML import",
+				"readingFile": "Error reading file",
+				"failedToReadFile": "Failed to read file",
+				"fetchingYamlFromUrl": "Error fetching YAML from URL",
+				"failedToFetchFromUrl": "Failed to fetch from URL: {{status}} {{statusText}}"
+			}
+		},
+		"yamlExport": {
+			"exportYaml": "Export YAML",
+			"title": "Export Resources to YAML",
+			"description": "Select resources and entities to export as YAML. Configure export options to customize the output format.",
+			"exportOptions": "Export Options",
+			"resourceSelection": "Resource Selection",
+			"selectAll": "Select All",
+			"deselectAll": "Deselect All",
+			"loadingAll": "Loading All...",
+			"entitiesSelected": "entities selected",
+			"loading": "Loading",
+			"noEntitiesFound": "No entities found",
+			"exportingResources": "Exporting resources",
+			"exporting": "Exporting...",
+			"generateYaml": "Generate YAML",
+			"generatedYaml": "Generated YAML",
+			"copyToClipboard": "Copy to Clipboard",
+			"copied": "Copied",
+			"downloadFile": "Download File",
+			"yamlContentPlaceholder": "Generated YAML content will appear here...",
+			"backToSelection": "Back to Selection",
+			"reset": "Reset",
+			"copySuccess": "Copied to clipboard",
+			"copySuccessDescription": "YAML content has been copied to your clipboard",
+			"downloadSuccess": "File downloaded",
+			"downloadSuccessDescription": "YAML file has been downloaded successfully",
+			"options": {
+				"removeStatus": "Remove status fields",
+				"removeIds": "Remove auto-generated IDs",
+				"removeTimestamps": "Remove timestamps",
+				"includeCredentials": "Include credentials"
+			},
+			"errors": {
+				"generateFailed": "Failed to generate YAML",
+				"copyFailed": "Failed to copy to clipboard"
+			}
+		},
+		"apiKey": {
+			"copySuccess": "Copied to clipboard",
+			"copySuccessDescription": "API key has been copied to your clipboard",
+			"errors": {
+				"copyFailed": "Failed to copy to clipboard"
+			}
+		},
+		"variablesInput": {
+			"key": "Key",
+			"value": "Value",
+			"selectValue": "Select value",
+			"true": "True",
+			"false": "False",
+			"newValue": "New value",
+			"selectFromSchema": "Select from schema",
+			"orTypeCustomKey": "Or type custom key",
+			"newKey": "New key",
+			"addVariable": "Add Variable",
+			"selectOrTypeKey": "Select from schema or type custom key",
+			"noSchemaKeys": "No schema keys available",
+			"invalidJsonValue": "Enter a valid JSON object or array"
+		},
+		"playground": {
+			"chat": {
+				"selectModel": "Select a model",
+				"selectModelFirst": "Select a model first",
+				"chatPlaceholder": "Chat with your AI model...",
+				"stop": "Stop",
+				"send": "Send",
+				"images": "Images",
+				"uploadImages": "Upload Images",
+				"removeImage": "Remove image",
+				"unsupportedImage": "Not added: {{files}}. Supported image formats: {{formats}}.",
+				"systemMessage": "System Message",
+				"systemMessagePlaceholder": "Enter system message to set behavior and context...",
+				"functions": "Functions",
+				"createFunction": "Create Function",
+				"editFunction": "Edit Function",
+				"functionName": "Function Name",
+				"functionNamePlaceholder": "Enter function name...",
+				"functionDescription": "Description",
+				"functionDescriptionPlaceholder": "Enter function description...",
+				"parameters": "Parameters",
+				"parametersPlaceholder": "Enter JSON schema for parameters...",
+				"loadFromExample": "Load from example:",
+				"chooseExample": "Choose Example",
+				"weatherFunction": "Weather Function",
+				"stockPriceFunction": "Stock Price Function",
+				"delete": "Delete",
+				"noFunctions": "No functions defined. Click 'Create Function' to add one.",
+				"invalidJsonSchema": "Invalid JSON schema",
+				"toggleSidebar": "Toggle Sidebar",
+				"clearChat": "Clear Chat",
+				"latest": "Latest",
+				"jumpToLatest": "Jump to latest messages",
+				"modelParameters": "Model & Parameters",
+				"error": "Error",
+				"reasoning": "Thinking...",
+				"temperature": "Temperature",
+				"temperatureDescription": "Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.",
+				"maximumLength": "Maximum Length",
+				"maximumLengthDescription": "The maximum number of tokens to generate. Range: 1K to 1M, shared between prompt and completion. The exact limit varies by model.",
+				"topP": "Top P",
+				"topPDescription": "Control diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options are considered."
+			},
+			"embedding": {
+				"title": "Embedding",
+				"generate": "Generate",
+				"selectModel": "Select a model",
+				"selectModelFirst": "Please select a model first",
+				"batchInputMode": "Batch Input Mode",
+				"documents": "Documents",
+				"addText": "Add Text",
+				"enterText": "Enter text...",
+				"chart": "Chart",
+				"json": "JSON",
+				"noEmbeddingData": "No embedding data to display"
+			},
+			"rerank": {
+				"title": "Reranking",
+				"processing": "Processing...",
+				"rerank": "Rerank",
+				"model": "Model",
+				"query": "Query",
+				"selectModel": "Select a reranker model",
+				"selectModelAndQuery": "Please select a model and enter a query",
+				"addOneDocument": "Please add at least one document",
+				"enterSearchQuery": "Enter your search query...",
+				"documents": "Documents",
+				"results": "Results",
+				"json": "JSON",
+				"addDocument": "Add Document",
+				"enterDocumentText": "Enter document text...",
+				"noResults": "No results yet. Add documents and click \"Rerank\" to see results.",
+				"failedRerank": "Failed to rerank documents. Please check the console for details.",
+				"score": "Score",
+				"was": "was"
+			}
+		},
+		"grafanaPanels": {
+			"timeRange": {
+				"title": "Time Range",
+				"last5minutes": "Last 5 minutes",
+				"last15minutes": "Last 15 minutes",
+				"last30minutes": "Last 30 minutes",
+				"last1hour": "Last 1 hour",
+				"last3hours": "Last 3 hours",
+				"last6hours": "Last 6 hours",
+				"last12hours": "Last 12 hours",
+				"last24hours": "Last 24 hours",
+				"last2days": "Last 2 days",
+				"last7days": "Last 7 days",
+				"today": "Today"
+			},
+			"refresh": {
+				"refreshNow": "Refresh now",
+				"autoRefresh": "Auto-refresh:",
+				"off": "Off"
+			},
+			"defaultPanelTitle": "Grafana Panel {{id}}"
+		},
+		"jsonSchemaValueVisualizer": {
+			"undefined": "undefined",
+			"null": "null",
+			"typeMismatch": "type miss match: expect {{expectedType}}, actual {{actualType}}",
+			"noValue": "no value",
+			"root": "Root"
+		},
+		"jsonSchemaVisualizer": {
+			"empty": "This version declares no values schema.",
+			"required": "required",
+			"root": "Root"
+		},
+		"logViewer": {
+			"search": "Search keyword",
+			"reverse": "Reverse",
+			"startTime": "Start",
+			"endTime": "End",
+			"download": "Download",
+			"fontSize": "Font Size",
+			"noLogs": "No logs available",
+			"loading": "Loading logs...",
+			"loadMore": "Load more logs",
+			"searchPlaceholder": "Enter search term...",
+			"timeFilter": "Time Filter"
+		}
+	},
+	"status": {
+		"copyErrorSuccess": "Error message copied to clipboard",
+		"copyErrorFailed": "Failed to copy error message",
+		"phases": {
+			"apiKey": {
+				"Pending": "Pending",
+				"Created": "Created",
+				"Deleted": "Deleted"
+			},
+			"cluster": {
+				"Pending": "Pending",
+				"Running": "Running",
+				"Paused": "Paused",
+				"Failed": "Failed",
+				"Deleted": "Deleted",
+				"Initializing": "Initializing",
+				"Updating": "Updating",
+				"Upgrading": "Upgrading",
+				"Deleting": "Deleting"
+			},
+			"registry": {
+				"Pending": "Pending",
+				"Connected": "Connected",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
+			"catalog": {
+				"Pending": "Pending",
+				"Ready": "Ready",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
+			"endpoint": {
+				"Pending": "Pending",
+				"Deploying": "Deploying",
+				"ModelDownloading": "Model Downloading",
+				"Running": "Running",
+				"Degraded": "Degraded",
+				"Paused": "Paused",
+				"Deleting": "Deleting",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
+			"externalEndpoint": {
+				"Pending": "Pending",
+				"Running": "Running",
+				"Degraded": "Degraded",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
+			"externalEndpointUpstream": {
+				"Ready": "Ready",
+				"Failed": "Failed"
+			},
+			"engine": {
+				"Pending": "Pending",
+				"Created": "Created",
+				"Failed": "Failed",
+				"Deleted": "Deleted"
+			},
+			"nodeProvision": {
+				"provisioning": "Provisioning",
+				"provisioned": "Provisioned"
+			}
+		},
+		"accessModes": {
+			"LoadBalancer": "Load Balancer",
+			"NodePort": "NodePort",
+			"Ingress": "Ingress"
+		},
+		"last_transition": "Last Transition Time: "
+	},
+	"settings": {
+		"title": "Settings"
+	},
+	"vram_calculator": {
+		"title": "VRAM Calculator"
+	},
+	"oem_configs": {
+		"title": "Customize Appearance",
+		"description": "Customize your application's appearance",
+		"fields": {
+			"brandName": "Brand Name",
+			"mainLogo": "Main Logo",
+			"collapsedLogo": "Collapsed Logo",
+			"brandSettings": "Brand Settings"
+		},
+		"placeholders": {
+			"brandName": "Enter brand name"
+		},
+		"descriptions": {
+			"brandName": "This will be displayed in the navigation and login pages",
+			"mainLogo": "Recommended size: 64x64px. Supports PNG, JPG, SVG formats.",
+			"collapsedLogo": "Used when the sidebar is collapsed. If not provided, the main logo will be used."
+		},
+		"buttons": {
+			"uploadLogo": "Upload Logo",
+			"uploadCollapsedLogo": "Upload Collapsed Logo",
+			"resetToDefault": "Reset to Default",
+			"saveConfiguration": "Save Configuration"
+		},
+		"labels": {
+			"optional": "(Optional)"
+		}
+	},
+	"observability": {
+		"title": "Observability"
+	},
+	"ai_traces": {
+		"title": "Access Log",
+		"empty": "No access logs in the selected window.",
+		"forbidden": "You do not have permission to view access logs.",
+		"refresh": "Refresh",
+		"export": {
+			"button": "Export",
+			"exporting": "Exporting…",
+			"csv": "CSV (Excel)",
+			"jsonl": "JSONL",
+			"hint": "Exports the current filters and time range, up to 100,000 rows. Request and response bodies are not included.",
+			"failed": "Export failed"
+		},
+		"stats": {
+			"title": "Requests",
+			"requests": "Requests",
+			"totalRequests": "{{total}} total"
+		},
+		"filters": {
+			"requestId": "Request ID (exact match)",
+			"endpoint": "Endpoint name",
+			"allEndpoints": "All endpoints",
+			"endpointSearch": "Search or enter an endpoint name",
+			"endpointType": "Endpoint type",
+			"allTypes": "All types",
+			"status": "Status",
+			"allStatuses": "All statuses",
+			"statusSearch": "Type or pick a status code",
+			"statusHint": "Enter a 3-digit status code (100–599).",
+			"model": "Request model",
+			"allModels": "All models",
+			"modelSearch": "Search or enter a model name",
+			"optionsTruncated": "Only some values are listed. Enter the full name to filter by it.",
+			"apiKey": "API key",
+			"allApiKeys": "All API keys",
+			"finishReason": "Finish",
+			"allFinishReasons": "All finish reasons"
+		},
+		"columns": {
+			"requestId": "Request ID",
+			"time": "Time",
+			"workspace": "Workspace",
+			"endpoint": "Endpoint",
+			"app": "App",
+			"model": "Request model",
+			"status": "Status",
+			"apiKey": "API key",
+			"tokens": "Tokens",
+			"throughput": "Tok/s",
+			"duration": "Duration",
+			"finishReason": "Finish"
+		},
+		"status": {
+			"classInfo": "Informational — the server acknowledged the request and is still processing it.",
+			"classSuccess": "Success — the request completed normally.",
+			"classRedirect": "Redirect.",
+			"classClient": "Client error — the request was rejected.",
+			"classServer": "Server error — the gateway or upstream failed.",
+			"unknown": "Unknown status.",
+			"description": {
+				"200": "OK — the request completed successfully.",
+				"400": "Bad request — the request was malformed or rejected by the gateway.",
+				"401": "Unauthorized — the API key is missing or invalid.",
+				"403": "Forbidden — the API key is not allowed to access this resource.",
+				"404": "Not found — the requested model or endpoint does not exist.",
+				"408": "Request timeout — the client did not finish sending the request in time.",
+				"429": "Too many requests — a rate or quota limit was exceeded.",
+				"499": "Client closed request — the client disconnected before the response completed.",
+				"500": "Internal server error — the gateway or upstream failed unexpectedly.",
+				"502": "Bad gateway — the upstream returned an invalid response.",
+				"503": "Service unavailable — no healthy upstream was available to serve the request.",
+				"504": "Gateway timeout — the upstream did not respond within the time limit."
+			},
+			"shortInfo": "Informational",
+			"shortSuccess": "Success",
+			"shortRedirect": "Redirect",
+			"shortClient": "Client error",
+			"shortServer": "Server error",
+			"short": {
+				"200": "OK",
+				"400": "Bad request",
+				"401": "Unauthorized",
+				"403": "Forbidden",
+				"404": "Not found",
+				"408": "Request timeout",
+				"429": "Too many requests",
+				"499": "Client closed request",
+				"500": "Internal server error",
+				"502": "Bad gateway",
+				"503": "Service unavailable",
+				"504": "Gateway timeout"
+			}
+		},
+		"detail": {
+			"title": "Access log detail",
+			"time": "Time",
+			"status": "Status",
+			"endpoint": "Endpoint",
+			"workspace": "Workspace",
+			"requestModel": "Request model",
+			"responseModel": "Response model",
+			"stream": "Stream",
+			"streamOn": "Streaming",
+			"streamOff": "Non-streaming",
+			"tokens": "Tokens",
+			"tokenParts": {
+				"prompt": "prompt",
+				"completion": "completion",
+				"total": "total"
+			},
+			"apiKey": "API key",
+			"request": "Request body",
+			"response": "Response body",
+			"viewFormatted": "Formatted",
+			"viewRaw": "Raw",
+			"messageRaw": "</> View raw",
+			"messageHideRaw": "</> Hide raw",
+			"wrap": "Wrap lines",
+			"noWrap": "No wrap",
+			"collapse": "Collapse",
+			"expand": "Expand",
+			"collapseAll": "Collapse all",
+			"expandAll": "Expand all",
+			"searchPlaceholder": "Search in body…",
+			"clearSearch": "Clear search",
+			"matchCount": "{{current}} / {{total}}",
+			"noMatches": "No matches",
+			"prevMatch": "Previous match",
+			"nextMatch": "Next match",
+			"role": {
+				"system": "System",
+				"user": "User",
+				"assistant": "Assistant",
+				"tool": "Tool",
+				"developer": "Developer"
+			},
+			"block": {
+				"text": "Text",
+				"toolUse": "Tool use",
+				"toolResult": "Tool result",
+				"image": "Image",
+				"thinking": "Thinking",
+				"unknown": "Content block"
+			}
+		},
+		"routing": {
+			"target": "Upstream target",
+			"upstream": "Upstream",
+			"upstreamModel": "Upstream model"
+		}
+	},
+	"permissions": {
+		"create": "Create",
+		"read": "Read",
+		"update": "Update",
+		"delete": "Delete",
+		"push": "Push",
+		"pull": "Pull",
+		"system_admin": "System Admin",
+		"read-credentials": "Read Credentials",
+		"trace-read": "Access Log Read",
+		"usage-read": "Usage Read",
+		"requiredBy": "Required by: {{actions}}",
+		"dependenciesAdded": "Added required permissions: {{actions}}"
+	},
+	"systems": {
+		"title": "Systems"
+	},
+	"license": {
+		"title": "License",
+		"loading": "Loading license information...",
+		"noLicense": "Enterprise license not activated yet",
+		"unlimited": "Unlimited",
+		"permanent": "Permanent",
+		"fields": {
+			"edition": "Edition",
+			"vendor": "Vendor",
+			"licenseType": "License Type",
+			"signDate": "Sign Date",
+			"period": "Valid Period",
+			"expirationDate": "Expiration Date",
+			"days": "days",
+			"maxGpus": "Max GPUs",
+			"serial": "Serial Number"
+		},
+		"usage": {
+			"title": "Resource Usage"
+		},
+		"update": {
+			"title": "Update License",
+			"codeLabel": "License Code",
+			"codePlaceholder": "Enter your license code here...",
+			"submit": "Update License",
+			"updating": "Updating..."
+		},
+		"errors": {
+			"emptyCode": "License code cannot be empty",
+			"updateFailed": "Failed to update license"
+		},
+		"success": {
+			"updated": "License updated successfully",
+			"serialCopied": "Serial number copied to clipboard"
+		},
+		"phase": {
+			"active": "Active",
+			"expired": "Expired",
+			"pending": "Pending",
+			"invalid": "Invalid"
+		},
+		"edition": {
+			"enterprise": "Enterprise"
+		},
+		"licenseType": {
+			"trial": "Trial",
+			"perpetual": "Perpetual",
+			"subscription": "Subscription"
+		}
+	},
+	"url": {
+		"title": "URL"
+	},
+	"file": {
+		"title": "File"
+	},
+	"modelSource": {
+		"label": "Model source",
+		"unspecified": "Unspecified",
+		"placeholder": "Select a model source",
+		"values": {
+			"self-hosted": "Private self-deployed",
+			"private-access": "Private access",
+			"third-party-public": "Public cloud",
+			"hybrid": "Hybrid"
+		}
+	},
+	"model_usage": {
+		"title": "Model Usage",
+		"refresh": "Refresh",
+		"empty": "No usage in the selected window.",
+		"filters": {
+			"apiKey": "API key",
+			"allApiKeys": "All API keys",
+			"model": "Model",
+			"endpointType": "Type",
+			"allTypes": "All types"
+		},
+		"apiKey": "API key",
+		"model": "Model",
+		"promptTokens": "Prompt",
+		"completionTokens": "Completion",
+		"totalTokens": "Total",
+		"byApiKey": "By API key",
+		"byModel": "By model",
+		"range": {
+			"7": "Last 7 days",
+			"30": "Last 30 days",
+			"90": "Last 90 days"
+		},
+		"daily": {
+			"title": "Daily tokens",
+			"totalTokens": "{{total}} total",
+			"tooltip": {
+				"prompt": "Prompt",
+				"completion": "Completion",
+				"total": "Total"
+			},
+			"titleByKey": "Daily tokens by API key",
+			"titleByModel": "Daily tokens by model",
+			"totalLabel": "total tokens",
+			"titleDayByKey": "Tokens by API key · single day",
+			"titleDayByModel": "Tokens by model · single day",
+			"otherKeys": "Other {{n}} API keys",
+			"otherAxisLabel": "Other {{n}} (total)",
+			"clickHint": "Click a day to scope the page to that day",
+			"backToPreset": "Back to last {{days}} days",
+			"backToRange": "Back to {{range}}"
+		},
+		"detail": {
+			"title": "Daily detail",
+			"date": "Date",
+			"type": "Type",
+			"endpoint": "Endpoint",
+			"internal": "Internal",
+			"external": "External"
+		},
+		"chart": {
+			"line": "Line chart",
+			"bar": "Bar chart"
+		},
+		"byApiKeyOnDay": "By API key · {{date}}",
+		"byModelOnDay": "By model · {{date}}"
+	},
+	"observations": {
+		"actualMemory": "Actual VRAM",
+		"actual": "Actual",
+		"allocated": "Allocated",
+		"physical": "Physical",
+		"noMeasurement": "No recent measurement",
+		"utilization": "GPU utilization",
+		"assignments": "Allocated inference instances",
+		"unhealthy": "Device unhealthy",
+		"replicaUsage": "Replica usage",
+		"deviceUsage": "Physical device usage",
+		"deviceTemperature": "Device temperature",
+		"devicePower": "Device power",
+		"sampleTime": "VRAM sampled at",
+		"hardware": "Hardware and connection",
+		"noAssignments": "No visible instance allocations",
+		"status": {
+			"no_data": "No recent GPU measurements. Allocation information remains available.",
+			"not_configured": "GPU monitoring query service is not configured.",
+			"unavailable": "GPU measurements are unavailable. Allocation information remains available."
+		},
+		"hardwareFields": {
+			"architecture": "Architecture",
+			"cuda_capability": "CUDA capability",
+			"driver_version": "Driver",
+			"cuda_driver_version": "CUDA driver",
+			"pcie_bus_id": "PCIe bus ID",
+			"pcie_generation": "PCIe generation",
+			"pcie_width": "PCIe width",
+			"numa_node": "NUMA node",
+			"nvlink": "NVLink",
+			"nvswitch": "NVSwitch",
+			"hccs_capable": "HCCS capability"
+		},
+		"details": "Device details",
+		"present": "Present",
+		"absent": "Absent",
+		"supported": "Supported",
+		"unsupported": "Unsupported",
+		"overAllocation": "Actual usage exceeds allocation",
+		"fp16": "FP16 compute (TFLOPS)",
+		"flopsEstimate": "Estimated usage = nominal FP16 peak × utilization",
+		"flops": "Compute monitoring (FLOPS)",
+		"calibrate": "Calibrate compute",
+		"flopsTrend": "Last 30 days · 6-hour average usage",
+		"noTrend": "No compute history available",
+		"calibrationHelp": "Single-card FP16 TFLOPS by model. Leave blank to restore the default.",
+		"invalidTflops": "Enter a finite number greater than zero.",
+		"calibrationFailed": "Could not save calibration. Please retry.",
+		"noTopology": "No GPU topology data available",
+		"unknownNuma": "NUMA not reported",
+		"interconnectEnabled": "High-speed interconnect enabled (reported by node)",
+		"topology": "Topology",
+		"trendEstimate": "Reported devices; calculated with current calibration"
+	}
 }

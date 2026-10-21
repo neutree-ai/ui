@@ -1,4 +1,4 @@
-import { useCan, useCustom, useUpdate, useDataProvider } from '@refinedev/core';
+import { useCustom, useUpdate, useDataProvider } from '@refinedev/core';
 import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,9 +16,8 @@ export function ClusterFlops({cluster,samples}:{cluster:Cluster;samples:Accelera
  const {total,used}=flopsTotals(devices,samples,overrides);
  const products=[...new Set(devices.map(d=>d.product))].sort();
  const [open,setOpen]=useState(false);const [draft,setDraft]=useState<Record<string,string>>({});const [error,setError]=useState('');
- const {data:permission}=useCan({resource:'clusters',action:'edit',params:{workspace:cluster.metadata.workspace}});
  const provider=useDataProvider();const update=useUpdate<Cluster>();
- const history=useCustom<AcceleratorSnapshot>({url:`/clusters/${encodeURIComponent(cluster.metadata.workspace ?? '')}/${encodeURIComponent(cluster.metadata.name)}/accelerator-utilization-trend`,method:'get',queryOptions:{retry:false,staleTime:300000,refetchInterval:300000}});
+ const history=useCustom<AcceleratorSnapshot & {start:number;end:number}>({url:`/clusters/${encodeURIComponent(cluster.metadata.workspace ?? '')}/${encodeURIComponent(cluster.metadata.name)}/accelerator-utilization-trend`,method:'get',queryOptions:{retry:false,staleTime:300000,refetchInterval:300000}});
  const byTime=new Map<number,AcceleratorSample[]>();
  for(const sample of history.error ? [] : history.data?.data.samples ?? []) byTime.set(sample.observed_at,[...(byTime.get(sample.observed_at) ?? []),sample]);
  // Use each historical device identity/product, rather than multiplying today's
@@ -34,7 +33,7 @@ export function ClusterFlops({cluster,samples}:{cluster:Cluster;samples:Accelera
  });
  const [hover,setHover]=useState<number|null>(null);
  const max=Math.max(1,...points.map(p=>p.value ?? 0));
- const start=points[0]?.time ?? 0,end=points.at(-1)?.time ?? start;
+ const start=history.data?.data.start ?? points[0]?.time ?? 0,end=history.data?.data.end ?? points.at(-1)?.time ?? start;
  const x=(time:number)=>(time-start)/Math.max(21600,end-start)*400;
  const y=(value:number)=>72-value/max*64;
  const segments:typeof points[]=[];
@@ -62,7 +61,7 @@ export function ClusterFlops({cluster,samples}:{cluster:Cluster;samples:Accelera
  return <div className="border-t pt-4">
   <div className="grid gap-5 md:grid-cols-2">
    <div className="space-y-3">
-    <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-medium">{t('observations.flops')}</h3>{permission?.can && <Button variant="ghost" size="sm" onClick={()=>{setDraft(Object.fromEntries(products.map(p=>[p,overrides[p]?.toString() ?? ''])));setError('');setOpen(true);}}>{t('observations.calibrate')}</Button>}</div>
+    <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-medium">{t('observations.flops')}</h3>{<Button variant="ghost" size="sm" onClick={()=>{setDraft(Object.fromEntries(products.map(p=>[p,overrides[p]?.toString() ?? ''])));setError('');setOpen(true);}}>{t('observations.calibrate')}</Button>}</div>
     <div className="text-xl font-semibold tabular-nums">{formatFlops(used)} / {formatFlops(total)}</div>
     <MetricBar value={used!=null && total ? used/total*100:null} series="blue" size="sm" />
     <p className="text-xs text-muted-foreground">{t('observations.flopsEstimate')}</p>
