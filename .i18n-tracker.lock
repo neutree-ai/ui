@@ -481,7 +481,7 @@
   "src/domains/log-sink/components/LogSinkStatus.tsx": "98ac8316261800c66b7784dc78faba0a",
   "src/domains/log-sink/components/TestConnectionButton.tsx": "a42998619e43bf670dc4f38fb18b2488",
   "src/domains/log-sink/hooks/use-log-sink-delete-confirmation.ts": "8786d19ac29aa168a204710538650da9",
-  "src/domains/log-sink/hooks/use-log-sink-form.tsx": "574fa94713b86ee487740103e9d42544",
+  "src/domains/log-sink/hooks/use-log-sink-form.tsx": "9ecb39755d67ee33b24e3fdeb6ba31b1",
   "src/domains/log-sink/hooks/use-log-sink-test-connection.ts": "3c9bd1eefd152d78921db870265daef0",
   "src/domains/log-sink/lib/log-sink-display.ts": "5061923e6e38f3b7e419ab693664c7f3",
   "src/domains/log-sink/lib/log-sink-form.ts": "0e5ffa1ef686c24250968bfca3abf8d4",
