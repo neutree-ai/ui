@@ -66,7 +66,7 @@ export function ClusterFlops({
       const distinct = new Map(
         values.map((s) => [`${s.labels.node}/${s.labels.accelerator_uuid}`, s]),
       );
-      let value: number | null = 0;
+      let value: number | null = null;
       for (const s of distinct.values()) {
         const product =
           s.labels.product ||
@@ -76,7 +76,8 @@ export function ClusterFlops({
           )?.product ||
           "";
         const peak = peakTflops(product, overrides);
-        value = value == null || peak == null ? null : value + peak * s.value;
+        if (peak != null && Number.isFinite(s.value) && s.value >= 0 && s.value <= 1)
+          value = (value ?? 0) + peak * s.value;
       }
       return { time, value };
     });
