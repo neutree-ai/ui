@@ -427,7 +427,7 @@ describe("s3", () => {
 
   it.each([
     ["", undefined],
-    ["neutree/%Y/%m/%d/", undefined],
+    ["traces/%Y/%m/%d/", undefined],
     ["x".repeat(513), "tooLong"],
     ["/abs", "leadingSlash"],
     ["a/{{ field }}/", "template"],

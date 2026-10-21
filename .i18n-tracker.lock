@@ -454,7 +454,7 @@
   "src/domains/log-sink/hooks/use-log-sink-form.tsx": "6f2016d889af20f22bd0b24083c3fbef",
   "src/domains/log-sink/hooks/use-log-sink-test-connection.ts": "e581ef561867f1d7cf4756f230e0ef54",
   "src/domains/log-sink/lib/log-sink-display.ts": "408cfb39b53d8bd4dc292ff5767e8f4b",
-  "src/domains/log-sink/lib/log-sink-form.ts": "81e225b48fdc54d22503c0bf15e91735",
+  "src/domains/log-sink/lib/log-sink-form.ts": "24ff96490e7d005a58429534c5a4ed9c",
   "src/domains/log-sink/lib/test-connection.ts": "be5d30881c064949f51f74236c88ae95",
   "src/domains/log-sink/types.ts": "05d02d7be49608291a19edc99292e769",
   "src/pages/log-sinks/create.tsx": "63f96513deb43cc99d59f974694bf2c5",
