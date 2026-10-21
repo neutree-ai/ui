@@ -300,6 +300,7 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
                 {...form}
                 name="spec.s3.region"
                 label={t("log_sinks.fields.region")}
+                description={t("log_sinks.descriptions.region")}
                 required
                 rules={{
                   validate: (value: string) =>
