@@ -905,7 +905,7 @@
 			"timeoutSeconds": "60",
 			"bufferSize": "1",
 			"endpoint": "e.g. https://s3.example.com",
-			"region": "e.g. us-east-1"
+			"region": "Region name"
 		},
 		"descriptions": {
 			"enabled": "When off, nothing is sent to this destination. Access logs produced while it is off are never sent later.",
@@ -914,6 +914,7 @@
 			"bufferSize": "On-disk buffer for this destination. Leave empty to use the default (1 GiB). When full, the newest events are dropped.",
 			"extraFields": "Added as fields to every record sent to this destination.",
 			"endpoint": "Leave empty to use the AWS endpoint for the region. Set it for S3-compatible stores.",
+			"region": "Use the region your storage provider specifies.",
 			"bucket": "The bucket must already exist.",
 			"keyPrefix": "Leave empty to use the default (neutree/%Y/%m/%d/). Date placeholders use UTC.",
 			"forcePathStyle": "Address the bucket as <endpoint>/<bucket>. Turn off for virtual-hosted style (<bucket>.<endpoint host>), which most S3-compatible stores do not support.",
