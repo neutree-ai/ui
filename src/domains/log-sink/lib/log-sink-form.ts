@@ -14,7 +14,7 @@ import type {
 const GIB = 1024 ** 3;
 const MIN_BUFFER_BYTES = 268435488;
 
-export const S3_DEFAULT_KEY_PREFIX = "neutree/%Y/%m/%d/";
+export const S3_DEFAULT_KEY_PREFIX = "traces/%Y/%m/%d/";
 export const S3_DEFAULT_FLUSH_INTERVAL_SECONDS = 300;
 const S3_MAX_FLUSH_INTERVAL_SECONDS = 86400;
 const S3_MAX_KEY_PREFIX_LENGTH = 512;
