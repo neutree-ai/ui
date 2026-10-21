@@ -73,21 +73,21 @@ export function flopsTotals(
   samples: AcceleratorSample[],
   overrides: Record<string, number>,
 ) {
-  let total: number | null = 0,
-    used: number | null = 0;
-  for (const device of devices.filter((d) => d.healthy)) {
+  const healthy = devices.filter((d) => d.healthy);
+  let total: number | null = healthy.length ? null : 0,
+    used: number | null = healthy.length ? null : 0;
+  for (const device of healthy) {
     const peak = peakTflops(device.product, overrides);
+    if (peak == null) continue;
+    total = (total ?? 0) + peak;
     const ratio = reading(
       samples,
       "neutree_accelerator_utilization_ratio",
       device.node,
       device.uuid,
     )?.value;
-    total = total == null || peak == null ? null : total + peak;
-    used =
-      used == null || peak == null || ratio == null || ratio < 0 || ratio > 1
-        ? null
-        : used + peak * ratio;
+    if (ratio != null && Number.isFinite(ratio) && ratio >= 0 && ratio <= 1)
+      used = (used ?? 0) + peak * ratio;
   }
   return { total, used };
 }

@@ -353,9 +353,6 @@ export function GpuObservationCard({
                       : "—"}{" "}
                     / {nominalTflops?.toFixed(1) ?? "—"} TFLOPS
                   </span>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.flopsEstimate")}
-                  </p>
                 </div>
               </div>
               {used && (
