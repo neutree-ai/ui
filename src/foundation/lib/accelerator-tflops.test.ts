@@ -7,12 +7,19 @@ import {
 } from "./accelerator-tflops";
 describe("FP16 estimates", () => {
   const device = {
-    node: "n", uuid: "g", index: 0, product: "T4", healthy: true,
-    totalMiB: null, allocatedMiB: null,
+    node: "n",
+    uuid: "g",
+    index: 0,
+    product: "T4",
+    healthy: true,
+    totalMiB: null,
+    allocatedMiB: null,
   };
   const sample = (uuid: string, value: number) => ({
     metric: "neutree_accelerator_utilization_ratio",
-    labels: { node: "n", accelerator_uuid: uuid }, value, observed_at: 1,
+    labels: { node: "n", accelerator_uuid: uuid },
+    value,
+    observed_at: 1,
   });
   it("retains known capacity and measured usage when other cards are unknown or missing metrics", () => {
     const devices = [
@@ -21,18 +28,24 @@ describe("FP16 estimates", () => {
       device,
       { ...device, uuid: "bad", healthy: false },
     ];
-    expect(flopsTotals(devices, [sample("g", 0.5), sample("bad", 1)], {}))
-      .toEqual({ total: 130, used: 32.5 });
-    expect(flopsTotals([...devices].reverse(), [sample("g", 0)], {}))
-      .toEqual({ total: 130, used: 0 });
+    expect(
+      flopsTotals(devices, [sample("g", 0.5), sample("bad", 1)], {}),
+    ).toEqual({ total: 130, used: 32.5 });
+    expect(flopsTotals([...devices].reverse(), [sample("g", 0)], {})).toEqual({
+      total: 130,
+      used: 0,
+    });
   });
   it("keeps entirely unknown values unknown and an empty cluster at zero", () => {
-    expect(flopsTotals([{ ...device, product: "unknown" }], [sample("g", 0.5)], {}))
-      .toEqual({ total: null, used: null });
+    expect(
+      flopsTotals([{ ...device, product: "unknown" }], [sample("g", 0.5)], {}),
+    ).toEqual({ total: null, used: null });
     expect(flopsTotals([], [], {})).toEqual({ total: 0, used: 0 });
     for (const value of [NaN, Infinity, -0.1, 1.1]) {
-      expect(flopsTotals([device], [sample("g", value)], {}))
-        .toEqual({ total: 65, used: null });
+      expect(flopsTotals([device], [sample("g", value)], {})).toEqual({
+        total: 65,
+        used: null,
+      });
     }
   });
   it("matches longest model first and honors exact calibration", () => {

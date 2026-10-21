@@ -39,23 +39,39 @@ const cluster = {
 } as unknown as Cluster;
 describe("compute calibration", () => {
   it("keeps historical known-card usage and zero points when other cards are unknown", () => {
-    const sample = (time: number, uuid: string, product: string, value: number) => ({
+    const sample = (
+      time: number,
+      uuid: string,
+      product: string,
+      value: number,
+    ) => ({
       metric: "neutree_accelerator_utilization_ratio",
       labels: { node: "n", accelerator_uuid: uuid, product },
-      observed_at: time, value,
+      observed_at: time,
+      value,
     });
-    mocks.history.mockReturnValue({ data: { data: {
-      start: 1, end: 64801, samples: [
-        sample(1, "unknown", "unknown", 0.8),
-        sample(1, "g", "T4", 0.5),
-        sample(21601, "g", "T4", 0),
-        sample(21601, "unknown", "unknown", 0.8),
-        sample(43201, "unknown", "unknown", 1),
-        sample(64801, "g", "T4", 1.1),
-      ],
-    } } });
-    const { container } = render(<ClusterFlops cluster={cluster} samples={[]} />);
-    const titles = [...container.querySelectorAll("svg circle title")].map((e) => e.textContent);
+    mocks.history.mockReturnValue({
+      data: {
+        data: {
+          start: 1,
+          end: 64801,
+          samples: [
+            sample(1, "unknown", "unknown", 0.8),
+            sample(1, "g", "T4", 0.5),
+            sample(21601, "g", "T4", 0),
+            sample(21601, "unknown", "unknown", 0.8),
+            sample(43201, "unknown", "unknown", 1),
+            sample(64801, "g", "T4", 1.1),
+          ],
+        },
+      },
+    });
+    const { container } = render(
+      <ClusterFlops cluster={cluster} samples={[]} />,
+    );
+    const titles = [...container.querySelectorAll("svg circle title")].map(
+      (e) => e.textContent,
+    );
     expect(titles).toHaveLength(2);
     expect(titles[0]).toContain("32.50 TFLOPS");
     expect(titles[1]).toContain("0.00 TFLOPS");
