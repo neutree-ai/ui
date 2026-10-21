@@ -43,7 +43,9 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
   const matches = sameCacheConfig(desired, status?.current);
   const phase =
-    summary?.phase === "Ready" && !matches ? "Reconciling" : summary?.phase;
+    (summary?.phase === "Ready" || summary?.phase === "Disabled") && !matches
+      ? "Reconciling"
+      : summary?.phase;
   const stale = availability?.status === "Unknown" || !status?.observed_at;
   const busy = activeCacheChange(status);
   const request = busy?.request;
@@ -148,19 +150,24 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
             )}
           </div>
         )}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>
-            {stale
-              ? t("clusters.zcache.lastObservation")
-              : t("clusters.zcache.readyCount", { ready, total: names.length })}
-          </span>
-          {status?.observed_at && (
+        {(phase !== "Disabled" || names.length > 0) && (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
-              {t("clusters.zcache.observedAt")}{" "}
-              <Timestamp timestamp={status.observed_at} />
+              {stale
+                ? t("clusters.zcache.lastObservation")
+                : t("clusters.zcache.readyCount", {
+                    ready,
+                    total: names.length,
+                  })}
             </span>
-          )}
-        </div>
+            {status?.observed_at && (
+              <span>
+                {t("clusters.zcache.observedAt")}{" "}
+                <Timestamp timestamp={status.observed_at} />
+              </span>
+            )}
+          </div>
+        )}
         {names.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

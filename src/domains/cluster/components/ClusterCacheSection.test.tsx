@@ -293,3 +293,40 @@ it("exposes a retry for initial installation failure with no node inventory", ()
   expect(screen.queryByText("clusters.zcache.controlPlane.title")).toBeNull();
   expect(screen.queryByText("clusters.cache.providerLabel")).toBeNull();
 });
+
+it("shows pending enablement over an old Disabled observation", () => {
+  const cluster = {
+    spec: {
+      cache: {
+        provider: "zcache",
+        options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] },
+      },
+    },
+    status: {
+      cache: {
+        provider: "zcache",
+        phase: "Disabled",
+        conditions: [],
+        details: { current: { enabled: false, target_nodes: [] }, nodes: [] },
+      },
+    },
+  } as unknown as Cluster;
+  render(<ClusterCacheSection cluster={cluster} />);
+  expect(screen.getByText("clusters.zcache.reconciling")).toBeTruthy();
+  expect(screen.queryByText("clusters.zcache.disabled")).toBeNull();
+});
+it("omits node counts when disabled with no nodes", () => {
+  const cluster = {
+    spec: {},
+    status: {
+      cache: {
+        provider: "zcache",
+        phase: "Disabled",
+        conditions: [],
+        details: { observed_at: "now", nodes: [] },
+      },
+    },
+  } as unknown as Cluster;
+  render(<ClusterCacheSection cluster={cluster} />);
+  expect(screen.queryByText("clusters.zcache.readyCount")).toBeNull();
+});

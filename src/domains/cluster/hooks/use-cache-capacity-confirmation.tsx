@@ -14,7 +14,10 @@ type Capacity = { enabled?: boolean; l1_size_gib?: unknown };
 
 export function useCacheCapacityConfirmation() {
   const { t } = useTranslation();
-  const [pending, setPending] = useState<{ save: () => void } | null>(null);
+  const [pending, setPending] = useState<{
+    save: () => void;
+    disable: boolean;
+  } | null>(null);
   const confirmCapacity = (
     before: Capacity | undefined,
     after: Capacity | undefined,
@@ -22,10 +25,10 @@ export function useCacheCapacityConfirmation() {
   ) => {
     if (
       before?.enabled &&
-      after?.enabled &&
-      Number(before.l1_size_gib) !== Number(after.l1_size_gib)
+      (!after?.enabled ||
+        Number(before.l1_size_gib) !== Number(after.l1_size_gib))
     ) {
-      setPending({ save });
+      setPending({ save, disable: !after?.enabled });
     } else save();
   };
   const capacityConfirmation = (
@@ -37,9 +40,19 @@ export function useCacheCapacityConfirmation() {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("clusters.zcache.capacityChangeTitle")}</DialogTitle>
+          <DialogTitle>
+            {t(
+              pending?.disable
+                ? "clusters.zcache.disableTitle"
+                : "clusters.zcache.capacityChangeTitle",
+            )}
+          </DialogTitle>
           <DialogDescription>
-            {t("clusters.zcache.capacityChangeDescription")}
+            {t(
+              pending?.disable
+                ? "clusters.zcache.disableDescription"
+                : "clusters.zcache.capacityChangeDescription",
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -47,13 +60,18 @@ export function useCacheCapacityConfirmation() {
             {t("buttons.cancel")}
           </Button>
           <Button
+            variant={pending?.disable ? "destructive" : "default"}
             onClick={() => {
               const save = pending?.save;
               setPending(null);
               save?.();
             }}
           >
-            {t("clusters.zcache.confirmSave")}
+            {t(
+              pending?.disable
+                ? "clusters.zcache.disableTitle"
+                : "clusters.zcache.confirmSave",
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

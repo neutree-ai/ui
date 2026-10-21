@@ -48,26 +48,26 @@ export function ZCacheEditor({
   const { mutateAsync, isLoading } = useUpdate<Cluster>();
   const invalidate = useInvalidate();
   const [error, setError] = useState("");
-  const [confirm, setConfirm] = useState<"disable" | "discard" | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const status = zcacheStatus(cluster);
   const draft = form.watch("spec.cache.options");
   const unchanged = sameCacheConfig(draft, zcacheSpec(cluster));
   const busy = activeCacheChange(status);
   const close = () => {
     if (isLoading) return;
-    if (form.formState.isDirty) setConfirm("discard");
+    if (form.formState.isDirty) setConfirmDiscard(true);
     else onClose();
   };
   const save = async () => {
-    if (!draft || isLoading || access?.can !== true) return;
+    if (isLoading || access?.can !== true) return;
     setError("");
     const spec = structuredClone(cluster.spec);
     spec.cache = {
       provider: "zcache",
       options: {
-        enabled: draft.enabled,
-        l1_size_gib: Number(draft.l1_size_gib),
-        target_nodes: [...draft.target_nodes],
+        enabled: draft?.enabled === true,
+        l1_size_gib: Number(draft?.l1_size_gib ?? 1),
+        target_nodes: [...(draft?.target_nodes ?? [])],
       },
     };
     // Masked credentials must not overwrite the stored kubeconfig.
@@ -137,10 +137,7 @@ export function ZCacheEditor({
           <form
             className="flex min-h-0 flex-1 flex-col"
             onSubmit={form.handleSubmit(() => {
-              if (zcacheSpec(cluster)?.enabled && !draft?.enabled)
-                setConfirm("disable");
-              else
-                confirmCapacity(zcacheSpec(cluster), draft, () => void save());
+              confirmCapacity(zcacheSpec(cluster), draft, () => void save());
             })}
           >
             <fieldset
@@ -201,46 +198,33 @@ export function ZCacheEditor({
         </FormProvider>
         {capacityConfirmation}
         <Dialog
-          open={confirm !== null}
+          open={confirmDiscard}
           onOpenChange={(open) => {
-            if (!open) setConfirm(null);
+            if (!open) setConfirmDiscard(false);
           }}
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                {t(
-                  confirm === "disable"
-                    ? "clusters.zcache.disableTitle"
-                    : "clusters.zcache.discardTitle",
-                )}
-              </DialogTitle>
+              <DialogTitle>{t("clusters.zcache.discardTitle")}</DialogTitle>
               <DialogDescription>
-                {t(
-                  confirm === "disable"
-                    ? "clusters.zcache.disableDescription"
-                    : "clusters.zcache.discardDescription",
-                )}
+                {t("clusters.zcache.discardDescription")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirm(null)}>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDiscard(false)}
+              >
                 {t("buttons.cancel")}
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => {
-                  const action = confirm;
-                  setConfirm(null);
-                  if (action === "disable") void save();
-                  else onClose();
+                  setConfirmDiscard(false);
+                  onClose();
                 }}
               >
-                {t(
-                  confirm === "disable"
-                    ? "clusters.zcache.disableTitle"
-                    : "clusters.zcache.discardTitle",
-                )}
+                {t("clusters.zcache.discardTitle")}
               </Button>
             </DialogFooter>
           </DialogContent>

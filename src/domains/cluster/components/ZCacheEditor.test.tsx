@@ -134,3 +134,22 @@ describe("cache editing", () => {
     );
   });
 });
+
+it.each([undefined, { provider: "zcache", options: { enabled: false } }])(
+  "retries a failed service with incomplete disabled config %j",
+  async (cache) => {
+    const c = structuredClone(cluster);
+    c.spec.cache = cache as Cluster["spec"]["cache"];
+    c.status!.cache!.phase = "Failed";
+    render(<ZCacheEditor cluster={c} onClose={vi.fn()} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.zcache.retry" }),
+    );
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+    expect(mocks.update.mock.calls[0][0].values.spec.cache.options).toEqual({
+      enabled: false,
+      l1_size_gib: 1,
+      target_nodes: [],
+    });
+  },
+);

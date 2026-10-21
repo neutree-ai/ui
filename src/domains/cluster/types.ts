@@ -208,7 +208,7 @@ export type ClusterCacheSpec = {
   provider: string;
   options: Record<string, unknown>;
 };
-export type CacheCondition = {
+type CacheCondition = {
   type: "ConfigurationApplied" | "Ready";
   status: "True" | "False" | "Unknown";
   reason: string;

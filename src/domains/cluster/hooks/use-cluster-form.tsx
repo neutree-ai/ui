@@ -42,10 +42,6 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     // unsaved changes to the server state (NEU-500). Populate from the
     // initial fetch only.
     refineCoreProps: {
-      successNotification: (data) =>
-        cacheSupported && data?.data?.spec?.cache
-          ? { message: t("clusters.zcache.saved"), type: "success" }
-          : undefined,
       queryOptions: {
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,

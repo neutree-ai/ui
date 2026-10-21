@@ -106,7 +106,9 @@ export function ZCacheFields({
                   onChange={(event) =>
                     form.setValue(
                       "spec.cache.options.l1_size_gib",
-                      Number(event.target.value),
+                      event.target.value === ""
+                        ? ""
+                        : Number(event.target.value),
                       { shouldDirty: true, shouldValidate: true },
                     )
                   }
@@ -116,7 +118,11 @@ export function ZCacheFields({
                 <p className="text-sm">{t("clusters.zcache.targetNodes")}</p>
                 {status?.observation_error && (
                   <p role="alert" className="text-sm text-destructive">
-                    {t("clusters.zcache.stale")} {status.observation_error}
+                    {t("clusters.zcache.stale")}{" "}
+                    {cacheMessage(
+                      status.observation_error,
+                      t("clusters.zcache.serviceName"),
+                    )}
                   </p>
                 )}
                 {names.length === 0 && (

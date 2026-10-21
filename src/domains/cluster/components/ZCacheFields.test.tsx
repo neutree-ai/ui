@@ -177,3 +177,12 @@ describe("ZCacheFields", () => {
     expect(screen.queryByRole("checkbox")).toBeNull();
   });
 });
+
+it("allows clearing capacity before entering a replacement", () => {
+  render(<Form onSubmit={vi.fn()} />);
+  const input = screen.getByRole("spinbutton") as HTMLInputElement;
+  fireEvent.change(input, { target: { value: "" } });
+  expect(input.value).toBe("");
+  fireEvent.change(input, { target: { value: "16" } });
+  expect(input.value).toBe("16");
+});

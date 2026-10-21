@@ -56,10 +56,6 @@ describe("capacity change confirmation", () => {
       { enabled: true, l1_size_gib: 2 },
       { enabled: true, l1_size_gib: 2 },
     ],
-    [
-      { enabled: true, l1_size_gib: 2 },
-      { enabled: false, l1_size_gib: 3 },
-    ],
   ])(
     "does not confirm initial, unchanged or disabled capacity",
     (before, after) => {
@@ -70,4 +66,22 @@ describe("capacity change confirmation", () => {
       expect(screen.queryByRole("dialog")).toBeNull();
     },
   );
+});
+
+it("confirms disabling even when capacity is unchanged", () => {
+  const save = vi.fn();
+  render(
+    <Harness
+      before={{ enabled: true, l1_size_gib: 2 }}
+      after={{ enabled: false, l1_size_gib: 2 }}
+      save={save}
+    />,
+  );
+  fireEvent.click(screen.getByText("save"));
+  expect(save).not.toHaveBeenCalled();
+  expect(screen.getByText("clusters.zcache.disableDescription")).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole("button", { name: "clusters.zcache.disableTitle" }),
+  );
+  expect(save).toHaveBeenCalledOnce();
 });
