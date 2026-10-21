@@ -15,9 +15,7 @@ export function useAcceleratorObservations(
       retry: false,
     },
   });
-  const samples = query.error
-    ? []
-    : (query.data?.data.samples ?? []);
+  const samples = query.error ? [] : (query.data?.data.samples ?? []);
   return {
     samples,
     status: query.error

@@ -97,7 +97,10 @@ export function reading(
   return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
 }
 
-const colors = Array.from({ length: 5 }, (_, i) => `var(--nt-chart-series-${i + 1})`);
+const colors = Array.from(
+  { length: 5 },
+  (_, i) => `var(--nt-chart-series-${i + 1})`,
+);
 export function allocationColor(name: string): string {
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;

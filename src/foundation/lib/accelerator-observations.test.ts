@@ -39,8 +39,12 @@ describe("accelerator readings", () => {
   it("uses server-approved samples regardless of client clock offset", () => {
     const approved = sample();
     for (const offset of [-600000, 600000]) {
-      const clock = vi.spyOn(Date, "now").mockReturnValue(approved.observed_at * 1000 + offset);
-      expect(reading([approved], metric, "node", "gpu", allocation)?.value).toBe(0);
+      const clock = vi
+        .spyOn(Date, "now")
+        .mockReturnValue(approved.observed_at * 1000 + offset);
+      expect(
+        reading([approved], metric, "node", "gpu", allocation)?.value,
+      ).toBe(0);
       clock.mockRestore();
     }
   });
