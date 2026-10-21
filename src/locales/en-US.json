@@ -904,7 +904,7 @@
 			"caCert": "-----BEGIN CERTIFICATE-----",
 			"timeoutSeconds": "60",
 			"bufferSize": "1",
-			"endpoint": "e.g. http://minio.example.com:9000",
+			"endpoint": "e.g. https://s3.example.com",
 			"region": "e.g. us-east-1"
 		},
 		"descriptions": {
