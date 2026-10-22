@@ -22,8 +22,12 @@ export const useOrgUnits = (enabled = true) =>
     queryOptions: { enabled },
   });
 
-export const useTeams = () =>
-  useList<Team>({ resource: "teams", pagination: ALL });
+export const useTeams = (enabled = true) =>
+  useList<Team>({
+    resource: "teams",
+    pagination: ALL,
+    queryOptions: { enabled },
+  });
 
 /**
  * Members of one OrgUnit, or of its whole subtree (through the

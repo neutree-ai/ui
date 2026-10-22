@@ -3405,7 +3405,14 @@
 			"historyHint": "Usage counts toward the groups the user was in at the time.",
 			"subtreeHint": "A department includes its sub-departments. Usage counts toward the department the user was in at the time.",
 			"apiKeyIgnored": "The API key filter does not apply here.",
-			"subtreeOnly": "Only the departments you manage: usage a user had in another department is not included."
+			"subtreeOnly": "Only the departments you manage: usage a user had in another department is not included.",
+			"filters": {
+				"department": "Department",
+				"allDepartments": "All departments",
+				"team": "Team",
+				"allTeams": "All teams",
+				"subtreeIncluded": "Includes its sub-departments."
+			}
 		}
 	},
 	"observations": {

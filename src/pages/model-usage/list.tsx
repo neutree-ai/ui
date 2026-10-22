@@ -27,9 +27,13 @@ import type {
   GroupUsageKind,
   GroupUsageRecord,
 } from "@/domains/api-key/types";
-import { useOrgUnits } from "@/domains/organization/hooks/use-organization";
+import {
+  useOrgUnits,
+  useTeams,
+} from "@/domains/organization/hooks/use-organization";
 import {
   buildOrgTree,
+  displayName,
   indexNodes,
   type OrgTreeNode,
 } from "@/domains/organization/lib/org-tree";
@@ -78,6 +82,8 @@ const GROUP_KINDS: GroupUsageKind[] = ["User", "Team", "OrgUnit"];
 // org_unit:usage-read alone reads users and departments of the caller's
 // subtree; Team totals stay with a global workspace:usage-read.
 const SUBTREE_GROUP_KINDS: GroupUsageKind[] = ["User", "OrgUnit"];
+// The "no filter" value of the department and team selects by user.
+const ALL_GROUPS = "__all__";
 // What the chart's series are: API keys, or users / groups of one kind.
 type ChartDimension = "ApiKey" | GroupUsageKind;
 
@@ -132,15 +138,48 @@ export const ModelUsageList = () => {
     // in several teams), so a stacked bar would overstate the total.
     setChartType("line");
   };
+  // By user, the rows can be narrowed to one department (with its
+  // sub-departments) or, for a global reader, one team. The server only
+  // narrows: a department admin still reads only the units they manage.
+  const [unitFilter, setUnitFilter] = useState(ALL_GROUPS);
+  const [teamFilter, setTeamFilter] = useState(ALL_GROUPS);
+  const byUser = groupKind === "User";
+  const groupFilter = useMemo(
+    () =>
+      byUser
+        ? {
+            orgUnit: unitFilter === ALL_GROUPS ? undefined : unitFilter,
+            team:
+              canReadAllGroups && teamFilter !== ALL_GROUPS
+                ? teamFilter
+                : undefined,
+          }
+        : {},
+    [byUser, unitFilter, teamFilter, canReadAllGroups],
+  );
   const groupUsage = useGroupUsage(
     canReadGroups ? workspace : undefined,
     range.start,
     range.end,
     groupKind,
+    groupFilter,
   );
   // Departments are listed in tree order with their path. Without
   // org_unit:read the list is empty and the rows keep the usage order.
-  const orgUnits = useOrgUnits(canReadGroups && groupKind === "OrgUnit");
+  const orgUnits = useOrgUnits(
+    canReadGroups && (groupKind === "OrgUnit" || byUser),
+  );
+  const teams = useTeams(canReadAllGroups && byUser);
+  const teamOptions = useMemo(
+    () =>
+      (teams.data?.data ?? [])
+        .map((team) => ({
+          name: team.metadata.name,
+          label: displayName(team.metadata),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [teams.data],
+  );
   const orgNodes = useMemo(() => {
     const nodes = [
       ...indexNodes(buildOrgTree(orgUnits.data?.data ?? [])).values(),
@@ -378,6 +417,12 @@ export const ModelUsageList = () => {
   const scopeKey = [range.start, range.end, apiKeyId, endpointType, model].join(
     "|",
   );
+  const groupScopeKey = [
+    scopeKey,
+    groupKind,
+    groupFilter.orgUnit,
+    groupFilter.team,
+  ].join("|");
 
   const onToggleSeries = (key: string) => {
     if (!key) return;
@@ -600,7 +645,52 @@ export const ModelUsageList = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {byUser && orgNodes.size > 0 ? (
+                  <Select value={unitFilter} onValueChange={setUnitFilter}>
+                    <SelectTrigger
+                      className="h-7 w-[200px]"
+                      aria-label={t("model_usage.group.filters.department")}
+                      data-testid="usage-group-department"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_GROUPS}>
+                        {t("model_usage.group.filters.allDepartments")}
+                      </SelectItem>
+                      {[...orgNodes.entries()].map(([name, { node }]) => (
+                        <SelectItem key={name} value={name}>
+                          {node.pathLabel}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+                {byUser && canReadAllGroups && teamOptions.length > 0 ? (
+                  <Select value={teamFilter} onValueChange={setTeamFilter}>
+                    <SelectTrigger
+                      className="h-7 w-[160px]"
+                      aria-label={t("model_usage.group.filters.team")}
+                      data-testid="usage-group-team"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_GROUPS}>
+                        {t("model_usage.group.filters.allTeams")}
+                      </SelectItem>
+                      {teamOptions.map((team) => (
+                        <SelectItem key={team.name} value={team.name}>
+                          {team.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
                 <span className="text-xs font-normal text-muted-foreground">
+                  {byUser && groupFilter.orgUnit
+                    ? `${t("model_usage.group.filters.subtreeIncluded")} `
+                    : ""}
                   {groupKind === "OrgUnit"
                     ? t("model_usage.group.subtreeHint")
                     : t("model_usage.group.historyHint")}
@@ -613,7 +703,7 @@ export const ModelUsageList = () => {
             }
             nameHeader={t(`model_usage.group.kinds.${groupKind}`)}
             rows={byGroup}
-            resetKey={`${scopeKey}|${groupKind}`}
+            resetKey={groupScopeKey}
             showRequests
           />
           {groupUsage.error ? (

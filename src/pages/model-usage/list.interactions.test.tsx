@@ -244,9 +244,16 @@ let orgUnits: Array<{
   path: string;
   metadata: { name: string; display_name?: string };
 }> = [];
+let teams: Array<{
+  id: number;
+  metadata: { name: string; display_name?: string };
+}> = [];
 vi.mock("@/domains/organization/hooks/use-organization", () => ({
   useOrgUnits: () => ({ data: { data: orgUnits } }),
+  useTeams: () => ({ data: { data: teams } }),
 }));
+
+const groupFilters: Array<{ orgUnit?: string; team?: string } | undefined> = [];
 
 vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
   useGroupUsage: (
@@ -254,8 +261,10 @@ vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
     _start: string,
     _end: string,
     kind: GroupUsageKind,
+    filter?: { orgUnit?: string; team?: string },
   ) => {
     groupKinds.push(workspace ? kind : undefined);
+    groupFilters.push(filter);
     return {
       usageData: workspace ? groupRows.filter((r) => r.kind === kind) : [],
       isLoading: false,
@@ -291,6 +300,7 @@ beforeEach(() => {
   canReadGroups = false;
   canReadSubtree = false;
   groupKinds.length = 0;
+  groupFilters.length = 0;
   hookState = { usageData: rows, isLoading: false, error: null };
   render(<ModelUsageList />);
 });
@@ -661,5 +671,61 @@ describe("usage by group", () => {
     expect(rowsShown[3]).toContain("Gone");
     expect(rowsShown.join()).not.toContain("org-");
     orgUnits = [];
+  });
+
+  it("narrows users to a department subtree and a team", () => {
+    orgUnits = [
+      { id: 1, path: "1", metadata: { name: "org-1", display_name: "Corp" } },
+      { id: 2, path: "1/2", metadata: { name: "rnd", display_name: "R&D" } },
+    ];
+    teams = [
+      { id: 7, metadata: { name: "org-ldap-7", display_name: "Infra" } },
+    ];
+    renderAsReader();
+
+    expect(screen.getByTestId("usage-group-department")).toBeDefined();
+    openSelect(4);
+    pickOption("Corp / R&D");
+    expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: undefined });
+    expect(
+      screen.getByText(/model_usage\.group\.filters\.subtreeIncluded/),
+    ).toBeDefined();
+
+    openSelect(5);
+    pickOption("Infra");
+    expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: "org-ldap-7" });
+
+    // The rows the server returns are ranked by usage.
+    const [bob, alice] = bodyRows(cardFor("By user or group"));
+    expect(bob.textContent).toContain("Bob");
+    expect(alice.textContent).toContain("Alice");
+
+    // Other kinds are not filtered.
+    openSelect(3);
+    pickOption("Department");
+    expect(groupFilters.at(-1)).toEqual({});
+    orgUnits = [];
+    teams = [];
+  });
+
+  it("offers a subtree reader the department filter but no team filter", () => {
+    orgUnits = [
+      { id: 2, path: "1/2", metadata: { name: "rnd", display_name: "R&D" } },
+    ];
+    teams = [
+      { id: 7, metadata: { name: "org-ldap-7", display_name: "Infra" } },
+    ];
+    cleanup();
+    canReadSubtree = true;
+    groupRows = [groupRow("User", "u-1", "Alice", "endpoint", 2, 30)];
+    render(<ModelUsageList />);
+
+    expect(screen.getByTestId("usage-group-department")).toBeDefined();
+    expect(screen.queryByTestId("usage-group-team")).toBeNull();
+    openSelect(4);
+    pickOption("R&D");
+    expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: undefined });
+    orgUnits = [];
+    teams = [];
   });
 });
