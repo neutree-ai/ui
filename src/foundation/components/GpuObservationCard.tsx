@@ -290,7 +290,7 @@ export function GpuObservationCard({
       </div>
       {(activeWeights || activeL0Kv) && (
         <div
-          className="flex flex-wrap justify-between gap-1 text-xs text-muted-foreground"
+          className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
           data-testid="gpu-kv-weights-breakdown"
         >
           {activeWeights && (
@@ -298,6 +298,7 @@ export function GpuObservationCard({
               {t("observations.modelWeights")} {activeWeights}
             </span>
           )}
+          {activeWeights && activeL0Kv && <span aria-hidden="true">·</span>}
           {activeL0Kv && (
             <span>
               {t("observations.l0KvCache")} {activeL0Kv}

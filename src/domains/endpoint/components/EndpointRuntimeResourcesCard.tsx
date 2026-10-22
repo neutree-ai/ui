@@ -152,13 +152,21 @@ const Legend = ({
           ]
         : []),
       {
-        label: t("endpoints.fields.requestedMemory"),
+        label: t(
+          observations
+            ? "observations.allocated"
+            : "endpoints.fields.requestedMemory",
+        ),
         markerClassName: observations
           ? "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30"
           : "h-2 w-2 rounded-sm bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
       },
       {
-        label: t("endpoints.fields.physicalMemory"),
+        label: t(
+          observations
+            ? "observations.physical"
+            : "endpoints.fields.physicalMemory",
+        ),
         markerClassName:
           "h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]",
       },
@@ -457,14 +465,14 @@ function Host({
             {t("common.fields.cpu")} {requestedCpu} ·{" "}
             {t("common.fields.memory")} {requestedMemory} GiB
             {l1Cache && (
-              <>
+              <span data-testid="runtime-host-l1-cache">
                 {" · "}
                 {t("observations.l1KvCache")}{" "}
                 {l1Cache.usedGiB != null
                   ? formatToDecimal(l1Cache.usedGiB, 1)
                   : "—"}{" "}
                 / {formatToDecimal(l1Cache.capacityGiB, 1)} GiB
-              </>
+              </span>
             )}{" "}
             ·{" "}
             {formatCount(
@@ -475,26 +483,6 @@ function Host({
             )}
           </span>
         </div>
-        {l1Cache && (
-          <div className="mt-2" data-testid="runtime-host-l1-cache">
-            <MetricBar
-              size="sm"
-              series="blue"
-              value={
-                l1Cache.usedGiB != null && l1Cache.capacityGiB > 0
-                  ? Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        (l1Cache.usedGiB / l1Cache.capacityGiB) * 100,
-                      ),
-                    )
-                  : null
-              }
-              track="subtle"
-            />
-          </div>
-        )}
 
         <div className={cn("mt-3", GPU_GRID_FRAME_CLASS)}>
           <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>
@@ -558,27 +546,37 @@ function GpuCell({
       data-testid="runtime-gpu-cell"
       className={cn(GPU_CELL_CLASS, GPU_GRID_CELL_CLASS)}
     >
-      <div className="flex min-w-0 items-center gap-1">
-        <span className="whitespace-nowrap text-sm font-semibold leading-5">
-          {t("clusters.fields.gpuNumber")} {gpuNumber}
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          title={t("clusters.actions.copyUuid")}
-          aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
-          className="h-6 w-6 shrink-0 text-muted-foreground"
-          onClick={() =>
-            onCopyUuid(device.uuid, {
-              successMessage: t("clusters.messages.copyUuidSuccess"),
-              errorMessage: t("clusters.messages.copyUuidFailed"),
-            })
-          }
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="whitespace-nowrap text-sm font-semibold leading-5">
+            {t("clusters.fields.gpuNumber")} {gpuNumber}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title={t("clusters.actions.copyUuid")}
+            aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
+            className="h-6 w-6 shrink-0 text-muted-foreground"
+            onClick={() =>
+              onCopyUuid(device.uuid, {
+                successMessage: t("clusters.messages.copyUuidSuccess"),
+                errorMessage: t("clusters.messages.copyUuidFailed"),
+              })
+            }
+          >
+            <Copy className="h-3.5 w-3.5" />
+            <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
+          </Button>
+        </div>
+        <div
+          className={cn(
+            "shrink-0 whitespace-nowrap tabular-nums text-muted-foreground",
+            GPU_USAGE_TEXT_CLASS,
+          )}
         >
-          <Copy className="h-3.5 w-3.5" />
-          <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
-        </Button>
+          {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
+        </div>
       </div>
 
       {/* Clipped, the tooltip is the only way to read the name in full, so it
@@ -608,10 +606,6 @@ function GpuCell({
             physicalMiB={device.physicalMemoryMiB}
           />
         )}
-      </div>
-
-      <div className={cn("mt-1 text-muted-foreground", GPU_USAGE_TEXT_CLASS)}>
-        {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
       </div>
     </div>
   );
