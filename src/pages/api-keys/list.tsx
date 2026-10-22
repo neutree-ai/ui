@@ -64,6 +64,7 @@ import type {
   ApiKeyProject,
 } from "@/domains/api-key/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
@@ -1132,9 +1133,7 @@ export const ApiKeysList = () => {
                                       {key.metadata.workspace}
                                     </ShowButton>
                                   ) : (
-                                    <span className="text-muted-foreground">
-                                      -
-                                    </span>
+                                    <EmptyValue />
                                   )}
                                 </td>
                                 <td>
@@ -1273,9 +1272,7 @@ export const ApiKeysList = () => {
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-muted-foreground">
-                                      —
-                                    </span>
+                                    <EmptyValue />
                                   )}
                                 </td>
                                 <td>
@@ -1285,7 +1282,7 @@ export const ApiKeysList = () => {
                                     </span>
                                   ) : (
                                     <span className="text-muted-foreground">
-                                      —
+                                      {t("api_keys.limits.unlimited")}
                                     </span>
                                   )}
                                 </td>

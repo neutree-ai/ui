@@ -36,6 +36,9 @@ type UsageMetricProps = {
 const formatValue = (value: number, valueScale: number, precision: number) =>
   formatToDecimal(value * valueScale, precision) ?? EMPTY_VALUE;
 
+const renderValue = (value: string) =>
+  value === EMPTY_VALUE ? <EmptyValue /> : value;
+
 type ResourcePool = { total: number | null; available: number | null };
 
 /** Sum one allocatable/available pair across product rows.
@@ -108,7 +111,7 @@ const UsageMetric = ({
       <div className="text-sm text-muted-foreground">{label}</div>
       <div className="mt-1 flex items-baseline justify-between gap-3">
         <div className="min-w-0 whitespace-nowrap text-2xl font-semibold leading-8 tabular-nums text-foreground">
-          {usedText} / {totalText}
+          {renderValue(usedText)} / {renderValue(totalText)}
           {unit && (
             <span className="ml-1.5 text-base font-medium text-muted-foreground">
               {unit}
@@ -155,14 +158,14 @@ const UsageMetric = ({
         <span className="min-w-0 truncate">
           {usedLabel}{" "}
           <strong className="font-medium tabular-nums text-foreground">
-            {usedText === EMPTY_VALUE ? <EmptyValue /> : usedText}
+            {renderValue(usedText)}
             {unit && usageIsKnown && ` ${unit}`}
           </strong>
         </span>
         <span className="min-w-0 truncate text-right">
           {freeLabel}{" "}
           <strong className="font-medium tabular-nums text-foreground">
-            {freeText === EMPTY_VALUE ? <EmptyValue /> : freeText}
+            {renderValue(freeText)}
             {unit && usageIsKnown && ` ${unit}`}
           </strong>
         </span>

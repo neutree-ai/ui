@@ -160,8 +160,14 @@ describe("ClusterResourceSummary", () => {
 
     // The whole pool is unknown rather than the T4 share standing in for it,
     // which would have read as the L20 cards being fully consumed.
-    expect(screen.getByText("- / 70.0")).toBeTruthy();
-    expect(screen.getByText("- / 300")).toBeTruthy();
+    for (const label of ["VRAM: - / 70.0", "Core: - / 300"]) {
+      const bar = screen.getByRole("progressbar", { name: label });
+      expect(
+        bar.previousElementSibling?.querySelector(
+          '[data-testid="empty-value"]',
+        ),
+      ).toBeTruthy();
+    }
 
     const progressBars = screen.getAllByRole("progressbar");
     expect(progressBars[2].className).toContain("border-dashed");

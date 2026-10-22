@@ -16,7 +16,7 @@ import {
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
-import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
@@ -296,7 +296,7 @@ function Replica({
   onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
-  const replicaName = group.replicaId || group.instanceId || EMPTY_VALUE;
+  const replicaName = group.replicaId || group.instanceId;
   const requestedCoreUnits =
     requestedCorePerCard != null
       ? requestedCorePerCard * group.deviceCount
@@ -328,9 +328,9 @@ function Replica({
               </div>
               <span
                 className="min-w-0 truncate font-mono text-xs font-normal leading-4 text-[var(--nt-text-neutral-tertiary)]"
-                title={replicaName}
+                title={replicaName || undefined}
               >
-                {replicaName}
+                {replicaName || <EmptyValue />}
               </span>
             </div>
           </div>

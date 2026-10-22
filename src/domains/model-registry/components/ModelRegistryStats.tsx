@@ -33,7 +33,7 @@ const NotCounted = () => {
       className="text-muted-foreground"
       title={t("model_registries.stats.notApplicableHint")}
     >
-      -
+      {t("model_registries.models.values.notApplicable")}
     </span>
   );
 };

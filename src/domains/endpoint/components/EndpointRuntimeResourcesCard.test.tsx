@@ -233,6 +233,36 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getAllByText("Physical VRAM")).toHaveLength(2);
   });
 
+  it("uses the shared placeholder when a replica has no identifier", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        requestedResources={{
+          cpu: 1,
+          memory: 1,
+          gpu: 1,
+          accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+        }}
+        resources={{
+          summary: null,
+          replicas: [
+            {
+              instance_id: "",
+              replica_id: null,
+              node_id: "gpu-node-01",
+              devices: [t4],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const replica = screen.getByTestId("runtime-replica");
+    const placeholder = within(replica).getByTestId("empty-value");
+    expect(placeholder.textContent).toBe("-");
+    expect(placeholder.className).toContain("--nt-text-neutral-quaternary");
+    expect(placeholder.parentElement?.getAttribute("title")).toBeNull();
+  });
+
   it("wraps the GPU row instead of putting cards behind a scrollbar", () => {
     render(
       <EndpointRuntimeResourcesCard
