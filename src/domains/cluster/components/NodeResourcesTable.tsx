@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
+import { MetricBar } from "@/foundation/components/MetricBar";
+import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
 import type { GpuDeviceResourceRow } from "@/foundation/lib/gpu-device-resources";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -64,6 +66,7 @@ interface NodeResourcesTableProps {
   framed?: boolean;
   className?: string;
   renderGpuMemory?: (row: GpuDeviceResourceRow) => ReactNode;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
 }
 
 export const NodeResourcesTable = ({
@@ -73,6 +76,7 @@ export const NodeResourcesTable = ({
   framed = true,
   className,
   renderGpuMemory,
+  l1CacheByNode,
 }: NodeResourcesTableProps) => {
   const sortedNodeEntries = Object.entries(nodeResources).sort(
     ([, left], [, right]) => {
@@ -192,14 +196,59 @@ export const NodeResourcesTable = ({
                     />
                   </TableCell>
                   <TableCell className="align-top">
-                    <ResourceProgressBar
-                      label=""
-                      used={memory.used}
-                      total={nodeStatus.allocatable?.memory || 0}
-                      unit="GiB"
-                      compact
-                      series="purple"
-                    />
+                    <div className="space-y-2">
+                      <ResourceProgressBar
+                        label=""
+                        used={memory.used}
+                        total={nodeStatus.allocatable?.memory || 0}
+                        unit="GiB"
+                        compact
+                        series="purple"
+                      />
+                      {l1CacheByNode?.[nodeName] && (
+                        <div
+                          className="space-y-1 text-xs text-muted-foreground"
+                          data-testid="node-l1-cache-bar"
+                        >
+                          <div className="flex justify-between gap-2 tabular-nums">
+                            <span>{t("observations.l1KvCache")}</span>
+                            <span>
+                              {l1CacheByNode[nodeName].usedGiB != null
+                                ? formatToDecimal(
+                                    l1CacheByNode[nodeName].usedGiB,
+                                    1,
+                                  )
+                                : "—"}{" "}
+                              /{" "}
+                              {formatToDecimal(
+                                l1CacheByNode[nodeName].capacityGiB,
+                                1,
+                              )}{" "}
+                              GiB
+                            </span>
+                          </div>
+                          <MetricBar
+                            size="sm"
+                            series="blue"
+                            value={
+                              l1CacheByNode[nodeName].usedGiB != null &&
+                              l1CacheByNode[nodeName].capacityGiB > 0
+                                ? Math.min(
+                                    100,
+                                    Math.max(
+                                      0,
+                                      (l1CacheByNode[nodeName].usedGiB /
+                                        l1CacheByNode[nodeName].capacityGiB) *
+                                        100,
+                                    ),
+                                  )
+                                : null
+                            }
+                            track="subtle"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   {acceleratorTypes.map((accType) => {
                     const accGroup =

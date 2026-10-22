@@ -15,9 +15,14 @@ const { runtimeCardProps, useListMock, useOneMock, useShowMock } = vi.hoisted(
 );
 
 vi.mock("@refinedev/core", () => ({
+  useCustom: () => ({ data: undefined, isLoading: false }),
   useList: useListMock,
   useOne: useOneMock,
   useShow: useShowMock,
+}));
+
+vi.mock("@/foundation/lib/i18n", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
 }));
 
 vi.mock("react-i18next", () => ({
