@@ -114,8 +114,8 @@ export function GpuObservationCard({
     const kvUsage = replicaReading(samples, "vllm:kv_cache_usage_perc", a);
     if (a.kvCacheCapacityMiB != null) {
       return kvUsage != null
-        ? `≈${gib(a.kvCacheCapacityMiB * kvUsage.value)} / ${gib(a.kvCacheCapacityMiB)}`
-        : `≈${gib(a.kvCacheCapacityMiB)}`;
+        ? `${gib(a.kvCacheCapacityMiB * kvUsage.value)} / ${gib(a.kvCacheCapacityMiB)}`
+        : `${gib(a.kvCacheCapacityMiB)}`;
     }
     if (kvUsage != null) {
       return `${(kvUsage.value * 100).toFixed(1)}%`;

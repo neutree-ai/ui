@@ -122,7 +122,7 @@ describe("GPU observation card", () => {
       "observations.modelWeights 6.0 GiB",
     );
     expect(breakdown.textContent).toContain(
-      "observations.l0KvCache ≈4.0 GiB / 8.0 GiB",
+      "observations.l0KvCache 4.0 GiB / 8.0 GiB",
     );
   });
 });
