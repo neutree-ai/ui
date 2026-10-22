@@ -1,4 +1,10 @@
-import { useShow, useTranslation } from "@refinedev/core";
+import { ClusterFlops } from "@/domains/cluster/components/ClusterFlops";
+import { ClusterTopology } from "@/domains/cluster/components/ClusterTopology";
+import {
+  parseTflops,
+  TFLOPS_ANNOTATION,
+} from "@/foundation/lib/accelerator-tflops";
+import { useList, useShow, useTranslation } from "@refinedev/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
@@ -26,6 +32,10 @@ import {
 } from "@/foundation/components/detail-tabs";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
+import {
+  GpuObservationCard,
+  ObservationStatus,
+} from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
@@ -36,7 +46,9 @@ import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import Timestamp from "@/foundation/components/Timestamp";
+import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { gpuAllocations } from "@/foundation/lib/accelerator-observations";
 import {
   getClusterSplitDashboardProps,
   getZCacheDashboardProps,
@@ -49,6 +61,25 @@ export const ClustersShow = () => {
     query: { data, isLoading },
   } = useShow<Cluster>({ queryOptions: { refetchInterval: 10000 } });
   const record = data?.data;
+  const observations = useAcceleratorObservations(
+    "clusters",
+    record?.metadata.workspace,
+    record?.metadata.name,
+  );
+  const { data: clusterEndpoints } = useList<Endpoint>({
+    resource: "endpoints",
+    meta: { workspace: record?.metadata.workspace, workspaced: true },
+    filters: [
+      {
+        field: "spec->cluster",
+        operator: "eq",
+        value: JSON.stringify(record?.metadata.name),
+      },
+    ],
+    pagination: { mode: "off" },
+    queryOptions: { enabled: !!record?.metadata.name, refetchInterval: 15000 },
+  });
+  const allocations = gpuAllocations(clusterEndpoints?.data ?? []);
 
   const { translate } = useTranslation();
   const { t } = useI18nTranslation();
@@ -167,6 +198,9 @@ export const ClustersShow = () => {
             <TabsTrigger value="basic" className={detailTabTriggerClassName}>
               {t("common.tabs.basic")}
             </TabsTrigger>
+            <TabsTrigger value="topology" className={detailTabTriggerClassName}>
+              {t("observations.topology")}
+            </TabsTrigger>
             {showMonitorTab && (
               <TabsTrigger
                 value="monitor"
@@ -236,7 +270,12 @@ export const ClustersShow = () => {
                 <ClusterResourceSummary
                   resourceInfo={record.status.resource_info}
                   t={t}
-                />
+                >
+                  <ClusterFlops
+                    cluster={record}
+                    samples={observations.samples}
+                  />
+                </ClusterResourceSummary>
               </ShowPage.Section>
             )}
             {record.status?.resource_info?.node_resources &&
@@ -248,9 +287,14 @@ export const ClustersShow = () => {
                     <ResourceUsageLegend
                       items={[
                         {
-                          label: t("clusters.fields.vramUsed"),
+                          label: t("observations.actualMemory"),
                           markerClassName:
                             "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
+                        },
+                        {
+                          label: t("observations.allocated"),
+                          markerClassName:
+                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
                         },
                         {
                           label: t("clusters.fields.coreUsed"),
@@ -261,7 +305,26 @@ export const ClustersShow = () => {
                     />
                   }
                 >
+                  <ObservationStatus status={observations.status} />
                   <NodeResourcesTable
+                    renderGpuMemory={(row) => (
+                      <GpuObservationCard
+                        device={{
+                          node: row.nodeName,
+                          uuid: row.uuid,
+                          index: row.gpuNumber,
+                          product: row.product,
+                          totalMiB: row.memory.total,
+                          allocatedMiB: row.memory.used,
+                          healthy: row.healthy,
+                        }}
+                        tflopsOverrides={parseTflops(
+                          record.metadata.annotations?.[TFLOPS_ANNOTATION],
+                        )}
+                        samples={observations.samples}
+                        allocations={allocations}
+                      />
+                    )}
                     nodeResources={record.status.resource_info.node_resources}
                     acceleratorTypes={Object.keys(
                       record.status.resource_info.allocatable
@@ -434,6 +497,16 @@ export const ClustersShow = () => {
                 {metadataColumns.creation_timestamp}
               </Table>
             </ShowPage.Section>
+          </TabsContent>
+          <TabsContent
+            value="topology"
+            className="mt-0 flex-1 overflow-auto pt-4"
+          >
+            <ClusterTopology
+              cluster={record}
+              samples={observations.samples}
+              allocations={allocations}
+            />
           </TabsContent>
           {showMonitorTab && (
             <TabsContent

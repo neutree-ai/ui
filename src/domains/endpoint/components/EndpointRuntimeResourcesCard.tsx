@@ -40,12 +40,17 @@ import type {
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
+import type { EndpointReplicaResourceRow } from "../lib/resource-status";
 
 type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
+  renderMemory?: (
+    device: EndpointReplicaResourceRow,
+    deviceIndex: number,
+  ) => ReactNode;
 };
 
 const formatInteger = (value: number): ReactNode =>
@@ -127,16 +132,28 @@ const VramBar = ({
 
 const Legend = ({
   t,
+  observations = false,
 }: {
   t: (key: string, options?: Record<string, unknown>) => string;
+  observations?: boolean;
 }) => (
   <ResourceUsageLegend
     className="ml-0 text-[11px] leading-4"
     items={[
+      ...(observations
+        ? [
+            {
+              label: t("observations.actualMemory"),
+              markerClassName:
+                "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
+            },
+          ]
+        : []),
       {
         label: t("endpoints.fields.requestedMemory"),
-        markerClassName:
-          "h-2 w-2 rounded-sm bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
+        markerClassName: observations
+          ? "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30"
+          : "h-2 w-2 rounded-sm bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
       },
       {
         label: t("endpoints.fields.physicalMemory"),
@@ -153,6 +170,10 @@ export function EndpointRuntimeResourcesSummary({
 }: {
   resources: EndpointResourceStatus | null | undefined;
   className?: string;
+  renderMemory?: (
+    device: EndpointReplicaResourceRow,
+    deviceIndex: number,
+  ) => ReactNode;
 }) {
   const { t } = useTranslation();
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
@@ -183,6 +204,7 @@ export default function EndpointRuntimeResourcesCard({
   requestedResources,
   clusterResourceInfo,
   className,
+  renderMemory,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
@@ -222,6 +244,7 @@ export default function EndpointRuntimeResourcesCard({
               <Replica
                 key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
                 group={group}
+                renderMemory={renderMemory}
                 groupIndex={groupIndex}
                 requestedCpu={requestedCpu}
                 requestedMemory={requestedMemory}
@@ -278,6 +301,7 @@ export default function EndpointRuntimeResourcesCard({
 }
 
 function Replica({
+  renderMemory,
   group,
   groupIndex,
   requestedCpu,
@@ -288,6 +312,10 @@ function Replica({
   t,
 }: {
   group: EndpointReplicaResourceGroup;
+  renderMemory?: (
+    device: EndpointReplicaResourceRow,
+    deviceIndex: number,
+  ) => ReactNode;
   groupIndex: number;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
@@ -362,13 +390,14 @@ function Replica({
           <span className="text-xs text-muted-foreground">
             {t("endpoints.sections.gpuAllocation")}
           </span>
-          <Legend t={t} />
+          <Legend t={t} observations={!!renderMemory} />
         </div>
         <div className="mt-3">
           {group.nodes.map((node) => (
             <Host
               key={node.nodeId}
               node={node}
+              renderMemory={renderMemory}
               requestedCpu={requestedCpu}
               requestedMemory={requestedMemory}
               acceleratorType={acceleratorType}
@@ -383,6 +412,7 @@ function Replica({
 }
 
 function Host({
+  renderMemory,
   node,
   requestedCpu,
   requestedMemory,
@@ -391,6 +421,10 @@ function Host({
   t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
+  renderMemory?: (
+    device: EndpointReplicaResourceRow,
+    deviceIndex: number,
+  ) => ReactNode;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
   acceleratorType: string | null;
@@ -426,12 +460,13 @@ function Host({
           <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>
             {node.devices.map((device, deviceIndex) => (
               <GpuCell
-                key={device.uuid || deviceIndex}
+                key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
                 device={device}
                 deviceIndex={deviceIndex}
                 acceleratorType={acceleratorType}
                 onCopyUuid={onCopyUuid}
                 t={t}
+                renderMemory={renderMemory}
               />
             ))}
           </div>
@@ -443,11 +478,16 @@ function Host({
 
 function GpuCell({
   device,
+  renderMemory,
   deviceIndex,
   acceleratorType,
   onCopyUuid,
   t,
 }: {
+  renderMemory?: (
+    device: EndpointReplicaResourceRow,
+    deviceIndex: number,
+  ) => ReactNode;
   device: EndpointReplicaResourceGroup["nodes"][number]["devices"][number];
   deviceIndex: number;
   acceleratorType: string | null;
@@ -520,10 +560,14 @@ function GpuCell({
       )}
 
       <div className="mt-2">
-        <VramBar
-          requestedMiB={device.memoryMiB}
-          physicalMiB={device.physicalMemoryMiB}
-        />
+        {renderMemory ? (
+          renderMemory(device, deviceIndex)
+        ) : (
+          <VramBar
+            requestedMiB={device.memoryMiB}
+            physicalMiB={device.physicalMemoryMiB}
+          />
+        )}
       </div>
 
       <div className={cn("mt-1 text-muted-foreground", GPU_USAGE_TEXT_CLASS)}>
