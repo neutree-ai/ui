@@ -401,16 +401,19 @@ export type WorkspaceModelOption = {
   // that yields none.
   source: ModelSource | undefined;
   phase: string | null;
+  /** The endpoint's workspace; tells rows apart when listing every workspace. */
+  workspace?: string;
 };
 
 type WorkspaceEndpointRef = {
-  metadata?: { name?: string | null } | null;
+  metadata?: { name?: string | null; workspace?: string | null } | null;
   status?: { phase?: string | null; served_models?: string[] | null } | null;
 };
 
 type WorkspaceExternalEndpointRef = {
   metadata?: {
     name?: string | null;
+    workspace?: string | null;
     labels?: Record<string, string> | null;
   } | null;
   spec?: ExternalModelSourceSpec;
@@ -457,12 +460,13 @@ export function compareWorkspaceModelOptions(
     (a.source ?? "").localeCompare(b.source ?? "") ||
     runningRank(a.phase) - runningRank(b.phase) ||
     a.model.localeCompare(b.model) ||
-    a.endpointName.localeCompare(b.endpointName)
+    a.endpointName.localeCompare(b.endpointName) ||
+    (a.workspace ?? "").localeCompare(b.workspace ?? "")
   );
 }
 
-// Available client-facing models in a workspace (for the allowed-models
-// dropdown). Options are endpoint-level rows so duplicate model names served by
+// Available client-facing models in a workspace, or in every readable one for
+// ALL_WORKSPACES (for the allowed-models dropdown). Options are endpoint-level rows so duplicate model names served by
 // different internal/external endpoints remain visually distinct in the picker.
 // An internal endpoint contributes the first name the engine reports, since the
 // workspace model list exposes one candidate per endpoint.
@@ -501,6 +505,7 @@ export function useWorkspaceModels(
         type: "internal",
         source: SELF_HOSTED_MODEL_SOURCE,
         phase: endpoint.status?.phase ?? null,
+        workspace: endpoint.metadata?.workspace ?? undefined,
       });
     }
 
@@ -520,6 +525,7 @@ export function useWorkspaceModels(
           // endpoint can genuinely have different sources.
           source: resolveExternalModelSource(endpoint.spec, name),
           phase: endpoint.status?.phase ?? null,
+          workspace: endpoint.metadata?.workspace ?? undefined,
         });
       }
     }

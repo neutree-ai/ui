@@ -2998,11 +2998,6 @@
 		"noRule": "None",
 		"allWorkspaces": "All workspaces",
 		"addModel": "Add a model",
-		"source": {
-			"endpoint": "Endpoint {{name}} · {{workspace}}",
-			"external": "External endpoint {{name}} · {{workspace}}",
-			"count": "{{count}} sources"
-		},
 		"searchModel": "Search or type a model name",
 		"noModels": "No models found.",
 		"addTyped": "Add \"{{model}}\"",

@@ -1,11 +1,10 @@
 import {
   useCustom,
   useCustomMutation,
-  useDataProvider,
   useInvalidate,
   useList,
 } from "@refinedev/core";
-import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   GroupPolicy,
   GroupPolicySpec,
@@ -170,69 +169,4 @@ export const useGroupTokenPool = (
     pool: rows?.[0],
     error: query.error,
   };
-};
-
-/** Where a suggested model is served: one endpoint in one workspace. */
-export type ModelCandidateSource = {
-  external: boolean;
-  endpoint: string;
-  workspace: string;
-};
-
-export type ModelCandidate = { model: string; sources: ModelCandidateSource[] };
-
-type WorkspaceModelRow = {
-  model?: string | null;
-  source?: string | null;
-  endpoint_name?: string | null;
-};
-
-/**
- * Client-facing model names served in the given workspaces, for suggestions,
- * each with the endpoints that serve it. One entry per name: rules match by name.
- */
-export const useModelCandidates = (workspaces: string[]): ModelCandidate[] => {
-  const dataProvider = useDataProvider();
-  const results = useQueries({
-    queries: workspaces.map((workspace) => ({
-      queryKey: ["group-policy", "workspace-models", workspace],
-      queryFn: async () => {
-        const result = await dataProvider().custom?.({
-          url: "/rpc/get_workspace_models",
-          method: "post",
-          payload: { p_workspace: workspace },
-        });
-        return (result?.data as WorkspaceModelRow[] | null) ?? [];
-      },
-      staleTime: 60_000,
-    })),
-  });
-  const byModel = new Map<string, ModelCandidateSource[]>();
-  results.forEach((result, index) => {
-    for (const row of result.data ?? []) {
-      const model = String(row.model ?? "").trim();
-      if (!model) continue;
-      const sources = byModel.get(model) ?? [];
-      byModel.set(model, sources);
-      if (!row.endpoint_name) continue;
-      const source = {
-        external: row.source === "external_endpoint",
-        endpoint: row.endpoint_name,
-        workspace: workspaces[index],
-      };
-      if (
-        !sources.some(
-          (s) =>
-            s.external === source.external &&
-            s.endpoint === source.endpoint &&
-            s.workspace === source.workspace,
-        )
-      ) {
-        sources.push(source);
-      }
-    }
-  });
-  return [...byModel.entries()]
-    .map(([model, sources]) => ({ model, sources }))
-    .sort((a, b) => a.model.localeCompare(b.model));
 };

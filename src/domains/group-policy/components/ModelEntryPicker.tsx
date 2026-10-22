@@ -22,24 +22,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ModelOptionGroups,
+  useModelOptionMatcher,
+} from "@/domains/api-key/components/ModelOptionGroups";
+import { useWorkspaceModels } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
-  type ModelCandidateSource,
-  useModelCandidates,
-} from "@/domains/group-policy/hooks/use-group-policies";
-import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
+  ALL_WORKSPACES,
+  useWorkspaceOptions,
+} from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const ALL = "__all__";
 
 /**
  * Adds entries to one policy list: pick the workspace scope, then a model.
- * Models are suggested from the workspace (from every workspace for "all");
- * any typed name can be added, since a model may be deployed later.
+ * Models are suggested from the workspace (from every workspace for "all"),
+ * listed as in the API key picker: grouped by source, one row per endpoint.
+ * A name served by several endpoints shows a row for each; any of them adds
+ * the same name, since a rule matches by name. Any typed name can be added,
+ * since a model may be deployed later.
  */
 export function ModelEntryPicker({
   onAdd,
@@ -56,18 +57,13 @@ export function ModelEntryPicker({
   const workspaceNames = workspaces.map(
     (workspace) => workspace.metadata.name as string,
   );
-  const candidates = useModelCandidates(
-    scope === ALL ? workspaceNames : [scope],
-  );
+  const options = useWorkspaceModels(scope === ALL ? ALL_WORKSPACES : scope);
+  const matches = useModelOptionMatcher();
 
   const query = search.trim();
-  const visible = query
-    ? candidates.filter(({ model }) =>
-        model.toLowerCase().includes(query.toLowerCase()),
-      )
-    : candidates;
+  const visible = query ? options.filter((o) => matches(o, query)) : options;
   const canAddTyped =
-    query !== "" && !candidates.some(({ model }) => model === query);
+    query !== "" && !options.some(({ model }) => model === query);
 
   const add = (model: string) => {
     onAdd(model, scope === ALL ? "" : scope);
@@ -107,7 +103,7 @@ export function ModelEntryPicker({
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[280px] p-0">
+        <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] p-0">
           <Command shouldFilter={false}>
             <CommandInput
               placeholder={t("group_policies.searchModel")}
@@ -127,73 +123,15 @@ export function ModelEntryPicker({
                   </CommandItem>
                 </CommandGroup>
               )}
-              {visible.length > 0 && (
-                <CommandGroup>
-                  {visible.map(({ model, sources }) => (
-                    <CommandItem
-                      key={model}
-                      value={model}
-                      onSelect={() => add(model)}
-                      className="gap-2"
-                    >
-                      <span className="min-w-0 flex-1 truncate">{model}</span>
-                      <ModelSources sources={sources} />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+              <ModelOptionGroups
+                options={visible}
+                onSelect={(o) => add(o.model)}
+                showWorkspace={scope === ALL}
+              />
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
     </div>
-  );
-}
-
-/** The endpoint and workspace a model comes from; several collapse to a count. */
-function ModelSources({ sources }: { sources: ModelCandidateSource[] }) {
-  const { t } = useTranslation();
-  if (!sources.length) return null;
-  const label = (source: ModelCandidateSource) =>
-    t(
-      source.external
-        ? "group_policies.source.external"
-        : "group_policies.source.endpoint",
-      { name: source.endpoint, workspace: source.workspace },
-    );
-  if (sources.length === 1) {
-    return (
-      <span
-        className="max-w-[60%] shrink-0 truncate text-xs text-muted-foreground"
-        data-testid="model-source"
-      >
-        {label(sources[0])}
-      </span>
-    );
-  }
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className="shrink-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-2"
-            data-testid="model-source"
-          >
-            {t("group_policies.source.count", { count: sources.length })}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="right">
-          <ul className="space-y-0.5">
-            {sources.map((source) => (
-              <li
-                key={`${source.workspace}/${source.external}/${source.endpoint}`}
-              >
-                {label(source)}
-              </li>
-            ))}
-          </ul>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 }
