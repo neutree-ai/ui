@@ -91,6 +91,7 @@ export const ClustersShow = () => {
   const metadataColumns = useMetadataColumns({ resource: "endpoints" });
 
   const cacheStatus = zcacheStatus(record);
+  const l1ByNode = nodeL1CacheByNode(cacheStatus?.nodes, observations.samples);
   const {
     selectedPanel,
     setSelectedPanel,
@@ -266,7 +267,7 @@ export const ClustersShow = () => {
               </ShowPage.Section>
             )}
             {record.spec.type === "kubernetes" && (
-              <ClusterCacheSection cluster={record} />
+              <ClusterCacheSection cluster={record} l1CacheByNode={l1ByNode} />
             )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>
@@ -329,10 +330,7 @@ export const ClustersShow = () => {
                       />
                     )}
                     nodeResources={record.status.resource_info.node_resources}
-                    l1CacheByNode={nodeL1CacheByNode(
-                      cacheStatus?.nodes,
-                      observations.samples,
-                    )}
+                    l1CacheByNode={l1ByNode}
                     acceleratorTypes={Object.keys(
                       record.status.resource_info.allocatable
                         ?.accelerator_groups || {},
