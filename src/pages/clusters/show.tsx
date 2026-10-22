@@ -48,7 +48,10 @@ import { Table } from "@/foundation/components/Table";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { gpuAllocations } from "@/foundation/lib/accelerator-observations";
+import {
+  gpuAllocations,
+  nodeL1CacheByNode,
+} from "@/foundation/lib/accelerator-observations";
 import {
   getClusterSplitDashboardProps,
   getZCacheDashboardProps,
@@ -326,6 +329,10 @@ export const ClustersShow = () => {
                       />
                     )}
                     nodeResources={record.status.resource_info.node_resources}
+                    l1CacheByNode={nodeL1CacheByNode(
+                      cacheStatus?.nodes,
+                      observations.samples,
+                    )}
                     acceleratorTypes={Object.keys(
                       record.status.resource_info.allocatable
                         ?.accelerator_groups || {},

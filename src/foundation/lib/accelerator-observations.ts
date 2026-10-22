@@ -20,6 +20,13 @@ export type GpuAllocation = {
   instance: string;
   vdevice?: string;
   memoryMiB: number;
+  modelWeightsMiB?: number | null;
+  kvCacheCapacityMiB?: number | null;
+};
+
+export type NodeL1CacheUsage = {
+  usedGiB: number | null;
+  capacityGiB: number;
 };
 
 export function gpuAllocations(
@@ -50,6 +57,8 @@ export function gpuAllocations(
           instance: replica.instance_id,
           vdevice: device.vdevice_index ?? undefined,
           memoryMiB: device.memory_mib,
+          modelWeightsMiB: replica.model_weights_mib ?? null,
+          kvCacheCapacityMiB: replica.kv_cache_capacity_mib ?? null,
         })),
       );
     })
@@ -95,6 +104,67 @@ export function reading(
   )
     return undefined;
   return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
+}
+
+export function replicaReading(
+  samples: AcceleratorSample[],
+  metric: string,
+  allocation?: GpuAllocation,
+): AcceleratorSample | undefined {
+  if (!allocation) return undefined;
+  const matching = samples.filter((sample) => {
+    if (sample.metric !== metric) return false;
+    const l = sample.labels;
+    const endpointMatch =
+      l.endpoint === allocation.endpoint ||
+      l.application === allocation.endpoint;
+    if (!endpointMatch) return false;
+    if (allocation.replica && l.replica) {
+      return l.replica === allocation.replica;
+    }
+    if (allocation.instance && l.instance_id) {
+      return l.instance_id === allocation.instance;
+    }
+    return !l.replica;
+  });
+  return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
+}
+
+export function nodeReading(
+  samples: AcceleratorSample[],
+  metric: string,
+  node: string,
+): AcceleratorSample | undefined {
+  const matching = samples.filter(
+    (sample) => sample.metric === metric && sample.labels.node === node,
+  );
+  return matching.sort(
+    (a, b) => b.value - a.value || b.observed_at - a.observed_at,
+  )[0];
+}
+
+export function nodeL1CacheByNode(
+  cacheNodes:
+    | Array<{ node: string; capacity_bytes?: number | null }>
+    | null
+    | undefined,
+  samples: AcceleratorSample[],
+): Record<string, NodeL1CacheUsage> {
+  const result: Record<string, NodeL1CacheUsage> = {};
+  for (const cacheNode of cacheNodes ?? []) {
+    const capBytes = cacheNode.capacity_bytes ?? 0;
+    if (!cacheNode.node || capBytes <= 0) continue;
+    const usedSample = nodeReading(
+      samples,
+      "lmcache_mp_l1_memory_usage_bytes",
+      cacheNode.node,
+    );
+    result[cacheNode.node] = {
+      usedGiB: usedSample != null ? usedSample.value / 1024 ** 3 : null,
+      capacityGiB: capBytes / 1024 ** 3,
+    };
+  }
+  return result;
 }
 
 const colors = Array.from(

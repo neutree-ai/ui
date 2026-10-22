@@ -26,6 +26,8 @@ export type EndpointReplicaResourceRow = {
   coreUnits: number;
   physicalMemoryMiB: number | null;
   actualMemoryMiB: number | null;
+  modelWeightsMiB: number | null;
+  kvCacheCapacityMiB: number | null;
   vdeviceIndex?: string | null;
 };
 
@@ -92,6 +94,8 @@ const toReplicaResourceRow = (
     coreUnits: device.core_units,
     physicalMemoryMiB,
     actualMemoryMiB,
+    modelWeightsMiB: replica.model_weights_mib ?? null,
+    kvCacheCapacityMiB: replica.kv_cache_capacity_mib ?? null,
   };
 };
 

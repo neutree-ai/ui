@@ -14,6 +14,7 @@ import {
   allocationColor,
   type GpuAllocation,
   reading,
+  replicaReading,
 } from "@/foundation/lib/accelerator-observations";
 import { MetricBar } from "./MetricBar";
 import {
@@ -106,6 +107,25 @@ export function GpuObservationCard({
   const assigned = allocations.filter(
     (a) => a.node === device.node && a.uuid === device.uuid,
   );
+  const weightsText = (a?: GpuAllocation) =>
+    a?.modelWeightsMiB != null ? gib(a.modelWeightsMiB) : null;
+  const l0KvText = (a?: GpuAllocation) => {
+    if (!a) return null;
+    const kvUsage = replicaReading(samples, "vllm:kv_cache_usage_perc", a);
+    if (a.kvCacheCapacityMiB != null) {
+      return kvUsage != null
+        ? `${gib(a.kvCacheCapacityMiB * kvUsage.value)} / ${gib(a.kvCacheCapacityMiB)}`
+        : gib(a.kvCacheCapacityMiB);
+    }
+    if (kvUsage != null) {
+      return `${(kvUsage.value * 100).toFixed(1)}%`;
+    }
+    return null;
+  };
+  const activeAllocation =
+    replica ?? (assigned.length === 1 ? assigned[0] : undefined);
+  const activeWeights = weightsText(activeAllocation);
+  const activeL0Kv = l0KvText(activeAllocation);
   const label = (value?: string) =>
     !value || value === "unknown" || value === "-1" ? "—" : value;
   const utilizationText = utilization
@@ -227,6 +247,16 @@ export function GpuObservationCard({
                       {t("observations.actual")} {gib(fallbackMiB)} /{" "}
                       {t("observations.allocated")} {gib(a.memoryMiB)}
                     </p>
+                    {weightsText(a) && (
+                      <p>
+                        {t("observations.modelWeights")} {weightsText(a)}
+                      </p>
+                    )}
+                    {l0KvText(a) && (
+                      <p>
+                        {t("observations.l0KvCache")} {l0KvText(a)}
+                      </p>
+                    )}
                     {fallbackMiB != null && fallbackMiB > a.memoryMiB && (
                       <p>{t("observations.overAllocation")}</p>
                     )}
@@ -258,6 +288,23 @@ export function GpuObservationCard({
           {t("observations.physical")} {gib(total)}
         </span>
       </div>
+      {(activeWeights || activeL0Kv) && (
+        <div
+          className="flex flex-wrap justify-between gap-1 text-xs text-muted-foreground"
+          data-testid="gpu-kv-weights-breakdown"
+        >
+          {activeWeights && (
+            <span>
+              {t("observations.modelWeights")} {activeWeights}
+            </span>
+          )}
+          {activeL0Kv && (
+            <span>
+              {t("observations.l0KvCache")} {activeL0Kv}
+            </span>
+          )}
+        </div>
+      )}
       {actual == null && (
         <p className="text-xs text-muted-foreground">
           {t("observations.noMeasurement")}
@@ -412,6 +459,21 @@ export function GpuObservationCard({
                         )}{" "}
                         · {t("observations.allocated")} {gib(a.memoryMiB)}
                       </p>
+                      {(weightsText(a) || l0KvText(a)) && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {weightsText(a) && (
+                            <>
+                              {t("observations.modelWeights")} {weightsText(a)}
+                            </>
+                          )}
+                          {weightsText(a) && l0KvText(a) && " · "}
+                          {l0KvText(a) && (
+                            <>
+                              {t("observations.l0KvCache")} {l0KvText(a)}
+                            </>
+                          )}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
