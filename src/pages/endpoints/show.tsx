@@ -51,7 +51,10 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { gpuAllocations } from "@/foundation/lib/accelerator-observations";
+import {
+  gpuAllocations,
+  nodeL1CacheByNode,
+} from "@/foundation/lib/accelerator-observations";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
@@ -417,9 +420,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                           instance: device.instanceId,
                           vdevice: device.vdeviceIndex ?? undefined,
                           memoryMiB: device.memoryMiB,
+                          modelWeightsMiB: device.modelWeightsMiB,
+                          kvCacheCapacityMiB: device.kvCacheCapacityMiB,
                         }}
                       />
                     )}
+                    l1CacheByNode={
+                      record.spec.kv_cache?.provider === "zcache"
+                        ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
+                        : undefined
+                    }
                     resources={record.status?.resources}
                     requestedResources={record.spec.resources}
                     clusterResourceInfo={

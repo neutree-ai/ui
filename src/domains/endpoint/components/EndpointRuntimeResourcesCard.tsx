@@ -21,6 +21,7 @@ import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
+import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
 import {
   GPU_CELL_CLASS,
   GPU_GRID_CELL_CLASS,
@@ -47,6 +48,7 @@ type EndpointRuntimeResourcesCardProps = {
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
   renderMemory?: (
     device: EndpointReplicaResourceRow,
     deviceIndex: number,
@@ -204,6 +206,7 @@ export default function EndpointRuntimeResourcesCard({
   requestedResources,
   clusterResourceInfo,
   className,
+  l1CacheByNode,
   renderMemory,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
@@ -244,6 +247,7 @@ export default function EndpointRuntimeResourcesCard({
               <Replica
                 key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
                 group={group}
+                l1CacheByNode={l1CacheByNode}
                 renderMemory={renderMemory}
                 groupIndex={groupIndex}
                 requestedCpu={requestedCpu}
@@ -302,6 +306,7 @@ export default function EndpointRuntimeResourcesCard({
 
 function Replica({
   renderMemory,
+  l1CacheByNode,
   group,
   groupIndex,
   requestedCpu,
@@ -312,6 +317,7 @@ function Replica({
   t,
 }: {
   group: EndpointReplicaResourceGroup;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
   renderMemory?: (
     device: EndpointReplicaResourceRow,
     deviceIndex: number,
@@ -397,6 +403,7 @@ function Replica({
             <Host
               key={node.nodeId}
               node={node}
+              l1Cache={l1CacheByNode?.[node.nodeId]}
               renderMemory={renderMemory}
               requestedCpu={requestedCpu}
               requestedMemory={requestedMemory}
@@ -414,6 +421,7 @@ function Replica({
 function Host({
   renderMemory,
   node,
+  l1Cache,
   requestedCpu,
   requestedMemory,
   acceleratorType,
@@ -421,6 +429,7 @@ function Host({
   t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
+  l1Cache?: NodeL1CacheUsage;
   renderMemory?: (
     device: EndpointReplicaResourceRow,
     deviceIndex: number,
@@ -446,7 +455,18 @@ function Host({
           </span>
           <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
             {t("common.fields.cpu")} {requestedCpu} ·{" "}
-            {t("common.fields.memory")} {requestedMemory} GiB ·{" "}
+            {t("common.fields.memory")} {requestedMemory} GiB
+            {l1Cache && (
+              <>
+                {" · "}
+                {t("observations.l1KvCache")}{" "}
+                {l1Cache.usedGiB != null
+                  ? formatToDecimal(l1Cache.usedGiB, 1)
+                  : "—"}{" "}
+                / {formatToDecimal(l1Cache.capacityGiB, 1)} GiB
+              </>
+            )}{" "}
+            ·{" "}
             {formatCount(
               node.deviceCount,
               "endpoints.fields.card",
@@ -455,6 +475,26 @@ function Host({
             )}
           </span>
         </div>
+        {l1Cache && (
+          <div className="mt-2" data-testid="runtime-host-l1-cache">
+            <MetricBar
+              size="sm"
+              series="blue"
+              value={
+                l1Cache.usedGiB != null && l1Cache.capacityGiB > 0
+                  ? Math.min(
+                      100,
+                      Math.max(
+                        0,
+                        (l1Cache.usedGiB / l1Cache.capacityGiB) * 100,
+                      ),
+                    )
+                  : null
+              }
+              track="subtle"
+            />
+          </div>
+        )}
 
         <div className={cn("mt-3", GPU_GRID_FRAME_CLASS)}>
           <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>

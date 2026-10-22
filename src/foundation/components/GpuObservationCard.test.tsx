@@ -86,4 +86,37 @@ describe("GPU observation card", () => {
     expect(screen.getByText("observations.noMeasurement")).toBeTruthy();
     expect(screen.queryByText("13.0 GiB")).toBeNull();
   });
+  it("shows model weights and L0 KV-Cache usage when startup stats and vllm kv_cache_usage_perc are present", () => {
+    const allocWithStats = {
+      ...allocation,
+      modelWeightsMiB: 6144,
+      kvCacheCapacityMiB: 8192,
+    };
+    const kvSamples: AcceleratorSample[] = [
+      ...samples,
+      {
+        metric: "vllm:kv_cache_usage_perc",
+        labels: { endpoint: "instance", replica: "pod" },
+        value: 0.5,
+        observed_at: Date.now() / 1000,
+      },
+    ];
+    render(
+      <MemoryRouter>
+        <TooltipProvider>
+          <GpuObservationCard
+            device={device}
+            samples={kvSamples}
+            allocations={[allocWithStats]}
+            replica={allocWithStats}
+          />
+        </TooltipProvider>
+      </MemoryRouter>,
+    );
+    const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
+    expect(breakdown.textContent).toContain("observations.modelWeights 6.0 GiB");
+    expect(breakdown.textContent).toContain(
+      "observations.l0KvCache 4.0 GiB / 8.0 GiB",
+    );
+  });
 });

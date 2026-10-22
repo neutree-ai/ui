@@ -146,6 +146,9 @@ export type ReplicaDeviceAllocation = {
   instance_id: string;
   replica_id?: string | null;
   node_id?: string | null;
+  container_id?: string | null;
+  model_weights_mib?: number | null;
+  kv_cache_capacity_mib?: number | null;
   devices?: DeviceAllocation[] | null;
 };
 
