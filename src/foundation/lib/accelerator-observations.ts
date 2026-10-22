@@ -138,14 +138,12 @@ export function nodeReading(
   const matching = samples.filter(
     (sample) => sample.metric === metric && sample.labels.node === node,
   );
-  return matching.sort(
-    (a, b) => b.value - a.value || b.observed_at - a.observed_at,
-  )[0];
+  return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
 }
 
 export function nodeL1CacheByNode(
   cacheNodes:
-    | Array<{ node: string; capacity_bytes?: number | null }>
+    | Array<{ name: string; capacity_bytes?: number | null }>
     | null
     | undefined,
   samples: AcceleratorSample[],
@@ -153,13 +151,13 @@ export function nodeL1CacheByNode(
   const result: Record<string, NodeL1CacheUsage> = {};
   for (const cacheNode of cacheNodes ?? []) {
     const capBytes = cacheNode.capacity_bytes ?? 0;
-    if (!cacheNode.node || capBytes <= 0) continue;
+    if (!cacheNode.name || capBytes <= 0) continue;
     const usedSample = nodeReading(
       samples,
       "lmcache_mp_l1_memory_usage_bytes",
-      cacheNode.node,
+      cacheNode.name,
     );
-    result[cacheNode.node] = {
+    result[cacheNode.name] = {
       usedGiB: usedSample != null ? usedSample.value / 1024 ** 3 : null,
       capacityGiB: capBytes / 1024 ** 3,
     };
@@ -175,5 +173,5 @@ export function allocationColor(name: string, position = 0): string {
   if (position === 0) return colors[0];
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return colors[1 + (hash + position - 1) % (colors.length - 1)];
+  return colors[1 + ((hash + position - 1) % (colors.length - 1))];
 }
