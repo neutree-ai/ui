@@ -565,7 +565,7 @@ describe("usage by group", () => {
   it("applies the type filter", () => {
     renderAsReader();
 
-    openSelect(1);
+    openSelect(2);
     pickOption("model_usage.detail.external");
 
     const rowsShown = bodyRows(groupCard());
@@ -576,13 +576,28 @@ describe("usage by group", () => {
   it("switches to departments", () => {
     renderAsReader();
 
-    openSelect(2);
+    openSelect(3);
     pickOption("model_usage.group.kinds.OrgUnit");
 
     expect(groupKinds.at(-1)).toBe("OrgUnit");
     const rowsShown = bodyRows(groupCard());
     expect(rowsShown).toHaveLength(1);
     expect(rowsShown[0].textContent).toContain("Dept A");
+  });
+
+  it("charts the kind picked for the group card", () => {
+    renderAsReader();
+    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
+
+    openSelect(3);
+    pickOption("Department");
+
+    expect(screen.getByText("Daily tokens by Department")).toBeDefined();
+    expect(screen.getByTestId("usage-chart-dimension").textContent).toContain(
+      "Department",
+    );
+    // Departments overlap, so the chart shows no grand total.
+    expect(screen.queryByText("model_usage.daily.totalLabel")).toBeNull();
   });
 
   it("shows a team by its display name, not its internal name", () => {
@@ -593,7 +608,7 @@ describe("usage by group", () => {
     ];
     render(<ModelUsageList />);
 
-    openSelect(2);
+    openSelect(3);
     pickOption("Team");
 
     const [row] = bodyRows(cardFor("By user or group"));
@@ -611,7 +626,7 @@ describe("usage by group", () => {
     expect(bodyRows(card)[0].textContent).toContain("Alice");
     expect(screen.getByText(/model_usage\.group\.subtreeOnly/)).toBeDefined();
 
-    openSelect(2);
+    openSelect(3);
     const options = screen
       .getAllByRole("option")
       .map((node) => node.textContent);
@@ -634,7 +649,7 @@ describe("usage by group", () => {
     ];
     render(<ModelUsageList />);
 
-    openSelect(2);
+    openSelect(3);
     pickOption("Department");
 
     const rowsShown = bodyRows(cardFor("By user or group")).map(

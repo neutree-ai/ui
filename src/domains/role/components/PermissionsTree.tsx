@@ -24,10 +24,12 @@ import type React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import { formatPermission } from "@/domains/role/lib/format-permission";
+import {
+  formatPermission,
+  formatResource,
+} from "@/domains/role/lib/format-permission";
 import { sortPermissionResources } from "@/domains/role/lib/permission-resource-order";
 import type { Role } from "@/domains/role/types";
-import { getResourcePlural } from "@/foundation/lib/plural";
 
 const actionIcons: Record<string, React.ReactNode> = {
   read: <Eye className="h-4 w-4" />,
@@ -116,10 +118,7 @@ const ResourceNode = ({
   const sortedActions = actions.sort();
   const resourceIcon = resourceIcons[resource] || <Box className="h-5 w-5" />;
 
-  const formatResourceName = (name: string) => {
-    const plural = getResourcePlural(name);
-    return t(`${plural}.title`);
-  };
+  const formatResourceName = (name: string) => formatResource(t, name);
 
   return (
     <div className="border border-border rounded-md mb-2 overflow-hidden">

@@ -104,10 +104,10 @@ export function foldRemainder(
 // Rows for the multi-day trend chart: one row per date with a numeric field per
 // series. Days a series did not use get 0 rather than a gap, so every line stays
 // continuous across the window.
-export function buildTrend(
-  rows: ApiUsageRecord[],
+export function buildTrend<R extends Pick<ApiUsageRecord, "date" | "usage">>(
+  rows: R[],
   series: UsageSeries[],
-  keyOf: (r: ApiUsageRecord) => string,
+  keyOf: (r: R) => string,
 ): Array<Record<string, number | string>> {
   const byDate = new Map<string, Record<string, number>>();
   for (const r of rows) {

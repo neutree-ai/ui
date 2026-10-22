@@ -257,6 +257,15 @@ export const useTeamMemberWrites = (teamId: number | undefined) => {
   };
 };
 
+/** Every department membership the caller can read (RLS scopes the rows). */
+export const useAllOrgUnitMembers = (enabled: boolean) =>
+  useList<OrgUnitMember>({
+    resource: "org_unit_members",
+    pagination: ALL,
+    meta: { select: "user_id,org_unit_id" },
+    queryOptions: { enabled },
+  });
+
 export const useAllUsers = (enabled: boolean) =>
   useList<MemberProfile>({
     resource: "user_profiles",

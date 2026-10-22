@@ -21,7 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useModelCandidates } from "@/domains/group-policy/hooks/use-group-policies";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  type ModelCandidateSource,
+  useModelCandidates,
+} from "@/domains/group-policy/hooks/use-group-policies";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -53,11 +62,12 @@ export function ModelEntryPicker({
 
   const query = search.trim();
   const visible = query
-    ? candidates.filter((model) =>
+    ? candidates.filter(({ model }) =>
         model.toLowerCase().includes(query.toLowerCase()),
       )
     : candidates;
-  const canAddTyped = query !== "" && !candidates.includes(query);
+  const canAddTyped =
+    query !== "" && !candidates.some(({ model }) => model === query);
 
   const add = (model: string) => {
     onAdd(model, scope === ALL ? "" : scope);
@@ -119,13 +129,15 @@ export function ModelEntryPicker({
               )}
               {visible.length > 0 && (
                 <CommandGroup>
-                  {visible.map((model) => (
+                  {visible.map(({ model, sources }) => (
                     <CommandItem
                       key={model}
                       value={model}
                       onSelect={() => add(model)}
+                      className="gap-2"
                     >
-                      {model}
+                      <span className="min-w-0 flex-1 truncate">{model}</span>
+                      <ModelSources sources={sources} />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -135,5 +147,53 @@ export function ModelEntryPicker({
         </PopoverContent>
       </Popover>
     </div>
+  );
+}
+
+/** The endpoint and workspace a model comes from; several collapse to a count. */
+function ModelSources({ sources }: { sources: ModelCandidateSource[] }) {
+  const { t } = useTranslation();
+  if (!sources.length) return null;
+  const label = (source: ModelCandidateSource) =>
+    t(
+      source.external
+        ? "group_policies.source.external"
+        : "group_policies.source.endpoint",
+      { name: source.endpoint, workspace: source.workspace },
+    );
+  if (sources.length === 1) {
+    return (
+      <span
+        className="max-w-[60%] shrink-0 truncate text-xs text-muted-foreground"
+        data-testid="model-source"
+      >
+        {label(sources[0])}
+      </span>
+    );
+  }
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className="shrink-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-2"
+            data-testid="model-source"
+          >
+            {t("group_policies.source.count", { count: sources.length })}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <ul className="space-y-0.5">
+            {sources.map((source) => (
+              <li
+                key={`${source.workspace}/${source.external}/${source.endpoint}`}
+              >
+                {label(source)}
+              </li>
+            ))}
+          </ul>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

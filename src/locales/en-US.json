@@ -2909,6 +2909,8 @@
 			"addMembersTitle": "Add Members",
 			"addMembersHint": "Select the users to add to {{team}}.",
 			"searchUsers": "Search by name or email",
+			"filterDepartment": "Department",
+			"allDepartments": "All departments",
 			"noUsers": "No users match.",
 			"alreadyMember": "Member",
 			"addSelected": "Add ({{count}})",
@@ -2985,6 +2987,7 @@
 	},
 	"group_policies": {
 		"title": "Model Access",
+		"permissionTitle": "Model access policy",
 		"groupHint": {
 			"Team": "Limits the models every member of this team can call. Teams of a user combine: a model allowed by any team is allowed.",
 			"OrgUnit": "Limits the models every member of this department and its sub-departments can call. A sub-department cannot allow more than its parents."
@@ -2995,6 +2998,11 @@
 		"noRule": "None",
 		"allWorkspaces": "All workspaces",
 		"addModel": "Add a model",
+		"source": {
+			"endpoint": "Endpoint {{name}} · {{workspace}}",
+			"external": "External endpoint {{name}} · {{workspace}}",
+			"count": "{{count}} sources"
+		},
 		"searchModel": "Search or type a model name",
 		"noModels": "No models found.",
 		"addTyped": "Add \"{{model}}\"",
@@ -3361,6 +3369,10 @@
 			"titleDayByKey": "Tokens by API key · single day",
 			"titleDayByModel": "Tokens by model · single day",
 			"otherKeys": "Other {{n}} API keys",
+			"otherGroups": "Other {{n}}",
+			"titleByGroup": "Daily tokens by {{kind}}",
+			"titleDayByGroup": "Tokens by {{kind}} · single day",
+			"dimension": "Chart by",
 			"otherAxisLabel": "Other {{n}} (total)",
 			"clickHint": "Click a day to scope the page to that day",
 			"backToPreset": "Back to last {{days}} days",

@@ -40,8 +40,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePermissionDependencies } from "@/domains/role/hooks/use-permission-dependencies";
-import { formatPermission } from "@/domains/role/lib/format-permission";
-import { getResourcePlural } from "@/foundation/lib/plural";
+import {
+  formatPermission,
+  formatResource,
+} from "@/domains/role/lib/format-permission";
 import { cn } from "@/foundation/lib/utils";
 
 const actionIcons: Record<string, React.ReactNode> = {
@@ -169,10 +171,7 @@ const ResourceNode = ({
   const allSelected = sortedActions.length === selectedActions.length;
   const someSelected = selectedActions.length > 0 && !allSelected;
 
-  const formatResourceName = (name: string) => {
-    const plural = getResourcePlural(name);
-    return t(`${plural}.title`);
-  };
+  const formatResourceName = (name: string) => formatResource(t, name);
 
   return (
     <div className="border border-border rounded-md overflow-hidden">

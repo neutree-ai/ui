@@ -78,6 +78,8 @@ const GROUP_KINDS: GroupUsageKind[] = ["User", "Team", "OrgUnit"];
 // org_unit:usage-read alone reads users and departments of the caller's
 // subtree; Team totals stay with a global workspace:usage-read.
 const SUBTREE_GROUP_KINDS: GroupUsageKind[] = ["User", "OrgUnit"];
+// What the chart's series are: API keys, or users / groups of one kind.
+type ChartDimension = "ApiKey" | GroupUsageKind;
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
@@ -117,6 +119,19 @@ export const ModelUsageList = () => {
   const groupKind = groupKinds.includes(pickedGroupKind)
     ? pickedGroupKind
     : "User";
+  // The group card's kind drives the chart too, so both show the same
+  // breakdown; picking an API key goes back to the per-key chart.
+  const [chartDimension, setChartDimension] =
+    useState<ChartDimension>("ApiKey");
+  const chartGroupKind =
+    canReadGroups && chartDimension !== "ApiKey" ? groupKind : null;
+  const pickGroupKind = (kind: GroupUsageKind) => {
+    setGroupKind(kind);
+    setChartDimension(kind);
+    // Groups overlap (a department holds its sub-departments, a user may be
+    // in several teams), so a stacked bar would overstate the total.
+    setChartType("line");
+  };
   const groupUsage = useGroupUsage(
     canReadGroups ? workspace : undefined,
     range.start,
@@ -244,34 +259,72 @@ export const ModelUsageList = () => {
     [groupByModel],
   );
 
+  // The group RPC has no API key column, so only the type and model filters
+  // apply to it.
+  const groupRows = useMemo(
+    () =>
+      groupUsage.usageData.filter(
+        (r: GroupUsageRecord) =>
+          (!endpointType || r.endpoint_type === endpointType) &&
+          (!model ||
+            (r.model_name ?? "")
+              .toLowerCase()
+              .includes(model.trim().toLowerCase())),
+      ),
+    [groupUsage.usageData, endpointType, model],
+  );
+  const groupMeta = useCallback(
+    (r: GroupUsageRecord) => {
+      if (r.kind === "OrgUnit") {
+        const node = orgNodes.get(r.name)?.node;
+        return {
+          name: r.display_name || node?.label || r.name,
+          description:
+            node && node.pathLabel !== node.label ? node.pathLabel : null,
+        };
+      }
+      // A synced Team's name is an internal hash (org-ldap-…), so it is not
+      // shown, as for departments.
+      return { name: r.display_name || r.name, description: null };
+    },
+    [orgNodes],
+  );
+
   // Multi-day: the top TOP_K series each get a line, the rest fold into one
   // "other" series. A single key's models are few enough to show in full.
-  const series = useMemo(
-    () =>
-      foldRemainder(
-        aggregateSeries(filtered, seriesKey, seriesMeta),
-        groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
-        (count) => t("model_usage.daily.otherKeys", { n: count }),
-      ),
-    [filtered, groupByModel, seriesKey, seriesMeta, t],
-  );
+  const series = useMemo(() => {
+    if (chartGroupKind) {
+      return foldRemainder(
+        aggregateSeries(groupRows, (r) => r.name, groupMeta),
+        TOP_K,
+        (count) => t("model_usage.daily.otherGroups", { n: count }),
+      );
+    }
+    return foldRemainder(
+      aggregateSeries(filtered, seriesKey, seriesMeta),
+      groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
+      (count) => t("model_usage.daily.otherKeys", { n: count }),
+    );
+  }, [
+    chartGroupKind,
+    groupRows,
+    groupMeta,
+    filtered,
+    groupByModel,
+    seriesKey,
+    seriesMeta,
+    t,
+  ]);
   const trendData = useMemo(
-    () => buildTrend(filtered, series, seriesKey),
-    [filtered, series, seriesKey],
+    () =>
+      chartGroupKind
+        ? buildTrend(groupRows, series, (r) => r.name)
+        : buildTrend(filtered, series, seriesKey),
+    [chartGroupKind, groupRows, filtered, series, seriesKey],
   );
   // Single day: same folding, but the chart shows one bar per series with its
   // prompt/completion split.
-  const dayCategories = useMemo(
-    () =>
-      isSingleDay
-        ? foldRemainder(
-            aggregateSeries(filtered, seriesKey, seriesMeta),
-            groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
-            (count) => t("model_usage.daily.otherKeys", { n: count }),
-          )
-        : [],
-    [filtered, groupByModel, isSingleDay, seriesKey, seriesMeta, t],
-  );
+  const dayCategories = isSingleDay ? series : [];
 
   const byKey = useMemo(
     () =>
@@ -295,37 +348,12 @@ export const ModelUsageList = () => {
     [filtered],
   );
 
-  // The group RPC has no API key column, so only the type and model filters
-  // apply to it.
   const byGroup = useMemo(() => {
-    const series = aggregateSeries(
-      groupUsage.usageData.filter(
-        (r: GroupUsageRecord) =>
-          (!endpointType || r.endpoint_type === endpointType) &&
-          (!model ||
-            (r.model_name ?? "")
-              .toLowerCase()
-              .includes(model.trim().toLowerCase())),
-      ),
-      (r) => r.name,
-      (r) => {
-        if (r.kind === "OrgUnit") {
-          const node = orgNodes.get(r.name)?.node;
-          return {
-            name: r.display_name || node?.label || r.name,
-            description:
-              node && node.pathLabel !== node.label ? node.pathLabel : null,
-          };
-        }
-        // A synced Team's name is an internal hash (org-ldap-…), so it is not
-        // shown, as for departments.
-        return { name: r.display_name || r.name, description: null };
-      },
-    );
+    const series = aggregateSeries(groupRows, (r) => r.name, groupMeta);
     return groupKind === "OrgUnit"
       ? orderSeries(series, (key) => orgNodes.get(key)?.position)
       : series;
-  }, [groupUsage.usageData, endpointType, model, groupKind, orgNodes]);
+  }, [groupRows, groupMeta, groupKind, orgNodes]);
 
   const detailRows = useMemo(
     () =>
@@ -337,6 +365,13 @@ export const ModelUsageList = () => {
   );
 
   const totalTokens = filtered.reduce((sum, r) => sum + (r.usage ?? 0), 0);
+  // A user's usage counts once; Teams and departments overlap, so their sum
+  // is no total and the chart leaves it out.
+  const chartTotal = !chartGroupKind
+    ? totalTokens
+    : chartGroupKind === "User"
+      ? groupRows.reduce((sum, r) => sum + (r.usage ?? 0), 0)
+      : null;
   // The tables reset to page 1 when the scope changes — and only then. The
   // usage RPC polls every minute and hands back new arrays, which must not
   // throw the reader back to page 1.
@@ -370,7 +405,10 @@ export const ModelUsageList = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => refetch()}
+          onClick={() => {
+            refetch();
+            if (canReadGroups) groupUsage.refetch();
+          }}
           disabled={isLoading}
         >
           <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
@@ -384,12 +422,56 @@ export const ModelUsageList = () => {
         dayCategories={dayCategories}
         isSingleDay={isSingleDay}
         groupByModel={groupByModel}
+        groupKindLabel={
+          chartGroupKind
+            ? t(`model_usage.group.kinds.${chartGroupKind}`)
+            : undefined
+        }
+        headerExtra={
+          canReadGroups ? (
+            <>
+              <Select
+                value={chartGroupKind ?? "ApiKey"}
+                onValueChange={(v) =>
+                  v === "ApiKey"
+                    ? setChartDimension("ApiKey")
+                    : pickGroupKind(v as GroupUsageKind)
+                }
+              >
+                <SelectTrigger
+                  className="h-7 w-[140px]"
+                  aria-label={t("model_usage.daily.dimension")}
+                  data-testid="usage-chart-dimension"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ApiKey">
+                    {groupByModel
+                      ? t("model_usage.model")
+                      : t("model_usage.apiKey")}
+                  </SelectItem>
+                  {groupKinds.map((kind) => (
+                    <SelectItem key={kind} value={kind}>
+                      {t(`model_usage.group.kinds.${kind}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {chartGroupKind && apiKeyId ? (
+                <span className="text-xs font-normal text-muted-foreground">
+                  {t("model_usage.group.apiKeyIgnored")}
+                </span>
+              ) : null}
+            </>
+          ) : undefined
+        }
         chartType={chartType}
         onChartTypeChange={setChartType}
         hidden={hidden}
         onToggleSeries={onToggleSeries}
-        totalTokens={totalTokens}
-        isLoading={isLoading}
+        totalTokens={chartTotal}
+        isLoading={chartGroupKind ? groupUsage.isLoading : isLoading}
         backLabel={backLabel}
         onPickDay={pickDay}
         onResetRange={resetRange}
@@ -402,6 +484,7 @@ export const ModelUsageList = () => {
           onValueChange={(v) => {
             const next = v === "all" ? "" : v;
             setApiKeyId(next);
+            setChartDimension("ApiKey");
             // A single key reads best as a stacked bar of its daily model mix;
             // "All keys" reads best as per-key trend lines.
             setChartType(next ? "bar" : "line");
@@ -501,7 +584,7 @@ export const ModelUsageList = () => {
                 </span>
                 <Select
                   value={groupKind}
-                  onValueChange={(v) => setGroupKind(v as GroupUsageKind)}
+                  onValueChange={(v) => pickGroupKind(v as GroupUsageKind)}
                 >
                   <SelectTrigger
                     className="h-7 w-[140px]"
