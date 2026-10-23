@@ -427,10 +427,10 @@ export const resources: ResourceProps[] = [
   {
     // Opened from the Access Log page, not the menu. Global, so no workspace.
     name: "log_sinks",
-    list: "/ai-traces/log-sinks",
-    create: "/ai-traces/log-sinks/create",
-    edit: "/ai-traces/log-sinks/edit/:id",
-    show: "/ai-traces/log-sinks/show/:id",
+    list: "/log-forwarding",
+    create: "/log-forwarding/create",
+    edit: "/log-forwarding/edit/:id",
+    show: "/log-forwarding/show/:id",
     meta: {
       icon: <ScrollText />,
       idColumnName: "metadata->name",
@@ -706,7 +706,7 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   <Route path="edit/:id" element={<RoleAssignmentsEdit />} />
                   <Route path="create" element={<RoleAssignmentsCreate />} />
                 </Route>
-                <Route path="/ai-traces/log-sinks">
+                <Route path="/log-forwarding">
                   <Route index element={<LogSinksList />} />
                   <Route path="show/:id" element={<LogSinksShow />} />
                   <Route path="edit/:id" element={<LogSinksEdit />} />

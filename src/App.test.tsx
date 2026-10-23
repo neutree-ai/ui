@@ -15,18 +15,18 @@ describe("Log Forwarding resource", () => {
 
   it("lives under the Access Log routes", () => {
     expect(logSinks()).toMatchObject({
-      list: "/ai-traces/log-sinks",
-      create: "/ai-traces/log-sinks/create",
-      edit: "/ai-traces/log-sinks/edit/:id",
-      show: "/ai-traces/log-sinks/show/:id",
+      list: "/log-forwarding",
+      create: "/log-forwarding/create",
+      edit: "/log-forwarding/edit/:id",
+      show: "/log-forwarding/show/:id",
     });
   });
 
   it.each([
-    ["/ai-traces/log-sinks", "list"],
-    ["/ai-traces/log-sinks/create", "create"],
-    ["/ai-traces/log-sinks/edit/3", "edit"],
-    ["/ai-traces/log-sinks/show/3", "show"],
+    ["/log-forwarding", "list"],
+    ["/log-forwarding/create", "create"],
+    ["/log-forwarding/edit/3", "edit"],
+    ["/log-forwarding/show/3", "show"],
   ])("resolves %s to the log_sinks %s page", (path, action) => {
     const match = matchResourceFromRoute(path, resources);
     expect(match.resource?.name).toBe("log_sinks");
