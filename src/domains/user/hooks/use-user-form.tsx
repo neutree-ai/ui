@@ -2,8 +2,13 @@ import { useTranslation } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/domains/user/types";
+import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import {
+  profileEmail,
+  profileIdentitySource,
+} from "@/foundation/lib/user-identity";
 
 export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
   const isEdit = action === "edit";
@@ -31,6 +36,15 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
     refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
+
+  // The email of a user from an identity source belongs to that source; the
+  // database refuses to change it.
+  const metadata = form.watch("metadata");
+  const isExternal = isEdit && profileIdentitySource(metadata) !== "";
+  // A placeholder email is shown as empty, but the form value keeps it: the
+  // update sends the whole spec, and a missing or changed email is refused.
+  const hidesEmail =
+    isExternal && profileEmail({ metadata, spec: form.watch("spec") }) === "";
 
   const passwordField = isEdit
     ? null
@@ -114,8 +128,17 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="spec.email"
           label={translate("common.fields.email")}
+          description={
+            isExternal
+              ? translate("user_profiles.hints.externalEmail")
+              : undefined
+          }
         >
-          <Input type="email" />
+          <Input
+            type="email"
+            disabled={isExternal}
+            {...(hidesEmail ? { value: "", placeholder: EMPTY_VALUE } : {})}
+          />
         </FormFieldGroup>
       </FormCardGrid>
     ),

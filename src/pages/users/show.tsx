@@ -1,5 +1,6 @@
 import { useShow } from "@refinedev/core";
 import type { UserProfile } from "@/domains/user/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
@@ -7,6 +8,10 @@ import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  profileDisplayName,
+  profileEmail,
+} from "@/foundation/lib/user-identity";
 
 export const UsersShow = () => {
   const { t } = useTranslation();
@@ -28,11 +33,14 @@ export const UsersShow = () => {
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
       <ShowPage.ObjectHeader
-        title={record.metadata.name}
+        title={profileDisplayName(record.metadata)}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+            <ShowPage.Meta label={t("common.fields.name")}>
+              {record.metadata.name}
+            </ShowPage.Meta>
             <ShowPage.Meta label={t("common.fields.email")}>
-              {record.spec.email}
+              {profileEmail(record) || <EmptyValue />}
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
