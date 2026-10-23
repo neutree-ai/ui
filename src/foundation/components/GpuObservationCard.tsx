@@ -1,6 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { peakTflops } from "@/foundation/lib/accelerator-tflops";
+import { type ReactNode, useState } from "react";
 import { Link } from "react-router";
 import {
   Sheet,
@@ -10,19 +9,19 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   type AcceleratorSample,
   allocationColor,
   type GpuAllocation,
   reading,
-  replicaReading,
 } from "@/foundation/lib/accelerator-observations";
-import { MetricBar } from "./MetricBar";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+import { peakTflops } from "@/foundation/lib/accelerator-tflops";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { MetricBar } from "./MetricBar";
 
 export type ObservedGpu = {
   node: string;
@@ -107,38 +106,48 @@ export function GpuObservationCard({
   const assigned = allocations.filter(
     (a) => a.node === device.node && a.uuid === device.uuid,
   );
-  const weightsText = (a?: GpuAllocation) =>
-    a?.modelWeightsMiB != null ? gib(a.modelWeightsMiB) : null;
-  const l0KvText = (a?: GpuAllocation) => {
-    if (!a) return null;
-    if (a.kvCacheCapacityMiB != null) {
-      return gib(a.kvCacheCapacityMiB);
-    }
-    const kvUsage = replicaReading(samples, "vllm:kv_cache_usage_perc", a);
-    if (kvUsage != null) {
-      return `${(kvUsage.value * 100).toFixed(1)}%`;
-    }
-    return null;
-  };
+  // Both values come from the engine's startup log. The L0 KV-Cache is the
+  // pool vLLM pre-allocates at startup; its live usage ratio only counts
+  // in-flight requests, so it is deliberately not used as a fallback here.
+  const weightsText = (a: GpuAllocation) => gib(a.modelWeightsMiB);
+  const l0KvText = (a: GpuAllocation) => gib(a.kvCacheCapacityMiB);
+  const hasComposition = (a?: GpuAllocation) =>
+    a?.modelWeightsMiB != null && a.kvCacheCapacityMiB != null;
   const activeAllocation =
     replica ?? (assigned.length === 1 ? assigned[0] : undefined);
-  const activeWeights = weightsText(activeAllocation);
-  const activeL0Kv = l0KvText(activeAllocation);
-  const singleWeightsPct = ratio(activeAllocation?.modelWeightsMiB, total);
-  const singleKvPct = Math.min(
-    Math.max(0, 100 - singleWeightsPct),
-    ratio(activeAllocation?.kvCacheCapacityMiB, total),
-  );
-  const breakdownAllocations = !replica
-    ? assigned
-        .map((a, index) => ({
-          allocation: a,
-          index,
-          weights: weightsText(a),
-          l0Kv: l0KvText(a),
-        }))
-        .filter((item) => item.weights || item.l0Kv)
-    : [];
+  const multiBar =
+    assigned.length > 0 &&
+    !replica &&
+    (assigned.length === 1 ||
+      assigned.some((a) =>
+        Boolean(
+          reading(
+            samples,
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            device.node,
+            device.uuid,
+            a,
+          ),
+        ),
+      ));
+  const assignedUsedMiB = (a: GpuAllocation) => {
+    const measured = reading(
+      samples,
+      "neutree_endpoint_replica_accelerator_memory_used_bytes",
+      device.node,
+      device.uuid,
+      a,
+    );
+    return measured
+      ? measured.value / 1024 ** 2
+      : assigned.length === 1
+        ? actual
+        : null;
+  };
+  // Segments are only drawn on top of a real measurement, never on their own.
+  const showLegend = multiBar
+    ? assigned.some((a) => hasComposition(a) && assignedUsedMiB(a) != null)
+    : actual != null && hasComposition(activeAllocation);
   const label = (value?: string) =>
     !value || value === "unknown" || value === "-1" ? "—" : value;
   const utilizationText = utilization
@@ -193,32 +202,10 @@ export function GpuObservationCard({
         role="group"
         aria-label={`${t("observations.actual")}: ${gib(actual)}, ${t("observations.allocated")}: ${gib(device.allocatedMiB)}, ${t("observations.physical")}: ${gib(total)}`}
       >
-        {assigned.length > 0 &&
-        !replica &&
-        (assigned.length === 1 ||
-          assigned.some((a) =>
-            Boolean(
-              reading(
-                samples,
-                "neutree_endpoint_replica_accelerator_memory_used_bytes",
-                device.node,
-                device.uuid,
-                a,
-              ),
-            ),
-          )) ? (
+        {multiBar ? (
           <div className="flex h-full">
             {assigned.map((a, index) => {
-              const measured = reading(
-                samples,
-                "neutree_endpoint_replica_accelerator_memory_used_bytes",
-                device.node,
-                device.uuid,
-                a,
-              );
-              const usedMiB = measured ? measured.value / 1024 ** 2 : null;
-              const fallbackMiB =
-                usedMiB ?? (assigned.length === 1 ? actual : null);
+              const fallbackMiB = assignedUsedMiB(a);
               const segmentWidth =
                 a.memoryMiB > 0
                   ? ratio(a.memoryMiB, total)
@@ -226,11 +213,6 @@ export function GpuObservationCard({
                     ? 100 / assigned.length
                     : 0;
               const denom = a.memoryMiB || total;
-              const weightsPct = ratio(a.modelWeightsMiB, denom);
-              const kvPct = Math.min(
-                Math.max(0, 100 - weightsPct),
-                ratio(a.kvCacheCapacityMiB, denom),
-              );
               const color = allocationColor(a.endpoint, index);
               return (
                 <Tooltip
@@ -256,24 +238,11 @@ export function GpuObservationCard({
                           }}
                         />
                       )}
-                      {weightsPct > 0 && (
-                        <div
-                          data-testid="gpu-bar-weights-segment"
-                          className="pointer-events-none absolute inset-y-0 left-0 border-r border-background/80"
-                          style={{
-                            backgroundColor: color,
-                            width: `${weightsPct}%`,
-                          }}
-                        />
-                      )}
-                      {kvPct > 0 && (
-                        <div
-                          data-testid="gpu-bar-kv-segment"
-                          className="pointer-events-none absolute inset-y-0 border-r border-background/80 bg-background/25"
-                          style={{
-                            left: `${weightsPct}%`,
-                            width: `${kvPct}%`,
-                          }}
+                      {fallbackMiB != null && hasComposition(a) && (
+                        <CompositionSegments
+                          measuredPct={ratio(fallbackMiB, denom)}
+                          weightsPct={ratio(a.modelWeightsMiB, denom)}
+                          kvPct={ratio(a.kvCacheCapacityMiB, denom)}
                         />
                       )}
                       {fallbackMiB == null && (
@@ -288,16 +257,12 @@ export function GpuObservationCard({
                       {t("observations.actual")} {gib(fallbackMiB)} /{" "}
                       {t("observations.allocated")} {gib(a.memoryMiB)}
                     </p>
-                    {weightsText(a) && (
-                      <p>
-                        {t("observations.modelWeights")} {weightsText(a)}
-                      </p>
-                    )}
-                    {l0KvText(a) && (
-                      <p>
-                        {t("observations.l0KvCache")} {l0KvText(a)}
-                      </p>
-                    )}
+                    <p>
+                      {t("observations.modelWeights")} {weightsText(a)}
+                    </p>
+                    <p>
+                      {t("observations.l0KvCache")} {l0KvText(a)}
+                    </p>
                     {fallbackMiB != null && fallbackMiB > a.memoryMiB && (
                       <p>{t("observations.overAllocation")}</p>
                     )}
@@ -318,23 +283,15 @@ export function GpuObservationCard({
                 style={{ width: `${ratio(actual, total)}%` }}
               />
             )}
-            {singleWeightsPct > 0 && (
-              <div
-                data-testid="gpu-bar-weights-segment"
-                className="pointer-events-none absolute inset-y-0 left-0 border-r border-background/80 bg-[var(--nt-chart-series-1)]"
-                style={{ width: `${singleWeightsPct}%` }}
-              />
-            )}
-            {singleKvPct > 0 && (
-              <div
-                data-testid="gpu-bar-kv-segment"
-                className="pointer-events-none absolute inset-y-0 border-r border-background/80 bg-background/25"
-                style={{
-                  left: `${singleWeightsPct}%`,
-                  width: `${singleKvPct}%`,
-                }}
-              />
-            )}
+            {actual != null &&
+              activeAllocation &&
+              hasComposition(activeAllocation) && (
+                <CompositionSegments
+                  measuredPct={ratio(actual, total)}
+                  weightsPct={ratio(activeAllocation.modelWeightsMiB, total)}
+                  kvPct={ratio(activeAllocation.kvCacheCapacityMiB, total)}
+                />
+              )}
           </>
         )}
       </div>
@@ -346,32 +303,25 @@ export function GpuObservationCard({
           {t("observations.physical")} {gib(total)}
         </span>
       </div>
-      {replica && (activeWeights || activeL0Kv) && (
+      {showLegend && <CompositionLegend />}
+      {replica && (
         <div
-          className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+          className="text-xs text-muted-foreground"
           data-testid="gpu-kv-weights-breakdown"
         >
-          {activeWeights && (
-            <span>
-              {t("observations.modelWeights")} {activeWeights}
-            </span>
-          )}
-          {activeWeights && activeL0Kv && <span aria-hidden="true">·</span>}
-          {activeL0Kv && (
-            <span>
-              {t("observations.l0KvCache")} {activeL0Kv}
-            </span>
-          )}
+          {t("observations.modelWeights")} {weightsText(replica)} ·{" "}
+          {t("observations.l0KvCache")} {l0KvText(replica)}
         </div>
       )}
-      {!replica && breakdownAllocations.length > 0 && (
+      {!replica && assigned.length > 0 && (
         <div
           className="space-y-1 text-xs text-muted-foreground"
           data-testid="gpu-kv-weights-breakdown"
         >
-          {breakdownAllocations.map(({ allocation: a, index, weights, l0Kv }) => {
+          {assigned.map((a, index) => {
             const duplicateEndpoint =
-              assigned.filter((item) => item.endpoint === a.endpoint).length > 1;
+              assigned.filter((item) => item.endpoint === a.endpoint).length >
+              1;
             const instanceLabel =
               duplicateEndpoint && (a.replica || a.instance)
                 ? `${a.endpoint} (${a.replica || a.instance})`
@@ -390,17 +340,10 @@ export function GpuObservationCard({
                   />
                   <span className="break-all">{instanceLabel}</span>
                 </span>
-                {weights && (
-                  <span>
-                    {t("observations.modelWeights")} {weights}
-                  </span>
-                )}
-                {weights && l0Kv && <span aria-hidden="true">·</span>}
-                {l0Kv && (
-                  <span>
-                    {t("observations.l0KvCache")} {l0Kv}
-                  </span>
-                )}
+                <span>
+                  {t("observations.modelWeights")} {weightsText(a)} ·{" "}
+                  {t("observations.l0KvCache")} {l0KvText(a)}
+                </span>
               </div>
             );
           })}
@@ -560,21 +503,10 @@ export function GpuObservationCard({
                         )}{" "}
                         · {t("observations.allocated")} {gib(a.memoryMiB)}
                       </p>
-                      {(weightsText(a) || l0KvText(a)) && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {weightsText(a) && (
-                            <>
-                              {t("observations.modelWeights")} {weightsText(a)}
-                            </>
-                          )}
-                          {weightsText(a) && l0KvText(a) && " · "}
-                          {l0KvText(a) && (
-                            <>
-                              {t("observations.l0KvCache")} {l0KvText(a)}
-                            </>
-                          )}
-                        </p>
-                      )}
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t("observations.modelWeights")} {weightsText(a)} ·{" "}
+                        {t("observations.l0KvCache")} {l0KvText(a)}
+                      </p>
                     </div>
                   );
                 })}
@@ -588,6 +520,99 @@ export function GpuObservationCard({
           </div>
         </SheetContent>
       </Sheet>
+    </div>
+  );
+}
+
+// Light stripes mark the L0 KV-Cache pool; a light wash marks the rest of the
+// measured memory (CUDA context, activations, graphs). Both sit on top of the
+// solid measured bar, so they work with any instance colour.
+const KV_STRIPES =
+  "repeating-linear-gradient(135deg, rgba(255,255,255,0.6) 0 2px, transparent 2px 4px)";
+const OTHER_WASH = "rgba(255,255,255,0.45)";
+
+function CompositionSegments({
+  measuredPct,
+  weightsPct,
+  kvPct,
+}: {
+  measuredPct: number;
+  weightsPct: number;
+  kvPct: number;
+}) {
+  // Never draw past the measured usage: the composition explains the
+  // measurement, it does not replace it.
+  const weights = Math.min(weightsPct, measuredPct);
+  const kv = Math.min(kvPct, measuredPct - weights);
+  const other = Math.max(0, measuredPct - weights - kv);
+  return (
+    <>
+      {weights > 0 && (
+        <div
+          data-testid="gpu-bar-weights-segment"
+          className="pointer-events-none absolute inset-y-0 left-0 border-r border-white/80"
+          style={{ width: `${weights}%` }}
+        />
+      )}
+      {kv > 0 && (
+        <div
+          data-testid="gpu-bar-kv-segment"
+          className="pointer-events-none absolute inset-y-0 border-r border-white/80"
+          style={{
+            left: `${weights}%`,
+            width: `${kv}%`,
+            backgroundImage: KV_STRIPES,
+          }}
+        />
+      )}
+      {other > 0 && (
+        <div
+          data-testid="gpu-bar-other-segment"
+          className="pointer-events-none absolute inset-y-0"
+          style={{
+            left: `${weights + kv}%`,
+            width: `${other}%`,
+            backgroundColor: OTHER_WASH,
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function CompositionLegend() {
+  const { t } = useTranslation();
+  const swatch = "inline-block h-2 w-3 shrink-0 rounded-sm";
+  const base = "var(--nt-chart-series-1)";
+  const items = [
+    { key: "modelWeights", style: { backgroundColor: base } },
+    {
+      key: "l0KvCache",
+      style: { backgroundColor: base, backgroundImage: KV_STRIPES },
+    },
+    {
+      key: "otherMemory",
+      style: {
+        backgroundColor: base,
+        boxShadow: `inset 0 0 0 999px ${OTHER_WASH}`,
+      },
+    },
+    {
+      key: "allocatedUnused",
+      style: { backgroundColor: base, opacity: 0.3 },
+    },
+  ];
+  return (
+    <div
+      className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground"
+      data-testid="gpu-bar-legend"
+    >
+      {items.map((item) => (
+        <span key={item.key} className="inline-flex items-center gap-1">
+          <i className={swatch} style={item.style} />
+          {t(`observations.${item.key}`)}
+        </span>
+      ))}
     </div>
   );
 }
