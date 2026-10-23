@@ -1,4 +1,5 @@
 import { useCustom } from "@refinedev/core";
+import type { LogContainer } from "@/domains/endpoint/lib/log-helpers";
 import type { Endpoint } from "@/domains/endpoint/types";
 
 /**
@@ -16,6 +17,7 @@ interface LogSource {
 interface Replica {
   replica_id: string;
   logs: LogSource[];
+  containers?: LogContainer[];
 }
 
 /**
@@ -31,7 +33,8 @@ interface Deployment {
  */
 export const getBackendReplicas = (deployments: Deployment[]): Replica[] => {
   const backend =
-    deployments.find((d) => d.name === "Backend") || deployments[0];
+    deployments.find((deployment) => deployment.name === "Backend") ||
+    deployments[0];
   return backend?.replicas ?? [];
 };
 
@@ -70,6 +73,7 @@ interface LogSourcesResponse {
 export const useEndpointLogSources = (endpoint: Endpoint | null) => {
   const workspace = endpoint?.metadata.workspace;
   const name = endpoint?.metadata.name;
+  const enabled = !!workspace && !!name;
 
   const {
     data: logSourcesData,
@@ -79,16 +83,16 @@ export const useEndpointLogSources = (endpoint: Endpoint | null) => {
     url: workspace && name ? `/endpoints/${workspace}/${name}/log-sources` : "",
     method: "get",
     queryOptions: {
-      enabled: !!workspace && !!name,
+      enabled,
       staleTime: 30 * 1000, // Cache for 30 seconds
     },
   });
 
-  const deployments = logSourcesData?.data?.deployments || [];
+  const deployments = enabled ? logSourcesData?.data?.deployments || [] : [];
 
   return {
     deployments,
-    isLoading,
+    isLoading: enabled && isLoading,
     refetch,
   };
 };

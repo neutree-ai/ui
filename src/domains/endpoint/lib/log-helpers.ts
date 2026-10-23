@@ -1,3 +1,61 @@
+export interface LogContainer {
+  name: string;
+  type: "container" | "initContainer";
+  restart_count: number;
+  started?: boolean;
+}
+
+export function getDefaultLogContainer(
+  containers: LogContainer[],
+  engineNames: ReadonlySet<string>,
+): LogContainer | undefined {
+  return (
+    containers.find(
+      (container) =>
+        engineNames.has(container.name) &&
+        (container.started || container.restart_count > 0),
+    ) ??
+    containers.find((container) => container.name === "model-downloader") ??
+    containers[0]
+  );
+}
+
+function withLogParams(
+  url: string,
+  params: Record<string, string | undefined>,
+): string {
+  const [baseUrl, ...fragmentParts] = url.split("#");
+  const [pathname, ...queryParts] = baseUrl.split("?");
+  const searchParams = new URLSearchParams(queryParts.join("?"));
+
+  for (const [name, value] of Object.entries(params)) {
+    if (value === undefined) searchParams.delete(name);
+    else searchParams.set(name, value);
+  }
+
+  return `${pathname}?${searchParams}${fragmentParts.length ? `#${fragmentParts.join("#")}` : ""}`;
+}
+
+export function getLogUrls(
+  source: { url: string; download_url: string },
+  container?: string,
+  previous = false,
+): { url: string; downloadUrl: string } {
+  const params: Record<string, string | undefined> = container
+    ? { container, previous: previous ? "true" : undefined }
+    : {};
+
+  return {
+    url: withLogParams(source.url.replace(/^\/api\/v1(?=\/|$)/, ""), {
+      ...params,
+      lines: "1000",
+    }),
+    downloadUrl: container
+      ? withLogParams(source.download_url, { ...params, download: "true" })
+      : source.download_url,
+  };
+}
+
 /**
  * Filter a log line by timestamp range.
  *
