@@ -19,6 +19,7 @@ import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import { EndpointKVCacheSummary } from "@/domains/endpoint/components/EndpointKVCacheSummary";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
+import { EndpointPerformanceCard } from "@/domains/endpoint/components/EndpointPerformanceCard";
 import EndpointRuntimeResourcesCard, {
   EndpointRuntimeResourcesSummary,
 } from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
@@ -375,6 +376,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 cluster={clusterData?.data?.[0]}
               />
             )}
+            <EndpointPerformanceCard
+              workspace={record.metadata.workspace}
+              name={record.metadata.name}
+              paused={record.status?.phase === "Paused"}
+            />
             <div className="space-y-3">
               <ShowPage.Section
                 title={t("endpoints.sections.runtimeAllocation")}
