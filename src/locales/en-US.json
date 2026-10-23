@@ -829,7 +829,7 @@
 	"log_sinks": {
 		"log_sinks": "destination",
 		"title": "Log Forwarding",
-		"empty": "No destinations yet. Add one to copy access logs to a log store of your own.",
+		"empty": "No destinations yet. Add one to copy access logs to a log store or S3 bucket of your own.",
 		"create": {
 			"title": "Add Destination"
 		},
@@ -926,7 +926,7 @@
 			"removeExtraField": "Remove field"
 		},
 		"delete": {
-			"description": "Forwarding to this destination stops and buffered events that have not been sent are discarded. Data already in the log store is not touched."
+			"description": "Forwarding to this destination stops and buffered events that have not been sent are discarded. Data already in the log store or bucket is not touched."
 		},
 		"validation": {
 			"nameRequired": "Name is required",
@@ -2234,7 +2234,7 @@
 		"forwarding": {
 			"button": "Forwarding",
 			"buttonWithCount": "Forwarding · {{count}}",
-			"hint": "Copy access logs to log stores of your own",
+			"hint": "Copy access logs to log stores or S3 buckets of your own",
 			"failing": "{{count}} destinations failing",
 			"failing_one": "1 destination failing",
 			"degraded": "{{count}} destinations degraded",
