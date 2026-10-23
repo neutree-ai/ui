@@ -1049,7 +1049,28 @@
 			"resourceSummary": "Resource Summary",
 			"replicaResources": "Replica Resources",
 			"gpuAllocation": "GPU Allocation & Usage",
-			"weights": "Weights & Cache"
+			"weights": "Weights & Cache",
+			"monitoringMetrics": "Monitoring Metrics"
+		},
+		"performance": {
+			"window5m": "Last 5m",
+			"window1h": "Last 1h",
+			"window24h": "Last 24h",
+			"cumulative": "Cumulative",
+			"latency": "Latency",
+			"throughput": "Throughput",
+			"kvCache": "KV-Cache",
+			"ttft": "TTFT",
+			"tpot": "TPOT",
+			"avg": "Avg",
+			"p95": "P95",
+			"totalTokensPerSecond": "Total tokens/s (TPS)",
+			"promptTokensPerSecond": "Prompt tokens/s",
+			"generationTokensPerSecond": "Generation tokens/s",
+			"l0HitRate": "L0 Hit Rate",
+			"l1HitRate": "L1 Hit Rate",
+			"l1ReadSpeed": "L1 Read Speed",
+			"l1WriteSpeed": "L1 Write Speed"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
