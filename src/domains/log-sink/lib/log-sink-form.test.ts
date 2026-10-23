@@ -4,6 +4,7 @@ import {
   bytesToGib,
   emptyLogSinkFormValues,
   gibToBytes,
+  LOG_SINK_ERROR_FIELDS,
   type LogSinkFormValues,
   toLogSinkFormValues,
   toLogSinkPayload,
@@ -11,6 +12,9 @@ import {
   validateBufferGib,
   validateExtraFieldKey,
   validateExtraFieldValue,
+  validateFlushInterval,
+  validateKeyPrefix,
+  validateS3Endpoint,
   validateSinkUrl,
   validateTimeoutSeconds,
 } from "./log-sink-form";
@@ -281,5 +285,183 @@ describe("validation", () => {
     expect(validateExtraFieldKey(rows, 4)).toBeUndefined();
     expect(validateExtraFieldValue("a,b")).toBe("comma");
     expect(validateExtraFieldValue("ab")).toBeUndefined();
+  });
+});
+
+const withS3Form = (
+  patch: (values: LogSinkFormValues) => void,
+): LogSinkFormValues =>
+  withForm((v) => {
+    v.spec.type = "s3";
+    v.spec.s3.region = "us-east-1";
+    v.spec.s3.bucket = "traces";
+    v.spec.s3.auth = { access_key_id: "ak", secret_access_key: "sk" };
+    patch(v);
+  });
+
+describe("s3", () => {
+  it("sends only the s3 sub-object, defaults omitted", () => {
+    expect(toLogSinkSpec(withS3Form(() => {}))).toEqual({
+      type: "s3",
+      enabled: true,
+      s3: {
+        region: "us-east-1",
+        bucket: "traces",
+        auth: { access_key_id: "ak", secret_access_key: "sk" },
+      },
+    });
+  });
+
+  it("writes non-default values", () => {
+    const spec = toLogSinkSpec(
+      withS3Form((v) => {
+        v.spec.s3.endpoint = " http://minio:9000 ";
+        v.spec.s3.key_prefix = "logs/%Y/";
+        v.spec.s3.force_path_style = false;
+        v.spec.s3.compression = "zstd";
+        v.spec.s3.flush_interval_seconds = "10";
+        v.spec.buffer.max_size_gib = "2";
+      }),
+    );
+    expect(spec).toEqual({
+      type: "s3",
+      enabled: true,
+      s3: {
+        endpoint: "http://minio:9000",
+        region: "us-east-1",
+        bucket: "traces",
+        key_prefix: "logs/%Y/",
+        force_path_style: false,
+        compression: "zstd",
+        flush_interval_seconds: 10,
+        auth: { access_key_id: "ak", secret_access_key: "sk" },
+      },
+      buffer: { max_size: 2147483648 },
+    });
+  });
+
+  it("omits blank keys on edit, each one alone, and auth when both are blank", () => {
+    const onlySecret = toLogSinkSpec(
+      withS3Form((v) => {
+        v.spec.s3.auth = { access_key_id: "", secret_access_key: "new" };
+      }),
+    );
+    expect(onlySecret.s3?.auth).toEqual({ secret_access_key: "new" });
+
+    const none = toLogSinkSpec(
+      withS3Form((v) => {
+        v.spec.s3.auth = { access_key_id: " ", secret_access_key: "" };
+      }),
+    );
+    expect(none.s3).not.toHaveProperty("auth");
+  });
+
+  it("victorialogs spec carries no s3 settings even when the s3 inputs were filled", () => {
+    const values = withS3Form(() => {});
+    values.spec.type = "victorialogs";
+    expect(toLogSinkSpec(values)).not.toHaveProperty("s3");
+  });
+
+  it("s3 spec carries no victorialogs settings", () => {
+    expect(toLogSinkSpec(withS3Form(() => {}))).not.toHaveProperty(
+      "victorialogs",
+    );
+  });
+
+  it.each<[string, NonNullable<LogSink["spec"]["s3"]>]>([
+    ["defaults", { region: "us-east-1", bucket: "traces" }],
+    [
+      "everything set",
+      {
+        endpoint: "http://minio:9000",
+        region: "eu-west-1",
+        bucket: "traces",
+        key_prefix: "a/%Y/",
+        force_path_style: false,
+        compression: "none",
+        flush_interval_seconds: 86400,
+      },
+    ],
+  ])("reopen round-trip: %s (keys masked as {})", (_, stored) => {
+    const read = record({
+      type: "s3",
+      enabled: false,
+      s3: { ...stored, auth: {} },
+      buffer: { max_size: 268435488 },
+    });
+    const values = toLogSinkFormValues(read);
+    expect(values.spec.type).toBe("s3");
+    expect(values.spec.s3.auth).toEqual({
+      access_key_id: "",
+      secret_access_key: "",
+    });
+    // Blank keys are omitted, so the PATCH keeps the stored ones.
+    expect(toLogSinkSpec(values)).toEqual({
+      type: "s3",
+      enabled: false,
+      s3: stored,
+      buffer: { max_size: 268435488 },
+    });
+  });
+
+  it("opens absent path style as on and absent compression as gzip", () => {
+    const values = toLogSinkFormValues(
+      record({ type: "s3", s3: { region: "r", bucket: "b", auth: {} } }),
+    );
+    expect(values.spec.s3.force_path_style).toBe(true);
+    expect(values.spec.s3.compression).toBe("gzip");
+    expect(values.spec.s3.flush_interval_seconds).toBe("");
+  });
+
+  it.each([
+    ["", undefined],
+    ["http://minio:9000", undefined],
+    ["https://s3.amazonaws.com", undefined],
+    ["minio:9000", "scheme"],
+    ["http://", "invalid"],
+    ["http://u:p@minio:9000", "extraParts"],
+    ["http://minio:9000?x=1", "extraParts"],
+  ])("endpoint %j -> %s", (url, error) => {
+    expect(validateS3Endpoint(url)).toBe(error);
+  });
+
+  it.each([
+    ["", undefined],
+    ["traces/%Y/%m/%d/", undefined],
+    ["x".repeat(513), "tooLong"],
+    ["/abs", "leadingSlash"],
+    ["a/{{ field }}/", "template"],
+    ["a\\b", "invalidChars"],
+    ["a\nb", "invalidChars"],
+  ])("key prefix %j -> %s", (prefix, error) => {
+    expect(validateKeyPrefix(prefix)).toBe(error);
+  });
+
+  it.each([
+    ["", undefined],
+    ["1", undefined],
+    ["86400", undefined],
+    ["0", "invalid"],
+    ["86401", "invalid"],
+    ["1.5", "invalid"],
+    ["x", "invalid"],
+  ])("flush interval %j -> %s", (value, error) => {
+    expect(validateFlushInterval(value)).toBe(error);
+  });
+
+  it("maps s3 error codes to fields", () => {
+    expect(
+      ["10305", "10306", "10307", "10308", "10309", "10310", "10311"].map(
+        (code) => LOG_SINK_ERROR_FIELDS[code],
+      ),
+    ).toEqual([
+      "spec.type",
+      "spec.s3.bucket",
+      "spec.s3.region",
+      "spec.s3.endpoint",
+      "spec.s3.compression",
+      "spec.s3.flush_interval_seconds",
+      "spec.s3.auth.access_key_id",
+    ]);
   });
 });

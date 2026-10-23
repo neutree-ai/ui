@@ -6,7 +6,10 @@ import TestConnectionButton from "@/domains/log-sink/components/TestConnectionBu
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
 import { useLogSinkTestConnection } from "@/domains/log-sink/hooks/use-log-sink-test-connection";
 import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
-import { bytesToGib } from "@/domains/log-sink/lib/log-sink-form";
+import {
+  bytesToGib,
+  S3_DEFAULT_KEY_PREFIX,
+} from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
@@ -33,7 +36,9 @@ export const LogSinksShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
+  const isS3 = record.spec?.type === "s3";
   const vl = record.spec?.victorialogs;
+  const s3 = record.spec?.s3;
   const authType =
     vl?.auth?.type === "basic" || vl?.auth?.type === "bearer"
       ? vl.auth.type
@@ -66,59 +71,115 @@ export const LogSinksShow = () => {
             <ShowPage.Row title={t("log_sinks.fields.type")}>
               {t(`log_sinks.types.${record.spec?.type}`)}
             </ShowPage.Row>
-            <ShowPage.Row title={t("log_sinks.fields.url")}>
-              <span className="break-all">{vl?.url}</span>
-            </ShowPage.Row>
-            <ShowPage.Row title={t("log_sinks.fields.authType")}>
-              {t(`log_sinks.authTypes.${authType}`)}
-            </ShowPage.Row>
-            {authType === "basic" && (
-              <ShowPage.Row title={t("log_sinks.fields.username")}>
-                {vl?.auth?.username ?? <EmptyValue />}
-              </ShowPage.Row>
-            )}
-            <ShowPage.Row title={t("log_sinks.fields.insecureSkipVerify")}>
-              {vl?.insecure_skip_verify
-                ? t("log_sinks.values.yes")
-                : t("log_sinks.values.no")}
-            </ShowPage.Row>
-            <ShowPage.Row title={t("log_sinks.fields.caCert")}>
-              {vl?.ca_cert
-                ? t("log_sinks.values.set")
-                : t("log_sinks.values.notSet")}
-            </ShowPage.Row>
-            <ShowPage.Row title={t("log_sinks.fields.timeout")}>
-              {vl?.timeout_seconds
-                ? t("log_sinks.values.timeoutSeconds", {
-                    count: vl.timeout_seconds,
-                  })
-                : t("log_sinks.values.timeoutDefault")}
-            </ShowPage.Row>
-            <ShowPage.Row title={t("log_sinks.fields.bufferSizeShort")}>
-              {maxSize
-                ? t("log_sinks.values.bufferGib", {
-                    value: bytesToGib(maxSize),
-                  })
-                : t("log_sinks.values.bufferDefault")}
-            </ShowPage.Row>
-            <div className="lg:col-span-4">
-              <ShowPage.Row title={t("log_sinks.fields.extraFields")}>
-                {extraFields.length ? (
-                  <span className="flex flex-wrap gap-2">
-                    {extraFields.map(([key, value]) => (
-                      <code
-                        key={key}
-                        className="rounded bg-muted px-1.5 py-0.5 text-xs"
-                      >
-                        {key}={value}
-                      </code>
-                    ))}
+            {isS3 ? (
+              <>
+                <ShowPage.Row title={t("log_sinks.fields.endpoint")}>
+                  <span className="break-all">
+                    {s3?.endpoint || t("log_sinks.values.endpointDefault")}
                   </span>
-                ) : (
-                  <EmptyValue />
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.region")}>
+                  <span>{s3?.region}</span>
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.bucket")}>
+                  <span className="break-all">{s3?.bucket}</span>
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.keyPrefix")}>
+                  <span className="break-all">
+                    {s3?.key_prefix ||
+                      t("log_sinks.values.defaultSuffix", {
+                        value: S3_DEFAULT_KEY_PREFIX,
+                      })}
+                  </span>
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.addressing")}>
+                  {s3?.force_path_style === false
+                    ? t("log_sinks.values.virtualHosted")
+                    : s3?.force_path_style
+                      ? t("log_sinks.values.pathStyle")
+                      : t("log_sinks.values.defaultSuffix", {
+                          value: t("log_sinks.values.pathStyle"),
+                        })}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.compression")}>
+                  {s3?.compression
+                    ? t(`log_sinks.compressions.${s3.compression}`)
+                    : t("log_sinks.values.defaultSuffix", {
+                        value: t("log_sinks.compressions.gzip"),
+                      })}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.flushInterval")}>
+                  {s3?.flush_interval_seconds
+                    ? t("log_sinks.values.timeoutSeconds", {
+                        count: s3.flush_interval_seconds,
+                      })
+                    : t("log_sinks.values.flushIntervalDefault")}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.bufferSizeShort")}>
+                  {maxSize
+                    ? t("log_sinks.values.bufferGib", {
+                        value: bytesToGib(maxSize),
+                      })
+                    : t("log_sinks.values.bufferDefault")}
+                </ShowPage.Row>
+              </>
+            ) : (
+              <>
+                <ShowPage.Row title={t("log_sinks.fields.url")}>
+                  <span className="break-all">{vl?.url}</span>
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.authType")}>
+                  {t(`log_sinks.authTypes.${authType}`)}
+                </ShowPage.Row>
+                {authType === "basic" && (
+                  <ShowPage.Row title={t("log_sinks.fields.username")}>
+                    {vl?.auth?.username ?? <EmptyValue />}
+                  </ShowPage.Row>
                 )}
-              </ShowPage.Row>
-            </div>
+                <ShowPage.Row title={t("log_sinks.fields.insecureSkipVerify")}>
+                  {vl?.insecure_skip_verify
+                    ? t("log_sinks.values.yes")
+                    : t("log_sinks.values.no")}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.caCert")}>
+                  {vl?.ca_cert
+                    ? t("log_sinks.values.set")
+                    : t("log_sinks.values.notSet")}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.timeout")}>
+                  {vl?.timeout_seconds
+                    ? t("log_sinks.values.timeoutSeconds", {
+                        count: vl.timeout_seconds,
+                      })
+                    : t("log_sinks.values.timeoutDefault")}
+                </ShowPage.Row>
+                <ShowPage.Row title={t("log_sinks.fields.bufferSizeShort")}>
+                  {maxSize
+                    ? t("log_sinks.values.bufferGib", {
+                        value: bytesToGib(maxSize),
+                      })
+                    : t("log_sinks.values.bufferDefault")}
+                </ShowPage.Row>
+                <div className="lg:col-span-4">
+                  <ShowPage.Row title={t("log_sinks.fields.extraFields")}>
+                    {extraFields.length ? (
+                      <span className="flex flex-wrap gap-2">
+                        {extraFields.map(([key, value]) => (
+                          <code
+                            key={key}
+                            className="rounded bg-muted px-1.5 py-0.5 text-xs"
+                          >
+                            {key}={value}
+                          </code>
+                        ))}
+                      </span>
+                    ) : (
+                      <EmptyValue />
+                    )}
+                  </ShowPage.Row>
+                </div>
+              </>
+            )}
           </div>
         </ShowPage.Section>
         <ShowPage.Section title={t("log_sinks.sections.delivery")}>

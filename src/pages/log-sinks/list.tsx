@@ -3,7 +3,10 @@ import { LogSinkEnableAction } from "@/domains/log-sink/components/LogSinkEnable
 import LogSinkEnabled from "@/domains/log-sink/components/LogSinkEnabled";
 import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
-import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
+import {
+  formatEventCount,
+  formatLogSinkDestination,
+} from "@/domains/log-sink/lib/log-sink-display";
 import type { LogSink } from "@/domains/log-sink/types";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { ListPage } from "@/foundation/components/ListPage";
@@ -37,11 +40,34 @@ export const LogSinksList = () => {
       >
         {metadataColumns.name}
         <Table.Column
-          header={t("log_sinks.fields.url")}
-          accessorKey="spec.victorialogs.url"
-          id="url"
+          header={t("log_sinks.fields.type")}
+          accessorKey="spec.type"
+          id="type"
           enableHiding
-          cell={({ row }) => (row.original as LogSink).spec?.victorialogs?.url}
+          cell={({ row }) =>
+            t(`log_sinks.types.${(row.original as LogSink).spec?.type}`)
+          }
+        />
+        <Table.Column
+          header={t("log_sinks.sections.destination")}
+          accessorKey="spec"
+          id="destination"
+          enableHiding
+          cell={({ row }) => {
+            const { primary, secondary } = formatLogSinkDestination(
+              (row.original as LogSink).spec,
+            );
+            return (
+              <div className="flex flex-col">
+                <span className="break-all">{primary}</span>
+                {secondary && (
+                  <span className="text-xs text-muted-foreground">
+                    {secondary}
+                  </span>
+                )}
+              </div>
+            );
+          }}
         />
         <Table.Column
           header={t("common.fields.status")}
