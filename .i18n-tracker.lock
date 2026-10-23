@@ -1,6 +1,6 @@
 {
   "vite.config.ts": "2f4ea227a08df0d1587921fe627a10e3",
-  "src/App.tsx": "2d7f746ae04f46750bdc40703b7978f2",
+  "src/App.tsx": "1dd9ae1e72610256c73c46c41242a574",
   "src/Root.tsx": "dd7ccc8e83bb3cb7f8c8fb879e4aa203",
   "src/index.tsx": "eea917dfd0f718cd42c34525bfc8cf21",
   "src/pages/workspaces/create.tsx": "eda0d8545f33f74948967657ec231e35",

@@ -28,7 +28,7 @@ vi.mock("@refinedev/core", () => ({
   },
   useNavigation: () => ({
     listUrl: (resource: string) =>
-      resource === "log_sinks" ? "/ai-traces/log-sinks" : "",
+      resource === "log_sinks" ? "/log-forwarding" : "",
   }),
 }));
 
@@ -88,7 +88,7 @@ describe("LogForwardingButton", () => {
   it("links to the Log Forwarding page", () => {
     renderButton();
 
-    expect(button().getAttribute("href")).toBe("/ai-traces/log-sinks");
+    expect(button().getAttribute("href")).toBe("/log-forwarding");
   });
 
   it("shows no count and no dot when nothing is enabled", () => {

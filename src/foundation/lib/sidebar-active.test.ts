@@ -52,8 +52,8 @@ describe("buildMenuItemPaths", () => {
       list: "/:workspace/ai-traces",
       children: [
         {
-          list: "/ai-traces/log-sinks",
-          show: "/ai-traces/log-sinks/show/:id",
+          list: "/log-forwarding",
+          show: "/log-forwarding/show/:id",
         },
       ],
     };
@@ -62,10 +62,10 @@ describe("buildMenuItemPaths", () => {
 
     expect(paths).toEqual([
       "/default/ai-traces",
-      "/ai-traces/log-sinks",
-      "/ai-traces/log-sinks/show/7",
+      "/log-forwarding",
+      "/log-forwarding/show/7",
     ]);
-    expect(isMenuItemActive(paths, "/ai-traces/log-sinks/show/7")).toBe(true);
+    expect(isMenuItemActive(paths, "/log-forwarding/show/7")).toBe(true);
   });
 });
 
