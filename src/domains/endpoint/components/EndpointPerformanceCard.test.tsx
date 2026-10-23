@@ -78,8 +78,7 @@ describe("EndpointPerformanceCard", () => {
     );
     expect(useCustomMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        url: "/endpoints/default/chat-ep/performance-observations",
-        config: { query: { window: "1h" } },
+        url: "/endpoints/default/chat-ep/performance-observations?window=1h",
       }),
     );
   });
