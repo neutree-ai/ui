@@ -23,6 +23,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { formatPermission } from "@/domains/role/lib/format-permission";
+import { sortPermissionResources } from "@/domains/role/lib/permission-resource-order";
 import type { Role } from "@/domains/role/types";
 import { getResourcePlural } from "@/foundation/lib/plural";
 
@@ -79,7 +80,7 @@ const PermissionsTree = ({
     [permissions],
   );
   const sortedResources = useMemo(
-    () => Object.keys(permissionTree).sort(),
+    () => sortPermissionResources(Object.keys(permissionTree)),
     [permissionTree],
   );
 
