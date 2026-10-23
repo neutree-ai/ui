@@ -45,13 +45,13 @@ export function formatBandwidth(bytesPerSec?: number | null): string {
   }
   if (bytesPerSec === 0) return "0 B/s";
   if (bytesPerSec >= 1024 ** 3) {
-    return `${(bytesPerSec / 1024 ** 3).toFixed(2)} GB/s`;
+    return `${(bytesPerSec / 1024 ** 3).toFixed(2)} GiB/s`;
   }
   if (bytesPerSec >= 1024 ** 2) {
-    return `${(bytesPerSec / 1024 ** 2).toFixed(1)} MB/s`;
+    return `${(bytesPerSec / 1024 ** 2).toFixed(1)} MiB/s`;
   }
   if (bytesPerSec >= 1024) {
-    return `${(bytesPerSec / 1024).toFixed(1)} KB/s`;
+    return `${(bytesPerSec / 1024).toFixed(1)} KiB/s`;
   }
   return `${bytesPerSec.toFixed(0)} B/s`;
 }

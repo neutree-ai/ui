@@ -67,10 +67,10 @@ describe("EndpointPerformanceCard", () => {
     expect(screen.getByTestId("perf-l1-hit-rate").textContent).toBe("48.0%");
     expect(screen.getByTestId("perf-cache-cumulative")).toBeTruthy();
     expect(screen.getByTestId("perf-l1-read-speed").textContent).toBe(
-      "512.0 MB/s",
+      "512.0 MiB/s",
     );
     expect(screen.getByTestId("perf-l1-write-speed").textContent).toBe(
-      "128.0 MB/s",
+      "128.0 MiB/s",
     );
 
     fireEvent.click(
