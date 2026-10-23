@@ -333,13 +333,17 @@ export function GpuObservationCard({
               >
                 <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                   <span
-                    className="inline-block h-2 w-2 shrink-0 rounded-full"
-                    style={{
-                      backgroundColor: allocationColor(a.endpoint, index),
-                    }}
+                    className="inline-block h-2 w-2 shrink-0 rounded-full bg-muted-foreground/50"
+                    style={
+                      multiBar
+                        ? {
+                            backgroundColor: allocationColor(a.endpoint, index),
+                          }
+                        : undefined
+                    }
                   />
                   <span className="break-all">{instanceLabel}</span>
-                </span>
+                </span>{" "}
                 <span>
                   {t("observations.modelWeights")} {weightsText(a)} ·{" "}
                   {t("observations.l0KvCache")} {l0KvText(a)}
@@ -524,12 +528,12 @@ export function GpuObservationCard({
   );
 }
 
-// Light stripes mark the L0 KV-Cache pool; a light wash marks the rest of the
-// measured memory (CUDA context, activations, graphs). Both sit on top of the
-// solid measured bar, so they work with any instance colour.
+// Light stripes mark the L0 KV-Cache pool; a dark shade marks the rest of the
+// measured memory (CUDA context, activations, graphs) so it stays deeper than
+// the 30%-opacity allocated-unused track in both light and dark themes.
 const KV_STRIPES =
   "repeating-linear-gradient(135deg, rgba(255,255,255,0.6) 0 2px, transparent 2px 4px)";
-const OTHER_WASH = "rgba(255,255,255,0.45)";
+const OTHER_SHADE = "rgba(0,0,0,0.28)";
 
 function CompositionSegments({
   measuredPct,
@@ -568,11 +572,11 @@ function CompositionSegments({
       {other > 0 && (
         <div
           data-testid="gpu-bar-other-segment"
-          className="pointer-events-none absolute inset-y-0"
+          className="pointer-events-none absolute inset-y-0 border-r border-white/80"
           style={{
             left: `${weights + kv}%`,
             width: `${other}%`,
-            backgroundColor: OTHER_WASH,
+            backgroundColor: OTHER_SHADE,
           }}
         />
       )}
@@ -583,7 +587,7 @@ function CompositionSegments({
 function CompositionLegend() {
   const { t } = useTranslation();
   const swatch = "inline-block h-2 w-3 shrink-0 rounded-sm";
-  const base = "var(--nt-chart-series-1)";
+  const base = "currentColor";
   const items = [
     { key: "modelWeights", style: { backgroundColor: base } },
     {
@@ -594,7 +598,7 @@ function CompositionLegend() {
       key: "otherMemory",
       style: {
         backgroundColor: base,
-        boxShadow: `inset 0 0 0 999px ${OTHER_WASH}`,
+        boxShadow: `inset 0 0 0 999px ${OTHER_SHADE}`,
       },
     },
     {

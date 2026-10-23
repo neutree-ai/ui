@@ -185,11 +185,67 @@ describe("GPU observation card", () => {
     renderCard({ allocations: [allocA, allocB] });
     const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
     expect(breakdown.textContent).toContain(
-      "qwen-aobservations.modelWeights 2.0 GiB · observations.l0KvCache 4.0 GiB",
+      "qwen-a observations.modelWeights 2.0 GiB · observations.l0KvCache 4.0 GiB",
     );
     expect(breakdown.textContent).toContain(
-      "qwen-bobservations.modelWeights — · observations.l0KvCache —",
+      "qwen-b observations.modelWeights — · observations.l0KvCache —",
     );
     expect(screen.queryByTestId("gpu-bar-weights-segment")).toBeNull();
+  });
+  it("draws per-instance composition segments when shared GPU replica measurements exist", () => {
+    const allocA = {
+      ...allocation,
+      endpoint: "qwen-a",
+      replica: "pod-a",
+      instance: "pod-a",
+      memoryMiB: 8192,
+      modelWeightsMiB: 2048,
+      kvCacheCapacityMiB: 4096,
+    };
+    const allocB = {
+      ...allocation,
+      endpoint: "qwen-b",
+      replica: "pod-b",
+      instance: "pod-b",
+      memoryMiB: 7168,
+      modelWeightsMiB: 1792,
+      kvCacheCapacityMiB: 3584,
+    };
+    renderCard({
+      allocations: [allocA, allocB],
+      samples: [
+        ...samples,
+        {
+          metric: "neutree_endpoint_replica_accelerator_memory_used_bytes",
+          labels: {
+            node: "node",
+            accelerator_uuid: "gpu",
+            endpoint: "qwen-a",
+            replica: "pod-a",
+          },
+          value: 7 * 1024 ** 3,
+          observed_at: Date.now() / 1000,
+        },
+        {
+          metric: "neutree_endpoint_replica_accelerator_memory_used_bytes",
+          labels: {
+            node: "node",
+            accelerator_uuid: "gpu",
+            endpoint: "qwen-b",
+            replica: "pod-b",
+          },
+          value: 6 * 1024 ** 3,
+          observed_at: Date.now() / 1000,
+        },
+      ],
+    });
+    const weightSegments = screen.getAllByTestId("gpu-bar-weights-segment");
+    const kvSegments = screen.getAllByTestId("gpu-bar-kv-segment");
+    expect(weightSegments).toHaveLength(2);
+    expect(kvSegments).toHaveLength(2);
+    expect(Number.parseFloat(weightSegments[0].style.width)).toBeCloseTo(25, 3);
+    expect(Number.parseFloat(kvSegments[0].style.width)).toBeCloseTo(50, 3);
+    expect(Number.parseFloat(weightSegments[1].style.width)).toBeCloseTo(25, 3);
+    expect(Number.parseFloat(kvSegments[1].style.width)).toBeCloseTo(50, 3);
   });
 });
