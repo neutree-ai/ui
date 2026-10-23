@@ -169,7 +169,7 @@ describe("useLicense", () => {
       expect(mockMutate).toHaveBeenCalledWith(
         {
           url: "/license",
-          method: "PATCH",
+          method: "patch",
           values: { code: "new-license-code" },
         },
         expect.objectContaining({

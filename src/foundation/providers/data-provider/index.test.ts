@@ -43,4 +43,18 @@ describe("dataProvider custom responses", () => {
       }),
     ).resolves.toEqual({ data: { id: "project-id" } });
   });
+
+  it("sends the method upper-cased, as fetch requires for PATCH", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await dataProvider(client as never).custom({
+      url: "/license",
+      method: "patch",
+      payload: { code: "license-code" },
+    });
+    expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
+  });
 });
