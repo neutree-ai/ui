@@ -513,7 +513,9 @@
 			"acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
 		},
 		"monitor": {
-			"overviewMetrics": "Cluster Overview"
+			"overviewMetrics": "Cluster Overview",
+			"overview": "Overview",
+			"cache": "Cache"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
@@ -612,7 +614,9 @@
 			},
 			"serviceName": "Cache service",
 			"dependencyHint": "Inference instances still use the cache. Turn off their cache before disabling the cluster cache.",
-			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
+			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds.",
+			"monitorTitle": "Shared L1 monitoring",
+			"monitorHint": "Shared cache per node, not exclusive inference instance memory. Read/write rates are chunks/s. Missing or uncollected metrics show no samples, not zero."
 		}
 	},
 	"model_registries": {
@@ -1045,7 +1049,28 @@
 			"resourceSummary": "Resource Summary",
 			"replicaResources": "Replica Resources",
 			"gpuAllocation": "GPU Allocation & Usage",
-			"weights": "Weights & Cache"
+			"weights": "Weights & Cache",
+			"monitoringMetrics": "Monitoring Metrics"
+		},
+		"performance": {
+			"window5m": "Last 5m",
+			"window1h": "Last 1h",
+			"window24h": "Last 24h",
+			"cumulative": "Cumulative",
+			"latency": "Latency",
+			"throughput": "Throughput",
+			"kvCache": "KV-Cache",
+			"ttft": "TTFT",
+			"tpot": "TPOT",
+			"avg": "Avg",
+			"p95": "P95",
+			"totalTokensPerSecond": "Total tokens/s (TPS)",
+			"promptTokensPerSecond": "Prompt tokens/s",
+			"generationTokensPerSecond": "Generation tokens/s",
+			"l0HitRate": "L0 Hit Rate",
+			"l1HitRate": "L1 Hit Rate",
+			"l1ReadSpeed": "Hosting-node L1 Read Speed",
+			"l1WriteSpeed": "Hosting-node L1 Write Speed"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
@@ -2449,5 +2474,65 @@
 		},
 		"byApiKeyOnDay": "By API key · {{date}}",
 		"byModelOnDay": "By model · {{date}}"
+	},
+	"observations": {
+		"actualMemory": "Actual VRAM",
+		"actual": "Actual",
+		"allocated": "Allocated",
+		"physical": "Physical",
+		"modelWeights": "Model weights",
+		"l0KvCache": "L0 KV-Cache",
+		"otherMemory": "Other",
+		"allocatedUnused": "Allocated, unused",
+		"l1KvCache": "L1 KV-Cache",
+		"noMeasurement": "No recent measurement",
+		"utilization": "GPU utilization",
+		"assignments": "Allocated inference instances",
+		"unhealthy": "Device unhealthy",
+		"replicaUsage": "Replica usage",
+		"deviceUsage": "Physical device usage",
+		"deviceTemperature": "Device temperature",
+		"devicePower": "Device power",
+		"sampleTime": "VRAM sampled at",
+		"hardware": "Hardware and connection",
+		"noAssignments": "No visible instance allocations",
+		"status": {
+			"no_data": "No recent GPU measurements. Allocation information remains available.",
+			"not_configured": "GPU monitoring query service is not configured.",
+			"unavailable": "GPU measurements are unavailable. Allocation information remains available."
+		},
+		"hardwareFields": {
+			"architecture": "Architecture",
+			"cuda_capability": "CUDA capability",
+			"driver_version": "Driver",
+			"cuda_driver_version": "CUDA driver",
+			"pcie_bus_id": "PCIe bus ID",
+			"pcie_generation": "PCIe generation",
+			"pcie_width": "PCIe width",
+			"numa_node": "NUMA node",
+			"nvlink": "NVLink",
+			"nvswitch": "NVSwitch",
+			"hccs_capable": "HCCS capability"
+		},
+		"details": "Device details",
+		"present": "Present",
+		"absent": "Absent",
+		"supported": "Supported",
+		"unsupported": "Unsupported",
+		"overAllocation": "Actual usage exceeds allocation",
+		"fp16": "FP16 compute (TFLOPS)",
+		"flopsEstimate": "Estimated usage = nominal FP16 peak × utilization",
+		"flops": "Compute monitoring (FLOPS)",
+		"calibrate": "Calibrate compute",
+		"flopsTrend": "Last 30 days · 6-hour average usage",
+		"noTrend": "No compute history available",
+		"calibrationHelp": "Single-card FP16 TFLOPS by model. Leave blank to restore the default.",
+		"invalidTflops": "Enter a finite number greater than zero.",
+		"calibrationFailed": "Could not save calibration. Please retry.",
+		"noTopology": "No GPU topology data available",
+		"unknownNuma": "NUMA not reported",
+		"interconnectEnabled": "High-speed interconnect enabled (reported by node)",
+		"topology": "Topology",
+		"trendEstimate": "Reported devices; calculated with current calibration"
 	}
 }

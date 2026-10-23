@@ -11,6 +11,8 @@ const { useShowMock } = vi.hoisted(() => ({
 
 vi.mock("@refinedev/core", () => ({
   useShow: useShowMock,
+  useCustom: () => ({ data: undefined, isLoading: false }),
+  useList: () => ({ data: { data: [] } }),
   useTranslation: () => ({ translate: (key: string) => key }),
 }));
 
@@ -221,7 +223,7 @@ describe("ClustersShow", () => {
       screen.getByTestId("cluster-resource-summary").textContent,
     ).toContain('"cpu":16');
     expect(screen.getByTestId("resource-usage-legend").textContent).toBe(
-      "clusters.fields.vramUsed,clusters.fields.coreUsed",
+      "observations.actualMemory,observations.allocated,clusters.fields.coreUsed",
     );
     expect(screen.getByTestId("node-resources-table").textContent).toBe(
       "node-a|nvidia_gpu|false",

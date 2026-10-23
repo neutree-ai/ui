@@ -598,3 +598,27 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.queryByRole("table")).toBeNull();
   });
 });
+
+it.each(["grid", "cards", "table"] as const)(
+  "keeps allocation and UUID controls with observed memory in %s",
+  (variant) => {
+    render(
+      <TooltipProvider>
+        <GpuDeviceResourcesView
+          nodeResources={nodeResources}
+          labels={labels}
+          variant={variant}
+          showSummary={false}
+          renderMemory={(row) => <span>Observed {row.uuid}</span>}
+        />
+      </TooltipProvider>,
+    );
+    expect(screen.getAllByText(/Observed GPU/).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/Core Usage|Used \/ Total/).length,
+    ).toBeGreaterThan(0);
+    const copy = screen.getAllByRole("button", { name: /Copy UUID/ })[0];
+    fireEvent.click(copy);
+    expect(copyMock).toHaveBeenCalled();
+  },
+);

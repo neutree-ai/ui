@@ -72,18 +72,42 @@ export const getEndpointSplitDashboardProps = (
   context: {
     clusterName: string;
     endpointName: string;
+    workspace?: string;
+    cacheNodes?: { name: string; capacity_bytes: number }[];
   },
-): GrafanaDashboardProps => ({
-  dashboardConfig: {
-    ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
-    variables: {
-      ...getCommonVariables(),
-      Cluster: context.clusterName,
-      Endpoint: context.endpointName,
+): GrafanaDashboardProps => {
+  const nodes = context.cacheNodes ?? [];
+  const capacity = nodes[0]?.capacity_bytes ?? 0;
+  // A single per-node capacity is safe only for a uniform observed pool.
+  // Leave mixed/unknown inventories empty rather than average their sizes.
+  const uniform =
+    Number.isSafeInteger(capacity) &&
+    capacity > 0 &&
+    nodes.every((node) => node.name && node.capacity_bytes === capacity);
+  const nodePattern = uniform
+    ? nodes
+        .map((node) => node.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("|")
+    : "a^";
+  return {
+    dashboardConfig: {
+      ...getBaseDashboardConfig(grafanaUrl),
+      dashboardId: ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
+      variables: {
+        ...getCommonVariables(),
+        Cluster: context.clusterName,
+        Endpoint: context.endpointName,
+        ...(dashboardType === "cache"
+          ? {
+              Workspace: context.workspace ?? "default",
+              L1CapacityBytes: String(uniform ? capacity : 0),
+              L1Nodes: JSON.stringify(nodePattern).slice(1, -1),
+            }
+          : {}),
+      },
     },
-  },
-});
+  };
+};
 
 export const getModelRoutingDashboardProps = (
   grafanaUrl: string,
@@ -114,4 +138,44 @@ export const getModelRoutingDashboardProps = (
   initialFrom: context.from,
   initialTo: context.to,
   initialRefresh: context.refresh,
+});
+
+export const getZCacheDashboardProps = (
+  grafanaUrl: string,
+  context: {
+    workspace: string;
+    clusterName: string;
+    nodes?: { name: string; capacity_bytes: number; runtime: string }[];
+  },
+): GrafanaDashboardProps => ({
+  dashboardConfig: {
+    ...getBaseDashboardConfig(grafanaUrl),
+    dashboardId: "neutree-zcache-embed",
+    variables: {
+      ...getCommonVariables(),
+      Workspace: context.workspace,
+      Cluster: context.clusterName,
+      CacheCapacity:
+        (context.nodes ?? [])
+          .filter(
+            (n) =>
+              n.name &&
+              Number.isSafeInteger(n.capacity_bytes) &&
+              n.capacity_bytes > 0,
+          )
+          .map(
+            (n) =>
+              `label_replace(vector(${n.capacity_bytes}), "node", ${JSON.stringify(n.name)}, "", "")`,
+          )
+          .join(" or ") || "(vector(0) > 0)",
+      CacheReady:
+        (context.nodes ?? [])
+          .filter((n) => n.name)
+          .map(
+            (n) =>
+              `label_replace(vector(${n.runtime === "Ready" ? 1 : 0}), "node", ${JSON.stringify(n.name)}, "", "")`,
+          )
+          .join(" or ") || "(vector(0) > 0)",
+    },
+  },
 });

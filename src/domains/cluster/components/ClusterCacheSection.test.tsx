@@ -1,11 +1,11 @@
 import { fireEvent, render as renderUI, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import type { ReactNode } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ClusterCacheSection } from "./ClusterCacheSection";
 
-const render = (ui: ReactNode) => renderUI(ui, {wrapper: MemoryRouter});
+const render = (ui: ReactNode) => renderUI(ui, { wrapper: MemoryRouter });
 
 vi.mock("@refinedev/core", () => ({ useCan: () => ({ data: { can: true } }) }));
 vi.mock("./ZCacheEditor", () => ({ ZCacheEditor: () => null }));
