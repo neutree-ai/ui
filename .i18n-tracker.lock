@@ -115,7 +115,7 @@
   "src/foundation/hooks/use-yaml-export.ts": "a46c26163f36ca265998397a59ae7d1c",
   "src/foundation/hooks/use-yaml-import.ts": "a3a7cbedbfd51f3c02cd46f042084790",
   "src/foundation/components/AppBreadcrumbs.tsx": "e772adfcf4378047e6bdd545044e342e",
-  "src/foundation/components/AppSidebar.tsx": "623a47f8c62071858357747d2189f0d2",
+  "src/foundation/components/AppSidebar.tsx": "3ff83e117a36235885938414a435377e",
   "src/foundation/components/BaseLayout.tsx": "64ddc4474cb6be136156ab722644c460",
   "src/foundation/components/BaseStatus.tsx": "4f1f63a88eff21e982c1ab12a219ccdd",
   "src/foundation/components/BatchDeleteBar.tsx": "d23d0ae643bb73ff055119036b19282a",
