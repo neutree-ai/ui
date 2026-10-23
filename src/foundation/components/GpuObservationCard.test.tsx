@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AcceleratorSample } from "@/foundation/lib/accelerator-observations";
 import { GpuObservationCard } from "./GpuObservationCard";
 
@@ -90,40 +90,80 @@ describe("GPU observation card", () => {
     expect(screen.getByText("observations.noMeasurement")).toBeTruthy();
     expect(screen.queryByText("13.0 GiB")).toBeNull();
   });
-  it("shows model weights and L0 KV-Cache usage when startup stats and vllm kv_cache_usage_perc are present", () => {
-    const allocWithStats = {
-      ...allocation,
-      modelWeightsMiB: 6144,
-      kvCacheCapacityMiB: 8192,
-    };
-    const kvSamples: AcceleratorSample[] = [
-      ...samples,
-      {
-        metric: "vllm:kv_cache_usage_perc",
-        labels: { endpoint: "instance", replica: "pod" },
-        value: 0.5,
-        observed_at: Date.now() / 1000,
-      },
-    ];
+  const allocWithStats = {
+    ...allocation,
+    modelWeightsMiB: 2048,
+    kvCacheCapacityMiB: 8192,
+  };
+  const renderCard = (
+    props: Partial<Parameters<typeof GpuObservationCard>[0]>,
+  ) =>
     render(
       <MemoryRouter>
         <TooltipProvider>
           <GpuObservationCard
             device={device}
-            samples={kvSamples}
+            samples={samples}
             allocations={[allocWithStats]}
-            replica={allocWithStats}
+            {...props}
           />
         </TooltipProvider>
       </MemoryRouter>,
     );
+  it("shows weights and L0 KV-Cache text but draws no segments without a replica measurement", () => {
+    renderCard({ replica: allocWithStats });
     const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
     expect(breakdown.textContent).toContain(
-      "observations.modelWeights 6.0 GiB",
+      "observations.modelWeights 2.0 GiB",
     );
     expect(breakdown.textContent).toContain("observations.l0KvCache 8.0 GiB");
-    expect(screen.getAllByTestId("gpu-bar-weights-segment").length).toBeGreaterThan(0);
-    expect(screen.getAllByTestId("gpu-bar-kv-segment").length).toBeGreaterThan(0);
+    expect(screen.getByText("observations.noMeasurement")).toBeTruthy();
+    expect(screen.queryByTestId("gpu-bar-weights-segment")).toBeNull();
+    expect(screen.queryByTestId("gpu-bar-kv-segment")).toBeNull();
+    expect(screen.queryByTestId("gpu-bar-legend")).toBeNull();
+  });
+  it("draws weights, L0 KV-Cache and other segments inside the measured bar", () => {
+    renderCard({
+      replica: allocWithStats,
+      samples: [
+        {
+          metric: "neutree_endpoint_replica_accelerator_memory_used_bytes",
+          labels: {
+            node: "node",
+            accelerator_uuid: "gpu",
+            endpoint: "instance",
+            replica: "pod",
+          },
+          value: 12 * 1024 ** 3,
+          observed_at: Date.now() / 1000,
+        },
+      ],
+    });
+    const width = (id: string) =>
+      Number.parseFloat(screen.getByTestId(id).style.width);
+    expect(width("gpu-bar-weights-segment")).toBeCloseTo(13.3333, 3);
+    expect(width("gpu-bar-kv-segment")).toBeCloseTo(53.3333, 3);
+    expect(width("gpu-bar-other-segment")).toBeCloseTo(13.3333, 3);
+    expect(screen.getByTestId("gpu-bar-legend")).toBeTruthy();
+  });
+  it("shows a dash instead of the live usage ratio when the L0 pool size is unknown", () => {
+    const noCapacity = { ...allocation, modelWeightsMiB: 2048 };
+    renderCard({
+      allocations: [noCapacity],
+      replica: noCapacity,
+      samples: [
+        ...samples,
+        {
+          metric: "vllm:kv_cache_usage_perc",
+          labels: { endpoint: "instance", replica: "pod" },
+          value: 0.5,
+          observed_at: Date.now() / 1000,
+        },
+      ],
+    });
+    const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
+    expect(breakdown.textContent).toContain("observations.l0KvCache —");
+    expect(breakdown.textContent).not.toContain("%");
   });
   it("lists each assigned instance with its name, weights, and L0 KV-Cache on the cluster view", () => {
     const allocA = {
@@ -141,26 +181,15 @@ describe("GPU observation card", () => {
       replica: "pod-b",
       instance: "pod-b",
       memoryMiB: 7680,
-      modelWeightsMiB: 1536,
-      kvCacheCapacityMiB: 5120,
     };
-    render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <GpuObservationCard
-            device={device}
-            samples={samples}
-            allocations={[allocA, allocB]}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
-    );
+    renderCard({ allocations: [allocA, allocB] });
     const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
-    expect(breakdown.textContent).toContain("qwen-a");
-    expect(breakdown.textContent).toContain("observations.modelWeights 2.0 GiB");
-    expect(breakdown.textContent).toContain("observations.l0KvCache 4.0 GiB");
-    expect(breakdown.textContent).toContain("qwen-b");
-    expect(breakdown.textContent).toContain("observations.modelWeights 1.5 GiB");
-    expect(breakdown.textContent).toContain("observations.l0KvCache 5.0 GiB");
+    expect(breakdown.textContent).toContain(
+      "qwen-aobservations.modelWeights 2.0 GiB · observations.l0KvCache 4.0 GiB",
+    );
+    expect(breakdown.textContent).toContain(
+      "qwen-bobservations.modelWeights — · observations.l0KvCache —",
+    );
+    expect(screen.queryByTestId("gpu-bar-weights-segment")).toBeNull();
   });
 });
