@@ -161,6 +161,8 @@ type TableProps<
   showHeader?: boolean;
   enableBatchDelete?: boolean;
   searchField?: string;
+  /** Shown instead of "No results." while no filter or search is applied. */
+  emptyText?: ReactNode;
   filters?:
     | ReactElement
     | ((props: {
@@ -484,6 +486,7 @@ export function Table<
   showHeader = true,
   enableBatchDelete = false,
   searchField,
+  emptyText,
   columns = [],
   filters,
   ...props
@@ -679,7 +682,9 @@ export function Table<
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    {t("table.noResults")}
+                    {emptyText && table.refineCore.filters.length === 0
+                      ? emptyText
+                      : t("table.noResults")}
                   </TableCell>
                 </TableRow>
               )}

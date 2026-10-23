@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { sortPermissionResources } from "@/domains/role/lib/permission-resource-order";
 import { ALL_PERMISSIONS } from "@/domains/role/types";
 
 export type PermissionDependencyRule = {
@@ -245,7 +246,7 @@ export function usePermissionDependencies(options: {
   );
 
   const sortedResources = useMemo(
-    () => Object.keys(permissionTree).sort(),
+    () => sortPermissionResources(Object.keys(permissionTree)),
     [permissionTree],
   );
 
