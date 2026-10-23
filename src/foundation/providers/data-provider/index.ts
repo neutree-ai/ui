@@ -340,7 +340,9 @@ export const dataProvider = (
 
     custom: async ({ url, method, payload, meta }) => {
       return fetch(`${postgrestClient.url}${url}`, {
-        method,
+        // fetch upper-cases only the standard methods; a lowercase "patch" is
+        // sent as is and rejected.
+        method: method.toUpperCase(),
         body: payload ? JSON.stringify(payload) : undefined,
         headers: {
           "Content-Type": "application/json",
