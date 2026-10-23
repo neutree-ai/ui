@@ -145,9 +145,19 @@ export function GpuObservationCard({
         : null;
   };
   // Segments are only drawn on top of a real measurement, never on their own.
+  const firstComposedIndex = multiBar
+    ? assigned.findIndex((a) => hasComposition(a) && assignedUsedMiB(a) != null)
+    : -1;
   const showLegend = multiBar
-    ? assigned.some((a) => hasComposition(a) && assignedUsedMiB(a) != null)
+    ? firstComposedIndex >= 0
     : actual != null && hasComposition(activeAllocation);
+  const legendColor =
+    multiBar && firstComposedIndex >= 0
+      ? allocationColor(
+          assigned[firstComposedIndex].endpoint,
+          firstComposedIndex,
+        )
+      : "var(--nt-chart-series-1)";
   const label = (value?: string) =>
     !value || value === "unknown" || value === "-1" ? "—" : value;
   const utilizationText = utilization
@@ -303,7 +313,7 @@ export function GpuObservationCard({
           {t("observations.physical")} {gib(total)}
         </span>
       </div>
-      {showLegend && <CompositionLegend />}
+      {showLegend && <CompositionLegend color={legendColor} />}
       {replica && (
         <div
           className="text-xs text-muted-foreground"
@@ -528,12 +538,15 @@ export function GpuObservationCard({
   );
 }
 
-// Light stripes mark the L0 KV-Cache pool; a dark shade marks the rest of the
-// measured memory (CUDA context, activations, graphs) so it stays deeper than
-// the 30%-opacity allocated-unused track in both light and dark themes.
+// Theme-aware overlays on top of the solid measured bar:
+// 1. Model weights: 100% solid instance color
+// 2. L0 KV-Cache: diagonal stripes in theme background color
+// 3. Other measured memory: 45% theme background wash (55% instance color),
+//    visibly lighter than weights and darker than the 30% allocated-unused track
 const KV_STRIPES =
-  "repeating-linear-gradient(135deg, rgba(255,255,255,0.6) 0 2px, transparent 2px 4px)";
-const OTHER_SHADE = "rgba(0,0,0,0.28)";
+  "repeating-linear-gradient(135deg, hsl(var(--background) / 0.65) 0 2px, transparent 2px 4px)";
+const OTHER_MASK = "hsl(var(--background) / 0.45)";
+const SEGMENT_DIVIDER = "hsl(var(--background) / 0.9)";
 
 function CompositionSegments({
   measuredPct,
@@ -554,29 +567,34 @@ function CompositionSegments({
       {weights > 0 && (
         <div
           data-testid="gpu-bar-weights-segment"
-          className="pointer-events-none absolute inset-y-0 left-0 border-r border-white/80"
-          style={{ width: `${weights}%` }}
+          className="pointer-events-none absolute inset-y-0 left-0 border-r"
+          style={{
+            width: `${weights}%`,
+            borderRightColor: SEGMENT_DIVIDER,
+          }}
         />
       )}
       {kv > 0 && (
         <div
           data-testid="gpu-bar-kv-segment"
-          className="pointer-events-none absolute inset-y-0 border-r border-white/80"
+          className="pointer-events-none absolute inset-y-0 border-r"
           style={{
             left: `${weights}%`,
             width: `${kv}%`,
             backgroundImage: KV_STRIPES,
+            borderRightColor: SEGMENT_DIVIDER,
           }}
         />
       )}
       {other > 0 && (
         <div
           data-testid="gpu-bar-other-segment"
-          className="pointer-events-none absolute inset-y-0 border-r border-white/80"
+          className="pointer-events-none absolute inset-y-0 border-r"
           style={{
             left: `${weights + kv}%`,
             width: `${other}%`,
-            backgroundColor: OTHER_SHADE,
+            backgroundColor: OTHER_MASK,
+            borderRightColor: SEGMENT_DIVIDER,
           }}
         />
       )}
@@ -584,26 +602,25 @@ function CompositionSegments({
   );
 }
 
-function CompositionLegend() {
+function CompositionLegend({ color }: { color: string }) {
   const { t } = useTranslation();
   const swatch = "inline-block h-2 w-3 shrink-0 rounded-sm";
-  const base = "currentColor";
   const items = [
-    { key: "modelWeights", style: { backgroundColor: base } },
+    { key: "modelWeights", style: { backgroundColor: color } },
     {
       key: "l0KvCache",
-      style: { backgroundColor: base, backgroundImage: KV_STRIPES },
+      style: { backgroundColor: color, backgroundImage: KV_STRIPES },
     },
     {
       key: "otherMemory",
       style: {
-        backgroundColor: base,
-        boxShadow: `inset 0 0 0 999px ${OTHER_SHADE}`,
+        backgroundColor: color,
+        boxShadow: `inset 0 0 0 999px ${OTHER_MASK}`,
       },
     },
     {
       key: "allocatedUnused",
-      style: { backgroundColor: base, opacity: 0.3 },
+      style: { backgroundColor: color, opacity: 0.3 },
     },
   ];
   return (
