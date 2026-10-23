@@ -101,6 +101,7 @@ export function GpuObservationCard({
       "neutree_node_accelerator_nvidia_info",
       "neutree_node_accelerator_npu_info",
       "neutree_node_accelerator_hcu_info",
+      "neutree_node_accelerator_iluvatar_info",
     ].map((name) => get(name)?.labels ?? {}),
   ) as Record<string, string>;
   const assigned = allocations.filter(
