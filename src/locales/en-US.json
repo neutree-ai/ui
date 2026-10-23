@@ -1069,8 +1069,8 @@
 			"generationTokensPerSecond": "Generation tokens/s",
 			"l0HitRate": "L0 Hit Rate",
 			"l1HitRate": "L1 Hit Rate",
-			"l1ReadSpeed": "L1 Read Speed",
-			"l1WriteSpeed": "L1 Write Speed"
+			"l1ReadSpeed": "Hosting-node L1 Read Speed",
+			"l1WriteSpeed": "Hosting-node L1 Write Speed"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
