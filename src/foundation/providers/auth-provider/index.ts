@@ -2,6 +2,11 @@ import type { AuthProvider } from "@refinedev/core";
 import { AuthClient } from "@supabase/auth-js";
 import { clientPostgrest, REST_URL } from "@/foundation/lib/api";
 import { i18n } from "@/foundation/lib/i18n";
+import {
+  authUserDisplayName,
+  authUserEmail,
+  isExternalUser,
+} from "@/foundation/lib/user-identity";
 
 const GOTRUE_URL = `${REST_URL}/auth`;
 
@@ -89,6 +94,27 @@ export async function verifySsoToken(tokenHash: string) {
     return { success: false as const };
   }
   return { success: true as const };
+}
+
+/** The signed-in user's own profile metadata, or null if unreadable. */
+async function fetchOwnProfile(userId: string) {
+  try {
+    const { data } = await clientPostgrest
+      .from("user_profiles")
+      .select("metadata")
+      .eq("id", userId)
+      .maybeSingle();
+    const metadata = data?.metadata as
+      | { name?: string | null; display_name?: string | null }
+      | null
+      | undefined;
+    if (!metadata?.name) {
+      return null;
+    }
+    return { name: metadata.name, display_name: metadata.display_name };
+  } catch {
+    return null;
+  }
 }
 
 export const authProvider: AuthProvider = {
@@ -272,9 +298,12 @@ export const authProvider: AuthProvider = {
     const { data } = await auth.getUser();
 
     if (data?.user) {
+      const profile = await fetchOwnProfile(data.user.id);
       return {
         ...data.user,
-        name: data.user.email,
+        name: authUserDisplayName(data.user, profile),
+        displayEmail: authUserEmail(data.user),
+        external: isExternalUser(data.user),
       };
     }
 
