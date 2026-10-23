@@ -1665,6 +1665,7 @@
 			"remainingLabel": "remaining",
 			"usageColumn": "Usage",
 			"rateColumn": "Rate limits",
+			"unlimited": "Unlimited",
 			"modelsColumn": "Supported models",
 			"allModels": "All",
 			"showMore": "Show {{count}} more",

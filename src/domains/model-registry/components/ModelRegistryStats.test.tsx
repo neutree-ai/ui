@@ -40,12 +40,16 @@ const registry = (
   }) as unknown as ModelRegistry;
 
 describe("registry counters", () => {
-  it("shows a dash for a registry the control plane does not measure", () => {
+  it("shows explicit not-applicable copy for a registry the control plane does not measure", () => {
     render(<ModelRegistryStorage registry={registry("public")} />);
 
     expect(
       screen.getByTitle("model_registries.stats.notApplicableHint"),
     ).toBeDefined();
+    expect(
+      screen.getByText("model_registries.models.values.notApplicable"),
+    ).toBeDefined();
+    expect(screen.queryByText("-")).toBeNull();
     expect(screen.queryByTestId("registry-storage")).toBeNull();
   });
 

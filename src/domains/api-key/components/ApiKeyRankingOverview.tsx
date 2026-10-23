@@ -60,9 +60,10 @@ const RankingPanel = ({
             </PieChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-full border border-dashed text-[10px] text-muted-foreground">
-            —
-          </div>
+          <div
+            aria-hidden="true"
+            className="h-full w-full rounded-full border border-dashed"
+          />
         )}
       </div>
       <div className="min-w-0 flex-1">
