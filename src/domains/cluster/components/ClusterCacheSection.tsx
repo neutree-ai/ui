@@ -213,7 +213,9 @@ function ZCacheDetails({
                 {names.map((name) => {
                   const node = nodes.find((n) => n.name === name);
                   const target = targetNodes.includes(name);
-                  const usedGiB = !stale ? l1CacheByNode?.[name]?.usedGiB : null;
+                  const usedGiB = !stale
+                    ? l1CacheByNode?.[name]?.usedGiB
+                    : null;
                   return (
                     <tr key={name} className="border-b last:border-0">
                       <td className="py-3 pr-6">
