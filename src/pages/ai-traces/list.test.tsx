@@ -123,6 +123,10 @@ vi.mock("@/pages/ai-traces/components/TraceExportButton", () => ({
   },
 }));
 
+vi.mock("@/pages/ai-traces/components/LogForwardingButton", () => ({
+  LogForwardingButton: () => <button type="button">forwarding</button>,
+}));
+
 const apiKeys = [
   {
     id: "key-analytics",
@@ -460,5 +464,21 @@ describe("AITracesList export", () => {
     renderList();
 
     expect(screen.queryByText("export")).toBeNull();
+  });
+});
+
+describe("AITracesList log forwarding entry", () => {
+  it("sits in the header next to export", () => {
+    renderList();
+
+    expect(screen.getByText("forwarding")).toBeTruthy();
+  });
+
+  it("is not offered without trace permission", () => {
+    listState.error = new AITraceRequestError(403, "insufficient permissions");
+
+    renderList();
+
+    expect(screen.queryByText("forwarding")).toBeNull();
   });
 });

@@ -827,10 +827,11 @@
 		}
 	},
 	"log_sinks": {
-		"log_sinks": "log sink",
-		"title": "Log Sinks",
+		"log_sinks": "destination",
+		"title": "Log Forwarding",
+		"empty": "No destinations yet. Add one to copy access logs to a log store of your own.",
 		"create": {
-			"title": "Create Log Sink"
+			"title": "Add Destination"
 		},
 		"sections": {
 			"destination": "Destination",
@@ -881,25 +882,26 @@
 			"never": "Not run yet"
 		},
 		"placeholders": {
-			"name": "Log sink name",
+			"name": "Destination name",
 			"url": "e.g. https://vl.example.com:9428",
 			"caCert": "-----BEGIN CERTIFICATE-----",
 			"timeoutSeconds": "60",
 			"bufferSize": "1"
 		},
 		"descriptions": {
-			"enabled": "When off, nothing is sent to this sink. Traces produced while it is off are never sent later.",
+			"enabled": "When off, nothing is sent to this destination. Access logs produced while it is off are never sent later.",
 			"insecureSkipVerify": "Do not verify the server's TLS certificate.",
 			"timeoutSeconds": "Leave empty to use the default (60 seconds).",
-			"bufferSize": "On-disk buffer for this sink. Leave empty to use the default (1 GiB). When full, the newest events are dropped.",
-			"extraFields": "Added as fields to every record sent to this sink."
+			"bufferSize": "On-disk buffer for this destination. Leave empty to use the default (1 GiB). When full, the newest events are dropped.",
+			"extraFields": "Added as fields to every record sent to this destination."
 		},
 		"buttons": {
+			"addDestination": "Add destination",
 			"addExtraField": "Add field",
 			"removeExtraField": "Remove field"
 		},
 		"delete": {
-			"description": "Delivery to this log store stops and buffered events that have not been sent are discarded. Data already in the log store is not touched."
+			"description": "Forwarding to this destination stops and buffered events that have not been sent are discarded. Data already in the log store is not touched."
 		},
 		"validation": {
 			"nameRequired": "Name is required",
@@ -924,10 +926,10 @@
 			"disable": "Disable"
 		},
 		"messages": {
-			"enableSuccess": "Log sink enabled",
-			"disableSuccess": "Log sink disabled",
-			"enableFailed": "Failed to enable log sink",
-			"disableFailed": "Failed to disable log sink"
+			"enableSuccess": "Destination enabled",
+			"disableSuccess": "Destination disabled",
+			"enableFailed": "Failed to enable destination",
+			"disableFailed": "Failed to disable destination"
 		},
 		"testConnection": {
 			"button": "Test connection",
@@ -2186,6 +2188,15 @@
 		"empty": "No access logs in the selected window.",
 		"forbidden": "You do not have permission to view access logs.",
 		"refresh": "Refresh",
+		"forwarding": {
+			"button": "Forwarding",
+			"buttonWithCount": "Forwarding · {{count}}",
+			"hint": "Copy access logs to log stores of your own",
+			"failing": "{{count}} destinations failing",
+			"failing_one": "1 destination failing",
+			"degraded": "{{count}} destinations degraded",
+			"degraded_one": "1 destination degraded"
+		},
 		"export": {
 			"button": "Export",
 			"exporting": "Exporting…",

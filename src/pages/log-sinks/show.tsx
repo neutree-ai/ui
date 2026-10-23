@@ -45,7 +45,6 @@ export const LogSinksShow = () => {
   return (
     <ShowPage
       record={record}
-      showCurrentBreadcrumb={false}
       deleteConfirmation={deleteConfirmation(record.metadata.name)}
       extraActions={() => <LogSinkEnableAction sink={record} />}
     >

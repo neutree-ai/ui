@@ -272,7 +272,7 @@ const WorkspacesCreate = lazy(() =>
   })),
 );
 
-const resources: ResourceProps[] = [
+export const resources: ResourceProps[] = [
   {
     name: "dashboard",
     list: "/dashboard",
@@ -396,15 +396,17 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    // Opened from the Access Log page, not the menu. Global, so no workspace.
     name: "log_sinks",
-    list: "/log-sinks",
-    create: "/log-sinks/create",
-    edit: "/log-sinks/edit/:id",
-    show: "/log-sinks/show/:id",
+    list: "/ai-traces/log-sinks",
+    create: "/ai-traces/log-sinks/create",
+    edit: "/ai-traces/log-sinks/edit/:id",
+    show: "/ai-traces/log-sinks/show/:id",
     meta: {
       icon: <ScrollText />,
       idColumnName: "metadata->name",
-      parent: "model_gateway",
+      parent: "ai_traces",
+      hide: true,
     },
   },
   {
@@ -661,7 +663,7 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   <Route path="edit/:id" element={<RoleAssignmentsEdit />} />
                   <Route path="create" element={<RoleAssignmentsCreate />} />
                 </Route>
-                <Route path="/log-sinks">
+                <Route path="/ai-traces/log-sinks">
                   <Route index element={<LogSinksList />} />
                   <Route path="show/:id" element={<LogSinksShow />} />
                   <Route path="edit/:id" element={<LogSinksEdit />} />

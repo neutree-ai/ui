@@ -5,6 +5,7 @@ import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
 import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
 import type { LogSink } from "@/domains/log-sink/types";
+import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { Table } from "@/foundation/components/Table";
@@ -19,11 +20,15 @@ export const LogSinksList = () => {
   const deleteConfirmation = useLogSinkDeleteConfirmation();
 
   return (
-    <ListPage>
+    <ListPage
+      breadcrumb={<AppBreadcrumbs showCurrent={false} />}
+      createButtonProps={{ children: t("log_sinks.buttons.addDestination") }}
+    >
       <Table
         enableSorting
         enableFilters
         searchField="metadata->>name"
+        emptyText={t("log_sinks.empty")}
         refineCoreProps={{
           sorters: {
             initial: [{ field: "metadata->name", order: "asc" }],
