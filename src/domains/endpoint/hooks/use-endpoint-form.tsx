@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
+import { EndpointKVCacheFields } from "@/domains/endpoint/components/EndpointKVCacheFields";
 import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointWeightsEstimate";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
@@ -46,6 +47,7 @@ import {
   VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
   VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "@/domains/endpoint/lib/vgpu";
+import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import type {
   Endpoint,
   EndpointClusterRef,
@@ -272,6 +274,37 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const gpuUsage = normalizedResources?.gpu || 0;
   const replicaCount = Math.max(1, Number(watchedReplicaCount || 1));
 
+  const meta = useMemo(
+    () => ({
+      workspace,
+      workspaced: true,
+    }),
+    [workspace],
+  );
+
+  const clusters = useSelect<EndpointClusterRef>({
+    resource: "clusters",
+    meta,
+  });
+
+  const cacheEnabled = form.watch("spec.kv_cache.provider") === "zcache";
+  const cacheNodeNames = new Set(
+    endpointZCacheOptions(
+      clusters.query.data?.data.find(
+        (cluster) => cluster.metadata.name === currentCluster,
+      ),
+    )?.target_nodes ?? [],
+  );
+  const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
+  // Releasing an allocation outside the cache pool does not free capacity
+  // inside that pool. Only credit allocations whose nodes are still eligible.
+  const currentAllocationInCachePool = Boolean(
+    currentEndpointRuntimeResources?.replicas?.length &&
+      currentEndpointRuntimeResources.replicas.every(
+        (replica) => replica.node_id && cacheNodeNames.has(replica.node_id),
+      ),
+  );
+
   const currentEndpointAccelerator = normalizedQueryResources?.accelerator;
   const currentEndpointReplicaCount =
     action === "edit"
@@ -280,7 +313,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const canReuseCurrentEndpointResources = Boolean(
     action === "edit" &&
       queryEndpoint?.spec?.cluster &&
-      queryEndpoint.spec.cluster === currentCluster,
+      queryEndpoint.spec.cluster === currentCluster &&
+      (!cacheEnabled || currentAllocationInCachePool),
   );
   const canReuseCurrentEndpointAccelerator = Boolean(
     canReuseCurrentEndpointResources &&
@@ -289,7 +323,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       currentEndpointAccelerator?.type === selectedAccelerator.type &&
       currentEndpointAccelerator?.product === selectedAccelerator.product,
   );
-  const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
   const canReuseCurrentEndpointDeviceAllocations = Boolean(
     canReuseCurrentEndpointAccelerator &&
       currentEndpointRuntimeResources?.replicas?.some(
@@ -312,21 +345,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         : 0,
   };
 
-  const meta = useMemo(
-    () => ({
-      workspace,
-      workspaced: true,
-    }),
-    [workspace],
-  );
-
   const engines = useSelect<EndpointEngineRef>({
     resource: "engines",
-    meta,
-  });
-
-  const clusters = useSelect<EndpointClusterRef>({
-    resource: "clusters",
     meta,
   });
 
@@ -404,6 +424,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedAccelerator,
     currentUsage,
     t,
+    cacheEnabled,
   });
 
   const clusterType: "ssh" | "kubernetes" | undefined =
@@ -2321,6 +2342,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </div>
             </div>
           </section>
+
+          <EndpointKVCacheFields
+            form={form}
+            cluster={selectedCluster}
+            isEdit={isEdit}
+          />
 
           <div
             data-testid="endpoint-resource-layout-grid"
