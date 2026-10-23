@@ -3,7 +3,6 @@ import type React from "react";
 
 import { ForgotPasswordPage } from "./ForgotPasswordPage";
 import { LoginPage } from "./LoginPage";
-import { RegisterPage } from "./RegisterPage";
 import { UpdatePasswordPage } from "./UpdatePasswordPage";
 
 type AuthProps = AuthPageProps & {
@@ -19,8 +18,6 @@ export const AuthPage: React.FC<AuthProps> = (props) => {
 
   const renderView = () => {
     switch (type) {
-      case "register":
-        return <RegisterPage {...props} />;
       case "forgotPassword":
         return <ForgotPasswordPage {...props} />;
       case "updatePassword":
