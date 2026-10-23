@@ -19,14 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AddTeamMembersTree } from "@/domains/organization/components/AddTeamMembersTree";
 import {
   useAllOrgUnitMembers,
   useAllUsers,
   useOrgUnits,
 } from "@/domains/organization/hooks/use-organization";
+import { buildMemberTree } from "@/domains/organization/lib/member-tree";
 import { buildOrgTree, indexNodes } from "@/domains/organization/lib/org-tree";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -35,6 +38,8 @@ import {
 } from "@/foundation/lib/user-identity";
 
 const ALL_UNITS = "__all__";
+
+type ViewMode = "list" | "tree";
 
 type AddTeamMembersDialogProps = {
   onOpenChange: (open: boolean) => void;
@@ -59,12 +64,17 @@ export function AddTeamMembersDialog({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [unitFilter, setUnitFilter] = useState(ALL_UNITS);
+  const [view, setView] = useState<ViewMode>("list");
   // Departments the caller cannot read stay unknown: no path, no filter match.
   const orgUnits = useOrgUnits();
   const memberships = useAllOrgUnitMembers(true);
-  const unitNodes = useMemo(
-    () => [...indexNodes(buildOrgTree(orgUnits.data?.data ?? [])).values()],
+  const unitRoots = useMemo(
+    () => buildOrgTree(orgUnits.data?.data ?? []),
     [orgUnits.data],
+  );
+  const unitNodes = useMemo(
+    () => [...indexNodes(unitRoots).values()],
+    [unitRoots],
   );
   const unitOfUser = useMemo(() => {
     const byId = new Map(unitNodes.map((node) => [node.unit.id, node]));
@@ -100,6 +110,13 @@ export function AddTeamMembersDialog({
       );
   }, [users.data, query, unitFilter, unitOfUser]);
 
+  const tree = useMemo(() => {
+    const unitIdOfUser = new Map(
+      [...unitOfUser].map(([userId, node]) => [userId, node.unit.id]),
+    );
+    return buildMemberTree(unitRoots, rows, unitIdOfUser);
+  }, [unitRoots, rows, unitOfUser]);
+
   const toggle = (id: string, on: boolean) => {
     const next = new Set(selected);
     if (on) next.add(id);
@@ -116,6 +133,16 @@ export function AddTeamMembersDialog({
             {t("organization.teams.addMembersHint", { team: teamName })}
           </DialogDescription>
         </DialogHeader>
+        <SegmentedControl<ViewMode>
+          className="self-start"
+          ariaLabel={t("organization.teams.viewMode")}
+          value={view}
+          onValueChange={setView}
+          items={[
+            { value: "list", label: t("organization.teams.viewList") },
+            { value: "tree", label: t("organization.teams.viewTree") },
+          ]}
+        />
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             className="flex-1"
@@ -162,6 +189,15 @@ export function AddTeamMembersDialog({
             <EmptyState variant="inline">
               {t("organization.teams.noUsers")}
             </EmptyState>
+          ) : view === "tree" ? (
+            <AddTeamMembersTree
+              roots={tree.roots}
+              unassigned={tree.unassigned}
+              memberIds={memberIds}
+              selected={selected}
+              onSelectedChange={setSelected}
+              expandAll={query.trim() !== ""}
+            />
           ) : (
             <ul>
               {rows.map((user) => {

@@ -47,7 +47,7 @@
   "src/components/ui/breadcrumb.tsx": "e02d56bc060ed9398039fd955cc4a555",
   "src/components/ui/button.tsx": "830763014fdcb52c5bdb7f0251510f41",
   "src/components/ui/card.tsx": "50a1f983d39f170c6b57782337550d95",
-  "src/components/ui/checkbox.tsx": "a39deda8bc8d3b94bf9dd4269ce455c7",
+  "src/components/ui/checkbox.tsx": "8a4d4bc936ffde7c5fdf11c1e4713ae7",
   "src/components/ui/collapsible.tsx": "934b00582dae08af749fb55469081de6",
   "src/components/ui/combobox.tsx": "6b9122569fb7506db9a96940dc1bc013",
   "src/components/ui/command.tsx": "7d1c13ae99a4d676093951d523f4a4b9",
@@ -556,7 +556,7 @@
   "src/domains/identity-source/components/IdentitySourceSyncResult.tsx": "8bd1f2bf8994e7fae242b1802ce3fe1c",
   "src/domains/identity-source/components/IdentitySourceSyncSection.tsx": "dcab68dd371f7c8c14f7c577513b5120",
   "src/domains/identity-source/lib/identity-source-sync.ts": "0a40faab262f263d947236c35b7f7fd9",
-  "src/domains/organization/components/AddTeamMembersDialog.tsx": "60986b3a0f31968b4258f6e1c401091c",
+  "src/domains/organization/components/AddTeamMembersDialog.tsx": "f6c0e370960043313c948e0b83ddd9fd",
   "src/domains/organization/components/TeamFormDialog.tsx": "a1941ddd5a42f82dc565a4d247c5b5e3",
   "src/domains/organization/components/TeamSourceLabel.tsx": "332212e3ee67ecf43ccae6799c073186",
   "src/domains/organization/lib/team.ts": "87a5d46035485d067843642b8a3dbfe9",
@@ -582,5 +582,7 @@
   "src/domains/organization/hooks/use-organization-view.ts": "25f4df88ca53c9ecc713306b206bf0cb",
   "src/domains/organization/lib/organization-view.ts": "ac8c40b7138182fb2593ae91a8eaa5b6",
   "src/pages/organization/use-team-delete-check.ts": "bbe9f87b84dc6867f121cd972095efe1",
-  "src/domains/api-key/components/ModelOptionGroups.tsx": "85684ea8fba13f500f2e266b73628a0e"
+  "src/domains/api-key/components/ModelOptionGroups.tsx": "85684ea8fba13f500f2e266b73628a0e",
+  "src/domains/organization/components/AddTeamMembersTree.tsx": "e7120fd1790cf71e9f39156730fcd9f9",
+  "src/domains/organization/lib/member-tree.ts": "3c14e34efa3d294fe2be8455e6ff144b"
 }
