@@ -32,11 +32,8 @@ export function useEndpointPerformanceObservations(
   enabled = true,
 ) {
   const query = useCustom<EndpointPerformanceSnapshot>({
-    url: `/endpoints/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/performance-observations`,
+    url: `/endpoints/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/performance-observations?window=${encodeURIComponent(window)}`,
     method: "get",
-    config: {
-      query: { window },
-    },
     queryOptions: {
       enabled: Boolean(workspace && name && enabled),
       refetchInterval: 15000,
