@@ -106,30 +106,6 @@ export function reading(
   return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
 }
 
-export function replicaReading(
-  samples: AcceleratorSample[],
-  metric: string,
-  allocation?: GpuAllocation,
-): AcceleratorSample | undefined {
-  if (!allocation) return undefined;
-  const matching = samples.filter((sample) => {
-    if (sample.metric !== metric) return false;
-    const l = sample.labels;
-    const endpointMatch =
-      l.endpoint === allocation.endpoint ||
-      l.application === allocation.endpoint;
-    if (!endpointMatch) return false;
-    if (allocation.replica && l.replica) {
-      return l.replica === allocation.replica;
-    }
-    if (allocation.instance && l.instance_id) {
-      return l.instance_id === allocation.instance;
-    }
-    return !l.replica;
-  });
-  return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
-}
-
 export function nodeReading(
   samples: AcceleratorSample[],
   metric: string,
