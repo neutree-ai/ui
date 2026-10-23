@@ -205,49 +205,47 @@ export const NodeResourcesTable = ({
                         compact
                         series="purple"
                       />
-                      {l1CacheByNode?.[nodeName] && (
-                        <div
-                          className="space-y-1 text-xs text-muted-foreground"
-                          data-testid="node-l1-cache-bar"
-                        >
-                          <div className="flex justify-between gap-2 tabular-nums">
-                            <span>{t("observations.l1KvCache")}</span>
-                            <span>
-                              {l1CacheByNode[nodeName].usedGiB != null
-                                ? formatToDecimal(
-                                    l1CacheByNode[nodeName].usedGiB,
-                                    1,
-                                  )
-                                : "—"}{" "}
-                              /{" "}
-                              {formatToDecimal(
-                                l1CacheByNode[nodeName].capacityGiB,
-                                1,
-                              )}{" "}
-                              GiB
-                            </span>
-                          </div>
-                          <MetricBar
-                            size="sm"
-                            series="blue"
-                            value={
-                              l1CacheByNode[nodeName].usedGiB != null &&
-                              l1CacheByNode[nodeName].capacityGiB > 0
-                                ? Math.min(
-                                    100,
-                                    Math.max(
-                                      0,
-                                      (l1CacheByNode[nodeName].usedGiB /
-                                        l1CacheByNode[nodeName].capacityGiB) *
-                                        100,
-                                    ),
-                                  )
-                                : null
-                            }
-                            track="subtle"
-                          />
-                        </div>
-                      )}
+                      {l1CacheByNode?.[nodeName] &&
+                        (() => {
+                          const l1 = l1CacheByNode[nodeName];
+                          const l1Ratio =
+                            l1.usedGiB != null && l1.capacityGiB > 0
+                              ? Math.min(
+                                  100,
+                                  Math.max(
+                                    0,
+                                    (l1.usedGiB / l1.capacityGiB) * 100,
+                                  ),
+                                )
+                              : null;
+                          return (
+                            <div
+                              className="space-y-1 text-xs text-muted-foreground"
+                              data-testid="node-l1-cache-bar"
+                            >
+                              <div className="flex items-center justify-between gap-2 tabular-nums">
+                                <span>
+                                  {t("observations.l1KvCache")}{" "}
+                                  {l1.usedGiB != null
+                                    ? formatToDecimal(l1.usedGiB, 1)
+                                    : "—"}{" "}
+                                  / {formatToDecimal(l1.capacityGiB, 1)} GiB
+                                </span>
+                                <span>
+                                  {l1Ratio != null
+                                    ? `${Math.round(l1Ratio)}%`
+                                    : "—"}
+                                </span>
+                              </div>
+                              <MetricBar
+                                size="sm"
+                                series="blue"
+                                value={l1Ratio}
+                                track="subtle"
+                              />
+                            </div>
+                          );
+                        })()}
                     </div>
                   </TableCell>
                   {acceleratorTypes.map((accType) => {
