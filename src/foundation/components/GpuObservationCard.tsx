@@ -124,6 +124,21 @@ export function GpuObservationCard({
     replica ?? (assigned.length === 1 ? assigned[0] : undefined);
   const activeWeights = weightsText(activeAllocation);
   const activeL0Kv = l0KvText(activeAllocation);
+  const singleWeightsPct = ratio(activeAllocation?.modelWeightsMiB, total);
+  const singleKvPct = Math.min(
+    Math.max(0, 100 - singleWeightsPct),
+    ratio(activeAllocation?.kvCacheCapacityMiB, total),
+  );
+  const breakdownAllocations = !replica
+    ? assigned
+        .map((a, index) => ({
+          allocation: a,
+          index,
+          weights: weightsText(a),
+          l0Kv: l0KvText(a),
+        }))
+        .filter((item) => item.weights || item.l0Kv)
+    : [];
   const label = (value?: string) =>
     !value || value === "unknown" || value === "-1" ? "—" : value;
   const utilizationText = utilization
@@ -210,9 +225,17 @@ export function GpuObservationCard({
                   : assigned.length > 0
                     ? 100 / assigned.length
                     : 0;
+              const denom = a.memoryMiB || total;
+              const weightsPct = ratio(a.modelWeightsMiB, denom);
+              const kvPct = Math.min(
+                Math.max(0, 100 - weightsPct),
+                ratio(a.kvCacheCapacityMiB, denom),
+              );
               const color = allocationColor(a.endpoint, index);
               return (
-                <Tooltip key={`${a.endpoint}:${a.instance}:${a.vdevice}`}>
+                <Tooltip
+                  key={`${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`}
+                >
                   <TooltipTrigger asChild>
                     <Link
                       className="relative block h-full shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
@@ -229,7 +252,27 @@ export function GpuObservationCard({
                           className="absolute inset-y-0 left-0"
                           style={{
                             backgroundColor: color,
-                            width: `${ratio(fallbackMiB, a.memoryMiB || total)}%`,
+                            width: `${ratio(fallbackMiB, denom)}%`,
+                          }}
+                        />
+                      )}
+                      {weightsPct > 0 && (
+                        <div
+                          data-testid="gpu-bar-weights-segment"
+                          className="pointer-events-none absolute inset-y-0 left-0 border-r border-background/80"
+                          style={{
+                            backgroundColor: color,
+                            width: `${weightsPct}%`,
+                          }}
+                        />
+                      )}
+                      {kvPct > 0 && (
+                        <div
+                          data-testid="gpu-bar-kv-segment"
+                          className="pointer-events-none absolute inset-y-0 border-r border-background/80 bg-background/25"
+                          style={{
+                            left: `${weightsPct}%`,
+                            width: `${kvPct}%`,
                           }}
                         />
                       )}
@@ -275,6 +318,23 @@ export function GpuObservationCard({
                 style={{ width: `${ratio(actual, total)}%` }}
               />
             )}
+            {singleWeightsPct > 0 && (
+              <div
+                data-testid="gpu-bar-weights-segment"
+                className="pointer-events-none absolute inset-y-0 left-0 border-r border-background/80 bg-[var(--nt-chart-series-1)]"
+                style={{ width: `${singleWeightsPct}%` }}
+              />
+            )}
+            {singleKvPct > 0 && (
+              <div
+                data-testid="gpu-bar-kv-segment"
+                className="pointer-events-none absolute inset-y-0 border-r border-background/80 bg-background/25"
+                style={{
+                  left: `${singleWeightsPct}%`,
+                  width: `${singleKvPct}%`,
+                }}
+              />
+            )}
           </>
         )}
       </div>
@@ -286,7 +346,7 @@ export function GpuObservationCard({
           {t("observations.physical")} {gib(total)}
         </span>
       </div>
-      {(activeWeights || activeL0Kv) && (
+      {replica && (activeWeights || activeL0Kv) && (
         <div
           className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
           data-testid="gpu-kv-weights-breakdown"
@@ -302,6 +362,48 @@ export function GpuObservationCard({
               {t("observations.l0KvCache")} {activeL0Kv}
             </span>
           )}
+        </div>
+      )}
+      {!replica && breakdownAllocations.length > 0 && (
+        <div
+          className="space-y-1 text-xs text-muted-foreground"
+          data-testid="gpu-kv-weights-breakdown"
+        >
+          {breakdownAllocations.map(({ allocation: a, index, weights, l0Kv }) => {
+            const duplicateEndpoint =
+              assigned.filter((item) => item.endpoint === a.endpoint).length > 1;
+            const instanceLabel =
+              duplicateEndpoint && (a.replica || a.instance)
+                ? `${a.endpoint} (${a.replica || a.instance})`
+                : a.endpoint;
+            return (
+              <div
+                key={`${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`}
+                className="flex flex-wrap items-center gap-x-2 gap-y-0.5"
+              >
+                <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                  <span
+                    className="inline-block h-2 w-2 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: allocationColor(a.endpoint, index),
+                    }}
+                  />
+                  <span className="break-all">{instanceLabel}</span>
+                </span>
+                {weights && (
+                  <span>
+                    {t("observations.modelWeights")} {weights}
+                  </span>
+                )}
+                {weights && l0Kv && <span aria-hidden="true">·</span>}
+                {l0Kv && (
+                  <span>
+                    {t("observations.l0KvCache")} {l0Kv}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
       {actual == null && (
@@ -426,7 +528,7 @@ export function GpuObservationCard({
                 {t("observations.assignments")}
               </h3>
               <div className="space-y-3">
-                {assigned.map((a) => {
+                {assigned.map((a, index) => {
                   const measurement = reading(
                     samples,
                     "neutree_endpoint_replica_accelerator_memory_used_bytes",
@@ -436,7 +538,7 @@ export function GpuObservationCard({
                   );
                   return (
                     <div
-                      key={`${a.endpoint}:${a.instance}:${a.vdevice}`}
+                      key={`${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`}
                       className="rounded-md border p-3 text-sm"
                     >
                       <Link

@@ -122,5 +122,45 @@ describe("GPU observation card", () => {
       "observations.modelWeights 6.0 GiB",
     );
     expect(breakdown.textContent).toContain("observations.l0KvCache 8.0 GiB");
+    expect(screen.getAllByTestId("gpu-bar-weights-segment").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("gpu-bar-kv-segment").length).toBeGreaterThan(0);
+  });
+  it("lists each assigned instance with its name, weights, and L0 KV-Cache on the cluster view", () => {
+    const allocA = {
+      ...allocation,
+      endpoint: "qwen-a",
+      replica: "pod-a",
+      instance: "pod-a",
+      memoryMiB: 7680,
+      modelWeightsMiB: 2048,
+      kvCacheCapacityMiB: 4096,
+    };
+    const allocB = {
+      ...allocation,
+      endpoint: "qwen-b",
+      replica: "pod-b",
+      instance: "pod-b",
+      memoryMiB: 7680,
+      modelWeightsMiB: 1536,
+      kvCacheCapacityMiB: 5120,
+    };
+    render(
+      <MemoryRouter>
+        <TooltipProvider>
+          <GpuObservationCard
+            device={device}
+            samples={samples}
+            allocations={[allocA, allocB]}
+          />
+        </TooltipProvider>
+      </MemoryRouter>,
+    );
+    const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
+    expect(breakdown.textContent).toContain("qwen-a");
+    expect(breakdown.textContent).toContain("observations.modelWeights 2.0 GiB");
+    expect(breakdown.textContent).toContain("observations.l0KvCache 4.0 GiB");
+    expect(breakdown.textContent).toContain("qwen-b");
+    expect(breakdown.textContent).toContain("observations.modelWeights 1.5 GiB");
+    expect(breakdown.textContent).toContain("observations.l0KvCache 5.0 GiB");
   });
 });

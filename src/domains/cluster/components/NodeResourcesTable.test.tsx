@@ -214,5 +214,6 @@ describe("NodeResourcesTable", () => {
     const l1Bar = screen.getByTestId("node-l1-cache-bar");
     expect(l1Bar.textContent).toContain("observations.l1KvCache");
     expect(l1Bar.textContent).toContain("12.5 / 32.0 GiB");
+    expect(l1Bar.textContent).toContain("39%");
   });
 });
