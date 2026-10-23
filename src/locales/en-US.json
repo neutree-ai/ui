@@ -2461,6 +2461,8 @@
 		"physical": "Physical",
 		"modelWeights": "Model weights",
 		"l0KvCache": "L0 KV-Cache",
+		"otherMemory": "Other",
+		"allocatedUnused": "Allocated, unused",
 		"l1KvCache": "L1 KV-Cache",
 		"noMeasurement": "No recent measurement",
 		"utilization": "GPU utilization",
