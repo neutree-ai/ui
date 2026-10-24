@@ -153,7 +153,8 @@
 			},
 			"buttons": {
 				"submit": "Update"
-			}
+			},
+			"externalManaged": "Your password is managed by your organization's identity provider and cannot be changed here."
 		},
 		"error": {
 			"info": "You may have forgotten to add the {{action}} component to {{resource}} resource.",
@@ -1546,7 +1547,11 @@
 		"create": "Create User",
 		"edit": "Edit User",
 		"fields": {
-			"confirmPassword": "Confirm Password"
+			"confirmPassword": "Confirm Password",
+			"displayName": "Display Name"
+		},
+		"hints": {
+			"externalEmail": "This user comes from an identity source, which manages the email. Change it there."
 		},
 		"placeholders": {
 			"userName": "User Name",
