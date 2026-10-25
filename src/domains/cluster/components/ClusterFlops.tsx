@@ -1,28 +1,28 @@
-import { useCustom, useUpdate, useDataProvider } from "@refinedev/core";
+import { useCustom, useDataProvider, useUpdate } from "@refinedev/core";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { MetricBar } from "@/foundation/components/MetricBar";
-import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  TFLOPS_ANNOTATION,
-  parseTflops,
-  peakTflops,
-  formatFlops,
-  observedDevices,
-  flopsTotals,
-} from "@/foundation/lib/accelerator-tflops";
 import type {
   AcceleratorSample,
   AcceleratorSnapshot,
 } from "@/foundation/lib/accelerator-observations";
+import {
+  flopsTotals,
+  formatFlops,
+  observedDevices,
+  parseTflops,
+  peakTflops,
+  TFLOPS_ANNOTATION,
+} from "@/foundation/lib/accelerator-tflops";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type { Cluster } from "../types";
 
 export function ClusterFlops({
@@ -285,10 +285,12 @@ export function ClusterFlops({
             {products.map((product) => (
               <label
                 key={product}
+                htmlFor={`calibration-${product}`}
                 className="flex items-center justify-between gap-3 text-sm"
               >
                 <span>{product}</span>
                 <Input
+                  id={`calibration-${product}`}
                   className="w-36"
                   type="number"
                   min="0.01"

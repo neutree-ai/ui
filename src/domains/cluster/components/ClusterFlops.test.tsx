@@ -1,4 +1,3 @@
-import { afterEach, describe, it, expect, vi } from "vitest";
 import {
   cleanup,
   fireEvent,
@@ -6,8 +5,10 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ClusterFlops } from "./ClusterFlops";
+
 const mocks = vi.hoisted(() => ({
   getOne: vi.fn(),
   update: vi.fn(),

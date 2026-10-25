@@ -19,7 +19,7 @@ export type EndpointPerformanceMetrics = {
   l1_write_bytes_per_second?: number;
 };
 
-export type EndpointPerformanceSnapshot = {
+type EndpointPerformanceSnapshot = {
   status: "ok" | "no_data" | "not_configured";
   window: PerformanceWindow;
   metrics: EndpointPerformanceMetrics;
@@ -43,7 +43,9 @@ export function useEndpointPerformanceObservations(
 
   const data = query.error ? undefined : query.data?.data;
   const metrics = data?.metrics ?? {};
-  const hasAnyMetric = Object.values(metrics).some((v) => typeof v === "number");
+  const hasAnyMetric = Object.values(metrics).some(
+    (v) => typeof v === "number",
+  );
 
   return {
     metrics,

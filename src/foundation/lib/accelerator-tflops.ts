@@ -1,7 +1,7 @@
+import type { ObservedGpu } from "@/foundation/components/GpuObservationCard";
+import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import type { AcceleratorSample } from "./accelerator-observations";
 import { reading } from "./accelerator-observations";
-import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
-import type { ObservedGpu } from "@/foundation/components/GpuObservationCard";
 export const TFLOPS_ANNOTATION = "neutree.ai/accelerator-tflops";
 // Defaults are FP16 peak estimates, not measured arithmetic throughput.
 const defaults: Record<string, number> = {

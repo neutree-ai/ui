@@ -1,14 +1,10 @@
-import { ClusterFlops } from "@/domains/cluster/components/ClusterFlops";
-import { ClusterTopology } from "@/domains/cluster/components/ClusterTopology";
-import {
-  parseTflops,
-  TFLOPS_ANNOTATION,
-} from "@/foundation/lib/accelerator-tflops";
 import { useList, useShow, useTranslation } from "@refinedev/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
+import { ClusterFlops } from "@/domains/cluster/components/ClusterFlops";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
+import { ClusterTopology } from "@/domains/cluster/components/ClusterTopology";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
   ClusterUpgradeAction,
@@ -52,6 +48,10 @@ import {
   gpuAllocations,
   nodeL1CacheByNode,
 } from "@/foundation/lib/accelerator-observations";
+import {
+  parseTflops,
+  TFLOPS_ANNOTATION,
+} from "@/foundation/lib/accelerator-tflops";
 import {
   getClusterSplitDashboardProps,
   getZCacheDashboardProps,
