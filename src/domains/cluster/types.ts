@@ -222,9 +222,12 @@ export type ClusterCacheStatus = {
   details?: Record<string, unknown>;
 };
 
-export function zcacheSpec(cluster?: { spec: { cache?: ClusterCacheSpec } }): ZCacheSpec | undefined {
- return cluster?.spec.cache?.provider === "zcache" ? cluster.spec.cache.options as ZCacheSpec : undefined;
-
+export function zcacheSpec(cluster?: {
+  spec: { cache?: ClusterCacheSpec };
+}): ZCacheSpec | undefined {
+  return cluster?.spec.cache?.provider === "zcache"
+    ? (cluster.spec.cache.options as ZCacheSpec)
+    : undefined;
 }
 
 export function zcacheStatus(
