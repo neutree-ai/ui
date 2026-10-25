@@ -1,6 +1,7 @@
-import { renderHook, cleanup } from "@testing-library/react";
+import { cleanup, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { useAcceleratorObservations } from "./use-accelerator-observations";
+
 const state = vi.hoisted(() => ({ result: {} as any }));
 vi.mock("@refinedev/core", () => ({ useCustom: () => state.result }));
 afterEach(() => {

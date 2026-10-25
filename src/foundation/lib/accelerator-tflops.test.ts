@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  peakTflops,
-  parseTflops,
-  formatFlops,
   flopsTotals,
+  formatFlops,
+  parseTflops,
+  peakTflops,
 } from "./accelerator-tflops";
+
 describe("FP16 estimates", () => {
   const device = {
     node: "n",

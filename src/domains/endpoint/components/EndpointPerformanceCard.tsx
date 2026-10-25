@@ -11,7 +11,7 @@ import { MetricBar } from "@/foundation/components/MetricBar";
 import { Section } from "@/foundation/components/Section";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 
-export function formatLatency(seconds?: number | null): string {
+function formatLatency(seconds?: number | null): string {
   if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return "—";
   if (seconds === 0) return "0 ms";
   if (seconds < 1) {
@@ -21,7 +21,7 @@ export function formatLatency(seconds?: number | null): string {
   return `${seconds.toFixed(2)} s`;
 }
 
-export function formatTokenRate(tokensPerSec?: number | null): string {
+function formatTokenRate(tokensPerSec?: number | null): string {
   if (
     tokensPerSec == null ||
     !Number.isFinite(tokensPerSec) ||
@@ -33,13 +33,13 @@ export function formatTokenRate(tokensPerSec?: number | null): string {
   return `${tokensPerSec >= 100 ? tokensPerSec.toFixed(1) : tokensPerSec.toFixed(2).replace(/\.?0+$/, "")} tok/s`;
 }
 
-export function formatPercent(ratio?: number | null): string {
+function formatPercent(ratio?: number | null): string {
   if (ratio == null || !Number.isFinite(ratio) || ratio < 0) return "—";
   const clamped = Math.max(0, Math.min(1, ratio));
   return `${(clamped * 100).toFixed(1)}%`;
 }
 
-export function formatBandwidth(bytesPerSec?: number | null): string {
+function formatBandwidth(bytesPerSec?: number | null): string {
   if (bytesPerSec == null || !Number.isFinite(bytesPerSec) || bytesPerSec < 0) {
     return "—";
   }

@@ -1,8 +1,4 @@
 import {
-  parseTflops,
-  TFLOPS_ANNOTATION,
-} from "@/foundation/lib/accelerator-tflops";
-import {
   type IResourceComponentsProps,
   useList,
   useOne,
@@ -56,6 +52,10 @@ import {
   gpuAllocations,
   nodeL1CacheByNode,
 } from "@/foundation/lib/accelerator-observations";
+import {
+  parseTflops,
+  TFLOPS_ANNOTATION,
+} from "@/foundation/lib/accelerator-tflops";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 

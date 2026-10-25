@@ -1,18 +1,18 @@
 import { Link } from "react-router";
-import type { Cluster } from "../types";
 import { GpuObservationCard } from "@/foundation/components/GpuObservationCard";
+import {
+  type AcceleratorSample,
+  allocationColor,
+  type GpuAllocation,
+  reading,
+} from "@/foundation/lib/accelerator-observations";
 import {
   observedDevices,
   parseTflops,
   TFLOPS_ANNOTATION,
 } from "@/foundation/lib/accelerator-tflops";
-import {
-  reading,
-  allocationColor,
-  type AcceleratorSample,
-  type GpuAllocation,
-} from "@/foundation/lib/accelerator-observations";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { Cluster } from "../types";
 export function ClusterTopology({
   cluster,
   samples,
