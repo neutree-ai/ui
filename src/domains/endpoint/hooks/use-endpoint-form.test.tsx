@@ -10,8 +10,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@refinedev/core", () => ({
   useSelect: vi.fn(),
-  useCustom: () => ({
-    data: { data: { capabilities: { cluster_cache_providers: [] } } },
+  useCustom: ({ url }: { url: string }) => ({
+    data: {
+      data:
+        url === "/rpc/zcache_versions"
+          ? []
+          : { capabilities: { cluster_cache_providers: [] } },
+    },
   }),
 }));
 
