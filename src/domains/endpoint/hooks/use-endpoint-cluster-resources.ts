@@ -25,9 +25,8 @@ export function useEndpointClusterResources({
   currentUsage,
   t,
 }: UseEndpointClusterResourcesProps) {
-  const selectedCluster = useMemo(
-    () => clustersData?.find((cluster) => cluster.metadata.name === currentCluster),
-    [currentCluster, clustersData],
+  const selectedCluster = clustersData?.find(
+    (cluster) => cluster.metadata.name === currentCluster,
   );
   const schedulingResourceInfo = useMemo(() => {
     const info = selectedCluster?.status?.resource_info;
