@@ -49,8 +49,12 @@ export function ZCacheFields({
           e.status.kv_cache.details?.in_use),
     ) === true;
   const guardRemoval = inUse || dependencies.isLoading || dependencies.isError;
-  const persistedNodes: string[] =
-    form.formState.defaultValues?.spec?.cache?.options?.target_nodes ?? [];
+  // Only nodes the cache service has applied are protected; a saved node that
+  // never took effect can be withdrawn (mirrors the database guard).
+  const appliedNodes: string[] =
+    status?.current?.target_nodes ??
+    form.formState.defaultValues?.spec?.cache?.options?.target_nodes ??
+    [];
   const enabled = form.watch("spec.cache.options.enabled") === true;
   const selected: string[] =
     form.watch("spec.cache.options.target_nodes") ?? [];
@@ -184,7 +188,7 @@ export function ZCacheFields({
                         aria-label={name}
                         checked={selected.includes(name)}
                         disabled={
-                          (guardRemoval && persistedNodes.includes(name)) ||
+                          (guardRemoval && appliedNodes.includes(name)) ||
                           (!selected.includes(name) &&
                             (!candidate?.selectable ||
                               !!status?.observation_error))

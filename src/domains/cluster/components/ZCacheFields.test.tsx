@@ -122,6 +122,26 @@ describe("ZCacheFields", () => {
         .hasAttribute("disabled"),
     ).toBe(true);
   });
+  it("lets a saved but never-applied node be withdrawn while inference uses cache", () => {
+    cacheDependencies.rows = [
+      { spec: { kv_cache: { provider: "zcache" } }, status: undefined },
+    ];
+    render(
+      <Form
+        onSubmit={vi.fn()}
+        status={{
+          ...observed,
+          current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+        }}
+      />,
+    );
+    expect(
+      screen.getByRole("checkbox", { name: "a" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("checkbox", { name: "b" }).hasAttribute("disabled"),
+    ).toBe(false);
+  });
   it("keeps ZCache absent when an existing cluster is saved without enabling it", async () => {
     const submit = vi.fn();
     render(<Form onSubmit={submit} legacy />);
