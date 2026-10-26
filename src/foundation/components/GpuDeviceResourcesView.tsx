@@ -286,7 +286,6 @@ const GridResourceUsage = ({
   valueScale,
   precision,
   series = "blue",
-  unavailable = false,
 }: {
   label: string;
   remainingLabel: string;
@@ -295,61 +294,28 @@ const GridResourceUsage = ({
   valueScale?: number;
   precision?: number;
   series?: MetricBarSeries;
-  /** The device is out of service, so its pools carry no measurement. */
-  unavailable?: boolean;
 }) => (
   <div
     className={cn(
       "mt-2 grid min-w-0 gap-1.5",
       GPU_USAGE_TEXT_CLASS,
-      unavailable ? undefined : "text-muted-foreground",
+      "text-muted-foreground",
     )}
   >
     <div className="flex min-w-0 items-center gap-2">
-      <span
-        className={cn(
-          "shrink-0 font-medium",
-          unavailable ? undefined : "text-foreground",
-        )}
-      >
-        {label}
+      <span className="shrink-0 font-medium text-foreground">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right font-medium tabular-nums text-foreground">
+        {formatUsage(pool, unit, valueScale, precision)}
       </span>
-      <span
-        className={cn(
-          "ml-auto min-w-0 truncate text-right font-medium tabular-nums",
-          unavailable ? undefined : "text-foreground",
-        )}
-      >
-        {/* An unhealthy card reports zeroed pools. Printing "0 / 0" says the
-            card is idle and available; the reading simply does not exist. */}
-        {unavailable ? (
-          <EmptyValue />
-        ) : (
-          formatUsage(pool, unit, valueScale, precision)
-        )}
-      </span>
-      <span
-        className={cn(
-          "w-9 shrink-0 text-right font-semibold tabular-nums",
-          unavailable ? undefined : "text-foreground",
-        )}
-      >
-        {unavailable ? <EmptyValue /> : `${pool.percent}%`}
+      <span className="w-9 shrink-0 text-right font-semibold tabular-nums text-foreground">
+        {pool.percent}%
       </span>
     </div>
-    <MetricBar
-      value={unavailable ? 0 : pool.percent}
-      series={series}
-      track={unavailable ? "unavailable" : "outlined"}
-    />
+    <MetricBar value={pool.percent} series={series} track="outlined" />
     <div className="flex min-w-0 items-center gap-2 tabular-nums">
       <span className="shrink-0">{remainingLabel}</span>
       <span className="min-w-0 truncate">
-        {unavailable ? (
-          <EmptyValue />
-        ) : (
-          formatAvailable(pool, unit, valueScale, precision)
-        )}
+        {formatAvailable(pool, unit, valueScale, precision)}
       </span>
     </div>
   </div>
@@ -501,7 +467,6 @@ const GpuGridCell = ({
         unit="GiB"
         valueScale={VRAM_VALUE_SCALE}
         precision={VRAM_VALUE_PRECISION}
-        unavailable={!row.healthy}
         series="blue"
       />
       <GridResourceUsage
@@ -512,7 +477,6 @@ const GpuGridCell = ({
         // legend colour-codes which is which. The endpoint cell has one bar and
         // needs no such pairing.
         series="cyan"
-        unavailable={!row.healthy}
       />
     </div>
   );

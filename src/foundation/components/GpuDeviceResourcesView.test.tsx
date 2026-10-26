@@ -377,7 +377,7 @@ describe("GpuDeviceResourcesView", () => {
     expect(usageRow.className).toContain("grid-cols-2");
   });
 
-  it("renders an unhealthy card as out of service rather than idle", () => {
+  it("preserves resource data on unhealthy cards", () => {
     render(
       <TooltipProvider delayDuration={0}>
         <GpuDeviceResourcesView
@@ -389,9 +389,8 @@ describe("GpuDeviceResourcesView", () => {
                   uuid: "GPU-dead",
                   product: "Tesla-T4",
                   health: false,
-                  // How the backend reports an unhealthy device: both pools zeroed.
-                  allocatable: { memory_mib: 0, core_units: 0 },
-                  available: { memory_mib: 0, core_units: 0 },
+                  allocatable: { memory_mib: 15360, core_units: 100 },
+                  available: { memory_mib: 7680, core_units: 50 },
                 },
               ],
             },
@@ -407,20 +406,16 @@ describe("GpuDeviceResourcesView", () => {
     );
 
     expect(screen.getByText("Unhealthy")).toBeTruthy();
+    expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
+    expect(screen.getByText("50 / 100")).toBeTruthy();
+    expect(screen.getAllByText("50%")).toHaveLength(2);
+    expect(screen.getByText("7.5 GiB")).toBeTruthy();
+    expect(screen.getByText("50")).toBeTruthy();
 
-    // "0 / 0" would read as an idle card with capacity to spare. There is no
-    // reading at all, so both metrics show a dash.
-    expect(screen.queryByText("0.0 / 0.0 GiB")).toBeNull();
-    expect(screen.queryByText("0 / 0")).toBeNull();
-    expect(screen.getAllByText("-")).toHaveLength(6);
-
-    // Bars carry no fill and use the dashed no-reading track.
     const bars = screen.getAllByTestId("progress");
     expect(bars).toHaveLength(2);
     for (const bar of bars) {
-      expect(bar.getAttribute("data-value")).toBe("0");
-      expect(bar.className).toContain("border-dashed");
-      expect(bar.className).toContain("[&>div]:bg-transparent");
+      expect(bar.getAttribute("data-value")).toBe("50");
     }
 
     // The cell itself is dimmed by tokens, not by a blanket opacity that would
