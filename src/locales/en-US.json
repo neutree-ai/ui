@@ -1294,6 +1294,17 @@
 		},
 		"logs": {
 			"application": "Application",
+			"container": "Container",
+			"inference": "inference",
+			"modelDownloader": "model downloader",
+			"containerRun": "Container run",
+			"current": "Current",
+			"previous": "LastContainer",
+			"previousUnavailable": "LastContainer logs are unavailable for the selected container. They may no longer be retained, or the Pod may have been deleted. Switch to Current to view logs from the current run.",
+			"loadError": "Unable to load logs. The Pod or selected log source may no longer be available. {{error}}",
+			"httpError": "Request failed (HTTP {{status}}).",
+			"unreadableResponse": "The log response could not be read.",
+			"unknownError": "An unexpected error occurred while loading logs.",
 			"stderr": "Stderr",
 			"stdout": "Stdout",
 			"loading": "Loading logs...",
@@ -2035,6 +2046,8 @@
 			"root": "Root"
 		},
 		"logViewer": {
+			"downloadFailed": "Failed to download logs. Please try again.",
+			"clearTimeFilters": "Clear time filters",
 			"search": "Search keyword",
 			"reverse": "Reverse",
 			"startTime": "Start",

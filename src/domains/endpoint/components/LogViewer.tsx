@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { CalendarIcon, Download, RefreshCw, Search, X } from "lucide-react";
-import { type FC, useCallback, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { VirtualLog } from "./VirtualLog";
 interface LogViewerProps {
   source: string; // Complete log content
   downloadUrl?: string;
+  downloadErrorMessage?: string;
   height?: number | string;
   defaultFontSize?: number;
   onRefresh?: () => void;
@@ -41,6 +42,7 @@ interface LogViewerProps {
 export const LogViewer: FC<LogViewerProps> = ({
   source,
   downloadUrl,
+  downloadErrorMessage,
   height = "100%",
   defaultFontSize = 12,
   onRefresh,
@@ -53,6 +55,21 @@ export const LogViewer: FC<LogViewerProps> = ({
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
   const [fontSize] = useState<number>(defaultFontSize);
+  const downloadRequestRef = useRef<{
+    url: string;
+    controller: AbortController;
+  } | null>(null);
+
+  useEffect(
+    () => () => {
+      const request = downloadRequestRef.current;
+      if (request && request.url === downloadUrl) {
+        request.controller.abort();
+        downloadRequestRef.current = null;
+      }
+    },
+    [downloadUrl],
+  );
 
   /**
    * Clear time filters
@@ -76,9 +93,18 @@ export const LogViewer: FC<LogViewerProps> = ({
    */
   const handleDownload = useCallback(async () => {
     if (!downloadUrl) return;
+    downloadRequestRef.current?.controller.abort();
+    const request = { url: downloadUrl, controller: new AbortController() };
+    downloadRequestRef.current = request;
+    const isCurrent = () =>
+      downloadRequestRef.current === request &&
+      !request.controller.signal.aborted;
+    const errorMessage =
+      downloadErrorMessage ?? t("components.logViewer.downloadFailed");
 
     try {
       const { data } = await auth.getSession();
+      if (!isCurrent()) return;
       const token = data.session?.access_token;
 
       const headers: HeadersInit = {};
@@ -88,17 +114,23 @@ export const LogViewer: FC<LogViewerProps> = ({
 
       const response = await fetch(downloadUrl, {
         headers,
+        signal: request.controller.signal,
       });
+      if (!isCurrent()) {
+        await response.body?.cancel();
+        return;
+      }
 
       if (!response.ok) {
-        toast.error(`Download failed: ${await response.text()}`);
+        toast.error(errorMessage);
         return;
       }
 
       const blob = await response.blob();
+      if (!isCurrent()) return;
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
+      const link = document.createElement("a");
+      link.href = url;
 
       // Try to get filename from Content-Disposition header
       const contentDisposition = response.headers.get("Content-Disposition");
@@ -110,20 +142,29 @@ export const LogViewer: FC<LogViewerProps> = ({
         }
       } else {
         // Fallback to filename from URL
-        const urlParts = downloadUrl.split("/");
+        const urlParts = new URL(
+          downloadUrl,
+          window.location.origin,
+        ).pathname.split("/");
         const lastPart = urlParts[urlParts.length - 1];
         if (lastPart) filename = lastPart;
       }
 
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      toast.error(`Download error: ${String(error)}`);
+      link.download = filename;
+      document.body.appendChild(link);
+      try {
+        link.click();
+      } finally {
+        window.URL.revokeObjectURL(url);
+        link.remove();
+      }
+    } catch {
+      if (isCurrent()) toast.error(errorMessage);
+    } finally {
+      if (downloadRequestRef.current === request)
+        downloadRequestRef.current = null;
     }
-  }, [downloadUrl]);
+  }, [downloadUrl, downloadErrorMessage, t]);
 
   /**
    * Toolbar component
@@ -134,9 +175,10 @@ export const LogViewer: FC<LogViewerProps> = ({
       <div className="flex items-center gap-2">
         <Search className="h-4 w-4 text-muted-foreground" />
         <Input
+          aria-label={t("components.logViewer.search")}
           placeholder={t("components.logViewer.searchPlaceholder")}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           className="w-48"
         />
       </div>
@@ -186,7 +228,7 @@ export const LogViewer: FC<LogViewerProps> = ({
                 id="start-time"
                 type="datetime-local"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(event) => setStartTime(event.target.value)}
               />
             </div>
           </PopoverContent>
@@ -215,7 +257,7 @@ export const LogViewer: FC<LogViewerProps> = ({
                 id="end-time"
                 type="datetime-local"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(event) => setEndTime(event.target.value)}
               />
             </div>
           </PopoverContent>
@@ -228,7 +270,8 @@ export const LogViewer: FC<LogViewerProps> = ({
             size="sm"
             onClick={clearTimeFilters}
             className="px-2"
-            title="Clear time filters"
+            title={t("components.logViewer.clearTimeFilters")}
+            aria-label={t("components.logViewer.clearTimeFilters")}
           >
             <X className="h-4 w-4" />
           </Button>

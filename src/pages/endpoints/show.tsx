@@ -441,7 +441,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             className="mt-0 flex-1 overflow-hidden pt-4"
           >
             <Suspense fallback={<TabLoader />}>
-              <EndpointLogTabs endpoint={record} />
+              <EndpointLogTabs endpoint={record} clusterType={clusterType} />
             </Suspense>
           </TabsContent>
           {playground.enabled && (
