@@ -310,12 +310,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     action === "edit"
       ? Math.max(1, Number(queryEndpoint?.spec?.replicas?.num || 1))
       : 0;
-  const canReuseCurrentEndpointResources = Boolean(
+  const isEditingCurrentCluster = Boolean(
     action === "edit" &&
       queryEndpoint?.spec?.cluster &&
-      queryEndpoint.spec.cluster === currentCluster &&
-      (!cacheEnabled || currentAllocationInCachePool),
+      queryEndpoint.spec.cluster === currentCluster,
   );
+  const canReuseCurrentEndpointResources =
+    isEditingCurrentCluster && (!cacheEnabled || currentAllocationInCachePool);
   const canReuseCurrentEndpointAccelerator = Boolean(
     canReuseCurrentEndpointResources &&
       selectedAccelerator?.type &&
@@ -535,11 +536,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     () =>
       addBackEndpointDeviceAllocationsToNodeResources(
         schedulingResourceInfo?.node_resources,
-        canReuseCurrentEndpointResources
+        isEditingCurrentCluster
           ? currentEndpointRuntimeResources
           : undefined,
         selectedAccelerator,
-        canReuseCurrentEndpointResources
+        isEditingCurrentCluster
           ? {
               cpuPerReplica: normalizedQueryResources?.cpu,
               memoryPerReplica: normalizedQueryResources?.memory,
@@ -548,7 +549,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       ),
     [
       currentEndpointRuntimeResources,
-      canReuseCurrentEndpointResources,
+      isEditingCurrentCluster,
       normalizedQueryResources?.cpu,
       normalizedQueryResources?.memory,
       selectedAccelerator,

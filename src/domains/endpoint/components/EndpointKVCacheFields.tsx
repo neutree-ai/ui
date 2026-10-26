@@ -23,10 +23,12 @@ export function EndpointKVCacheFields({
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
   const engine = form.watch("spec.engine");
+  const task = form.watch("spec.model.task");
   const supported =
     cluster?.spec.type === "kubernetes" &&
     endpointZCacheOptions(cluster)?.enabled &&
-    engine?.engine === "vllm";
+    engine?.engine === "vllm" &&
+    (!task || task === "text-generation");
   form.register("spec.kv_cache", {
     validate: (value) =>
       value?.provider !== "zcache" ||

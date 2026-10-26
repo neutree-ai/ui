@@ -2005,6 +2005,102 @@ describe("useEndpointForm", () => {
       });
     });
 
+    it("reuses only the cache-pool GPU when existing replicas span pool and non-pool nodes", async () => {
+      queryDataRef.current = {
+        metadata: metadata("edit-resource-display-source"),
+        spec: {
+          cluster: "virtualized-k8s-devices",
+          replicas: { num: 2 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "8192",
+              "virtualization.core_percent": "50",
+            },
+          },
+        },
+        status: {
+          resources: {
+            replicas: [
+              { instance_id: "outside", node_id: "node-b", devices: [] },
+              {
+                instance_id: "edit-resource-display-source-0",
+                replica_id: "edit-resource-display-source-0",
+                node_id: "node-a",
+                devices: [
+                  {
+                    uuid: "GPU-11111111-2222-3333-4444-555555555555",
+                    product: "Tesla-T4",
+                    memory_mib: 7680,
+                    core_units: 50,
+                    node_id: "node-a",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+      setupMocks(
+        [catalogA, catalogB],
+        [{ ...virtualizedKubernetesClusterWithDevices, spec: { ...virtualizedKubernetesClusterWithDevices.spec, cache: { provider: "zcache", options: { enabled: true, target_nodes: ["node-a"] } } } }],
+      );
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.kv_cache", { provider: "zcache" });
+        formInstance?.setValue("spec.replicas.num", 1);
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const panel = within(
+        await screen.findByTestId("endpoint-resource-context"),
+      );
+      const nodeACard = panel
+        .getAllByTestId("endpoint-compact-node-card")
+        .find((card) => card.textContent?.includes("node-a"));
+      if (!nodeACard) throw new Error("node-a resource card is missing");
+
+      const memoryPill = within(nodeACard)
+        .getAllByTestId("endpoint-node-resource-pill")
+        .find((pill) =>
+          pill.textContent?.includes("clusters.fields.memoryUsage"),
+        );
+      if (!memoryPill) throw new Error("node-a memory pill is missing");
+
+      await waitFor(() => {
+        expect(
+          within(memoryPill)
+            .getAllByTestId("endpoint-node-resource-pill-value")
+            .map((value) => value.textContent),
+        ).toEqual(["15.0", "7.5", "7.5"]);
+        expect(
+          within(nodeACard).getByText(
+            (_, node) => node?.textContent === "clusters.options.usable 1",
+          ),
+        ).toBeTruthy();
+      });
+    });
+
     it("uses the full edit request when reusing allocated vGPU devices", async () => {
       queryDataRef.current = {
         metadata: metadata("ruiyang-endpoint-0"),
@@ -5348,16 +5444,17 @@ describe("useEndpointForm", () => {
     });
 
     it.each([
-      ["node-a", false],
-      ["node-b", true],
+      [["node-a"], false],
+      [["node-b"], true],
+      [["node-a", "node-b"], false],
     ])(
       "credits cache-pool CPU only for eligible existing allocation %s",
-      async (node, blocked) => {
+      async (nodes, blocked) => {
         queryDataRef.current = {
           metadata: metadata("cache-pool-edit"),
           spec: {
             cluster: "plain-k8s-node-resources",
-            replicas: { num: 1 },
+            replicas: { num: (nodes as string[]).length },
             resources: {
               cpu: "4",
               memory: "8",
@@ -5367,13 +5464,11 @@ describe("useEndpointForm", () => {
           },
           status: {
             resources: {
-              replicas: [
-                {
-                  instance_id: "cache-pool-edit-0",
-                  node_id: node,
-                  devices: [],
-                },
-              ],
+              replicas: (nodes as string[]).map((node, index) => ({
+                instance_id: `cache-pool-edit-${index}`,
+                node_id: node,
+                devices: [],
+              })),
             },
           },
         };

@@ -5,6 +5,7 @@ import type {
   ResourceStatus,
 } from "@/foundation/types/resource-types";
 import {
+  cachePoolResources,
   findBestNodeForAccelerator,
   parseClusterResources,
 } from "./cluster-resources";
@@ -734,4 +735,23 @@ describe("findBestNodeForAccelerator", () => {
       gpu: { available: 1, total: 2 },
     });
   });
+});
+
+
+it("preserves generic GPUs after cache-pool aggregation", () => {
+  const nodes: Record<string, NodeResourceStatus> = {
+    "cache-node": {
+      allocatable: { cpu: 8, memory: 16, accelerator_groups: { nvidia_gpu: { quantity: 2 } } },
+      available: { cpu: 4, memory: 8, accelerator_groups: { nvidia_gpu: { quantity: 1 } } },
+    },
+  };
+  const result = parseClusterResources({
+    allocatable: cachePoolResources(nodes, "allocatable"),
+    available: cachePoolResources(nodes, "available"),
+    node_resources: nodes,
+  }, mockTranslate);
+  expect(result.acceleratorOptions).toEqual([{
+    label: "NVIDIA GPU", value: "nvidia_gpu:generic", type: "nvidia_gpu",
+    product: "", available: 1, total: 2,
+  }]);
 });

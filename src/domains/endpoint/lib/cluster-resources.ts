@@ -203,7 +203,10 @@ export function parseClusterResources(
             ),
           );
         }
-      } else if (allocatableGroup.product_groups) {
+      } else if (
+        allocatableGroup.product_groups &&
+        Object.keys(allocatableGroup.product_groups).length > 0
+      ) {
         // Create an option for each product
         for (const [product, productTotal] of Object.entries(
           allocatableGroup.product_groups,
