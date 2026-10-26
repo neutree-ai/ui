@@ -38,7 +38,7 @@
   "src/pages/clusters/create.tsx": "2e019fc4a0e9b0a2fa52bcb5b44906b1",
   "src/pages/clusters/edit.tsx": "bfb67faeac1f09a71a10f782b7cb9d59",
   "src/pages/clusters/list.tsx": "a4adbe1aecc3cedea1704a586fd4fd2f",
-  "src/pages/clusters/show.tsx": "d39d34f81e47597b6e87a94b69090b2f",
+  "src/pages/clusters/show.tsx": "cebe4bc24df9441447b49b03e5c28063",
   "src/pages/api-keys/list.tsx": "d192ad6a6cd6957658e0196c9ca00e72",
   "src/pages/api-keys/show.tsx": "ffff8d9de8bbfcca72446a6a1399a2ac",
   "src/components/ui/alert-dialog.tsx": "70af8c8b7632a7cc58b311f65ecd1309",
@@ -96,7 +96,7 @@
   "src/foundation/providers/auth-provider/index.ts": "b020feb6296355591297213c06e79a7f",
   "src/foundation/lib/column-visibility-storage.ts": "1c01bd1a7acbeac08880f87e23fbfb51",
   "src/foundation/lib/constant.ts": "7ba88946322ba84f6d56091fcb3c624e",
-  "src/foundation/lib/grafana-dashboard-configs.ts": "dea8e711ae7b65a3d639b7141035c7ef",
+  "src/foundation/lib/grafana-dashboard-configs.ts": "49dbb7a5961dc50c668da893bd44da2a",
   "src/foundation/lib/i18n.ts": "7ca93a505420fdfee78bb9d88ffcc272",
   "src/foundation/lib/plural.ts": "5d10922518b7de7bf6db90ce2e078f5f",
   "src/foundation/lib/unit.ts": "364e1f56b690042e2823558b0a435817",
@@ -194,7 +194,7 @@
   "src/domains/endpoint/components/VirtualLog.tsx": "9f0aae0f2ec30cb6fbfc94546fde0f82",
   "src/domains/cluster/types.ts": "6a8c78d86f75099c8de9ab4e6dc56ef2",
   "src/domains/cluster/lib/get-ray-dashboard-proxy.ts": "a4a3c75f58c68ee9dca572ad3a70c62b",
-  "src/domains/cluster/hooks/use-cluster-monitor-panels.ts": "9b1755f6538148e43f76f6f7aab08420",
+  "src/domains/cluster/hooks/use-cluster-monitor-panels.ts": "cbdebcebd3914e9bf5139e1601a1f1e4",
   "src/domains/cluster/components/ClusterStatus.tsx": "5ddd108e4c3237b3e08c0beb093b455a",
   "src/domains/cluster/components/ClusterType.tsx": "eab96797deed4ce4ac3bd78512ef04cc",
   "src/domains/cluster/components/NodeIPsField.tsx": "c252ebd7c87fb4bcf58fae1a2be15c65",
@@ -464,6 +464,5 @@
   "src/foundation/components/GpuObservationCard.tsx": "da504af1023665511294128737ae336d",
   "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "52d1f1840fc64c3e005123cb8203341c",
   "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "8bd159b754c5c548bb9e2b3c30122165",
-  "src/domains/cluster/components/ClusterFlops.tsx": "0020850b1e1272edc2e34d9691c5b908",
-  "src/domains/cluster/components/ClusterTopology.tsx": "e6a16454286cd95781af4b2d92223124"
+  "src/domains/cluster/components/ClusterFlops.tsx": "0020850b1e1272edc2e34d9691c5b908"
 }
