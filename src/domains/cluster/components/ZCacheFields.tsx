@@ -25,6 +25,9 @@ export function ZCacheFields({
   const { t } = useTranslation();
   const name = form.watch("metadata.name");
   const workspace = form.watch("metadata.workspace");
+  const enabled = form.watch("spec.cache.options.enabled") === true;
+  const savedEnabled =
+    form.formState.defaultValues?.spec?.cache?.options?.enabled === true;
   const dependencies = useList<{
     id: number;
     spec: { kv_cache?: { provider: string } | null };
@@ -35,9 +38,9 @@ export function ZCacheFields({
     resource: "endpoints",
     pagination: { mode: "off" },
     filters: [{ field: "spec->>cluster", operator: "eq", value: name }],
-    meta: { workspace, workspaced: true },
+    meta: { workspace, workspaced: true, select: "id,spec,status" },
     queryOptions: {
-      enabled: isEdit && !!name && !!workspace,
+      enabled: isEdit && !!name && !!workspace && (enabled || savedEnabled),
       refetchInterval: 5000,
     },
   });
@@ -55,7 +58,6 @@ export function ZCacheFields({
     status?.current?.target_nodes ??
     form.formState.defaultValues?.spec?.cache?.options?.target_nodes ??
     [];
-  const enabled = form.watch("spec.cache.options.enabled") === true;
   const selected: string[] =
     form.watch("spec.cache.options.target_nodes") ?? [];
   const candidates = status?.candidates ?? [];
@@ -82,7 +84,6 @@ export function ZCacheFields({
               name="spec.cache.options.enabled"
               label={t("clusters.zcache.enable")}
               isCheckbox
-              className="col-span-full"
             >
               <Checkbox
                 checked={enabled}

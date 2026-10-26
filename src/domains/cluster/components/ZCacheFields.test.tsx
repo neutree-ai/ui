@@ -7,20 +7,25 @@ import type { Cluster, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
 
 const cacheDependencies = vi.hoisted(() => ({
+  query: vi.fn(),
   rows: [] as Array<{
     spec: { kv_cache?: { provider: string } | null };
     status?: { kv_cache?: { provider: string; details: { in_use: boolean } } };
   }>,
 }));
 vi.mock("@refinedev/core", () => ({
-  useList: () => ({
+  useList: (options: unknown) => {
+    cacheDependencies.query(options);
+    return ({
     data: { data: cacheDependencies.rows },
     isLoading: false,
     isError: false,
-  }),
+  });
+  },
 }));
 beforeEach(() => {
   cacheDependencies.rows = [];
+  cacheDependencies.query.mockClear();
 });
 
 globalThis.ResizeObserver = class ResizeObserver {
@@ -45,6 +50,7 @@ function Form({
 }) {
   const form = useForm<Cluster>({
     defaultValues: {
+      metadata: { name: "test-cluster", workspace: "default" },
       spec: {
         type: "kubernetes",
         config: {},
@@ -141,6 +147,20 @@ describe("ZCacheFields", () => {
     expect(
       screen.getByRole("checkbox", { name: "b" }).hasAttribute("disabled"),
     ).toBe(false);
+  });
+  it("queries dependencies only when saved or edited cache is enabled", () => {
+    render(<Form onSubmit={vi.fn()} legacy />);
+    expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(false);
+    fireEvent.click(screen.getByRole("checkbox", { name: "clusters.zcache.enable" }));
+    expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(true);
+    expect(cacheDependencies.query.mock.lastCall?.[0].meta.select).toBe("id,spec,status");
+    fireEvent.click(screen.getByRole("checkbox", { name: "clusters.zcache.enable" }));
+    expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(false);
+  });
+  it("keeps checking dependencies while disabling a saved cache configuration", () => {
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "clusters.zcache.enable" }));
+    expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(true);
   });
   it("keeps ZCache absent when an existing cluster is saved without enabling it", async () => {
     const submit = vi.fn();
