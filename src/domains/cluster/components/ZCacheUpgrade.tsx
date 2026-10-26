@@ -275,9 +275,7 @@ function UpgradeDialog({
               <select
                 aria-label={ep.metadata.name}
                 className={`rounded-md border bg-background p-2 text-sm ${
-                  version && !selection(ep)
-                    ? "border-amber-500/80"
-                    : ""
+                  version && !selection(ep) ? "border-amber-500/80" : ""
                 }`}
                 disabled={!version || isLoading}
                 value={selection(ep)}
