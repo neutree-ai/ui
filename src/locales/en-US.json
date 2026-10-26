@@ -1360,14 +1360,10 @@
 			"enable": "KV cache",
 			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
 			"requirements": "Requires vLLM and a Kubernetes cluster with cache enabled.",
-			"advanced": "Cache settings",
 			"timeout": "Cache timeout (seconds)",
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
 			"timeoutHint": "Maximum wait time for a single cache message",
-			"redeploy": "Saving this change will redeploy the inference instance",
-			"configured": "Cluster cache enabled",
-			"off": "Cluster cache disabled",
-			"releasing": "Stopping cache use"
+			"redeploy": "Saving this change will redeploy the inference instance"
 		}
 	},
 	"external_endpoints": {
