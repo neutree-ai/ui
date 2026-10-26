@@ -610,7 +610,9 @@
 				"capacity": "Change cache capacity",
 				"configure": "Update cache configuration"
 			},
-			"serviceName": "Cache service"
+			"serviceName": "Cache service",
+			"dependencyHint": "Inference instances still use the cache. Turn off their cache before disabling the cluster cache.",
+			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
 		}
 	},
 	"model_registries": {
@@ -1349,6 +1351,19 @@
 			"declared": "Declared by the catalog",
 			"breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
 			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
+		},
+		"kvCacheSettings": {
+			"timeoutLabel": "Cache timeout",
+			"timeoutValue": "{{seconds}} s",
+			"clusterUnconfigured": "Cache is not configured on this cluster",
+			"viewCluster": "View cluster cache",
+			"enable": "KV cache",
+			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
+			"requirements": "Requires vLLM and a Kubernetes cluster with cache enabled.",
+			"timeout": "Cache timeout (seconds)",
+			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
+			"timeoutHint": "Maximum wait time for a single cache message",
+			"redeploy": "Saving this change will redeploy the inference instance"
 		}
 	},
 	"external_endpoints": {

@@ -1,10 +1,32 @@
 import type { UseFormReturnType } from "@refinedev/react-hook-form";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { transformClusterValues } from "../lib/transform-cluster-values";
 import type { Cluster, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
+
+const cacheDependencies = vi.hoisted(() => ({
+  query: vi.fn(),
+  rows: [] as Array<{
+    spec: { kv_cache?: { provider: string } | null };
+    status?: { kv_cache?: { provider: string; details: { in_use: boolean } } };
+  }>,
+}));
+vi.mock("@refinedev/core", () => ({
+  useList: (options: unknown) => {
+    cacheDependencies.query(options);
+    return {
+      data: { data: cacheDependencies.rows },
+      isLoading: false,
+      isError: false,
+    };
+  },
+}));
+beforeEach(() => {
+  cacheDependencies.rows = [];
+  cacheDependencies.query.mockClear();
+});
 
 globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
@@ -28,6 +50,7 @@ function Form({
 }) {
   const form = useForm<Cluster>({
     defaultValues: {
+      metadata: { name: "test-cluster", workspace: "default" },
       spec: {
         type: "kubernetes",
         config: {},
@@ -85,6 +108,78 @@ const observed: ZCacheStatus = {
 };
 
 describe("ZCacheFields", () => {
+  it("blocks removal while old inference pods still use cache, but allows expansion", () => {
+    cacheDependencies.rows = [
+      {
+        spec: { kv_cache: null },
+        status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
+      },
+    ];
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    expect(
+      screen.getByRole("checkbox", { name: "a" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("checkbox", { name: "c" }).hasAttribute("disabled"),
+    ).toBe(false);
+    expect(
+      screen
+        .getByRole("checkbox", { name: "clusters.zcache.enable" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+  });
+  it("lets a saved but never-applied node be withdrawn while inference uses cache", () => {
+    cacheDependencies.rows = [
+      { spec: { kv_cache: { provider: "zcache" } }, status: undefined },
+    ];
+    render(
+      <Form
+        onSubmit={vi.fn()}
+        status={{
+          ...observed,
+          current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+        }}
+      />,
+    );
+    expect(
+      screen.getByRole("checkbox", { name: "a" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("checkbox", { name: "b" }).hasAttribute("disabled"),
+    ).toBe(false);
+  });
+  it("queries dependencies only when saved or edited cache is enabled", async () => {
+    render(<Form onSubmit={vi.fn()} legacy />);
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(false);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "clusters.zcache.enable" }),
+    );
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(true);
+    expect(cacheDependencies.query.mock.lastCall?.[0].meta.select).toBe(
+      "id,spec,status",
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "clusters.zcache.enable" }),
+    );
+    await waitFor(() =>
+      expect(
+        cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+      ).toBe(false),
+    );
+  });
+  it("keeps checking dependencies while disabling a saved cache configuration", () => {
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "clusters.zcache.enable" }),
+    );
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(true);
+  });
   it("keeps ZCache absent when an existing cluster is saved without enabling it", async () => {
     const submit = vi.fn();
     render(<Form onSubmit={submit} legacy />);

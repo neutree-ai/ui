@@ -33,6 +33,10 @@ enum EndpointPhase {
 }
 
 export type EndpointSpec = {
+  kv_cache?: {
+    provider: string;
+    options?: { timeout_seconds?: number; [key: string]: unknown };
+  } | null;
   cluster: string;
   /**
    * Nullable: an engine that brings its own workload (Flex) deploys with no
@@ -49,6 +53,7 @@ export type EndpointSpec = {
 };
 
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
+  kv_cache?: { provider: string; details: Record<string, unknown> } | null;
   service_url: string | null;
   resources?: EndpointResourceStatus | null;
   model_download_completed_hash?: string | null;
@@ -75,6 +80,7 @@ export type EndpointClusterRef = {
     type: string;
     /** The image registry this cluster pulls workload images from. */
     image_registry?: string;
+    cache?: { provider: string; options: Record<string, unknown> };
     accelerator_virtualization?: { enabled?: boolean } | null;
   };
   status: {

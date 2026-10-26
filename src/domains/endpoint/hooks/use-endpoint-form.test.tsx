@@ -62,6 +62,9 @@ vi.mock("@refinedev/react-hook-form", async () => {
 
 vi.mock("@refinedev/core", () => ({
   useSelect: vi.fn(),
+  useCustom: () => ({
+    data: { data: { capabilities: { cluster_cache_providers: [] } } },
+  }),
 }));
 
 // The registry-models listing is shared L1 infrastructure now, so the model
@@ -1958,6 +1961,113 @@ describe("useEndpointForm", () => {
 
       act(() => {
         formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.resources", {
+          cpu: 2,
+          memory: 8,
+          gpu: 1,
+          accelerator: {
+            type: "nvidia_gpu",
+            product: "Tesla-T4",
+            virtualization: {
+              memory_mib: 8192,
+              core_percent: 50,
+            },
+          },
+        });
+      });
+
+      const panel = within(
+        await screen.findByTestId("endpoint-resource-context"),
+      );
+      const nodeACard = panel
+        .getAllByTestId("endpoint-compact-node-card")
+        .find((card) => card.textContent?.includes("node-a"));
+      if (!nodeACard) throw new Error("node-a resource card is missing");
+
+      const memoryPill = within(nodeACard)
+        .getAllByTestId("endpoint-node-resource-pill")
+        .find((pill) =>
+          pill.textContent?.includes("clusters.fields.memoryUsage"),
+        );
+      if (!memoryPill) throw new Error("node-a memory pill is missing");
+
+      await waitFor(() => {
+        expect(
+          within(memoryPill)
+            .getAllByTestId("endpoint-node-resource-pill-value")
+            .map((value) => value.textContent),
+        ).toEqual(["15.0", "7.5", "7.5"]);
+        expect(
+          within(nodeACard).getByText(
+            (_, node) => node?.textContent === "clusters.options.usable 1",
+          ),
+        ).toBeTruthy();
+      });
+    });
+
+    it("reuses only the cache-pool GPU when existing replicas span pool and non-pool nodes", async () => {
+      queryDataRef.current = {
+        metadata: metadata("edit-resource-display-source"),
+        spec: {
+          cluster: "virtualized-k8s-devices",
+          replicas: { num: 2 },
+          resources: {
+            cpu: "2",
+            memory: "8",
+            gpu: "1",
+            accelerator: {
+              type: "nvidia_gpu",
+              product: "Tesla-T4",
+              "virtualization.memory_mib": "8192",
+              "virtualization.core_percent": "50",
+            },
+          },
+        },
+        status: {
+          resources: {
+            replicas: [
+              { instance_id: "outside", node_id: "node-b", devices: [] },
+              {
+                instance_id: "edit-resource-display-source-0",
+                replica_id: "edit-resource-display-source-0",
+                node_id: "node-a",
+                devices: [
+                  {
+                    uuid: "GPU-11111111-2222-3333-4444-555555555555",
+                    product: "Tesla-T4",
+                    memory_mib: 7680,
+                    core_units: 50,
+                    node_id: "node-a",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+      setupMocks(
+        [catalogA, catalogB],
+        [
+          {
+            ...virtualizedKubernetesClusterWithDevices,
+            spec: {
+              ...virtualizedKubernetesClusterWithDevices.spec,
+              cache: {
+                provider: "zcache",
+                options: { enabled: true, target_nodes: ["node-a"] },
+              },
+            },
+          },
+        ],
+      );
+      render(<EditForm />);
+
+      await waitFor(() => expect(formInstance).not.toBeNull());
+
+      act(() => {
+        formInstance?.setValue("spec.cluster", "virtualized-k8s-devices");
+        formInstance?.setValue("spec.kv_cache", { provider: "zcache" });
+        formInstance?.setValue("spec.replicas.num", 1);
         formInstance?.setValue("spec.resources", {
           cpu: 2,
           memory: 8,
@@ -5343,6 +5453,70 @@ describe("useEndpointForm", () => {
         screen.queryByText("endpoints.messages.memoryResourcesInsufficient"),
       ).toBeNull();
     });
+
+    it.each([
+      [["node-a"], false],
+      [["node-b"], true],
+      [["node-a", "node-b"], false],
+    ])(
+      "credits cache-pool CPU only for eligible existing allocation %s",
+      async (nodes, blocked) => {
+        queryDataRef.current = {
+          metadata: metadata("cache-pool-edit"),
+          spec: {
+            cluster: "plain-k8s-node-resources",
+            replicas: { num: (nodes as string[]).length },
+            resources: {
+              cpu: "4",
+              memory: "8",
+              gpu: "1",
+              accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+            },
+          },
+          status: {
+            resources: {
+              replicas: (nodes as string[]).map((node, index) => ({
+                instance_id: `cache-pool-edit-${index}`,
+                node_id: node,
+                devices: [],
+              })),
+            },
+          },
+        };
+        setupMocks(
+          [catalogA, catalogB],
+          [
+            {
+              ...plainKubernetesClusterWithNodeResources,
+              spec: {
+                type: "kubernetes",
+                cache: {
+                  provider: "zcache",
+                  options: { enabled: true, target_nodes: ["node-a"] },
+                },
+              },
+            },
+          ],
+        );
+        render(<EditForm />);
+        await waitFor(() => expect(formInstance).not.toBeNull());
+        act(() => {
+          formInstance?.setValue("spec.cluster", "plain-k8s-node-resources");
+          formInstance?.setValue("spec.kv_cache", {
+            provider: "zcache",
+            options: { timeout_seconds: 2 },
+          });
+          formInstance?.setValue("spec.replicas.num", 1);
+          formInstance?.setValue("spec.resources", {
+            cpu: 12,
+            memory: 8,
+            gpu: 1,
+            accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+          });
+        });
+        await waitFor(() => expect(submitBlockedState).toBe(blocked));
+      },
+    );
 
     it("adds back known edit replica CPU and memory without device allocations", async () => {
       queryDataRef.current = {

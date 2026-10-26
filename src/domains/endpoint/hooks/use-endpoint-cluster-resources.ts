@@ -1,13 +1,16 @@
 import { useMemo } from "react";
 import {
+  cachePoolResources,
   findBestNodeForAccelerator,
   parseClusterResources,
 } from "@/domains/endpoint/lib/cluster-resources";
 import { computeMaxAvailable } from "@/domains/endpoint/lib/endpoint-form-helpers";
+import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
 
 interface UseEndpointClusterResourcesProps {
   currentCluster: string;
+  cacheEnabled?: boolean;
   clustersData: EndpointClusterRef[] | undefined;
   selectedAccelerator: { type: string; product: string } | null | undefined;
   currentUsage: { cpu: number; memory: number; gpu: number };
@@ -16,37 +19,49 @@ interface UseEndpointClusterResourcesProps {
 
 export function useEndpointClusterResources({
   currentCluster,
+  cacheEnabled = false,
   clustersData,
   selectedAccelerator,
   currentUsage,
   t,
 }: UseEndpointClusterResourcesProps) {
-  const selectedCluster = useMemo(() => {
-    if (!currentCluster || !clustersData) {
-      return undefined;
-    }
-    return clustersData.find(
-      (opt) => opt.metadata.name === currentCluster,
-    ) as unknown as EndpointClusterRef | undefined;
-  }, [currentCluster, clustersData]);
+  const selectedCluster = clustersData?.find(
+    (cluster) => cluster.metadata.name === currentCluster,
+  );
+  const schedulingResourceInfo = useMemo(() => {
+    const info = selectedCluster?.status?.resource_info;
+    const cache = endpointZCacheOptions(selectedCluster);
+    if (!cacheEnabled || !cache?.enabled || !info) return info;
+    const names = new Set(cache.target_nodes ?? []);
+    const nodes = Object.fromEntries(
+      Object.entries(info.node_resources ?? {}).filter(([name]) =>
+        names.has(name),
+      ),
+    );
+    return {
+      ...info,
+      node_resources: nodes,
+      allocatable: cachePoolResources(nodes, "allocatable"),
+      available: cachePoolResources(nodes, "available"),
+    };
+  }, [selectedCluster, cacheEnabled]);
 
   const { summary: clusterResources, acceleratorOptions } = useMemo(() => {
-    return parseClusterResources(
-      selectedCluster?.status?.resource_info,
-      (type) => t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
+    return parseClusterResources(schedulingResourceInfo, (type) =>
+      t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
     );
-  }, [selectedCluster, t]);
+  }, [schedulingResourceInfo, t]);
 
   const singleNodeMax = useMemo(() => {
-    if (!selectedCluster?.status?.resource_info) {
+    if (!schedulingResourceInfo) {
       return null;
     }
     return findBestNodeForAccelerator(
-      selectedCluster.status.resource_info.node_resources,
+      schedulingResourceInfo.node_resources,
       selectedAccelerator?.type || undefined,
       selectedAccelerator?.product || undefined,
     );
-  }, [selectedAccelerator, selectedCluster]);
+  }, [selectedAccelerator, schedulingResourceInfo]);
 
   const selectedAcceleratorOption = useMemo(() => {
     if (!selectedAccelerator) return undefined;
@@ -69,6 +84,7 @@ export function useEndpointClusterResources({
 
   return {
     selectedCluster,
+    schedulingResourceInfo,
     clusterResources,
     acceleratorOptions,
     selectedAcceleratorOption,
