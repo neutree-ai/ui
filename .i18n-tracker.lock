@@ -488,6 +488,6 @@
   "src/foundation/components/GpuObservationCard.tsx": "adab59fffed97ffc72af651365230357",
   "src/foundation/lib/accelerator-tflops.ts": "5ad904b9bcc465e7d81ca0912de5859b",
   "src/foundation/lib/accelerator-extra-info.ts": "8593b9fb11ef0b10e6f87f9a004108a1",
-  "src/domains/cluster/components/ZCacheUpgrade.tsx": "94afa27da4210a9b5421f5fd58d44452",
+  "src/domains/cluster/components/ZCacheUpgrade.tsx": "9798ba6edea0545a4f8059be86a0457a",
   "src/foundation/hooks/use-cache-versions.ts": "5a45cba264be741ddb0834821157162b"
 }
