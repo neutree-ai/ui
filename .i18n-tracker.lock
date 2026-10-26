@@ -492,5 +492,5 @@
   "src/foundation/components/GrafanaDashboardLink.tsx": "7862ccafc12a19c02c1eb8c35d173258",
   "src/domains/cluster/lib/zcache-dashboard.ts": "022a6c3b0eca23bbe761fb60c5309aec",
   "src/foundation/hooks/use-cache-versions.ts": "5a45cba264be741ddb0834821157162b",
-  "src/domains/cluster/components/ZCacheUpgrade.tsx": "5e434c0769799c0b57a1cb4e307d780a"
+  "src/domains/cluster/components/ZCacheUpgrade.tsx": "94afa27da4210a9b5421f5fd58d44452"
 }
