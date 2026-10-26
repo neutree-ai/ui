@@ -144,9 +144,16 @@ function UpgradeDialog({
   });
   const { mutateAsync, isLoading } = useCustomMutation();
   const invalidate = useInvalidate();
-  const [version, setVersion] = useState("");
+  const [selected, setVersion] = useState("");
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const candidates = (versions.data?.data ?? []).filter(
+    (v) => v.version !== zcacheStatus(cluster)?.ready_runtime_version,
+  );
+  const version =
+    candidates.find((v) => v.version === selected)?.version ??
+    candidates[0]?.version ??
+    "";
   const affected = (endpoints?.data ?? []).filter(
     (ep) => ep.spec.kv_cache?.provider === "zcache",
   );
@@ -215,7 +222,18 @@ function UpgradeDialog({
           </DialogDescription>
         </DialogHeader>
         <label className="space-y-2 text-sm">
-          <span>{t("clusters.cacheUpgrade.selectVersion")}</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium">
+              {t("clusters.cacheUpgrade.selectVersion")}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {t("clusters.cacheUpgrade.current", {
+                version:
+                  zcacheStatus(cluster)?.ready_runtime_version ??
+                  t("clusters.zcache.unknown"),
+              })}
+            </span>
+          </div>
           <select
             className="block w-full rounded-md border bg-background p-2"
             value={version}
@@ -225,17 +243,14 @@ function UpgradeDialog({
               setChoices({});
             }}
           >
-            <option value="">{t("clusters.cacheUpgrade.selectVersion")}</option>
-            {(versions.data?.data ?? [])
-              .filter(
-                (v) =>
-                  v.version !== zcacheStatus(cluster)?.ready_runtime_version,
-              )
-              .map((v) => (
-                <option key={v.version} value={v.version}>
-                  {v.version}
-                </option>
-              ))}
+            {candidates.length === 0 && <option value="" />}
+            {candidates.map((v) => (
+              <option key={v.version} value={v.version}>
+                {v.engine_versions.length > 0
+                  ? `${v.version} (vLLM ${v.engine_versions.join(", ")})`
+                  : v.version}
+              </option>
+            ))}
           </select>
         </label>
         <div className="max-h-80 space-y-3 overflow-auto">
@@ -247,17 +262,23 @@ function UpgradeDialog({
               <div className="text-sm">
                 {ep.metadata.display_name || ep.metadata.name}
                 <div className="text-xs text-muted-foreground">
-                  {ep.spec.engine.version}
-                  {version &&
-                    !supported.includes(ep.spec.engine.version) &&
-                    ` · ${t("clusters.cacheUpgrade.incompatibleTarget")}`}
+                  <span>{ep.spec.engine.version}</span>
+                  {version && !supported.includes(ep.spec.engine.version) && (
+                    <span className="text-amber-600 dark:text-amber-400">
+                      {` · ${t("clusters.cacheUpgrade.incompatibleTarget")}`}
+                    </span>
+                  )}
                   {ep.spec.replicas?.num === 0 &&
                     ` · ${t("clusters.cacheUpgrade.phases.Paused")}`}
                 </div>
               </div>
               <select
                 aria-label={ep.metadata.name}
-                className="rounded-md border bg-background p-2 text-sm"
+                className={`rounded-md border bg-background p-2 text-sm ${
+                  version && !selection(ep)
+                    ? "border-amber-500/80"
+                    : ""
+                }`}
                 disabled={!version || isLoading}
                 value={selection(ep)}
                 onChange={(e) =>
@@ -267,7 +288,7 @@ function UpgradeDialog({
                   }))
                 }
               >
-                <option value="">
+                <option value="" disabled>
                   {t("clusters.cacheUpgrade.chooseAction")}
                 </option>
                 {supported.includes(ep.spec.engine.version) && (
