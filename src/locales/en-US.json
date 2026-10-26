@@ -2525,10 +2525,6 @@
 		"calibrationHelp": "Single-card FP16 TFLOPS by model. Leave blank to restore the default.",
 		"invalidTflops": "Enter a finite number greater than zero.",
 		"calibrationFailed": "Could not save calibration. Please retry.",
-		"noTopology": "No GPU topology data available",
-		"unknownNuma": "NUMA not reported",
-		"interconnectEnabled": "High-speed interconnect enabled (reported by node)",
-		"topology": "Topology",
 		"trendEstimate": "Reported devices; calculated with current calibration"
 	}
 }

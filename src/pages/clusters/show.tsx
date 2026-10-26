@@ -4,7 +4,6 @@ import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSe
 import { ClusterFlops } from "@/domains/cluster/components/ClusterFlops";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
-import { ClusterTopology } from "@/domains/cluster/components/ClusterTopology";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
   ClusterUpgradeAction,
@@ -201,9 +200,6 @@ export const ClustersShow = () => {
           <TabsList className={detailTabsListClassName}>
             <TabsTrigger value="basic" className={detailTabTriggerClassName}>
               {t("common.tabs.basic")}
-            </TabsTrigger>
-            <TabsTrigger value="topology" className={detailTabTriggerClassName}>
-              {t("observations.topology")}
             </TabsTrigger>
             {showMonitorTab && (
               <TabsTrigger
@@ -502,16 +498,6 @@ export const ClustersShow = () => {
                 {metadataColumns.creation_timestamp}
               </Table>
             </ShowPage.Section>
-          </TabsContent>
-          <TabsContent
-            value="topology"
-            className="mt-0 flex-1 overflow-auto pt-4"
-          >
-            <ClusterTopology
-              cluster={record}
-              samples={observations.samples}
-              allocations={allocations}
-            />
           </TabsContent>
           {showMonitorTab && (
             <TabsContent
