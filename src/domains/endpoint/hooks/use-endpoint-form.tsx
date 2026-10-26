@@ -413,6 +413,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const {
     selectedCluster,
+    schedulingResourceInfo,
     clusterResources,
     acceleratorOptions,
     selectedAcceleratorOption,
@@ -533,7 +534,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const reusableNodeResources = useMemo(
     () =>
       addBackEndpointDeviceAllocationsToNodeResources(
-        selectedCluster?.status?.resource_info?.node_resources,
+        schedulingResourceInfo?.node_resources,
         canReuseCurrentEndpointResources
           ? currentEndpointRuntimeResources
           : undefined,
@@ -551,7 +552,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       normalizedQueryResources?.cpu,
       normalizedQueryResources?.memory,
       selectedAccelerator,
-      selectedCluster?.status?.resource_info?.node_resources,
+      schedulingResourceInfo?.node_resources,
     ],
   );
   const matchingDeviceAvailableResources = useMemo(
@@ -1595,7 +1596,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const clusterGpuResourcesPanel = currentCluster ? (
     <EndpointClusterGpuResourcesPanel
-      resourceInfo={selectedCluster?.status?.resource_info}
+      resourceInfo={schedulingResourceInfo}
       schedulingNodeResources={reusableNodeResources}
       currentCluster={currentCluster}
       selectedAccelerator={selectedAccelerator}

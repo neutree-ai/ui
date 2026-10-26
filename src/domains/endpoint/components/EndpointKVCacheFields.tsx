@@ -27,6 +27,12 @@ export function EndpointKVCacheFields({
     cluster?.spec.type === "kubernetes" &&
     endpointZCacheOptions(cluster)?.enabled &&
     engine?.engine === "vllm";
+  form.register("spec.kv_cache", {
+    validate: (value) =>
+      value?.provider !== "zcache" ||
+      !!supported ||
+      t("endpoints.kvCacheSettings.requirements"),
+  });
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (
     !systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") &&

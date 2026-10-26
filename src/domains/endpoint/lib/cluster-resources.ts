@@ -3,6 +3,7 @@ import type {
   AcceleratorProductResources,
   ClusterResourceInfo,
   NodeResourceStatus,
+  ResourceInfo,
 } from "@/foundation/types/resource-types";
 
 /**
@@ -398,4 +399,53 @@ export function findBestNodeForAccelerator(
     memory: bestNode.memory,
     gpu: bestNode.gpu,
   };
+}
+
+// Sum only the eligible nodes; keeping cluster-wide totals would overstate
+// capacity when inference must colocate with a node-local cache.
+export function cachePoolResources(
+  nodes: Record<string, NodeResourceStatus>,
+  field: "allocatable" | "available",
+): ResourceInfo {
+  const groups: NonNullable<ResourceInfo["accelerator_groups"]> = {};
+  const total: ResourceInfo = { cpu: 0, memory: 0, accelerator_groups: groups };
+  for (const node of Object.values(nodes)) {
+    const resource = node[field];
+    total.cpu += resource?.cpu ?? 0;
+    total.memory += resource?.memory ?? 0;
+    for (const [type, group] of Object.entries(
+      resource?.accelerator_groups ?? {},
+    )) {
+      const sum = groups[type] ?? {
+        quantity: 0,
+        product_groups: {},
+        products: {},
+      };
+      groups[type] = sum;
+      sum.product_groups ??= {};
+      sum.products ??= {};
+      sum.quantity += group.quantity ?? 0;
+      for (const [product, count] of Object.entries(
+        group.product_groups ?? {},
+      )) {
+        sum.product_groups[product] =
+          (sum.product_groups[product] ?? 0) + count;
+      }
+      for (const [product, value] of Object.entries(group.products ?? {})) {
+        const accumulated = sum.products[product] ?? { quantity: 0 };
+        sum.products[product] = accumulated;
+        accumulated.quantity += value.quantity ?? 0;
+        if (value.virtualization) {
+          accumulated.virtualization ??= { memory_mib: 0, core_units: 0 };
+          accumulated.virtualization.memory_mib =
+            (accumulated.virtualization.memory_mib ?? 0) +
+            (value.virtualization.memory_mib ?? 0);
+          accumulated.virtualization.core_units =
+            (accumulated.virtualization.core_units ?? 0) +
+            (value.virtualization.core_units ?? 0);
+        }
+      }
+    }
+  }
+  return total;
 }
