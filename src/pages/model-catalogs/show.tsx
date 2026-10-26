@@ -1,21 +1,15 @@
-import { useOne, useShow } from "@refinedev/core";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useShow } from "@refinedev/core";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import DeploymentConfigCard from "@/domains/endpoint/components/DeploymentConfigCard";
+import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
-import JSONSchemaValueVisualizer from "@/domains/engine/components/JsonSchemaValueVisualizer";
-import type { Engine } from "@/domains/engine/types";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
+import { modelCatalogEngineParameters } from "@/domains/model-catalog/lib/advanced-parameters";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
@@ -33,16 +27,7 @@ export const ModelCatalogsShow = () => {
     query: { data, isLoading },
   } = useShow<ModelCatalog>({});
   const record = data?.data;
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<string>("");
-
-  const { data: engineData } = useOne<Engine>({
-    resource: "engines",
-    id: record?.spec.engine?.engine,
-    queryOptions: {
-      enabled: Boolean(record?.spec.engine?.engine),
-    },
-  });
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
@@ -51,10 +36,6 @@ export const ModelCatalogsShow = () => {
   if (!record) {
     return <div>{t("pages.error.notFound")}</div>;
   }
-
-  const engineVersionSchema = engineData?.data?.spec.versions.find(
-    (v) => v.version === record.spec.engine?.version,
-  )?.values_schema;
 
   const isRecipe = isRecipeShape(record.spec);
   const variantEntries = isRecipe
@@ -90,21 +71,7 @@ export const ModelCatalogsShow = () => {
         ...(activeVariant?.env ?? {}),
       }
     : (record.spec.env ?? null);
-  // Advanced section for Recipe MC: union of base.engine_args + every
-  // variant.engine_args + every feature.engine_args (presentation only).
-  const buildRecipeAdvancedView = (): Record<string, unknown> | null => {
-    if (!isRecipe) return null;
-    const acc: Record<string, unknown> = {};
-    Object.assign(acc, record.spec.base?.engine_args ?? {});
-    for (const v of Object.values(record.spec.variants ?? {})) {
-      Object.assign(acc, v?.engine_args ?? {});
-    }
-    for (const f of record.spec.features ?? []) {
-      Object.assign(acc, f?.engine_args ?? {});
-    }
-    return { engine_args: acc };
-  };
-  const recipeAdvancedView = buildRecipeAdvancedView();
+  const advancedEngineParameters = modelCatalogEngineParameters(record.spec);
 
   // Verified-hardware list comes via the well-known annotation
   // `recipe.vllm.ai/hardware-verified` as a comma-separated list of
@@ -231,37 +198,10 @@ export const ModelCatalogsShow = () => {
           deploymentOptions={record.spec.deployment_options}
         />
 
-        {engineVersionSchema &&
-          (isRecipe ? recipeAdvancedView : record.spec.variables) && (
-            <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardContent className="cursor-pointer py-3 flex items-center gap-2 hover:bg-accent/40">
-                    {advancedOpen ? (
-                      <ChevronDown className="size-4" />
-                    ) : (
-                      <ChevronRight className="size-4" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {t("model_catalogs.sections.advanced")}
-                    </span>
-                  </CardContent>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <JSONSchemaValueVisualizer
-                      schema={engineVersionSchema as Record<string, unknown>}
-                      value={
-                        isRecipe
-                          ? (recipeAdvancedView as Record<string, unknown>)
-                          : record.spec.variables
-                      }
-                    />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          )}
+        <EndpointAdvancedParameters
+          engineParameters={advancedEngineParameters}
+          environmentVariables={null}
+        />
       </div>
     </ShowPage>
   );
