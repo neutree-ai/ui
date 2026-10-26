@@ -118,7 +118,7 @@ export function EndpointKVCacheFields({
                     onChange={(event) =>
                       form.setValue(
                         "spec.kv_cache.options.timeout_seconds",
-                        Number(event.target.value),
+                        event.target.value === "" ? "" : Number(event.target.value),
                         { shouldDirty: true, shouldValidate: true },
                       )
                     }

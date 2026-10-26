@@ -144,3 +144,28 @@ it("blocks ZCache after switching to a non-vLLM engine", async () => {
   await vi.waitFor(() => expect(invalid).toHaveBeenCalled());
   expect(save).not.toHaveBeenCalled();
 });
+
+
+it("allows clearing timeout but requires a valid number before saving", async () => {
+  const save = vi.fn();
+  const invalid = vi.fn();
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: { timeout_seconds: 5 } }}
+      save={save}
+      invalid={invalid}
+    />,
+  );
+  const input = screen.getByRole("spinbutton") as HTMLInputElement;
+  fireEvent.change(input, { target: { value: "" } });
+  fireEvent.blur(input);
+  expect(input.value).toBe("");
+  fireEvent.click(screen.getByText("save"));
+  await vi.waitFor(() => expect(invalid).toHaveBeenCalled());
+  expect(save).not.toHaveBeenCalled();
+  expect(input.value).toBe("");
+  fireEvent.change(input, { target: { value: "2.5" } });
+  fireEvent.click(screen.getByText("save"));
+  await vi.waitFor(() => expect(save).toHaveBeenCalled());
+  expect(save.mock.calls[0][0].spec.kv_cache.options.timeout_seconds).toBe(2.5);
+});
