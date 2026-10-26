@@ -92,8 +92,12 @@ describe("useEndpointClusterResources", () => {
       }),
     );
     expect(result.current.selectedCluster).toBe(cluster);
-    expect(result.current.selectedCluster?.status?.resource_info?.node_resources).toBe(cluster.status?.resource_info?.node_resources);
-    expect(Object.keys(result.current.schedulingResourceInfo?.node_resources ?? {})).toEqual(["cache-node"]);
+    expect(
+      result.current.selectedCluster?.status?.resource_info?.node_resources,
+    ).toBe(cluster.status?.resource_info?.node_resources);
+    expect(
+      Object.keys(result.current.schedulingResourceInfo?.node_resources ?? {}),
+    ).toEqual(["cache-node"]);
     expect(result.current.acceleratorOptions).toHaveLength(1);
     expect(result.current.selectedAcceleratorOption).toMatchObject({
       product: "Tesla-T4",
@@ -336,14 +340,21 @@ describe("useEndpointClusterResources", () => {
   });
 });
 
-
 it("keeps normal resources when cache remains selected on an unsupported cluster", () => {
   const cluster = makeCluster("ordinary", "kubernetes");
-  const { result } = renderHook(() => useEndpointClusterResources({
-    currentCluster: "ordinary", cacheEnabled: true, clustersData: [cluster],
-    selectedAccelerator: null, currentUsage: zeroUsage, t: mockT,
-  }));
+  const { result } = renderHook(() =>
+    useEndpointClusterResources({
+      currentCluster: "ordinary",
+      cacheEnabled: true,
+      clustersData: [cluster],
+      selectedAccelerator: null,
+      currentUsage: zeroUsage,
+      t: mockT,
+    }),
+  );
   expect(result.current.selectedCluster).toBe(cluster);
-  expect(result.current.schedulingResourceInfo).toBe(cluster.status?.resource_info);
+  expect(result.current.schedulingResourceInfo).toBe(
+    cluster.status?.resource_info,
+  );
   expect(result.current.clusterResources?.cpu.total).toBe(16);
 });

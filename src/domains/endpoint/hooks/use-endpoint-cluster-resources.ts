@@ -34,7 +34,9 @@ export function useEndpointClusterResources({
     if (!cacheEnabled || !cache?.enabled || !info) return info;
     const names = new Set(cache.target_nodes ?? []);
     const nodes = Object.fromEntries(
-      Object.entries(info.node_resources ?? {}).filter(([name]) => names.has(name)),
+      Object.entries(info.node_resources ?? {}).filter(([name]) =>
+        names.has(name),
+      ),
     );
     return {
       ...info,
@@ -45,9 +47,8 @@ export function useEndpointClusterResources({
   }, [selectedCluster, cacheEnabled]);
 
   const { summary: clusterResources, acceleratorOptions } = useMemo(() => {
-    return parseClusterResources(
-      schedulingResourceInfo,
-      (type) => t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
+    return parseClusterResources(schedulingResourceInfo, (type) =>
+      t(`clusters.acceleratorTypes.${type}`, { defaultValue: type }),
     );
   }, [schedulingResourceInfo, t]);
 

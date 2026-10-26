@@ -16,11 +16,11 @@ const cacheDependencies = vi.hoisted(() => ({
 vi.mock("@refinedev/core", () => ({
   useList: (options: unknown) => {
     cacheDependencies.query(options);
-    return ({
-    data: { data: cacheDependencies.rows },
-    isLoading: false,
-    isError: false,
-  });
+    return {
+      data: { data: cacheDependencies.rows },
+      isLoading: false,
+      isError: false,
+    };
   },
 }));
 beforeEach(() => {
@@ -150,17 +150,35 @@ describe("ZCacheFields", () => {
   });
   it("queries dependencies only when saved or edited cache is enabled", async () => {
     render(<Form onSubmit={vi.fn()} legacy />);
-    expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(false);
-    fireEvent.click(screen.getByRole("checkbox", { name: "clusters.zcache.enable" }));
-    expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(true);
-    expect(cacheDependencies.query.mock.lastCall?.[0].meta.select).toBe("id,spec,status");
-    fireEvent.click(screen.getByRole("checkbox", { name: "clusters.zcache.enable" }));
-    await waitFor(() => expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(false));
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(false);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "clusters.zcache.enable" }),
+    );
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(true);
+    expect(cacheDependencies.query.mock.lastCall?.[0].meta.select).toBe(
+      "id,spec,status",
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "clusters.zcache.enable" }),
+    );
+    await waitFor(() =>
+      expect(
+        cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+      ).toBe(false),
+    );
   });
   it("keeps checking dependencies while disabling a saved cache configuration", () => {
     render(<Form onSubmit={vi.fn()} status={observed} />);
-    fireEvent.click(screen.getByRole("checkbox", { name: "clusters.zcache.enable" }));
-    expect(cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled).toBe(true);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "clusters.zcache.enable" }),
+    );
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(true);
   });
   it("keeps ZCache absent when an existing cluster is saved without enabling it", async () => {
     const submit = vi.fn();

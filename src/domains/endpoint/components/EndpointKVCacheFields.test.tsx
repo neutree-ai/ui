@@ -47,7 +47,12 @@ function Editor({
             } as unknown as EndpointClusterRef
           }
         />
-        <button type="button" onClick={() => form.setValue("spec.engine.engine", "sglang")}>change engine</button>
+        <button
+          type="button"
+          onClick={() => form.setValue("spec.engine.engine", "sglang")}
+        >
+          change engine
+        </button>
         <button type="submit">save</button>
       </form>
     </FormProvider>
@@ -119,13 +124,21 @@ it("saves the common timeout option and rejects values outside its range", async
   });
 });
 
-
 it("blocks cache submission after switching to an unsupported cluster, and permits disabling cache", async () => {
   const save = vi.fn();
   const invalid = vi.fn();
   const cache = { provider: "zcache", options: { timeout_seconds: 5 } };
-  const { rerender } = render(<Editor cache={cache} save={save} invalid={invalid} />);
-  rerender(<Editor cache={cache} save={save} invalid={invalid} supportedCluster={false} />);
+  const { rerender } = render(
+    <Editor cache={cache} save={save} invalid={invalid} />,
+  );
+  rerender(
+    <Editor
+      cache={cache}
+      save={save}
+      invalid={invalid}
+      supportedCluster={false}
+    />,
+  );
   fireEvent.click(screen.getByText("save"));
   await vi.waitFor(() => expect(invalid).toHaveBeenCalled());
   expect(save).not.toHaveBeenCalled();
@@ -138,13 +151,14 @@ it("blocks cache submission after switching to an unsupported cluster, and permi
 it("blocks ZCache after switching to a non-vLLM engine", async () => {
   const save = vi.fn();
   const invalid = vi.fn();
-  render(<Editor cache={{ provider: "zcache" }} save={save} invalid={invalid} />);
+  render(
+    <Editor cache={{ provider: "zcache" }} save={save} invalid={invalid} />,
+  );
   fireEvent.click(screen.getByText("change engine"));
   fireEvent.click(screen.getByText("save"));
   await vi.waitFor(() => expect(invalid).toHaveBeenCalled());
   expect(save).not.toHaveBeenCalled();
 });
-
 
 it("allows clearing timeout but requires a valid number before saving", async () => {
   const save = vi.fn();
