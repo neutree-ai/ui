@@ -23,7 +23,7 @@
   "src/pages/model-registries/list.tsx": "9a2390c87f7284ad5b133b75fd64cd15",
   "src/pages/model-registries/show.tsx": "504319ea3c79aee89aa36a175acd9039",
   "src/pages/model-catalogs/list.tsx": "c605c392cb13b47c389ff17fa2828478",
-  "src/pages/model-catalogs/show.tsx": "221c921088895388874bf23854bf03a5",
+  "src/pages/model-catalogs/show.tsx": "ba574a9b01ec218599de64c4091d7f20",
   "src/pages/image-registries/create.tsx": "5c916d2cd7f7367dbf5ba7297639f711",
   "src/pages/image-registries/edit.tsx": "70b4ec2249988bba2726da5308172e49",
   "src/pages/image-registries/list.tsx": "dbb66ec58562425528cceda447c606a6",
@@ -168,7 +168,6 @@
   "src/domains/image-registry/components/ImageRegistryStatus.tsx": "e077a63fa5f81d6da4fad5cd765d2a32",
   "src/domains/engine/types.ts": "0732151782c629496da2f96e8065a9db",
   "src/domains/engine/components/EngineStatus.tsx": "209e569d71fcea9b3b18f77fa4413474",
-  "src/domains/engine/components/JsonSchemaValueVisualizer.tsx": "803cf91cd6e73b7c54d736e5cf6a7283",
   "src/domains/endpoint/types.ts": "96fe052cd868c97001b25b5df386bd35",
   "src/domains/endpoint/hooks/use-chat-state.ts": "7555e18e5668956e332598e536bdb46a",
   "src/domains/endpoint/hooks/use-endpoint-log-sources.ts": "db5f58fbfdf90e73192f68cd4c29b7da",
@@ -456,5 +455,6 @@
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
   "src/domains/endpoint/lib/zcache.ts": "a7b5ba66e96c0002ada91e339b052732",
   "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "959dec39641e70aabfcb6e0793d19693",
-  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5"
+  "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
+  "src/domains/model-catalog/lib/advanced-parameters.ts": "30acaae6474f6faa8bbb26be769b5154"
 }
