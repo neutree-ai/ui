@@ -260,7 +260,7 @@ function UpgradeDialog({
               className="grid grid-cols-2 items-center gap-3 rounded border p-3"
             >
               <div className="text-sm">
-                {ep.metadata.display_name || ep.metadata.name}
+                {ep.metadata.name}
                 <div className="text-xs text-muted-foreground">
                   <span>{ep.spec.engine.version}</span>
                   {version && !supported.includes(ep.spec.engine.version) && (
