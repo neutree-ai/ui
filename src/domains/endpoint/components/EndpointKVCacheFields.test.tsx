@@ -53,7 +53,12 @@ function Editor({
         >
           change engine
         </button>
-        <button type="button" onClick={() => form.setValue("spec.model.task", "text-embedding")}>change task</button>
+        <button
+          type="button"
+          onClick={() => form.setValue("spec.model.task", "text-embedding")}
+        >
+          change task
+        </button>
         <button type="submit">save</button>
       </form>
     </FormProvider>
@@ -185,11 +190,16 @@ it("allows clearing timeout but requires a valid number before saving", async ()
   expect(save.mock.calls[0][0].spec.kv_cache.options.timeout_seconds).toBe(2.5);
 });
 
-
 it("blocks cache after switching to an embedding task and allows disabling it", async () => {
   const save = vi.fn();
   const invalid = vi.fn();
-  render(<Editor cache={{ provider: "zcache", options: { timeout_seconds: 5 } }} save={save} invalid={invalid} />);
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: { timeout_seconds: 5 } }}
+      save={save}
+      invalid={invalid}
+    />,
+  );
   fireEvent.click(screen.getByText("change task"));
   fireEvent.click(screen.getByText("save"));
   await vi.waitFor(() => expect(invalid).toHaveBeenCalled());

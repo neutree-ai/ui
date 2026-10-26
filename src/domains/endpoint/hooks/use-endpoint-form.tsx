@@ -536,9 +536,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     () =>
       addBackEndpointDeviceAllocationsToNodeResources(
         schedulingResourceInfo?.node_resources,
-        isEditingCurrentCluster
-          ? currentEndpointRuntimeResources
-          : undefined,
+        isEditingCurrentCluster ? currentEndpointRuntimeResources : undefined,
         selectedAccelerator,
         isEditingCurrentCluster
           ? {

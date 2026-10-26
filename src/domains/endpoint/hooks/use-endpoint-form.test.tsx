@@ -2047,7 +2047,18 @@ describe("useEndpointForm", () => {
       };
       setupMocks(
         [catalogA, catalogB],
-        [{ ...virtualizedKubernetesClusterWithDevices, spec: { ...virtualizedKubernetesClusterWithDevices.spec, cache: { provider: "zcache", options: { enabled: true, target_nodes: ["node-a"] } } } }],
+        [
+          {
+            ...virtualizedKubernetesClusterWithDevices,
+            spec: {
+              ...virtualizedKubernetesClusterWithDevices.spec,
+              cache: {
+                provider: "zcache",
+                options: { enabled: true, target_nodes: ["node-a"] },
+              },
+            },
+          },
+        ],
       );
       render(<EditForm />);
 

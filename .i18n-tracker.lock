@@ -455,6 +455,6 @@
   "src/domains/cluster/lib/zcache-presentation.ts": "09dfa96ff79b53f61a9fffa2624a4dc5",
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
   "src/domains/endpoint/lib/zcache.ts": "a7b5ba66e96c0002ada91e339b052732",
-  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "94fd82ca0f2abb9ea7480291ccd60273",
+  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "959dec39641e70aabfcb6e0793d19693",
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5"
 }

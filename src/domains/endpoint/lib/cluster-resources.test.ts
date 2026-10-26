@@ -737,21 +737,41 @@ describe("findBestNodeForAccelerator", () => {
   });
 });
 
-
 it("preserves generic GPUs after cache-pool aggregation", () => {
   const nodes: Record<string, NodeResourceStatus> = {
     "cache-node": {
-      allocatable: { cpu: 8, memory: 16, accelerator_groups: { nvidia_gpu: { quantity: 2 } } },
-      available: { cpu: 4, memory: 8, accelerator_groups: { nvidia_gpu: { quantity: 1 } } },
+      allocatable: {
+        cpu: 8,
+        memory: 16,
+        accelerator_groups: {
+          nvidia_gpu: { quantity: 2, product_groups: null },
+        },
+      },
+      available: {
+        cpu: 4,
+        memory: 8,
+        accelerator_groups: {
+          nvidia_gpu: { quantity: 1, product_groups: null },
+        },
+      },
     },
   };
-  const result = parseClusterResources({
-    allocatable: cachePoolResources(nodes, "allocatable"),
-    available: cachePoolResources(nodes, "available"),
-    node_resources: nodes,
-  }, mockTranslate);
-  expect(result.acceleratorOptions).toEqual([{
-    label: "NVIDIA GPU", value: "nvidia_gpu:generic", type: "nvidia_gpu",
-    product: "", available: 1, total: 2,
-  }]);
+  const result = parseClusterResources(
+    {
+      allocatable: cachePoolResources(nodes, "allocatable"),
+      available: cachePoolResources(nodes, "available"),
+      node_resources: nodes,
+    },
+    mockTranslate,
+  );
+  expect(result.acceleratorOptions).toEqual([
+    {
+      label: "NVIDIA GPU",
+      value: "nvidia_gpu:generic",
+      type: "nvidia_gpu",
+      product: "",
+      available: 1,
+      total: 2,
+    },
+  ]);
 });
