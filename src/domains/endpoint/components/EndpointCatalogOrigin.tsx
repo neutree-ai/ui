@@ -1,8 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   type CatalogOrigin,
   readCatalogOrigin,
 } from "@/domains/endpoint/lib/catalog-origin";
+import { ShowButton } from "@/foundation/components/ShowButton";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**
@@ -61,3 +67,48 @@ export const EndpointCatalogOrigin = ({
 };
 
 EndpointCatalogOrigin.displayName = "EndpointCatalogOrigin";
+
+/**
+ * The same record, compact enough for a header line: the catalog by name,
+ * linked so it is one click away, with the variant left to a tooltip.
+ *
+ * The link follows the recorded name and nothing else, so a catalog deleted
+ * since lands on its not-found page rather than being hidden here.
+ */
+export const EndpointCatalogOriginLink = ({
+  origin,
+  workspace,
+}: {
+  origin: CatalogOrigin;
+  workspace: string | null | undefined;
+}) => {
+  const { t } = useTranslation();
+
+  const link = (
+    <ShowButton
+      recordItemId={origin.catalog}
+      meta={{ workspace }}
+      variant="link"
+      resource="model_catalogs"
+    >
+      {origin.catalog}
+    </ShowButton>
+  );
+
+  if (!origin.variant) return link;
+
+  return (
+    <Tooltip>
+      {/* ShowButton forwards no ref, so the trigger needs an element of its
+      own to anchor to. */}
+      <TooltipTrigger asChild>
+        <span>{link}</span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        {t("endpoints.origin.variant", { variant: origin.variant })}
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
+EndpointCatalogOriginLink.displayName = "EndpointCatalogOriginLink";
