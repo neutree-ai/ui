@@ -237,13 +237,19 @@ function UpgradeDialog({
           <select
             className="block w-full rounded-md border bg-background p-2"
             value={version}
-            disabled={isLoading}
+            disabled={isLoading || candidates.length === 0}
             onChange={(e) => {
               setVersion(e.target.value);
               setChoices({});
             }}
           >
-            {candidates.length === 0 && <option value="" />}
+            {candidates.length === 0 && (
+              <option value="">
+                {versions.isLoading
+                  ? t("loading")
+                  : t("clusters.messages.noUpgradeVersions")}
+              </option>
+            )}
             {candidates.map((v) => (
               <option key={v.version} value={v.version}>
                 {v.engine_versions.length > 0
