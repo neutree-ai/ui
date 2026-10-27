@@ -1,3 +1,4 @@
+import { useList } from "@refinedev/core";
 import { type FC, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,112 +10,110 @@ import {
 } from "@/components/ui/select";
 import {
   getBackendReplicas,
+  type LogSource,
   useEndpointLogSources,
 } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
 import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
-import type { Endpoint } from "@/domains/endpoint/types";
+import {
+  getDefaultLogContainer,
+  getLogUrls,
+} from "@/domains/endpoint/lib/log-helpers";
+import type { Endpoint, EndpointEngineRef } from "@/domains/endpoint/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { LogViewer } from "./LogViewer";
 
 interface EndpointLogTabsProps {
   endpoint: Endpoint;
+  clusterType: string | undefined;
 }
 
-/**
- * Component for displaying endpoint logs in tabs
- * Supports multiple log types (logs, application, stderr, stdout) from both Ray and Kubernetes
- */
-export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
+export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({
+  endpoint,
+  clusterType,
+}) => {
   const { t } = useTranslation();
-
-  // Fetch log sources using the new unified API
   const {
     deployments,
     isLoading: isLoadingLogSources,
     refetch: refetchLogSources,
   } = useEndpointLogSources(endpoint);
-
   const replicas = useMemo(
     () => getBackendReplicas(deployments),
     [deployments],
   );
-
-  const [activeReplicaId, setActiveReplicaId] = useState<string | null>(
-    () => replicas[0]?.replica_id ?? null,
+  const [activeReplicaId, setActiveReplicaId] = useState<string | null>(null);
+  const [activeContainerName, setActiveContainerName] = useState<string | null>(
+    null,
   );
+  const [previous, setPrevious] = useState(false);
+  const [activeTab, setActiveTab] = useState("application");
 
-  // Ensure active replica is valid when replicas change
-  useMemo(() => {
-    if (!replicas.length) {
-      if (activeReplicaId !== null) setActiveReplicaId(null);
-      return;
-    }
-    if (!replicas.some((replica) => replica.replica_id === activeReplicaId)) {
-      setActiveReplicaId(replicas[0]?.replica_id ?? null);
-    }
-  }, [replicas, activeReplicaId]);
-
-  const activeReplica = useMemo(() => {
-    if (!activeReplicaId) return replicas[0];
-    return replicas.find((replica) => replica.replica_id === activeReplicaId);
-  }, [replicas, activeReplicaId]);
-
-  // Get logs from selected replica of backend deployment
-  const availableLogs = useMemo(() => {
-    if (!activeReplica) return [];
-    return activeReplica.logs;
-  }, [activeReplica]);
-
-  // Determine available log types and set initial active tab
-  const logTypeMap = useMemo(() => {
-    const map: Record<string, { url: string; downloadUrl: string }> = {};
-    availableLogs.forEach((log) => {
-      map[log.type] = {
-        url: log.url,
-        downloadUrl: log.download_url,
-      };
-    });
-    return map;
-  }, [availableLogs]);
-
-  // Available tab keys in priority order
-  const availableTabKeys = useMemo(() => {
-    const priority = ["application", "logs", "stderr", "stdout"];
-    return priority.filter((key) => key in logTypeMap);
-  }, [logTypeMap]);
-
-  const [activeTab, setActiveTab] = useState<string>(
-    () => availableTabKeys[0] || "application",
+  const activeReplica =
+    replicas.find((replica) => replica.replica_id === activeReplicaId) ??
+    replicas[0];
+  const availableLogs = activeReplica?.logs ?? [];
+  const isKubernetes = clusterType === "kubernetes";
+  const containers = isKubernetes
+    ? availableLogs.filter(
+        (log): log is LogSource & { container_name: string } =>
+          !!log.container_name,
+      )
+    : [];
+  const { data: enginesData } = useList<Pick<EndpointEngineRef, "metadata">>({
+    resource: "engines",
+    meta: {
+      select: "metadata",
+      workspaced: true,
+      workspace: endpoint.metadata.workspace,
+    },
+    pagination: { mode: "off" },
+    queryOptions: { enabled: isKubernetes },
+  });
+  const engineNames = new Set(
+    enginesData?.data.map((engine) => engine.metadata.name) ?? [
+      endpoint.spec.engine.engine,
+    ],
   );
+  const activeContainer =
+    containers.find(
+      (container) => container.container_name === activeContainerName,
+    ) ?? getDefaultLogContainer(containers, engineNames);
+  const canViewPrevious = (activeContainer?.restart_count ?? 0) > 0;
 
-  // Ensure activeTab is valid when availableTabKeys change
-  useMemo(() => {
-    if (!availableTabKeys.includes(activeTab) && availableTabKeys.length > 0) {
-      setActiveTab(availableTabKeys[0]);
-    }
-  }, [availableTabKeys, activeTab]);
+  if (activeReplicaId !== (activeReplica?.replica_id ?? null)) {
+    setActiveReplicaId(activeReplica?.replica_id ?? null);
+    setPrevious(false);
+  }
+  if (activeContainerName !== (activeContainer?.container_name ?? null)) {
+    setActiveContainerName(activeContainer?.container_name ?? null);
+    setPrevious(false);
+  }
+  if (previous && !canViewPrevious) setPrevious(false);
 
-  // Stream logs for active tab
-  const activeLogInfo = logTypeMap[activeTab];
+  const availableTabKeys = ["application", "logs", "stderr", "stdout"].filter(
+    (type) => availableLogs.some((log) => log.type === type),
+  );
+  if (availableTabKeys.length && !availableTabKeys.includes(activeTab)) {
+    setActiveTab(availableTabKeys[0]);
+  }
 
-  // Remove /api/v1 prefix from URL if present (hook will add REST_URL automatically)
-  const relativeUrl = activeLogInfo?.url
-    ? activeLogInfo.url.replace(/^\/api\/v1/, "")
-    : null;
-
+  const activeLog = isKubernetes
+    ? activeContainer
+    : availableLogs.find((log) => log.type === activeTab);
+  const activeLogInfo =
+    activeLog?.url && (!isKubernetes || activeContainer)
+      ? getLogUrls(activeLog, activeContainer?.container_name, previous)
+      : null;
   const {
     logs: streamedLogs,
     isLoading: isLoadingLogs,
     error: logsError,
     refetch: refetchLogs,
-  } = useStreamingLogs(
-    relativeUrl ? `${relativeUrl}?lines=1000` : null,
-    !!relativeUrl,
-  );
+  } = useStreamingLogs(activeLogInfo?.url ?? null, !!activeLogInfo?.url);
 
   const handleRefresh = () => {
-    refetchLogSources();
+    void refetchLogSources();
     refetchLogs();
   };
 
@@ -125,54 +124,59 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
       </div>
     );
   }
-
   if (!replicas.length || !availableLogs.length) {
     return <EmptyState>{t("endpoints.logs.noLogsAvailable")}</EmptyState>;
   }
 
-  // Helper function to get tab label based on log type
-  const getTabLabel = (logType: string) => {
-    const labels: Record<string, string> = {
-      application: t("endpoints.logs.application"),
-      logs: t("common.tabs.logs"),
-      stderr: t("endpoints.logs.stderr"),
-      stdout: t("endpoints.logs.stdout"),
-    };
-    return labels[logType] || logType;
+  const labels: Record<string, string> = {
+    application: t("endpoints.logs.application"),
+    logs: t("common.tabs.logs"),
+    stderr: t("endpoints.logs.stderr"),
+    stdout: t("endpoints.logs.stdout"),
   };
-
-  const showToolbar = availableTabKeys.length > 1 || replicas.length > 1;
+  const replicaLabel = t("common.fields.replica");
+  const showToolbar =
+    isKubernetes || availableTabKeys.length > 1 || replicas.length > 1;
+  const containerLabels = new Map([
+    ...Array.from(
+      engineNames,
+      (name) => [name, t("endpoints.logs.inference")] as const,
+    ),
+    ["model-downloader", t("endpoints.logs.modelDownloader")],
+  ]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       {showToolbar && (
         <div
           data-testid="endpoint-log-toolbar"
-          className="relative flex min-h-9 shrink-0 items-center justify-start pb-2"
+          className="flex min-h-9 shrink-0 flex-wrap items-center gap-3 pb-2"
         >
-          {availableTabKeys.length > 1 && (
+          {!isKubernetes && availableTabKeys.length > 1 && (
             <SegmentedControl
               ariaLabel={t("common.tabs.logs")}
-              className="shrink-0"
-              items={availableTabKeys.map((logType) => ({
-                value: logType,
-                label: getTabLabel(logType),
+              items={availableTabKeys.map((type) => ({
+                value: type,
+                label: labels[type],
               }))}
               onValueChange={setActiveTab}
               value={activeTab}
             />
           )}
-          {replicas.length > 1 && (
-            <div className="absolute right-0 flex items-center gap-2">
+          {(isKubernetes || replicas.length > 1) && (
+            <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">
-                {t("common.fields.replica")}
+                {replicaLabel}
               </span>
               <Select
-                value={activeReplicaId ?? replicas[0]?.replica_id}
-                onValueChange={(value) => setActiveReplicaId(value)}
+                value={activeReplicaId ?? undefined}
+                onValueChange={(replicaId) => {
+                  setActiveReplicaId(replicaId);
+                  setPrevious(false);
+                }}
               >
-                <SelectTrigger className="w-[260px]">
-                  <SelectValue placeholder={t("common.fields.replica")} />
+                <SelectTrigger aria-label={replicaLabel} className="w-[260px]">
+                  <SelectValue placeholder={replicaLabel} />
                 </SelectTrigger>
                 <SelectContent>
                   {replicas.map((replica) => (
@@ -187,10 +191,57 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
               </Select>
             </div>
           )}
+          {isKubernetes && (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  {t("endpoints.logs.container")}
+                </span>
+                <Select
+                  value={activeContainer?.container_name}
+                  disabled={!containers.length}
+                  onValueChange={(containerName) => {
+                    setActiveContainerName(containerName);
+                    setPrevious(false);
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label={t("endpoints.logs.container")}
+                    className="w-[220px]"
+                  >
+                    <SelectValue placeholder={t("endpoints.logs.container")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {containers.map((container) => (
+                      <SelectItem
+                        key={container.container_name}
+                        value={container.container_name}
+                      >
+                        {containerLabels.get(container.container_name) ??
+                          container.container_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {canViewPrevious && (
+                <SegmentedControl
+                  ariaLabel={t("endpoints.logs.containerRun")}
+                  value={previous ? "previous" : "current"}
+                  items={[
+                    { value: "current", label: t("endpoints.logs.current") },
+                    { value: "previous", label: t("endpoints.logs.previous") },
+                  ]}
+                  onValueChange={(run) => {
+                    setPrevious(run === "previous");
+                  }}
+                />
+              )}
+            </>
+          )}
         </div>
       )}
-
-      {activeLogInfo && (
+      {activeLogInfo ? (
         <div
           className={`min-h-0 flex-1 overflow-hidden ${showToolbar ? "mt-2" : ""}`}
         >
@@ -199,14 +250,24 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({ endpoint }) => {
               isLoadingLogs
                 ? t("endpoints.logs.loading")
                 : logsError
-                  ? `Error: ${logsError}`
+                  ? t(
+                      previous
+                        ? "endpoints.logs.previousUnavailable"
+                        : "endpoints.logs.loadError",
+                      { error: logsError },
+                    )
                   : streamedLogs || t("endpoints.logs.noLogsAvailable")
             }
             downloadUrl={activeLogInfo.downloadUrl}
+            downloadErrorMessage={
+              previous ? t("endpoints.logs.previousUnavailable") : undefined
+            }
             height="100%"
             onRefresh={handleRefresh}
           />
         </div>
+      ) : (
+        <EmptyState>{t("endpoints.logs.noLogsAvailable")}</EmptyState>
       )}
     </div>
   );
