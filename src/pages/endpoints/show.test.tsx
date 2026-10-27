@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Endpoint } from "@/domains/endpoint/types";
@@ -52,16 +52,30 @@ vi.mock("@/foundation/components/ShowPage", () => {
   ShowPage.ObjectHeader = ({
     title,
     status,
+    description,
   }: {
     title?: ReactNode;
     status?: ReactNode;
+    description?: ReactNode;
   }) => (
     <header>
       <h1>{title}</h1>
       {status}
+      {description}
     </header>
   );
-  ShowPage.Meta = ({ children }: { children: ReactNode }) => <>{children}</>;
+  ShowPage.Meta = ({
+    children,
+    label,
+  }: {
+    children: ReactNode;
+    label?: ReactNode;
+  }) => (
+    <span>
+      <span>{label}</span>
+      {children}
+    </span>
+  );
   ShowPage.Section = ({ children }: { children: ReactNode }) => <>{children}</>;
   return { ShowPage };
 });
@@ -70,7 +84,7 @@ vi.mock("@/domains/cluster/lib/get-ray-dashboard-proxy", () => ({
   getRayDashboardProxy: () => null,
 }));
 vi.mock("@/domains/endpoint/components/EndpointAccessSummary", () => ({
-  EndpointAccessSummary: () => null,
+  EndpointAccessSummary: () => <span data-testid="endpoint-access-summary" />,
 }));
 vi.mock("@/domains/endpoint/components/EndpointAdvancedParameters", () => ({
   EndpointAdvancedParameters: () => null,
@@ -228,5 +242,35 @@ describe("EndpointsShow", () => {
     });
     render(<EndpointsShow />);
     expect(screen.getByTestId("endpoint-status")).toBeTruthy();
+  });
+
+  it("shows all served model names together with the access address", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        data: {
+          data: {
+            ...endpoint,
+            status: {
+              phase: "Running",
+              service_url: "http://gateway/endpoint-a",
+              served_models: ["chat-primary", "chat-alias"],
+            },
+          },
+        },
+        isLoading: false,
+      },
+    });
+    render(<EndpointsShow />);
+    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
+    expect(servingInfo.getByTestId("endpoint-access-summary")).toBeTruthy();
+    expect(servingInfo.getByText("chat-primary")).toBeTruthy();
+    expect(servingInfo.getByText("chat-alias")).toBeTruthy();
+  });
+
+  it("shows a placeholder while served models have not been discovered", () => {
+    render(<EndpointsShow />);
+    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
+    expect(servingInfo.getByText("endpoints.fields.servedModels")).toBeTruthy();
+    expect(servingInfo.getByText("-")).toBeTruthy();
   });
 });

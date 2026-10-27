@@ -55,6 +55,7 @@ export type EndpointSpec = {
 export type EndpointStatus = BaseStatus<EndpointPhase> & {
   kv_cache?: { provider: string; details: Record<string, unknown> } | null;
   service_url: string | null;
+  served_models?: string[] | null;
   resources?: EndpointResourceStatus | null;
   model_download_completed_hash?: string | null;
 };

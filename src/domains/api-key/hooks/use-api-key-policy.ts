@@ -191,8 +191,8 @@ export function buildApiKeyLimits(
   const seen = new Set<string>();
   const allowed: AllowedModel[] = [];
   for (const r of values.models ?? []) {
-    const model = String(r.model ?? "").trim();
-    if (!model) continue;
+    const model = String(r.model ?? "");
+    if (!model.trim()) continue;
     // Emit whichever dimensions the row carries. A row the picker produced has
     // both; a stored entry that pins only one (which the backend allows, and a
     // CLI can write) must keep it -- dropping `type` would widen "any external
@@ -397,8 +397,7 @@ export type WorkspaceModelOption = {
 
 type WorkspaceEndpointRef = {
   metadata?: { name?: string | null } | null;
-  spec?: { model?: { name?: string | null } | null } | null;
-  status?: { phase?: string | null } | null;
+  status?: { phase?: string | null; served_models?: string[] | null } | null;
 };
 
 type WorkspaceExternalEndpointRef = {
@@ -454,11 +453,9 @@ export function compareWorkspaceModelOptions(
   );
 }
 
-// Available client-facing models in a workspace (for the allowed-models
-// dropdown). Options are endpoint-level rows so duplicate model names served by
-// different internal/external endpoints remain visually distinct in the picker.
-export function useWorkspaceModels(
+function useWorkspaceModelOptions(
   workspace: string | undefined,
+  firstOnly: boolean,
 ): WorkspaceModelOption[] {
   const enabled = Boolean(workspace);
   const { data: endpointsData } = useList<WorkspaceEndpointRef>({
@@ -481,18 +478,21 @@ export function useWorkspaceModels(
     const options: WorkspaceModelOption[] = [];
 
     for (const endpoint of endpointsData?.data ?? []) {
-      const model = String(endpoint.spec?.model?.name ?? "").trim();
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
-      if (!model || !endpointName) continue;
-      options.push({
-        value: modelOptionValue("internal", endpointName, model),
-        label: model,
-        model,
-        endpointName,
-        type: "internal",
-        source: SELF_HOSTED_MODEL_SOURCE,
-        phase: endpoint.status?.phase ?? null,
-      });
+      if (!endpointName) continue;
+      const models = endpoint.status?.served_models ?? [];
+      for (const model of firstOnly ? models.slice(0, 1) : models) {
+        if (!model?.trim()) continue;
+        options.push({
+          value: modelOptionValue("internal", endpointName, model),
+          label: model,
+          model,
+          endpointName,
+          type: "internal",
+          source: SELF_HOSTED_MODEL_SOURCE,
+          phase: endpoint.status?.phase ?? null,
+        });
+      }
     }
 
     for (const endpoint of externalEndpointsData?.data ?? []) {
@@ -516,7 +516,15 @@ export function useWorkspaceModels(
     }
 
     return options.sort(compareWorkspaceModelOptions);
-  }, [endpointsData?.data, externalEndpointsData?.data, workspace]);
+  }, [endpointsData?.data, externalEndpointsData?.data, workspace, firstOnly]);
+}
+
+// The picker defaults to the first IE name; existing keys can reference any
+// name still served, so display indexes use the complete observation instead.
+export function useWorkspaceModels(
+  workspace: string | undefined,
+): WorkspaceModelOption[] {
+  return useWorkspaceModelOptions(workspace, true);
 }
 
 // Per-model serving info: whether the model is served internally / externally
@@ -541,13 +549,13 @@ type ModelInfo = {
  *
  * The source is a property of the MODEL, so it cannot be derived from a row's
  * `type` alone — that only ever yields self-hosted for internal rows and
- * nothing for external ones. It is read from the same workspace options the
- * picker is built from, so every screen showing an allowlist entry agrees.
+ * nothing for external ones. Include every serving name so existing entries
+ * keep their source when their model moves after the first name.
  */
 export function useModelSourceByValue(
   workspace: string | undefined,
 ): Map<string, string | undefined> {
-  const options = useWorkspaceModels(workspace);
+  const options = useWorkspaceModelOptions(workspace, false);
 
   return useMemo(
     () => new Map(options.map((option) => [option.value, option.source])),
@@ -558,7 +566,7 @@ export function useModelSourceByValue(
 export function useWorkspaceModelMap(
   workspace: string | undefined,
 ): Map<string, ModelInfo> {
-  const options = useWorkspaceModels(workspace);
+  const options = useWorkspaceModelOptions(workspace, false);
 
   return useMemo(() => {
     const m = new Map<string, ModelInfo>();

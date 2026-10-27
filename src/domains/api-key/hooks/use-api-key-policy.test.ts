@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 import { DEFAULT_TOKEN_QUOTA_UNIT } from "@/foundation/lib/token-quota";
@@ -14,8 +15,18 @@ import {
   type PolicyModelRow,
   rateSummary,
   resolveQuotaPeriod,
+  useModelSourceByValue,
+  useWorkspaceModelMap,
+  useWorkspaceModels,
   type WorkspaceModelOption,
 } from "./use-api-key-policy";
+
+const { useListMock } = vi.hoisted(() => ({ useListMock: vi.fn() }));
+
+vi.mock("@refinedev/core", () => ({
+  useList: useListMock,
+  useCustomMutation: vi.fn(),
+}));
 
 const row = (over: Partial<PolicyModelRow>): PolicyModelRow => ({
   value: `${over.type ?? ""}:${over.endpoint_name ?? ""}:${over.model ?? "m"}`,
@@ -692,6 +703,211 @@ describe("per-model quota round trip", () => {
     const rebuilt = buildApiKeyLimits(limitsToForm(stored));
     expect(rebuilt.allowed_models).toEqual([
       { model: "gpt-4o", endpoint_name: "ep-a" },
+    ]);
+  });
+});
+
+describe("useWorkspaceModels", () => {
+  beforeEach(() => {
+    useListMock.mockReset();
+  });
+
+  it("keeps serving aliases available after their order changes without widening picker options", () => {
+    let servedModels = ["a", "b"];
+    useListMock.mockImplementation(({ resource }) => ({
+      data: {
+        data:
+          resource === "endpoints"
+            ? [
+                {
+                  metadata: { name: "local" },
+                  status: { phase: "Running", served_models: servedModels },
+                },
+              ]
+            : [
+                {
+                  metadata: { name: "external" },
+                  spec: {
+                    upstreams: [{ model_mapping: { a: "provider-model" } }],
+                    model_sources: { a: "third-party-public" },
+                  },
+                  status: { phase: "Degraded" },
+                },
+              ],
+      },
+    }));
+    const { result, rerender } = renderHook(() => ({
+      options: useWorkspaceModels("workspace-a"),
+      models: useWorkspaceModelMap("workspace-a"),
+      sources: useModelSourceByValue("workspace-a"),
+    }));
+
+    expect(result.current.models.get("b")?.endpoints).toEqual([
+      {
+        name: "local",
+        type: "internal",
+        source: SELF_HOSTED_MODEL_SOURCE,
+        phase: "Running",
+      },
+    ]);
+    expect(result.current.sources.get("internal:local:b")).toBe(
+      SELF_HOSTED_MODEL_SOURCE,
+    );
+
+    servedModels = ["b", "a"];
+    rerender();
+
+    expect(
+      result.current.options
+        .filter((option) => option.type === "internal")
+        .map((option) => option.model),
+    ).toEqual(["b"]);
+    expect(result.current.models.get("a")?.endpoints).toEqual([
+      {
+        name: "local",
+        type: "internal",
+        source: SELF_HOSTED_MODEL_SOURCE,
+        phase: "Running",
+      },
+      {
+        name: "external",
+        type: "external",
+        source: "third-party-public",
+        phase: "Degraded",
+      },
+    ]);
+    expect(result.current.sources.get("internal:local:a")).toBe(
+      SELF_HOSTED_MODEL_SOURCE,
+    );
+    expect(result.current.sources.get("external:external:a")).toBe(
+      "third-party-public",
+    );
+  });
+
+  it("uses the first observed served model for an internal endpoint and its policy", () => {
+    useListMock.mockImplementation(({ resource }) => ({
+      data: {
+        data:
+          resource === "endpoints"
+            ? [
+                {
+                  metadata: { name: "local" },
+                  spec: { model: { name: "physical-model" } },
+                  status: {
+                    phase: "Running",
+                    served_models: ["z-first", "a-second"],
+                  },
+                },
+              ]
+            : [],
+      },
+    }));
+
+    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+    expect(result.current).toEqual([
+      expect.objectContaining({
+        value: "internal:local:z-first",
+        label: "z-first",
+        model: "z-first",
+        endpointName: "local",
+        type: "internal",
+      }),
+    ]);
+    expect(
+      buildApiKeyLimits({
+        ...apiKeyPolicyDefaults(),
+        models: result.current.map((option) => ({
+          value: option.value,
+          model: option.model,
+          type: option.type,
+          endpoint_name: option.endpointName,
+        })),
+      }).allowed_models,
+    ).toEqual([{ model: "z-first", type: "internal", endpoint_name: "local" }]);
+  });
+
+  it.each([undefined, null, [], ["", "second"], ["   ", "second"]])(
+    "does not invent a model before discovery: %s",
+    (servedModels) => {
+      useListMock.mockImplementation(({ resource }) => ({
+        data: {
+          data:
+            resource === "endpoints"
+              ? [
+                  {
+                    metadata: { name: "local" },
+                    spec: { model: { name: "physical-model" } },
+                    status: { served_models: servedModels },
+                  },
+                ]
+              : [],
+        },
+      }));
+      const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+      expect(result.current).toEqual([]);
+    },
+  );
+
+  it("preserves the exact observed model name", () => {
+    useListMock.mockImplementation(({ resource }) => ({
+      data: {
+        data:
+          resource === "endpoints"
+            ? [
+                {
+                  metadata: { name: "local" },
+                  status: { served_models: [" model "] },
+                },
+              ]
+            : [],
+      },
+    }));
+    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+    expect(result.current[0].model).toBe(" model ");
+    expect(result.current[0].value).toBe("internal:local: model ");
+    const option = result.current[0];
+    const limits = buildApiKeyLimits({
+      ...apiKeyPolicyDefaults(),
+      models: [
+        {
+          value: option.value,
+          model: option.model,
+          type: option.type,
+          endpoint_name: option.endpointName,
+        },
+      ],
+    });
+    expect(limits.allowed_models).toEqual([
+      { model: " model ", type: "internal", endpoint_name: "local" },
+    ]);
+    expect(buildApiKeyLimits(limitsToForm(limits))).toEqual(limits);
+  });
+
+  it("keeps external endpoint client-facing model mappings", () => {
+    useListMock.mockImplementation(({ resource }) => ({
+      data: {
+        data:
+          resource === "external_endpoints"
+            ? [
+                {
+                  metadata: { name: "external" },
+                  spec: {
+                    upstreams: [
+                      { model_mapping: { "public-name": "provider-name" } },
+                    ],
+                  },
+                },
+              ]
+            : [],
+      },
+    }));
+    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+    expect(result.current).toEqual([
+      expect.objectContaining({
+        model: "public-name",
+        type: "external",
+        endpointName: "external",
+      }),
     ]);
   });
 });

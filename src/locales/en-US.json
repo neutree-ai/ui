@@ -965,6 +965,7 @@
 			"hoverTitle": "Access URLs"
 		},
 		"fields": {
+			"servedModels": "Served models",
 			"serviceUrl": "Service URL",
 			"npu": "NPU",
 			"modelRegistry": "Model Registry",
