@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "cb35c8f7f98c0e100f1868c32490dadc",
   "src/pages/endpoints/edit.tsx": "ef661bb90e2dfbc2be9ac65b92fbc3f1",
   "src/pages/endpoints/list.tsx": "74ae1fda1411a31fa8ddcab05f4d7162",
-  "src/pages/endpoints/show.tsx": "4bc6ed7db8ede9571ce127d33c0790d7",
+  "src/pages/endpoints/show.tsx": "c79a0f5f6f82a86429504436be044274",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "2e019fc4a0e9b0a2fa52bcb5b44906b1",
   "src/pages/clusters/edit.tsx": "bfb67faeac1f09a71a10f782b7cb9d59",
@@ -467,5 +467,5 @@
   "src/domains/cluster/components/ClusterFlops.tsx": "dfc23d64d2173612b02695745ac7d768",
   "src/foundation/lib/accelerator-extra-info.ts": "8593b9fb11ef0b10e6f87f9a004108a1",
   "src/foundation/hooks/use-cache-versions.ts": "0d902f9454218406822893d5a85361fd",
-  "src/domains/cluster/components/ZCacheUpgrade.tsx": "3ff8dd557e48c7c91c0bd20211ddadf6"
+  "src/domains/cluster/components/ZCacheUpgrade.tsx": "edc8927288a0532f32c9f8f6bdcdddb0"
 }

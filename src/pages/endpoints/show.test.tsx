@@ -200,6 +200,32 @@ describe("EndpointsShow", () => {
     );
   });
 
+  it.each(["Paused", "Deleted"])(
+    "hides retained runtime allocations once the endpoint is %s",
+    (phase) => {
+      useShowMock.mockReturnValue({
+        query: {
+          data: {
+            data: {
+              ...endpoint,
+              status: {
+                phase,
+                resources: {
+                  replicas: [{ instance_id: "old-worker", devices: [] }],
+                },
+              },
+            },
+          },
+          isLoading: false,
+        },
+      });
+
+      render(<EndpointsShow />);
+
+      expect(screen.queryByTestId("runtime-resources-card")).toBeNull();
+    },
+  );
+
   // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
   // the task off it used to throw and blank the whole page (NEU-728).
   it("renders a model-free endpoint", () => {
