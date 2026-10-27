@@ -19,10 +19,6 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/foundation/components/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => (
     <main>{children}</main>

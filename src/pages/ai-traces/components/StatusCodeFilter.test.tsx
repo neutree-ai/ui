@@ -1,19 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 import { StatusCodeFilter } from "./StatusCodeFilter";
 
 // cmdk observes and scrolls its list; jsdom implements neither.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
 
 function openFilter(value = "") {
   const onChange = vi.fn();

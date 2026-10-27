@@ -2,23 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
-// cmdk (used by the comboboxes) observes its list on mount; jsdom has no
-// ResizeObserver, so stub it before rendering.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = () => {};
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // The picker is exercised by its own tests; here it only has to not need a
 // workspace listing.
 vi.mock("@/domains/api-key/components/ModelMultiSelect", () => ({
@@ -81,11 +64,9 @@ function Harness({ models = [] as PolicyModelRow[] }) {
 
 const overallAmount = () =>
   screen.getByLabelText("api_keys.limits.tokenLimit") as HTMLInputElement;
-// `t` is stubbed to return the bare key, so every row's limit input shares one
-// accessible name; index into them rather than naming a model.
 const modelLimits = () =>
   screen.getAllByLabelText(
-    "api_keys.limits.perModel.limitLabel",
+    /^api_keys\.limits\.perModel\.limitLabel/,
   ) as HTMLInputElement[];
 
 describe("ApiKeyPolicyFields", () => {
@@ -126,12 +107,14 @@ describe("ApiKeyPolicyFields", () => {
     );
     // No limit anywhere yet: a migrated any-source entry alongside a pinned one
     // is legal and must not be flagged.
-    expect(screen.queryByText("api_keys.limits.perModel.overlap")).toBeNull();
+    expect(
+      screen.queryByText(/^api_keys\.limits\.perModel\.overlap:/),
+    ).toBeNull();
 
     fireEvent.change(modelLimits()[0], { target: { value: "2" } });
     await waitFor(() => {
       expect(
-        screen.getAllByText("api_keys.limits.perModel.overlap").length,
+        screen.getAllByText(/^api_keys\.limits\.perModel\.overlap:/).length,
       ).toBe(2);
     });
 

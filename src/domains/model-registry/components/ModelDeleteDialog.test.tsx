@@ -1,16 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   ReferenceList,
   referencePhaseClassName,
 } from "@/domains/model-registry/components/ModelDeleteDialog";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, vars?: Record<string, string>) =>
-      vars ? `${key}:${Object.values(vars).join(",")}` : key,
-  }),
-}));
 
 describe("referencePhaseClassName", () => {
   it("leaves a serving endpoint unmarked", () => {

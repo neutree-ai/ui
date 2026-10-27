@@ -5,10 +5,6 @@ import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 
 const { systemApiMock } = vi.hoisted(() => ({ systemApiMock: vi.fn() }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("next-themes", () => ({
   useTheme: () => ({ resolvedTheme: "light" }),
 }));

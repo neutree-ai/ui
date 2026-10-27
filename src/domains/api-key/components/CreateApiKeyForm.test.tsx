@@ -9,12 +9,6 @@ vi.mock("@refinedev/core", () => ({
   useInvalidate: () => invalidate,
 }));
 
-vi.mock("@refinedev/react-hook-form", async () => {
-  const form =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return { useForm: form.useForm };
-});
-
 // Keep `t` stable across renders; effects that depend on it would otherwise
 // re-run on every render.
 vi.mock("react-i18next", () => {

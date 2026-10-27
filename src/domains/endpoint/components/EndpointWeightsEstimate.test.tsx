@@ -2,10 +2,6 @@ import { render, screen, within } from "@testing-library/react";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/domains/endpoint/components/KVCacheEstimate", () => ({
   KVCacheEstimate: ({
     onEstimate,

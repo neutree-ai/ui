@@ -10,14 +10,6 @@ import {
 } from "@/foundation/lib/api/ai-traces";
 import { AITracesList } from "@/pages/ai-traces/list";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const context = vi.hoisted(() => ({
   params: { workspace: "design-lab" } as Record<string, string>,
   query: vi.fn(),
@@ -39,12 +31,6 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 // cmdk observes and scrolls its list; jsdom implements neither.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
 
 // The query never runs; the pages come from `listState.items`, which is empty
 // unless a test needs a row, and `listState.error` stands in for a failed request.

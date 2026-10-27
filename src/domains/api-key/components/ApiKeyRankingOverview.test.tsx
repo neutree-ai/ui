@@ -1,10 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ApiKeyRankingOverview } from "./ApiKeyRankingOverview";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 describe("ApiKeyRankingOverview", () => {
   it("uses an explicit empty state without a bare dash", () => {

@@ -10,10 +10,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ChatPlayground from "@/domains/endpoint/components/ChatPlayground";
 import type { Endpoint } from "@/domains/endpoint/types";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // The child selectors take their translations from the app's i18n module,
 // which initialises i18next on import.
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -311,7 +307,7 @@ describe("ChatPlayground transcript", () => {
     );
     expect(toastError).toHaveBeenCalledTimes(1);
     expect(toastError).toHaveBeenCalledWith(
-      "components.playground.chat.unsupportedImage",
+      expect.stringMatching(/^components\.playground\.chat\.unsupportedImage:/),
     );
   });
 

@@ -89,7 +89,9 @@ describe("ExternalEndpointsList", () => {
       ],
       model_sources: { "gpt-6-astra": "third-party-public" },
     });
-    expect(within(cell).getByText("third-party-public")).toBeTruthy();
+    expect(
+      within(cell).getByText("modelSource.values.third-party-public"),
+    ).toBeTruthy();
   });
 
   it("renders a placeholder when the endpoint exposes no models", () => {

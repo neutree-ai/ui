@@ -58,10 +58,6 @@ vi.mock("@/domains/endpoint/hooks/use-streaming-logs", () => ({
   useStreamingLogs: vi.fn(),
 }));
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("./LogViewer", () => ({
   LogViewer: ({
     source,
@@ -169,7 +165,6 @@ beforeEach(() => {
     error: null,
     refetch: vi.fn(),
   });
-  Element.prototype.scrollIntoView = vi.fn();
 });
 
 afterEach(cleanup);

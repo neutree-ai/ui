@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { type FieldValues, useForm } from "react-hook-form";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Form } from "@/components/ui/form";
 import { FormCombobox } from "./FormCombobox";
@@ -11,15 +11,6 @@ const OPTIONS = [
   { label: "Text Generation", value: "text-generation" },
   { label: "Text Embedding", value: "text-embedding" },
 ];
-
-beforeAll(() => {
-  globalThis.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-  HTMLElement.prototype.scrollIntoView = () => {};
-});
 
 // Render through FormFieldGroup so the combobox receives field.value the same
 // way production forms inject it (cloneElement spreads the controller field).
@@ -137,8 +128,7 @@ describe("FormCombobox", () => {
 });
 
 describe("FormCombobox with allowCustomValue", () => {
-  // i18n is live in this file, so the search box cannot be found by its
-  // translation key; cmdk marks its input with this attribute.
+  // cmdk marks its input with this attribute.
   const searchBox = () =>
     document.querySelector("[cmdk-input]") as HTMLInputElement;
 
@@ -209,7 +199,7 @@ describe("FormCombobox clearing", () => {
     const onChange = vi.fn();
     render(<ClearHarness onChange={onChange} />);
     fireEvent.click(getTrigger());
-    fireEvent.click(screen.getByText("Clear selection"));
+    fireEvent.click(screen.getByText("components.ui.combobox.clearSelection"));
     expect(onChange).toHaveBeenCalledWith("");
   });
 

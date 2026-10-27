@@ -6,7 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
 import { ModelUsageList } from "@/pages/model-usage/list";
 
@@ -288,15 +288,6 @@ const pickOption = (label: string) => {
   if (!option) throw new Error(`no option labelled ${label}`);
   fireEvent.click(option);
 };
-
-// jsdom has no pointer capture or scrollIntoView; Radix Select calls both while
-// opening, and without them the option list never mounts.
-beforeAll(() => {
-  Element.prototype.hasPointerCapture = () => false;
-  Element.prototype.setPointerCapture = () => {};
-  Element.prototype.releasePointerCapture = () => {};
-  Element.prototype.scrollIntoView = () => {};
-});
 
 beforeEach(() => {
   refetch.mockClear();

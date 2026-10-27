@@ -4,14 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
 import { ModelUsageList } from "@/pages/model-usage/list";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@refinedev/core", () => ({
   useParsed: () => ({ params: { workspace: "design-lab" } }),
 }));

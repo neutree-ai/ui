@@ -7,17 +7,6 @@ vi.mock("@refinedev/core", () => ({
   useTranslation: () => ({ translate: (key: string) => key }),
 }));
 
-vi.mock("@refinedev/react-hook-form", async () => {
-  const rhf =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return {
-    useForm: (opts: Record<string, unknown>) => {
-      const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
-      return rhf.useForm(rhfOpts);
-    },
-  };
-});
-
 import { useUserForm } from "./use-user-form";
 
 function CreateForm() {

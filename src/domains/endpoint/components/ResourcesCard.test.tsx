@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 import ResourcesCard from "./ResourcesCard";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/foundation/components/ShowPage", () => ({
   ShowPage: {
     Row: ({ title, children }: { title: string; children: ReactNode }) => (

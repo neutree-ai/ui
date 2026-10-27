@@ -8,22 +8,11 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import UpstreamModelInput, {
   UpstreamConnectionWarning,
 } from "./UpstreamModelInput";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-beforeAll(() => {
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-  HTMLElement.prototype.scrollIntoView = () => {};
-});
 afterEach(cleanup);
 const request = { endpoint_ref: "first", workspace: "default" };
 const result = (models: string[]) => ({ data: { success: true, models } });

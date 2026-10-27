@@ -11,10 +11,6 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/domains/image-registry/components/ImageRegistryStatus", () => ({
   default: () => <span>Status</span>,
 }));

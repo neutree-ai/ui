@@ -9,36 +9,6 @@ import React from "react";
 import { FormProvider } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-  initReactI18next: { type: "3rdParty", init: () => {} },
-}));
-
-vi.mock("@refinedev/react-hook-form", async () => {
-  const rhf =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return {
-    useForm: (opts: Record<string, unknown>) => {
-      const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
-      const form = rhf.useForm(rhfOpts);
-      (form as Record<string, unknown>).refineCore = {
-        onFinish: vi.fn(),
-      };
-      return form;
-    },
-  };
-});
-
 vi.mock("@refinedev/core", () => ({
   useList: () => ({ data: { data: [] }, isLoading: false }),
   useSelect: () => ({

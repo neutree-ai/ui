@@ -3,20 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ZCacheEditor } from "./ZCacheEditor";
 
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
 const mocks = vi.hoisted(() => ({ update: vi.fn(), access: true }));
 vi.mock("@refinedev/core", () => ({
   useList: () => ({ data: { data: [] }, isLoading: false }),
   useCan: () => ({ data: { can: mocks.access } }),
   useUpdate: () => ({ mutateAsync: mocks.update, isLoading: false }),
   useInvalidate: () => vi.fn().mockResolvedValue(undefined),
-}));
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 const cluster = {

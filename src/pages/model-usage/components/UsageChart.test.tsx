@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   DayTooltip,
   formatTick,
@@ -8,14 +8,6 @@ import {
   trendCursor,
 } from "@/pages/model-usage/components/UsageChart";
 import type { UsageSeries } from "@/pages/model-usage/lib/usage-series";
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 const series = (
   key: string,

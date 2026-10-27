@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { VariablesInput } from "./VariablesInput";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const objectSchema = {
   speculative_config: { type: "object", title: "Speculative Config" },
 } as unknown as Schema;

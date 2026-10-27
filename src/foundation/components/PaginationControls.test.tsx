@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
 
 vi.mock("react-i18next", () => ({
@@ -15,15 +15,6 @@ vi.mock("@/foundation/lib/i18n", () => ({
       options ? `${key}${JSON.stringify(options)}` : key,
   }),
 }));
-
-// jsdom has no pointer capture or scrollIntoView; Radix Select calls both while
-// opening, and without them the option list never mounts.
-beforeAll(() => {
-  Element.prototype.hasPointerCapture = () => false;
-  Element.prototype.setPointerCapture = () => {};
-  Element.prototype.releasePointerCapture = () => {};
-  Element.prototype.scrollIntoView = () => {};
-});
 
 const openSelect = (index: number) =>
   fireEvent.pointerDown(screen.getAllByRole("combobox")[index], {

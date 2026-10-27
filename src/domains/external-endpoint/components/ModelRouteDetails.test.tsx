@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { ModelRoute } from "@/domains/external-endpoint/types";
 import ModelRouteDetails from "./ModelRouteDetails";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "default" }),
 }));

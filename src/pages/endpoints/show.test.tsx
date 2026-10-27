@@ -20,10 +20,6 @@ vi.mock("@refinedev/core", () => ({
   useShow: useShowMock,
 }));
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/components/ui/tabs", () => ({
   Tabs: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   TabsContent: ({ children, value }: { children: ReactNode; value: string }) =>

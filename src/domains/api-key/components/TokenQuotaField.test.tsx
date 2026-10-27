@@ -1,23 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
-import { describe, expect, it, vi } from "vitest";
-
-// cmdk (used by FormCombobox) observes its list on mount; jsdom has no
-// ResizeObserver, so stub it before rendering.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = () => {};
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
+import { describe, expect, it } from "vitest";
 
 import { apiKeyPolicyDefaults } from "@/domains/api-key/hooks/use-api-key-policy";
 import { TokenQuotaField } from "./TokenQuotaField";

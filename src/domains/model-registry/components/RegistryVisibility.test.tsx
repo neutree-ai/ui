@@ -1,10 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { RegistryVisibility } from "./RegistryVisibility";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 describe("RegistryVisibility", () => {
   it("aligns the icon and value with surrounding metadata", () => {

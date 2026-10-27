@@ -3,15 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 
 // `t` has to keep its identity across renders: FunctionDialog's schema effect
 // depends on it, and a fresh function per render would loop forever.
-vi.mock("react-i18next", () => {
-  const t = (key: string) => key;
-  return { useTranslation: () => ({ t }) };
-});
-
-vi.mock("@/foundation/lib/i18n", () => {
-  const t = (key: string) => key;
-  return { useTranslation: () => ({ t }) };
-});
 
 import { FunctionDialog } from "./FunctionDialog";
 

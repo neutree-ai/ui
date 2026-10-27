@@ -20,13 +20,6 @@ vi.mock("@/foundation/components/ShowPage", () => ({
   },
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, vars?: Record<string, string>) =>
-      vars ? `${key}:${Object.values(vars).join(",")}` : key,
-  }),
-}));
-
 const modelRef = {
   workspace: "default",
   registry: "public-hugging-face",

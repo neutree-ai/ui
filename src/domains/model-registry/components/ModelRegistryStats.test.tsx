@@ -1,18 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   ModelRegistryModelCount,
   ModelRegistryStorage,
 } from "@/domains/model-registry/components/ModelRegistryStats";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, vars?: Record<string, string>) =>
-      vars ? `${key}:${Object.values(vars).join(",")}` : key,
-  }),
-}));
 
 const registry = (
   visibility: ModelRegistryVisibility | undefined,

@@ -56,10 +56,6 @@ vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
   },
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/components/ui/combobox", () => ({
   Combobox: ({
     onChange,

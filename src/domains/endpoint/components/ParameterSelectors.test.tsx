@@ -4,10 +4,6 @@ import { MaxLengthSelector } from "./MaxLengthSelector";
 import { TemperatureSelector } from "./TemperatureSelector";
 import { TopPSelector } from "./TopPSelector";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // Radix Slider needs pointer events / ResizeObserver; stub it out and expose
 // the min/max it was handed so we can assert each wrapper's range wiring.
 vi.mock("@/components/ui/slider", () => ({

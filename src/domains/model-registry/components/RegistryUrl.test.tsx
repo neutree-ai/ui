@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RegistryUrl } from "@/domains/model-registry/components/RegistryUrl";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const copy = vi.fn();
 vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   useCopyToClipboard: () => ({ copy, copied: false }),

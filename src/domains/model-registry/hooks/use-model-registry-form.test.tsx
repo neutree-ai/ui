@@ -3,25 +3,6 @@ import React from "react";
 import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@refinedev/react-hook-form", async () => {
-  const rhf =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return {
-    useForm: (opts: Record<string, unknown>) => {
-      const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
-      const form = rhf.useForm(rhfOpts);
-      (form as Record<string, unknown>).refineCore = {
-        onFinish: vi.fn(),
-      };
-      return form;
-    },
-  };
-});
-
 vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));

@@ -26,9 +26,6 @@ vi.mock("@/foundation/providers/auth-provider", () => ({
   auth: { getSession: mocks.getSession },
 }));
 vi.mock("sonner", () => ({ toast: { error: mocks.error } }));
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("./VirtualLog", () => ({
   VirtualLog: ({ log }: { log: string }) => <pre>{log}</pre>,
 }));
@@ -113,7 +110,6 @@ beforeEach(() => {
   ) {
     mocks.save(this.download);
   });
-  Element.prototype.scrollIntoView = vi.fn();
 });
 
 afterEach(() => {

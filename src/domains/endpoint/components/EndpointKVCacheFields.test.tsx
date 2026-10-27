@@ -4,9 +4,6 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { EndpointClusterRef } from "../types";
 import { EndpointKVCacheFields } from "./EndpointKVCacheFields";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
     systemInfo: { capabilities: { cluster_cache_providers: ["zcache"] } },

@@ -2,10 +2,6 @@ import { act, renderHook } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 let mockValue: { head_ip: string; worker_ips: string[] } = {
   head_ip: "",
   worker_ips: [],

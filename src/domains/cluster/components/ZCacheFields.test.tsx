@@ -28,15 +28,6 @@ beforeEach(() => {
   cacheDependencies.query.mockClear();
 });
 
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 function Form({
   onSubmit,
   status,

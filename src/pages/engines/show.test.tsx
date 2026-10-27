@@ -9,9 +9,6 @@ const { useShowMock, searchParamsMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@refinedev/core", () => ({ useShow: useShowMock }));
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("react-router-dom", () => ({
   useSearchParams: () => [searchParamsMock()],
 }));

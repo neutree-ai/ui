@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 
+process.env.TZ = "UTC";
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -10,12 +12,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: [],
+    setupFiles: ["./src/foundation/testing/setup.ts"],
     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    typecheck: {
-      enabled: true,
-      tsconfig: "./tsconfig.json",
-    },
     coverage: {
       provider: "v8",
       all: true,

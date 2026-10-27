@@ -25,9 +25,6 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
 beforeEach(() => {
   capability.value = true;
 });
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("@/foundation/components/ShowPage", () => ({
   ShowPage: {
     Section: ({
@@ -331,5 +328,5 @@ it("omits node counts when disabled with no nodes", () => {
     },
   } as unknown as Cluster;
   render(<ClusterCacheSection cluster={cluster} />);
-  expect(screen.queryByText("clusters.zcache.readyCount")).toBeNull();
+  expect(screen.queryByText(/^clusters\.zcache\.readyCount/)).toBeNull();
 });

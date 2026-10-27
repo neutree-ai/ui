@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import { ModelRegistryWriteActions } from "@/domains/model-registry/components/ModelRegistryWriteActions";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // Reaching the row-action parts means importing the table module, which pulls in
 // @refinedev/react-table — whose ESM build imports `lodash/isEqual` with no
 // extension and fails to resolve under vitest. Nothing here renders a table, so

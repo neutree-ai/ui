@@ -1,14 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// jsdom ships neither of these, and the popover's positioning needs both.
-globalThis.ResizeObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView ??= () => {};
-
 const mockOnSearchChange = vi.fn();
 const mockUseWorkspaceSearch = vi.fn();
 

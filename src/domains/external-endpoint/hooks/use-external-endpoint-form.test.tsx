@@ -1230,12 +1230,6 @@ describe("routing state regression", () => {
     cleanup();
     submitEndpoint.mockClear();
     modelListQuery.mockClear();
-    globalThis.ResizeObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    };
-    HTMLElement.prototype.scrollIntoView = () => {};
     render(
       <RoutingEditForm
         spec={{

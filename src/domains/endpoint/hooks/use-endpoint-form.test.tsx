@@ -11,12 +11,6 @@ import { FormProvider } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // cmdk and Radix components use APIs missing from jsdom
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
 
 const refineCoreOnFinishMock = vi.hoisted(() => vi.fn());
 const useFormOptionsRef = vi.hoisted(() => ({
@@ -24,15 +18,6 @@ const useFormOptionsRef = vi.hoisted(() => ({
 }));
 const queryDataRef = vi.hoisted(() => ({
   current: null as Record<string, unknown> | null,
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-  initReactI18next: { type: "3rdParty", init: () => {} },
 }));
 
 vi.mock("@refinedev/react-hook-form", async () => {
@@ -3367,10 +3352,10 @@ describe("useEndpointForm", () => {
         screen.getByTestId("endpoint-current-request-grid").className,
       ).toContain("grid-cols-[repeat(auto-fit,minmax(110px,1fr))]");
       expect(
-        screen.getByText("endpoints.messages.cardsAvailable").className,
+        screen.getByText(/^endpoints\.messages\.cardsAvailable/).className,
       ).toContain("bg-amber-50");
       expect(
-        screen.getByText("endpoints.messages.cardsAvailable").className,
+        screen.getByText(/^endpoints\.messages\.cardsAvailable/).className,
       ).toContain("text-amber-700");
       expect(getAcceleratorCardText()).toContain(
         "endpoints.fields.virtualCardCount",
@@ -3506,10 +3491,10 @@ describe("useEndpointForm", () => {
       });
       expect(getCurrentRequestText()).toContain("4.0 / 1.0");
       expect(
-        screen.getByText("endpoints.messages.cardsAvailable").className,
+        screen.getByText(/^endpoints\.messages\.cardsAvailable/).className,
       ).toContain("bg-amber-50");
       expect(
-        screen.getByText("endpoints.messages.cardsAvailable").className,
+        screen.getByText(/^endpoints\.messages\.cardsAvailable/).className,
       ).toContain("text-amber-700");
       expect(getAcceleratorCardText()).toContain(
         "endpoints.messages.vgpuResourcesInsufficient",
@@ -5031,7 +5016,9 @@ describe("useEndpointForm", () => {
 
       await waitFor(() => expect(submitBlockedState).toBe(true));
       expect(
-        screen.getByText("endpoints.messages.noNodeCanScheduleFullGpuRequest"),
+        screen.getByText(
+          /^endpoints\.messages\.noNodeCanScheduleFullGpuRequest/,
+        ),
       ).toBeTruthy();
       expect(
         screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
@@ -5063,11 +5050,13 @@ describe("useEndpointForm", () => {
 
       await waitFor(() => expect(submitBlockedState).toBe(true));
       expect(
-        screen.getByText("endpoints.messages.fullGpuCardCapacityInsufficient"),
+        screen.getByText(
+          /^endpoints\.messages\.fullGpuCardCapacityInsufficient/,
+        ),
       ).toBeTruthy();
       expect(
         screen.queryByText(
-          "endpoints.messages.noNodeCanScheduleFullGpuRequest",
+          /^endpoints\.messages\.noNodeCanScheduleFullGpuRequest/,
         ),
       ).toBeNull();
     });
@@ -5097,11 +5086,11 @@ describe("useEndpointForm", () => {
 
       await waitFor(() => expect(submitBlockedState).toBe(true));
       expect(
-        screen.getByText("endpoints.messages.noMatchingAccelerator"),
+        screen.getByText(/^endpoints\.messages\.noMatchingAccelerator/),
       ).toBeTruthy();
       expect(
         screen.queryByText(
-          "endpoints.messages.fullGpuCardCapacityInsufficient",
+          /^endpoints\.messages\.fullGpuCardCapacityInsufficient/,
         ),
       ).toBeNull();
       expect(
@@ -5138,7 +5127,7 @@ describe("useEndpointForm", () => {
 
       await waitFor(() => expect(submitBlockedState).toBe(true));
       expect(
-        screen.getByText("endpoints.messages.noMatchingAccelerator"),
+        screen.getByText(/^endpoints\.messages\.noMatchingAccelerator/),
       ).toBeTruthy();
       expect(
         screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
@@ -6322,7 +6311,7 @@ describe("engines that need no model spec", () => {
 
     expect(
       formInstance?.formState.errors?.["spec.model.registry"]?.message,
-    ).toBe("endpoints.messages.modelRegistryNotInWorkspace");
+    ).toMatch(/^endpoints\.messages\.modelRegistryNotInWorkspace/);
   });
 
   it("submits no model beyond the task the engine set", async () => {
@@ -6645,8 +6634,8 @@ describe("a catalog naming a registry this workspace does not have", () => {
   it("says so instead of leaving the field looking unfilled", async () => {
     const error = await registryError("someone-elses-registry");
 
-    expect(error?.message).toBe(
-      "endpoints.messages.modelRegistryNotInWorkspace",
+    expect(error?.message).toMatch(
+      /^endpoints\.messages\.modelRegistryNotInWorkspace/,
     );
   });
 

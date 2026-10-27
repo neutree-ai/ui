@@ -1,10 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { useForm } from "react-hook-form";
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
+import { describe, expect, it } from "vitest";
 
 import type { Cluster } from "../types";
 import { useModelCacheFields } from "./use-model-cache-fields";

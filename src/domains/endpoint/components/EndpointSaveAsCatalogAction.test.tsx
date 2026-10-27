@@ -15,10 +15,6 @@ vi.mock("@refinedev/core", () => ({
   useInvalidate: () => mocks.invalidate,
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("sonner", () => ({
   toast: { error: mocks.toastError, success: mocks.toastSuccess },
 }));
@@ -130,7 +126,7 @@ describe("EndpointSaveAsCatalogAction", () => {
 
     await waitFor(() =>
       expect(mocks.toastError).toHaveBeenCalledWith(
-        "endpoints.messages.saveAsCatalogDuplicate",
+        expect.stringMatching(/^endpoints\.messages\.saveAsCatalogDuplicate/),
       ),
     );
     expect(screen.queryByRole("dialog")).not.toBeNull();

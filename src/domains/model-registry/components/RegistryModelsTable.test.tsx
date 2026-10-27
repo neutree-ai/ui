@@ -17,13 +17,6 @@ vi.mock("@/foundation/hooks/use-registry-models", () => ({
   useRegistryModels: vi.fn(),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, vars?: Record<string, unknown>) =>
-      vars ? `${key}:${Object.values(vars).join(",")}` : key,
-  }),
-}));
-
 type Call = {
   workspace?: string | null;
   registry?: string | null;

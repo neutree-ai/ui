@@ -2,10 +2,6 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // Timestamp reaches the real i18n module, which registers the react-i18next
 // plugin mocked above and throws on a partial mock.
 vi.mock("./Timestamp", () => ({ default: () => null }));

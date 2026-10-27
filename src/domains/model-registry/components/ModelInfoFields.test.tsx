@@ -1,16 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ModelInfoFields,
   resolveFieldValue,
 } from "@/domains/model-registry/components/ModelInfoFields";
 import type { ModelInfo } from "@/foundation/types/serving-types";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 // SourceTag's Tooltip relies on the app-wide TooltipProvider mounted in
 // BaseLayout; this test renders the component in isolation, so it stands in.

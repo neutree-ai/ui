@@ -13,10 +13,6 @@ vi.mock("@refinedev/core", () => ({
   ),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("./ThemedTitle", () => ({ ThemedTitle: () => null }));
 
 vi.mock("@/foundation/providers/auth-provider", () => ({
