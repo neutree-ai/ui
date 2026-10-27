@@ -9,18 +9,7 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspaceSearch: () => mockUseWorkspaceSearch(),
 }));
 
-const SELECT_A_WORKSPACE = "Select a workspace";
-
-const translate = (key: string) =>
-  key === "workspaces.placeholders.selectWorkspace" ? SELECT_A_WORKSPACE : key;
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: translate }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: translate }),
-}));
+const SELECT_A_WORKSPACE = "workspaces.placeholders.selectWorkspace";
 
 // The real FormControl needs a FormField context; Slot keeps the one behaviour
 // this test depends on — forwarding the popover trigger's props to the button.

@@ -341,7 +341,7 @@
   "src/foundation/lib/api/registry-models.ts": "7a0b45e22eee9ece967e6e73fe350e7d",
   "src/foundation/hooks/use-registry-models.ts": "397d8e6ccf905144e4899dc90c789c09",
   "src/domains/model-registry/hooks/use-registry-model-version.ts": "3600c55535d71900ff9ac8320da1260a",
-  "src/domains/model-registry/components/ModelDeleteDialog.tsx": "f58bab7be8df9b329ec973c0c95a776a",
+  "src/domains/model-registry/components/ModelDeleteDialog.tsx": "c9ec194631432b24fe326fa2712815a3",
   "src/domains/model-registry/components/ModelEditDialog.tsx": "c9af4f5b1b5cae132240a0669762769a",
   "src/domains/model-registry/components/ModelInfoFields.tsx": "e239505537f92ff3410ef57c9ee5be9f",
   "src/domains/model-registry/components/ModelRegistryStats.tsx": "c6d0579bb4627b9d9065a4ea81306d8b",
@@ -408,7 +408,7 @@
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
   "src/foundation/hooks/use-stick-to-bottom.ts": "0872502f44d1a80431757e37b3c1b991",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
-  "src/pages/model-usage/components/UsageChart.tsx": "c6b8782aaeca10e416a19419ecd5d8c4",
+  "src/pages/model-usage/components/UsageChart.tsx": "96587002a169ebf66fc1cceed6326736",
   "src/pages/model-usage/lib/usage-series.ts": "1e91a8c738600220a8aac4af25e86bfe",
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
@@ -461,8 +461,9 @@
   "src/foundation/lib/api/identity-sources.ts": "4100b4d07ce7a31c1629acb5facde47d",
   "src/foundation/hooks/use-login-identity-sources.ts": "38f948fd1cd096bc5413f1077d397c51",
   "src/foundation/lib/user-identity.ts": "ebf1ee25675f956d4d2d0ca0036c85ac",
-  "src/foundation/testing/interactions.ts": "ba458a7a56f9c1fe5d028abfebd22e6f",
+  "src/foundation/testing/interactions.ts": "9988cb53423d3269486f7526be9ffb90",
   "src/foundation/testing/refine-form.ts": "f411a2429aea4cfbc6d22f575ebab1a4",
   "src/foundation/testing/render-form.tsx": "10de9abc0bfa135bfd9f3a9dd324a790",
-  "src/foundation/testing/setup.ts": "c5f5a3c5c6bf325c5f42a6df53dbef60"
+  "src/foundation/testing/setup.ts": "b7b98e5461909d1b1faa3c58bc66d11f",
+  "src/domains/external-endpoint/testing/fixtures.ts": "f86841bce24639bbd284a4661ecf708a"
 }

@@ -37,3 +37,15 @@ export function isHidden(element: Element) {
   }
   return false;
 }
+
+/**
+ * Opens a Radix DropdownMenu or Select. Both open on pointer down, not click:
+ * a plain click leaves them closed and later assertions pass vacuously.
+ */
+export function openMenu(trigger: Element) {
+  fireEvent.pointerDown(trigger, {
+    button: 0,
+    ctrlKey: false,
+    pointerType: "mouse",
+  });
+}

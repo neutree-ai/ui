@@ -1,36 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Resolved against the real locale file rather than echoed back, so the
-// assertions below are about the sentences a user reads -- and a key that never
-// made it into the locale fails here rather than shipping as its own name.
-vi.mock("@/foundation/lib/i18n", async () => {
-  const en = (await import("@/locales/en-US.json")).default as Record<
-    string,
-    unknown
-  >;
-
-  const lookup = (key: string): string | undefined => {
-    const found = key
-      .split(".")
-      .reduce<unknown>(
-        (node, part) => (node as Record<string, unknown> | undefined)?.[part],
-        en,
-      );
-
-    return typeof found === "string" ? found : undefined;
-  };
-
-  return {
-    useTranslation: () => ({
-      t: (key: string, options?: Record<string, unknown>) =>
-        (lookup(key) ?? key).replace(/{{(\w+)}}/g, (_, name) =>
-          String(options?.[name] ?? ""),
-        ),
-    }),
-  };
-});
-
 const useCustom = vi.fn();
 const useList = vi.fn();
 
@@ -188,19 +158,22 @@ const dockerHubRow = (overrides: Record<string, unknown> = {}) =>
     ...overrides,
   });
 
-const registrySelect = () => screen.getByLabelText("Select an image registry");
+const registrySelect = () =>
+  screen.getByLabelText("endpoints.imageExplorer.selectRegistry");
 const namespaceSelect = () =>
-  screen.getByLabelText("Select or type a namespace");
+  screen.getByLabelText("endpoints.imageExplorer.selectNamespace");
 const namespaceSearch = () =>
-  screen.getByLabelText("Select or type a namespace search");
+  screen.getByLabelText("endpoints.imageExplorer.selectNamespace search");
 const namespaceOptions = () =>
   Array.from(namespaceSelect().querySelectorAll("option"))
     .map((option) => option.textContent)
     .filter(Boolean);
-const imageSelect = () => screen.getByLabelText("Select or type an image");
+const imageSelect = () =>
+  screen.getByLabelText("endpoints.imageExplorer.selectImage");
 const imageSearch = () =>
-  screen.getByLabelText("Select or type an image search");
-const tagSelect = () => screen.getByLabelText("Select or type a tag");
+  screen.getByLabelText("endpoints.imageExplorer.selectImage search");
+const tagSelect = () =>
+  screen.getByLabelText("endpoints.imageExplorer.selectTag");
 const note = () =>
   screen.getByTestId("image-explorer-capability").textContent ?? "";
 
@@ -221,7 +194,7 @@ describe("ImageRegistryExplorerDialog", () => {
     open();
 
     expect((registrySelect() as HTMLSelectElement).value).toBe("cluster-hub");
-    screen.getByText(/used by this cluster/);
+    screen.getByText(/^endpoints\.imageExplorer\.registryInUse:/);
   });
 
   it("is usable with no cluster picked at all", () => {
@@ -251,7 +224,7 @@ describe("ImageRegistryExplorerDialog", () => {
 
     fireEvent.change(imageSelect(), { target: { value: "inner/x" } });
     fireEvent.change(tagSelect(), { target: { value: "v2" } });
-    fireEvent.click(screen.getByText("Use this image"));
+    fireEvent.click(screen.getByText("endpoints.imageExplorer.apply"));
 
     expect(onApply).toHaveBeenCalledWith(
       "registry.example.com/team/inner/x:v2",
@@ -264,7 +237,7 @@ describe("ImageRegistryExplorerDialog", () => {
     const { onApply } = open();
 
     fireEvent.change(imageSelect(), { target: { value: "inner/x" } });
-    fireEvent.click(screen.getByText("Use this image"));
+    fireEvent.click(screen.getByText("endpoints.imageExplorer.apply"));
 
     expect(onApply).toHaveBeenCalledWith("registry.example.com/team/inner/x");
   });
@@ -287,7 +260,7 @@ describe("ImageRegistryExplorerDialog", () => {
       answerRepositories(["vllm", "mineru"]);
       open();
 
-      expect(note()).toContain("Type to narrow the images");
+      expect(note()).toContain("endpoints.imageExplorer.listing");
       expect(useImageRepositories).toHaveBeenLastCalledWith(
         expect.objectContaining({ enabled: true }),
       );
@@ -314,8 +287,8 @@ describe("ImageRegistryExplorerDialog", () => {
       expect(namespaceSelect()).toBeTruthy();
       expect(
         screen.getByTestId("image-explorer-namespace-note").textContent,
-      ).toContain("cannot list namespaces");
-      expect(note()).toContain("Choose a namespace above");
+      ).toContain("endpoints.imageExplorer.namespaceNote");
+      expect(note()).toContain("endpoints.imageExplorer.chooseNamespaceFirst");
       expect(useImageRepositories).toHaveBeenLastCalledWith(
         expect.objectContaining({ enabled: false }),
       );
@@ -381,7 +354,9 @@ describe("ImageRegistryExplorerDialog", () => {
       answerRepositories(["vllm", "mineru"]);
       open();
 
-      expect(screen.queryByLabelText("Select or type a namespace")).toBeNull();
+      expect(
+        screen.queryByLabelText("endpoints.imageExplorer.selectNamespace"),
+      ).toBeNull();
       expect(screen.queryByTestId("image-explorer-namespace-note")).toBeNull();
     });
 
@@ -389,14 +364,14 @@ describe("ImageRegistryExplorerDialog", () => {
       answerRegistries([registryRow({ capability: "unsupported" })]);
       const { onApply } = open();
 
-      expect(note()).toContain("cannot list its images");
+      expect(note()).toContain("endpoints.imageExplorer.unsupported");
       expect(useImageRepositories).toHaveBeenLastCalledWith(
         expect.objectContaining({ enabled: false }),
       );
 
       fireEvent.change(imageSearch(), { target: { value: "typed/name" } });
       fireEvent.change(imageSelect(), { target: { value: "typed/name" } });
-      fireEvent.click(screen.getByText("Use this image"));
+      fireEvent.click(screen.getByText("endpoints.imageExplorer.apply"));
 
       expect(onApply).toHaveBeenCalledWith(
         "registry.example.com/team/typed/name",
@@ -409,21 +384,21 @@ describe("ImageRegistryExplorerDialog", () => {
       answerRegistries([registryRow({ capability: "unauthorized" })]);
       open();
 
-      expect(note()).toContain("Ask an operator for credentials");
+      expect(note()).toContain("endpoints.imageExplorer.unauthorized");
     });
 
     it("never probed: says tags still work", () => {
       answerRegistries([registryRow({ capability: null })]);
       open();
 
-      expect(note()).toContain("has not reported yet");
+      expect(note()).toContain("endpoints.imageExplorer.notChecked");
     });
 
     it("unreachable: says to try again, and never leaves the line blank", () => {
       answerRepositories([], { error: { reason: "unavailable" } });
       open();
 
-      expect(note()).toContain("could not be reached");
+      expect(note()).toContain("endpoints.imageExplorer.unavailable");
     });
 
     it("prefers what a request answered over what was recorded", () => {
@@ -433,7 +408,7 @@ describe("ImageRegistryExplorerDialog", () => {
       answerRepositories([], { error: { reason: "registry_unauthorized" } });
       open();
 
-      expect(note()).toContain("Ask an operator for credentials");
+      expect(note()).toContain("endpoints.imageExplorer.unauthorized");
     });
   });
 

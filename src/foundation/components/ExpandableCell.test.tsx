@@ -36,12 +36,9 @@ describe("ExpandableCell", () => {
   it("offers the control, named after the field, once the content is cut off", () => {
     renderCell(true);
 
-    const control = screen.getByRole("button", {
+    screen.getByRole("button", {
       name: "Show the full value of additional_config",
     });
-    expect(control).toBeTruthy();
-    // A real button, so it takes a tab stop and opens with Enter or Space.
-    expect(control.tagName).toBe("BUTTON");
     expect(screen.getByTestId("expand-panel").textContent).toContain(
       "additional_config",
     );

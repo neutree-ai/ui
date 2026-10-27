@@ -1,4 +1,5 @@
 import { beforeEach, vi } from "vitest";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { resetRefineForm } from "./refine-form";
 
 // Global test environment. Everything here applies to every test file, so a
@@ -33,8 +34,15 @@ vi.mock("@/foundation/lib/i18n", async (importOriginal) => ({
 // Refine forms run on plain react-hook-form; see ./refine-form.
 vi.mock("@refinedev/react-hook-form", () => import("./refine-form"));
 
+// jsdom has no layout, so nothing ever measures as clipped. A test that needs
+// a clipped element says so: vi.mocked(useIsTruncated).mockReturnValue(true).
+vi.mock("@/foundation/hooks/use-is-truncated", () => ({
+  useIsTruncated: vi.fn(() => false),
+}));
+
 beforeEach(() => {
   resetRefineForm();
+  vi.mocked(useIsTruncated).mockReset().mockReturnValue(false);
 });
 
 // jsdom lacks the layout APIs Radix and cmdk call.

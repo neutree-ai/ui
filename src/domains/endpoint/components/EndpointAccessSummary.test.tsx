@@ -5,13 +5,6 @@ import { EndpointAccessSummary } from "./EndpointAccessSummary";
 
 const copyMock = vi.fn();
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { count?: number }) =>
-      key === "endpoints.access.summary" ? `${options?.count} URLs` : key,
-  }),
-}));
-
 vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   useCopyToClipboard: () => ({ copy: copyMock, copied: false }),
 }));
@@ -30,11 +23,9 @@ describe("EndpointAccessSummary", () => {
   it("renders the summary and complete access URLs", () => {
     render(<EndpointAccessSummary serviceUrl="https://endpoint.example.com" />);
 
-    screen.getByText("2 URLs");
+    screen.getByText("endpoints.access.summary:2");
     screen.getByText("https://endpoint.example.com/v1");
-    expect(
-      screen.getByText("https://endpoint.example.com/anthropic"),
-    ).toBeTruthy();
+    screen.getByText("https://endpoint.example.com/anthropic");
   });
 
   it("copies each derived URL independently", () => {

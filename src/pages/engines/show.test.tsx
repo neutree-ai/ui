@@ -121,6 +121,8 @@ const showReturns = (data: unknown, isLoading = false) =>
   });
 
 const schemaOf = (version: string) => ({ title: `schema ${version}` });
+const versionsOf = (...names: string[]) =>
+  names.map((version) => ({ version, values_schema: schemaOf(version) }));
 
 const versionLinks = () =>
   screen.queryAllByRole("link").map((link) => ({
@@ -152,9 +154,7 @@ describe("EnginesShow", () => {
   });
 
   it("names the only version instead of drawing a one-item list", () => {
-    showReturns(
-      engineWith([{ version: "v0.3.7", values_schema: schemaOf("v0.3.7") }]),
-    );
+    showReturns(engineWith(versionsOf("v0.3.7")));
 
     render(<EnginesShow />);
 
@@ -167,34 +167,21 @@ describe("EnginesShow", () => {
   });
 
   it("defaults to the newest version, not the first one in the array", () => {
-    showReturns(
-      engineWith([
-        { version: "v0.8.5", values_schema: schemaOf("v0.8.5") },
-        { version: "v0.24.0", values_schema: schemaOf("v0.24.0") },
-        { version: "v0.9.0-rc1", values_schema: schemaOf("v0.9.0-rc1") },
-      ]),
-    );
+    showReturns(engineWith(versionsOf("v0.8.5", "v0.24.0", "v0.9.0-rc1")));
 
     render(<EnginesShow />);
 
-    expect(versionLinks().map((link) => link.href)).toEqual([
-      "/design-lab/engines/show/vllm?version=v0.24.0",
-      "/design-lab/engines/show/vllm?version=v0.9.0-rc1",
-      "/design-lab/engines/show/vllm?version=v0.8.5",
-    ]);
-    expect(versionLinks()[0].current).toBe("true");
-    expect(versionLinks()[0].text).toContain("engines.versions.latest");
+    const [newest] = versionLinks();
+    expect(newest.href).toBe("/design-lab/engines/show/vllm?version=v0.24.0");
+    expect(newest.current).toBe("true");
+    expect(newest.text).toContain("engines.versions.latest");
     expect(screen.getByTestId("schema").textContent).toContain(
       "schema v0.24.0",
     );
   });
 
   it("honours ?version= and falls back to the newest for one it does not know", () => {
-    const versions = [
-      { version: "v0.8.5", values_schema: schemaOf("v0.8.5") },
-      { version: "v0.24.0", values_schema: schemaOf("v0.24.0") },
-    ];
-    showReturns(engineWith(versions));
+    showReturns(engineWith(versionsOf("v0.8.5", "v0.24.0")));
     searchParamsMock.mockReturnValue(new URLSearchParams("version=v0.8.5"));
 
     const { unmount } = render(<EnginesShow />);
@@ -213,11 +200,7 @@ describe("EnginesShow", () => {
   });
 
   it("starts the schema table afresh when the version changes", () => {
-    const versions = [
-      { version: "v0.8.5", values_schema: schemaOf("v0.8.5") },
-      { version: "v0.24.0", values_schema: schemaOf("v0.24.0") },
-    ];
-    showReturns(engineWith(versions));
+    showReturns(engineWith(versionsOf("v0.8.5", "v0.24.0")));
     searchParamsMock.mockReturnValue(new URLSearchParams("version=v0.8.5"));
 
     const { rerender } = render(<EnginesShow />);

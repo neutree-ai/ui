@@ -1,18 +1,14 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import { EndpointClusterGpuResourcesPanel } from "./EndpointClusterGpuResourcesPanel";
 
-// jsdom lays nothing out, so the real measurement always says "not clipped".
-// The flag stands in for it: off everywhere except the truncation test, which
-// is also the state every other test would be in on a wide screen.
-const truncation = vi.hoisted(() => ({ value: false }));
-
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => truncation.value,
-}));
+type PanelRequest = NonNullable<
+  ComponentProps<typeof EndpointClusterGpuResourcesPanel>["request"]
+>;
 
 vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   useCopyToClipboard: () => ({
@@ -59,6 +55,26 @@ const findByExactLabel = (cards: HTMLElement[], label: string) => {
 
   return card as HTMLElement;
 };
+
+const getUsableCount = (count: number) =>
+  screen.getByText((_, node) => node?.textContent === `Usable ${count}`);
+
+const makeRequest = (overrides: Partial<PanelRequest>): PanelRequest => ({
+  allocationMode: "full",
+  cpuPerReplica: 1,
+  memoryPerReplica: 1,
+  requestedFullGpuCards: 0,
+  fullGpuCardCapacity: 0,
+  fullGpuCapacityExceeded: false,
+  requestedVirtualCards: 0,
+  totalVirtualCardCapacity: 0,
+  requestedVgpuMemoryMiB: 0,
+  availableVgpuMemoryMiB: 0,
+  requestedVgpuCoreUnits: 0,
+  availableVgpuCoreUnits: 0,
+  vgpuCapacityExceeded: false,
+  ...overrides,
+});
 
 const resourceInfo: ClusterResourceInfo = {
   allocatable: {
@@ -149,19 +165,23 @@ const withProduct = (
   ),
 });
 
+const panelDefaults = {
+  resourceInfo,
+  currentCluster: "cluster-a",
+  selectedAccelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
+  t,
+};
+
 describe("EndpointClusterGpuResourcesPanel", () => {
   beforeEach(() => {
-    truncation.value = false;
+    vi.mocked(useIsTruncated).mockReturnValue(false);
   });
 
   it("shows node GPU device cards when virtualization is disabled but devices exist", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        {...panelDefaults}
         virtualizationEnabled={false}
-        t={t}
       />,
     );
 
@@ -171,29 +191,16 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     );
     clusterSummary.getByText("Memory Usage");
     clusterSummary.getByText("Core Usage");
-    expect(
-      screen.getByRole("button", {
-        name: "GPU 1 Copy UUID",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", {
-        name: "GPU 2 Copy UUID",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 1"),
-    ).toBeTruthy();
+    screen.getByRole("button", { name: "GPU 1 Copy UUID" });
+    screen.getByRole("button", { name: "GPU 2 Copy UUID" });
+    getUsableCount(1);
   });
 
   it("uses aggregate capacity in the summary and fully free devices in cards", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        {...panelDefaults}
         virtualizationEnabled={true}
-        t={t}
       />,
     );
 
@@ -202,9 +209,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     );
     const cardCountCard = findByExactLabel(summaryCards, "Card Count");
     within(cardCountCard).getByText("Free 1.5");
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 1"),
-    ).toBeTruthy();
+    getUsableCount(1);
     expect(screen.getAllByLabelText("Usable")).toHaveLength(1);
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
   });
@@ -212,11 +217,8 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   it("keeps healthy GPU indicators native and out of the tab order", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        {...panelDefaults}
         virtualizationEnabled={false}
-        t={t}
       />,
     );
 
@@ -235,6 +237,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     renderPanel(
       <EndpointClusterGpuResourcesPanel
+        {...panelDefaults}
         resourceInfo={{
           ...resourceInfo,
           node_resources: {
@@ -248,10 +251,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
             },
           },
         }}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
         virtualizationEnabled={false}
-        t={t}
       />,
     );
 
@@ -260,8 +260,6 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     });
     expect(unhealthyIndicator.getAttribute("title")).toBeNull();
     expect(unhealthyIndicator.getAttribute("tabindex")).toBe("0");
-    expect(unhealthyIndicator.className).not.toContain("cursor-");
-    expect(unhealthyIndicator.className).toContain("focus-visible:ring-2");
 
     fireEvent.focus(unhealthyIndicator);
 
@@ -271,33 +269,18 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   it("uses fractional card capacity when checking physical GPU requests", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        {...panelDefaults}
         virtualizationEnabled={false}
-        request={{
+        request={makeRequest({
           allocationMode: "fractional",
           gpuPerReplica: 0.75,
-          cpuPerReplica: 1,
-          memoryPerReplica: 1,
           requestedFullGpuCards: 0.75,
           fullGpuCardCapacity: 1,
-          fullGpuCapacityExceeded: false,
-          requestedVirtualCards: 0,
-          totalVirtualCardCapacity: 0,
-          requestedVgpuMemoryMiB: 0,
-          availableVgpuMemoryMiB: 0,
-          requestedVgpuCoreUnits: 0,
-          availableVgpuCoreUnits: 0,
-          vgpuCapacityExceeded: false,
-        }}
-        t={t}
+        })}
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 1"),
-    ).toBeTruthy();
+    getUsableCount(1);
     expect(screen.getAllByLabelText("Usable")).toHaveLength(1);
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(1);
   });
@@ -308,6 +291,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     renderPanel(
       <EndpointClusterGpuResourcesPanel
+        {...panelDefaults}
         resourceInfo={{
           ...resourceInfo,
           node_resources: {
@@ -324,32 +308,17 @@ describe("EndpointClusterGpuResourcesPanel", () => {
             },
           },
         }}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
         virtualizationEnabled={false}
-        request={{
+        request={makeRequest({
           allocationMode: "fractional",
           gpuPerReplica: 0.75,
-          cpuPerReplica: 1,
-          memoryPerReplica: 1,
           requestedFullGpuCards: 0.75,
           fullGpuCardCapacity: 2,
-          fullGpuCapacityExceeded: false,
-          requestedVirtualCards: 0,
-          totalVirtualCardCapacity: 0,
-          requestedVgpuMemoryMiB: 0,
-          availableVgpuMemoryMiB: 0,
-          requestedVgpuCoreUnits: 0,
-          availableVgpuCoreUnits: 0,
-          vgpuCapacityExceeded: false,
-        }}
-        t={t}
+        })}
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 2"),
-    ).toBeTruthy();
+    getUsableCount(2);
     expect(screen.getAllByLabelText("Usable")).toHaveLength(2);
   });
 
@@ -357,6 +326,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const nodeA = resourceInfo.node_resources?.["node-a"];
     renderPanel(
       <EndpointClusterGpuResourcesPanel
+        {...panelDefaults}
         resourceInfo={{
           ...resourceInfo,
           node_resources: {
@@ -372,16 +342,11 @@ describe("EndpointClusterGpuResourcesPanel", () => {
             },
           },
         }}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
         virtualizationEnabled={true}
-        request={{
+        request={makeRequest({
           allocationMode: "vgpu",
           cpuPerReplica: 2,
           memoryPerReplica: 8,
-          requestedFullGpuCards: 0,
-          fullGpuCardCapacity: 0,
-          fullGpuCapacityExceeded: false,
           requestedVirtualCards: 1,
           totalVirtualCardCapacity: 1,
           requestedVgpuMemoryMiB: 4096,
@@ -390,15 +355,11 @@ describe("EndpointClusterGpuResourcesPanel", () => {
           availableVgpuCoreUnits: 100,
           memoryMiBPerCard: 4096,
           coreUnitsPerCard: 50,
-          vgpuCapacityExceeded: false,
-        }}
-        t={t}
+        })}
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 0"),
-    ).toBeTruthy();
+    getUsableCount(0);
     expect(screen.getAllByLabelText("Allocated")).toHaveLength(2);
   });
 
@@ -419,28 +380,14 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
+        {...panelDefaults}
         schedulingNodeResources={schedulingNodeResources}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
         virtualizationEnabled={true}
-        request={{
-          allocationMode: "full",
+        request={makeRequest({
           gpuPerReplica: 1,
-          cpuPerReplica: 1,
-          memoryPerReplica: 1,
           requestedFullGpuCards: 1,
           fullGpuCardCapacity: 2,
-          fullGpuCapacityExceeded: false,
-          requestedVirtualCards: 0,
-          totalVirtualCardCapacity: 0,
-          requestedVgpuMemoryMiB: 0,
-          availableVgpuMemoryMiB: 0,
-          requestedVgpuCoreUnits: 0,
-          availableVgpuCoreUnits: 0,
-          vgpuCapacityExceeded: false,
-        }}
-        t={t}
+        })}
       />,
     );
 
@@ -451,9 +398,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
         .getAllByTestId("endpoint-node-resource-pill-value")
         .map((value) => value.textContent),
     ).toEqual(["30.0", "7.5", "22.5"]);
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 2"),
-    ).toBeTruthy();
+    getUsableCount(2);
     expect(screen.getAllByLabelText("Usable")).toHaveLength(2);
   });
 
@@ -474,40 +419,26 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
+        {...panelDefaults}
         schedulingNodeResources={schedulingNodeResources}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
         virtualizationEnabled={false}
-        request={{
+        request={makeRequest({
           allocationMode: "fractional",
           gpuPerReplica: 0.75,
-          cpuPerReplica: 1,
-          memoryPerReplica: 1,
           requestedFullGpuCards: 0.75,
           fullGpuCardCapacity: 2,
-          fullGpuCapacityExceeded: false,
-          requestedVirtualCards: 0,
-          totalVirtualCardCapacity: 0,
-          requestedVgpuMemoryMiB: 0,
-          availableVgpuMemoryMiB: 0,
-          requestedVgpuCoreUnits: 0,
-          availableVgpuCoreUnits: 0,
-          vgpuCapacityExceeded: false,
-        }}
-        t={t}
+        })}
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 2"),
-    ).toBeTruthy();
+    getUsableCount(2);
     expect(screen.getAllByLabelText("Usable")).toHaveLength(2);
   });
 
   it("falls back to compact node summaries when devices are missing", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
+        {...panelDefaults}
         resourceInfo={{
           ...resourceInfo,
           node_resources: {
@@ -545,10 +476,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
             },
           },
         }}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
         virtualizationEnabled={true}
-        t={t}
       />,
     );
 
@@ -562,11 +490,8 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   it("shows resource units in card titles instead of appending them to every value", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        {...panelDefaults}
         virtualizationEnabled={true}
-        t={t}
       />,
     );
 
@@ -593,56 +518,33 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     within(cpuCard).getByText("32.0");
     within(memoryCard).getByText("128.0");
     expect(vramCard.textContent).not.toContain("7.5 / 30.0 GiB");
-    expect(
-      within(vramCard).getByText((text) => text.includes("7.5 / 30.0")),
-    ).toBeTruthy();
+    within(vramCard).getByText((text) => text.includes("7.5 / 30.0"));
     expect(coreCard.textContent).not.toContain("cores");
     expect(coreCard.textContent).not.toContain("GiB");
-    expect(
-      within(coreCard).getByText((text) => text.includes("50.0 / 200.0")),
-    ).toBeTruthy();
+    within(coreCard).getByText((text) => text.includes("50.0 / 200.0"));
   });
 
   it("shows a long GPU product name in full on the device card", async () => {
-    // The card is only ~180px wide, so a vendor-prefixed name used to be
-    // clipped with no way to read the rest of it.
     const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
-    truncation.value = true;
+    vi.mocked(useIsTruncated).mockReturnValue(true);
 
     renderPanel(
       <EndpointClusterGpuResourcesPanel
+        {...panelDefaults}
         resourceInfo={withProduct(resourceInfo, longProduct)}
-        currentCluster="cluster-a"
         selectedAccelerator={{ type: "nvidia_gpu", product: longProduct }}
         virtualizationEnabled={false}
-        t={t}
       />,
     );
 
     const [card] = screen.getAllByTestId("endpoint-gpu-device-card");
-    const productBadge = within(card).getByText(longProduct);
+    const badge = within(card).getByText(longProduct)
+      .parentElement as HTMLElement;
 
-    // jsdom does no layout, so the class is the only thing that can pin "cuts
-    // the name off instead of running past the card". The text also has to sit
-    // in an element of its own: an `inline-flex` turns bare text into an
-    // anonymous flex item that refuses to shrink below its own width, so the
-    // badge would clip nothing and the name would spill over the card's edge.
-    // It is a child of the card itself, not of the header row's first column,
-    // so it can use the whole card width rather than stopping where the status
-    // icon's column begins.
-    expect(productBadge.tagName).toBe("SPAN");
-    expect(productBadge.className).toContain("truncate");
-    expect(productBadge.parentElement?.parentElement).toBe(card);
-
-    // The full name survives the truncation, on hover and on keyboard focus:
-    // a truncated label with no way back to its text is not readable, and a
-    // native title would leave keyboard users with no way back at all.
-    const badge = productBadge.parentElement as HTMLElement;
+    // Truncated, so the tooltip is the only way to the whole name: the badge
+    // has to be a keyboard stop, not a native title.
     expect(badge.getAttribute("title")).toBeNull();
     expect(badge.getAttribute("tabindex")).toBe("0");
-    // A question mark is the help cursor, and this badge is a value: the
-    // ellipsis and the tooltip carry the truncation, the cursor carries nothing.
-    expect(badge.className).not.toContain("cursor-help");
 
     fireEvent.focus(badge);
 
@@ -652,11 +554,8 @@ describe("EndpointClusterGpuResourcesPanel", () => {
   it("leaves a product name that fits alone", async () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        {...panelDefaults}
         virtualizationEnabled={false}
-        t={t}
       />,
     );
 
@@ -664,10 +563,8 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const productBadge = within(card).getByText("Tesla-T4");
     const badge = productBadge.parentElement as HTMLElement;
 
-    // Nothing to reveal, so nothing announces itself: no tab stop, no help
-    // cursor and no tooltip repeating the line under the pointer.
+    // Nothing to reveal: no tab stop and no tooltip repeating the line.
     expect(badge.getAttribute("tabindex")).toBeNull();
-    expect(badge.className).not.toContain("cursor-help");
 
     fireEvent.focus(badge);
     fireEvent.mouseEnter(badge);
@@ -680,11 +577,9 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     // not have; the "GPU Type" badge must reflect the cluster's actual GPUs.
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
+        {...panelDefaults}
         selectedAccelerator={{ type: "nvidia_gpu", product: "L4" }}
         virtualizationEnabled={true}
-        t={t}
       />,
     );
 
@@ -695,34 +590,15 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(toolbar.queryByText("L4")).toBeNull();
   });
 
-  it("keeps the header badge on cluster products when the preset accelerator matches", () => {
-    renderPanel(
-      <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
-        virtualizationEnabled={true}
-        t={t}
-      />,
-    );
-
-    const toolbar = within(
-      screen.getByTestId("endpoint-cluster-resource-target-notes"),
-    );
-    toolbar.getByText("Tesla-T4");
-  });
-
   it("keeps cluster pool values visible when the preset accelerator matches no product", () => {
     // A recipe/catalog preset can carry a product name the cluster does not
     // report at all; the summary must fall back to the full pool instead of
-    // rendering an all-dashes board (NEU-501).
+    // rendering an all-dashes board.
     renderPanel(
       <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
+        {...panelDefaults}
         selectedAccelerator={{ type: "nvidia_gpu", product: "H100" }}
         virtualizationEnabled={true}
-        t={t}
       />,
     );
 

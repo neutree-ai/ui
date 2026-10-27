@@ -7,77 +7,41 @@ type UseHookArgs = {
 };
 
 describe("useEndpointMonitorPanels", () => {
-  it("should return empty panels when no engine type is available", () => {
-    const { result } = renderHook(() => useEndpointMonitorPanels({}));
+  const SPLIT_PANELS = ["overview", "latency", "throughput", "queue", "cache"];
 
-    expect(result.current.panels).toEqual([]);
-    expect(result.current.selectedPanel).toBeNull();
-    expect(result.current.showMonitorTab).toBe(false);
-    expect(result.current.showSelector).toBe(false);
-  });
+  it.each([
+    { engineType: undefined, panels: [], selected: null, tab: false },
+    {
+      engineType: "llama-cpp",
+      panels: ["overview"],
+      selected: "overview",
+      tab: true,
+    },
+    {
+      engineType: "vllm",
+      panels: SPLIT_PANELS,
+      selected: "overview",
+      tab: true,
+    },
+    {
+      engineType: "sglang",
+      panels: SPLIT_PANELS,
+      selected: "overview",
+      tab: true,
+    },
+  ])(
+    "offers $panels for engine $engineType",
+    ({ engineType, panels, selected, tab }) => {
+      const { result } = renderHook(() =>
+        useEndpointMonitorPanels({ engineType }),
+      );
 
-  it("should return an overview panel for a non-LLM engine", () => {
-    const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ engineType: "llama-cpp" }),
-    );
-
-    expect(result.current.panels).toEqual(["overview"]);
-    expect(result.current.selectedPanel).toBe("overview");
-    expect(result.current.showMonitorTab).toBe(true);
-    expect(result.current.showSelector).toBe(false);
-  });
-
-  it("should return split endpoint panels for vllm engine", () => {
-    const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ engineType: "vllm" }),
-    );
-
-    expect(result.current.panels).toEqual([
-      "overview",
-      "latency",
-      "throughput",
-      "queue",
-      "cache",
-    ]);
-    expect(result.current.selectedPanel).toBe("overview");
-    expect(result.current.showMonitorTab).toBe(true);
-    expect(result.current.showSelector).toBe(true);
-  });
-
-  it("should return split endpoint panels for sglang engine", () => {
-    const { result } = renderHook(() =>
-      useEndpointMonitorPanels({ engineType: "sglang" }),
-    );
-
-    expect(result.current.panels).toEqual([
-      "overview",
-      "latency",
-      "throughput",
-      "queue",
-      "cache",
-    ]);
-    expect(result.current.selectedPanel).toBe("overview");
-    expect(result.current.showMonitorTab).toBe(true);
-    expect(result.current.showSelector).toBe(true);
-  });
-
-  it("should not add separate GPU or vGPU panels", () => {
-    const { result } = renderHook(() =>
-      useEndpointMonitorPanels({
-        engineType: "vllm",
-      }),
-    );
-
-    expect(result.current.panels).toEqual([
-      "overview",
-      "latency",
-      "throughput",
-      "queue",
-      "cache",
-    ]);
-    expect(result.current.selectedPanel).toBe("overview");
-    expect(result.current.showMonitorTab).toBe(true);
-  });
+      expect(result.current.panels).toEqual(panels);
+      expect(result.current.selectedPanel).toBe(selected);
+      expect(result.current.showMonitorTab).toBe(tab);
+      expect(result.current.showSelector).toBe(panels.length > 1);
+    },
+  );
 
   it("should allow user to select panel", () => {
     const { result } = renderHook(() =>

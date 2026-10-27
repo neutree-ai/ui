@@ -14,13 +14,6 @@ vi.mock("@refinedev/core", () => ({
   useParsed: () => ({ params: { workspace: "design-lab" } }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { name?: string }) =>
-      options?.name ? `${key}:${options.name}` : key,
-  }),
-}));
-
 vi.mock("@/foundation/components/ListPage", () => ({
   ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));

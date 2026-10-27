@@ -27,7 +27,6 @@ describe("VariantTable", () => {
       />,
     );
 
-    screen.getByTestId("variant-selector-table");
     expect(
       (
         screen.getByLabelText(

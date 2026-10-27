@@ -139,6 +139,37 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
 
 import { ClustersShow } from "./show";
 
+const showCluster = ({
+  spec = {},
+  status = {},
+}: {
+  spec?: Record<string, unknown>;
+  status?: Record<string, unknown>;
+} = {}) =>
+  useShowMock.mockReturnValue({
+    query: {
+      isLoading: false,
+      data: {
+        data: {
+          metadata: {
+            name: "gpu-cluster",
+            workspace: "design-lab",
+            creation_timestamp: "2026-08-25T00:00:00Z",
+          },
+          spec: {
+            type: "kubernetes",
+            version: "v1.2.0",
+            image_registry: "default",
+            accelerator_virtualization: { enabled: true },
+            config: {},
+            ...spec,
+          },
+          status,
+        },
+      },
+    },
+  });
+
 describe("ClustersShow", () => {
   beforeEach(() => {
     useShowMock.mockReset();
@@ -161,48 +192,22 @@ describe("ClustersShow", () => {
     screen.getByText("clusters.messages.notFound");
   });
 
-  it("connects cluster and node resource data to the redesigned sections", () => {
-    useShowMock.mockReturnValue({
-      query: {
-        isLoading: false,
-        data: {
-          data: {
-            metadata: {
-              name: "gpu-cluster",
-              workspace: "design-lab",
-              creation_timestamp: "2026-08-25T00:00:00Z",
+  it("connects cluster and node resource data to the resource sections", () => {
+    showCluster({
+      status: {
+        phase: "Running",
+        version: "v1.2.0",
+        resource_info: {
+          allocatable: {
+            cpu: 16,
+            memory: 64,
+            accelerator_groups: {
+              nvidia_gpu: { quantity: 1, product_groups: { "Tesla-T4": 1 } },
             },
-            spec: {
-              type: "kubernetes",
-              version: "v1.2.0",
-              image_registry: "default",
-              accelerator_virtualization: { enabled: true },
-              config: {},
-            },
-            status: {
-              phase: "Running",
-              version: "v1.2.0",
-              resource_info: {
-                allocatable: {
-                  cpu: 16,
-                  memory: 64,
-                  accelerator_groups: {
-                    nvidia_gpu: {
-                      quantity: 1,
-                      product_groups: { "Tesla-T4": 1 },
-                    },
-                  },
-                },
-                available: null,
-                node_resources: {
-                  "node-a": {
-                    allocatable: null,
-                    available: null,
-                    devices: [],
-                  },
-                },
-              },
-            },
+          },
+          available: null,
+          node_resources: {
+            "node-a": { allocatable: null, available: null, devices: [] },
           },
         },
       },
@@ -210,9 +215,7 @@ describe("ClustersShow", () => {
 
     render(<ClustersShow />);
 
-    expect(
-      screen.getByRole("heading", { level: 1, name: "gpu-cluster" }),
-    ).toBeTruthy();
+    screen.getByRole("heading", { level: 1, name: "gpu-cluster" });
     expect(
       screen.getByTestId("cluster-resource-summary").textContent,
     ).toContain('"cpu":16');
@@ -225,35 +228,16 @@ describe("ClustersShow", () => {
   });
 
   // The API requires router.replicas / resources.cpu / resources.memory for a
-  // Kubernetes cluster (validation codes 10024-10026), so a record without
-  // them can only come from a gap in the data. Each row still shows the
-  // placeholder rather than rendering an empty cell.
+  // Kubernetes cluster, so a record without them can only come from a gap in
+  // the data. Each row still shows the placeholder rather than an empty cell.
   it("shows the placeholder for a router that reports no capacity", () => {
-    useShowMock.mockReturnValue({
-      query: {
-        isLoading: false,
-        data: {
-          data: {
-            metadata: {
-              name: "gpu-cluster",
-              workspace: "design-lab",
-              creation_timestamp: "2026-08-25T00:00:00Z",
-            },
-            spec: {
-              type: "kubernetes",
-              version: "v1.2.0",
-              image_registry: "default",
-              accelerator_virtualization: { enabled: true },
-              config: {
-                kubernetes_config: {
-                  router: { access_mode: "LoadBalancer" },
-                },
-              },
-            },
-            status: { phase: "Running", version: "v1.2.0" },
-          },
+    showCluster({
+      spec: {
+        config: {
+          kubernetes_config: { router: { access_mode: "LoadBalancer" } },
         },
       },
+      status: { phase: "Running", version: "v1.2.0" },
     });
 
     render(<ClustersShow />);
@@ -261,36 +245,11 @@ describe("ClustersShow", () => {
     expect(screen.getAllByTestId("empty-value")).toHaveLength(3);
   });
 
-  // The identity line drops the badge rather than printing "name, -" before
-  // the controller has reported a phase.
   it("still renders the page for a cluster with no phase yet", () => {
-    useShowMock.mockReturnValue({
-      query: {
-        isLoading: false,
-        data: {
-          data: {
-            metadata: {
-              name: "gpu-cluster",
-              workspace: "design-lab",
-              creation_timestamp: "2026-08-25T00:00:00Z",
-            },
-            spec: {
-              type: "kubernetes",
-              version: "v1.2.0",
-              image_registry: "default",
-              accelerator_virtualization: { enabled: true },
-              config: {},
-            },
-            status: {},
-          },
-        },
-      },
-    });
+    showCluster();
 
     render(<ClustersShow />);
 
-    expect(
-      screen.getByRole("heading", { level: 1, name: "gpu-cluster" }),
-    ).toBeTruthy();
+    screen.getByRole("heading", { level: 1, name: "gpu-cluster" });
   });
 });

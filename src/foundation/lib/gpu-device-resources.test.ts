@@ -11,10 +11,6 @@ import {
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
   filterGpuDeviceResourceRows,
-  GPU_GRID_CELL_CLASS,
-  GPU_GRID_CLASS,
-  GPU_GRID_FRAME_CLASS,
-  GPU_GRID_STYLE,
   sumMatchingDeviceAvailableResources,
 } from "./gpu-device-resources";
 
@@ -1738,7 +1734,7 @@ describe("gpu device resource helpers", () => {
   it("matches bare recipe-style product names against vendor-prefixed cluster products", () => {
     // A recipe/catalog preset uses bare model names ("T4") while the cluster
     // reports decorated products ("Tesla-T4") — the two schemes must line up
-    // instead of filtering every row out (NEU-501).
+    // instead of filtering every row out.
     const rows = buildGpuDeviceResourceRows(nodeResources, {
       type: "nvidia_gpu",
       product: "T4",
@@ -2402,27 +2398,45 @@ describe("gpu device resource helpers", () => {
   });
 });
 
-describe("gpu grid layout", () => {
-  it("leaves the column count to the browser so rows can wrap", () => {
-    // A fixed count cannot hold both ends of this: eight cards on one node used
-    // to sit in a single row that carried half of them off-screen.
-    expect(GPU_GRID_STYLE).toEqual({
-      gridTemplateColumns: "repeat(auto-fit, minmax(188px, 1fr))",
-    });
+describe("nodes without GPU details", () => {
+  const cpuOnlyNode: NodeResourceStatus = {
+    allocatable: { cpu: 8, memory: 32, accelerator_groups: null },
+    available: { cpu: 6, memory: 24, accelerator_groups: null },
+  };
+
+  it("counts no GPU capacity on a node that lists no devices", () => {
+    const t4 = { type: "nvidia_gpu", product: "Tesla-T4" };
+
+    expect(
+      sumMatchingDeviceAvailableResources({ "node-c": cpuOnlyNode }, t4),
+    ).toEqual({ coreUnits: 0, memoryMiB: 0 });
+    expect(
+      calculatePhysicalCardUsageForRequest(
+        { "node-c": cpuOnlyNode },
+        {
+          allocationMode: "full",
+          selectedAccelerator: t4,
+          requestedPerReplica: 1,
+          replicaCount: 1,
+        },
+      ),
+    ).toMatchObject({ available: 0, placementCapacity: 0, total: 0 });
   });
 
-  it("rules rows and columns from the cells, not from divide-x", () => {
-    // `divide-x` targets every sibling after the first in DOM order, so on a
-    // wrapped grid it draws a stray left rule on each row's first card and no
-    // horizontal rule at all.
-    expect(GPU_GRID_CLASS).not.toContain("divide-");
-    expect(GPU_GRID_CELL_CLASS).toContain("border-b");
-    expect(GPU_GRID_CELL_CLASS).toContain("border-r");
-  });
-
-  it("hangs the trailing rules under the frame's clip", () => {
-    expect(GPU_GRID_CLASS).toContain("-mr-px");
-    expect(GPU_GRID_CLASS).toContain("-mb-px");
-    expect(GPU_GRID_FRAME_CLASS).toContain("overflow-hidden");
+  it("builds a zero-GPU row for a CPU-only node", () => {
+    expect(
+      buildNodePhysicalGpuResourceRows({
+        "node-c": cpuOnlyNode,
+        "node-d": { allocatable: null, available: null },
+      }),
+    ).toMatchObject([
+      {
+        nodeName: "node-c",
+        cpu: { available: 6, total: 8, used: 2 },
+        memory: { available: 24, total: 32, used: 8 },
+        quantity: { available: 0, total: 0, used: 0 },
+      },
+      { nodeName: "node-d", quantity: { available: 0, total: 0, used: 0 } },
+    ]);
   });
 });

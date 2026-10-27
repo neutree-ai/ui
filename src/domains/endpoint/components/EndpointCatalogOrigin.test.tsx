@@ -2,13 +2,6 @@ import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, params?: Record<string, string>) =>
-      params ? `${key} ${JSON.stringify(params)}` : key,
-  }),
-}));
-
 vi.mock("@/foundation/components/ShowButton", () => ({
   ShowButton: ({
     children,
@@ -76,9 +69,7 @@ describe("EndpointCatalogOrigin", () => {
 
     const block = screen.getByTestId("endpoint-catalog-origin");
     within(block).getByText("qwen3.6-35b");
-    expect(
-      within(block).getByText("endpoints.origin.featuresUnreadable"),
-    ).toBeDefined();
+    within(block).getByText("endpoints.origin.featuresUnreadable");
   });
 });
 
@@ -100,7 +91,7 @@ describe("EndpointCatalogOriginLink", () => {
       screen.getByRole("link", { name: "qwen3-6-27b" }).getAttribute("href"),
     ).toBe("#/default/model_catalogs/qwen3-6-27b");
     expect(screen.getByRole("tooltip").textContent).toBe(
-      'endpoints.origin.variant {"variant":"bf16"}',
+      "endpoints.origin.variant:bf16",
     );
   });
 

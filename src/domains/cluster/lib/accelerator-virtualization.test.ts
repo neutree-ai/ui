@@ -21,219 +21,135 @@ const makeCluster = (overrides: Partial<Cluster> = {}): Cluster =>
     ...overrides,
   }) as Cluster;
 
+const t4Pool = (
+  quantity: number,
+  virtualization?: { memory_mib: number; core_units: number },
+  productGroups: Record<string, number> | null = null,
+) => ({
+  cpu: 16,
+  memory: 64,
+  accelerator_groups: {
+    nvidia_gpu: {
+      quantity,
+      product_groups: productGroups,
+      products: virtualization
+        ? { "Tesla-T4": { quantity, virtualization } }
+        : {},
+    },
+  },
+});
+
+const t4Row = (overrides: Record<string, number>) => ({
+  acceleratorType: "nvidia_gpu",
+  product: "Tesla-T4",
+  quantity: 3,
+  availableQuantity: 3,
+  ...overrides,
+});
+
 describe("cluster accelerator virtualization helpers", () => {
-  it("treats missing accelerator virtualization as disabled", () => {
-    expect(isAcceleratorVirtualizationEnabled(makeCluster())).toBe(false);
+  it.each([
+    [undefined, false],
+    [{ enabled: true }, true],
+  ])("reads accelerator virtualization %j as enabled: %s", (av, enabled) => {
+    const cluster = makeCluster();
+    cluster.spec.accelerator_virtualization = av;
+    expect(isAcceleratorVirtualizationEnabled(cluster)).toBe(enabled);
   });
 
-  it("reads accelerator virtualization enabled from cluster spec", () => {
-    expect(
-      isAcceleratorVirtualizationEnabled(
-        makeCluster({
-          spec: {
-            type: "kubernetes",
-            image_registry: "registry",
-            config: { kubernetes_config: {} },
-            accelerator_virtualization: { enabled: true },
-          },
-        } as Partial<Cluster>),
-      ),
-    ).toBe(true);
-  });
-
-  it("checks accelerator virtualization support by cluster version", () => {
-    expect(isAcceleratorVirtualizationSupported("v1.0.1")).toBe(false);
-    expect(isAcceleratorVirtualizationSupported("v1.0.2")).toBe(true);
-    expect(isAcceleratorVirtualizationSupported("v1.1.0")).toBe(true);
-    expect(isAcceleratorVirtualizationSupported("v1.2.0")).toBe(true);
-    expect(isAcceleratorVirtualizationSupported(null)).toBe(false);
+  it.each([
+    ["v1.0.1", false],
+    ["v1.0.2", true],
+    ["v1.1.0", true],
+    ["v1.2.0", true],
+    [null, false],
+  ])("supports accelerator virtualization on %s: %s", (version, supported) => {
+    expect(isAcceleratorVirtualizationSupported(version)).toBe(supported);
   });
 
   it("builds accelerator product resource rows from virtualized product pools", () => {
     const resourceInfo = {
       accelerator_metadata: {
-        nvidia_gpu: {
-          products: {
-            "Tesla-T4": { memory_total_mib: 15360 },
-          },
-        },
+        nvidia_gpu: { products: { "Tesla-T4": { memory_total_mib: 15360 } } },
       },
-      allocatable: {
-        cpu: 16,
-        memory: 64,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 3,
-            product_groups: { "Tesla-T4": 3 },
-            products: {
-              "Tesla-T4": {
-                quantity: 3,
-                virtualization: {
-                  memory_mib: 46080,
-                  core_units: 300,
-                },
-              },
-            },
-          },
-        },
-      },
-      available: {
-        cpu: 12,
-        memory: 48,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 3,
-            product_groups: { "Tesla-T4": 3 },
-            products: {
-              "Tesla-T4": {
-                quantity: 3,
-                virtualization: {
-                  memory_mib: 33792,
-                  core_units: 240,
-                },
-              },
-            },
-          },
-        },
-      },
+      allocatable: t4Pool(
+        3,
+        { memory_mib: 46080, core_units: 300 },
+        { "Tesla-T4": 3 },
+      ),
+      available: t4Pool(
+        3,
+        { memory_mib: 33792, core_units: 240 },
+        { "Tesla-T4": 3 },
+      ),
       node_resources: null,
     } as ClusterResourceInfo;
 
     expect(getAcceleratorProductResourceRows(resourceInfo)).toEqual([
-      {
-        acceleratorType: "nvidia_gpu",
-        product: "Tesla-T4",
-        quantity: 3,
-        availableQuantity: 3,
+      t4Row({
         memoryTotalMiB: 15360,
         allocatableMemoryMiB: 46080,
         availableMemoryMiB: 33792,
         allocatableCoreUnits: 300,
         availableCoreUnits: 240,
-      },
+      }),
     ]);
   });
 
   it("rounds fallback per-card memory up to whole MiB", () => {
+    const pool = t4Pool(3, { memory_mib: 100, core_units: 300 });
     const resourceInfo = {
       accelerator_metadata: null,
-      allocatable: {
-        cpu: 16,
-        memory: 64,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 3,
-            product_groups: null,
-            products: {
-              "Tesla-T4": {
-                quantity: 3,
-                virtualization: {
-                  memory_mib: 100,
-                  core_units: 300,
-                },
-              },
-            },
-          },
-        },
-      },
-      available: {
-        cpu: 12,
-        memory: 48,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 3,
-            product_groups: null,
-            products: {
-              "Tesla-T4": {
-                quantity: 3,
-                virtualization: {
-                  memory_mib: 100,
-                  core_units: 300,
-                },
-              },
-            },
-          },
-        },
-      },
+      allocatable: pool,
+      available: pool,
       node_resources: null,
     } as ClusterResourceInfo;
 
     expect(getAcceleratorProductResourceRows(resourceInfo)).toEqual([
-      {
-        acceleratorType: "nvidia_gpu",
-        product: "Tesla-T4",
-        quantity: 3,
-        availableQuantity: 3,
+      t4Row({
         memoryTotalMiB: 34,
         allocatableMemoryMiB: 100,
         availableMemoryMiB: 100,
         allocatableCoreUnits: 300,
         availableCoreUnits: 300,
-      },
+      }),
     ]);
   });
 
   it("falls back to product groups and device pools for non-virtualized resources", () => {
+    const device = (
+      uuid: string,
+      availableMiB: number,
+      availableCores: number,
+    ) => ({
+      uuid,
+      product: "Tesla-T4",
+      health: true,
+      allocatable: { memory_mib: 15360, core_units: 100 },
+      available: { memory_mib: availableMiB, core_units: availableCores },
+    });
     const resourceInfo = {
       accelerator_metadata: null,
-      allocatable: {
-        cpu: 16,
-        memory: 64,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 3,
-            product_groups: { "Tesla-T4": 3 },
-            products: {},
-          },
-        },
-      },
-      available: {
-        cpu: 12,
-        memory: 48,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 2,
-            product_groups: { "Tesla-T4": 2 },
-            products: {},
-          },
-        },
-      },
+      allocatable: t4Pool(3, undefined, { "Tesla-T4": 3 }),
+      available: t4Pool(2, undefined, { "Tesla-T4": 2 }),
       node_resources: {
         "node-a": {
           allocatable: null,
           available: null,
-          devices: [
-            {
-              uuid: "GPU-1",
-              product: "Tesla-T4",
-              health: true,
-              allocatable: { memory_mib: 15360, core_units: 100 },
-              available: { memory_mib: 15360, core_units: 100 },
-            },
-            {
-              uuid: "GPU-2",
-              product: "Tesla-T4",
-              health: true,
-              allocatable: { memory_mib: 15360, core_units: 100 },
-              available: { memory_mib: 0, core_units: 0 },
-            },
-          ],
+          devices: [device("GPU-1", 15360, 100), device("GPU-2", 0, 0)],
         },
       },
     } as ClusterResourceInfo;
 
     expect(getAcceleratorProductResourceRows(resourceInfo)).toEqual([
-      {
-        acceleratorType: "nvidia_gpu",
-        product: "Tesla-T4",
-        quantity: 3,
+      t4Row({
         availableQuantity: 2,
         memoryTotalMiB: 15360,
         allocatableMemoryMiB: 30720,
         availableMemoryMiB: 15360,
         allocatableCoreUnits: 200,
         availableCoreUnits: 100,
-      },
+      }),
     ]);
   });
 });

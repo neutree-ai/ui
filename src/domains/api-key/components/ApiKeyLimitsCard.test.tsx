@@ -132,9 +132,7 @@ describe("ApiKeyLimitsCard", () => {
     await waitFor(() => expect(cancel.disabled).toBe(false));
 
     fireEvent.click(cancel);
-    await waitFor(() =>
-      expect(screen.getByDisplayValue("Old name")).toBeTruthy(),
-    );
+    await screen.findByDisplayValue("Old name");
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 });

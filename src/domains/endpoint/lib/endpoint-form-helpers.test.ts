@@ -13,50 +13,34 @@ import {
 } from "./endpoint-form-helpers";
 
 describe("isResourceRequestExceeded", () => {
-  it("flags a request larger than the available budget", () => {
-    // 3 requested vs 2.9 free on the target node -> over-allocated (NEU-514).
-    expect(isResourceRequestExceeded(3, 2.9, 15.7)).toBe(true);
-  });
-
-  it("does not flag a request that fits", () => {
-    expect(isResourceRequestExceeded(2, 2.9, 15.7)).toBe(false);
-  });
-
-  it("treats exactly-available as fitting (not exceeded)", () => {
-    expect(isResourceRequestExceeded(2.9, 2.9, 15.7)).toBe(false);
-  });
-
-  it("does not flag floating-point drift from per-replica × count", () => {
-    // The CPU field steps by 0.1, so 0.1 requested across 3 replicas is
-    // 0.30000000000000004 — must not spuriously exceed a 0.3 budget.
-    expect(isResourceRequestExceeded(0.1 * 3, 0.3, 15.7)).toBe(false);
-  });
-
-  it("never flags a zero request", () => {
-    expect(isResourceRequestExceeded(0, 0, 15.7)).toBe(false);
-  });
-
-  it("never flags when capacity info is unknown (total 0)", () => {
+  it.each([
+    // 3 requested vs 2.9 free on the target node -> over-allocated.
+    { requested: 3, available: 2.9, total: 15.7, exceeded: true },
+    { requested: 2, available: 2.9, total: 15.7, exceeded: false },
+    { requested: 2.9, available: 2.9, total: 15.7, exceeded: false },
+    // The CPU field steps by 0.1, so 0.1 × 3 replicas is 0.30000000000000004.
+    { requested: 0.1 * 3, available: 0.3, total: 15.7, exceeded: false },
+    { requested: 0, available: 0, total: 15.7, exceeded: false },
     // No cluster selected / no resource data yet -> avoid false positives.
-    expect(isResourceRequestExceeded(3, 0, 0)).toBe(false);
-  });
+    { requested: 3, available: 0, total: 0, exceeded: false },
+  ])(
+    "$requested of $available available (total $total) -> exceeded: $exceeded",
+    ({ requested, available, total, exceeded }) => {
+      expect(isResourceRequestExceeded(requested, available, total)).toBe(
+        exceeded,
+      );
+    },
+  );
 });
 
 describe("validateCurrentUsage", () => {
-  it("returns currentUsage when within capacity", () => {
-    expect(validateCurrentUsage(4, 8)).toBe(4);
-  });
-
-  it("returns 0 when currentUsage exceeds capacity", () => {
-    expect(validateCurrentUsage(10, 8)).toBe(0);
-  });
-
-  it("returns currentUsage when equal to capacity", () => {
-    expect(validateCurrentUsage(8, 8)).toBe(8);
-  });
-
-  it("returns 0 when currentUsage is 0", () => {
-    expect(validateCurrentUsage(0, 8)).toBe(0);
+  it.each([
+    { usage: 4, capacity: 8, kept: 4 },
+    { usage: 8, capacity: 8, kept: 8 },
+    { usage: 10, capacity: 8, kept: 0 },
+    { usage: 0, capacity: 8, kept: 0 },
+  ])("$usage of $capacity -> $kept", ({ usage, capacity, kept }) => {
+    expect(validateCurrentUsage(usage, capacity)).toBe(kept);
   });
 });
 
@@ -468,346 +452,131 @@ describe("normalizeEndpointResourcesForForm", () => {
 });
 
 describe("validateEndpointValues", () => {
-  const mockT = (key: string) => key;
+  type Spec = Parameters<typeof validateEndpointValues>[0];
+  type Context = Parameters<typeof validateEndpointValues>[1];
 
-  const validScheduler = {
-    deployment_options: { scheduler: { type: "consistent_hash" } },
-  };
+  const t = (key: string) => key;
 
-  it("returns error when replicas < 1", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 0 }, ...validScheduler },
+  const validate = (spec: Spec, context: Partial<Context> = {}) =>
+    validateEndpointValues(
+      {
+        replicas: { num: 1 },
+        deployment_options: { scheduler: { type: "consistent_hash" } },
+        ...spec,
+      },
       {
         action: "create",
         currentRegistry: "",
         currentModelName: "",
         availableModelNames: [],
         availableRegistryNames: null,
+        ...context,
       },
-      mockT,
+      t,
     );
-    expect(errors["spec.replicas.num"]).toBeDefined();
+
+  it.each([
+    { num: 0, error: true },
+    { num: 2, error: false },
+  ])("replicas $num -> error: $error", ({ num, error }) => {
+    expect(Boolean(validate({ replicas: { num } })["spec.replicas.num"])).toBe(
+      error,
+    );
   });
 
-  it("returns no error when replicas >= 1", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 2 }, ...validScheduler },
-      {
-        action: "create",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["spec.replicas.num"]).toBeUndefined();
-  });
-
-  // A catalog written elsewhere names its author's registry. The picker shows an
-  // unknown value as an empty box, so nothing else says the field is wrong.
-  it("returns error when the registry is not in this workspace", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "create",
-        currentRegistry: "someone-elses-registry",
-        currentModelName: "",
-        availableModelNames: null,
-        availableRegistryNames: ["mine"],
-      },
-      mockT,
-    );
-    expect(errors["spec.model.registry"]).toBeDefined();
-  });
-
-  it("returns no error when the registry is in this workspace", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "create",
-        currentRegistry: "mine",
-        currentModelName: "",
-        availableModelNames: null,
-        availableRegistryNames: ["mine"],
-      },
-      mockT,
-    );
-    expect(errors["spec.model.registry"]).toBeUndefined();
-  });
-
-  it("skips the registry check while the listing has not resolved", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "create",
-        currentRegistry: "someone-elses-registry",
-        currentModelName: "",
-        availableModelNames: null,
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["spec.model.registry"]).toBeUndefined();
-  });
-
+  // A catalog written elsewhere names its author's registry. The picker shows
+  // an unknown value as an empty box, so nothing else says the field is wrong.
   // Editing an endpoint whose registry has since been removed must stay
-  // editable — the field is not what the user came to change.
-  it("skips the registry check in edit mode", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "edit",
-        currentRegistry: "gone",
-        currentModelName: "",
-        availableModelNames: null,
-        availableRegistryNames: ["mine"],
-      },
-      mockT,
-    );
-    expect(errors["spec.model.registry"]).toBeUndefined();
-  });
-
-  it("returns error when model not found in create mode", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "create",
-        currentRegistry: "my-registry",
-        currentModelName: "missing-model",
-        availableModelNames: ["model-a", "model-b"],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["-model-catalog"]).toBeDefined();
-  });
-
-  it("returns no error when model exists in create mode", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "create",
-        currentRegistry: "my-registry",
-        currentModelName: "model-a",
-        availableModelNames: ["model-a", "model-b"],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["-model-catalog"]).toBeUndefined();
-  });
-
-  it("skips model check when availableModelNames is null (existence unknown)", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "create",
-        currentRegistry: "my-registry",
-        currentModelName: "missing-model",
-        availableModelNames: null,
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["-model-catalog"]).toBeUndefined();
-  });
-
-  it("skips model check in edit mode", () => {
-    const errors = validateEndpointValues(
-      { replicas: { num: 1 }, ...validScheduler },
-      {
-        action: "edit",
-        currentRegistry: "my-registry",
-        currentModelName: "missing-model",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["-model-catalog"]).toBeUndefined();
-  });
-
-  it("returns error when scheduler type is blank", () => {
-    const errors = validateEndpointValues(
-      {
-        replicas: { num: 1 },
-        deployment_options: { scheduler: { type: "" } },
-      },
-      {
-        action: "create",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["spec.deployment_options.scheduler.type"]).toEqual({
-      type: "manual",
-      message: "endpoints.messages.schedulerTypeRequired",
-    });
-  });
-
-  it("returns error when deployment_options are missing", () => {
-    const errors = validateEndpointValues(
-      {
-        replicas: { num: 1 },
-        deployment_options: null,
-      },
-      {
-        action: "create",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["spec.deployment_options.scheduler.type"]).toEqual({
-      type: "manual",
-      message: "endpoints.messages.schedulerTypeRequired",
-    });
-  });
-
-  it("returns no error when scheduler type is set", () => {
-    const errors = validateEndpointValues(
-      {
-        replicas: { num: 1 },
-        deployment_options: { scheduler: { type: "roundrobin" } },
-      },
-      {
-        action: "create",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-    expect(errors["spec.deployment_options.scheduler.type"]).toBeUndefined();
-  });
-
-  it("ignores memory_percent when memory_mib is set", () => {
-    const errors = validateEndpointValues(
-      {
-        ...validScheduler,
-        resources: {
-          accelerator: {
-            type: "nvidia_gpu",
-            product: "Tesla-T4",
-            virtualization: {
-              memory_mib: 10240,
-              memory_percent: 50,
-              core_percent: 30,
-            },
-          },
+  // editable, and an unresolved listing must not block submit.
+  it.each([
+    { action: "create", registry: "elsewhere", listed: ["mine"], error: true },
+    { action: "create", registry: "mine", listed: ["mine"], error: false },
+    { action: "create", registry: "elsewhere", listed: null, error: false },
+    { action: "edit", registry: "gone", listed: ["mine"], error: false },
+  ] as const)(
+    "$action with registry $registry among $listed -> error: $error",
+    ({ action, registry, listed, error }) => {
+      const errors = validate(
+        {},
+        {
+          action,
+          currentRegistry: registry,
+          availableModelNames: null,
+          availableRegistryNames: listed ? [...listed] : null,
         },
-      },
-      {
-        action: "create",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
+      );
+      expect(Boolean(errors["spec.model.registry"])).toBe(error);
+    },
+  );
 
-    expect(
-      errors["spec.resources.accelerator.virtualization.memory_percent"],
-    ).toBeUndefined();
-    expect(
-      errors["spec.resources.accelerator.virtualization.memory_mib"],
-    ).toBeUndefined();
+  // `null` model names mean the existence lookup has not resolved.
+  it.each([
+    {
+      action: "create",
+      model: "missing-model",
+      found: ["model-a"],
+      error: true,
+    },
+    { action: "create", model: "model-a", found: ["model-a"], error: false },
+    { action: "create", model: "missing-model", found: null, error: false },
+    { action: "edit", model: "missing-model", found: [], error: false },
+  ] as const)(
+    "$action with model $model among $found -> error: $error",
+    ({ action, model, found, error }) => {
+      const errors = validate(
+        {},
+        {
+          action,
+          currentRegistry: "my-registry",
+          currentModelName: model,
+          availableModelNames: found ? [...found] : null,
+        },
+      );
+      expect(Boolean(errors["-model-catalog"])).toBe(error);
+    },
+  );
+
+  it.each([
+    { deployment_options: { scheduler: { type: "" } }, error: true },
+    { deployment_options: null, error: true },
+    { deployment_options: { scheduler: { type: "roundrobin" } }, error: false },
+  ])(
+    "scheduler $deployment_options -> error: $error",
+    ({ deployment_options, error }) => {
+      const message = validate({ deployment_options })[
+        "spec.deployment_options.scheduler.type"
+      ]?.message;
+      expect(message).toBe(
+        error ? "endpoints.messages.schedulerTypeRequired" : undefined,
+      );
+    },
+  );
+
+  const withVirtualization = (
+    virtualization: Record<string, unknown>,
+  ): Spec => ({
+    resources: {
+      accelerator: {
+        type: "nvidia_gpu",
+        product: "Tesla-T4",
+        virtualization: virtualization as never,
+      },
+    },
   });
 
-  it("treats blank optional vGPU fields as not configured", () => {
-    const errors = validateEndpointValues(
-      {
-        ...validScheduler,
-        resources: {
-          accelerator: {
-            type: "nvidia_gpu",
-            product: "Tesla-T4",
-            virtualization: {
-              memory_mib: "" as unknown as number,
-              memory_percent: "" as unknown as number,
-              core_percent: "" as unknown as number,
-            },
-          },
-        },
-      },
-      {
-        action: "edit",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-
-    expect(errors).toEqual({});
-  });
-
-  it("ignores memory_percent and allows zero vGPU core percent as not configured", () => {
-    const errors = validateEndpointValues(
-      {
-        ...validScheduler,
-        resources: {
-          accelerator: {
-            type: "nvidia_gpu",
-            product: "Tesla-T4",
-            virtualization: {
-              memory_percent: 50,
-              core_percent: 0,
-            },
-          },
-        },
-      },
-      {
-        action: "create",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
-
-    expect(
-      errors["spec.resources.accelerator.virtualization.core_percent"],
-    ).toBeUndefined();
+  it.each([
+    { memory_mib: 10240, memory_percent: 50, core_percent: 30 },
+    // Blank optional fields are not configured.
+    { memory_mib: "", memory_percent: "", core_percent: "" },
+    // memory_percent is ignored and a zero core percent is not configured.
+    { memory_percent: 50, core_percent: 0 },
+  ])("accepts vGPU virtualization %o", (virtualization) => {
+    expect(validate(withVirtualization(virtualization))).toEqual({});
   });
 
   it("returns error when vGPU core percent is out of range", () => {
-    const errors = validateEndpointValues(
-      {
-        ...validScheduler,
-        resources: {
-          accelerator: {
-            type: "nvidia_gpu",
-            product: "Tesla-T4",
-            virtualization: {
-              core_percent: -1,
-            },
-          },
-        },
-      },
-      {
-        action: "create",
-        currentRegistry: "",
-        currentModelName: "",
-        availableModelNames: [],
-        availableRegistryNames: null,
-      },
-      mockT,
-    );
+    const errors = validate(withVirtualization({ core_percent: -1 }));
 
-    expect(
-      errors["spec.resources.accelerator.virtualization.memory_percent"],
-    ).toBeUndefined();
     expect(
       errors["spec.resources.accelerator.virtualization.core_percent"]?.message,
     ).toBe("endpoints.messages.vgpuCorePercentRange");
@@ -815,27 +584,18 @@ describe("validateEndpointValues", () => {
 });
 
 describe("validateEndpointValues GPU count precision", () => {
-  const mockT = (key: string) => key;
-
-  const scheduler = {
-    deployment_options: { scheduler: { type: "consistent_hash" } },
-  };
-
   const validate = (
-    gpu: number | null,
+    gpu: number,
     clusterType: "ssh" | "kubernetes" | undefined,
-    accelerator?: { type?: string; product?: string } | null,
-  ) => {
-    return validateEndpointValues(
+    accelerator: { type?: string; product?: string } | null = {
+      type: "nvidia_gpu",
+      product: "Tesla-T4",
+    },
+  ) =>
+    validateEndpointValues(
       {
-        ...scheduler,
-        resources: {
-          gpu,
-          accelerator:
-            accelerator === undefined
-              ? { type: "nvidia_gpu", product: "Tesla-T4" }
-              : accelerator,
-        },
+        deployment_options: { scheduler: { type: "consistent_hash" } },
+        resources: { gpu, accelerator },
       },
       {
         action: "create",
@@ -845,83 +605,50 @@ describe("validateEndpointValues GPU count precision", () => {
         availableRegistryNames: null,
         clusterType,
       },
-      mockT,
+      (key) => key,
     );
-  };
 
-  it("allows ssh 0 as the unselect value", () => {
-    expect(validate(0, "ssh")).toEqual({});
+  // 0 is the unselect value on both cluster types; ssh takes one decimal below
+  // one card and whole cards above it, kubernetes whole cards only.
+  it.each([
+    { gpu: 0, cluster: "ssh", error: false },
+    { gpu: 0, cluster: "kubernetes", error: false },
+    { gpu: 0.1, cluster: "ssh", error: false },
+    { gpu: 0.9, cluster: "ssh", error: false },
+    { gpu: 1, cluster: "ssh", error: false },
+    { gpu: 8, cluster: "ssh", error: false },
+    { gpu: 0.01, cluster: "ssh", error: true },
+    { gpu: 0.15, cluster: "ssh", error: true },
+    { gpu: 1.5, cluster: "ssh", error: true },
+    { gpu: -1, cluster: "ssh", error: true },
+    { gpu: 2, cluster: "kubernetes", error: false },
+    { gpu: 0.5, cluster: "kubernetes", error: true },
+    { gpu: 1.5, cluster: "kubernetes", error: true },
+    { gpu: -1, cluster: "kubernetes", error: true },
+  ] as const)(
+    "count $gpu on $cluster -> error: $error",
+    ({ gpu, cluster, error }) => {
+      expect(Boolean(validate(gpu, cluster)["spec.resources.gpu"])).toBe(error);
+    },
+  );
+
+  it("names the ssh precision rule in its message", () => {
+    expect(validate(0.15, "ssh")["spec.resources.gpu"]).toEqual({
+      type: "manual",
+      message: "endpoints.messages.gpuCountPrecisionSsh",
+    });
   });
 
-  it("allows kubernetes 0 as the unselect value", () => {
-    expect(validate(0, "kubernetes")).toEqual({});
-  });
-
-  it("allows ssh one-decimal counts below one", () => {
-    for (const gpu of [0.1, 0.5, 0.9]) {
-      expect(validate(gpu, "ssh")).toEqual({});
-    }
-  });
-
-  it("allows ssh integer counts at or above one", () => {
-    for (const gpu of [1, 2, 8]) {
-      expect(validate(gpu, "ssh")).toEqual({});
-    }
-  });
-
-  it("rejects ssh multi-decimal counts below one", () => {
-    for (const gpu of [0.01, 0.15]) {
-      const errors = validate(gpu, "ssh");
-      expect(errors["spec.resources.gpu"]).toEqual({
-        type: "manual",
-        message: "endpoints.messages.gpuCountPrecisionSsh",
-      });
-    }
-  });
-
-  it("rejects ssh non-integer counts at or above one", () => {
-    for (const gpu of [1.1, 1.5]) {
-      const errors = validate(gpu, "ssh");
-      expect(errors["spec.resources.gpu"]).toBeDefined();
-    }
-  });
-
-  it("rejects ssh negative counts", () => {
-    const errors = validate(-1, "ssh");
-    expect(errors["spec.resources.gpu"]).toBeDefined();
-  });
-
-  it("allows kubernetes positive integer counts only", () => {
-    for (const gpu of [1, 2, 8]) {
-      expect(validate(gpu, "kubernetes")).toEqual({});
-    }
-  });
-
-  it("rejects kubernetes fractional counts", () => {
-    for (const gpu of [0.5, 1.5]) {
-      const errors = validate(gpu, "kubernetes");
-      expect(errors["spec.resources.gpu"]).toBeDefined();
-    }
-  });
-
-  it("rejects kubernetes negative counts", () => {
-    const errors = validate(-1, "kubernetes");
-    expect(errors["spec.resources.gpu"]).toBeDefined();
-  });
-
-  it("skips precision validation when no accelerator is selected", () => {
-    expect(validate(1.5, "ssh", null)).toEqual({});
-  });
-
-  it("skips precision validation when accelerator product is missing", () => {
-    expect(validate(1.5, "ssh", { type: "nvidia_gpu", product: "" })).toEqual(
-      {},
-    );
-  });
-
-  it("skips precision validation when cluster type is unknown", () => {
-    expect(validate(1.5, undefined)).toEqual({});
-  });
+  it.each([
+    { accelerator: null, cluster: "ssh" },
+    { accelerator: { type: "nvidia_gpu", product: "" }, cluster: "ssh" },
+    { accelerator: undefined, cluster: undefined },
+  ] as const)(
+    "skips precision validation for $accelerator on $cluster",
+    ({ accelerator, cluster }) => {
+      expect(validate(1.5, cluster, accelerator)).toEqual({});
+    },
+  );
 });
 
 describe("buildCatalogMergedSpec", () => {

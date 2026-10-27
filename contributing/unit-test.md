@@ -107,6 +107,7 @@ reproduces the bug.
 | `@/foundation/lib/i18n`, `react-i18next` | `t(key)` returns the key; interpolation values are appended after a colon: `t("x.count", { count: 3 })` → `"x.count:3"`. A string fallback argument is ignored. |
 | `@refinedev/react-hook-form` | `useForm` runs on plain react-hook-form. Control and inspect it through `refineForm` (below). |
 | jsdom layout APIs | `ResizeObserver`, `scrollIntoView`, pointer capture — what Radix and cmdk need to open. |
+| `@/foundation/hooks/use-is-truncated` | Returns `false` (jsdom has no layout). A test that needs a clipped element: `vi.mocked(useIsTruncated).mockReturnValue(true)`. Reset before each test. |
 | Time zone | `TZ=UTC` |
 
 **Do not** re-declare any of these in a test file. Assert on translation keys:
@@ -129,6 +130,7 @@ All in `src/foundation/testing/`.
 | `refineForm` | State of the Refine `useForm` mock: set `queryData` to simulate the record an edit form loads; read `options` for what the hook passed to Refine (e.g. `refineCoreProps.queryOptions.select`); assert on `onFinish`. Reset before each test. |
 | `selectOption(fieldName, option)` | Pick an option from the Radix Select inside `data-testid="field-<fieldName>"`. |
 | `fillField(fieldName, value)` | Type into the input inside `data-testid="field-<fieldName>"` and blur it. |
+| `openMenu(trigger)` | Open a Radix DropdownMenu or Select. They open on pointer down; a plain `click` leaves them closed and later assertions pass vacuously. |
 | `isHidden(element)` | Whether an element is hidden from the user (`hidden` attribute or Tailwind `hidden` class on it or an ancestor). The one sanctioned way to check visibility toggled by a class. |
 
 ## Testing Patterns
@@ -210,6 +212,12 @@ Unit tests follow the same dependency rules as source code (see [architecture.md
 
 - **L1 tests** mock only external libraries (Refine, i18n, PostgREST) — no L2/L3 imports
 - **L2 tests** may import from L1 or mock it — no cross-domain or L3 imports
+
+## Enforcement
+
+`node tools/check-test-patterns.cjs` runs in CI and pre-commit. It rejects class-name assertions,
+`expect(getBy…).toBeTruthy()`, and re-declarations of the global environment. It cannot judge
+cross-layer duplication or whether a test proves its name — that is what the checklist is for.
 
 ## Checklist Before Finishing
 

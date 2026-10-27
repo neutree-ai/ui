@@ -5,12 +5,6 @@ import type {
   RecipeFeature,
 } from "@/foundation/recipe/types";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string) => fallback ?? key,
-  }),
-}));
-
 import { FeaturePicker } from "./FeaturePicker";
 
 const imageFeature = (
@@ -115,11 +109,8 @@ describe("FeaturePicker input addons", () => {
   });
 });
 
-// A feature's description used to sit as a permanent line under every field,
-// which is exactly what made a form with several features (context window,
-// concurrency, tool-calling, ...) read as dense. It now lives behind the same
-// hover-hint affordance InfoHint offers elsewhere, so the label row stays one
-// line and the explanation is still there for whoever wants it.
+// A feature's description lives behind the same hover hint InfoHint offers
+// elsewhere, so the label row stays one line.
 describe("FeaturePicker feature descriptions", () => {
   it("keeps a feature's description out of the label row, offering it via hover hint", async () => {
     renderPicker({

@@ -72,9 +72,7 @@ const modelLimits = () =>
 describe("ApiKeyPolicyFields", () => {
   it("offers only the overall quota while the allowlist is empty", () => {
     render(<Harness />);
-    expect(
-      screen.getByText("api_keys.limits.perModel.emptyAllowlist"),
-    ).toBeTruthy();
+    screen.getByText("api_keys.limits.perModel.emptyAllowlist");
     expect(overallAmount().disabled).toBe(false);
   });
 
@@ -86,9 +84,7 @@ describe("ApiKeyPolicyFields", () => {
     await waitFor(() => {
       expect(overallAmount().disabled).toBe(true);
     });
-    expect(
-      screen.getByText("api_keys.limits.perModel.overallSuspended"),
-    ).toBeTruthy();
+    screen.getByText("api_keys.limits.perModel.overallSuspended");
 
     fireEvent.change(modelLimits()[0], { target: { value: "" } });
     await waitFor(() => {
@@ -120,11 +116,7 @@ describe("ApiKeyPolicyFields", () => {
 
     // And the form refuses to submit rather than letting the backend reject it.
     fireEvent.click(screen.getByText("submit"));
-    await waitFor(() => {
-      expect(
-        screen.getByText("api_keys.limits.perModel.overlapError"),
-      ).toBeTruthy();
-    });
+    await screen.findByText("api_keys.limits.perModel.overlapError");
   });
 });
 
@@ -146,8 +138,6 @@ describe("model source on the allowlist rows", () => {
       />,
     );
 
-    expect(
-      screen.getByText("modelSource.values.third-party-public"),
-    ).toBeTruthy();
+    screen.getByText("modelSource.values.third-party-public");
   });
 });

@@ -39,7 +39,7 @@ describe("parseCatalogSpecYaml", () => {
     expect(result).toEqual({ ok: true, spec: parsedSpec });
   });
 
-  // NEU-611: pasting the whole document used to store the envelope as the spec,
+  // Pasting the whole document used to store the envelope as the spec,
   // leaving the record with no engine and blanking the list page.
   it("unwraps a full ModelCatalog document to its spec", () => {
     const result = parseCatalogSpecYaml(fullDocument, record);
@@ -102,7 +102,7 @@ describe("parseCatalogSpecYaml", () => {
   });
 
   // An envelope whose spec was deleted or mangled must not be stored as the
-  // spec — that would reproduce the NEU-611 corruption the parser guards.
+  // spec — that would store the envelope as the spec all over again.
   it.each([
     ["a missing spec", `kind: ModelCatalog\nmetadata:\n  name: ${"neu"}\n`],
     ["a null spec", `apiVersion: v1\nkind: ModelCatalog\nspec:\n`],
@@ -115,48 +115,26 @@ describe("parseCatalogSpecYaml", () => {
     });
   });
 
-  it("rejects a document for a different catalog", () => {
-    const result = parseCatalogSpecYaml(
-      fullDocument.replace("name: qwen3-6-27b", "name: llama-3-8b"),
-      record,
-    );
-
-    expect(result).toEqual({
-      ok: false,
-      error: {
-        type: "nameMismatch",
-        expected: "qwen3-6-27b",
-        actual: "llama-3-8b",
-      },
-    });
-  });
-
-  it("rejects a document from a different workspace", () => {
-    const result = parseCatalogSpecYaml(
-      fullDocument.replace("workspace: default", "workspace: staging"),
-      record,
-    );
-
-    expect(result).toEqual({
-      ok: false,
-      error: {
-        type: "workspaceMismatch",
-        expected: "default",
-        actual: "staging",
-      },
-    });
-  });
-
-  it("rejects a document of another kind", () => {
-    const result = parseCatalogSpecYaml(
-      fullDocument.replace("kind: ModelCatalog", "kind: Endpoint"),
-      record,
-    );
-
-    expect(result).toEqual({
-      ok: false,
-      error: { type: "wrongKind", kind: "Endpoint" },
-    });
+  it.each([
+    [
+      "for a different catalog",
+      ["name: qwen3-6-27b", "name: llama-3-8b"],
+      { type: "nameMismatch", expected: "qwen3-6-27b", actual: "llama-3-8b" },
+    ],
+    [
+      "from a different workspace",
+      ["workspace: default", "workspace: staging"],
+      { type: "workspaceMismatch", expected: "default", actual: "staging" },
+    ],
+    [
+      "of another kind",
+      ["kind: ModelCatalog", "kind: Endpoint"],
+      { type: "wrongKind", kind: "Endpoint" },
+    ],
+  ])("rejects a document %s", (_label, [from, to], error) => {
+    expect(
+      parseCatalogSpecYaml(fullDocument.replace(from, to), record),
+    ).toEqual({ ok: false, error });
   });
 
   it.each([

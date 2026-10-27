@@ -9,13 +9,6 @@ vi.mock("@refinedev/core", () => ({
   useInvalidate: () => invalidate,
 }));
 
-// Keep `t` stable across renders; effects that depend on it would otherwise
-// re-run on every render.
-vi.mock("react-i18next", () => {
-  const t = (key: string) => key;
-  return { useTranslation: () => ({ t }) };
-});
-
 vi.mock("@/domains/api-key/components/ApiKeyPolicyFields", () => ({
   ApiKeyPolicyFields: () => <div>Policy fields</div>,
 }));

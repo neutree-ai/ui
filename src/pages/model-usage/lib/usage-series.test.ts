@@ -64,9 +64,7 @@ describe("aggregateSeries", () => {
       total: 500,
     });
   });
-});
 
-describe("aggregateSeries", () => {
   it("treats missing token counts as zero", () => {
     const [series] = aggregateSeries(
       [

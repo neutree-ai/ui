@@ -194,8 +194,7 @@ describe("EndpointsShow", () => {
     );
   });
 
-  // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
-  // the task off it used to throw and blank the whole page (NEU-728).
+  // A Flex endpoint deploys with no model, so the API omits spec.model.
   it("renders a model-free endpoint", () => {
     useShowMock.mockReturnValue({
       query: {
@@ -206,7 +205,9 @@ describe("EndpointsShow", () => {
       },
     });
 
-    expect(() => render(<EndpointsShow />)).not.toThrow();
+    render(<EndpointsShow />);
+
+    screen.getByRole("heading", { name: "endpoint-a" });
   });
 
   // The identity line drops the badge rather than printing "name, -" before

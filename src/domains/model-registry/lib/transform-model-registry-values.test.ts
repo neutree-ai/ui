@@ -11,27 +11,35 @@ const makeRegistry = (credentials?: string): ModelRegistry =>
   }) as unknown as ModelRegistry;
 
 describe("transformModelRegistryValues", () => {
-  it("preserves empty credentials in create mode", () => {
-    const result = transformModelRegistryValues(makeRegistry(""));
-    expect(result.spec.credentials).toBe("");
-  });
-
-  it("preserves non-empty credentials in edit mode", () => {
-    const result = transformModelRegistryValues(
-      makeRegistry("token-123"),
+  it.each([
+    ["keeps empty credentials on create", "", false, undefined, ""],
+    [
+      "keeps new credentials on edit",
+      "token-123",
       true,
+      undefined,
+      "token-123",
+    ],
+    [
+      "drops untouched empty credentials on edit",
+      "",
+      true,
+      undefined,
+      undefined,
+    ],
+    [
+      "keeps credentials cleared on purpose on edit",
+      "",
+      true,
+      { spec: { credentials: true } },
+      "",
+    ],
+  ])("%s", (_, credentials, isEdit, touched, expected) => {
+    const result = transformModelRegistryValues(
+      makeRegistry(credentials),
+      isEdit,
+      touched,
     );
-    expect(result.spec.credentials).toBe("token-123");
-  });
-
-  it("removes unchanged empty credentials in edit mode", () => {
-    const result = transformModelRegistryValues(makeRegistry(""), true);
-    expect(result.spec.credentials).toBeUndefined();
-  });
-  it("preserves touched empty credentials in edit mode", () => {
-    const result = transformModelRegistryValues(makeRegistry(""), true, {
-      spec: { credentials: true },
-    });
-    expect(result.spec.credentials).toBe("");
+    expect(result.spec.credentials).toBe(expected);
   });
 });

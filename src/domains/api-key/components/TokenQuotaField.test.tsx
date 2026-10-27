@@ -3,6 +3,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it } from "vitest";
 
 import { apiKeyPolicyDefaults } from "@/domains/api-key/hooks/use-api-key-policy";
+import { selectOption } from "@/foundation/testing/interactions";
 import { TokenQuotaField } from "./TokenQuotaField";
 
 function Harness() {
@@ -18,15 +19,6 @@ function Harness() {
 
 const amountInput = () =>
   screen.getByLabelText("api_keys.limits.tokenLimit") as HTMLInputElement;
-
-// Open the unit Select (second combobox) and pick a unit by its label.
-function selectUnit(unitLabel: string) {
-  const unitField = screen.getByTestId("field-quota_unit");
-  const trigger = unitField.querySelector('button[role="combobox"]');
-  if (!trigger) throw new Error("unit trigger not found");
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole("option", { name: unitLabel }));
-}
 
 describe("TokenQuotaField", () => {
   it("groups digits with thousands separators as you type", () => {
@@ -48,15 +40,11 @@ describe("TokenQuotaField", () => {
 
     // Switch to Tokens: 1.5 tokens is illegal, and the error must appear
     // without touching the amount field again (this is what the deps rule buys).
-    selectUnit("api_keys.limits.units.tokens");
-    await waitFor(() => {
-      expect(
-        screen.getByText("api_keys.limits.invalidTokenQuota"),
-      ).toBeTruthy();
-    });
+    selectOption("quota_unit", "api_keys.limits.units.tokens");
+    await screen.findByText("api_keys.limits.invalidTokenQuota");
 
     // Switch back to M: the amount becomes legal again, error clears.
-    selectUnit("api_keys.limits.units.M");
+    selectOption("quota_unit", "api_keys.limits.units.M");
     await waitFor(() => {
       expect(
         screen.queryByText("api_keys.limits.invalidTokenQuota"),

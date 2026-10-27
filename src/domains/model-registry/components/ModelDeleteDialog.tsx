@@ -40,7 +40,7 @@ import type { ModelReference } from "@/foundation/types/model-types";
  */
 const SERVING_PHASE = "Running";
 
-export const referencePhaseClassName = (phase: string) =>
+const referencePhaseClassName = (phase: string) =>
   phase === SERVING_PHASE
     ? "ml-2 text-muted-foreground"
     : "ml-2 text-amber-600 dark:text-amber-500";

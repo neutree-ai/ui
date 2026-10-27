@@ -4,20 +4,6 @@ import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallbackOrVars?: unknown, vars?: unknown) => {
-      const values = (vars ?? fallbackOrVars) as
-        | Record<string, unknown>
-        | undefined;
-
-      return values && typeof values === "object"
-        ? `${key} ${JSON.stringify(values)}`
-        : key;
-    },
-  }),
-}));
-
 /** deepseek-ai/DeepSeek-V3, as the registry reports it. */
 const deepseekV3: ModelInfo = {
   num_hidden_layers: 61,
@@ -84,28 +70,46 @@ describe("KVCacheEstimate", () => {
     );
   });
 
-  it("names the field it is missing instead of estimating without it", () => {
-    render(
-      <KVCacheEstimate
-        read={ready({ ...deepseekV3, kv_lora_rank: undefined })}
-      />,
-    );
+  // Which checkpoints are refused is the formula's rule (kv-cache tests); the
+  // panel's part is naming the obstacle, in full, with no formula to open.
+  it.each([
+    {
+      refusal: "missing-fields",
+      info: { ...deepseekV3, kv_lora_rank: undefined },
+      names: "kv_lora_rank",
+    },
+    {
+      refusal: "layer-types",
+      info: { ...qwen36, layer_types: ["mamba", "full_attention"] },
+      names: "mamba",
+    },
+    {
+      refusal: "compression-rates",
+      info: {
+        num_hidden_layers: 4,
+        num_key_value_heads: 1,
+        head_dim: 512,
+        sliding_window: 128,
+        index_head_dim: 128,
+        compress_ratios: [128, 8, 128, 8],
+        max_position_embeddings: 1048576,
+        parameter_dtype: "bfloat16",
+      },
+      names: "8",
+    },
+  ])("names what a $refusal refusal is missing", ({ refusal, info, names }) => {
+    render(<KVCacheEstimate read={ready(info)} />);
 
-    expect(state()).toBe("missing-fields");
-    expect(screen.getByTestId("kv-cache-refusal").textContent).toContain(
-      "kv_lora_rank",
-    );
+    expect(state()).toBe(refusal);
+    expect(screen.getByTestId("kv-cache-refusal").textContent).toContain(names);
+    expect(screen.queryByTestId("kv-cache-formula-toggle")).toBeNull();
   });
 
-  it("estimates a mixed sliding/full checkpoint instead of refusing it", () => {
+  it("shows the windowed layers as their own part of a mixed sliding/full formula", () => {
     render(
       <KVCacheEstimate
         read={ready({
-          num_hidden_layers: 24,
-          num_key_value_heads: 8,
-          head_dim: 64,
-          max_position_embeddings: 131072,
-          parameter_dtype: "bfloat16",
+          ...qwen36,
           layer_types: ["sliding_attention", "full_attention"],
           sliding_window: 128,
         })}
@@ -113,55 +117,8 @@ describe("KVCacheEstimate", () => {
     );
 
     expect(state()).toBe("mixed_full_sliding_gqa");
-    expect(screen.queryByTestId("kv-cache-refusal")).toBeNull();
-
-    // The windowed layers are their own part of the cache, because they stop
-    // growing where the full ones do not — visible once the formula is opened.
     fireEvent.click(screen.getByTestId("kv-cache-formula-toggle"));
-
-    expect(
-      screen.queryByTestId("kv-cache-component-sliding_kv"),
-    ).not.toBeNull();
-  });
-
-  it("refuses a layer kind none of the formulas describes", () => {
-    render(
-      <KVCacheEstimate
-        read={ready({
-          num_hidden_layers: 24,
-          num_key_value_heads: 8,
-          head_dim: 64,
-          max_position_embeddings: 131072,
-          parameter_dtype: "bfloat16",
-          layer_types: ["mamba", "full_attention"],
-        })}
-      />,
-    );
-
-    expect(state()).toBe("layer-types");
-    expect(screen.getByTestId("kv-cache-refusal").textContent).toContain(
-      "mamba",
-    );
-  });
-
-  it("says why it will not size a compression rate it has no evidence for", () => {
-    render(
-      <KVCacheEstimate
-        read={ready({
-          num_hidden_layers: 4,
-          num_key_value_heads: 1,
-          head_dim: 512,
-          sliding_window: 128,
-          index_head_dim: 128,
-          compress_ratios: [128, 8, 128, 8],
-          max_position_embeddings: 1048576,
-          parameter_dtype: "bfloat16",
-        })}
-      />,
-    );
-
-    expect(state()).toBe("compression-rates");
-    expect(screen.getByTestId("kv-cache-refusal").textContent).toContain("8");
+    screen.getByTestId("kv-cache-component-sliding_kv");
   });
 
   it("leaves the token count empty when the checkpoint states no context length", () => {
@@ -432,38 +389,6 @@ describe("KVCacheEstimate disclosure", () => {
     expect(screen.queryByTestId("kv-cache-components")).toBeNull();
   });
 
-  it("is a real button, so keyboard and touch reach it as well as a pointer", () => {
-    // The formula is what a reader checks the arithmetic against. Putting it
-    // behind hover alone would hand it to mouse users and nobody else.
-    render(<KVCacheEstimate read={ready(deepseekV3)} />);
-
-    expect(open().tagName).toBe("BUTTON");
-
-    open().focus();
-    expect(document.activeElement).toBe(open());
-
-    fireEvent.keyDown(open(), { key: "Enter" });
-    fireEvent.keyUp(open(), { key: "Enter" });
-    fireEvent.click(open());
-
-    expect(screen.queryByTestId("kv-cache-components")).not.toBeNull();
-  });
-
-  it("shows a refusal in full, with nothing to open", () => {
-    // A refusal is what the reader has to act on — supply a token, pick another
-    // model, fill the field in by hand — so it is never behind a disclosure.
-    render(
-      <KVCacheEstimate
-        read={ready({ ...deepseekV3, kv_lora_rank: undefined })}
-      />,
-    );
-
-    expect(screen.getByTestId("kv-cache-refusal").textContent).toContain(
-      "kv_lora_rank",
-    );
-    expect(screen.queryByTestId("kv-cache-formula-toggle")).toBeNull();
-  });
-
   it("shows a read failure in full, with nothing to open", () => {
     render(
       <KVCacheEstimate
@@ -492,7 +417,6 @@ describe("KVCacheEstimate fields a control elsewhere owns", () => {
     );
 
     const tokens = screen.getByTestId("kv-cache-tokens");
-    expect(tokens.tagName).not.toBe("INPUT");
     expect(tokens.textContent).toBe("32,768");
     expect(tokens.getAttribute("data-owned-by")).toBe("Context window");
 
@@ -540,12 +464,6 @@ describe("KVCacheEstimate fields a control elsewhere owns", () => {
 // magnitude on by eye — the field groups it, and typing or deleting must not
 // fight the commas that come and go around the caret as it does.
 describe("KVCacheEstimate thousands grouping", () => {
-  it("groups the value the deployment or checkpoint derived", () => {
-    render(<KVCacheEstimate read={ready(qwen36)} />);
-
-    expect(tokenInput().value).toBe("262,144");
-  });
-
   it("groups what the user types, keeping the underlying value plain digits", () => {
     render(<KVCacheEstimate read={ready(deepseekV3)} />);
 

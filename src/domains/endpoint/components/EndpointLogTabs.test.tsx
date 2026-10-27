@@ -1,6 +1,6 @@
 import { useList } from "@refinedev/core";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { EndpointLogTabs } from "./EndpointLogTabs";
@@ -167,8 +167,6 @@ beforeEach(() => {
   });
 });
 
-afterEach(cleanup);
-
 describe("EndpointLogTabs toolbar", () => {
   it("removes the toolbar when there is nothing to switch", () => {
     logSources.deployments = [makeDeployment(1, ["logs"])];
@@ -185,9 +183,7 @@ describe("EndpointLogTabs toolbar", () => {
     render(<EndpointLogTabs endpoint={endpoint} clusterType="ssh" />);
 
     screen.getByTestId("endpoint-log-toolbar");
-    expect(
-      screen.getByRole("group", { name: "common.tabs.logs" }),
-    ).toBeTruthy();
+    screen.getByRole("group", { name: "common.tabs.logs" });
   });
 
   it("keeps the toolbar when replicas can be switched", () => {
@@ -227,9 +223,7 @@ describe("Kubernetes log sources", () => {
 
     rerender(<EndpointLogTabs endpoint={endpoint} clusterType="kubernetes" />);
 
-    expect(
-      screen.getByRole("combobox", { name: "endpoints.logs.container" }),
-    ).toBeTruthy();
+    screen.getByRole("combobox", { name: "endpoints.logs.container" });
     expectLogSource("pod-a", "engine");
   });
 
@@ -373,9 +367,7 @@ describe("Kubernetes log sources", () => {
 
     selectLogOption("endpoints.logs.container", "engine");
     expectLogSource("pod-a", "engine");
-    expect(
-      screen.getByRole("button", { name: "endpoints.logs.previous" }),
-    ).toBeTruthy();
+    screen.getByRole("button", { name: "endpoints.logs.previous" });
   });
 
   it.each(["engine", "init-model"])(

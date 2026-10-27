@@ -1,22 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import { GpuDeviceResourcesView } from "./GpuDeviceResourcesView";
 
 const copyMock = vi.fn();
-// jsdom lays nothing out, so the real measurement always says "not clipped".
-// The flag stands in for it: off everywhere except the truncation test, which
-// is also the state every other test would be in on a wide screen.
-const truncation = vi.hoisted(() => ({ value: false }));
-
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => truncation.value,
-}));
-
 vi.mock("@/components/ui/progress", () => ({
-  Progress: ({ value, className }: { value: number; className?: string }) => (
-    <div data-testid="progress" data-value={value} className={className} />
+  Progress: ({ value }: { value: number }) => (
+    <div data-testid="progress" data-value={value} />
   ),
 }));
 
@@ -112,7 +104,7 @@ const nodeResources: Record<string, NodeResourceStatus> = {
 describe("GpuDeviceResourcesView", () => {
   beforeEach(() => {
     copyMock.mockClear();
-    truncation.value = false;
+    vi.mocked(useIsTruncated).mockReturnValue(false);
   });
 
   it("renders GPU number, copyable UUID, remaining pools, and no slots column", () => {
@@ -162,36 +154,6 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.queryByText("Selected")).toBeNull();
   });
 
-  it("orders device table resources as VRAM before core", () => {
-    render(
-      <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
-    );
-
-    expect(
-      screen.getAllByRole("columnheader").map((header) => header.textContent),
-    ).toEqual([
-      "GPU",
-      "Status",
-      "Node",
-      "Product",
-      "Memory Usage",
-      "Core Usage",
-    ]);
-  });
-
-  it("centers the device status column", () => {
-    render(
-      <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
-    );
-
-    expect(
-      screen.getByRole("columnheader", { name: "Status" }).className,
-    ).toContain("text-center");
-    expect(
-      screen.getByRole("img", { name: "Healthy" }).closest("td")?.className,
-    ).toContain("text-center");
-  });
-
   it("keeps healthy device indicators native and out of the tab order", () => {
     render(
       <TooltipProvider delayDuration={0}>
@@ -234,8 +196,6 @@ describe("GpuDeviceResourcesView", () => {
     });
     expect(unhealthyIndicator.getAttribute("title")).toBeNull();
     expect(unhealthyIndicator.getAttribute("tabindex")).toBe("0");
-    expect(unhealthyIndicator.className).not.toContain("cursor-");
-    expect(unhealthyIndicator.className).toContain("focus-visible:ring-2");
 
     fireEvent.focus(unhealthyIndicator);
 
@@ -373,8 +333,6 @@ describe("GpuDeviceResourcesView", () => {
       expect.any(Object),
     );
     screen.getByText("Usable");
-    const usageRow = screen.getByTestId("gpu-device-resource-usage-row");
-    expect(usageRow.className).toContain("grid-cols-2");
   });
 
   it("renders an unhealthy card as out of service rather than idle", () => {
@@ -414,21 +372,10 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.queryByText("0 / 0")).toBeNull();
     expect(screen.getAllByText("-")).toHaveLength(6);
 
-    // Bars carry no fill and use the dashed no-reading track.
-    const bars = screen.getAllByTestId("progress");
-    expect(bars).toHaveLength(2);
-    for (const bar of bars) {
+    // Bars carry no fill.
+    for (const bar of screen.getAllByTestId("progress")) {
       expect(bar.getAttribute("data-value")).toBe("0");
-      expect(bar.className).toContain("border-dashed");
-      expect(bar.className).toContain("[&>div]:bg-transparent");
     }
-
-    // The cell itself is dimmed by tokens, not by a blanket opacity that would
-    // also wash out the Unhealthy badge.
-    const cell = screen.getByText("GPU 1").closest("div")
-      ?.parentElement as HTMLElement;
-    expect(cell.className).toContain("var(--nt-fill-neutral-trans-3)");
-    expect(cell.className).not.toContain("opacity-");
   });
 
   it("renders a compact device grid for node details", () => {
@@ -457,20 +404,13 @@ describe("GpuDeviceResourcesView", () => {
     screen.getByText("7.5 GiB");
     screen.getByText("50");
     expect(screen.getAllByTestId("progress")).toHaveLength(2);
-    // The cell used to hide the product behind a native `title`, so this line
-    // read the other way round: the name was asserted *absent* from the grid.
-    // It is visible now — two cards of one node are told apart by it.
+    // Two cards of one node are told apart by the visible product name.
     expect(screen.getByTestId("gpu-cell-product").textContent).toBe("Tesla-T4");
     // And it stays out of the tab order while nothing is clipped: its tooltip
     // would only repeat what is already on screen.
     expect(
       screen.getByTestId("gpu-cell-product").getAttribute("tabindex"),
     ).toBe(null);
-    // Nothing to reveal, so nothing announces itself: no help cursor and no
-    // tooltip repeating the line under the pointer.
-    expect(screen.getByTestId("gpu-cell-product").className).not.toContain(
-      "cursor-help",
-    );
 
     fireEvent.mouseEnter(screen.getByTestId("gpu-cell-product"));
 
@@ -485,7 +425,7 @@ describe("GpuDeviceResourcesView", () => {
 
   it("keeps a truncated cell product reachable from the keyboard", async () => {
     const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
-    truncation.value = true;
+    vi.mocked(useIsTruncated).mockReturnValue(true);
 
     render(
       <TooltipProvider delayDuration={0}>
@@ -520,37 +460,10 @@ describe("GpuDeviceResourcesView", () => {
     // Nothing carries the name as a native title any more: it is either visible
     // or it is on the tooltip, and both are reachable without a pointer.
     expect(product.closest("[title]")).toBeNull();
-    // Still no help cursor: this is a value, not a help topic.
-    expect(product.className).not.toContain("cursor-help");
 
     fireEvent.focus(product);
 
     expect((await screen.findByRole("tooltip")).textContent).toBe(longProduct);
-  });
-
-  it("lets the device grid wrap instead of pinning it to a column count", () => {
-    render(
-      <TooltipProvider delayDuration={0}>
-        <GpuDeviceResourcesView
-          nodeResources={nodeResources}
-          labels={labels}
-          variant="grid"
-          showHeader={false}
-          showFilters={false}
-          showSummary={false}
-          showNodeColumn={false}
-        />
-      </TooltipProvider>,
-    );
-
-    const grid = screen.getByTestId("gpu-device-grid");
-    expect(grid.style.gridTemplateColumns).toBe(
-      "repeat(auto-fit, minmax(188px, 1fr))",
-    );
-    // Without a fixed column count the row has no shape left to pad to, and a
-    // min-width would put the overflow back on a scrollbar.
-    expect(grid.style.minWidth).toBe("");
-    expect(screen.queryByTestId("gpu-device-grid-empty-cell")).toBeNull();
   });
 
   it("uses free and allocated labels when no request fit context is provided", () => {

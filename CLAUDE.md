@@ -8,6 +8,11 @@ Follow the architecture guide: [contributing/architecture.md](contributing/archi
 
 Follow the unit testing guide: [contributing/unit-test.md](contributing/unit-test.md)
 
+Read it before adding or changing any test, and go through its checklist before finishing. In short:
+test each rule once at the cheapest layer (`lib/` first; components and forms only prove the wiring),
+assert what the user sees rather than class names or layout, and do not re-declare what
+`src/foundation/testing/setup.ts` already provides.
+
 ## E2E Tests
 
 Follow the E2E guide: [contributing/e2e.md](contributing/e2e.md)

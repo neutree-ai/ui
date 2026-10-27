@@ -25,7 +25,7 @@ describe("EndpointEngine", () => {
   });
 
   // A catalog saved with a broken or engine-less spec used to throw here and,
-  // with no error boundary above it, blank the whole list page (NEU-611).
+  // with no error boundary above it, blank the whole list page.
   it.each([
     ["a missing engine", {}],
     ["an engine without a name", { engine: { version: "v1" } }],

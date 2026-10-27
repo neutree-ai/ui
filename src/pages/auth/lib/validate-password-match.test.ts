@@ -2,19 +2,12 @@ import { describe, expect, it } from "vitest";
 import { validatePasswordMatch } from "./validate-password-match";
 
 describe("validatePasswordMatch", () => {
-  it("returns true when passwords match", () => {
-    expect(validatePasswordMatch("abc123", "abc123")).toBe(true);
-  });
-
-  it("returns false when passwords differ", () => {
-    expect(validatePasswordMatch("abc123", "abc456")).toBe(false);
-  });
-
-  it("returns false when one is empty", () => {
-    expect(validatePasswordMatch("abc123", "")).toBe(false);
-  });
-
-  it("returns true when both are empty", () => {
-    expect(validatePasswordMatch("", "")).toBe(true);
+  it.each([
+    ["abc123", "abc123", true],
+    ["abc123", "abc456", false],
+    ["abc123", "", false],
+    ["", "", true],
+  ])("%j vs %j -> %s", (password, confirm, matches) => {
+    expect(validatePasswordMatch(password, confirm)).toBe(matches);
   });
 });

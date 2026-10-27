@@ -1,63 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { ValueSchemaTable } from "./ValueSchemaTable";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (
-      key: string,
-      options?: {
-        count?: number;
-        values?: string;
-        name?: string;
-        visible?: number;
-        total?: number;
-      },
-    ) => {
-      if (key === "engines.schema.parameterCount") {
-        return `${options?.count} parameters`;
-      }
-      if (key === "engines.schema.nestedCount") {
-        return `${options?.count} nested parameters`;
-      }
-      if (key === "engines.schema.filteredCount") {
-        return `${options?.visible} of ${options?.total} parameters`;
-      }
-      if (key === "engines.schema.enumLead") return "one of";
-      if (key === "engines.schema.expandDescription")
-        return `expand ${options?.name}`;
-      if (key === "engines.schema.toggleNested") {
-        return `Expand or collapse ${options?.name}`;
-      }
-      if (key === "engines.schema.required") return "required";
-      if (key === "engines.schema.filters.type") return "Type";
-      if (key === "engines.schema.filters.allTypes") return "All types";
-      if (key === "engines.schema.filters.onlyRequired") return "Required only";
-      if (key === "engines.schema.noMatches") {
-        return "No parameters match the filters.";
-      }
-      if (key === "engines.schema.copyJson") return "Copy JSON";
-      if (key === "engines.schema.enumAll") {
-        return `${options?.count} allowed values`;
-      }
-      return key;
-    },
-  }),
-}));
-
-// jsdom has no layout, so truncation never measures true; the panel path is
-// asserted by faking the measurement. A per-render queue lets a test decide
-// what the description and the enum row each answer.
-const truncated = vi.hoisted(() => ({
-  queue: [] as boolean[],
-  fallback: true,
-}));
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () =>
-    truncated.queue.length > 0 ? truncated.queue.shift()! : truncated.fallback,
-}));
+// Row building, filtering and description splitting are owned by
+// lib/value-schema-rows.test.ts; this file proves the table wires them up.
 
 vi.mock("@/components/ui/popover", () => ({
   Popover: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -142,51 +91,29 @@ const row = (path: string) =>
     `[data-testid="value-schema-row"][data-path="${path}"]`,
   );
 
+const search = (value: string) =>
+  fireEvent.change(
+    screen.getByPlaceholderText("engines.schema.searchPlaceholder"),
+    { target: { value } },
+  );
+
+const requiredOnly = () =>
+  screen.getByRole("checkbox", { name: "engines.schema.filters.onlyRequired" });
+
 describe("ValueSchemaTable", () => {
   beforeEach(() => {
-    truncated.queue = [];
-    truncated.fallback = true;
+    vi.mocked(useIsTruncated).mockReturnValue(true);
+    copyMock.mockClear();
   });
 
-  it("renders a row per parameter with type, default and required", () => {
+  it("renders a row per parameter with title, type, default and required", () => {
     renderTable();
 
-    // Four declared parameters, two of which have nested children.
-    screen.getByText("6 parameters");
+    screen.getByText("engines.schema.parameterCount:6");
     expect(row("command")?.textContent).toContain("Command");
-    expect(row("command")?.textContent).toContain("command");
-    expect(row("command")?.textContent).toContain("required");
+    expect(row("command")?.textContent).toContain("engines.schema.required");
     expect(row("health_path")?.textContent).toContain('"/health"');
-  });
-
-  it("shows union branches and the array item type", () => {
-    renderTable();
-
-    expect(row("served_model_name")?.textContent).toContain("string");
     expect(row("served_model_name")?.textContent).toContain("array<string>");
-  });
-
-  it("keeps nested fields behind an expand toggle", () => {
-    renderTable();
-
-    const toggle = screen.getByRole("button", {
-      name: "Expand or collapse rope_scaling",
-    });
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    expect(row("rope_scaling.factor")).toBeTruthy();
-
-    fireEvent.click(toggle);
-
-    expect(row("rope_scaling.factor")).toBeNull();
-    expect(
-      screen
-        .getByRole("button", { name: "Expand or collapse rope_scaling" })
-        .getAttribute("aria-expanded"),
-    ).toBe("false");
-
-    // Expanding again brings the children back.
-    fireEvent.click(toggle);
-    expect(row("rope_scaling.factor")).toBeTruthy();
   });
 
   it("labels a parameter that declares no type as unknown", () => {
@@ -200,232 +127,158 @@ describe("ValueSchemaTable", () => {
     );
   });
 
-  it("offers the panel when only the enum row is cut off", () => {
-    // The description fits, so the enum row is what has to ask for the panel.
-    truncated.queue = [false, true];
-
+  it("collapses and re-expands nested fields", () => {
     renderTable();
+    const toggle = screen.getByRole("button", {
+      name: "engines.schema.toggleNested:rope_scaling",
+    });
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
 
-    expect(
-      screen.getByRole("button", { name: "expand rope_scaling.type" }),
-    ).toBeTruthy();
-  });
-
-  it("leaves the enum row unfaded while it fits", () => {
-    truncated.fallback = false;
-
-    renderTable();
-
-    const enumRow = document.querySelector('[data-testid="value-schema-enum"]');
-    expect(enumRow?.getAttribute("style")).toBeNull();
-    expect(screen.queryAllByRole("button", { name: /^expand / })).toHaveLength(
-      0,
-    );
-  });
-
-  it("filters by parameter name and keeps the matching ancestors", () => {
-    renderTable();
-
-    fireEvent.change(
-      screen.getByPlaceholderText("engines.schema.searchPlaceholder"),
-      { target: { value: "factor" } },
-    );
-
-    expect(row("rope_scaling.factor")).toBeTruthy();
-    expect(row("rope_scaling")).toBeTruthy();
-    expect(row("health_path")).toBeNull();
-  });
-
-  it("narrows to required parameters from the toolbar", () => {
-    renderTable();
-
-    expect(row("health_path")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("checkbox", { name: "Required only" }));
-
-    // `command` is the only required parameter; the rest goes, and the count
-    // reports what is left of the whole schema.
-    expect(row("command")).toBeTruthy();
-    expect(row("health_path")).toBeNull();
+    fireEvent.click(toggle);
     expect(row("rope_scaling.factor")).toBeNull();
-    screen.getByText("1 of 6 parameters");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "Required only" }));
+    fireEvent.click(toggle);
+    expect(row("rope_scaling.factor")).not.toBeNull();
+  });
 
-    expect(row("health_path")).toBeTruthy();
-    screen.getByText("6 parameters");
+  it("filters by name from the search box", () => {
+    renderTable();
+
+    search("factor");
+
+    expect(row("rope_scaling.factor")).not.toBeNull();
+    expect(row("health_path")).toBeNull();
+  });
+
+  it("narrows to required parameters and reports what is left", () => {
+    renderTable();
+
+    fireEvent.click(requiredOnly());
+
+    expect(row("command")).not.toBeNull();
+    expect(row("health_path")).toBeNull();
+    screen.getByText("engines.schema.filteredCount:1,6");
+
+    fireEvent.click(requiredOnly());
+    screen.getByText("engines.schema.parameterCount:6");
+  });
+
+  it("narrows by the type picked in the toolbar and clears with all types", () => {
+    renderTable();
+    const typeFilter = screen.getByTestId("value-schema-type-filter");
+
+    fireEvent.change(typeFilter, { target: { value: "number" } });
+    expect(row("rope_scaling.factor")).not.toBeNull();
+    expect(row("health_path")).toBeNull();
+
+    fireEvent.change(typeFilter, { target: { value: "all" } });
+    expect(row("health_path")).not.toBeNull();
   });
 
   it("says so when a filter matches nothing", () => {
     renderTable();
 
-    fireEvent.change(
-      screen.getByPlaceholderText("engines.schema.searchPlaceholder"),
-      { target: { value: "no such parameter" } },
-    );
+    search("no such parameter");
 
-    screen.getByTestId("value-schema-no-matches");
+    screen.getByText("engines.schema.noMatches");
     expect(screen.queryAllByTestId("value-schema-row")).toHaveLength(0);
   });
 
   it("only offers the required switch when the schema has required fields", () => {
-    // Built-in packages declare none, and a switch that can only empty the
-    // table is not worth showing.
-    renderTable({
-      type: "object",
-      properties: {
-        dtype: { type: "string" },
-        block_size: { type: "integer" },
-      },
-    });
+    renderTable({ type: "object", properties: { dtype: { type: "string" } } });
 
     expect(
-      screen.queryByRole("checkbox", { name: "Required only" }),
+      screen.queryByRole("checkbox", {
+        name: "engines.schema.filters.onlyRequired",
+      }),
     ).toBeNull();
-    screen.getByTestId("value-schema-type-filter");
   });
 
-  it("narrows by the type picked in the toolbar", () => {
-    renderTable();
-
-    fireEvent.change(screen.getByTestId("value-schema-type-filter"), {
-      target: { value: "number" },
-    });
-
-    // Only `rope_scaling.factor` is a number; its parent stays as context.
-    expect(row("rope_scaling.factor")).toBeTruthy();
-    expect(row("rope_scaling")).toBeTruthy();
-    expect(row("health_path")).toBeNull();
-    screen.getByText("2 of 6 parameters");
-
-    // The "all types" entry clears the filter again.
-    fireEvent.change(screen.getByTestId("value-schema-type-filter"), {
-      target: { value: "all" },
-    });
-    expect(row("health_path")).toBeTruthy();
-  });
-
-  it("keeps rows past the indent cap attached to their parent", () => {
-    renderTable({
-      type: "object",
-      properties: {
-        serving: {
-          type: "object",
-          properties: {
-            placement: {
-              type: "object",
-              properties: {
-                affinity: {
-                  type: "object",
-                  properties: {
-                    weights: {
-                      type: "object",
-                      properties: { weight: { type: "integer" } },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    const indent = (path: string) =>
-      (row(path)?.querySelector("div[style]") as HTMLElement | null)?.style
-        .paddingLeft;
-    const label = (path: string) =>
-      row(path)?.querySelector("span[title]")?.getAttribute("title");
-
-    // The indent grows a level at a time, then stops so a deep schema cannot
-    // squeeze the name out of its column.
-    expect(indent("serving.placement")).toBe("16px");
-    expect(indent("serving.placement.affinity")).toBe("32px");
-    expect(indent("serving.placement.affinity.weights")).toBe("48px");
-    expect(indent("serving.placement.affinity.weights.weight")).toBe("48px");
-
-    // Past the cap the indent no longer separates two levels, so the row
-    // names its parent instead. The full path stays reachable.
-    expect(row("serving.placement.affinity.weights")?.textContent).toContain(
-      "weights",
+  it("names the parent of a row nested past the indent cap", () => {
+    const nest = (names: string[]): object =>
+      names.length === 0
+        ? { type: "integer" }
+        : {
+            type: "object",
+            properties: { [names[0]]: nest(names.slice(1)) },
+          };
+    renderTable(
+      nest(["serving", "placement", "affinity", "weights", "weight"]),
     );
-    expect(
-      row("serving.placement.affinity.weights.weight")?.textContent,
-    ).toContain("weights.weight");
-    expect(label("serving.placement.affinity.weights.weight")).toBe(
-      "serving.placement.affinity.weights.weight",
+
+    const path = "serving.placement.affinity.weights.weight";
+    expect(within(row(path) as HTMLElement).getByTitle(path).textContent).toBe(
+      "weights.weight",
     );
   });
 
-  it("shows the enum values inline as tags", () => {
+  it("shows enum values inline", () => {
     renderTable();
 
     const inline = row("rope_scaling.type")?.querySelector(
       '[data-testid="value-schema-enum"]',
     );
-    expect(inline?.textContent).toContain("one of");
     expect(inline?.textContent).toContain("linear");
     expect(inline?.textContent).toContain("dynamic");
-    // Tags, not prose: each value is its own element.
-    expect(inline?.querySelectorAll("code").length).toBe(2);
   });
 
-  it("opens a floating details panel with the full text and JSON example", () => {
+  it("offers the details panel only when the description or enum is cut off", () => {
+    // The description fits, so the enum row is what has to ask for the panel.
+    vi.mocked(useIsTruncated)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
     renderTable();
-
-    fireEvent.click(screen.getByRole("button", { name: "expand command" }));
-
-    // Every row renders its panel inline in this mock; pick the command one.
-    const panel = screen
-      .getAllByTestId("row-details")
-      .find((element) => element.textContent?.includes("Starts the workload"))!;
-    expect(panel.textContent).toContain("Starts the workload. Example:");
-    expect(panel.querySelector("pre")?.textContent).toContain('"port": 8000');
-    screen.getByRole("button", { name: "Copy JSON" });
+    screen.getByRole("button", {
+      name: "engines.schema.expandDescription:rope_scaling.type",
+    });
   });
 
-  it("copies the pretty-printed example rather than the cell's one line", () => {
-    copyMock.mockClear();
+  it("offers no details panel while everything fits", () => {
+    vi.mocked(useIsTruncated).mockReturnValue(false);
     renderTable();
-
-    fireEvent.click(screen.getByRole("button", { name: "Copy JSON" }));
-
-    expect(copyMock).toHaveBeenCalledWith(
-      '{\n  "port": 8000\n}',
-      expect.objectContaining({
-        successMessage: "components.apiKey.copySuccess",
-        errorMessage: "components.apiKey.errors.copyFailed",
+    expect(
+      screen.queryAllByRole("button", {
+        name: /^engines\.schema\.expandDescription:/,
       }),
-    );
+    ).toHaveLength(0);
   });
 
   it("lists every enum value in the details panel", () => {
     renderTable();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "expand rope_scaling.type" }),
-    );
-
     const panel = screen
       .getAllByTestId("row-details")
-      .find((element) => element.textContent?.includes("allowed values"))!;
-    expect(panel.textContent).toContain("2 allowed values");
+      .find((element) =>
+        element.textContent?.includes("engines.schema.enumAll:2"),
+      )!;
     expect(panel.textContent).toContain("linear");
     expect(panel.textContent).toContain("dynamic");
   });
 
-  it("renders an empty state for a version that declares nothing", () => {
-    renderTable({ type: "object", additionalProperties: true });
+  it("copies the pretty-printed JSON example from the details panel", () => {
+    renderTable();
 
-    screen.getByText("engines.schema.empty");
-    screen.getByText("engines.schema.allowsAdditional");
+    fireEvent.click(
+      screen.getByRole("button", { name: "engines.schema.copyJson" }),
+    );
+
+    expect(copyMock).toHaveBeenCalledWith(
+      '{\n  "port": 8000\n}',
+      expect.anything(),
+    );
   });
 
-  it("adds no extras note to a schema that declares nothing and accepts nothing", () => {
-    renderTable({ type: "object" });
+  it.each([
+    { schema: { type: "object", additionalProperties: true }, extras: true },
+    { schema: { type: "object" }, extras: false },
+  ])("shows the empty state (extras note: $extras)", ({ schema, extras }) => {
+    renderTable(schema);
 
     screen.getByText("engines.schema.empty");
-    expect(screen.queryByText("engines.schema.allowsAdditional")).toBeNull();
+    expect(screen.queryByText("engines.schema.allowsAdditional") !== null).toBe(
+      extras,
+    );
   });
 
   it("notes the parameters a schema accepts but does not list", () => {
@@ -437,27 +290,5 @@ describe("ValueSchemaTable", () => {
 
     screen.getByTestId("value-schema-row");
     screen.getByText("engines.schema.allowsAdditional");
-  });
-
-  it("measures the toolbar so the sticky header can clear it", () => {
-    const observed: Element[] = [];
-    const disconnect = vi.fn();
-    class FakeResizeObserver {
-      observe(element: Element) {
-        observed.push(element);
-      }
-      disconnect = disconnect;
-    }
-    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
-
-    const { unmount } = renderTable();
-
-    // The header's sticky offset is built from the toolbar's height, so the
-    // toolbar has to be the element being observed.
-    expect(observed).toHaveLength(1);
-    expect(observed[0].querySelector("input")).toBeTruthy();
-    unmount();
-    expect(disconnect).toHaveBeenCalled();
-    vi.unstubAllGlobals();
   });
 });

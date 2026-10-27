@@ -11,11 +11,6 @@ vi.mock("@/foundation/lib/api", () => ({
 vi.mock("@/foundation/providers/auth-provider", () => ({
   auth: { getSession: mocks.getSession },
 }));
-vi.mock("react-i18next", () => {
-  const translate = (key: string) => key;
-  return { useTranslation: () => ({ t: translate }) };
-});
-
 function createStream(text = "new log") {
   const reader = {
     read: vi
@@ -165,7 +160,7 @@ describe("useStreamingLogs refresh and decoding", () => {
 
     expect(result.current.logs).toBe("new log");
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBe("endpoints.logs.httpError");
+    expect(result.current.error).toBe("endpoints.logs.httpError:500");
 
     const pending =
       Promise.withResolvers<ReadableStreamReadResult<Uint8Array>>();

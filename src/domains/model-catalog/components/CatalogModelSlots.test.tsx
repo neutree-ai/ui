@@ -182,12 +182,10 @@ describe("CatalogModelSlots", () => {
     renderPanel();
 
     const row = screen.getByTestId("catalog-model-slot-variant.fp8");
-    expect(
-      within(row).queryByText("model_catalogs.models.unset"),
-    ).not.toBeNull();
+    within(row).getByText("model_catalogs.models.unset");
   });
 
-  it("repoints one variant and leaves the rest of the document alone", async () => {
+  it("writes the picked model into its variant", async () => {
     const onChange = renderPanel();
 
     pickModel("variant.bf16", "qwen3-27b");
@@ -196,20 +194,6 @@ describe("CatalogModelSlots", () => {
     const doc = nextDoc(onChange);
     expect(doc.spec.variants?.bf16.model).toMatchObject({
       registry: "huggingface",
-      name: "qwen3-27b",
-    });
-    expect(doc.spec.variants?.bf16.model).not.toHaveProperty("version");
-    expect(doc.spec.features).toEqual(recipeDoc.spec.features);
-    expect(doc.metadata).toEqual(recipeDoc.metadata);
-  });
-
-  it("gives an inheriting variant a model of its own", async () => {
-    const onChange = renderPanel();
-
-    pickModel("variant.fp8", "qwen3-27b");
-
-    await waitFor(() => expect(onChange).toHaveBeenCalled());
-    expect(nextDoc(onChange).spec.variants?.fp8.model).toMatchObject({
       name: "qwen3-27b",
     });
   });

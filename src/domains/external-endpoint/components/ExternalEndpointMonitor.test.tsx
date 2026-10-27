@@ -104,9 +104,7 @@ describe("ExternalEndpointMonitor", () => {
     render(<ExternalEndpointMonitor record={endpoint()} />, {
       wrapper: MemoryRouter,
     });
-    expect(
-      screen.getByText("external_endpoints.monitor.configError"),
-    ).toBeTruthy();
+    screen.getByText("external_endpoints.monitor.configError");
     fireEvent.click(
       screen.getByRole("button", { name: "external_endpoints.monitor.retry" }),
     );
@@ -118,9 +116,7 @@ describe("ExternalEndpointMonitor", () => {
     render(<ExternalEndpointMonitor record={endpoint()} />, {
       wrapper: MemoryRouter,
     });
-    expect(
-      screen.getByText("common.messages.grafanaNotConfigured"),
-    ).toBeTruthy();
+    screen.getByText("common.messages.grafanaNotConfigured");
   });
 });
 

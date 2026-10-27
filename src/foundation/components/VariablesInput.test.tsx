@@ -83,9 +83,7 @@ describe("VariablesInput", () => {
 
     expect(textarea.value).toBe('{"method":');
     expect(onChange).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 
   it("updates existing object schema values as structured JSON", () => {
@@ -171,9 +169,7 @@ describe("VariablesInput", () => {
     fireEvent.click(screen.getByText("Save"));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 
   it("blocks form submission when an existing object value starts as invalid JSON", () => {
@@ -188,9 +184,7 @@ describe("VariablesInput", () => {
     fireEvent.click(screen.getByText("Save"));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 
   it("blocks form submission while a new object row has invalid JSON", () => {
@@ -206,9 +200,7 @@ describe("VariablesInput", () => {
     fireEvent.click(screen.getByText("Save"));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 });
 

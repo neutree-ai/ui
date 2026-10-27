@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ModelRegistryWriteActions } from "@/domains/model-registry/components/ModelRegistryWriteActions";
 import type { ModelRegistry } from "@/domains/model-registry/types";
+import { openMenu } from "@/foundation/testing/interactions";
 
 // Reaching the row-action parts means importing the table module, which pulls in
 // @refinedev/react-table — whose ESM build imports `lodash/isEqual` with no
@@ -54,27 +55,9 @@ describe("ModelRegistryWriteActions", () => {
   it("offers edit and delete on a registry a user created", () => {
     render(<ModelRegistryWriteActions registry={registry({})} />);
 
-    // The menu opens on pointer down, not on click — a plain click leaves it
-    // closed and every assertion below would pass vacuously.
-    fireEvent.pointerDown(screen.getByTestId("row-actions-trigger"), {
-      button: 0,
-      ctrlKey: false,
-      pointerType: "mouse",
-    });
+    openMenu(screen.getByTestId("row-actions-trigger"));
 
     screen.getByText("buttons.edit");
     screen.getByText("buttons.delete");
-  });
-
-  it("reads the annotation, not the registry's name or kind", () => {
-    // The provisioned registries are a public hub under a reserved name, which
-    // is exactly what a user's own registry can also look like.
-    render(
-      <ModelRegistryWriteActions
-        registry={registry({ "neutree.ai/builtin": "false" })}
-      />,
-    );
-
-    screen.getByTestId("row-actions-trigger");
   });
 });

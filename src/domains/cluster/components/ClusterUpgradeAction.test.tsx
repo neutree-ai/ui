@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "@/domains/cluster/types";
@@ -20,22 +26,6 @@ vi.mock("@refinedev/core", () => ({
 
 vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
-}));
-
-vi.mock("@/components/ui/alert", () => ({
-  Alert: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  AlertDescription: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-vi.mock("@/components/ui/button", () => ({
-  Button: ({
-    children,
-    ...props
-  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button {...props}>{children}</button>
-  ),
 }));
 
 vi.mock("@/components/ui/combobox", () => ({
@@ -60,21 +50,6 @@ vi.mock("@/components/ui/combobox", () => ({
       ))}
     </select>
   ),
-}));
-
-vi.mock("@/components/ui/dialog", () => ({
-  Dialog: ({ children, open }: { children: ReactNode; open: boolean }) =>
-    open ? <div role="dialog">{children}</div> : null,
-  DialogContent: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DialogFooter: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DialogHeader: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
 
 vi.mock("@/components/ui/dropdown-menu", () => ({
@@ -125,30 +100,22 @@ describe("ClusterUpgradeAction", () => {
     mocks.mutateAsync.mockReset().mockResolvedValue({});
   });
 
-  it("only offers newer versions and selects the highest result", async () => {
+  it("offers only newer versions and submits the highest, then refreshes cluster data", async () => {
     mocks.availableVersions = ["v1.2.0", "v1.0.2", "v1.1.0"];
     renderUpgradeAction();
 
     fireEvent.click(
       screen.getByRole("button", { name: "clusters.actions.upgrade" }),
     );
-
     const targetVersion = await screen.findByLabelText("target-version");
     expect((targetVersion as HTMLSelectElement).value).toBe("v1.2.0");
-    expect(screen.getAllByRole("option")).toHaveLength(1);
-    screen.getByRole("option", { name: "v1.2.0" });
-  });
-
-  it("submits the selected newer version and refreshes cluster data", async () => {
-    mocks.availableVersions = ["v1.2.0", "v1.0.2", "v1.1.0"];
-    renderUpgradeAction();
-
+    expect(
+      screen.getAllByRole("option").map((option) => option.textContent),
+    ).toEqual(["v1.2.0"]);
     fireEvent.click(
-      screen.getByRole("button", { name: "clusters.actions.upgrade" }),
-    );
-    await screen.findByLabelText("target-version");
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "clusters.actions.upgrade" })[1],
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "clusters.actions.upgrade",
+      }),
     );
 
     await waitFor(() => {

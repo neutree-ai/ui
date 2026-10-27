@@ -15,13 +15,6 @@ vi.mock("@refinedev/core", () => ({
   useParsed: vi.fn(() => ({ params: {} })),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, opts?: { name?: string }) =>
-      opts?.name ? `${key}:${opts.name}` : key,
-  }),
-}));
-
 vi.mock("./ThemedTitle", () => ({ ThemedTitle: () => null }));
 
 vi.mock("@/foundation/hooks/use-login-identity-sources", () => ({

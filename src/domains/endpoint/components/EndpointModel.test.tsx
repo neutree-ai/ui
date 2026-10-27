@@ -46,7 +46,7 @@ describe("EndpointModel", () => {
 
   // A Flex endpoint deploys with no model at all, so the API omits spec.model
   // entirely. Dereferencing it used to throw and, with no error boundary above
-  // it, blank the whole endpoints list page (NEU-728).
+  // it, blank the whole endpoints list page.
   it("renders a placeholder for a model-free endpoint", () => {
     render(<EndpointModel model={null} />);
 
@@ -64,7 +64,7 @@ describe("EndpointModel", () => {
     screen.getByText("-");
   });
 
-  // NEU-736: on the endpoint detail page the registry opens the registry, and
+  // On the endpoint detail page the registry opens the registry, and
   // the model opens that model's drawer inside it.
   it("links the registry and the model when given a workspace", () => {
     render(

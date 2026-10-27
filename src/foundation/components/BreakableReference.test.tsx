@@ -48,17 +48,6 @@ describe("referenceSegments", () => {
 });
 
 describe("BreakableReference", () => {
-  it("offers a break opportunity at every separator", () => {
-    // A reference has no spaces, and neither `/` nor `:` is a break point on
-    // its own -- so without these the string cannot wrap at all, refuses to
-    // shrink, and overflows whatever holds it.
-    const { container } = render(
-      <BreakableReference value="registry.example.com/team/x:v1" />,
-    );
-
-    expect(container.querySelectorAll("wbr")).toHaveLength(4);
-  });
-
   it("renders the reference unchanged as text", () => {
     // The break hints must not alter what is read or copied.
     const { container } = render(

@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
-import { afterEach, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import type { EndpointClusterRef } from "../types";
 import { EndpointKVCacheFields } from "./EndpointKVCacheFields";
 
@@ -9,7 +9,6 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
     systemInfo: { capabilities: { cluster_cache_providers: ["zcache"] } },
   }),
 }));
-afterEach(cleanup);
 
 function Editor({
   cache,
@@ -110,11 +109,7 @@ it("saves the common timeout option and rejects values outside its range", async
   );
   fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "0" } });
   fireEvent.click(screen.getByText("save"));
-  await vi.waitFor(() =>
-    expect(
-      screen.getByText("endpoints.kvCacheSettings.invalidTimeout"),
-    ).toBeTruthy(),
-  );
+  await screen.findByText("endpoints.kvCacheSettings.invalidTimeout");
   expect(save).not.toHaveBeenCalled();
   fireEvent.change(screen.getByRole("spinbutton"), {
     target: { value: "1.5" },

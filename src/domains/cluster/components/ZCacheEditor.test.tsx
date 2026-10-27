@@ -91,11 +91,11 @@ describe("cache editing", () => {
       mocks.update.mock.calls[0][0].values.spec.cache?.options.enabled,
     ).toBe(false);
   });
-  it("does not submit an invalid capacity or a read-only user's edit", async () => {
+  it("disables save for a read-only user", () => {
     mocks.access = false;
     render(<ZCacheEditor cluster={cluster} onClose={vi.fn()} />);
     fireEvent.change(screen.getByRole("spinbutton"), {
-      target: { value: "0" },
+      target: { value: "5" },
     });
     expect(
       (
@@ -104,8 +104,29 @@ describe("cache editing", () => {
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
+  });
+
+  it("does not submit an invalid capacity", async () => {
+    render(<ZCacheEditor cluster={cluster} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByRole("spinbutton"), {
+      target: { value: "0" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.zcache.save" }),
+    );
+    await waitFor(() =>
+      expect(
+        screen
+          .getByTestId("field-spec.cache.options.l1_size_gib")
+          .querySelector('[aria-invalid="true"]'),
+      ).not.toBeNull(),
+    );
+    expect(
+      screen.queryByText("clusters.zcache.capacityChangeDescription"),
+    ).toBeNull();
     expect(mocks.update).not.toHaveBeenCalled();
   });
+
   it("keeps a failed write open with the user's draft", async () => {
     mocks.update.mockRejectedValue(new Error("network unavailable"));
     const close = vi.fn();
@@ -126,23 +147,22 @@ describe("cache editing", () => {
       "5",
     );
   });
+  it.each([undefined, { provider: "zcache", options: { enabled: false } }])(
+    "retries a failed service with incomplete disabled config %j",
+    async (cache) => {
+      const c = structuredClone(cluster);
+      c.spec.cache = cache as Cluster["spec"]["cache"];
+      c.status!.cache!.phase = "Failed";
+      render(<ZCacheEditor cluster={c} onClose={vi.fn()} />);
+      fireEvent.click(
+        screen.getByRole("button", { name: "clusters.zcache.retry" }),
+      );
+      await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+      expect(mocks.update.mock.calls[0][0].values.spec.cache.options).toEqual({
+        enabled: false,
+        l1_size_gib: 1,
+        target_nodes: [],
+      });
+    },
+  );
 });
-
-it.each([undefined, { provider: "zcache", options: { enabled: false } }])(
-  "retries a failed service with incomplete disabled config %j",
-  async (cache) => {
-    const c = structuredClone(cluster);
-    c.spec.cache = cache as Cluster["spec"]["cache"];
-    c.status!.cache!.phase = "Failed";
-    render(<ZCacheEditor cluster={c} onClose={vi.fn()} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "clusters.zcache.retry" }),
-    );
-    await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
-    expect(mocks.update.mock.calls[0][0].values.spec.cache.options).toEqual({
-      enabled: false,
-      l1_size_gib: 1,
-      target_nodes: [],
-    });
-  },
-);

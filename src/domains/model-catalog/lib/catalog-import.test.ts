@@ -13,31 +13,37 @@ const recipeSpec = {
 const plainSpec = { variants: null };
 
 describe("resolveCatalogImportAction", () => {
-  it("creates when the name is free, updates when it is taken", () => {
-    expect(resolveCatalogImportAction(null, recipeSpec)).toBe("create");
-    expect(resolveCatalogImportAction({ spec: recipeSpec }, recipeSpec)).toBe(
+  // The type is read off variants, not off the field being present:
+  // `variants: {}` is a plain catalog, since a recipe needs at least one.
+  it.each([
+    ["creates on a free name", null, recipeSpec, "create"],
+    ["updates recipe over recipe", { spec: recipeSpec }, recipeSpec, "update"],
+    [
+      "flags plain over recipe",
+      { spec: recipeSpec },
+      plainSpec,
+      "update-type-change",
+    ],
+    [
+      "flags recipe over plain",
+      { spec: plainSpec },
+      recipeSpec,
+      "update-type-change",
+    ],
+    [
+      "updates plain over empty variants",
+      { spec: { variants: {} } },
+      plainSpec,
       "update",
-    );
-  });
-
-  it("flags a type change in both directions", () => {
-    expect(resolveCatalogImportAction({ spec: recipeSpec }, plainSpec)).toBe(
+    ],
+    [
+      "flags recipe over no spec",
+      { spec: null },
+      recipeSpec,
       "update-type-change",
-    );
-    expect(resolveCatalogImportAction({ spec: plainSpec }, recipeSpec)).toBe(
-      "update-type-change",
-    );
-  });
-
-  it("reads the type off variants, not off the field being present", () => {
-    // `variants: {}` is a plain catalog — a recipe needs at least one variant —
-    // so re-importing one over a plain catalog must not read as a type change.
-    expect(
-      resolveCatalogImportAction({ spec: { variants: {} } }, plainSpec),
-    ).toBe("update");
-    expect(resolveCatalogImportAction({ spec: null }, recipeSpec)).toBe(
-      "update-type-change",
-    );
+    ],
+  ] as const)("%s", (_, existing, incoming, expected) => {
+    expect(resolveCatalogImportAction(existing, incoming)).toBe(expected);
   });
 });
 

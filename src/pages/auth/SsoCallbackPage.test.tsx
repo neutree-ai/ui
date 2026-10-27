@@ -78,53 +78,29 @@ describe("SsoCallbackPage", () => {
 
     render(<SsoCallbackPage />);
 
-    expect(
-      await screen.findByText("pages.ssoCallback.errors.verifyFailed"),
-    ).toBeTruthy();
+    await screen.findByText("pages.ssoCallback.errors.verifyFailed");
     expect(mockGo).not.toHaveBeenCalled();
     expect(
       screen.getByRole("link", { name: "pages.ssoCallback.backToLogin" }),
     ).toHaveProperty("href", expect.stringContaining("/login"));
   });
 
-  it("shows the server's error code without verifying anything", () => {
-    arrive("#error=login_failed");
+  it.each([
+    { hash: "#error=login_failed", error: "login_failed" },
+    { hash: "#error=user_disabled", error: "user_disabled" },
+    { hash: "#error=something_new", error: "unknown" },
+    { hash: "", error: "missing" },
+  ])(
+    "shows error $error for callback $hash without verifying anything",
+    ({ hash, error }) => {
+      if (hash) arrive(hash);
 
-    render(<SsoCallbackPage />);
+      render(<SsoCallbackPage />);
 
-    expect(screen.getByTestId("sso-callback-error").textContent).toBe(
-      "pages.ssoCallback.errors.login_failed",
-    );
-    expect(verifySsoToken).not.toHaveBeenCalled();
-  });
-
-  it("tells a disabled user that the account is disabled", () => {
-    arrive("#error=user_disabled");
-
-    render(<SsoCallbackPage />);
-
-    expect(screen.getByTestId("sso-callback-error").textContent).toBe(
-      "pages.ssoCallback.errors.user_disabled",
-    );
-    expect(verifySsoToken).not.toHaveBeenCalled();
-  });
-
-  it("uses a generic message for an unknown error code", () => {
-    arrive("#error=something_new");
-
-    render(<SsoCallbackPage />);
-
-    expect(screen.getByTestId("sso-callback-error").textContent).toBe(
-      "pages.ssoCallback.errors.unknown",
-    );
-  });
-
-  it("explains a callback opened without a result", () => {
-    render(<SsoCallbackPage />);
-
-    expect(screen.getByTestId("sso-callback-error").textContent).toBe(
-      "pages.ssoCallback.errors.missing",
-    );
-    expect(verifySsoToken).not.toHaveBeenCalled();
-  });
+      expect(screen.getByTestId("sso-callback-error").textContent).toBe(
+        `pages.ssoCallback.errors.${error}`,
+      );
+      expect(verifySsoToken).not.toHaveBeenCalled();
+    },
+  );
 });

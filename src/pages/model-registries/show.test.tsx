@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TooltipProvider } from "@/components/ui/tooltip";
 
 const state = vi.hoisted(() => ({
   isLoading: false,
@@ -32,7 +31,7 @@ vi.mock("@/foundation/components/ShowPage", () => {
   }) => (
     <header>
       <h1>{title}</h1>
-      <div data-testid="object-header-meta">{description}</div>
+      <div>{description}</div>
     </header>
   );
   ShowPage.Meta = ({
@@ -137,16 +136,6 @@ beforeEach(() => {
 });
 
 describe("ModelRegistriesShow", () => {
-  it("places the address after visibility and before creation time", () => {
-    render(<ModelRegistriesShow />);
-
-    expect(screen.getByTestId("object-header-meta").textContent).toBe(
-      "common.fields.type:ModelScopemodel_registries.fields.visibility:Publicmodel_registries.fields.url:nfs://modelsCreated:3 days ago",
-    );
-  });
-
-  // NEU-770: the address used to live in a "Basic" tab, and dropping that tab
-  // took the address with it. This asserts the header itself carries it.
   it("shows the registry address", () => {
     render(<ModelRegistriesShow />);
 
@@ -166,26 +155,6 @@ describe("ModelRegistriesShow", () => {
         .getByRole("link", { name: "https://huggingface.co" })
         .getAttribute("href"),
     ).toBe("https://huggingface.co");
-  });
-
-  it("shortens an address too long for the header, keeping it readable", () => {
-    state.record = {
-      ...registry,
-      spec: {
-        type: "bentoml",
-        url: "nfs://models.internal/volumes/models/registry/prod",
-      },
-    };
-
-    render(
-      <TooltipProvider>
-        <ModelRegistriesShow />
-      </TooltipProvider>,
-    );
-
-    expect(
-      screen.getByText("nfs://models.internal/…models/registry/prod"),
-    ).toBeDefined();
   });
 
   it("renders loading and not-found states", () => {
@@ -215,7 +184,7 @@ describe("ModelRegistriesShow", () => {
     expect(currentSearch).toBe("");
   });
 
-  // NEU-736: the endpoint detail page links to a model through the URL.
+  // The endpoint detail page links to a model through the URL.
   it("opens the model the URL names", () => {
     renderAt("/?model=org%2Fmodel");
 

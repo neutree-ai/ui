@@ -1,14 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { ModelInfoBadges } from "./ModelInfoBadges";
-
-// jsdom lays nothing out, so the real measurement always says "not clipped".
-const truncation = vi.hoisted(() => ({ value: false }));
-
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => truncation.value,
-}));
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -27,7 +21,6 @@ describe("ModelInfoBadges", () => {
     render(
       <ModelInfoBadges
         variant="inline"
-        className="inline-metadata"
         info={{
           parameter_count: "27000000000",
           quantization: "BF16",
@@ -41,17 +34,15 @@ describe("ModelInfoBadges", () => {
     screen.getByText("BF16");
     screen.getByText("131K");
     screen.getByText("Qwen3ForCausalLM");
-    expect(document.querySelector(".inline-metadata")).not.toBeNull();
   });
 
   it("shows the complete architecture in a keyboard-accessible tooltip", async () => {
-    truncation.value = true;
+    vi.mocked(useIsTruncated).mockReturnValue(true);
     const architecture =
       "Qwen3MoeForConditionalGenerationWithAnIntentionallyLongArchitectureName";
     render(
       <TooltipProvider delayDuration={0}>
         <ModelInfoBadges
-          className="catalog-info"
           info={{ architecture, parameter_count: "6000000000" }}
         />
       </TooltipProvider>,
@@ -63,13 +54,10 @@ describe("ModelInfoBadges", () => {
     if (!trigger)
       throw new Error("architecture tooltip trigger was not rendered");
 
-    expect(triggerValue.className).toContain("truncate");
     fireEvent.focus(trigger);
 
     expect((await screen.findByRole("tooltip")).textContent).toBe(architecture);
-    // The value is a value, not a help topic: no question-mark cursor.
-    expect(trigger.className).not.toContain("cursor-help");
-    truncation.value = false;
+    vi.mocked(useIsTruncated).mockReturnValue(false);
   });
 
   it("leaves an architecture that fits alone", async () => {
@@ -84,9 +72,8 @@ describe("ModelInfoBadges", () => {
     const triggerValue = screen.getByText("Llama");
     const trigger = triggerValue.parentElement as HTMLElement;
 
-    // Nothing to reveal: no tab stop, no popup, no help cursor.
+    // Nothing to reveal: no tab stop, no popup.
     expect(trigger.getAttribute("tabindex")).toBeNull();
-    expect(trigger.className).not.toContain("cursor-help");
 
     fireEvent.focus(trigger);
     fireEvent.mouseEnter(trigger);

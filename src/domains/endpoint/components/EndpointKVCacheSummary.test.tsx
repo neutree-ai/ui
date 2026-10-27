@@ -1,16 +1,9 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Endpoint, EndpointClusterRef } from "../types";
 import { EndpointKVCacheSummary } from "./EndpointKVCacheSummary";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string, values?: { seconds: number }) =>
-      values ? `${values.seconds} s` : key,
-  }),
-}));
-afterEach(cleanup);
 describe("EndpointKVCacheSummary", () => {
   it.each([
     [true, true],
@@ -38,7 +31,9 @@ describe("EndpointKVCacheSummary", () => {
     const toggle = screen.getByRole("switch") as HTMLButtonElement;
     expect(toggle.disabled).toBe(true);
     expect(toggle.getAttribute("aria-checked")).toBe(String(enabled));
-    expect(Boolean(screen.queryByText("2 s"))).toBe(enabled);
+    expect(
+      Boolean(screen.queryByText("endpoints.kvCacheSettings.timeoutValue:2")),
+    ).toBe(enabled);
     const link = screen.queryByRole("link");
     expect(Boolean(link)).toBe(configured);
     if (link)

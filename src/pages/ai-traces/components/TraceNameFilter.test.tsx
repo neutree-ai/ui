@@ -2,8 +2,6 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { type NameOption, TraceNameFilter } from "./TraceNameFilter";
 
-// cmdk observes and scrolls its list; jsdom implements neither.
-
 const NAMES = ["qwen3-chat", "qwen3-embed", "deepseek-ocr"];
 const OPTIONS = NAMES.map((name) => ({ name }));
 

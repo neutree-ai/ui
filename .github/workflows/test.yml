@@ -45,6 +45,9 @@ jobs:
       - name: Check Tailwind shadow utilities
         run: node tools/check-shadow-utilities.cjs
 
+      - name: Check unit-test patterns
+        run: node tools/check-test-patterns.cjs
+
       - name: Run tests
         run: yarn test:coverage
 

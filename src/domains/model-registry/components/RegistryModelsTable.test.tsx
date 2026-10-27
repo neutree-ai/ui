@@ -117,37 +117,38 @@ beforeEach(() => {
 });
 
 describe("canPageForward", () => {
-  it("pages forward while the total says there is more", () => {
-    expect(canPageForward(50, 0, 20)).toBe(true);
-    expect(canPageForward(50, 20, 20)).toBe(true);
-  });
-
-  it("stops at the end of a countable listing", () => {
-    expect(canPageForward(50, 40, 20)).toBe(false);
-    expect(canPageForward(0, 0, 20)).toBe(false);
-  });
-
-  it("never pages a registry that cannot report a total", () => {
-    // Not being able to count and not being able to read from an offset are the
-    // same upstream limitation. A full page is not evidence of a next one here:
-    // asking for it is answered with a 400, so the control must not offer it.
-    expect(canPageForward(null, 0, 20)).toBe(false);
-    expect(canPageForward(null, 20, 20)).toBe(false);
+  // A registry that cannot report a total cannot read from an offset either:
+  // asking for a next page is answered with a 400, so a full page is no
+  // evidence of a next one there.
+  it.each([
+    [50, 0, true],
+    [50, 20, true],
+    [50, 40, false],
+    [0, 0, false],
+    [null, 0, false],
+    [null, 20, false],
+  ])("total %s at offset %i -> %s", (total, offset, expected) => {
+    expect(canPageForward(total, offset, 20)).toBe(expected);
   });
 });
 
 describe("paging follows what the registry can do", () => {
-  it("offers numbered paging when the server counted the matches", () => {
-    answerWith(() => ({ page: page(20, 57) }));
+  // Decided by whether the server counted, not by the registry's type or
+  // visibility.
+  it.each(["private", "public"] as const)(
+    "offers numbered paging on a %s registry the server counted",
+    (visibility) => {
+      answerWith(() => ({ page: page(20, 57) }));
 
-    renderTable(registry({ visibility: "private" }));
+      renderTable(registry({ visibility }));
 
-    screen.getByText("table.pagination.totalItems:57");
-    expect(screen.queryByTestId("registry-models-show-more")).toBeNull();
-    expect(
-      screen.getByTestId("registry-models-next").hasAttribute("disabled"),
-    ).toBe(false);
-  });
+      screen.getByText("table.pagination.totalItems:57");
+      expect(screen.queryByTestId("registry-models-show-more")).toBeNull();
+      expect(
+        screen.getByTestId("registry-models-next").hasAttribute("disabled"),
+      ).toBe(false);
+    },
+  );
 
   it("disables Next at the end of a counted listing without changing mode", () => {
     answerWith(() => ({ page: page(20, 40) }));
@@ -179,13 +180,7 @@ describe("paging follows what the registry can do", () => {
 
     renderTable(registry({ visibility: "public" }));
 
-    expect(
-      screen.getByText("model_registries.models.totalUnknown"),
-    ).toBeDefined();
-    // Stronger than the assertion this replaces. The review finding on #367 was
-    // that a Next the server answers with a 400 must not be clickable, and it
-    // was fixed by disabling the button; there is now no Next at all, with a
-    // widening control in its place.
+    screen.getByText("model_registries.models.totalUnknown");
     expect(screen.queryByTestId("registry-models-next")).toBeNull();
     screen.getByTestId("registry-models-show-more");
   });
@@ -202,19 +197,6 @@ describe("paging follows what the registry can do", () => {
     expect(last.limit).toBe(40);
     expect(last.offset).toBe(0);
     expect(calls.every((call) => (call.offset ?? 0) === 0)).toBe(true);
-  });
-
-  it("does not decide from the registry's type", () => {
-    // Same `spec.type` in both directions; only the range header differs. A
-    // registry whose provider answers with a total gets numbered paging even
-    // though it is a hugging-face one.
-    answerWith(() => ({ page: page(20, 100) }));
-
-    renderTable(registry({ visibility: "public" }));
-
-    screen.getByText("table.pagination.totalItems:100");
-    screen.getByTestId("registry-models-next");
-    expect(screen.queryByTestId("registry-models-show-more")).toBeNull();
   });
 
   it("stops widening at the cap and says so instead of quietly capping", () => {
@@ -301,20 +283,6 @@ describe("states", () => {
 
     expect(onModelSelect).toHaveBeenNthCalledWith(1, "model-0", "v1");
     expect(onModelSelect).toHaveBeenNthCalledWith(2, "model-0", "v1");
-  });
-
-  it("keeps the version visually secondary to the model name", () => {
-    answerWith(() => ({ page: page(1, 1) }));
-
-    renderTable(registry({ visibility: "private" }));
-
-    const version = screen.getByText("v1");
-    expect(version.className).toContain("font-mono");
-    expect(version.className).toContain("text-xs");
-    expect(version.className).toContain("font-normal");
-    expect(version.className).toContain(
-      "text-[var(--nt-text-neutral-tertiary)]",
-    );
   });
 
   it("shows a loader while asking, and claims nothing about the total", () => {

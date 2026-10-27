@@ -3,19 +3,8 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Engine, EngineVersion } from "@/domains/engine/types";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { EngineCard } from "./EngineCard";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { count?: number; name?: string }) => {
-      if (key === "engines.versions.count") return `${options?.count} versions`;
-      if (key === "engines.versions.latest") return "Latest";
-      if (key === "engines.card.open") return `Open ${options?.name}`;
-      if (key.startsWith("status.phases.engine.")) return key.split(".").pop();
-      return key;
-    },
-  }),
-}));
 
 // The card is a navigation surface; render the anchor without the router.
 vi.mock("@/foundation/components/Link", () => ({
@@ -29,13 +18,6 @@ vi.mock("@/components/ui/hover-card", () => ({
   HoverCardContent: ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
   ),
-}));
-
-// jsdom has no layout, so the truncation answer is driven from the test; the
-// tooltip primitives are flattened so the content is assertable.
-const truncatedMock = vi.fn(() => false);
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => truncatedMock(),
 }));
 
 vi.mock("@/components/ui/tooltip", () => ({
@@ -90,7 +72,7 @@ const renderCard = (value: Engine) =>
 
 describe("EngineCard", () => {
   beforeEach(() => {
-    truncatedMock.mockReturnValue(false);
+    vi.mocked(useIsTruncated).mockReturnValue(false);
   });
 
   it("shows the newest version rather than the first one the engine returned", () => {
@@ -102,16 +84,15 @@ describe("EngineCard", () => {
     screen.getByText("v0.17.1"); // listed in the hover card
   });
 
-  it("hides the status badge while the engine is in its steady phase", () => {
-    renderCard(engine({ versions: ["v0.24.0"], phase: "Created" }));
+  it.each([
+    { phase: "Created", shown: false },
+    { phase: "Pending", shown: true },
+  ] as const)("shows a status badge for $phase: $shown", ({ phase, shown }) => {
+    renderCard(engine({ versions: ["v0.24.0"], phase }));
 
-    expect(screen.queryByText("Created")).toBeNull();
-  });
-
-  it("shows the status badge for a non-steady phase", () => {
-    renderCard(engine({ versions: ["v0.24.0"], phase: "Pending" }));
-
-    screen.getByText("Pending");
+    expect(screen.queryByText(`status.phases.engine.${phase}`) !== null).toBe(
+      shown,
+    );
   });
 
   it("offers no version entry point for a single-version engine", () => {
@@ -126,7 +107,7 @@ describe("EngineCard", () => {
   it("offers the full version list for a multi-version engine", () => {
     renderCard(engine({ versions: ["v0.17.1", "v0.24.0"], phase: "Created" }));
 
-    screen.getByRole("button", { name: "2 versions" });
+    screen.getByRole("button", { name: "engines.versions.count:2" });
   });
 
   it("renders an engine that declares no versions, tasks or status", () => {
@@ -153,18 +134,19 @@ describe("EngineCard", () => {
     expect(screen.queryByText("text-generation")).toBeNull();
   });
 
-  it("repeats the version in a tooltip once the chip is cut off", () => {
-    truncatedMock.mockReturnValue(true);
+  it.each([
+    { truncated: true, tooltip: "v0.24.0" },
+    { truncated: false, tooltip: null },
+  ])(
+    "repeats the version in a tooltip only when the chip is cut off (truncated: $truncated)",
+    ({ truncated, tooltip }) => {
+      vi.mocked(useIsTruncated).mockReturnValue(truncated);
 
-    renderCard(engine({ versions: ["v0.24.0"] }));
+      renderCard(engine({ versions: ["v0.24.0"] }));
 
-    expect(screen.getByTestId("version-tooltip").textContent).toBe("v0.24.0");
-  });
-
-  it("leaves the tooltip out while the version fits", () => {
-    renderCard(engine({ versions: ["v0.24.0"] }));
-
-    // The tooltip is the fallback for a clipped chip, not a permanent fixture.
-    expect(screen.queryByTestId("version-tooltip")).toBeNull();
-  });
+      expect(screen.queryByTestId("version-tooltip")?.textContent ?? null).toBe(
+        tooltip,
+      );
+    },
+  );
 });
