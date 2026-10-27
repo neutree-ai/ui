@@ -32,7 +32,7 @@ export function EndpointKVCacheFields({
   const runtimeVersion =
     endpointZCacheOptions(cluster)?.version ??
     cluster?.status?.cache?.details?.configured_runtime_version ??
-    "v0.5.5";
+    versions.data?.data.find((v) => v.is_default)?.version;
   const compatible = !!versions.data?.data
     .find((v) => v.version === runtimeVersion)
     ?.engine_versions.includes(engine?.version);

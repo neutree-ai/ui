@@ -1,6 +1,10 @@
 import { useCustom } from "@refinedev/core";
 
-type CacheVersion = { version: string; engine_versions: string[] };
+type CacheVersion = {
+  version: string;
+  engine_versions: string[];
+  is_default?: boolean;
+};
 
 export function useCacheVersions(enabled = true) {
   return useCustom<CacheVersion[]>({
