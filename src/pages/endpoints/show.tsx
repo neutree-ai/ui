@@ -164,8 +164,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     record?.metadata.name,
   );
   const allocations = gpuAllocations(record ? [record] : []);
-  const gpuSamples =
-    record?.status?.phase === "Paused" ? [] : observations.samples;
+  const inactive =
+    record?.status?.phase === "Paused" || record?.status?.phase === "Deleted";
+  const gpuSamples = inactive ? [] : observations.samples;
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -379,72 +380,68 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
               name={record.metadata.name}
-              paused={record.status?.phase === "Paused"}
+              paused={inactive}
             />
-            <div className="space-y-3">
-              <ShowPage.Section
-                title={t("endpoints.sections.runtimeAllocation")}
-                actions={
-                  <EndpointRuntimeResourcesSummary
-                    resources={record.status?.resources}
-                  />
-                }
-              >
-                <div className="space-y-6">
-                  <ObservationStatus
-                    status={
-                      record.status?.phase === "Paused"
-                        ? "no_data"
-                        : observations.status
-                    }
-                  />
-                  <EndpointRuntimeResourcesCard
-                    renderMemory={(device, deviceIndex) => (
-                      <GpuObservationCard
-                        device={{
-                          node: device.nodeId,
-                          uuid: device.uuid,
-                          index: device.order ?? deviceIndex + 1,
-                          product: device.product,
-                          totalMiB: device.physicalMemoryMiB,
-                          allocatedMiB: device.memoryMiB,
-                        }}
-                        tflopsOverrides={parseTflops(
-                          clusterData?.data?.[0]?.metadata.annotations?.[
-                            TFLOPS_ANNOTATION
-                          ],
-                        )}
-                        samples={gpuSamples}
-                        allocations={allocations}
-                        replica={{
-                          endpoint: record.metadata.name,
-                          workspace: record.metadata.workspace ?? "default",
-                          model: record.spec.model?.name ?? "",
-                          node: device.nodeId,
-                          uuid: device.uuid,
-                          replica: device.replicaId,
-                          instance: device.instanceId,
-                          vdevice: device.vdeviceIndex ?? undefined,
-                          memoryMiB: device.memoryMiB,
-                          modelWeightsMiB: device.modelWeightsMiB,
-                          kvCacheCapacityMiB: device.kvCacheCapacityMiB,
-                        }}
-                      />
-                    )}
-                    l1CacheByNode={
-                      record.spec.kv_cache?.provider === "zcache"
-                        ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
-                        : undefined
-                    }
-                    resources={record.status?.resources}
-                    requestedResources={record.spec.resources}
-                    clusterResourceInfo={
-                      clusterData?.data?.[0]?.status?.resource_info
-                    }
-                  />
-                </div>
-              </ShowPage.Section>
-            </div>
+            {!inactive && (
+              <div className="space-y-3">
+                <ShowPage.Section
+                  title={t("endpoints.sections.runtimeAllocation")}
+                  actions={
+                    <EndpointRuntimeResourcesSummary
+                      resources={record.status?.resources}
+                    />
+                  }
+                >
+                  <div className="space-y-6">
+                    <ObservationStatus status={observations.status} />
+                    <EndpointRuntimeResourcesCard
+                      renderMemory={(device, deviceIndex) => (
+                        <GpuObservationCard
+                          device={{
+                            node: device.nodeId,
+                            uuid: device.uuid,
+                            index: device.order ?? deviceIndex + 1,
+                            product: device.product,
+                            totalMiB: device.physicalMemoryMiB,
+                            allocatedMiB: device.memoryMiB,
+                          }}
+                          tflopsOverrides={parseTflops(
+                            clusterData?.data?.[0]?.metadata.annotations?.[
+                              TFLOPS_ANNOTATION
+                            ],
+                          )}
+                          samples={gpuSamples}
+                          allocations={allocations}
+                          replica={{
+                            endpoint: record.metadata.name,
+                            workspace: record.metadata.workspace ?? "default",
+                            model: record.spec.model?.name ?? "",
+                            node: device.nodeId,
+                            uuid: device.uuid,
+                            replica: device.replicaId,
+                            instance: device.instanceId,
+                            vdevice: device.vdeviceIndex ?? undefined,
+                            memoryMiB: device.memoryMiB,
+                            modelWeightsMiB: device.modelWeightsMiB,
+                            kvCacheCapacityMiB: device.kvCacheCapacityMiB,
+                          }}
+                        />
+                      )}
+                      l1CacheByNode={
+                        record.spec.kv_cache?.provider === "zcache"
+                          ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
+                          : undefined
+                      }
+                      resources={record.status?.resources}
+                      requestedResources={record.spec.resources}
+                      clusterResourceInfo={
+                        clusterData?.data?.[0]?.status?.resource_info
+                      }
+                    />
+                  </div>
+                </ShowPage.Section>
+              </div>
+            )}
             <EndpointAdvancedParameters
               engineParameters={
                 record.spec.variables?.engine_args as
