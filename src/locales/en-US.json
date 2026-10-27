@@ -968,7 +968,7 @@
 			"serviceUrl": "Service URL",
 			"npu": "NPU",
 			"modelRegistry": "Model Registry",
-			"modelCatalog": "Model Catalog (Template)",
+			"modelCatalog": "Model Catalog",
 			"memoryGb": "Memory (GB)",
 			"acceleratorCount": "Accelerator Count",
 			"allocatedCard": "allocated card",
@@ -1317,7 +1317,8 @@
 		},
 		"origin": {
 			"hint": "What this endpoint was deployed from. Its settings are edited below; changing them here does not change the catalog.",
-			"featuresUnreadable": "the recorded options could not be read"
+			"featuresUnreadable": "the recorded options could not be read",
+			"variant": "Variant: {{variant}}"
 		},
 		"imageExplorer": {
 			"open": "Explore image registry",

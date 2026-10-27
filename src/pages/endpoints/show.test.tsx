@@ -75,6 +75,9 @@ vi.mock("@/domains/endpoint/components/EndpointAccessSummary", () => ({
 vi.mock("@/domains/endpoint/components/EndpointAdvancedParameters", () => ({
   EndpointAdvancedParameters: () => null,
 }));
+vi.mock("@/domains/endpoint/components/EndpointCatalogOrigin", () => ({
+  EndpointCatalogOriginLink: () => null,
+}));
 vi.mock("@/domains/endpoint/components/EndpointEngine", () => ({
   default: () => null,
 }));

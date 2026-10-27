@@ -11,6 +11,7 @@ import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-pr
 import type { Cluster } from "@/domains/cluster/types";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
+import { EndpointCatalogOriginLink } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import { EndpointKVCacheSummary } from "@/domains/endpoint/components/EndpointKVCacheSummary";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
@@ -245,11 +246,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 </ShowPage.Meta>
                 {catalogOrigin && (
                   <ShowPage.Meta label={t("endpoints.fields.modelCatalog")}>
-                    <span data-testid="endpoint-origin-summary">
-                      {catalogOrigin.variant
-                        ? `${catalogOrigin.catalog} · ${catalogOrigin.variant}`
-                        : catalogOrigin.catalog}
-                    </span>
+                    <EndpointCatalogOriginLink
+                      origin={catalogOrigin}
+                      workspace={record.metadata.workspace}
+                    />
                   </ShowPage.Meta>
                 )}
                 <ShowPage.Meta label={t("common.fields.cluster")}>
