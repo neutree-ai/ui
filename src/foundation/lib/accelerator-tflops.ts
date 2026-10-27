@@ -17,6 +17,8 @@ const defaults: Record<string, number> = {
   H20: 148,
   "4090": 165,
   "910B": 320,
+  "310P": 70,
+  K100_AI: 196,
 };
 export function parseTflops(raw?: string): Record<string, number> {
   try {
