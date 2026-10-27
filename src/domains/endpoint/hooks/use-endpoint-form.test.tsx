@@ -50,12 +50,17 @@ import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { selectOption } from "@/foundation/testing/interactions";
 import { refineForm } from "@/foundation/testing/refine-form";
 import { renderForm } from "@/foundation/testing/render-form";
+import {
+  FULL_T4,
+  makeGpuDevice,
+  makeNodeResources,
+  makeResourceInfo,
+  vgpuProduct,
+} from "@/foundation/testing/resource-builders";
 import type {
-  AcceleratorProductResources,
   ClusterResourceInfo,
   DeviceResource,
   NodeResourceStatus,
-  ResourceInfo,
 } from "@/foundation/types/resource-types";
 import { useEndpointForm } from "./use-endpoint-form";
 
@@ -63,7 +68,6 @@ import { useEndpointForm } from "./use-endpoint-form";
 
 const T4 = "Tesla-T4";
 const L20 = "NVIDIA-L20";
-const FULL_T4 = { memory_mib: 15360, core_units: 100 };
 
 const metadata = (name: string) => ({
   name,
@@ -73,52 +77,6 @@ const metadata = (name: string) => ({
   update_timestamp: "",
   labels: {},
   annotations: {},
-});
-
-/** Product counts become `product_groups`; product objects become `products`. */
-function pool(
-  cpu: number,
-  memory: number,
-  gpus?: Record<string, number> | Record<string, AcceleratorProductResources>,
-): ResourceInfo {
-  if (!gpus) return { cpu, memory, accelerator_groups: null };
-  const values = Object.values(gpus);
-  const counted = values.every((value) => typeof value === "number");
-  const quantity = values.reduce<number>(
-    (sum, value) => sum + (typeof value === "number" ? value : value.quantity),
-    0,
-  );
-  return {
-    cpu,
-    memory,
-    accelerator_groups: {
-      nvidia_gpu: counted
-        ? { quantity, product_groups: gpus as Record<string, number> }
-        : {
-            quantity,
-            product_groups: null,
-            products: gpus as Record<string, AcceleratorProductResources>,
-          },
-    },
-  };
-}
-
-const vgpu = (quantity: number, memory_mib: number, core_units: number) => ({
-  quantity,
-  virtualization: { memory_mib, core_units },
-});
-
-const device = (
-  uuid: string,
-  available = FULL_T4,
-  overrides: Partial<DeviceResource> = {},
-): DeviceResource => ({
-  uuid,
-  product: T4,
-  health: true,
-  allocatable: FULL_T4,
-  available,
-  ...overrides,
 });
 
 function makeCluster(
@@ -196,21 +154,24 @@ function plainGpuCluster({
   extraProducts?: Record<string, number>;
 } = {}) {
   const node = (index: number, card: DeviceResource) => ({
-    allocatable: pool(16, 64, { [T4]: 2 }),
-    available: pool(cpu[index], memory[index], { [T4]: 1 }),
+    allocatable: makeResourceInfo(16, 64, { [T4]: 2 }),
+    available: makeResourceInfo(cpu[index], memory[index], { [T4]: 1 }),
     devices: [card],
   });
   return makeCluster(name, {
     type,
     cacheNodes,
     resources: {
-      allocatable: pool(32, 128, { [T4]: 4, ...extraProducts }),
-      available: pool(cpu[0], memory[0], { [T4]: 2, ...extraProducts }),
+      allocatable: makeResourceInfo(32, 128, { [T4]: 4, ...extraProducts }),
+      available: makeResourceInfo(cpu[0], memory[0], {
+        [T4]: 2,
+        ...extraProducts,
+      }),
       nodes: {
-        "node-a": node(1, device("GPU-free")),
+        "node-a": node(1, makeGpuDevice("GPU-free")),
         "node-b": node(
           2,
-          device(
+          makeGpuDevice(
             "GPU-used",
             allFree ? FULL_T4 : { memory_mib: 0, core_units: 0 },
           ),
@@ -237,18 +198,24 @@ function vgpuCluster({
     vgpuEnabled: true,
     supportedResources,
     resources: {
-      allocatable: pool(16, 64, { [T4]: vgpu(2, 30720, 200) }),
-      available: pool(12, 48, { [T4]: vgpu(1, 15360, 150) }),
+      allocatable: makeResourceInfo(16, 64, {
+        [T4]: vgpuProduct(2, 30720, 200),
+      }),
+      available: makeResourceInfo(12, 48, { [T4]: vgpuProduct(1, 15360, 150) }),
       nodes: {
         "node-a": {
-          allocatable: pool(16, 64, { [T4]: vgpu(2, 30720, 200) }),
-          available: pool(12, 48, { [T4]: vgpu(1, 15360, 150) }),
-          devices: [device("GPU-a", free[0])],
+          allocatable: makeResourceInfo(16, 64, {
+            [T4]: vgpuProduct(2, 30720, 200),
+          }),
+          available: makeResourceInfo(12, 48, {
+            [T4]: vgpuProduct(1, 15360, 150),
+          }),
+          devices: [makeGpuDevice("GPU-a", free[0])],
         },
         "node-b": {
-          allocatable: pool(16, 64, { [T4]: { quantity: 1 } }),
-          available: pool(12, 48, { [T4]: { quantity: 0 } }),
-          devices: [device("GPU-b", free[1])],
+          allocatable: makeResourceInfo(16, 64, { [T4]: { quantity: 1 } }),
+          available: makeResourceInfo(12, 48, { [T4]: { quantity: 0 } }),
+          devices: [makeGpuDevice("GPU-b", free[1])],
         },
       },
     },
@@ -260,8 +227,8 @@ const vgpuAggregateCluster = makeCluster("vgpu-aggregate", {
   vgpuEnabled: true,
   readyNodes: 2,
   resources: {
-    allocatable: pool(16, 64, { [T4]: vgpu(2, 30720, 200) }),
-    available: pool(12, 48, { [T4]: vgpu(1, 15360, 150) }),
+    allocatable: makeResourceInfo(16, 64, { [T4]: vgpuProduct(2, 30720, 200) }),
+    available: makeResourceInfo(12, 48, { [T4]: vgpuProduct(1, 15360, 150) }),
   },
 });
 
@@ -272,33 +239,35 @@ const vgpuAggregateCluster = makeCluster("vgpu-aggregate", {
 const oneUsableCardCluster = makeCluster("one-usable-card", {
   vgpuEnabled: true,
   resources: {
-    allocatable: pool(16, 64, { [T4]: { quantity: 3 } }),
-    available: pool(12, 48, { [T4]: { quantity: 1 } }),
+    allocatable: makeResourceInfo(16, 64, { [T4]: { quantity: 3 } }),
+    available: makeResourceInfo(12, 48, { [T4]: { quantity: 1 } }),
     nodes: {
-      "node-a": {
-        allocatable: null,
-        available: null,
+      "node-a": makeNodeResources({
         devices: [
-          device("GPU-a", { memory_mib: 7680, core_units: 100 }),
+          makeGpuDevice("GPU-a", { memory_mib: 7680, core_units: 100 }),
           ...["GPU-b", "GPU-c"].map((uuid) =>
-            device(
+            makeGpuDevice(
               uuid,
               { memory_mib: 2048, core_units: 100 },
               { allocatable: { memory_mib: 8192, core_units: 100 } },
             ),
           ),
         ],
-      },
+      }),
     },
   },
 });
 
 /** Two 45 GiB L20 cards with 1012 MiB and 7156 MiB left. */
 const fragmentedL20Cluster = (() => {
-  const allocatable = pool(64, 256, { [L20]: vgpu(2, 92136, 200) });
-  const available = pool(48, 192, { [L20]: vgpu(2, 8168, 45) });
+  const allocatable = makeResourceInfo(64, 256, {
+    [L20]: vgpuProduct(2, 92136, 200),
+  });
+  const available = makeResourceInfo(48, 192, {
+    [L20]: vgpuProduct(2, 8168, 45),
+  });
   const card = (uuid: string, memory_mib: number, core_units: number) =>
-    device(
+    makeGpuDevice(
       uuid,
       { memory_mib, core_units },
       { product: L20, allocatable: { memory_mib: 46068, core_units: 100 } },
@@ -325,16 +294,14 @@ const fragmentedL20Cluster = (() => {
 /** Two T4 cards with 60 of 100 core units free each. */
 const fractionalSlotsCluster = makeCluster("fractional-slots", {
   resources: {
-    allocatable: pool(16, 64, { [T4]: { quantity: 2 } }),
-    available: pool(12, 48, { [T4]: { quantity: 2 } }),
+    allocatable: makeResourceInfo(16, 64, { [T4]: { quantity: 2 } }),
+    available: makeResourceInfo(12, 48, { [T4]: { quantity: 2 } }),
     nodes: {
-      "node-a": {
-        allocatable: null,
-        available: null,
+      "node-a": makeNodeResources({
         devices: ["GPU-a", "GPU-b"].map((uuid) =>
-          device(uuid, { memory_mib: 9216, core_units: 60 }),
+          makeGpuDevice(uuid, { memory_mib: 9216, core_units: 60 }),
         ),
-      },
+      }),
     },
   },
 });

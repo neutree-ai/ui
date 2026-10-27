@@ -1,5 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import {
+  makeGpuDevice,
+  makeNodeResources,
+  makeResourceInfo,
+} from "@/foundation/testing/resource-builders";
 import { NodeResourcesTable } from "./NodeResourcesTable";
 
 const t = (key: string, options?: Record<string, unknown>) => {
@@ -20,55 +25,17 @@ describe("NodeResourcesTable", () => {
       <NodeResourcesTable
         nodeResources={{
           "node-a": {
-            allocatable: {
-              cpu: 16,
-              memory: 64,
-              accelerator_groups: {
-                nvidia_gpu: {
-                  quantity: 1,
-                  product_groups: null,
-                  products: {
-                    "Tesla-T4": {
-                      quantity: 1,
-                    },
-                  },
-                },
-              },
-            },
-            available: {
-              cpu: 12,
-              memory: 48,
-              accelerator_groups: {
-                nvidia_gpu: {
-                  quantity: 1,
-                  product_groups: null,
-                  products: {
-                    "Tesla-T4": {
-                      quantity: 1,
-                    },
-                  },
-                },
-              },
-            },
+            allocatable: makeResourceInfo(16, 64, {
+              "Tesla-T4": { quantity: 1 },
+            }),
+            available: makeResourceInfo(12, 48, {
+              "Tesla-T4": { quantity: 1 },
+            }),
             devices: [
-              {
-                uuid: "GPU-1",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 7680,
-                  core_units: 50,
-                },
-              },
+              makeGpuDevice("GPU-1", { memory_mib: 7680, core_units: 50 }),
             ],
           },
-          "node-b": {
-            allocatable: null,
-            available: null,
+          "node-b": makeNodeResources({
             devices: [
               {
                 uuid: "GPU-2",
@@ -76,7 +43,7 @@ describe("NodeResourcesTable", () => {
                 health: false,
               },
             ],
-          },
+          }),
         }}
         acceleratorTypes={["nvidia_gpu"]}
         t={t}

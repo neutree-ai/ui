@@ -3,6 +3,10 @@ import type { ComponentProps, ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
+import {
+  makeGpuDevice,
+  makeResourceInfo,
+} from "@/foundation/testing/resource-builders";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import { EndpointClusterGpuResourcesPanel } from "./EndpointClusterGpuResourcesPanel";
 
@@ -77,75 +81,15 @@ const makeRequest = (overrides: Partial<PanelRequest>): PanelRequest => ({
 });
 
 const resourceInfo: ClusterResourceInfo = {
-  allocatable: {
-    cpu: 64,
-    memory: 256,
-    accelerator_groups: {
-      nvidia_gpu: {
-        quantity: 2,
-        product_groups: null,
-        products: {
-          "Tesla-T4": {
-            quantity: 2,
-          },
-        },
-      },
-    },
-  },
-  available: {
-    cpu: 48,
-    memory: 192,
-    accelerator_groups: {
-      nvidia_gpu: {
-        quantity: 1.5,
-        product_groups: null,
-        products: {
-          "Tesla-T4": {
-            quantity: 1.5,
-          },
-        },
-      },
-    },
-  },
+  allocatable: makeResourceInfo(64, 256, { "Tesla-T4": { quantity: 2 } }),
+  available: makeResourceInfo(48, 192, { "Tesla-T4": { quantity: 1.5 } }),
   node_resources: {
     "node-a": {
-      allocatable: {
-        cpu: 32,
-        memory: 128,
-        accelerator_groups: null,
-      },
-      available: {
-        cpu: 24,
-        memory: 96,
-        accelerator_groups: null,
-      },
+      allocatable: makeResourceInfo(32, 128),
+      available: makeResourceInfo(24, 96),
       devices: [
-        {
-          uuid: "GPU-free",
-          product: "Tesla-T4",
-          health: true,
-          allocatable: {
-            memory_mib: 15360,
-            core_units: 100,
-          },
-          available: {
-            memory_mib: 15360,
-            core_units: 100,
-          },
-        },
-        {
-          uuid: "GPU-partial",
-          product: "Tesla-T4",
-          health: true,
-          allocatable: {
-            memory_mib: 15360,
-            core_units: 100,
-          },
-          available: {
-            memory_mib: 7680,
-            core_units: 50,
-          },
-        },
+        makeGpuDevice("GPU-free"),
+        makeGpuDevice("GPU-partial", { memory_mib: 7680, core_units: 50 }),
       ],
     },
   },
@@ -443,36 +387,12 @@ describe("EndpointClusterGpuResourcesPanel", () => {
           ...resourceInfo,
           node_resources: {
             "node-a": {
-              allocatable: {
-                cpu: 32,
-                memory: 128,
-                accelerator_groups: {
-                  nvidia_gpu: {
-                    quantity: 2,
-                    product_groups: null,
-                    products: {
-                      "Tesla-T4": {
-                        quantity: 2,
-                      },
-                    },
-                  },
-                },
-              },
-              available: {
-                cpu: 24,
-                memory: 96,
-                accelerator_groups: {
-                  nvidia_gpu: {
-                    quantity: 1,
-                    product_groups: null,
-                    products: {
-                      "Tesla-T4": {
-                        quantity: 1,
-                      },
-                    },
-                  },
-                },
-              },
+              allocatable: makeResourceInfo(32, 128, {
+                "Tesla-T4": { quantity: 2 },
+              }),
+              available: makeResourceInfo(24, 96, {
+                "Tesla-T4": { quantity: 1 },
+              }),
             },
           },
         }}

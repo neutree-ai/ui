@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Cluster } from "@/domains/cluster/types";
+import {
+  makeGpuDevice,
+  makeNodeResources,
+} from "@/foundation/testing/resource-builders";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import {
   getAcceleratorProductResourceRows,
@@ -117,27 +121,17 @@ describe("cluster accelerator virtualization helpers", () => {
   });
 
   it("falls back to product groups and device pools for non-virtualized resources", () => {
-    const device = (
-      uuid: string,
-      availableMiB: number,
-      availableCores: number,
-    ) => ({
-      uuid,
-      product: "Tesla-T4",
-      health: true,
-      allocatable: { memory_mib: 15360, core_units: 100 },
-      available: { memory_mib: availableMiB, core_units: availableCores },
-    });
     const resourceInfo = {
       accelerator_metadata: null,
       allocatable: t4Pool(3, undefined, { "Tesla-T4": 3 }),
       available: t4Pool(2, undefined, { "Tesla-T4": 2 }),
       node_resources: {
-        "node-a": {
-          allocatable: null,
-          available: null,
-          devices: [device("GPU-1", 15360, 100), device("GPU-2", 0, 0)],
-        },
+        "node-a": makeNodeResources({
+          devices: [
+            makeGpuDevice("GPU-1"),
+            makeGpuDevice("GPU-2", { memory_mib: 0, core_units: 0 }),
+          ],
+        }),
       },
     } as ClusterResourceInfo;
 

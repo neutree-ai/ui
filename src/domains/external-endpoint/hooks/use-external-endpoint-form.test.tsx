@@ -760,16 +760,18 @@ describe("submit adapter", () => {
   });
 
   it.each([undefined, null])(
-    "saves a route with strategy %s as fixed without changing targets",
+    "saves a route with strategy %s as fixed, weighting its target 1",
     async (strategy) => {
-      const targets = [makeTarget({ max_inflight_requests: 2 })];
+      const target = makeTarget({ max_inflight_requests: 2 });
       await finishWith({
         upstreams: [makeUpstream()],
-        model_routes: [makeRoute({ strategy, targets })],
+        model_routes: [
+          makeRoute({ strategy, targets: [{ ...target, weight: undefined }] }),
+        ],
       });
 
       expect(submitted().model_routes).toEqual([
-        makeRoute({ strategy: "fixed", targets }),
+        makeRoute({ strategy: "fixed", targets: [target] }),
       ]);
     },
   );
@@ -866,292 +868,29 @@ describe("loading a saved endpoint", () => {
   });
 });
 
-describe("route editor", () => {
-  it.each([
-    { strategy: "fixed" as const, limits: [2] },
-    { strategy: "priority" as const, limits: [2, 8] },
-  ])(
-    "edits and submits concurrent limits per $strategy target",
-    async ({ strategy, limits }) => {
-      const route = makeRoute({
-        strategy,
-        targets: limits.map((limit, index) =>
-          makeTarget({
-            upstream_model: `model-${index}`,
-            priority: index,
-            weight: 13,
-            max_inflight_requests: limit,
-          }),
-        ),
-      });
-      const view = renderEndpointForm({ spec: routesSpec(route) });
-      const inputs = field("maxInflightRequests") as HTMLInputElement[];
-      expect(inputs.map((input) => input.value)).toEqual(limits.map(String));
-
-      for (const [index, input] of inputs.entries()) {
-        change(input, String(index + 4));
-        fireEvent.blur(input);
-      }
-      await submit(view);
-      expect(submitted().model_routes?.[0].targets).toEqual(
-        route.targets.map((t, index) => ({
-          ...t,
-          max_inflight_requests: index + 4,
-        })),
-      );
-
-      for (const value of ["-1", "1.5", "2147483648"]) {
-        change(inputs[0], value);
-        expect(inputs[0].checkValidity()).toBe(false);
-      }
-      if (strategy === "priority") {
-        // Only a primary target requires a limit.
-        change(inputs[0], "");
-        expect(inputs[0].checkValidity()).toBe(false);
-        change(inputs[1], "");
-        expect(inputs[1].checkValidity()).toBe(true);
-        return;
-      }
-      for (const value of ["", "0"]) {
-        change(inputs[0], value);
-        fireEvent.blur(inputs[0]);
-        await submit(view);
-        expect(
-          submitted().model_routes?.[0].targets[0].max_inflight_requests,
-        ).toBe(value === "" ? undefined : 0);
-      }
-    },
-  );
-
-  it("updates weight feedback and submit availability while typing", () => {
-    const { result } = renderEndpointForm({
-      spec: routesSpec(
-        makeRoute({
-          strategy: "weighted",
-          targets: [
-            makeTarget({ upstream: "a", weight: 5 }),
-            makeTarget({ upstream: "b", weight: 5 }),
-          ],
-        }),
-      ),
-    });
-    const weights = field("weightRatio");
-    const feedback = () =>
-      document.getElementById(weights[0].getAttribute("aria-describedby") ?? "")
-        ?.textContent;
-    expect(result.current.submitBlocked).toBe(true);
-    expect(feedback()).toBe(
-      "external_endpoints.messages.weightTotalInvalid:10",
-    );
-
-    change(weights[0], "95");
-    expect(result.current.submitBlocked).toBe(false);
-    expect(feedback()).toBe("external_endpoints.messages.weightTotalValid:100");
-
-    change(weights[1], "");
-    expect(result.current.submitBlocked).toBe(true);
-  });
-
-  it("keeps hidden weighted capacity and retitles the route while editing", async () => {
+// The editor's own behavior is owned by ModelRouteEditor.test.tsx.
+describe("route editor wiring", () => {
+  it("blocks submission until the edited weights total 100, then saves them", async () => {
     const route = makeRoute({
       strategy: "weighted",
       targets: [
-        makeTarget({ upstream: "a", weight: 50, max_inflight_requests: 2 }),
-        makeTarget({ upstream: "b", weight: 50, max_inflight_requests: 8 }),
+        makeTarget({ upstream: "a", weight: 5 }),
+        makeTarget({ upstream: "b", weight: 5 }),
       ],
     });
     const view = renderEndpointForm({ spec: routesSpec(route) });
-    expect(
-      screen.queryByLabelText("external_endpoints.fields.maxInflightRequests"),
-    ).toBeNull();
+    expect(view.result.current.submitBlocked).toBe(true);
 
-    change(field("virtualModelName")[0], "renamed");
-    screen.getByRole("heading", {
-      name: "external_endpoints.sections.routeConfiguration:renamed",
-    });
-    change(field("upstreamModelName")[0], "updated");
+    change(field("weightRatio")[0], "95");
+    expect(view.result.current.submitBlocked).toBe(false);
     await submit(view);
 
-    expect(submitted().model_routes?.[0]).toMatchObject({
-      model: "renamed",
-      targets: [
-        { ...route.targets[0], upstream_model: "updated" },
-        route.targets[1],
-      ],
-    });
-  });
-
-  it("offers target actions only for multi-target strategies and follows reloaded data", () => {
-    const view = renderEndpointForm({
-      action: "create",
-      spec: routesSpec(makeRoute()),
-    });
-    expect(
-      screen.queryByRole("button", {
-        name: "external_endpoints.actions.removeTarget",
-      }),
-    ).toBeNull();
-
-    change(field("routingMode")[0], "priority");
-    clickAction("addPrimaryTarget");
-    expect(
-      within(table("primaryTargets")).getAllByRole("spinbutton"),
-    ).toHaveLength(2);
-    expect(
-      within(table("fallbackTargets")).getAllByRole("spinbutton"),
-    ).toHaveLength(1);
-    fireEvent.click(
-      within(table("primaryTargets")).getAllByRole("button", {
-        name: "external_endpoints.actions.removeTarget",
-      })[1],
-    );
-    // The last primary target cannot be removed.
-    expect(
-      within(table("primaryTargets")).getByRole("button", {
-        name: "external_endpoints.actions.removeTarget",
-      }),
-    ).toHaveProperty("disabled", true);
-
-    act(() =>
-      view.result.current.form.setValue("spec.model_routes", [
-        makeRoute({
-          strategy: "weighted",
-          targets: [makeTarget({ weight: 100 })],
-        }),
-      ]),
-    );
-    expect(field("routingMode")[0].value).toBe("weighted");
-    clickAction("addWeightedTarget");
-    expect(field("weightRatio")).toHaveLength(2);
-  });
-
-  it("puts every added standby in the second tier", async () => {
-    const view = renderEndpointForm({
-      spec: routesSpec(
-        makeRoute({ targets: [makeTarget({ upstream_model: "model-0" })] }),
-      ),
-    });
-    change(field("routingMode")[0], "priority");
-    change(field("maxInflightRequests")[0], "5");
-    for (const model of ["model-1", "extra-0", "extra-1"]) {
-      if (model !== "model-1") clickAction("addFallbackTarget");
-      change(field("upstreamModelName").at(-1)!, model);
-      change(field("provider").at(-1)!, "a");
-    }
-    await submit(view);
-
-    expect(
-      submitted().model_routes?.[0].targets.map((t) => t.priority),
-    ).toEqual([0, 1, 1, 1]);
-  });
-});
-
-describe("route strategy changes", () => {
-  const switchMode = (value: string, index = 0) => {
-    const selector = field("routingMode")[index];
-    expect(selector).toHaveProperty("disabled", false);
-    change(selector, value);
-  };
-  const confirmSwitch = () => clickAction("changeStrategy");
-  const spec = routesSpec(makeRoute());
-
-  it("switches an unconfigured draft route freely and submits it as fixed", async () => {
-    const view = renderEndpointForm({ action: "create", spec });
-    for (const mode of [
-      "priority",
-      "weighted",
-      "fixed",
-      "weighted",
-      "priority",
-      "fixed",
-    ]) {
-      switchMode(mode);
-      expect(screen.queryByRole("alertdialog")).toBeNull();
-      expect(field("upstreamModelName")).toHaveLength(mode === "fixed" ? 1 : 2);
-    }
-    await submit(view);
-
-    expect(submitted().model_routes).toEqual(spec.model_routes);
-  });
-
-  it("lets an added route switch while a renamed saved route stays locked after deletion", async () => {
-    const saved = makeRoute({
-      model: "saved",
-      strategy: "weighted",
-      targets: [makeTarget({ weight: 100 })],
-    });
-    const view = renderEndpointForm({
-      spec: {
-        ...spec,
-        model_routes: [makeRoute({ model: "remove-me" }), saved],
-      },
-    });
-    clickAction("addVirtualModel");
-    change(field("virtualModelName")[2], "new-model");
-    for (const mode of ["priority", "weighted", "fixed", "priority", "fixed"])
-      switchMode(mode, 2);
-    change(field("virtualModelName")[1], "renamed");
-    clickAction("removeVirtualModel");
-
-    expect(field("routingMode")[0]).toHaveProperty("disabled", true);
-    switchMode("weighted", 1);
-    switchMode("fixed", 1);
-    change(field("upstreamModelName")[1], "new-upstream-model");
-    await submit(view);
-
+    // Saved without the form-only strategy lock.
     expect(submitted().model_routes).toEqual([
-      { ...saved, model: "renamed" },
-      makeRoute({
-        model: "new-model",
-        targets: [makeTarget({ upstream_model: "new-upstream-model" })],
-      }),
+      {
+        ...route,
+        targets: [{ ...route.targets[0], weight: 95 }, route.targets[1]],
+      },
     ]);
-  });
-
-  it("asks before a lossy switch and keeps the targets when cancelled", async () => {
-    const view = renderEndpointForm({ action: "create", spec });
-    switchMode("priority");
-    change(field("provider")[1], "a");
-    change(field("upstreamModelName")[1], "standby");
-    change(field("maxInflightRequests")[0], "7");
-
-    switchMode("weighted");
-    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
-    expect(field("routingMode")[0].value).toBe("priority");
-    expect(field("maxInflightRequests")[0].value).toBe("7");
-
-    switchMode("weighted");
-    confirmSwitch();
-    for (const weight of field("weightRatio")) change(weight, "50");
-    switchMode("fixed");
-    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
-    expect(field("weightRatio").map((input) => input.value)).toEqual([
-      "50",
-      "50",
-    ]);
-
-    switchMode("fixed");
-    confirmSwitch();
-    await submit(view);
-    expect(submitted().model_routes).toEqual(spec.model_routes);
-  });
-
-  it("lets a saved fixed route change before saving and locks it once reopened as weighted", async () => {
-    const view = renderEndpointForm({ spec });
-    for (const mode of ["priority", "weighted", "fixed", "weighted"])
-      switchMode(mode);
-    for (const weight of field("weightRatio")) change(weight, "50");
-    change(field("provider")[1], "a");
-    change(field("upstreamModelName")[1], "backup");
-    await submit(view);
-    const savedSpec = submitted();
-    expect(savedSpec.model_routes?.[0]).not.toHaveProperty("strategyLocked");
-    view.unmount();
-
-    renderEndpointForm({ spec: savedSpec });
-    const selector = field("routingMode")[0];
-    expect(selector).toHaveProperty("disabled", true);
-    change(selector, "fixed");
-    expect(selector.value).toBe("weighted");
   });
 });

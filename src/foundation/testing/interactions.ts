@@ -9,6 +9,15 @@ export function selectOption(fieldName: string, option: string | RegExp) {
   const field = screen.getByTestId(`field-${fieldName}`);
   const trigger = field.querySelector('button[role="combobox"]');
   if (!trigger) throw new Error(`no select trigger in field-${fieldName}`);
+  pickOption(trigger, option);
+}
+
+/**
+ * Picks an option from the Radix Select opened by `trigger`. For a select
+ * found by its label rather than a `field-<name>` wrapper. Only the open
+ * select renders its options, so the option query cannot hit another one.
+ */
+export function pickOption(trigger: Element, option: string | RegExp) {
   fireEvent.click(trigger);
   fireEvent.click(screen.getByRole("option", { name: option }));
 }

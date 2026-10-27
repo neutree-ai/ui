@@ -461,9 +461,10 @@
   "src/foundation/lib/api/identity-sources.ts": "4100b4d07ce7a31c1629acb5facde47d",
   "src/foundation/hooks/use-login-identity-sources.ts": "38f948fd1cd096bc5413f1077d397c51",
   "src/foundation/lib/user-identity.ts": "ebf1ee25675f956d4d2d0ca0036c85ac",
-  "src/foundation/testing/interactions.ts": "9988cb53423d3269486f7526be9ffb90",
+  "src/foundation/testing/interactions.ts": "5fe24b3233c94e65f6a993b537ce0826",
   "src/foundation/testing/refine-form.ts": "f411a2429aea4cfbc6d22f575ebab1a4",
   "src/foundation/testing/render-form.tsx": "10de9abc0bfa135bfd9f3a9dd324a790",
   "src/foundation/testing/setup.ts": "b7b98e5461909d1b1faa3c58bc66d11f",
-  "src/domains/external-endpoint/testing/fixtures.ts": "f86841bce24639bbd284a4661ecf708a"
+  "src/domains/external-endpoint/testing/fixtures.ts": "f86841bce24639bbd284a4661ecf708a",
+  "src/foundation/testing/resource-builders.ts": "49670b2c2e6cc28402232dd86e20d62d"
 }

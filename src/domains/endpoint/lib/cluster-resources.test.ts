@@ -1,4 +1,10 @@
 import { describe, expect, it } from "vitest";
+import {
+  makeGpuDevice,
+  makeNodeResources,
+  makeResourceInfo,
+  vgpuProduct,
+} from "@/foundation/testing/resource-builders";
 import type {
   ClusterResourceInfo,
   NodeResourceStatus,
@@ -32,16 +38,8 @@ describe("parseClusterResources", () => {
 
   it("should parse basic CPU and memory resources", () => {
     const resourceInfo: ClusterResourceInfo = {
-      allocatable: {
-        cpu: 100,
-        memory: 256,
-        accelerator_groups: null,
-      },
-      available: {
-        cpu: 80,
-        memory: 200,
-        accelerator_groups: null,
-      },
+      allocatable: makeResourceInfo(100, 256),
+      available: makeResourceInfo(80, 200),
       node_resources: null,
     };
 
@@ -54,32 +52,11 @@ describe("parseClusterResources", () => {
 
   it("should parse accelerator options with product groups", () => {
     const resourceInfo: ClusterResourceInfo = {
-      allocatable: {
-        cpu: 100,
-        memory: 256,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 8,
-            product_groups: {
-              "Tesla-T4": 4,
-              "Tesla-V100": 4,
-            },
-          },
-        },
-      },
-      available: {
-        cpu: 80,
-        memory: 200,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 6,
-            product_groups: {
-              "Tesla-T4": 3,
-              "Tesla-V100": 3,
-            },
-          },
-        },
-      },
+      allocatable: makeResourceInfo(100, 256, {
+        "Tesla-T4": 4,
+        "Tesla-V100": 4,
+      }),
+      available: makeResourceInfo(80, 200, { "Tesla-T4": 3, "Tesla-V100": 3 }),
       node_resources: null,
     };
 
@@ -150,30 +127,8 @@ describe("parseClusterResources", () => {
 
   it("omits unknown accelerator memory totals instead of setting undefined", () => {
     const resourceInfo: ClusterResourceInfo = {
-      allocatable: {
-        cpu: 100,
-        memory: 256,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 4,
-            product_groups: {
-              "Tesla-T4": 4,
-            },
-          },
-        },
-      },
-      available: {
-        cpu: 80,
-        memory: 200,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 2,
-            product_groups: {
-              "Tesla-T4": 2,
-            },
-          },
-        },
-      },
+      allocatable: makeResourceInfo(100, 256, { "Tesla-T4": 4 }),
+      available: makeResourceInfo(80, 200, { "Tesla-T4": 2 }),
       node_resources: null,
     };
 
@@ -184,64 +139,18 @@ describe("parseClusterResources", () => {
 
   it("should derive accelerator memory total from node devices when metadata is absent", () => {
     const resourceInfo: ClusterResourceInfo = {
-      allocatable: {
-        cpu: 100,
-        memory: 256,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 2,
-            product_groups: null,
-            products: {
-              "Tesla-T4": {
-                quantity: 2,
-                virtualization: {
-                  memory_mib: 30720,
-                  core_units: 200,
-                },
-              },
-            },
-          },
-        },
-      },
-      available: {
-        cpu: 80,
-        memory: 200,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 1,
-            product_groups: null,
-            products: {
-              "Tesla-T4": {
-                quantity: 1,
-                virtualization: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-              },
-            },
-          },
-        },
-      },
+      allocatable: makeResourceInfo(100, 256, {
+        "Tesla-T4": vgpuProduct(2, 30720, 200),
+      }),
+      available: makeResourceInfo(80, 200, {
+        "Tesla-T4": vgpuProduct(1, 15360, 100),
+      }),
       node_resources: {
-        "node-1": {
-          allocatable: null,
-          available: null,
+        "node-1": makeNodeResources({
           devices: [
-            {
-              uuid: "GPU-1",
-              product: "Tesla-T4",
-              health: true,
-              allocatable: {
-                memory_mib: 15360,
-                core_units: 100,
-              },
-              available: {
-                memory_mib: 7680,
-                core_units: 50,
-              },
-            },
+            makeGpuDevice("GPU-1", { memory_mib: 7680, core_units: 50 }),
           ],
-        },
+        }),
       },
     };
 
@@ -491,71 +400,15 @@ describe("findBestNodeForAccelerator", () => {
   it("should count only fully free devices as full-card available for virtualized products", () => {
     const nodeResources: Record<string, NodeResourceStatus> = {
       "node-1": {
-        allocatable: {
-          cpu: 32,
-          memory: 64,
-          accelerator_groups: {
-            nvidia_gpu: {
-              quantity: 2,
-              product_groups: null,
-              products: {
-                "Tesla-T4": {
-                  quantity: 2,
-                  virtualization: {
-                    memory_mib: 30720,
-                    core_units: 200,
-                  },
-                },
-              },
-            },
-          },
-        },
-        available: {
-          cpu: 24,
-          memory: 48,
-          accelerator_groups: {
-            nvidia_gpu: {
-              quantity: 2,
-              product_groups: null,
-              products: {
-                "Tesla-T4": {
-                  quantity: 2,
-                  virtualization: {
-                    memory_mib: 23040,
-                    core_units: 150,
-                  },
-                },
-              },
-            },
-          },
-        },
+        allocatable: makeResourceInfo(32, 64, {
+          "Tesla-T4": vgpuProduct(2, 30720, 200),
+        }),
+        available: makeResourceInfo(24, 48, {
+          "Tesla-T4": vgpuProduct(2, 23040, 150),
+        }),
         devices: [
-          {
-            uuid: "GPU-full",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: {
-              memory_mib: 15360,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 15360,
-              core_units: 100,
-            },
-          },
-          {
-            uuid: "GPU-vgpu-used",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: {
-              memory_mib: 15360,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 7680,
-              core_units: 50,
-            },
-          },
+          makeGpuDevice("GPU-full"),
+          makeGpuDevice("GPU-vgpu-used", { memory_mib: 7680, core_units: 50 }),
         ],
       },
     };
@@ -611,19 +464,10 @@ it("preserves generic GPUs after cache-pool aggregation", () => {
 });
 
 it("sums vGPU product pools across cache-pool nodes", () => {
-  const t4 = (quantity: number, memory_mib: number, core_units: number) => ({
-    cpu: 8,
-    memory: 32,
-    accelerator_groups: {
-      nvidia_gpu: {
-        quantity,
-        product_groups: null,
-        products: {
-          "Tesla-T4": { quantity, virtualization: { memory_mib, core_units } },
-        },
-      },
-    },
-  });
+  const t4 = (quantity: number, memory_mib: number, core_units: number) =>
+    makeResourceInfo(8, 32, {
+      "Tesla-T4": vgpuProduct(quantity, memory_mib, core_units),
+    });
   const nodes: Record<string, NodeResourceStatus> = {
     "node-a": { allocatable: t4(2, 30720, 200), available: t4(1, 7680, 50) },
     "node-b": { allocatable: t4(1, 15360, 100), available: t4(1, 15360, 100) },
