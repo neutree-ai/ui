@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildCatalogFromEndpoint } from "@/domains/endpoint/lib/save-as-catalog";
@@ -56,16 +56,30 @@ vi.mock("@/foundation/components/ShowPage", () => {
   ShowPage.ObjectHeader = ({
     title,
     status,
+    description,
   }: {
     title?: ReactNode;
     status?: ReactNode;
+    description?: ReactNode;
   }) => (
     <header>
       <h1>{title}</h1>
       {status}
+      {description}
     </header>
   );
-  ShowPage.Meta = ({ children }: { children: ReactNode }) => <>{children}</>;
+  ShowPage.Meta = ({
+    children,
+    label,
+  }: {
+    children: ReactNode;
+    label?: ReactNode;
+  }) => (
+    <span>
+      <span>{label}</span>
+      {children}
+    </span>
+  );
   ShowPage.Section = ({ children }: { children: ReactNode }) => <>{children}</>;
   return { ShowPage };
 });
@@ -74,7 +88,7 @@ vi.mock("@/domains/cluster/lib/get-ray-dashboard-proxy", () => ({
   getRayDashboardProxy: () => null,
 }));
 vi.mock("@/domains/endpoint/components/EndpointAccessSummary", () => ({
-  EndpointAccessSummary: () => null,
+  EndpointAccessSummary: () => <span data-testid="endpoint-access-summary" />,
 }));
 vi.mock("@/domains/endpoint/components/EndpointAdvancedParameters", () => ({
   EndpointAdvancedParameters: (props: {
@@ -302,5 +316,35 @@ describe("EndpointsShow", () => {
     });
     render(<EndpointsShow />);
     expect(advancedParametersProps.current?.engineParameters).toEqual({});
+  });
+
+  it("shows all served model names together with the access address", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        data: {
+          data: {
+            ...endpoint,
+            status: {
+              phase: "Running",
+              service_url: "http://gateway/endpoint-a",
+              served_models: ["chat-primary", "chat-alias"],
+            },
+          },
+        },
+        isLoading: false,
+      },
+    });
+    render(<EndpointsShow />);
+    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
+    servingInfo.getByTestId("endpoint-access-summary");
+    servingInfo.getByText("chat-primary");
+    servingInfo.getByText("chat-alias");
+  });
+
+  it("shows a placeholder while served models have not been discovered", () => {
+    render(<EndpointsShow />);
+    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
+    servingInfo.getByText("endpoints.fields.servedModels");
+    servingInfo.getByText("-");
   });
 });
