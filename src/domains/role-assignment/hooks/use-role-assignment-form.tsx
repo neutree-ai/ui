@@ -9,6 +9,7 @@ import { FormSelect } from "@/foundation/components/FormSelect";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { profileOptionLabel } from "@/foundation/lib/user-identity";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 export const useRoleAssignmentForm = ({
@@ -77,7 +78,7 @@ export const useRoleAssignmentForm = ({
             placeholder={t("role_assignments.placeholders.selectUser")}
             disabled={users.query.isLoading}
             options={(users.query.data?.data || []).map((e) => ({
-              label: e.metadata.name,
+              label: profileOptionLabel(e.metadata),
               value: e.id,
             }))}
           />

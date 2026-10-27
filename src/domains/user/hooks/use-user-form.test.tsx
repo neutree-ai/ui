@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useEffect } from "react";
 import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
@@ -38,6 +39,38 @@ function EditForm() {
         {registerFields}
         {metadataFields}
         {specFields}
+      </form>
+    </FormProvider>
+  );
+}
+
+function EditFormWithRecord({
+  labels,
+  email = "alice@corp.example",
+  onSubmit,
+}: {
+  labels: Record<string, string>;
+  email?: string;
+  onSubmit?: (values: unknown) => void;
+}) {
+  const { form, metadataFields, specFields } = useUserForm({
+    action: "edit",
+  });
+  const { reset } = form;
+  useEffect(() => {
+    reset({
+      api_version: "v1",
+      kind: "UserProfile",
+      metadata: { name: "alice", labels },
+      spec: { email },
+    });
+  }, [reset, labels, email]);
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit((values) => onSubmit?.(values))}>
+        {metadataFields}
+        {specFields}
+        <button type="submit">submit</button>
       </form>
     </FormProvider>
   );
@@ -145,6 +178,70 @@ describe("useUserForm (render)", () => {
       render(<EditForm />);
       const input = screen.getByLabelText("common.fields.name");
       expect((input as HTMLInputElement).disabled).toBe(true);
+    });
+
+    it("disables the email of a user from an identity source, with a hint", async () => {
+      render(
+        <EditFormWithRecord
+          labels={{ "neutree.ai/identity-source": "ldap" }}
+        />,
+      );
+      await waitFor(() => {
+        const input = screen.getByLabelText(
+          "common.fields.email",
+        ) as HTMLInputElement;
+        expect(input.value).toBe("alice@corp.example");
+        expect(input.disabled).toBe(true);
+      });
+      expect(
+        screen.getByText("user_profiles.hints.externalEmail"),
+      ).toBeTruthy();
+    });
+
+    it("shows the placeholder email of an external user as empty, and submits it unchanged", async () => {
+      const placeholder = "0a1b2c3d@corp-ldap.ldap.neutree.local";
+      const onSubmit = vi.fn();
+      render(
+        <EditFormWithRecord
+          labels={{ "neutree.ai/identity-source": "ldap" }}
+          email={placeholder}
+          onSubmit={onSubmit}
+        />,
+      );
+      await waitFor(() => {
+        const input = screen.getByLabelText(
+          "common.fields.email",
+        ) as HTMLInputElement;
+        expect(input.disabled).toBe(true);
+        expect(input.placeholder).toBe("-");
+      });
+      expect(
+        (screen.getByLabelText("common.fields.email") as HTMLInputElement)
+          .value,
+      ).toBe("");
+
+      fireEvent.click(screen.getByText("submit"));
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+      expect(onSubmit.mock.calls[0][0]).toMatchObject({
+        spec: { email: placeholder },
+      });
+    });
+
+    it("keeps the email of a local user editable", async () => {
+      render(<EditFormWithRecord labels={{ team: "a" }} />);
+      await waitFor(() => {
+        expect(
+          (screen.getByLabelText("common.fields.email") as HTMLInputElement)
+            .value,
+        ).toBe("alice@corp.example");
+      });
+      expect(
+        (screen.getByLabelText("common.fields.email") as HTMLInputElement)
+          .disabled,
+      ).toBe(false);
+      expect(
+        screen.queryByText("user_profiles.hints.externalEmail"),
+      ).toBeNull();
     });
   });
 });

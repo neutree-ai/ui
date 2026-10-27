@@ -26,9 +26,14 @@ vi.mock("@supabase/auth-js", () => ({
   },
 }));
 
+const mockMaybeSingle = vi.fn();
+const mockFrom = vi.fn(() => ({
+  select: () => ({ eq: () => ({ maybeSingle: mockMaybeSingle }) }),
+}));
+
 vi.mock("@/foundation/lib/api", () => ({
   REST_URL: "http://localhost/api/v1",
-  clientPostgrest: { headers: {} },
+  clientPostgrest: { headers: {}, from: mockFrom },
 }));
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -462,14 +467,63 @@ describe("getPermissions", () => {
 // --- getIdentity -----------------------------------------------------
 
 describe("getIdentity", () => {
-  it("returns user with name set to email", async () => {
+  it("names a local user by the profile display name", async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { id: "u1", email: "a@b.com" } },
+      data: {
+        user: {
+          id: "u1",
+          email: "admin@neutree.local",
+          user_metadata: { username: "admin" },
+        },
+      },
+    });
+    mockMaybeSingle.mockResolvedValue({
+      data: { metadata: { name: "admin", display_name: "Administrator" } },
     });
 
     const result = await authProvider.getIdentity?.({});
 
-    expect(result).toEqual({ id: "u1", email: "a@b.com", name: "a@b.com" });
+    expect(result).toMatchObject({
+      id: "u1",
+      name: "Administrator",
+      displayEmail: "admin@neutree.local",
+      external: false,
+    });
+  });
+
+  it("shows an external user's real email, never the placeholder", async () => {
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: {
+          id: "u2",
+          email: "abc@corp-ldap.ldap.neutree.local",
+          app_metadata: { identity_source: "ldap" },
+          user_metadata: { name: "Alice Liddell", email: "alice@corp.test" },
+        },
+      },
+    });
+    mockMaybeSingle.mockResolvedValue({ data: null });
+
+    const result = await authProvider.getIdentity?.({});
+
+    expect(result).toMatchObject({
+      name: "Alice Liddell",
+      displayEmail: "alice@corp.test",
+      external: true,
+    });
+  });
+
+  it("falls back to GoTrue metadata when the profile read fails", async () => {
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: { id: "u3", email: "x@y.z", user_metadata: { username: "x" } },
+      },
+    });
+    mockMaybeSingle.mockRejectedValue(new Error("network"));
+
+    const result = await authProvider.getIdentity?.({});
+
+    expect(result).toMatchObject({ name: "x", displayEmail: "x@y.z" });
   });
 
   it("returns null when no user", async () => {
