@@ -75,7 +75,7 @@
   "src/pages/oem-config/show.tsx": "c967d3bbb5497df2ad25377ad3af9b38",
   "src/pages/oem-config/use-oem-config-form.tsx": "1f3f03f3d7cfa47a50fd17ef35e2004b",
   "src/pages/license/show.tsx": "a2725372fe4047e3ac3a03cec5df40d8",
-  "vitest.config.ts": "a128235c44d0485e2c4bd7d311f31a80",
+  "vitest.config.ts": "a53ec874eb30faef8d6d3adf68e6f191",
   "playwright.config.ts": "1e624a5e7453327ec44105e414fc39d7",
   "src/pages/auth/AuthPage.tsx": "d24f5cfff735e761566cd2ff24dc36ed",
   "src/pages/auth/ForgotPasswordPage.tsx": "f16e847fd4935b49246e9e8cb6b11b6f",
@@ -464,7 +464,7 @@
   "src/foundation/testing/interactions.ts": "5fe24b3233c94e65f6a993b537ce0826",
   "src/foundation/testing/refine-form.ts": "f411a2429aea4cfbc6d22f575ebab1a4",
   "src/foundation/testing/render-form.tsx": "10de9abc0bfa135bfd9f3a9dd324a790",
-  "src/foundation/testing/setup.ts": "b7b98e5461909d1b1faa3c58bc66d11f",
+  "src/foundation/testing/setup.ts": "72d60bfdae7a0ab1e65c5717d6cb7aa0",
   "src/domains/external-endpoint/testing/fixtures.ts": "f86841bce24639bbd284a4661ecf708a",
   "src/foundation/testing/resource-builders.ts": "49670b2c2e6cc28402232dd86e20d62d"
 }

@@ -45,13 +45,16 @@ beforeEach(() => {
   vi.mocked(useIsTruncated).mockReset().mockReturnValue(false);
 });
 
-// jsdom lacks the layout APIs Radix and cmdk call.
-globalThis.ResizeObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView ??= () => {};
-Element.prototype.hasPointerCapture ??= () => false;
-Element.prototype.setPointerCapture ??= () => {};
-Element.prototype.releasePointerCapture ??= () => {};
+// jsdom lacks the layout APIs Radix and cmdk call. Files running in the node
+// environment have no DOM to stub.
+if (typeof Element !== "undefined") {
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+  Element.prototype.scrollIntoView ??= () => {};
+  Element.prototype.hasPointerCapture ??= () => false;
+  Element.prototype.setPointerCapture ??= () => {};
+  Element.prototype.releasePointerCapture ??= () => {};
+}
